@@ -5,20 +5,16 @@ import torch
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
 
-def prepare_dataset(args):
-    """
-    Split the IQ_data into segments of size nperseg. Zero padding is applied
-    if the last section is not of length nperseg.
-    """
-    path_dataset = os.path.join('datasets', args.dataset_name)
-    train_input = pd.read_csv(os.path.join(path_dataset, 'train_input.csv'))
-    train_output = pd.read_csv(os.path.join(path_dataset, 'train_output.csv'))
-    val_input = pd.read_csv(os.path.join(path_dataset, 'val_input.csv'))
-    val_output = pd.read_csv(os.path.join(path_dataset, 'val_output.csv'))
-    test_input = pd.read_csv(os.path.join(path_dataset, 'test_input.csv'))
-    test_output = pd.read_csv(os.path.join(path_dataset, 'test_output.csv'))
 
-    return train_input, train_output, val_input, val_output, test_input, test_output
+def load_dataset(dataset_name):
+    path_dataset = os.path.join('datasets', dataset_name)
+    X_train = pd.read_csv(os.path.join(path_dataset, 'train_input.csv')).to_numpy()
+    y_train = pd.read_csv(os.path.join(path_dataset, 'train_output.csv')).to_numpy()
+    X_val = pd.read_csv(os.path.join(path_dataset, 'val_input.csv')).to_numpy()
+    y_val = pd.read_csv(os.path.join(path_dataset, 'val_output.csv')).to_numpy()
+    X_test = pd.read_csv(os.path.join(path_dataset, 'test_input.csv')).to_numpy()
+    y_test = pd.read_csv(os.path.join(path_dataset, 'test_output.csv')).to_numpy()
+    return X_train, y_train, X_val, y_val, X_test, y_test
 
 
 def prepare_segments(args):
@@ -82,61 +78,48 @@ def get_training_frames(segments, seq_len, stride=1):
 
 class IQSegmentDataset(Dataset):
     def __init__(self, features, targets, nperseg=2560):
-        def split_segments(sequence):
-            num_samples = len(sequence)
-            segments = []
-            for i in range(0, num_samples, nperseg):
-                segment = sequence[i:i + nperseg]
-                if len(segment) < nperseg:
-                    padding_shape = (nperseg - segment.shape[0], 2)
-                    segment = torch.vstack((segment, torch.zeros(padding_shape)))
-                segments.append(segment)
-            return np.array(segments)
+        self.nperseg = nperseg
 
-        train_input_segments = split_segments(train_input)
-        train_output_segments = split_segments(train_output)
-        val_input_segments = split_segments(val_input)
-        val_output_segments = split_segments(val_output)
-        test_input_segments = split_segments(test_input)
-        test_output_segments = split_segments(test_output)
+        features = self.split_segments(features)
+        targets = self.split_segments(targets)
+        self.features = torch.Tensor(features)
+        self.targets = torch.Tensor(targets)
 
-
-
-
-
-
-
-
-        self.PA_IQ_in_segments = torch.Tensor(PA_IQ_in_segments)
-        self.PA_IQ_out_segments = torch.Tensor(PA_IQ_out_segments)
+    def split_segments(self, sequence):
+        num_samples = len(sequence)
+        segments = []
+        for i in range(0, num_samples, self.nperseg):
+            segment = sequence[i:i + self.nperseg]
+            if len(segment) < self.nperseg:
+                padding_shape = (self.nperseg - segment.shape[0], 2)
+                segment = torch.vstack((segment, torch.zeros(padding_shape)))
+            segments.append(segment)
+        return np.array(segments)
 
     def __len__(self):
-        return len(self.PA_IQ_in_segments)
+        return len(self.features)
 
     def __getitem__(self, idx):
-        IQ_in_segment = self.PA_IQ_in_segments[idx, ...]
-        IQ_out_segment = self.PA_IQ_out_segments[idx, ...]
-        return IQ_in_segment, IQ_out_segment
+        features = self.features[idx, ...]
+        targets = self.targets[idx, ...]
+        return features, targets
 
 
 class IQFrameDataset(Dataset):
-    def __init__(self, features, targets, segment_dataset, frame_length, stride_length=1):
+    def __init__(self, features, targets, frame_length, stride=1):
+        # Convert segments into frames
+        self.features = torch.Tensor(self.get_frames(features, frame_length, stride))
+        self.targets = torch.Tensor(self.get_frames(targets, frame_length, stride))
 
-        def get_frames(sequence, frame_length, stride_length):
+    @staticmethod
+    def get_frames(sequence, frame_length, stride_length):
             frames = []
-            sequence_length = len(features)
+            sequence_length = len(sequence)
             num_frames = (sequence_length - frame_length) // stride_length + 1
             for i in range(num_frames):
                 frame = sequence[i * stride_length: i * stride_length + frame_length]
                 frames.append(frame)
-
             return np.stack(frames)
-
-
-        # Convert segments into frames
-        self.features = torch.Tensor(get_frames(features))
-        self.targets = torch.Tensor(get_frames(targets))
-
     def __len__(self):
         return len(self.features)
 
@@ -171,7 +154,7 @@ def data_prepare(X, y, frame_length, degree):
             for h in range(frame_length):
                 degree_matrix[:,
                 (j - 1) * frame_length * frame_length + h * frame_length:(j - 1) * frame_length * frame_length + (
-                            h + 1) * frame_length] = Input_matrix[:ulength - frame_length] * torch.pow(
+                        h + 1) * frame_length] = Input_matrix[:ulength - frame_length] * torch.pow(
                     abs(Input_matrix[h:h + ulength - frame_length, :]), j)
         Input_matrix = torch.cat((Input_matrix[:ulength - frame_length], degree_matrix), dim=1)
         b_output = np.array(Complex_Out[:len(Complex_In) - 2 * frame_length])

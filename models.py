@@ -75,17 +75,9 @@ class CoreModel(nn.Module):
                                     hidden_size=hidden_size)
         elif backbone_type == 'dvrjanet':
             self.backbone = DVRJANET(hidden_size=hidden_size)
-        elif backbone_type == 'cnn1d':
-            self.backbone = CNN1D(cnn_memory=cnn_memory,
-                                  output_length=pa_output_len,
-                                  kernel_size=hidden_size)
         elif backbone_type == 'rvtdcnn':
-            self.backbone = RVTDCNN(feature_num=input_size,
-                                    cnn_memory=cnn_memory,
-                                    output_length=pa_output_len,
-                                    kernel_num=hidden_size,
-                                    kernel_size=cnn_set[0:2]
-                                    )
+            self.backbone = RVTDCNN(input_size=input_size,
+                                    fc_hid_size=hidden_size)
 
         # Initialize backbone parameters
         try:

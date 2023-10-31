@@ -11,15 +11,15 @@ def extract_feature(X, backbone):
     cos = i_x / amp
     sin = q_x / amp
     if backbone == 'lstm' or backbone == 'gru' or backbone == 'fc':
-        Feat = X
+        features = X
     elif backbone == 'pgjanet' or backbone == 'dvrjanet':
-        Feat = np.concatenate((amp, angle), axis=-1)
+        features = np.concatenate((amp, angle), axis=-1)
     elif backbone == 'vdlstm':
-        Feat = np.concatenate((amp, angle), axis=-1)
-    elif backbone == 'cnn2d':
-        Feat = np.concatenate((i_x, q_x, amp, amp2, amp3), axis=-1)
+        features = np.concatenate((amp, angle), axis=-1)
+    elif backbone == 'rvtdcnn':
+        features = np.concatenate((i_x, q_x, amp, amp2, amp3), axis=-1)
     elif backbone == 'dgru':
-        Feat = np.concatenate((i_x, q_x, amp, amp3, sin, cos), axis=-1)
+        features = np.concatenate((i_x, q_x, amp, amp3, sin, cos), axis=-1)
     else:
-        Feat = X
-    return Feat
+        features = X
+    return features

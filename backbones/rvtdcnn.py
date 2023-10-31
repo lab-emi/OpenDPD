@@ -1,10 +1,13 @@
-import numpy as np
+"""
+Reproduced from: https://ieeexplore.ieee.org/document/9352501
+"""
+
 import torch
 from torch import nn
 
 
 class RVTDCNN(nn.Module):
-    def __init__(self, input_size, windows_length=4, out_channels=3, kernel_size=3, stride=1, padding=0,
+    def __init__(self, input_size, windows_length=4, out_channels=3, kernel_size=3, stride=1, padding=(0, 1),
                  dilation=1, fc_hid_size=6):
         super(RVTDCNN, self).__init__()
         self.out_channels = out_channels
@@ -55,9 +58,9 @@ class RVTDCNN(nn.Module):
 
         # Forward Propagation
         out = torch.tanh(self.Conv2d(windows))  # Dim: (batch_size * n_windows, 1, W, H)
-        out = out.view(-1, self.W * self.H)  # Dim: (batch_size * n_windows, W*H)
+        W_new = out.size(2)
+        out = out.view(-1, W_new * self.H)  # Dim: (batch_size * n_windows, W_new*H)
         out = torch.tanh(self.fc_hid(out))
         out = self.fc_out(out)  # Dim: (batch_size * n_windows, 2)
         out = out.view(batch_size, frame_length, 2)
         return out
-

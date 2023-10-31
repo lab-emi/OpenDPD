@@ -1,21 +1,18 @@
+import os
 import time
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-
 import models as model
-from modules.data_collector import prepare_segments, IQSegmentDataset, IQFrameDataset_gmp, IQFrameDataset, \
-    prepare_dataset
+from modules.data_collector import IQSegmentDataset, IQFrameDataset_gmp, IQFrameDataset, load_dataset
 from modules.feat_ext import extract_feature
 from modules.train_funcs import net_train, net_eval, calculate_metrics
-from modules.loggers import PandasLogger
 from project import Project
-
-
 from modules.paths import gen_model_id, gen_log_stat, gen_paths, create_folder
 from utils.util import count_net_params
 
@@ -30,48 +27,8 @@ def main(proj: Project):
     # Update Conditional Arguments or Hyperparameters
     proj.tune_conditional_args()
 
-    # Get Datasets
-    # train_input = pd.read_csv(os.path.join(path_dataset, 'train_input.csv'))
-    # train_output = pd.read_csv(os.path.join(path_dataset, 'train_output.csv'))
-    # val_input = pd.read_csv(os.path.join(path_dataset, 'val_input.csv'))
-    # val_output = pd.read_csv(os.path.join(path_dataset, 'val_output.csv'))
-    # test_input = pd.read_csv(os.path.join(path_dataset, 'test_input.csv'))
-    # test_output = pd.read_csv(os.path.join(path_dataset, 'test_output.csv'))
-
-    # Create Dataset Iterators
-    X_train, y_train, X_val, y_val, X_test, y_test = prepare_dataset(proj)
-
-    # Extract Features
-    X_train = extract_feature(X_train, proj.PA_backbone)
-    X_val = extract_feature(X_val, proj.PA_backbone)
-    X_test = extract_feature(X_test, proj.PA_backbone)
-
-    feat_size = X_train.shape[-1]
-
-    # train_segment_dataset = IQSegmentDataset(X_train, y_train)
-    # val_segment_dataset = IQSegmentDataset(X_val, y_val)
-    # test_segment_dataset = IQSegmentDataset(X_test, y_test)
-
-    train_set = IQFrameDataset(X_train, y_train, frame_length=proj.frame_length, stride_length=proj.stride_length)
-    val_set = IQFrameDataset(X_train, y_train, frame_length=proj.frame_length, stride_length=proj.stride_length)
-    test_set = IQFrameDataset(X_train, y_train, frame_length=proj.frame_length, stride_length=proj.stride_length)
-
-
-
-    """# Data Preparation
-    Now, we'll split the IQ_frame_dataset into training, validation, and testing sets with a 60-20-20 ratio.
-    """
-    # if proj.PA_backbone == 'gmp':
-    #     train_frame_dataset = IQFrameDataset_gmp(train_segment_dataset, frame_length=proj.frame_length,
-    #                                              degree=proj.degree,
-    #                                              stride_length=proj.stride_length)
-    # else:
-    #     train_frame_dataset = IQFrameDataset(train_segment_dataset, frame_length=proj.frame_length,
-    #                                          stride_length=proj.stride_length)
-
-    train_loader = DataLoader(train_frame_dataset, batch_size=proj.batch_size, shuffle=True)
-    val_loader = DataLoader(val_segment_dataset, batch_size=proj.batch_size_eval, shuffle=False)
-    test_loader = DataLoader(test_segment_dataset, batch_size=proj.batch_size_eval, shuffle=False)
+    # Build Dataloaders
+    (train_loader, val_loader, test_loader), input_size = proj.build_dataloaders()
 
     ###########################################################################################################
     # Network Settings
@@ -79,7 +36,7 @@ def main(proj: Project):
 
     # Instantiate Model
     PA_CNN_setup = [proj.PA_CNN_H, proj.PA_CNN_W]
-    net = model.CoreModel(input_size=feat_size,
+    net = model.CoreModel(input_size=input_size,
                           cnn_set=PA_CNN_setup,
                           cnn_memory=proj.pa_cnn_memory,
                           pa_output_len=proj.pa_output_len,

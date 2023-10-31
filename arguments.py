@@ -24,14 +24,14 @@ def get_arguments():
                         help='Whether partition training sequences into segments of length nperseg before doing the framing.')
     # Feature Extraction
     parser.add_argument('--frame_length', default=20, type=int, help='Frame length of signals')
-    parser.add_argument('--stride_length', default=1, type=int, help='stride_length length of signals')
+    parser.add_argument('--stride', default=1, type=int, help='stride_length length of signals')
     # General Hyperparameters
     parser.add_argument('--seed', default=0, type=int, help='Global random number seed.')
-    parser.add_argument('--batch_size', default=256, type=int, help='Batch size for training.')
-    parser.add_argument('--batch_size_eval', default=128, type=int, help='Batch size for evaluation.')
+    parser.add_argument('--batch_size', default=64, type=int, help='Batch size for training.')
+    parser.add_argument('--batch_size_eval', default=256, type=int, help='Batch size for evaluation.')
     parser.add_argument('--n_epochs', default=100, type=int, help='Number of epochs to train for.')
     parser.add_argument('--lr_schedule', default=1, type=int, help='Whether enable learning rate scheduling')
-    parser.add_argument('--lr', default=1e-2, type=float, help='Learning rate')
+    parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate')
     parser.add_argument('--lr_end', default=1e-7, type=float, help='Learning rate')
     parser.add_argument('--decay_factor', default=0.5, type=float, help='Learning rate')
     parser.add_argument('--patience', default=10, type=float, help='Learning rate')

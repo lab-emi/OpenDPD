@@ -22,7 +22,7 @@ from modules.paths import gen_model_id, create_folder, gen_paths
 from utils import util
 from modules.loggers import PandasLogger
 from modules.data_collector import IQSegmentDataset, IQFrameDataset, IQFrameDataset_gmp, \
-    prepare_segments
+    prepare_segments, load_dataset
 
 
 class Project:
@@ -41,9 +41,6 @@ class Project:
 
         # Hardware Info
         self.num_cpu_threads = os.cpu_count()
-
-        # Default Training Precision
-        # torch.set_default_dtype(torch.float64)
 
         # Configure Reproducibility
         self.reproducible()
@@ -132,6 +129,31 @@ class Project:
         else:
             frame_length = self.frame_length
         self.add_arg('frame_length', frame_length)
+
+    def build_dataloaders(self):
+        from modules.data_collector import IQSegmentDataset, IQFrameDataset, IQFrameDataset_gmp, load_dataset
+        from modules.feat_ext import extract_feature
+
+        # Load Dataset
+        X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_name=self.dataset_name)
+
+        # Extract Features
+        X_train = extract_feature(X_train, self.PA_backbone)
+        X_val = extract_feature(X_val, self.PA_backbone)
+        X_test = extract_feature(X_test, self.PA_backbone)
+        input_size = X_train.shape[-1]
+
+        # Define PyTorch Datasets
+        train_set = IQFrameDataset(X_train, y_train, frame_length=self.frame_length, stride=self.stride)
+        val_set = IQSegmentDataset(X_val, y_val)
+        test_set = IQSegmentDataset(X_test, y_test)
+
+        # Define PyTorch Dataloaders
+        train_loader = DataLoader(train_set, batch_size=self.batch_size, shuffle=True)
+        val_loader = DataLoader(val_set, batch_size=self.batch_size_eval, shuffle=False)
+        test_loader = DataLoader(test_set, batch_size=self.batch_size_eval, shuffle=False)
+
+        return (train_loader, val_loader, test_loader), input_size
 
     def build_model(self):
         # Load Pretrained Model if Running Retrain
