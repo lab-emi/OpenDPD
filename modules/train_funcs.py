@@ -31,13 +31,15 @@ def net_train(args,
 
         # Calculate Loss
         if args.PA_backbone == 'gmp':
-            targetY = torch.zeros(targets.size(1), 2)
-            targetY[:, 0] = torch.real(targets)
-            targetY[:, 1] = torch.imag(targets)
-            loss = criterion(out, targetY)
-        elif args.PA_backbone == 'rvtdcnn':
-            loss = criterion(out, targets[:, :args.pa_output_len, :].to(device))
+            # targetY = torch.zeros(targets.size(1), 2)
+            # targetY[:, 0] = torch.real(targets)
+            # targetY[:, 1] = torch.imag(targets)
+            out, time_slice = net(features)
+            loss = criterion(out[:, time_slice, :], targets[:, time_slice, :])
+        # elif args.PA_backbone == 'rvtdcnn':
+        #     loss = criterion(out, targets[:, :args.pa_output_len, :].to(device))
         else:
+            out = net(features)
             loss = criterion(out, targets)
         # Backward propagation
         loss.backward()
@@ -78,18 +80,21 @@ def net_eval(args,
             targets = targets.to(device)
 
             # Forward Propagation
-            outputs = net(features)
-            loss = criterion(outputs, targets)
-            outputs = outputs.cpu()
-            targets = targets.cpu()
-
             if args.PA_backbone == 'gmp':
-                targetY = torch.zeros(targets.size(1), 2)
-                targetY[:, 0] = torch.real(targets)
-                targetY[:, 1] = torch.imag(targets)
-                prediction.append(outputs)
-                ground_truth.append(targetY)
+                # targetY = torch.zeros(targets.size(1), 2)
+                # targetY[:, 0] = torch.real(targets)
+                # targetY[:, 1] = torch.imag(targets)
+
+                outputs, time_slice = net(features)
+                loss = criterion(outputs[:, time_slice, :], targets[:, time_slice, :])
+                prediction.append(outputs[:, time_slice, :])
+                ground_truth.append(targets[:, time_slice, :])
             else:
+                outputs = net(features)
+                outputs = outputs.cpu()
+                targets = targets.cpu()
+                loss = criterion(outputs, targets)
+
                 if args.PA_backbone == 'cnn2d' or args.PA_backbone == 'cnn1d':
                     ground_truth.append(targets[:, :outputs.size(1), :])
                     prediction.append(outputs)

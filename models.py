@@ -22,8 +22,7 @@ class CoreModel(nn.Module):
         self.bias = True
 
         if backbone_type == 'gmp':
-            self.backbone = GMP(memory_depth=frame_len,
-                                degree=degree)
+            self.backbone = GMP()
         elif backbone_type == 'fc':
             from backbones.fcn import FCN
             self.backbone = FCN(input_size=self.input_size,

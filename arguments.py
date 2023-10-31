@@ -17,13 +17,13 @@ def get_arguments():
     parser.add_argument('--step', default='train_pa', help='Step to run.')
     parser.add_argument('--eval_val', default=1, type=int, help='Whether evaluate val set during training.')
     parser.add_argument('--eval_test', default=1, type=int, help='Whether evaluate test set during training.')
-    parser.add_argument('--accelerator', default='cuda', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
+    parser.add_argument('--accelerator', default='cpu', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
     parser.add_argument('--devices', default=0, type=int, help='Which accelerator to train on.')
     parser.add_argument('--re_level', default='soft', choices=['soft', 'hard'], help='Level of reproducibility.')
     parser.add_argument('--use_segments', action='store_true', default=False,
                         help='Whether partition training sequences into segments of length nperseg before doing the framing.')
     # Feature Extraction
-    parser.add_argument('--frame_length', default=20, type=int, help='Frame length of signals')
+    parser.add_argument('--frame_length', default=50, type=int, help='Frame length of signals')
     parser.add_argument('--stride', default=1, type=int, help='stride_length length of signals')
     # General Hyperparameters
     parser.add_argument('--seed', default=0, type=int, help='Global random number seed.')
@@ -38,9 +38,9 @@ def get_arguments():
     # GMP Hyperparameters
     parser.add_argument('--degree', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
-    parser.add_argument('--PA_backbone', default='vdlstm',
+    parser.add_argument('--PA_backbone', default='rvtdcnn',
                         choices=['gmp', 'fc', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
-                                 'cnn1d', 'cnn2d'], help='Modeling PA Recurrent layer type')
+                                 'cnn1d', 'rvtdcnn'], help='Modeling PA Recurrent layer type')
     parser.add_argument('--PA_input_size', default=2, type=int, help='Size of PA model input features')
     parser.add_argument('--PA_hidden_size', default=16, type=int,
                         help='Size of PA model recurrent layers / kernel size in 1dCNN / kernel num in2dCNN')
