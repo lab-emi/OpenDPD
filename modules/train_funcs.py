@@ -35,10 +35,10 @@ def net_train(args,
             targetY[:, 0] = torch.real(targets)
             targetY[:, 1] = torch.imag(targets)
             loss = criterion(out, targetY)
-        elif args.PA_backbone == 'cnn2d' or args.PA_backbone == 'cnn1d':
-            loss = criterion(out, targets[:, :args.paoutput_len, :].to(device))
+        elif args.PA_backbone == 'rvtdcnn':
+            loss = criterion(out, targets[:, :args.pa_output_len, :].to(device))
         else:
-            loss = criterion(out, targets.to(device))
+            loss = criterion(out, targets)
         # Backward propagation
         loss.backward()
 
@@ -76,15 +76,13 @@ def net_eval(args,
         for features, targets in tqdm(dataloader):
             features = features.to(device)
             targets = targets.to(device)
+
+            # Forward Propagation
             outputs = net(features)
             loss = criterion(outputs, targets)
             outputs = outputs.cpu()
-            if args.norm == True:
-                # Denormalization
-                targets *= net.y_train_std.cpu()
-                targets += net.y_train_mean.cpu()
-                outputs *= net.y_train_std.cpu()
-                outputs += net.y_train_mean.cpu()
+            targets = targets.cpu()
+
             if args.PA_backbone == 'gmp':
                 targetY = torch.zeros(targets.size(1), 2)
                 targetY[:, 0] = torch.real(targets)

@@ -5,6 +5,21 @@ import torch
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
 
+def prepare_dataset(args):
+    """
+    Split the IQ_data into segments of size nperseg. Zero padding is applied
+    if the last section is not of length nperseg.
+    """
+    path_dataset = os.path.join('datasets', args.dataset_name)
+    train_input = pd.read_csv(os.path.join(path_dataset, 'train_input.csv'))
+    train_output = pd.read_csv(os.path.join(path_dataset, 'train_output.csv'))
+    val_input = pd.read_csv(os.path.join(path_dataset, 'val_input.csv'))
+    val_output = pd.read_csv(os.path.join(path_dataset, 'val_output.csv'))
+    test_input = pd.read_csv(os.path.join(path_dataset, 'test_input.csv'))
+    test_output = pd.read_csv(os.path.join(path_dataset, 'test_output.csv'))
+
+    return train_input, train_output, val_input, val_output, test_input, test_output
+
 
 def prepare_segments(args):
     """
@@ -12,9 +27,7 @@ def prepare_segments(args):
     if the last section is not of length nperseg.
     """
     nperseg = args.nperseg
-    path_dataset = os.path.join('data', args.dataset_name)
-    # Input = pd.read_csv(os.path.join(data_dict, 'Input80w.csv'))
-    # Output = pd.read_csv(os.path.join(data_dict, 'Output80w.csv'))
+    path_dataset = os.path.join('datasets', args.dataset_name)
     train_input = pd.read_csv(os.path.join(path_dataset, 'train_input.csv'))
     train_output = pd.read_csv(os.path.join(path_dataset, 'train_output.csv'))
     val_input = pd.read_csv(os.path.join(path_dataset, 'val_input.csv'))
@@ -50,7 +63,7 @@ def get_training_frames(segments, seq_len, stride=1):
     Args:
     - segments (3D array): The segments produced by get_ofdm_segments.
     - seq_len (int): The length of each frame.
-    - stride (int, optional): The step between frames. Default is 1.
+    - stride_length (int, optional): The step between frames. Default is 1.
 
     Returns:
     - 3D array where the first dimension is the total number of frames,
@@ -68,9 +81,34 @@ def get_training_frames(segments, seq_len, stride=1):
 
 
 class IQSegmentDataset(Dataset):
-    def __init__(self, PA_IQ_in_segments, PA_IQ_out_segments):
-        self.PA_IQ_in_segments = torch.DoubleTensor(PA_IQ_in_segments)
-        self.PA_IQ_out_segments = torch.DoubleTensor(PA_IQ_out_segments)
+    def __init__(self, features, targets, nperseg=2560):
+        def split_segments(sequence):
+            num_samples = len(sequence)
+            segments = []
+            for i in range(0, num_samples, nperseg):
+                segment = sequence[i:i + nperseg]
+                if len(segment) < nperseg:
+                    padding_shape = (nperseg - segment.shape[0], 2)
+                    segment = torch.vstack((segment, torch.zeros(padding_shape)))
+                segments.append(segment)
+            return np.array(segments)
+
+        train_input_segments = split_segments(train_input)
+        train_output_segments = split_segments(train_output)
+        val_input_segments = split_segments(val_input)
+        val_output_segments = split_segments(val_output)
+        test_input_segments = split_segments(test_input)
+        test_output_segments = split_segments(test_output)
+
+
+
+
+
+
+
+
+        self.PA_IQ_in_segments = torch.Tensor(PA_IQ_in_segments)
+        self.PA_IQ_out_segments = torch.Tensor(PA_IQ_out_segments)
 
     def __len__(self):
         return len(self.PA_IQ_in_segments)
@@ -82,33 +120,28 @@ class IQSegmentDataset(Dataset):
 
 
 class IQFrameDataset(Dataset):
-    def __init__(self, segment_dataset, frame_length, stride=1):
-        """
-        Initialize the frame dataset using a subset of IQSegmentDataset.
+    def __init__(self, features, targets, segment_dataset, frame_length, stride_length=1):
 
-        Args:
-        - segment_dataset (IQSegmentDataset): The pre-split segment dataset.
-        - seq_len (int): The length of each frame.
-        - stride (int, optional): The step between frames. Default is 1.
-        """
+        def get_frames(sequence, frame_length, stride_length):
+            frames = []
+            sequence_length = len(features)
+            num_frames = (sequence_length - frame_length) // stride_length + 1
+            for i in range(num_frames):
+                frame = sequence[i * stride_length: i * stride_length + frame_length]
+                frames.append(frame)
 
-        # Extract segments from the segment_dataset
-        IQ_in_segments = [item[0] for item in segment_dataset]
-        IQ_out_segments = [item[1] for item in segment_dataset]
+            return np.stack(frames)
 
-        # Convert the list of tensors to numpy arrays
-        IQ_in_segments = torch.stack(IQ_in_segments).numpy()
-        IQ_out_segments = torch.stack(IQ_out_segments).numpy()
 
         # Convert segments into frames
-        self.IQ_in_frames = torch.DoubleTensor(get_training_frames(IQ_in_segments, frame_length, stride))
-        self.IQ_out_frames = torch.DoubleTensor(get_training_frames(IQ_out_segments, frame_length, stride))
+        self.features = torch.Tensor(get_frames(features))
+        self.targets = torch.Tensor(get_frames(targets))
 
     def __len__(self):
-        return len(self.IQ_in_frames)
+        return len(self.features)
 
     def __getitem__(self, idx):
-        return self.IQ_in_frames[idx], self.IQ_out_frames[idx]
+        return self.features[idx], self.targets[idx]
 
 
 def split(In, Out):
@@ -150,14 +183,14 @@ def data_prepare(X, y, frame_length, degree):
 
 
 class IQFrameDataset_gmp(Dataset):
-    def __init__(self, segment_dataset, frame_length, degree, stride=1):
+    def __init__(self, segment_dataset, frame_length, degree, stride_length=1):
         """
         Initialize the frame dataset using a subset of IQSegmentDataset.
 
         Args:
         - segment_dataset (IQSegmentDataset): The pre-split segment dataset.
         - seq_len (int): The length of each frame.
-        - stride (int, optional): The step between frames. Default is 1.
+        - stride_length (int, optional): The step between frames. Default is 1.
         """
 
         # Extract segments from the segment_dataset

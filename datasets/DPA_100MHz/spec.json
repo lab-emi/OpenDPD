@@ -1,0 +1,6 @@
+{
+    "input_signal_fs": 800e6,
+    "input_signal_bw": 200e6,
+    "input_signal_ch_bw": 20e6,
+    "nperseg": 2560
+}

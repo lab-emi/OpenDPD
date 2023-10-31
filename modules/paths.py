@@ -1,12 +1,9 @@
+import argparse
 import os
-import platform
 import typing
-import warnings
-import torch
-import pandas as pd
 
 
-def gen_model_id(args):
+def gen_model_id(args: argparse.Namespace):
     dict_pa = {'M': args.PA_backbone.upper(),
                'I': f"{args.PA_input_size:d}",
                'H': f"{args.PA_hidden_size:d}",
@@ -38,7 +35,8 @@ def gen_model_id(args):
     return pa_model_id, dpd_model_id
 
 
-def gen_log_stat(args, elapsed_time, net, optimizer, epoch, train_stat=None, val_stat=None, test_stat=None):
+def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, train_stat=None, val_stat=None,
+                 test_stat=None):
     # Get Epoch & Batch Size
     n_epochs = args.n_epochs
     batch_size = args.batch_size
@@ -93,7 +91,7 @@ def gen_log_stat(args, elapsed_time, net, optimizer, epoch, train_stat=None, val
     return log_stat
 
 
-def gen_paths(args,
+def gen_paths(args: argparse.Namespace,
               model_id: typing.AnyStr = None,
               pretrain_model_id: typing.AnyStr = None):
     save_dir = os.path.join('./save', args.dataset_name, args.step)  # Best model save dir
@@ -104,9 +102,9 @@ def gen_paths(args,
 
     # File Paths
     if model_id is not None:
-        logfile_hist = os.path.join(log_dir_hist, model_id + '.csv')  # .csv logfile_hist
-        logfile_best = os.path.join(log_dir_best, model_id + '.csv')  # .csv logfile_hist
-        logfile_test = os.path.join(log_dir_test, model_id + '.csv')  # .csv logfile_hist
+        logfile_hist = os.path.join(log_dir_hist, model_id + '.csv')  # .csv path_log_file_hist
+        logfile_best = os.path.join(log_dir_best, model_id + '.csv')  # .csv path_log_file_hist
+        logfile_test = os.path.join(log_dir_test, model_id + '.csv')  # .csv path_log_file_hist
         save_file = os.path.join(save_dir, model_id + '.pt')
     if model_id is not None:
         file_paths = (save_file, logfile_hist, logfile_best, logfile_test)
@@ -128,13 +126,3 @@ def create_folder(folder_list):
             os.makedirs(folder)
         except:
             pass
-
-
-def count_net_params(net):
-    n_param = 0
-    for name, param in net.named_parameters():
-        sizes = 1
-        for el in param.size():
-            sizes = sizes * el
-        n_param += sizes
-    return n_param

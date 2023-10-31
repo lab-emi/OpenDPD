@@ -5,12 +5,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import models as model
-from utils import pandaslogger, util
+from utils import util
+from modules import loggers
 from tqdm import tqdm
 import importlib
 from torch.utils.data import DataLoader
 from modules.data_collector import IQSegmentDataset, IQFrameDataset, IQFrameDataset_gmp
-from modules.log import gen_paths, count_net_params
+from modules.paths import gen_paths
 
 
 def main(args, In, Out, Ideal, device):
@@ -81,33 +82,6 @@ def main(args, In, Out, Ideal, device):
 
     DPD_target_mean = torch.zeros_like(torch.mean(DPD_target, dim=0))
     DPD_target_std = torch.zeros_like(torch.std(DPD_target, dim=0))
-    y_train_mean = torch.zeros_like(torch.mean(y_train, dim=0))
-    y_train_std = torch.zeros_like(torch.std(y_train, dim=0))
-
-    if args.norm == True:
-        # Normalize DPD target Data
-        DPD_target_mean = torch.mean(DPD_target, dim=0)
-        DPD_target_std = torch.std(DPD_target, dim=0)
-        # Normalize Training Data
-        X_train_mean = torch.mean(X_train, dim=0)
-        X_train_std = torch.std(X_train, dim=0)
-        X_train -= X_train_mean
-        X_train /= X_train_std
-        X_val -= X_train_mean
-        X_val /= X_train_std
-        X_test -= X_train_mean
-        X_test /= X_train_std
-
-        # Normalize Labels
-        y_train_mean = torch.mean(y_train, dim=0)
-        y_train_std = torch.std(y_train, dim=0)
-        y_train -= y_train_mean
-        y_train /= y_train_std
-        y_val -= y_train_mean
-        y_val /= y_train_std
-        y_test -= y_train_mean
-        y_test /= y_train_std
-
     feat_size = X_train.size(-1)
 
     if args.DPD_model == 'cnn1d':
@@ -129,16 +103,16 @@ def main(args, In, Out, Ideal, device):
     """
     if args.PA_backbone == 'gmp':
         train_frame_dataset = IQFrameDataset_gmp(train_segment_dataset, frame_length=frame_length, degree=args.degree,
-                                                 stride=args.stride_length)
+                                                 stride_length=args.stride_length)
         val_frame_dataset = IQFrameDataset_gmp(val_segment_dataset, frame_length=frame_length, degree=args.degree,
-                                               stride=args.stride_length)
+                                               stride_length=args.stride_length)
         test_frame_dataset = IQFrameDataset_gmp(test_segment_dataset, frame_length=frame_length, degree=args.degree,
-                                                stride=args.stride_length)
+                                                stride_length=args.stride_length)
     else:
         train_frame_dataset = IQFrameDataset(train_segment_dataset, frame_length=frame_length,
-                                             stride=args.stride_length)
-        val_frame_dataset = IQFrameDataset(val_segment_dataset, frame_length=frame_length, stride=args.stride_length)
-        test_frame_dataset = IQFrameDataset(test_segment_dataset, frame_length=frame_length, stride=args.stride_length)
+                                             stride_length=args.stride_length)
+        val_frame_dataset = IQFrameDataset(val_segment_dataset, frame_length=frame_length, stride_length=args.stride_length)
+        test_frame_dataset = IQFrameDataset(test_segment_dataset, frame_length=frame_length, stride_length=args.stride_length)
 
     train_loader = DataLoader(train_frame_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_frame_dataset, batch_size=args.batch_size_eval, shuffle=False)
@@ -157,7 +131,7 @@ def main(args, In, Out, Ideal, device):
                          hidden_size=args.PA_hidden_size,
                          num_layers=1,
                          degree=args.degree,
-                         backbone_type=args.PA_backbone, y_train_mean=y_train_mean, y_train_std=y_train_std)
+                         backbone_type=args.PA_backbone)
 
     for weight in pa.parameters():
         weight.requires_grad = False
@@ -169,8 +143,7 @@ def main(args, In, Out, Ideal, device):
                           num_layers=1,
                           degree=args.degree,
                           rnn_type=args.DPD_model, X_train_mean=DPD_target_mean,
-                          X_train_std=DPD_target_std,
-                          y_train_mean=y_train_mean, y_train_std=y_train_std)
+                          X_train_std=DPD_target_std)
     # dpd_dict_path = os.path.join('save', args.dataset_name, args.phase, args.DPD_model_file)
     # net.load_state_dict(torch.load(dpd_dict_path))
 
@@ -194,7 +167,7 @@ def main(args, In, Out, Ideal, device):
     print("::: Save Path: ", save_file)
     print("::: Log Path: ", logfile_hist)
 
-    # Logger
+    # PandasLogger
     logger = pandaslogger.PandasLogger(logfile_hist)
 
     ###########################################################################################################
@@ -283,7 +256,7 @@ def main(args, In, Out, Ideal, device):
         print("time for this epoch: %1.5f" % (stop_time - start_time))
 
         # Save best model
-        best_model = logger.save_best_model(best_val=best_model,
+        best_model = logger.save_best_model(best_val_metric=best_model,
                                             net=net,
                                             save_file=save_file,
                                             logger=logger,

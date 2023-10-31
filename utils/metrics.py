@@ -103,7 +103,7 @@ def PSD(complex_signal, fs=800e6, nperseg=2560):
     Parameters:
     - complex_signal: Input complex signal for which the PSD is to be computed.
     - fs (float, optional): Sampling frequency of the signal. Default is 800e6 (800 MHz).
-    - nperseg (int, optional): Number of data points to be used in each block for the Welch method. Default is 2560.
+    - nperseg (int, optional): Number of datasets points to be used in each block for the Welch method. Default is 2560.
 
     Returns:
     - frequencies_signal_subset: Frequencies at which the PSD is computed.
@@ -113,7 +113,7 @@ def PSD(complex_signal, fs=800e6, nperseg=2560):
     import numpy as np
     from scipy.signal import welch
 
-    # Use only the specified number of data points from the beginning of the input signal
+    # Use only the specified number of datasets points from the beginning of the input signal
     complex_signal_subset = complex_signal[:nperseg]
 
     # Compute the PSD using the Welch method
@@ -137,7 +137,7 @@ def IQ_to_complex(IQ_signal):
     Convert a multi-dimensional array of I-Q pairs into a 2D array of complex signals.
 
     Args:
-    - IQ_in_segment (3D array): The prediction I-Q data with shape (#segments, frame_length, 2).
+    - IQ_in_segment (3D array): The prediction I-Q datasets with shape (#segments, frame_length, 2).
 
     Returns:
     - 2D array of shape (#segments, frame_length) containing complex signals.

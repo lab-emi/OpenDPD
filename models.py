@@ -10,8 +10,7 @@ from backbones.rvtdcnn import RVTDCNN
 
 
 class CoreModel(nn.Module):
-    def __init__(self, input_size, cnn_set, cnn_memory, pa_output_len, frame_len, hidden_size, num_layers, degree,
-                 backbone_type, y_train_mean, y_train_std):
+    def __init__(self, input_size, cnn_set, cnn_memory, pa_output_len, frame_len, hidden_size, num_layers, degree, backbone_type):
         super(CoreModel, self).__init__()
         self.output_size = 2  # PA outputs: I & Q
         self.input_size = input_size
@@ -19,8 +18,6 @@ class CoreModel(nn.Module):
         self.num_layers = num_layers
         self.backbone_type = backbone_type
         self.batch_first = True  # Force batch first
-        self.y_train_mean = y_train_mean
-        self.y_train_std = y_train_std
         self.bidirectional = False
         self.bias = True
 
@@ -95,6 +92,7 @@ class CoreModel(nn.Module):
             self.backbone.reset_parameters()
         except AttributeError:
             pass
+
 
     def forward(self, x, h_0=None):
         device = x.device

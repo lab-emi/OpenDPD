@@ -1,18 +1,8 @@
-import collections
-import torch
-import numpy as np
-import os
-import time
-import math
-import platform
-import typing
-
-from torch import Tensor
-from torch.autograd.function import Function
-
-
-
-
-
-
-
+def count_net_params(net):
+    n_param = 0
+    for name, param in net.named_parameters():
+        sizes = 1
+        for el in param.size():
+            sizes = sizes * el
+        n_param += sizes
+    return n_param

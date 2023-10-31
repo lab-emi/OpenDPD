@@ -1,33 +1,63 @@
+import numpy as np
 import torch
 from torch import nn
 
 
 class RVTDCNN(nn.Module):
-    def __init__(self, feature_num, cnn_memory, output_length, kernel_num, kernel_size):
+    def __init__(self, input_size, windows_length=4, out_channels=3, kernel_size=3, stride=1, padding=0,
+                 dilation=1, fc_hid_size=6):
         super(RVTDCNN, self).__init__()
-        self.C = kernel_num
-        self.H = feature_num
-        self.W = cnn_memory + kernel_size[1] - 1
-        self.outH = (self.H - kernel_size[0]) + 1
-        self.outW = (self.W - kernel_size[1]) + 1
-        self.width = kernel_size[1]
-        self.outlen = output_length
-        self.Conv2d = torch.nn.Conv2d(kernel_num, kernel_num, kernel_size, stride=1, padding=0, dilation=1,
-                                      groups=kernel_num, bias=True,
-                                      padding_mode='zeros', device=None, dtype=None)
+        self.out_channels = out_channels
+        self.H = input_size
+        self.W = windows_length
+        self.fc_in_features = self.out_channels * self.H * self.W
+        self.Conv2d = torch.nn.Conv2d(in_channels=1,
+                                      out_channels=out_channels,
+                                      kernel_size=kernel_size,
+                                      stride=stride,
+                                      padding=padding,
+                                      dilation=dilation,
+                                      bias=True,
+                                      padding_mode='zeros')
+        self.fc_hid = nn.Linear(in_features=self.fc_in_features,
+                                out_features=fc_hid_size,
+                                bias=True)
+        self.fc_out = nn.Linear(in_features=self.fc_hid_size,
+                                out_features=2,
+                                bias=True)
 
-        self.fc = nn.Linear(in_features=self.outH * self.outW * self.C,
-                            out_features=2,
-                            bias=True)
+    @staticmethod
+    def get_memory_window(sequence, windows_length=4, stride_length=1):
+        frames = []
+        padding = windows_length - 1
+        pad = torch.zeros((padding, sequence.size(1)))
+        sequence = torch.vstack((pad, sequence))
+        sequence_length = len(sequence)
+        num_frames = (sequence_length - windows_length) // stride_length + 1
+        for i in range(num_frames):
+            frame = sequence[i * stride_length: i * stride_length + windows_length]
+            frames.append(frame)
+        return torch.stack(frames)
 
     def forward(self, x):
         batch_size = x.size(0)
-        out = torch.zeros(batch_size, self.outlen, 2).to(x.device)
-        for t in range(self.outlen):
-            Input = x[:, t:t + self.W, :].unsqueeze(1)
-            Input = Input.repeat(1, self.C, 1, 1)
-            Input = Input.transpose(2, 3)
-            Convout = torch.tanh(self.Conv2d(Input))
-            fcin = torch.reshape(Convout, [batch_size, self.C * self.outH * self.outW])
-            out[:, t, :] = self.fc(fcin)
+        frame_length = x.size(1)
+        # x Dim: (batch_size, frame_length, input_size)
+
+        # Split a frame into memory windows
+        windows = []
+        for sample in x:  # sample Dim: (frame_length, H)
+            window = self.get_memory_window(sample)  # Dim: (n_windows, W, H)
+            windows.append(window)
+        windows = torch.stack(window)  # Dim: (batch_size, n_windows, W, H)
+        windows = torch.unsqueeze(windows, dim=2)  # Dim: (batch_size, n_windows, 1, W, H)
+        windows = windows.view(-1, 1, self.W, self.H)
+
+        # Forward Propagation
+        out = torch.tanh(self.Conv2d(windows))  # Dim: (batch_size * n_windows, 1, W, H)
+        out = out.view(-1, self.W * self.H)  # Dim: (batch_size * n_windows, W*H)
+        out = torch.tanh(self.fc_hid(out))
+        out = self.fc_out(out)  # Dim: (batch_size * n_windows, 2)
+        out = out.view(batch_size, frame_length, 2)
         return out
+

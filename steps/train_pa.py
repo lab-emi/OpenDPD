@@ -5,184 +5,157 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import models as model
-from modules.feature_extractor import extract_feature
-from modules.train_funcs import net_train, net_eval, calculate_metrics
-from utils import pandaslogger, util, metrics
-from tqdm import tqdm
-import importlib
 from torch.utils.data import DataLoader
-from modules.data_collector import IQSegmentDataset, IQFrameDataset, IQFrameDataset_gmp, \
-    prepare_segments
-from modules.log import gen_model_id, gen_log_stat, gen_paths, count_net_params, create_folder
+
+import models as model
+from modules.data_collector import prepare_segments, IQSegmentDataset, IQFrameDataset_gmp, IQFrameDataset, \
+    prepare_dataset
+from modules.feat_ext import extract_feature
+from modules.train_funcs import net_train, net_eval, calculate_metrics
+from modules.loggers import PandasLogger
+from project import Project
 
 
-def main(args, device):
+from modules.paths import gen_model_id, gen_log_stat, gen_paths, create_folder
+from utils.util import count_net_params
+
+
+def main(proj: Project):
     ###########################################################################################################
-    # Overhead
+    # Initialization
     ###########################################################################################################
+    # Set Accelerator Device
+    proj.set_device()
+
+    # Update Conditional Arguments or Hyperparameters
+    proj.tune_conditional_args()
+
+    # Get Datasets
+    # train_input = pd.read_csv(os.path.join(path_dataset, 'train_input.csv'))
+    # train_output = pd.read_csv(os.path.join(path_dataset, 'train_output.csv'))
+    # val_input = pd.read_csv(os.path.join(path_dataset, 'val_input.csv'))
+    # val_output = pd.read_csv(os.path.join(path_dataset, 'val_output.csv'))
+    # test_input = pd.read_csv(os.path.join(path_dataset, 'test_input.csv'))
+    # test_output = pd.read_csv(os.path.join(path_dataset, 'test_output.csv'))
+
     # Create Dataset Iterators
-    X_train, y_train, X_val, y_val, X_test, y_test = prepare_segments(args)
+    X_train, y_train, X_val, y_val, X_test, y_test = prepare_dataset(proj)
 
     # Extract Features
-    X_train = extract_feature(X_train, args.PA_backbone)
-    X_val = extract_feature(X_val, args.PA_backbone)
-    X_test = extract_feature(X_test, args.PA_backbone)
-
-    y_train_mean = np.zeros_like(y_train.mean(axis=0))
-    y_train_std = np.zeros_like(y_train.std(axis=0))
-
-    if args.norm == True:
-        # Normalize Training Data
-        X_train_mean = torch.mean(X_train, dim=0)
-        X_train_std = torch.std(X_train, dim=0)
-        X_train -= X_train_mean
-        X_train /= X_train_std
-        X_val -= X_train_mean
-        X_val /= X_train_std
-        X_test -= X_train_mean
-        X_test /= X_train_std
-
-        # Normalize Labels
-        y_train_mean = torch.mean(y_train, dim=0)
-        y_train_std = torch.std(y_train, dim=0)
-        y_train -= y_train_mean
-        y_train /= y_train_std
-        y_val -= y_train_mean
-        y_val /= y_train_std
-        y_test -= y_train_mean
-        y_test /= y_train_std
+    X_train = extract_feature(X_train, proj.PA_backbone)
+    X_val = extract_feature(X_val, proj.PA_backbone)
+    X_test = extract_feature(X_test, proj.PA_backbone)
 
     feat_size = X_train.shape[-1]
 
-    if args.PA_backbone == 'cnn1d':
-        frame_length = args.pa_cnn_memory + args.PA_hidden_size + args.paoutput_len - 2
-    elif args.PA_backbone == 'cnn2d':
-        frame_length = args.pa_cnn_memory + args.PA_CNN_W + args.paoutput_len - 2
-    else:
-        frame_length = args.frame_length
+    # train_segment_dataset = IQSegmentDataset(X_train, y_train)
+    # val_segment_dataset = IQSegmentDataset(X_val, y_val)
+    # test_segment_dataset = IQSegmentDataset(X_test, y_test)
 
-    train_segment_dataset = IQSegmentDataset(X_train, y_train)
-    val_segment_dataset = IQSegmentDataset(X_val, y_val)
-    test_segment_dataset = IQSegmentDataset(X_test, y_test)
+    train_set = IQFrameDataset(X_train, y_train, frame_length=proj.frame_length, stride_length=proj.stride_length)
+    val_set = IQFrameDataset(X_train, y_train, frame_length=proj.frame_length, stride_length=proj.stride_length)
+    test_set = IQFrameDataset(X_train, y_train, frame_length=proj.frame_length, stride_length=proj.stride_length)
+
+
 
     """# Data Preparation
     Now, we'll split the IQ_frame_dataset into training, validation, and testing sets with a 60-20-20 ratio.
     """
-    if args.PA_backbone == 'gmp':
-        train_frame_dataset = IQFrameDataset_gmp(train_segment_dataset, frame_length=frame_length, degree=args.degree,
-                                                 stride=args.stride_length)
-    else:
-        train_frame_dataset = IQFrameDataset(train_segment_dataset, frame_length=frame_length,
-                                             stride=args.stride_length)
+    # if proj.PA_backbone == 'gmp':
+    #     train_frame_dataset = IQFrameDataset_gmp(train_segment_dataset, frame_length=proj.frame_length,
+    #                                              degree=proj.degree,
+    #                                              stride_length=proj.stride_length)
+    # else:
+    #     train_frame_dataset = IQFrameDataset(train_segment_dataset, frame_length=proj.frame_length,
+    #                                          stride_length=proj.stride_length)
 
-    train_loader = DataLoader(train_frame_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_segment_dataset, batch_size=args.batch_size_eval, shuffle=False)
-    test_loader = DataLoader(test_segment_dataset, batch_size=args.batch_size_eval, shuffle=False)
+    train_loader = DataLoader(train_frame_dataset, batch_size=proj.batch_size, shuffle=True)
+    val_loader = DataLoader(val_segment_dataset, batch_size=proj.batch_size_eval, shuffle=False)
+    test_loader = DataLoader(test_segment_dataset, batch_size=proj.batch_size_eval, shuffle=False)
 
     ###########################################################################################################
     # Network Settings
     ###########################################################################################################
+
     # Instantiate Model
-    PA_CNN_setup = [args.PA_CNN_H, args.PA_CNN_W]
+    PA_CNN_setup = [proj.PA_CNN_H, proj.PA_CNN_W]
     net = model.CoreModel(input_size=feat_size,
                           cnn_set=PA_CNN_setup,
-                          cnn_memory=args.pa_cnn_memory,
-                          pa_output_len=args.pa_output_len,
-                          frame_len=args.frame_length,
-                          hidden_size=args.PA_hidden_size,
+                          cnn_memory=proj.pa_cnn_memory,
+                          pa_output_len=proj.pa_output_len,
+                          frame_len=proj.frame_length,
+                          hidden_size=proj.PA_hidden_size,
                           num_layers=1,
-                          degree=args.degree,
-                          backbone_type=args.PA_backbone,
-                          y_train_mean=y_train_mean,
-                          y_train_std=y_train_std)
+                          degree=proj.degree,
+                          backbone_type=proj.PA_backbone)
     # Get parameter count
     n_param = count_net_params(net)
+
     print("::: Number of Parameters: ", n_param)
-
-    ###########################################################################################################
-    # Save & Log Naming Convention
-    ###########################################################################################################
-
-    # Model ID
-    pamodel_id, dpdmodel_id = gen_model_id(args)
-
-    # Create Folders
-    dir_paths, file_paths, _ = gen_paths(args, model_id=pamodel_id)
-    save_dir, log_dir_hist, log_dir_best, _ = dir_paths
-    save_file, logfile_hist, logfile_best, _ = file_paths
-    create_folder([save_dir, log_dir_hist, log_dir_best])
-    print("::: Save Path: ", save_file)
-    print("::: Log Path: ", logfile_hist)
-
-    # Logger
-    logger = pandaslogger.PandasLogger(logfile_hist, precision=args.log_precision)
 
     ###########################################################################################################
     # Settings
     ###########################################################################################################
     # Use CUDA
-    if args.use_cuda:
-        net = net.cuda()
+    net = net.to(proj.device)
 
     # Select Loss function
     criterion = nn.MSELoss()
 
     # Create Optimizer
-    optimizer = torch.optim.AdamW(net.parameters(), lr=args.lr)
+    optimizer = torch.optim.AdamW(net.parameters(), lr=proj.lr)
 
     # Setup Learning Rate Scheduler
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
                                                         mode='min',
-                                                        factor=args.decay_factor,
-                                                        patience=args.patience,
+                                                        factor=proj.decay_factor,
+                                                        patience=proj.patience,
                                                         verbose=True,
                                                         threshold=1e-4,
-                                                        min_lr=args.lr_end)
+                                                        min_lr=proj.lr_end)
 
     ###########################################################################################################
     # Training
     ###########################################################################################################
-    # Value for Saving Best Model
-    best_model = None
+
     # Timer
     start_time = time.time()
     # Epoch loop
     print("Starting training...")
-    for epoch in range(args.n_epochs):
+    for epoch in range(proj.n_epochs):
         # -----------
         # Train
         # -----------
-        net, train_stat = net_train(args=args,
+        net, train_stat = net_train(args=proj.args,
                                     net=net,
                                     optimizer=optimizer,
                                     criterion=criterion,
                                     dataloader=train_loader,
-                                    device=device)
+                                    device=proj.device)
 
         # -----------
         # Validation
         # -----------
         val_stat = None
-        if args.eval_val:
-            _, val_stat, prediction, ground_truth = net_eval(args=args,
+        if proj.eval_val:
+            _, val_stat, prediction, ground_truth = net_eval(args=proj.args,
                                                              net=net,
                                                              criterion=criterion,
                                                              dataloader=val_loader,
-                                                             device=device)
-            val_stat = calculate_metrics(args, val_stat, prediction, ground_truth)
+                                                             device=proj.device)
+            val_stat = calculate_metrics(proj, val_stat, prediction, ground_truth)
 
         # -----------
         # Test
         # -----------
         test_stat = None
-        if args.eval_test:
-            _, test_stat, prediction, ground_truth = net_eval(args=args,
+        if proj.eval_test:
+            _, test_stat, prediction, ground_truth = net_eval(args=proj.args,
                                                               net=net,
                                                               criterion=criterion,
                                                               dataloader=test_loader,
-                                                              device=device)
-            test_stat = calculate_metrics(args, test_stat, prediction, ground_truth)
+                                                              device=proj.device)
+            test_stat = calculate_metrics(proj, test_stat, prediction, ground_truth)
 
         ###########################################################################################################
         # Logging & Saving
@@ -191,29 +164,23 @@ def main(args, device):
         # Generate Log Dict
         end_time = time.time()
         elapsed_time_minutes = (end_time - start_time) / 60.0
-        log_stat = gen_log_stat(args, elapsed_time_minutes, net, optimizer, epoch, train_stat, val_stat, test_stat)
+        log_stat = gen_log_stat(proj, elapsed_time_minutes, net, optimizer, epoch, train_stat, val_stat, test_stat)
 
         # Write Log
-        logger.write_log(log_stat)
+        proj.logger.write_log(log_stat)
 
         # Print
         print(log_stat)
 
         # Save best model
-        best_model = logger.save_best_model(best_val=best_model,
-                                            net=net,
-                                            save_file=save_file,
-                                            logger=logger,
-                                            logfile_best=logfile_best,
-                                            epoch=epoch,
-                                            val_stat=val_stat)
+        proj.logger.save_best_model(net=net, epoch=epoch, val_stat=val_stat, metric_name='ACLR_L')
 
         ###########################################################################################################
         # Learning Rate Schedule
         ###########################################################################################################
         # Schedule at the beginning of retrain
-        lr_scheduler_criteria = val_stat['NMSE']
-        if args.lr_schedule:
+        lr_scheduler_criteria = val_stat['ACLR_L']
+        if proj.lr_schedule:
             lr_scheduler.step(lr_scheduler_criteria)
 
     result_graph = get_plotdata(plt_head_idx=50, plt_tail_idx=60, prediction=prediction, ground_truth=ground_truth)
