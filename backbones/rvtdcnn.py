@@ -13,6 +13,7 @@ class RVTDCNN(nn.Module):
         self.out_channels = out_channels
         self.H = input_size
         self.W = windows_length
+        self.stride = stride
         self.H_new = 3
         self.fc_in_features = self.out_channels * self.H_new * self.W
         self.fc_hid_size = fc_hid_size
@@ -47,20 +48,18 @@ class RVTDCNN(nn.Module):
     def forward(self, x):
         batch_size = x.size(0)
         frame_length = x.size(1)
+        input_size = x.size(2)
         # x Dim: (batch_size, frame_length, input_size)
 
         # Split a frame into memory windows
-        windows = []
-        for sample in x:  # sample Dim: (frame_length, H)
-            window = self.get_memory_window(sample)  # Dim: (n_windows, W, H)
-            windows.append(window)
-        windows = torch.stack(windows)  # Dim: (batch_size, n_windows, W, H)
+        zero_pad = torch.zeros((batch_size, self.W - 1, input_size))
+        x = torch.cat((zero_pad, x), dim=1)
+        windows = x.unfold(dimension=1, size=4, step=1).transpose(2, 3)
         windows = torch.unsqueeze(windows, dim=2)  # Dim: (batch_size, n_windows, 1, W, H)
-        windows = windows.view(-1, 1, self.W, self.H)
+        windows = windows.reshape(-1, 1, self.W, self.H)
 
         # Forward Propagation
         out = torch.tanh(self.Conv2d(windows))  # Dim: (batch_size * n_windows, 1, W, H)
-        H_new = out.size(3)
         out = out.view(-1, self.fc_in_features)  # Dim: (batch_size * n_windows, W_new*H)
         out = torch.tanh(self.fc_hid(out))
         out = self.fc_out(out)  # Dim: (batch_size * n_windows, 2)
