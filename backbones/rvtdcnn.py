@@ -33,7 +33,7 @@ class RVTDCNN(nn.Module):
     def get_memory_window(sequence, windows_length=4, stride_length=1):
         frames = []
         padding = windows_length - 1
-        pad = torch.zeros((padding, sequence.size(1)))
+        pad = torch.zeros((padding, sequence.size(1)), device=sequence.device)
         sequence = torch.vstack((pad, sequence))
         sequence_length = len(sequence)
         num_frames = (sequence_length - windows_length) // stride_length + 1

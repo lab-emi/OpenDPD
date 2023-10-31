@@ -14,8 +14,6 @@ def extract_feature(X, backbone):
         features = X
     elif backbone == 'pgjanet' or backbone == 'dvrjanet':
         features = np.concatenate((amp, angle), axis=-1)
-    elif backbone == 'vdlstm':
-        features = np.concatenate((amp, angle), axis=-1)
     elif backbone == 'rvtdcnn':
         features = np.concatenate((i_x, q_x, amp, amp2, amp3), axis=-1)
     elif backbone == 'dgru':

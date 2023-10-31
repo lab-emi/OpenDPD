@@ -31,14 +31,14 @@ def get_arguments():
     parser.add_argument('--batch_size_eval', default=256, type=int, help='Batch size for evaluation.')
     parser.add_argument('--n_epochs', default=100, type=int, help='Number of epochs to train for.')
     parser.add_argument('--lr_schedule', default=1, type=int, help='Whether enable learning rate scheduling')
-    parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate')
+    parser.add_argument('--lr', default=5e-3, type=float, help='Learning rate')
     parser.add_argument('--lr_end', default=1e-7, type=float, help='Learning rate')
     parser.add_argument('--decay_factor', default=0.5, type=float, help='Learning rate')
     parser.add_argument('--patience', default=10, type=float, help='Learning rate')
     # GMP Hyperparameters
     parser.add_argument('--degree', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
-    parser.add_argument('--PA_backbone', default='gru',
+    parser.add_argument('--PA_backbone', default='vdlstm',
                         choices=['gmp', 'fc', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
                                  'cnn1d', 'cnn2d'], help='Modeling PA Recurrent layer type')
     parser.add_argument('--PA_input_size', default=2, type=int, help='Size of PA model input features')

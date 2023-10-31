@@ -10,7 +10,7 @@ from backbones.rvtdcnn import RVTDCNN
 
 
 class CoreModel(nn.Module):
-    def __init__(self, input_size, cnn_set, cnn_memory, pa_output_len, frame_len, hidden_size, num_layers, degree, backbone_type):
+    def __init__(self, input_size, frame_len, hidden_size, num_layers, degree, backbone_type):
         super(CoreModel, self).__init__()
         self.output_size = 2  # PA outputs: I & Q
         self.input_size = input_size

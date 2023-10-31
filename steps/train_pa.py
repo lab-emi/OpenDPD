@@ -37,9 +37,6 @@ def main(proj: Project):
     # Instantiate Model
     PA_CNN_setup = [proj.PA_CNN_H, proj.PA_CNN_W]
     net = model.CoreModel(input_size=input_size,
-                          cnn_set=PA_CNN_setup,
-                          cnn_memory=proj.pa_cnn_memory,
-                          pa_output_len=proj.pa_output_len,
                           frame_len=proj.frame_length,
                           hidden_size=proj.PA_hidden_size,
                           num_layers=1,
