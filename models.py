@@ -26,8 +26,7 @@ class CoreModel(nn.Module):
 
         if backbone_type == 'gmp':
             from backbones.gmp import GMP
-            self.backbone = GMP(degree=hidden_size,
-                                memory_length=10)
+            self.backbone = GMP()
         elif backbone_type == 'fcn':
             from backbones.fcn import FCN
             self.backbone = FCN(input_size=self.input_size,
@@ -82,8 +81,6 @@ class CoreModel(nn.Module):
                                      output_size=self.output_size)
         elif backbone_type == 'rvtdcnn':
             self.backbone = RVTDCNN(fc_hid_size=hidden_size)
-        elif backbone_type == 'tcn':
-            self.backbone = TCN(output_size=self.output_size)
         else:
             raise ValueError(f"The backbone type '{self.backbone_type}' is not supported. Please add your own "
                              f"backbone under ./backbones and update models.py accordingly.")

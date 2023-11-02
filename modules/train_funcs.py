@@ -15,6 +15,7 @@ def net_train(log: dict[str, Any],
               dataloader: DataLoader,
               optimizer: Optimizer,
               criterion: Callable,
+              grad_clip_val: float,
               device: torch.device):
     # Set Network to Training Mode
     net = net.train()
@@ -30,9 +31,12 @@ def net_train(log: dict[str, Any],
         # Forward Propagation
         out = net(features)
         # Calculate the Loss Function
-        loss = criterion(out.to(targets.device), targets)
+        loss = criterion(out, targets)
         # Backward propagation
         loss.backward()
+        # Gradient clipping
+        if grad_clip_val != 0:
+            nn.utils.clip_grad_norm_(net.parameters(), grad_clip_val)
         # Update parameters
         optimizer.step()
         # Detach loss from the graph indicating the end of forward propagation
@@ -66,7 +70,7 @@ def net_eval(log: Dict,
             # Forward Propagation
             outputs = net(features)
             # Calculate loss function
-            loss = criterion(outputs.to(device), targets)
+            loss = criterion(outputs, targets)
             # Collect prediction and ground truth for metric calculation
             prediction.append(outputs.cpu())
             ground_truth.append(targets.cpu())

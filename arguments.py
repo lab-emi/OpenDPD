@@ -18,7 +18,7 @@ def get_arguments():
     parser.add_argument('--eval_val', default=1, type=int, help='Whether evaluate val set during training.')
     parser.add_argument('--eval_test', default=1, type=int, help='Whether evaluate test set during training.')
     parser.add_argument('--accelerator', default='cuda', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
-    parser.add_argument('--devices', default=7, type=int, help='Which accelerator to train on.')
+    parser.add_argument('--devices', default=0, type=int, help='Which accelerator to train on.')
     parser.add_argument('--re_level', default='soft', choices=['soft', 'hard'], help='Level of reproducibility.')
     parser.add_argument('--use_segments', action='store_true', default=False,
                         help='Whether partition training sequences into segments of length nperseg before doing the framing.')
@@ -37,21 +37,22 @@ def get_arguments():
     parser.add_argument('--lr_end', default=1e-6, type=float, help='Learning rate')
     parser.add_argument('--decay_factor', default=0.5, type=float, help='Learning rate')
     parser.add_argument('--patience', default=10, type=float, help='Learning rate')
+    parser.add_argument('--grad_clip_val', default=200, type=float, help='Gradient clipping.')
     # GMP Hyperparameters
-    parser.add_argument('--degree', default=4, type=int, help='Degree of GMP model')
+    parser.add_argument('--K', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
-    parser.add_argument('--PA_backbone', default='gmp',
+    parser.add_argument('--PA_backbone', default='rvtdcnn',
                         choices=['gmp', 'fcn', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
                                  'cnn1d', 'rvtdcnn', 'tcn'], help='Modeling PA Recurrent layer type')
-    parser.add_argument('--PA_hidden_size', default=5, type=int,
+    parser.add_argument('--PA_hidden_size', default=12, type=int,
                         help='Hidden size of PA backbone')
     parser.add_argument('--PA_num_layers', default=1, type=int,
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
-    parser.add_argument('--DPD_backbone', default='dgru',
-                        choices=['gmp', 'fc', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
-                                 'dvrjanet', 'cnn2d'], help='DPD model Recurrent layer type')
-    parser.add_argument('--DPD_hidden_size', default=10, type=int, help='Hidden size of DPD backbone.')
-    parser.add_argument('--DPD_num_layers', default=1, type=int, help='Number of layers of the DPD backbone.')
+    parser.add_argument('--DPD_backbone', default='rvtdcnn',
+                        choices=['gmp', 'fcn', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
+                                 'dvrjanet', 'rvtdcnn'], help='DPD model Recurrent layer type')
+    parser.add_argument('--DPD_hidden_size', default=20, type=int, help='Hidden size of DPD backbone.')
+    parser.add_argument('--DPD_num_layers', default=2, type=int, help='Number of layers of the DPD backbone.')
 
     return parser.parse_args()

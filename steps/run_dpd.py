@@ -26,9 +26,9 @@ def main(proj: Project):
     ###########################################################################################################
     # Instantiate DPD Model
     net_dpd = model.CoreModel(input_size=2,  # I and Q
-                              hidden_size=proj.PA_hidden_size,
-                              num_layers=proj.PA_num_layers,
-                              backbone_type=proj.PA_backbone)
+                              hidden_size=proj.DPD_hidden_size,
+                              num_layers=proj.DPD_num_layers,
+                              backbone_type=proj.DPD_backbone)
     n_net_dpd_params = count_net_params(net_dpd)
     print("::: Number of DPD Model Parameters: ", n_net_dpd_params)
     dpd_model_id = proj.gen_dpd_model_id(n_net_dpd_params)
