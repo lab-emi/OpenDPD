@@ -268,7 +268,7 @@ class Project:
                                                        criterion=criterion,
                                                        dataloader=val_loader,
                                                        device=self.device)
-                self.log_val = calculate_metrics(self.args, self.log_val, prediction, ground_truth, self.target_gain)
+                self.log_val = calculate_metrics(self.args, self.log_val, prediction, ground_truth)
 
             # -----------
             # Test
@@ -279,7 +279,7 @@ class Project:
                                                        criterion=criterion,
                                                        dataloader=test_loader,
                                                        device=self.device)
-                self.log_test = calculate_metrics(self.args, self.log_test, prediction, ground_truth, self.target_gain)
+                self.log_test = calculate_metrics(self.args, self.log_test, prediction, ground_truth)
 
             ###########################################################################################################
             # Logging & Saving

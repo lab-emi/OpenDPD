@@ -12,17 +12,15 @@ class GMP(nn.Module):
         self.memory_length = memory_length
         self.degree = degree
         self.W = 1+degree*memory_length
-        self.Wreal = torch.Tensor(memory_length, self.W)
-        self.Wimag = torch.Tensor(memory_length, self.W)
-        self.Weight = nn.Parameter(torch.complex(self.Wreal, self.Wimag))
+        self.Weight = nn.Parameter(torch.Tensor(memory_length, self.W))
 
     @staticmethod
     def get_memory_window(sequence, memory_length):
         frames = []
-        sequence_length = sequence.shape[2]
+        sequence_length = sequence.shape[-1]
         num_frames = (sequence_length - memory_length) // 1 + 1
         for i in range(num_frames):
-            frame = sequence[:, :, i * 1: i * 1 + memory_length, :]
+            frame = sequence[..., i * 1: i * 1 + memory_length]
             frames.append(frame)
         return torch.stack(frames)
 
@@ -39,26 +37,28 @@ class GMP(nn.Module):
         # x Dim: (batch_size, frame_length, input_size)
 
         # Split a frame into memory windows
-        x = torch.complex(x[..., 0], x[..., 1]).unsqueeze(-1)  #Dim: (batch_size, frame_length, 1)
-        zero_pad = torch.zeros((batch_size, 2*self.memory_length-1, 1)).to(x.device)
+        x = torch.complex(x[..., 0], x[..., 1]) #Dim: (batch_size, frame_length)
+        zero_pad = torch.zeros((batch_size, self.memory_length-1)).to(x.device)
         x = torch.cat((zero_pad, x), dim=1)
-        amp = torch.abs(x)
+        amp = torch.abs(torch.cat((zero_pad,x), dim=1))
         x_degree=[]
-        for i in range(self.degree):
+        for i in range(1, self.degree+1):
             x_degree.append(torch.pow(amp.unsqueeze(1), i))
-        x_degree=torch.cat(x_degree, dim=1)             #Dim: (batch_size, degree, frame_length, 1)
-        x = torch.cat((x.unsqueeze(1), x_degree), dim=1) #Dim: (batch_size, degree+1, frame_length, 1)
-        windows = self.get_memory_window(x, self.memory_length)
-        windows=windows.transpose(0, 1).transpose(1, 2)     # Dim: (batch_size, degree, n_windows, window_size, feature_size)
+        x_degree=torch.cat(x_degree, dim=1)             #Dim: (batch_size, degree, frame_length)
+        windows_x = self.get_memory_window(x, self.memory_length)  #Dim: (batch_size, n_windows, memory_length)
+        windows_x=windows_x.transpose(0, 1)
+        windows_degree = self.get_memory_window(x_degree, self.memory_length)
+        windows_degree = windows_degree.transpose(0, 1).transpose(1, 2)
+        # Dim: (batch_size, degree+1, n_windows, window_size, feature_size)
 
 
         for j in range(frame_length):
-            x_input=windows[:, 0, j, :, :]
+            x_input=windows_x[:, j, :].unsqueeze(-1)
             for m in range(self.memory_length):
                 for d in range(self.degree):
-                    x_input = torch.cat((x_input, windows[:, 0, j, :, :] * windows[:, d, j+m, :, :]), dim=2)
+                    x_input = torch.cat((x_input, windows_x[:, j, :].unsqueeze(-1) * windows_degree[:, d, j+m, :].unsqueeze(-1)), dim=2)
             # Forward Propagation
-            complex_out = torch.sum(x_input * self.Weight)
+            complex_out = torch.sum(torch.sum(x_input * self.Weight, dim=-1), dim=-1)
             out[:, j, 0] = torch.real(complex_out)
             out[:, j, 1] = torch.imag(complex_out)
         return out

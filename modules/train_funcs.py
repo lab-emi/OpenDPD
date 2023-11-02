@@ -83,9 +83,9 @@ def net_eval(log: Dict,
     return net, prediction, ground_truth
 
 
-def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction: np.ndarray, ground_truth: np.ndarray, target_gain:float):
+def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction: np.ndarray, ground_truth: np.ndarray):
     stat['NMSE'] = metrics.NMSE(prediction, ground_truth)
-    stat['EVM'] = metrics.EVM(prediction / target_gain, ground_truth / target_gain, bw_main_ch=args.bw_main_ch, n_sub_ch=args.n_sub_ch, nperseg=args.nperseg)
+    stat['EVM'] = metrics.EVM(prediction, ground_truth, bw_main_ch=args.bw_main_ch, n_sub_ch=args.n_sub_ch, nperseg=args.nperseg)
     ACLR_L = []
     ACLR_R = []
     ACLR_left, ACLR_right = metrics.ACLR(prediction, fs=args.input_signal_fs, nperseg=args.nperseg,

@@ -17,8 +17,8 @@ def get_arguments():
     parser.add_argument('--step', default='train_pa', help='Step to run.')
     parser.add_argument('--eval_val', default=1, type=int, help='Whether evaluate val set during training.')
     parser.add_argument('--eval_test', default=1, type=int, help='Whether evaluate test set during training.')
-    parser.add_argument('--accelerator', default='cuda', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
-    parser.add_argument('--devices', default=0, type=int, help='Which accelerator to train on.')
+    parser.add_argument('--accelerator', default='cpu', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
+    parser.add_argument('--devices', default=6, type=int, help='Which accelerator to train on.')
     parser.add_argument('--re_level', default='soft', choices=['soft', 'hard'], help='Level of reproducibility.')
     parser.add_argument('--use_segments', action='store_true', default=False,
                         help='Whether partition training sequences into segments of length nperseg before doing the framing.')
@@ -40,7 +40,7 @@ def get_arguments():
     # GMP Hyperparameters
     parser.add_argument('--degree', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
-    parser.add_argument('--PA_backbone', default='dgru',
+    parser.add_argument('--PA_backbone', default='gmp',
                         choices=['gmp', 'fcn', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
                                  'cnn1d', 'rvtdcnn', 'tcn'], help='Modeling PA Recurrent layer type')
     parser.add_argument('--PA_hidden_size', default=8, type=int,
