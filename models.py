@@ -4,7 +4,7 @@ from backbones.pgjanet import PGJANET
 from backbones.dvrjanet import DVRJANET
 from backbones.ligru import LiGRU
 from backbones.rvtdcnn import RVTDCNN
-from backbones.tcn import TCN
+# from backbones.tcn import TCN
 
 
 class CoreModel(nn.Module):
@@ -19,7 +19,11 @@ class CoreModel(nn.Module):
         self.bidirectional = False
         self.bias = True
 
-        if backbone_type == 'fcn':
+        if backbone_type == 'gmp':
+            from backbones.gmp import GMP
+            self.backbone = GMP(degree=hidden_size,
+                                memory_length=10)
+        elif backbone_type == 'fcn':
             from backbones.fcn import FCN
             self.backbone = FCN(input_size=self.input_size,
                                 hidden_size=self.hidden_size,

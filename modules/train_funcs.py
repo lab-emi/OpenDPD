@@ -30,7 +30,7 @@ def net_train(log: dict[str, Any],
         # Forward Propagation
         out = net(features)
         # Calculate the Loss Function
-        loss = criterion(out, targets)
+        loss = criterion(out.to(targets.device), targets)
         # Backward propagation
         loss.backward()
         # Update parameters
@@ -66,7 +66,7 @@ def net_eval(log: Dict,
             # Forward Propagation
             outputs = net(features)
             # Calculate loss function
-            loss = criterion(outputs, targets)
+            loss = criterion(outputs.to(device), targets)
             # Collect prediction and ground truth for metric calculation
             prediction.append(outputs.cpu())
             ground_truth.append(targets.cpu())
