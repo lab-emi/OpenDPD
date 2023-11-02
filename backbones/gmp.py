@@ -36,9 +36,7 @@ class GMP(nn.Module):
             x_degree.append(torch.pow(amp.unsqueeze(1), i))
         x_degree=torch.cat(x_degree, dim=1)             #Dim: (batch_size, degree, frame_length)
         windows_x = x.unfold(dimension=-1, size=self.memory_length, step=1)  #Dim: (batch_size, n_windows, memory_length)
-        windows_x=windows_x.transpose(0, 1)
         windows_degree = x_degree.unfold(dimension=-1, size=self.memory_length, step=1)
-        windows_degree = windows_degree.transpose(0, 1).transpose(1, 2)
         # Dim: (batch_size, degree+1, n_windows, window_size, feature_size)
 
 
