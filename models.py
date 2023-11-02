@@ -27,7 +27,7 @@ class CoreModel(nn.Module):
         if backbone_type == 'gmp':
             from backbones.gmp import GMP
             self.backbone = GMP(degree=hidden_size,
-                                memory_length=3)
+                                memory_length=10)
         elif backbone_type == 'fcn':
             from backbones.fcn import FCN
             self.backbone = FCN(input_size=self.input_size,
