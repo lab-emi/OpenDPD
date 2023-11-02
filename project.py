@@ -108,7 +108,7 @@ class Project:
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.cuda.manual_seed_all(self.seed)
-        torch.autograd.set_detect_anomaly(True)
+        # torch.autograd.set_detect_anomaly(True)
 
         if self.re_level == 'soft':
             torch.use_deterministic_algorithms(mode=False)
