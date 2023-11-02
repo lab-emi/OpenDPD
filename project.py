@@ -1,17 +1,12 @@
-__author__ = "Chang Gao"
-__copyright__ = "Copyright @ Chang Gao"
-__credits__ = ["Chang Gao"]
-__license__ = "Private"
-__version__ = "0.0.1"
-__maintainer__ = "Chang Gao"
-__email__ = "gaochangw@outlook.com"
-__status__ = "Prototype"
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "MIT License"
+__version__ = "1.0"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import json
 import os
 import random as rnd
 import time
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -169,10 +164,10 @@ class Project:
 
         # Apply the PA Gain if training DPD
         if self.step == 'train_dpd':
-            target_gain = set_target_gain(X_train, y_train)
-            y_train = target_gain * X_train
-            y_val = target_gain * X_val
-            y_test = target_gain * X_test
+            self.target_gain = set_target_gain(X_train, y_train)
+            y_train = self.target_gain * X_train
+            y_val = self.target_gain * X_val
+            y_test = self.target_gain * X_test
 
         # Extract Features
         input_size = X_train.shape[-1]
@@ -273,7 +268,7 @@ class Project:
                                                        criterion=criterion,
                                                        dataloader=val_loader,
                                                        device=self.device)
-                self.log_val = calculate_metrics(self.args, self.log_val, prediction, ground_truth)
+                self.log_val = calculate_metrics(self.args, self.log_val, prediction, ground_truth, self.target_gain)
 
             # -----------
             # Test
@@ -284,7 +279,7 @@ class Project:
                                                        criterion=criterion,
                                                        dataloader=test_loader,
                                                        device=self.device)
-                self.log_test = calculate_metrics(self.args, self.log_test, prediction, ground_truth)
+                self.log_test = calculate_metrics(self.args, self.log_test, prediction, ground_truth, self.target_gain)
 
             ###########################################################################################################
             # Logging & Saving

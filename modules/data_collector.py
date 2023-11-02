@@ -1,3 +1,8 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "MIT License"
+__version__ = "1.0"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import os
 import pandas as pd
 import numpy as np

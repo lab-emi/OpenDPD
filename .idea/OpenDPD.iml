@@ -4,6 +4,7 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="jdk" jdkName="ptn" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="DPD_Yizhuo" />
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="NUMPY" />

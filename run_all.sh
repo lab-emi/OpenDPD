@@ -14,10 +14,7 @@ dataset_name=DPA_200MHz
 accelerator=cuda
 devices=0
 
-# PA Model
-PA_backbone=dgru
-PA_hidden_size=8
-PA_num_layers=1
+
 
 # DPD Model
 DPD_backbone=dgru
@@ -39,9 +36,17 @@ lr_end=1e-6
 decay_factor=0.5
 patience=10
 
+#########################
 # Train PA
+#########################
 step=train_pa
 seed=(0 1 2 3 4)
+
+# PA Model
+PA_backbone=(dgru, gru, vdlstm)
+PA_hidden_size=8
+PA_num_layers=1
+
 for i_seed in "${seed[@]}"; do
     python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\
     --accelerator "$accelerator" --devices "$devices"\
@@ -55,7 +60,7 @@ done
 # Train DPD
 step=train_dpd
 seed=(0 1)
-for i_seed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     in "${seed[@]}"; do
+for i_seed in "${seed[@]}"; do
     python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\
     --accelerator "$accelerator" --devices "$devices"\
     --PA_backbone "$PA_backbone" --PA_hidden_size "$PA_hidden_size" --PA_num_layers "$PA_num_layers"\

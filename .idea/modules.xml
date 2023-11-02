@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../DPD_Yizhuo/.idea/DPD_Yizhuo.iml" filepath="$PROJECT_DIR$/../DPD_Yizhuo/.idea/DPD_Yizhuo.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/OpenDPD.iml" filepath="$PROJECT_DIR$/.idea/OpenDPD.iml" />
     </modules>
   </component>

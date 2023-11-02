@@ -1,3 +1,8 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "MIT License"
+__version__ = "1.0"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import torch
 import torch.nn as nn
 from backbones.pgjanet import PGJANET

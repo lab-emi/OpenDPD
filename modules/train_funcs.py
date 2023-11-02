@@ -83,16 +83,15 @@ def net_eval(log: Dict,
     return net, prediction, ground_truth
 
 
-def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction: np.ndarray, ground_truth: np.ndarray):
+def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction: np.ndarray, ground_truth: np.ndarray, target_gain:float):
     stat['NMSE'] = metrics.NMSE(prediction, ground_truth)
-    stat['EVM'] = metrics.EVM(prediction, ground_truth, nperseg=args.nperseg)
+    stat['EVM'] = metrics.EVM(prediction / target_gain, ground_truth / target_gain, bw_main_ch=args.bw_main_ch, n_sub_ch=args.n_sub_ch, nperseg=args.nperseg)
     ACLR_L = []
     ACLR_R = []
-    for segment in prediction:
-        ACLR_left, ACLR_right = metrics.ACLR(segment, fs=args.input_signal_fs, nperseg=args.nperseg,
-                                             bw_main_ch=args.input_signal_bw, bw_side_ch=args.input_signal_ch_bw)
-        ACLR_L.append(ACLR_left)
-        ACLR_R.append(ACLR_right)
+    ACLR_left, ACLR_right = metrics.ACLR(prediction, fs=args.input_signal_fs, nperseg=args.nperseg,
+                                         bw_main_ch=args.bw_main_ch, n_sub_ch=args.n_sub_ch)
+    ACLR_L.append(ACLR_left)
+    ACLR_R.append(ACLR_right)
     stat['ACLR_L'] = np.mean(ACLR_L)
     stat['ACLR_R'] = np.mean(ACLR_R)
     stat['ACLR_AVG'] = (stat['ACLR_L'] + stat['ACLR_R']) / 2
