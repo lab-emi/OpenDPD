@@ -46,8 +46,9 @@ class RVTDCNN(nn.Module):
         feature_size = x.size(2)
 
         # Split a frame into memory windows
-        zero_pad = torch.zeros((batch_size, self.window_size - 1, feature_size))
-        x = torch.cat((zero_pad, x), dim=1)
+        # zero_pad = torch.zeros((batch_size, self.window_size - 1, feature_size))
+        pad = x[:, -(self.window_size - 1):, :]
+        x = torch.cat((pad, x), dim=1)
         windows = x.unfold(dimension=1, size=4, step=1).transpose(2, 3)
         windows = torch.unsqueeze(windows, dim=2)  # Dim: (batch_size, n_windows, 1, window_size, feature_size)
         windows = windows.contiguous().view(-1, 1, self.window_size, feature_size)

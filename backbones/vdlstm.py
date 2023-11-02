@@ -23,6 +23,7 @@ class VDLSTM(nn.Module):
         self.window_length = window_length
         self.stride = stride
         self.bias = bias
+        self.pad_size = self.window_length - 1
 
         # Instantiate NN Layers
         self.rnn = nn.LSTM(input_size=window_length,
@@ -56,32 +57,27 @@ class VDLSTM(nn.Module):
 
     def forward(self, x, h_0):
         # Get amplitude |x|
-        i_x = torch.unsqueeze(x[..., 0], dim=-1)
-        q_x = torch.unsqueeze(x[..., 1], dim=-1)
+        i_x = x[..., 0]
+        q_x = x[..., 1]
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
         amp = torch.sqrt(amp2)  # Dim: (batch_size, frame_length, 1)
 
-        # Split a frame into memory windows
-        i_x_windows = []
-        q_x_windows = []
-        amp_windows = []
-        for (i_x_sample, q_x_sample, amp_sample) in zip(i_x, q_x, amp):  # sample Dim: (frame_length, 1)
-            i_x_window = self.get_memory_window(i_x_sample)  # Dim: (n_windows, window_length, 1)
-            q_x_window = self.get_memory_window(q_x_sample)  # Dim: (n_windows, window_length, 1)
-            amp_window = self.get_memory_window(amp_sample)  # Dim: (n_windows, window_length, 1)
-            i_x_windows.append(torch.squeeze(i_x_window))
-            q_x_windows.append(torch.squeeze(q_x_window))
-            amp_windows.append(torch.squeeze(amp_window))
-        i_x_windows = torch.stack(i_x_windows)  # Dim: (batch, n_windows, window_length)
-        q_x_windows = torch.stack(q_x_windows)  # Dim: (batch, n_windows, window_length)
-        amp_windows = torch.stack(amp_windows)  # Dim: (batch, n_windows, window_length)
-        cos_windows = i_x_windows / amp_windows  # Dim: (batch, n_windows, window_length)
-        sin_windows = q_x_windows / amp_windows  # Dim: (batch, n_windows, window_length)
-
-        rnn_out, _ = self.rnn(amp_windows)  # Dim: (batch, n_windows, hidden_size)
+        # for (i_x_sample, q_x_sample, amp_sample) in zip(i_x, q_x, amp):  # sample Dim: (frame_length, 1)
+        pad = i_x[:, -self.pad_size:]
+        i_x = torch.cat((pad, i_x), dim=1)
+        i_x = i_x.unfold(dimension=1, size=self.window_length, step=self.stride)
+        pad = q_x[:, -self.pad_size:]
+        q_x = torch.cat((pad, q_x), dim=1)
+        q_x = q_x.unfold(dimension=1, size=self.window_length, step=self.stride)
+        pad = amp[:, -self.pad_size:]
+        amp = torch.cat((pad, amp), dim=1)
+        amp = amp.unfold(dimension=1, size=self.window_length, step=self.stride)
+        cos = i_x / amp  # Dim: (batch, n_windows, window_length)
+        sin = q_x / amp  # Dim: (batch, n_windows, window_length)
+        rnn_out, _ = self.rnn(amp)  # Dim: (batch, n_windows, hidden_size)
         lambda_1 = self.fc_lambda_1(rnn_out)  # Dim: (batch, n_windows, hidden_size)
         lambda_2 = self.fc_lambda_2(rnn_out)  # Dim: (batch, n_windows, hidden_size)
-        out = self.fc_out(torch.cat((lambda_1 * cos_windows, lambda_2 * sin_windows), dim=-1))
+        out = self.fc_out(torch.cat((lambda_1 * cos, lambda_2 * sin), dim=-1))
         return out
 
     def reset_parameters(self):

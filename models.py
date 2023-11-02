@@ -25,7 +25,7 @@ class CoreModel(nn.Module):
         self.bias = True
 
         if backbone_type == 'gmp':
-            from backbones.gmp_fast import GMP
+            from backbones.gmp import GMP
             self.backbone = GMP()
         elif backbone_type == 'fcn':
             from backbones.fcn import FCN
