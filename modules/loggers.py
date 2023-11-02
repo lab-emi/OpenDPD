@@ -66,17 +66,18 @@ class PandasLogger:
             else:
                 df.to_csv(self.path_log_file_hist, index=False)
 
-    def save_best_model(self, net, epoch, val_stat, metric_name='ACPR_L'):
+    def save_best_model(self, net, epoch, val_stat, metric_name='ACPR_AVG'):
         best_criteria = val_stat[metric_name]
         if epoch == 0:
             self.best_val_metric = best_criteria
             torch.save(net.state_dict(), self.path_save_file_best)
             best_epoch = epoch
             self.write_log_idx(best_epoch, self.path_log_file_best)
-            print('>>> saving best model from epoch %d to %s' % (epoch, self.path_save_file_best))
-        if best_criteria <= self.best_val_metric:
+            print(f'>>> saving best model (%f -> %f {metric_name}) from epoch %d to %s' % (self.best_val_metric, best_criteria, epoch, self.path_save_file_best))
+        if best_criteria < self.best_val_metric:
             best_epoch = epoch
             # Record the best epoch
             self.write_log_idx(best_epoch, self.path_log_file_best)
             torch.save(net.state_dict(), self.path_save_file_best)
-            print('>>> saving best model from epoch %d to %s' % (epoch, self.path_save_file_best))
+            print(f'>>> saving best model (%f -> %f {metric_name}) from epoch %d to %s' % (self.best_val_metric, best_criteria, epoch, self.path_save_file_best))
+            self.best_val_metric = best_criteria

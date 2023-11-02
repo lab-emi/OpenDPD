@@ -3,38 +3,6 @@ import os
 import typing
 
 
-def gen_model_id(args: argparse.Namespace):
-    dict_pa = {'M': args.PA_backbone.upper(),
-               'I': f"{args.PA_input_size:d}",
-               'H': f"{args.PA_hidden_size:d}",
-               'F': f"{args.frame_length:d}"
-               }
-    dict_dpd = {'M': args.DPD_backbone.upper(),
-                'I': f"{args.DPD_input_size:d}",
-                'H': f"{args.DPD_hidden_size:d}",
-                'F': f"{args.frame_length:d}"
-                }
-    dict_pamodel_id = dict(list(dict_pa.items()))
-    dict_dpdmodel_id = dict(list(dict_dpd.items()))
-
-    # PA Model ID
-    list_pamodel_id = []
-    for item in list(dict_pamodel_id.items()):
-        list_pamodel_id += list(item)
-    pa_model_id = '_'.join(list_pamodel_id)
-
-    # DPD Model ID
-    list_dpdmodel_id = []
-    for item in list(dict_dpdmodel_id.items()):
-        list_dpdmodel_id += list(item)
-    dpd_model_id = '_'.join(list_dpdmodel_id)
-
-    pa_model_id = 'PA_' + pa_model_id
-    dpd_model_id = 'DPD_' + dpd_model_id
-
-    return pa_model_id, dpd_model_id
-
-
 def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, train_stat=None, val_stat=None,
                  test_stat=None):
     # Get Epoch & Batch Size
@@ -57,11 +25,9 @@ def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, 
 
     if args.step == 'train_pa':
         backbone = args.PA_backbone
-        input_size = args.PA_input_size
         hidden_size = args.PA_hidden_size
     elif args.step == 'train_dpd':
         backbone = args.DPD_backbone
-        input_size = args.DPD_input_size
         hidden_size = args.DPD_hidden_size
 
     # Create log dictionary
@@ -73,7 +39,6 @@ def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, 
                 'N_PARAM': n_param,
                 'FRAME_LENGTH': args.frame_length,
                 'BACKBONE': backbone,
-                'INPUT_SIZE': input_size,
                 'HIDDEN_SIZE': hidden_size,
                 }
 
@@ -91,33 +56,21 @@ def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, 
     return log_stat
 
 
-def gen_paths(args: argparse.Namespace,
-              model_id: typing.AnyStr = None,
-              pretrain_model_id: typing.AnyStr = None):
-    save_dir = os.path.join('./save', args.dataset_name, args.step)  # Best model save dir
-    log_dir_hist = os.path.join('./log', args.dataset_name, args.step, 'history')  # Log dir to save training history
-    log_dir_best = os.path.join('./log', args.dataset_name, args.step, 'best')  # Log dir to save info of the best epoch
-    log_dir_test = os.path.join('./log', args.dataset_name, args.step, 'test')  # Log dir to save info of the best epoch
-    dir_paths = (save_dir, log_dir_hist, log_dir_best, log_dir_test)
+def gen_dir_paths(args: argparse.Namespace):
+    path_dir_save = os.path.join('./save', args.dataset_name, args.step)  # Best model save dir
+    path_dir_log_hist = os.path.join('./log', args.dataset_name, args.step, 'history')  # Log dir to save training history
+    path_dir_log_best = os.path.join('./log', args.dataset_name, args.step, 'best')  # Log dir to save info of the best epoch
+    dir_paths = (path_dir_save, path_dir_log_hist, path_dir_log_best)
+    return dir_paths
 
+
+def gen_file_paths(path_dir_save: str, path_dir_log_hist: str, path_dir_log_best: str, model_id: str):
     # File Paths
-    if model_id is not None:
-        logfile_hist = os.path.join(log_dir_hist, model_id + '.csv')  # .csv path_log_file_hist
-        logfile_best = os.path.join(log_dir_best, model_id + '.csv')  # .csv path_log_file_hist
-        logfile_test = os.path.join(log_dir_test, model_id + '.csv')  # .csv path_log_file_hist
-        save_file = os.path.join(save_dir, model_id + '.pt')
-    if model_id is not None:
-        file_paths = (save_file, logfile_hist, logfile_best, logfile_test)
-    else:
-        file_paths = None
-
-    # Pretrain Model Path
-    if pretrain_model_id is not None:
-        pretrain_file = os.path.join('./save', args.dataset_name, 'pretrain', pretrain_model_id + '.pt')
-    else:
-        pretrain_file = None
-
-    return dir_paths, file_paths, pretrain_file
+    path_file_save = os.path.join(path_dir_save, model_id + '.pt')
+    path_file_log_hist = os.path.join(path_dir_log_hist, model_id + '.csv')  # .csv path_log_file_hist
+    path_file_log_best = os.path.join(path_dir_log_best, model_id + '.csv')  # .csv path_log_file_hist
+    file_paths = (path_file_save, path_file_log_hist, path_file_log_best)
+    return file_paths
 
 
 def create_folder(folder_list):

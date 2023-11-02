@@ -1,16 +1,14 @@
 import torch
-import math
 import torch.nn as nn
 from backbones.pgjanet import PGJANET
 from backbones.dvrjanet import DVRJANET
-from backbones.gmp import GMP
 from backbones.ligru import LiGRU
-from backbones.cnn1d import CNN1D
 from backbones.rvtdcnn import RVTDCNN
+from backbones.tcn import TCN
 
 
 class CoreModel(nn.Module):
-    def __init__(self, input_size, frame_len, hidden_size, num_layers, degree, backbone_type):
+    def __init__(self, input_size, hidden_size, num_layers, backbone_type):
         super(CoreModel, self).__init__()
         self.output_size = 2  # PA outputs: I & Q
         self.input_size = input_size
@@ -21,9 +19,7 @@ class CoreModel(nn.Module):
         self.bidirectional = False
         self.bias = True
 
-        if backbone_type == 'gmp':
-            self.backbone = GMP()
-        elif backbone_type == 'fc':
+        if backbone_type == 'fcn':
             from backbones.fcn import FCN
             self.backbone = FCN(input_size=self.input_size,
                                 hidden_size=self.hidden_size,
@@ -41,8 +37,7 @@ class CoreModel(nn.Module):
                                 bias=self.bias)
         elif backbone_type == 'dgru':
             from backbones.dgru import DGRU
-            self.backbone = DGRU(input_size=self.input_size,
-                                 hidden_size=self.hidden_size,
+            self.backbone = DGRU(hidden_size=self.hidden_size,
                                  output_size=self.output_size,
                                  num_layers=self.num_layers,
                                  bidirectional=self.bidirectional,
@@ -71,19 +66,25 @@ class CoreModel(nn.Module):
                                   hidden_size=hidden_size)
         elif backbone_type == 'pgjanet':
             self.backbone = PGJANET(input_size=input_size,
-                                    hidden_size=hidden_size)
+                                    hidden_size=hidden_size,
+                                    output_size=self.output_size)
         elif backbone_type == 'dvrjanet':
-            self.backbone = DVRJANET(hidden_size=hidden_size)
+            self.backbone = DVRJANET(hidden_size=hidden_size,
+                                     output_size=self.output_size)
         elif backbone_type == 'rvtdcnn':
-            self.backbone = RVTDCNN(input_size=input_size,
-                                    fc_hid_size=hidden_size)
+            self.backbone = RVTDCNN(fc_hid_size=hidden_size)
+        elif backbone_type == 'tcn':
+            self.backbone = TCN(output_size=self.output_size)
+        else:
+            raise ValueError(f"The backbone type '{self.backbone_type}' is not supported. Please add your own "
+                             f"backbone under ./backbones and update models.py accordingly.")
 
         # Initialize backbone parameters
         try:
             self.backbone.reset_parameters()
+            print("Backbone Initialized...")
         except AttributeError:
             pass
-
 
     def forward(self, x, h_0=None):
         device = x.device
@@ -93,13 +94,8 @@ class CoreModel(nn.Module):
             h_0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(device)
 
         # Forward Propagate through the RNN
-        if self.backbone_type in ('gmp', 'fcn', 'cnn1d', 'rvtdcnn'):
-            out = self.backbone(x)
-        elif self.backbone_type in ('lstm', 'gru', 'dgru', 'ligru', 'vdlstm', 'pgjanet', 'dvrjanet'):
-            out = self.backbone(x, h_0)
-        else:
-            raise ValueError(f"The backbone type '{self.backbone_type}' is not supported. Please add your own "
-                             f"backbone under ./backbones and update models.py accordingly.")
+        out = self.backbone(x, h_0)
+
         return out
 
 

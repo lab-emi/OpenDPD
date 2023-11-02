@@ -3,30 +3,31 @@ from torch import nn
 
 
 class DVRJANET(nn.Module):
-    def __init__(self, hidden_size):
+    def __init__(self, hidden_size, output_size):
         super(DVRJANET, self).__init__()
         self.hidden_size = hidden_size
+        self.output_size = output_size
 
         # c_k
-        self.c1 = nn.Parameter(torch.DoubleTensor(1))
-        self.c2 = nn.Parameter(torch.DoubleTensor(1))
-        self.c3 = nn.Parameter(torch.DoubleTensor(1))
+        self.c1 = nn.Parameter(torch.Tensor(1))
+        self.c2 = nn.Parameter(torch.Tensor(1))
+        self.c3 = nn.Parameter(torch.Tensor(1))
 
         # a_n
-        self.Wa = nn.Parameter(torch.DoubleTensor(1, self.hidden_size))
-        self.Wah = nn.Parameter(torch.DoubleTensor(self.hidden_size, self.hidden_size))
+        self.Wa = nn.Parameter(torch.Tensor(1, self.hidden_size))
+        self.Wah = nn.Parameter(torch.Tensor(self.hidden_size, self.hidden_size))
         # theta_n
-        self.Wp1 = nn.Parameter(torch.DoubleTensor(1, self.hidden_size))
-        self.Wph = nn.Parameter(torch.DoubleTensor(self.hidden_size, self.hidden_size))
+        self.Wp1 = nn.Parameter(torch.Tensor(1, self.hidden_size))
+        self.Wph = nn.Parameter(torch.Tensor(self.hidden_size, self.hidden_size))
         # f_n
-        self.Wf = nn.Parameter(torch.DoubleTensor(self.hidden_size, self.hidden_size))
-        self.bf = nn.Parameter(torch.DoubleTensor(self.hidden_size))
+        self.Wf = nn.Parameter(torch.Tensor(self.hidden_size, self.hidden_size))
+        self.bf = nn.Parameter(torch.Tensor(self.hidden_size))
         # gcos_n
-        self.Wgc = nn.Parameter(torch.DoubleTensor(2 * self.hidden_size, self.hidden_size))
-        self.bgc = nn.Parameter(torch.DoubleTensor(self.hidden_size))
+        self.Wgc = nn.Parameter(torch.Tensor(2 * self.hidden_size, self.hidden_size))
+        self.bgc = nn.Parameter(torch.Tensor(self.hidden_size))
         # gsin_n
-        self.Wgs = nn.Parameter(torch.DoubleTensor(2 * self.hidden_size, self.hidden_size))
-        self.bgs = nn.Parameter(torch.DoubleTensor(self.hidden_size))
+        self.Wgs = nn.Parameter(torch.Tensor(2 * self.hidden_size, self.hidden_size))
+        self.bgs = nn.Parameter(torch.Tensor(self.hidden_size))
 
         # Output Layers
         self.fc_I = nn.Linear(in_features=hidden_size,
@@ -36,16 +37,24 @@ class DVRJANET(nn.Module):
                               out_features=1,
                               bias=True)
 
-    def forward(self, x, hI_0, hQ_0):
+    def forward(self, x, hI_0):
         device = x.device
         batch_size = x.size(0)  # NOTE: dim of x must be (batch, time, feat)/(N, T, F)
         seq_len = x.size(1)
+        i_x = torch.unsqueeze(x[..., 0], dim=-1)
+        q_x = torch.unsqueeze(x[..., 1], dim=-1)
+        amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
+        amp = torch.sqrt(amp2)
+        angle = torch.angle(i_x + 1j * q_x)
+        x = torch.cat((amp, angle), dim=-1)
         out = torch.zeros(batch_size, seq_len, 2).to(device)
         batch_size = x.size(0)
         out_I = torch.zeros(batch_size, seq_len, self.hidden_size).to(device)
         out_Q = torch.zeros(batch_size, seq_len, self.hidden_size).to(device)
-        hI_n = hI_0.squeeze(0)
-        hQ_n = hQ_0.squeeze(0)
+        # hI_n = hI_0.squeeze(0)
+        # hQ_n = hQ_0.squeeze(0)
+        hI_n = torch.zeros(batch_size, seq_len, self.hidden_size).to(device)
+        hQ_n = torch.zeros(batch_size, seq_len, self.hidden_size).to(device)
         for t in range(seq_len):
             a_n = torch.matmul(x[:, t, 0].unsqueeze(-1), self.Wa) + torch.matmul(hI_n * hQ_n, self.Wah)
             anew_n = torch.mul(torch.add(a_n, -1 / 3), self.c1) + torch.mul(torch.add(a_n, -2 / 3),

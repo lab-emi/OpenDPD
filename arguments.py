@@ -24,39 +24,34 @@ def get_arguments():
                         help='Whether partition training sequences into segments of length nperseg before doing the framing.')
     # Feature Extraction
     parser.add_argument('--frame_length', default=50, type=int, help='Frame length of signals')
-    parser.add_argument('--stride', default=1, type=int, help='stride_length length of signals')
+    parser.add_argument('--frame_stride', default=1, type=int, help='stride_length length of signals')
     # General Hyperparameters
     parser.add_argument('--seed', default=0, type=int, help='Global random number seed.')
+    parser.add_argument('--loss_type', default='l2', choices=['l1', 'l2'], help='Type of loss function.')
+    parser.add_argument('--opt_type', default='adamw', choices=['sgd', 'adam', 'adamw', 'adabound', 'rmsprop'], help='Type of optimizer.')
     parser.add_argument('--batch_size', default=64, type=int, help='Batch size for training.')
     parser.add_argument('--batch_size_eval', default=256, type=int, help='Batch size for evaluation.')
     parser.add_argument('--n_epochs', default=100, type=int, help='Number of epochs to train for.')
     parser.add_argument('--lr_schedule', default=1, type=int, help='Whether enable learning rate scheduling')
-    parser.add_argument('--lr', default=5e-3, type=float, help='Learning rate')
-    parser.add_argument('--lr_end', default=1e-7, type=float, help='Learning rate')
+    parser.add_argument('--lr', default=1e-3, type=float, help='Learning rate')
+    parser.add_argument('--lr_end', default=1e-6, type=float, help='Learning rate')
     parser.add_argument('--decay_factor', default=0.5, type=float, help='Learning rate')
     parser.add_argument('--patience', default=10, type=float, help='Learning rate')
     # GMP Hyperparameters
     parser.add_argument('--degree', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
-    parser.add_argument('--PA_backbone', default='rvtdcnn',
-                        choices=['gmp', 'fc', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
-                                 'cnn1d', 'rvtdcnn'], help='Modeling PA Recurrent layer type')
-    parser.add_argument('--PA_input_size', default=2, type=int, help='Size of PA model input features')
-    parser.add_argument('--PA_hidden_size', default=16, type=int,
-                        help='Size of PA model recurrent layers / kernel size in 1dCNN / kernel num in2dCNN')
-    parser.add_argument('--PA_CNN_H', default=5, type=int, help='kernel_height')
-    parser.add_argument('--PA_CNN_W', default=5, type=int, help=' kernel_width')
-    parser.add_argument('--pa_output_len', default=5, type=int, help='Frame length of signals')
-    parser.add_argument('--pa_cnn_memory', default=5, type=int, help='Frame length of signals')
+    parser.add_argument('--PA_backbone', default='dgru',
+                        choices=['gmp', 'fcn', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
+                                 'cnn1d', 'rvtdcnn', 'tcn'], help='Modeling PA Recurrent layer type')
+    parser.add_argument('--PA_hidden_size', default=8, type=int,
+                        help='Hidden size of PA backbone')
+    parser.add_argument('--PA_num_layers', default=1, type=int,
+                        help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
-    parser.add_argument('--DPD_backbone', default='gru',
+    parser.add_argument('--DPD_backbone', default='dgru',
                         choices=['gmp', 'fc', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
                                  'dvrjanet', 'cnn2d'], help='DPD model Recurrent layer type')
-    parser.add_argument('--DPD_input_size', default=6, type=int, help='Size of DPD model input features')
-    parser.add_argument('--DPD_hidden_size', default=10, type=int, help='Size of DPD model recurrent layers')
-    parser.add_argument('--dpd_cnn_memory', default=6, type=int, help='Frame length of signals')
-    # General Network Settings
-    parser.add_argument('--DPD_CNN_H', default=5, type=int, help='kernel_height')
-    parser.add_argument('--DPD_CNN_W', default=5, type=int, help='kernel_height')
+    parser.add_argument('--DPD_hidden_size', default=10, type=int, help='Hidden size of DPD backbone.')
+    parser.add_argument('--DPD_num_layers', default=1, type=int, help='Number of layers of the DPD backbone.')
 
     return parser.parse_args()

@@ -58,7 +58,6 @@ class VDLSTM(nn.Module):
         # Get amplitude |x|
         i_x = torch.unsqueeze(x[..., 0], dim=-1)
         q_x = torch.unsqueeze(x[..., 1], dim=-1)
-
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
         amp = torch.sqrt(amp2)  # Dim: (batch_size, frame_length, 1)
 

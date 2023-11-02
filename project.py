@@ -10,19 +10,20 @@ __status__ = "Prototype"
 import json
 import os
 import random as rnd
+import time
+
 import numpy as np
 import torch
 import torch.nn as nn
-from typing import Any
+from typing import Any, Callable
 from torch import optim
-from torch.nn import CTCLoss
 from torch.utils.data import DataLoader
 from arguments import get_arguments
-from modules.paths import gen_model_id, create_folder, gen_paths
+from modules.paths import create_folder, gen_log_stat, gen_dir_paths, gen_file_paths
+from modules.train_funcs import net_train, net_eval, calculate_metrics
 from utils import util
 from modules.loggers import PandasLogger
-from modules.data_collector import IQSegmentDataset, IQFrameDataset, IQFrameDataset_gmp, \
-    prepare_segments, load_dataset
+from utils.util import set_target_gain
 
 
 class Project:
@@ -30,6 +31,12 @@ class Project:
         ###########################################################################################################
         # Initialization
         ###########################################################################################################
+        # Dictionary for Statistics Log
+        self.log_all = {}
+        self.log_train = {}
+        self.log_val = {}
+        self.log_test = {}
+
         # Load Hyperparameters
         self.args = get_arguments()
         self.hparams = vars(self.args)
@@ -48,16 +55,49 @@ class Project:
         ###########################################################################################################
         #  Model ID, Paths of folders and log files and Logger
         ###########################################################################################################
-        # Model ID
-        self.pa_model_id, self.dpdmodel_id = gen_model_id(self.args)
-
         # Create Folders
-        paths_dir, paths_files, _ = gen_paths(self.args, model_id=self.pa_model_id)
-        path_save_dir, path_log_dir_hist, path_log_dir_best, _ = paths_dir
-        create_folder([path_save_dir, path_log_dir_hist, path_log_dir_best])
+        dir_paths = gen_dir_paths(self.args)
+        self.path_dir_save, self.path_dir_log_hist, self.path_dir_log_best = dir_paths
+        create_folder([self.path_dir_save, self.path_dir_log_hist, self.path_dir_log_best])
 
+    def gen_pa_model_id(self, n_net_params):
+        dict_pa = {'S': f"{self.seed}",
+                   'M': self.PA_backbone.upper(),
+                   'H': f"{self.PA_hidden_size:d}",
+                   'F': f"{self.frame_length:d}",
+                   'P': f"{n_net_params:d}"
+                   }
+        dict_pamodel_id = dict(list(dict_pa.items()))
+
+        # PA Model ID
+        list_pamodel_id = []
+        for item in list(dict_pamodel_id.items()):
+            list_pamodel_id += list(item)
+        pa_model_id = '_'.join(list_pamodel_id)
+        pa_model_id = 'PA_' + pa_model_id
+        return pa_model_id
+
+    def gen_dpd_model_id(self, n_net_params):
+        dict_dpd = {'S': f"{self.seed}",
+                    'M': self.DPD_backbone.upper(),
+                    'H': f"{self.DPD_hidden_size:d}",
+                    'F': f"{self.frame_length:d}",
+                    'P': f"{n_net_params:d}"
+                    }
+        dict_dpdmodel_id = dict(list(dict_dpd.items()))
+
+        # DPD Model ID
+        list_dpdmodel_id = []
+        for item in list(dict_dpdmodel_id.items()):
+            list_dpdmodel_id += list(item)
+        dpd_model_id = '_'.join(list_dpdmodel_id)
+        dpd_model_id = 'DPD_' + dpd_model_id
+        return dpd_model_id
+
+    def build_logger(self, model_id: str):
         # Get Save and Log Paths
-        self.path_save_file_best, self.path_log_file_hist, self.path_log_file_best, _ = paths_files
+        file_paths = gen_file_paths(self.path_dir_save, self.path_dir_log_hist, self.path_dir_log_best, model_id)
+        self.path_save_file_best, self.path_log_file_hist, self.path_log_file_best = file_paths
         print("::: Best Model Save Path: ", self.path_save_file_best)
         print("::: Log-History     Path: ", self.path_log_file_hist)
         print("::: Log-Best        Path: ", self.path_log_file_best)
@@ -121,30 +161,24 @@ class Project:
         self.add_arg("device", device)
         return device
 
-    def tune_conditional_args(self):
-        if self.PA_backbone == 'cnn1d':
-            frame_length = self.pa_cnn_memory + self.PA_hidden_size + self.pa_output_len - 2
-        elif self.PA_backbone == 'cnn2d':
-            frame_length = self.pa_cnn_memory + self.PA_CNN_W + self.pa_output_len - 2
-        else:
-            frame_length = self.frame_length
-        self.add_arg('frame_length', frame_length)
-
     def build_dataloaders(self):
-        from modules.data_collector import IQSegmentDataset, IQFrameDataset, IQFrameDataset_gmp, load_dataset
-        from modules.feat_ext import extract_feature
+        from modules.data_collector import IQSegmentDataset, IQFrameDataset, load_dataset
 
         # Load Dataset
         X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_name=self.dataset_name)
 
+        # Apply the PA Gain if training DPD
+        if self.step == 'train_dpd':
+            target_gain = set_target_gain(X_train, y_train)
+            y_train = target_gain * X_train
+            y_val = target_gain * X_val
+            y_test = target_gain * X_test
+
         # Extract Features
-        X_train = extract_feature(X_train, self.PA_backbone)
-        X_val = extract_feature(X_val, self.PA_backbone)
-        X_test = extract_feature(X_test, self.PA_backbone)
         input_size = X_train.shape[-1]
 
         # Define PyTorch Datasets
-        train_set = IQFrameDataset(X_train, y_train, frame_length=self.frame_length, stride=self.stride)
+        train_set = IQFrameDataset(X_train, y_train, frame_length=self.frame_length, stride=self.frame_stride)
         val_set = IQSegmentDataset(X_val, y_val)
         test_set = IQSegmentDataset(X_test, y_test)
 
@@ -176,64 +210,109 @@ class Project:
         return net
 
     def build_criterion(self):
-        dict_loss = {'crossentropy': nn.CrossEntropyLoss(reduction='mean'),
-                     'ctc': CTCLoss(blank=0, reduction='sum', zero_infinity=True),
-                     'mse': nn.MSELoss(),
+        dict_loss = {'l2': nn.MSELoss(),
                      'l1': nn.L1Loss()
                      }
-        loss_func_name = self.loss
+        loss_func_name = self.loss_type
         try:
             criterion = dict_loss[loss_func_name]
             self.add_arg("criterion", criterion)
             return criterion
         except AttributeError:
-            raise AttributeError('Please use a valid loss function. See modules/argument.py.')
+            raise AttributeError('Please use a valid loss function. Check argument.py.')
 
-    # def build_dataloader(self):
-
-
-    def build_structure(self):
-        """
-        Build project folder structure
-        """
-        dir_paths, file_paths, default_path_net_pretrain = self.log.gen_paths(self)
-        self.add_arg('default_path_net_pretrain', default_path_net_pretrain)
-        save_dir, log_dir_hist, log_dir_best, _ = dir_paths
-        self.path_save_file_best, self.path_log_file_hist, self.path_log_file_best, _ = file_paths
-        util.create_folder([save_dir, log_dir_hist, log_dir_best])
-        print("::: Save Path: ", self.path_save_file_best)
-        print("::: Log Path: ", self.path_log_file_hist)
-        print("--------------------------------------------------------------------")
-        self.add_arg('path_save_file_best', self.path_save_file_best)
-        self.add_arg('path_log_file_hist', self.path_log_file_hist)
-        self.add_arg('path_log_file_best', self.path_log_file_best)
-
-    def build_optimizer(self, net=None):
+    def build_optimizer(self, net: nn.Module):
         # Optimizer
-        net = self.net if net is None else net
-        if self.opt == 'ADAM':
-            optimizer = optim.Adam(net.parameters(), lr=self.lr, amsgrad=False, weight_decay=self.weight_decay)
-        elif self.opt == 'SGD':
+        if self.opt_type == 'adam':
+            optimizer = optim.Adam(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'sgd':
             optimizer = optim.SGD(net.parameters(), lr=self.lr, momentum=0.9)
-        elif self.opt == 'RMSPROP':
-            optimizer = optim.RMSprop(net.parameters(), lr=0.0016, alpha=0.95, eps=1e-08, weight_decay=0, momentum=0,
-                                      centered=False)
-        elif self.opt == 'ADAMW':
-            optimizer = optim.AdamW(net.parameters(), lr=self.lr, amsgrad=False, weight_decay=self.weight_decay)
-        elif self.opt == 'AdaBound':
+        elif self.opt_type == 'rmsprop':
+            optimizer = optim.RMSprop(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'adamw':
+            optimizer = optim.AdamW(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'adabound':
             import adabound  # Run pip install adabound (https://github.com/Luolc/AdaBound)
             optimizer = adabound.AdaBound(net.parameters(), lr=self.lr, final_lr=0.1)
         else:
             raise RuntimeError('Please use a valid optimizer.')
-        self.add_arg("optimizer", optimizer)
 
         # Learning Rate Scheduler
-        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=self.optimizer,
+        lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
                                                             mode='min',
                                                             factor=self.decay_factor,
                                                             patience=self.patience,
                                                             verbose=True,
                                                             threshold=1e-4,
                                                             min_lr=self.lr_end)
-        self.add_arg("lr_scheduler", lr_scheduler)
         return optimizer, lr_scheduler
+
+    def train(self, net: nn.Module, criterion: Callable, optimizer: optim.Optimizer, lr_scheduler,
+              train_loader: DataLoader, val_loader: DataLoader, test_loader: DataLoader, best_model_metric: str) -> None:
+        # Timer
+        start_time = time.time()
+        # Epoch loop
+        print("Starting training...")
+        for epoch in range(self.n_epochs):
+            # -----------
+            # Train
+            # -----------
+            net = net_train(log=self.log_train,
+                            net=net,
+                            optimizer=optimizer,
+                            criterion=criterion,
+                            dataloader=train_loader,
+                            device=self.device)
+
+            # -----------
+            # Validation
+            # -----------
+            if self.eval_val:
+                _, prediction, ground_truth = net_eval(log=self.log_val,
+                                                       net=net,
+                                                       criterion=criterion,
+                                                       dataloader=val_loader,
+                                                       device=self.device)
+                self.log_val = calculate_metrics(self.args, self.log_val, prediction, ground_truth)
+
+            # -----------
+            # Test
+            # -----------
+            if self.eval_test:
+                _, prediction, ground_truth = net_eval(log=self.log_test,
+                                                       net=net,
+                                                       criterion=criterion,
+                                                       dataloader=test_loader,
+                                                       device=self.device)
+                self.log_test = calculate_metrics(self.args, self.log_test, prediction, ground_truth)
+
+            ###########################################################################################################
+            # Logging & Saving
+            ###########################################################################################################
+
+            # Generate Log Dict
+            end_time = time.time()
+            elapsed_time_minutes = (end_time - start_time) / 60.0
+            self.log_all = gen_log_stat(self.args, elapsed_time_minutes, net, optimizer, epoch, self.log_train,
+                                        self.log_val, self.log_test)
+
+            # Write Log
+            self.logger.write_log(self.log_all)
+
+            # Print
+            print(self.log_all)
+
+            # Save best model
+            best_net = net.dpd_model if self.step == 'train_dpd' else net
+            self.logger.save_best_model(net=best_net, epoch=epoch, val_stat=self.log_val, metric_name=best_model_metric)
+
+            ###########################################################################################################
+            # Learning Rate Schedule
+            ###########################################################################################################
+            # Schedule at the beginning of retrain
+            lr_scheduler_criteria = self.log_val[best_model_metric]
+            if self.lr_schedule:
+                lr_scheduler.step(lr_scheduler_criteria)
+
+        print("Training Completed...")
+        print(" ")

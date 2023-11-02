@@ -1,116 +1,86 @@
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.optim.optimizer import Optimizer
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 from utils import metrics
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 import argparse
 
 
-def net_train(args,
-              net,
-              optimizer,
-              criterion,
-              dataloader,
-              device):
-    # Set Network Properties
+def net_train(log: dict[str, Any],
+              net: nn.Module,
+              dataloader: DataLoader,
+              optimizer: Optimizer,
+              criterion: Callable,
+              device: torch.device):
+    # Set Network to Training Mode
     net = net.train()
-
     # Statistics
     losses = []
-
     # Iterate through batches
     for features, targets in tqdm(dataloader):
+        # Move features and targets to the proper device
         features = features.to(device)
         targets = targets.to(device)
-
-        # Optimization
+        # Initialize all gradients to zero
         optimizer.zero_grad()
-
         # Forward Propagation
         out = net(features)
-
-        # Calculate Loss
-        if args.PA_backbone == 'gmp':
-            # targetY = torch.zeros(targets.size(1), 2)
-            # targetY[:, 0] = torch.real(targets)
-            # targetY[:, 1] = torch.imag(targets)
-            out, time_slice = net(features)
-            loss = criterion(out[:, time_slice, :], targets[:, time_slice, :])
-        # elif args.PA_backbone == 'rvtdcnn':
-        #     loss = criterion(out, targets[:, :args.pa_output_len, :].to(device))
-        else:
-            out = net(features)
-            loss = criterion(out, targets)
+        # Calculate the Loss Function
+        loss = criterion(out, targets)
         # Backward propagation
         loss.backward()
-
         # Update parameters
         optimizer.step()
-
-        # Increment monitoring variables
+        # Detach loss from the graph indicating the end of forward propagation
         loss.detach()
-
         # Get losses
         losses.append(loss.item())
-
     # Average loss
     loss = np.mean(losses)
-
     # Save Statistics
-    stat = {'loss': loss}
+    log['loss'] = loss
+    # End of Training Epoch
+    return net
 
-    return net, stat
 
-
-def net_eval(args,
-             net,
-             criterion,
-             dataloader,
-             device):
+def net_eval(log: Dict,
+             net: nn.Module,
+             dataloader: DataLoader,
+             criterion: Callable,
+             device: torch.device):
     net = net.eval()
     with torch.no_grad():
         # Statistics
         losses = []
         prediction = []
         ground_truth = []
-
         # Batch Iteration
         for features, targets in tqdm(dataloader):
+            # Move features and targets to the proper device
             features = features.to(device)
             targets = targets.to(device)
-
             # Forward Propagation
-            if args.PA_backbone == 'gmp':
-                # targetY = torch.zeros(targets.size(1), 2)
-                # targetY[:, 0] = torch.real(targets)
-                # targetY[:, 1] = torch.imag(targets)
-
-                outputs, time_slice = net(features)
-                loss = criterion(outputs[:, time_slice, :], targets[:, time_slice, :])
-                prediction.append(outputs[:, time_slice, :])
-                ground_truth.append(targets[:, time_slice, :])
-            else:
-                outputs = net(features)
-                outputs = outputs.cpu()
-                targets = targets.cpu()
-                loss = criterion(outputs, targets)
-
-                if args.PA_backbone == 'cnn2d' or args.PA_backbone == 'cnn1d':
-                    ground_truth.append(targets[:, :outputs.size(1), :])
-                    prediction.append(outputs)
-                else:
-                    ground_truth.append(targets)
-                    prediction.append(outputs)
+            outputs = net(features)
+            # Calculate loss function
+            loss = criterion(outputs, targets)
+            # Collect prediction and ground truth for metric calculation
+            prediction.append(outputs.cpu())
+            ground_truth.append(targets.cpu())
+            # Collect losses to calculate the average loss per epoch
             losses.append(loss.item())
-
+    # Average loss per epoch
     avg_loss = np.mean(losses)
+    # Prediction and Ground Truth
     prediction = torch.cat(prediction, dim=0).numpy()
     ground_truth = torch.cat(ground_truth, dim=0).numpy()
-
     # Save Statistics
-    stat = {'loss': avg_loss}
-
-    return net, stat, prediction, ground_truth
+    log['loss'] = avg_loss
+    # End of Evaluation Epoch
+    return net, prediction, ground_truth
 
 
 def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction: np.ndarray, ground_truth: np.ndarray):
@@ -118,11 +88,12 @@ def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction
     stat['EVM'] = metrics.EVM(prediction, ground_truth, nperseg=args.nperseg)
     ACLR_L = []
     ACLR_R = []
-    for segment in ground_truth:
+    for segment in prediction:
         ACLR_left, ACLR_right = metrics.ACLR(segment, fs=args.input_signal_fs, nperseg=args.nperseg,
                                              bw_main_ch=args.input_signal_bw, bw_side_ch=args.input_signal_ch_bw)
         ACLR_L.append(ACLR_left)
         ACLR_R.append(ACLR_right)
     stat['ACLR_L'] = np.mean(ACLR_L)
     stat['ACLR_R'] = np.mean(ACLR_R)
+    stat['ACLR_AVG'] = (stat['ACLR_L'] + stat['ACLR_R']) / 2
     return stat

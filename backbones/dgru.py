@@ -3,11 +3,11 @@ from torch import nn
 
 
 class DGRU(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers, bidirectional=False, batch_first=True,
+    def __init__(self, hidden_size, output_size, num_layers, bidirectional=False, batch_first=True,
                  bias=True):
         super(DGRU, self).__init__()
         self.hidden_size = hidden_size
-        self.input_size = input_size
+        self.input_size = 6
         self.output_size = output_size
         self.num_layers = num_layers
         self.bidirectional = bidirectional
@@ -15,13 +15,13 @@ class DGRU(nn.Module):
         self.bias = bias
 
         # Instantiate NN Layers
-        self.rnn = nn.GRU(input_size=input_size,
+        self.rnn = nn.GRU(input_size=self.input_size,
                           hidden_size=hidden_size,
                           num_layers=num_layers,
                           bidirectional=self.bidirectional,
                           batch_first=self.batch_first,
                           bias=self.bias)
-        self.fc_out = nn.Linear(in_features=hidden_size + input_size,
+        self.fc_out = nn.Linear(in_features=hidden_size + self.input_size,
                                 out_features=self.output_size,
                                 bias=self.bias)
         self.fc_hid = nn.Linear(in_features=hidden_size,
@@ -53,6 +53,16 @@ class DGRU(nn.Module):
                 nn.init.constant_(param, 0)
 
     def forward(self, x, h_0):
+        # Feature Extraction
+        i_x = torch.unsqueeze(x[..., 0], dim=-1)
+        q_x = torch.unsqueeze(x[..., 1], dim=-1)
+        amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
+        amp = torch.sqrt(amp2)
+        amp3 = torch.pow(amp, 3)
+        cos = i_x / amp
+        sin = q_x / amp
+        x = torch.cat((i_x, q_x, amp, amp3, sin, cos), dim=-1)
+        # Regressor
         out, _ = self.rnn(x, h_0)
         out = torch.relu(self.fc_hid(out))
         out = torch.cat((out, x), dim=-1)

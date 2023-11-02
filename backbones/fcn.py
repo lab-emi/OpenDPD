@@ -35,7 +35,7 @@ class FCN(nn.Module):
             if 'bias' in name:
                 nn.init.constant_(param, 0)
 
-    def forward(self, x):
+    def forward(self, x, h_0):
         out = torch.relu(self.fc_in(x))
         for layer in self.fc_hidden:
             out = torch.relu(layer(out))
