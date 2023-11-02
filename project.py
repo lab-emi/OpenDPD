@@ -108,6 +108,7 @@ class Project:
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.cuda.manual_seed_all(self.seed)
+        torch.autograd.set_detect_anomaly(True)
 
         if self.re_level == 'soft':
             torch.use_deterministic_algorithms(mode=False)
@@ -163,8 +164,8 @@ class Project:
         X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_name=self.dataset_name)
 
         # Apply the PA Gain if training DPD
+        self.target_gain = set_target_gain(X_train, y_train)
         if self.step == 'train_dpd':
-            self.target_gain = set_target_gain(X_train, y_train)
             y_train = self.target_gain * X_train
             y_val = self.target_gain * X_val
             y_test = self.target_gain * X_test
@@ -257,6 +258,7 @@ class Project:
                             optimizer=optimizer,
                             criterion=criterion,
                             dataloader=train_loader,
+                            grad_clip_val=self.grad_clip_val,
                             device=self.device)
 
             # -----------

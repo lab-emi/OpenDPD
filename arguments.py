@@ -37,8 +37,9 @@ def get_arguments():
     parser.add_argument('--lr_end', default=1e-6, type=float, help='Learning rate')
     parser.add_argument('--decay_factor', default=0.5, type=float, help='Learning rate')
     parser.add_argument('--patience', default=10, type=float, help='Learning rate')
+    parser.add_argument('--grad_clip_val', default=200, type=float, help='Gradient clipping.')
     # GMP Hyperparameters
-    parser.add_argument('--degree', default=4, type=int, help='Degree of GMP model')
+    parser.add_argument('--K', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
     parser.add_argument('--PA_backbone', default='gmp',
                         choices=['gmp', 'fcn', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
@@ -48,7 +49,7 @@ def get_arguments():
     parser.add_argument('--PA_num_layers', default=1, type=int,
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
-    parser.add_argument('--DPD_backbone', default='dgru',
+    parser.add_argument('--DPD_backbone', default='gmp',
                         choices=['gmp', 'fc', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
                                  'dvrjanet', 'cnn2d'], help='DPD model Recurrent layer type')
     parser.add_argument('--DPD_hidden_size', default=10, type=int, help='Hidden size of DPD backbone.')
