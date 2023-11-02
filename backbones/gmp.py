@@ -14,16 +14,6 @@ class GMP(nn.Module):
         self.W = 1+degree*memory_length
         self.Weight = nn.Parameter(torch.Tensor(memory_length, self.W))
 
-    @staticmethod
-    def get_memory_window(sequence, memory_length):
-        frames = []
-        sequence_length = sequence.shape[-1]
-        num_frames = (sequence_length - memory_length) // 1 + 1
-        for i in range(num_frames):
-            frame = sequence[..., i * 1: i * 1 + memory_length]
-            frames.append(frame)
-        return torch.stack(frames)
-
     def reset_parameters(self):
         for name, param in self.named_parameters():
             if 'W' in name:
@@ -45,9 +35,9 @@ class GMP(nn.Module):
         for i in range(1, self.degree+1):
             x_degree.append(torch.pow(amp.unsqueeze(1), i))
         x_degree=torch.cat(x_degree, dim=1)             #Dim: (batch_size, degree, frame_length)
-        windows_x = self.get_memory_window(x, self.memory_length)  #Dim: (batch_size, n_windows, memory_length)
+        windows_x = x.unfold(dimension=-1, size=self.memory_length, step=1)  #Dim: (batch_size, n_windows, memory_length)
         windows_x=windows_x.transpose(0, 1)
-        windows_degree = self.get_memory_window(x_degree, self.memory_length)
+        windows_degree = x_degree.unfold(dimension=-1, size=self.memory_length, step=1)
         windows_degree = windows_degree.transpose(0, 1).transpose(1, 2)
         # Dim: (batch_size, degree+1, n_windows, window_size, feature_size)
 
