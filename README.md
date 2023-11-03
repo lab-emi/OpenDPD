@@ -1,21 +1,30 @@
-# Yizhuo_DPD
-Now GMP, GRU, LSTM, VDLSTM, PGJANET, DVRJANET, 1DCNN, 2DCNN(RVTDCNN), RGRU Model are avaliable.
+# OpenDPD
+OpenDPD is an end-to-end learning framework built in PyTorch for power amplifier (PA) modeling and digital pre-distortion. You are cordially invited to contribute to this project by providing your own backbone neural networks, pretrained models or measured PA datasets.
+![My Image](pics/OpenDPD_logo.png)
+# Authors & Citation
+Yizhuo Wu, Gagan Singe, Mohammad Reza Beikmirza, Leo de Vreede, Morteza Alavi, Chang Gao
 
-Input Features for GRU, LSTM: I and Q
+# Project Structure
+```
+.
+└── backbone        # Configuration Files (for feature extractor or whatever else you like).
+└── datasets        # Measured PA Datasets.
+    └──DPA_200MHz   └── # Digital Power Amplifier with 200 MHz OFDM Signals
+└── dpd_out         # Outputs of  (Automatically generated).
+└── log             # Experimental Log Data (Automatically generated).
+└── modules         # Major Modules.
+└── save            # Saved Models.
+└── steps           # Steps (train_pa, train_dpd, run_dpd, all called from main.py).
+└── utils           # Libraries of useful methods.
+└── argument.py     # Arguments
+└── main.py         # Top (Everything starts from here).
+└── model.py        # Top-level Neural Network Models
+└── project.py      # A class having useful functions and storing hyperparameters
 
-Input Features for RVTDCNN: I, Q, |x|, |x|^2, |x|^3, sin\theta cos\theta
+```
+## Environment
 
-Input Features for RGRU: I, Q, |x|, |x|^3, sin\theta cos\theta
-
-## Settings for Different NN model
-GMP: frame_length = memory_length;  degree = degree
-
-1DCNN: hidden_size = kernel_size
-
-2DCNN(RVTDCNN): hidden_size=kernel_number; NN_H=kernel_height; NN_W=kernel_width; cnn_memory=input_matrix_memory_length;
-                paoutput_len = output_length_of_pa_model;
-
-## Run
+## Reproduction
 Example uses RFWeblab data, here args.gain = 290.
 
 For Matlab data, args.gain = 23.
