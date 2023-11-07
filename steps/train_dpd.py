@@ -3,7 +3,9 @@ import torch
 import models as model
 from project import Project
 from utils.util import count_net_params
-
+import sys
+sys.path.append('../..')
+from quant import Base_GRUQuantEnv, AttrDict
 
 def main(proj: Project):
     ###########################################################################################################
@@ -36,6 +38,17 @@ def main(proj: Project):
                               hidden_size=proj.DPD_hidden_size,
                               num_layers=proj.DPD_num_layers,
                               backbone_type=proj.DPD_backbone)
+    
+    if proj.args.quant:
+        quant_env_args = AttrDict({
+            'n_bits_w': proj.args.n_bits_w,
+            'n_bits_a': proj.args.n_bits_a,
+            'pretrained_model': proj.args.pretrained_model,
+        })
+        quant_env = Base_GRUQuantEnv(net_dpd, quant_env_args)
+        net_dpd = quant_env.q_model
+        print("::: Quantized DPD Model: ", net_dpd)
+        
     n_net_dpd_params = count_net_params(net_dpd)
     print("::: Number of DPD Model Parameters: ", n_net_dpd_params)
     dpd_model_id = proj.gen_dpd_model_id(n_net_dpd_params)

@@ -22,7 +22,7 @@ class INT_Conv2D(torch.nn.Conv2d):
         self.weight_quantizer.init_step_size(m.weight)
 
         self.act_quantizer = act_quantizer
-
+        self.act_quantizer.init_act_params()
             
         # save the parameters 
         self.register_buffer('n_bits_w', torch.Tensor([self.weight_quantizer.bits]))
@@ -49,8 +49,9 @@ class INT_Linear(torch.nn.Linear):
 
         self.weight = torch.nn.Parameter(m.weight.detach())        
         self.weight_quantizer = weight_quantizer
-        self.weight_quantizer.init_step_size(m.weight)
+        self.weight_quantizer.init_act_params()
         self.act_quantizer = act_quantizer
+        self.act_quantizer.init_act_params()
         
         # save the parameters 
         self.register_buffer('n_bits_w', torch.Tensor([self.weight_quantizer.bits]))

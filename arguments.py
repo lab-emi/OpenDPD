@@ -55,4 +55,11 @@ def get_arguments():
     parser.add_argument('--DPD_hidden_size', default=20, type=int, help='Hidden size of DPD backbone.')
     parser.add_argument('--DPD_num_layers', default=2, type=int, help='Number of layers of the DPD backbone.')
 
+    # quantization
+    parser.add_argument('--quant', action='store_true', default=False, help='Whether to quantize the model')
+    parser.add_argument('--n_bits_w', default=8, type=int, help='Number of bits for weights')
+    parser.add_argument('--n_bits_a', default=8, type=int, help='Number of bits for activations')
+    parser.add_argument('--pretrained_model', default='', help='Path to pretrained model')
+    
+
     return parser.parse_args()

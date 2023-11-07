@@ -38,6 +38,12 @@ class INT_Quantizer(torch.nn.Module):
         self.register_buffer('integer_num', self.int_num)
         self.register_buffer('decimal_num', self.dec_num)
     
+    def init_act_params(self):
+        integer_num = 2
+        init_scale = 2 ** (integer_num - self.bits)
+        
+        self.scale = torch.nn.Parameter(torch.Tensor([init_scale]))
+        
     def init_step_size(self, x):
         self.scale = torch.nn.Parameter(
             x.detach().abs().mean() * 2 / (self.Qp) ** 0.5)
@@ -85,5 +91,15 @@ class OP_INT_Quantizer(INT_Quantizer):
         
         
     def init_params(self):
-        init_scale = 2 ** (1 - self.bits)
+        init_scale = 2 ** (2 - self.bits)
         self.scale = torch.nn.Parameter(torch.Tensor([init_scale]))
+
+class Identity_Quantizer(torch.nn.Module):
+    def __init__(self, bits, all_positive=False):
+        super().__init__()
+    
+        self.bits = bits
+        self.all_positive = all_positive
+        
+    def forward(self, x):
+        return x
