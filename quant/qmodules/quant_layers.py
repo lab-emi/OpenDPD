@@ -1,9 +1,9 @@
 import torch
 import torch.nn.functional as F
-
+from .quantizers import INT_Quantizer
 
 class INT_Conv2D(torch.nn.Conv2d):
-    def __init__(self, m: torch.nn.Conv2d, weight_quantizer, act_quantizer):
+    def __init__(self, m: torch.nn.Conv2d, weight_quantizer=INT_Quantizer(bits=8, all_positive=False), act_quantizer=INT_Quantizer(bits=8, all_positive=True)):
         super(INT_Conv2D, self).__init__(
             in_channels=m.in_channels,
             out_channels=m.out_channels,
@@ -41,7 +41,7 @@ class INT_Conv2D(torch.nn.Conv2d):
 
 
 class INT_Linear(torch.nn.Linear):
-    def __init__(self, m: torch.nn.Conv2d, weight_quantizer, act_quantizer):
+    def __init__(self, m: torch.nn.Conv2d, weight_quantizer=INT_Quantizer(bits=8, all_positive=False), act_quantizer=INT_Quantizer(bits=8, all_positive=True)):
         super(INT_Linear, self).__init__(
             in_features=m.in_features,
             out_features=m.out_features,
@@ -66,3 +66,15 @@ class INT_Linear(torch.nn.Linear):
         # self.register_buffer('quantized_act', quantized_act)
 
         return F.linear(quantized_act, quantized_weight, self.bias)
+
+class INT_Pass(torch.nn.Module):
+    def __init__(self, act_quantizer=INT_Quantizer(bits=8, all_positive=False)):
+        super(INT_Pass, self).__init__()
+        
+        self.act_quantizer = act_quantizer
+        
+    def forward(self, x):
+        quantized_act = self.act_quantizer(x)
+        return quantized_act
+            
+            

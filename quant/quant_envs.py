@@ -5,7 +5,7 @@ import copy
 from .modules.gru import GRU as PYGRU
 from .modules.ops import Mul, Add
 from .qmodules.quantizers import INT_Quantizer, OP_INT_Quantizer
-from .qmodules.quant_layers import INT_Conv2D, INT_Linear
+from .qmodules.quant_layers import INT_Conv2D, INT_Linear, INT_Pass
 from .qmodules.quant_ops import Quant_sigmoid, Quant_tanh, Quant_mult, Quant_add
 
 
@@ -131,6 +131,8 @@ class Base_GRUQuantEnv(object):
             Add: Quant_add,
         }
 
+        self.last_layer_type = INT_Pass
+
         # quantizers
         self.weight_quantizer, self.act_quantizer, \
         self.sigmod_quantizer, self.tanh_quantizer, \
@@ -176,7 +178,18 @@ class Base_GRUQuantEnv(object):
         """
         recur_rpls_gru(model)
         return model
-           
+
+    def add_last_layer(self, model, last_layer_type=INT_Pass):
+        """ Add the last layer to the model.
+        Args:
+            model: the model to be added with the last layer.
+            last_layer_type: the type of the last layer.
+        Returns:
+            A model with the last layer.
+        """
+        model.add_module('last_layer_quant', last_layer_type(self.act_quantizer))
+        return model
+    
     def create_quantized_model(self, model):
         """ Create a quantized model from the original model.
         Args:
@@ -192,4 +205,8 @@ class Base_GRUQuantEnv(object):
         for layer_type, rpls_layer_type in self.fq_layers_hash.items():
             recur_rpls_layers(self.args, model, layer_type, rpls_layer_type, self.weight_quantizer, self.act_quantizer)
 
+        # add the last layer
+        model = self.add_last_layer(model, self.last_layer_type)
+        
+        
         return model
