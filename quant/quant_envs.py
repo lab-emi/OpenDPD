@@ -4,7 +4,7 @@ import copy
 
 from .modules.gru import GRU as PYGRU
 from .modules.ops import Mul, Add
-from .qmodules.quantizers import INT_Quantizer, OP_INT_Quantizer
+from .qmodules.quantizers import Identity_Quantizer, INT_Quantizer, OP_INT_Quantizer, Drf_Act_Quantizer, Drf_Weight_Quantizer, IAO_Quantizer
 from .qmodules.quant_layers import INT_Conv2D, INT_Linear, INT_Pass
 from .qmodules.quant_ops import Quant_sigmoid, Quant_tanh, Quant_mult, Quant_add
 
@@ -20,16 +20,25 @@ class AttrDict(dict):
         self[key] = value
 
 
-def create_quantizer(type, n_bits, all_positive):
-    quantizer_types = ['INT_Quantizer']
+def create_quantizer(type, n_bits, all_positive, act_or_weight):
+    quantizer_types = ['INT_Quantizer', 'Drf_Act_Quantizer', 'Drf_Weight_Quantizer', 'IAO_Quantizer']
     assert type in quantizer_types, 'Quantizer type {} is not supported.'.format(type)
     if 'INT_Quantizer' in type:
         quantizer = INT_Quantizer(n_bits, all_positive)
+    elif 'Drf_Act_Quantizer' in type:
+        quantizer = Drf_Act_Quantizer(n_bits, all_positive)
+    elif 'Drf_Weight_Quantizer' in type:
+        quantizer = Drf_Weight_Quantizer(n_bits, all_positive)
+    elif 'IAO_Quantizer' in type:
+        quantizer = IAO_Quantizer(n_bits, all_positive, act_or_weight)
     else:
         raise NotImplementedError('Quantizer type {} is not implemented.'.format(type))
     return quantizer
 
-def recur_rpls_layers(args, model, layer_type, rpls_layer_type, weight_quantizer, act_quantizer):
+def recur_rpls_layers(args, model, layer_type=nn.Conv2d,
+                      rpls_layer_type=INT_Conv2D,
+                      weight_quantizer=INT_Quantizer(8, all_positive=False),
+                      act_quantizer=INT_Quantizer(8, all_positive=False)):
     """ Recursively replace layers of a given type with another type within a model.
     Args:
         model: the model to be searched.
@@ -40,8 +49,8 @@ def recur_rpls_layers(args, model, layer_type, rpls_layer_type, weight_quantizer
     """
 
     for name, module in model.named_children():
-        weight_quantizer = create_quantizer(weight_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
-        act_quantizer = create_quantizer(act_quantizer.__class__.__name__, args.n_bits_a, all_positive=False)
+        weight_quantizer = create_quantizer(weight_quantizer.__class__.__name__, args.n_bits_w, all_positive=False, act_or_weight='weight')
+        act_quantizer = create_quantizer(act_quantizer.__class__.__name__, args.n_bits_a, all_positive=False, act_or_weight='act')
         if isinstance(module, layer_type):
             setattr(model, name, rpls_layer_type(module, weight_quantizer, act_quantizer))
         else:
@@ -160,6 +169,8 @@ class Base_GRUQuantEnv(object):
         print('INT Quantizers are used.')
         weight_quantizer = INT_Quantizer(self.n_bits_w, all_positive=False)
         act_quantizer = INT_Quantizer(self.n_bits_a, all_positive=False)
+        # weight_quantizer = IAO_Quantizer(bits=self.n_bits_w, all_positive=False, act_or_weight='weight')
+        # act_quantizer = IAO_Quantizer(bits=self.n_bits_a, all_positive=False, act_or_weight='act')
    
         sigmod_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
         tanh_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
@@ -179,17 +190,22 @@ class Base_GRUQuantEnv(object):
         recur_rpls_gru(model)
         return model
 
-    def add_last_layer(self, model, last_layer_type=INT_Pass):
-        """ Add the last layer to the model.
+    def unquantize_last_layer(self, model, last_layer_name='fc_out'):
+        """ Unquantize the last layer of the model.
         Args:
             model: the model to be added with the last layer.
-            last_layer_type: the type of the last layer.
+            last_layer_name: the name of the last layer.
         Returns:
-            A model with the last layer.
+            A model with the a unquantized last layer.
         """
-        model.add_module('last_layer_quant', last_layer_type(self.act_quantizer))
-        return model
-    
+        for name, module in model.named_children():
+            if name == last_layer_name:
+                print("Unquantize the last layer: ", name)
+                module.weight_quantizer = Identity_Quantizer()
+                module.act_quantizer = Identity_Quantizer()
+            else:
+                self.unquantize_last_layer(module, last_layer_name)
+        
     def create_quantized_model(self, model):
         """ Create a quantized model from the original model.
         Args:
@@ -204,9 +220,7 @@ class Base_GRUQuantEnv(object):
         
         for layer_type, rpls_layer_type in self.fq_layers_hash.items():
             recur_rpls_layers(self.args, model, layer_type, rpls_layer_type, self.weight_quantizer, self.act_quantizer)
-
-        # add the last layer
-        model = self.add_last_layer(model, self.last_layer_type)
         
+        self.unquantize_last_layer(model)
         
         return model
