@@ -296,9 +296,6 @@ class Project:
             # Write Log
             self.logger.write_log(self.log_all)
 
-            # Print
-            print(self.log_all)
-
             # Save best model
             best_net = net.dpd_model if self.step == 'train_dpd' else net
             self.logger.save_best_model(net=best_net, epoch=epoch, val_stat=self.log_val, metric_name=best_model_metric)

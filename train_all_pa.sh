@@ -32,12 +32,12 @@ patience=10
 #########################
 # Train
 #########################
-seed=(0)
+seed=(0 1 2 3 4)
 
 # PA Model
-PA_backbone=(dgru fcn gru vdlstm rvtdcnn gmp)
-PA_hidden_size=(8 20 11 8 12 8)
-PA_num_layers=(1 2 1 1 1 1)
+PA_backbone=(fcn gru vdlstm rvtdcnn gmp)
+PA_hidden_size=(20 11 8 12 8)
+PA_num_layers=(2 1 1 1 1)
 
 for i_seed in "${seed[@]}"; do
     for ((i=0; i<${#PA_backbone[@]}; i++)); do
