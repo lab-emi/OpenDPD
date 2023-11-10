@@ -46,9 +46,9 @@ def main(proj: Project):
             'pretrained_model': proj.args.pretrained_model,
         })
         quant_env = Base_GRUQuantEnv(net_dpd, quant_env_args)
-        net_dpd = quant_env.q_model
-        print("::: Quantized DPD Model: ", net_dpd)
-        
+        net_dpd = quant_env.pygru_model
+    
+    print("::: DPD Model: ", net_dpd)    
     n_net_dpd_params = count_net_params(net_dpd)
     print("::: Number of DPD Model Parameters: ", n_net_dpd_params)
     dpd_model_id = proj.gen_dpd_model_id(n_net_dpd_params)

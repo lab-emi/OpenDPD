@@ -3,10 +3,10 @@ import torch.nn as nn
 import copy
 
 from .modules.gru import GRU as PYGRU
-from .modules.ops import Mul, Add
+from .modules.ops import Mul, Add, Sqrt, Pow
 from .qmodules.quantizers import Identity_Quantizer, INT_Quantizer, OP_INT_Quantizer, Drf_Act_Quantizer, Drf_Weight_Quantizer, IAO_Quantizer
 from .qmodules.quant_layers import INT_Conv2D, INT_Linear, INT_Pass
-from .qmodules.quant_ops import Quant_sigmoid, Quant_tanh, Quant_mult, Quant_add
+from .qmodules.quant_ops import Quant_sigmoid, Quant_tanh, Quant_mult, Quant_add, Quant_sqrt, Quant_pow
 
 
 class AttrDict(dict):
@@ -74,8 +74,9 @@ def recur_rpls_ops(args, model, op_type, rpls_op_type, *quantizers):
     Returns:
         A list of layers of the given type.
     """
-    sigmoid_quantizer, tanh_quantizer, \
-    mult_quantizer, add_quantizer = quantizers
+    sigmoid_quantizer, tanh_quantizer, mult_quantizer, add_quantizer, \
+    sqrt_quantizer, pow_quantizer = quantizers
+    
     for name, module in model.named_children():        
         if isinstance(module, op_type):
             # print('Replace {} with {}'.format(op_type, rpls_op_type))
@@ -91,6 +92,12 @@ def recur_rpls_ops(args, model, op_type, rpls_op_type, *quantizers):
             elif isinstance(module, Add):
                 add_quantizer = create_op_quantizer(add_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
                 setattr(model, name, rpls_op_type(add_quantizer))
+            elif isinstance(module, Sqrt):
+                sqrt_quantizer = create_op_quantizer(sqrt_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                setattr(model, name, rpls_op_type(sqrt_quantizer))
+            elif isinstance(module, Pow):
+                pow_quantizer = create_op_quantizer(pow_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                setattr(model, name, rpls_op_type(module, pow_quantizer))
             else:
                 raise NotImplementedError('Operation type {} is not implemented.'.format(op_type))
             # print("model: ", model)
@@ -138,14 +145,17 @@ class Base_GRUQuantEnv(object):
             nn.Tanh: Quant_tanh,
             Mul: Quant_mult,
             Add: Quant_add,
+            Sqrt: Quant_sqrt,
+            Pow: Quant_pow,
         }
 
         self.last_layer_type = INT_Pass
 
         # quantizers
-        self.weight_quantizer, self.act_quantizer, \
+        self.weight_quantizer, self.act_quantizer,  \
         self.sigmod_quantizer, self.tanh_quantizer, \
-        self.mult_quantizer, self.add_quantizer  = self.set_quantizer()
+        self.mult_quantizer, self.add_quantizer,    \
+        self.sqrt_quantizer, self.pow_quantizer        = self.set_quantizer()
 
         # float model
         self.pygru_model = self.create_pygru_model(copy.deepcopy(self.model))
@@ -176,9 +186,12 @@ class Base_GRUQuantEnv(object):
         tanh_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
         mult_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
         add_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
+        sqrt_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
+        pow_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
         
         
-        return weight_quantizer, act_quantizer, sigmod_quantizer, tanh_quantizer, mult_quantizer, add_quantizer
+        return weight_quantizer, act_quantizer, sigmod_quantizer, tanh_quantizer, mult_quantizer, add_quantizer, \
+               sqrt_quantizer, pow_quantizer
 
     def create_pygru_model(self, model):
         """ Create a pytorch GRU model from the original model.
@@ -187,7 +200,32 @@ class Base_GRUQuantEnv(object):
         Returns:
             A model with pytorch GRU module.
         """
+        def _reset_parameters(model, hidden_size):
+            for name, param in model.named_parameters():
+                num_gates = int(param.shape[0] / hidden_size)
+                if 'bias' in name:
+                    nn.init.constant_(param, 0)
+                if 'weight' in name:
+                    for i in range(0, num_gates):
+                        nn.init.orthogonal_(param[i * hidden_size:(i + 1) * hidden_size, :])
+                if 'x2h.weight' in name:
+                    for i in range(0, num_gates):
+                        nn.init.xavier_uniform_(param[i * hidden_size:(i + 1) * hidden_size, :])
+
+        def _reset_pygru(model):
+            for name, module in model.named_children():
+                if isinstance(module, PYGRU):
+                    print("::: Reset pytorch GRU module.")
+                    _reset_parameters(module, module.hidden_size)
+                else:
+                    _reset_pygru(module)
+        
+        # replace GRU module with pytorch GRU module
         recur_rpls_gru(model)
+        
+        # reset parameters
+        _reset_pygru(model)
+ 
         return model
 
     def unquantize_last_layer(self, model, last_layer_name='fc_out'):
@@ -216,7 +254,8 @@ class Base_GRUQuantEnv(object):
 
         for op_type, rpls_op_type in self.fq_ops_hash.items():
             recur_rpls_ops(self.args, model, op_type, rpls_op_type, \
-                self.sigmod_quantizer, self.tanh_quantizer, self.mult_quantizer, self.add_quantizer)
+                self.sigmod_quantizer, self.tanh_quantizer, self.mult_quantizer, self.add_quantizer, \
+                self.sqrt_quantizer, self.pow_quantizer)
         
         for layer_type, rpls_layer_type in self.fq_layers_hash.items():
             recur_rpls_layers(self.args, model, layer_type, rpls_layer_type, self.weight_quantizer, self.act_quantizer)

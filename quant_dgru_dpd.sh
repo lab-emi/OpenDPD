@@ -35,12 +35,12 @@ patience=10
 seed=(0)
 
 # PA Model
-PA_backbone=dgru
+PA_backbone=qgru
 PA_hidden_size=8
 PA_num_layers=1
 
 # DPD Model
-DPD_backbone=(dgru)
+DPD_backbone=(qgru)
 DPD_hidden_size=(8 20 11 8 12 8)
 DPD_num_layers=(1 2 1 1 1 1)
 
