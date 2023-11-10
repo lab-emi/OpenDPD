@@ -42,7 +42,7 @@ def get_arguments():
     parser.add_argument('--K', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
     parser.add_argument('--PA_backbone', default='rvtdcnn',
-                        choices=['gmp', 'fcn', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
+                        choices=['gmp', 'fcn', 'gru', 'dgru', 'qgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
                                  'cnn1d', 'rvtdcnn', 'tcn'], help='Modeling PA Recurrent layer type')
     parser.add_argument('--PA_hidden_size', default=12, type=int,
                         help='Hidden size of PA backbone')
@@ -50,7 +50,7 @@ def get_arguments():
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
     parser.add_argument('--DPD_backbone', default='rvtdcnn',
-                        choices=['gmp', 'fcn', 'gru', 'dgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
+                        choices=['gmp', 'fcn', 'gru', 'dgru', 'qgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
                                  'dvrjanet', 'rvtdcnn'], help='DPD model Recurrent layer type')
     parser.add_argument('--DPD_hidden_size', default=20, type=int, help='Hidden size of DPD backbone.')
     parser.add_argument('--DPD_num_layers', default=2, type=int, help='Number of layers of the DPD backbone.')

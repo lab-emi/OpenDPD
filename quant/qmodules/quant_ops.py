@@ -9,7 +9,7 @@ from .quantizers import OP_INT_Quantizer
 
 import sys
 sys.path.append('../')
-from ..modules.ops import Mul
+from ..modules import Mul, Sqrt, Pow
 
 class Quant_sigmoid(nn.Module):
     def __init__(self, quantizer=OP_INT_Quantizer(8, all_positive=True)):
@@ -63,3 +63,32 @@ class Quant_add(nn.Module):
     
     def __repr__(self):
         return self.__class__.__name__ + '({})'.format(self.quantizer)
+    
+    
+class Quant_sqrt(nn.Module):
+    def __init__(self, quantizer=OP_INT_Quantizer(8, all_positive=False)):
+        super(Quant_sqrt, self).__init__()
+        self.quantizer = quantizer
+        self.quantizer.init_params()
+        
+    def forward(self, x):
+        x = self.quantizer(Sqrt()(x))
+        
+        return x
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '({})'.format(self.quantizer)
+    
+class Quant_pow(nn.Module):
+    def __init__(self, m: nn.Module, quantizer=OP_INT_Quantizer(8, all_positive=False)):
+        super(Quant_pow, self).__init__()
+        self.quantizer = quantizer
+        self.quantizer.init_params()
+        self.power = m.power
+        self.pow = Pow(self.power)
+    
+    def forward(self, x):
+        x = self.quantizer(self.pow(x))
+        
+        return x
+        

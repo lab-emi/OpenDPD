@@ -159,9 +159,9 @@ class Drf_Act_Quantizer(nn.Module):
         elif self.bits == 1:
             return torch.sign(input)
         else:
-            output = torch.clamp(input * 0.1, 0, 1)  # 特征A截断前先进行缩放（* 0.1），以减小截断误差
+            output = torch.clamp(input * 0.1, 0, 1)  # clamp input to [0,1], and scale it by 0.1 first
             scale = 1 / float(2 ** self.bits - 1)  # scale
-            output = self.round(output / scale) * scale  # 量化/反量化
+            output = self.round(output / scale) * scale # quantize / dequantize
         return output
 
 
@@ -187,9 +187,9 @@ class Drf_Weight_Quantizer(nn.Module):
             return torch.sign(input)
         else:
             output = torch.tanh(input)
-            output = output / 2 / torch.max(torch.abs(output)) + 0.5  # 归一化-[0,1]
+            output = output / 2 / torch.max(torch.abs(output)) + 0.5 
             scale = 1 / float(2 ** self.bits - 1)  # scale
-            output = self.round(output / scale) * scale  # 量化/反量化
+            output = self.round(output / scale) * scale  # quantize / dequantize
             output = 2 * output - 1
         return output
     

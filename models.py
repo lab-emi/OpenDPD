@@ -51,6 +51,14 @@ class CoreModel(nn.Module):
                                  bidirectional=self.bidirectional,
                                  batch_first=self.batch_first,
                                  bias=self.bias)
+        elif backbone_type == 'qgru':
+            from backbones.qgru import QGRU
+            self.backbone = QGRU(hidden_size=self.hidden_size,
+                                 output_size=self.output_size,
+                                 num_layers=self.num_layers,
+                                 bidirectional=self.bidirectional,
+                                 batch_first=self.batch_first,
+                                 bias=self.bias)
         elif backbone_type == 'lstm':
             from backbones.lstm import LSTM
             self.backbone = LSTM(input_size=self.input_size,
