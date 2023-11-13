@@ -2,6 +2,11 @@ import torch
 import torch.nn.functional as F
 from .quantizers import INT_Quantizer
 
+def calc_similarity(tensor1, tensor2):
+    tensor1 = tensor1.flatten()
+    tensor2 = tensor2.flatten()
+    return torch.dot(tensor1, tensor2) / (torch.norm(tensor1) * torch.norm(tensor2))
+
 class INT_Conv2D(torch.nn.Conv2d):
     def __init__(self, m: torch.nn.Conv2d, weight_quantizer=INT_Quantizer(bits=8, all_positive=False), act_quantizer=INT_Quantizer(bits=8, all_positive=True)):
         super(INT_Conv2D, self).__init__(

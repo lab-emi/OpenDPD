@@ -25,6 +25,11 @@ class QGRU(nn.Module):
                           bidirectional=self.bidirectional,
                           batch_first=self.batch_first,
                           bias=self.bias)
+        
+        self.fc_hid = nn.Linear(in_features=hidden_size,
+                                out_features=hidden_size,
+                                bias=self.bias)
+        
         self.fc_out = nn.Linear(in_features=hidden_size,
                                 out_features=self.output_size,
                                 bias=self.bias)
@@ -72,5 +77,6 @@ class QGRU(nn.Module):
 
         # Regressor
         out, _ = self.rnn(x, h_0)
+        out = self.fc_hid(out)
         out = self.fc_out(out)
         return out

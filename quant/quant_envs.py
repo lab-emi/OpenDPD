@@ -4,7 +4,12 @@ import copy
 
 from .modules.gru import GRU as PYGRU
 from .modules.ops import Mul, Add, Sqrt, Pow
-from .qmodules.quantizers import Identity_Quantizer, INT_Quantizer, OP_INT_Quantizer, Drf_Act_Quantizer, Drf_Weight_Quantizer, IAO_Quantizer
+from .qmodules.quantizers import (
+    Identity_Quantizer, INT_Quantizer, OP_INT_Quantizer, 
+    Drf_Act_Quantizer, Drf_Weight_Quantizer, 
+    IAO_Quantizer, PACT_Quantizer
+    )
+from .qmodules.fp8 import FP8_Quantizer
 from .qmodules.quant_layers import INT_Conv2D, INT_Linear, INT_Pass
 from .qmodules.quant_ops import Quant_sigmoid, Quant_tanh, Quant_mult, Quant_add, Quant_sqrt, Quant_pow
 
@@ -21,16 +26,27 @@ class AttrDict(dict):
 
 
 def create_quantizer(type, n_bits, all_positive, act_or_weight):
-    quantizer_types = ['INT_Quantizer', 'Drf_Act_Quantizer', 'Drf_Weight_Quantizer', 'IAO_Quantizer']
+    quantizer_types = ['INT_Quantizer', 'Identity_Quantizer',
+                       'Drf_Act_Quantizer', 'Drf_Weight_Quantizer',
+                       'IAO_Quantizer', 
+                       'FP8_Quantizer', 
+                       'PACT_Quantizer',                       
+                    ]
     assert type in quantizer_types, 'Quantizer type {} is not supported.'.format(type)
     if 'INT_Quantizer' in type:
         quantizer = INT_Quantizer(n_bits, all_positive)
+    elif 'Identity_Quantizer' in type:
+        quantizer = Identity_Quantizer(n_bits, all_positive)
     elif 'Drf_Act_Quantizer' in type:
         quantizer = Drf_Act_Quantizer(n_bits, all_positive)
     elif 'Drf_Weight_Quantizer' in type:
         quantizer = Drf_Weight_Quantizer(n_bits, all_positive)
     elif 'IAO_Quantizer' in type:
         quantizer = IAO_Quantizer(n_bits, all_positive, act_or_weight)
+    elif 'FP8_Quantizer' in type:
+        quantizer = FP8_Quantizer(n_bits, all_positive)
+    elif 'PACT_Quantizer' in type:
+        quantizer = PACT_Quantizer(n_bits, all_positive)
     else:
         raise NotImplementedError('Quantizer type {} is not implemented.'.format(type))
     return quantizer
@@ -57,10 +73,18 @@ def recur_rpls_layers(args, model, layer_type=nn.Conv2d,
             recur_rpls_layers(args, module, layer_type, rpls_layer_type, weight_quantizer, act_quantizer)
 
 def create_op_quantizer(type, n_bits, all_positive):
-    quantizer_types = ['OP_INT_Quantizer']
+    quantizer_types = ['OP_INT_Quantizer', 'Identity_Quantizer', 'Drf_Act_Quantizer', 'IAO_Quantizer', 'FP8_Quantizer']
     assert type in quantizer_types, 'Quantizer type {} is not supported.'.format(type)
     if 'OP_INT_Quantizer' in type:
         quantizer = OP_INT_Quantizer(n_bits, all_positive)
+    elif 'Identity_Quantizer' in type:
+        quantizer = Identity_Quantizer(n_bits, all_positive)
+    elif 'Drf_Act_Quantizer' in type:
+        quantizer = Drf_Act_Quantizer(n_bits, all_positive)
+    elif 'IAO_Quantizer' in type:
+        quantizer = IAO_Quantizer(n_bits, all_positive, act_or_weight='weight')
+    elif 'FP8_Quantizer' in type:
+        quantizer = FP8_Quantizer(n_bits, all_positive)
     else:
         raise NotImplementedError('Quantizer type {} is not implemented.'.format(type))
     return quantizer
@@ -93,10 +117,10 @@ def recur_rpls_ops(args, model, op_type, rpls_op_type, *quantizers):
                 add_quantizer = create_op_quantizer(add_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
                 setattr(model, name, rpls_op_type(add_quantizer))
             elif isinstance(module, Sqrt):
-                sqrt_quantizer = create_op_quantizer(sqrt_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                sqrt_quantizer = create_op_quantizer(sqrt_quantizer.__class__.__name__, sqrt_quantizer.bits, all_positive=False)
                 setattr(model, name, rpls_op_type(sqrt_quantizer))
             elif isinstance(module, Pow):
-                pow_quantizer = create_op_quantizer(pow_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                pow_quantizer = create_op_quantizer(pow_quantizer.__class__.__name__, pow_quantizer.bits, all_positive=False)
                 setattr(model, name, rpls_op_type(module, pow_quantizer))
             else:
                 raise NotImplementedError('Operation type {} is not implemented.'.format(op_type))
@@ -181,13 +205,24 @@ class Base_GRUQuantEnv(object):
         act_quantizer = INT_Quantizer(self.n_bits_a, all_positive=False)
         # weight_quantizer = IAO_Quantizer(bits=self.n_bits_w, all_positive=False, act_or_weight='weight')
         # act_quantizer = IAO_Quantizer(bits=self.n_bits_a, all_positive=False, act_or_weight='act')
+        # weight_quantizer = Drf_Weight_Quantizer(bits=self.n_bits_w, all_positive=False)
+        # act_quantizer = Drf_Act_Quantizer(bits=self.n_bits_a, all_positive=True)
+        
+        # weight_quantizer = FP8_Quantizer(self.n_bits_w, all_positive=False)
+        # act_quantizer = Identity_Quantizer(self.n_bits_a, all_positive=False)
    
         sigmod_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
         tanh_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
         mult_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
         add_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
-        sqrt_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
-        pow_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
+        
+
+        # sigmod_quantizer = Drf_Act_Quantizer(self.n_bits_a, all_positive=False)
+        # tanh_quantizer = Drf_Act_Quantizer(self.n_bits_a, all_positive=False)
+        # mult_quantizer = Drf_Act_Quantizer(self.n_bits_w, all_positive=False)
+        # add_quantizer = Drf_Act_Quantizer(self.n_bits_w, all_positive=False)        
+        sqrt_quantizer = Identity_Quantizer(self.n_bits_w, all_positive=False)
+        pow_quantizer = Identity_Quantizer(self.n_bits_w, all_positive=False)
         
         
         return weight_quantizer, act_quantizer, sigmod_quantizer, tanh_quantizer, mult_quantizer, add_quantizer, \
@@ -243,7 +278,17 @@ class Base_GRUQuantEnv(object):
                 module.act_quantizer = Identity_Quantizer()
             else:
                 self.unquantize_last_layer(module, last_layer_name)
-        
+    
+    def set_first_layer(self, model, first_layer_name='x2h'):
+        """ Set the first layer attributes of the model.
+        """
+        for name, module in model.named_children():
+            if name == first_layer_name:
+                print("Set the first layer: ", name)
+                module.act_quantizer.bits = 16
+            else:
+                self.set_first_layer(module, first_layer_name)
+    
     def create_quantized_model(self, model):
         """ Create a quantized model from the original model.
         Args:
@@ -260,6 +305,7 @@ class Base_GRUQuantEnv(object):
         for layer_type, rpls_layer_type in self.fq_layers_hash.items():
             recur_rpls_layers(self.args, model, layer_type, rpls_layer_type, self.weight_quantizer, self.act_quantizer)
         
+        self.set_first_layer(model)
         self.unquantize_last_layer(model)
         
         return model

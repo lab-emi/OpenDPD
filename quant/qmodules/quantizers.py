@@ -70,17 +70,14 @@ class INT_Quantizer(torch.nn.Module):
 
     def forward(self, x):
         if self.training:
-            # train mode no need to round the scale
-            scale = self.scale
             scale_factor = 1 / (x.numel() * self.Qp) ** 0.5
-            scale = grad_scale(scale, scale_factor)
+            scale = grad_scale(self.scale, scale_factor)
         else:
-            # eval mode round the scale
-            scale, _ = self.round_scale2pow2(self.scale)
-            self.update_params()
+            scale = self.scale
+            scale, dec_num = self.round_scale2pow2(scale)
+            if scale != self.pow2_scale:
+                self.update_params()
         
-        self.scale.data = scale
-                    
         x = x / scale
         x = x.clamp(self.Qn, self.Qp)
         
@@ -113,7 +110,16 @@ class Identity_Quantizer(torch.nn.Module):
     
         self.bits = bits
         self.all_positive = all_positive
-        
+
+    def init_step_size(self, x):
+        pass
+
+    def init_params(self):
+        pass
+    
+    def init_act_params(self):
+        pass
+
     def forward(self, x):
         return x
     
@@ -125,7 +131,7 @@ import torch.nn.functional as F
 from torch.autograd import Function
 
 
-class Round(Function):
+class GRound(Function):
     @staticmethod
     def forward(self, input):
         sign = torch.sign(input)
@@ -142,9 +148,10 @@ class Drf_Act_Quantizer(nn.Module):
     def __init__(self, bits, all_positive=True):
         super(Drf_Act_Quantizer, self).__init__()
         self.bits = bits
-
+        
+        
     def round(self, input):
-        output = Round.apply(input)
+        output = GRound.apply(input)
         return output
     
     def init_step_size(self, x):
@@ -153,6 +160,9 @@ class Drf_Act_Quantizer(nn.Module):
     def init_act_params(self):
         pass
 
+    def init_params(self):
+        pass
+        
     def forward(self, input):
         if self.bits == 32:
             output = input
@@ -171,7 +181,7 @@ class Drf_Weight_Quantizer(nn.Module):
         self.bits = bits
 
     def round(self, input):
-        output = Round.apply(input)
+        output = GRound.apply(input)
         return output
 
     def init_step_size(self, x):
@@ -563,3 +573,66 @@ class IAO_Quantizer(nn.Module):
         
     def __repr__(self):
         return super().__repr__() + ' (quant bits={}) '.format(self.bits)
+
+##############################################
+## PACT
+##############################################
+
+class PACT_Quantizer(nn.Module):
+    def __init__(self, bits, all_positive=False):
+        super().__init__()
+        self.bits = bits
+        self.all_positive = all_positive
+        
+        self.quantizer = ActFn.apply
+        
+        self.alpha = nn.Parameter(torch.tensor(10.))
+        
+     
+    def init_step_size(self, x):
+        pass
+    
+    def init_params(self):
+        pass
+
+    def init_act_params(self):
+        pass
+           
+    def forward(self, x):
+        if self.training:
+            x = self.quantizer(x, self.alpha, self.bits-1)
+        else:
+            x = self.quantizer(x, self.alpha.detach(), self.bits-1)
+        
+        return x 
+
+    def __repr__(self):
+        return super().__repr__() + '(bits={})'.format(self.bits)
+    
+# k = 8
+class ActFn(Function):
+	@staticmethod
+	def forward(ctx, x, alpha, k):
+		ctx.save_for_backward(x, alpha)
+		# y_1 = 0.5 * ( torch.abs(x).detach() - torch.abs(x - alpha).detach() + alpha.item() )
+		y = torch.clamp(x, min = 0, max = alpha.item())
+		scale = (2**k - 1) / alpha
+		y_q = torch.round( y * scale) / scale
+		return y_q
+
+	@staticmethod
+	def backward(ctx, dLdy_q):
+		# Backward function, I borrowed code from
+		# https://github.com/obilaniu/GradOverride/blob/master/functional.py
+		# We get dL / dy_q as a gradient
+		x, alpha, = ctx.saved_tensors
+		# Weight gradient is only valid when [0, alpha]
+		# Actual gradient for alpha,
+		# By applying Chain Rule, we get dL / dy_q * dy_q / dy * dy / dalpha
+		# dL / dy_q = argument,  dy_q / dy * dy / dalpha = 0, 1 with x value range 
+		lower_bound      = x < 0
+		upper_bound      = x > alpha
+		# x_range       = 1.0-lower_bound-upper_bound
+		x_range = ~(lower_bound|upper_bound)
+		grad_alpha = torch.sum(dLdy_q * torch.ge(x, alpha).float()).view(-1)
+		return dLdy_q * x_range.float(), grad_alpha, None

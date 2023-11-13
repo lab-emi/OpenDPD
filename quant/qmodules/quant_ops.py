@@ -88,7 +88,13 @@ class Quant_pow(nn.Module):
         self.pow = Pow(self.power)
     
     def forward(self, x):
-        x = self.quantizer(self.pow(x))
+        powx = self.pow(x)
+        if self.training:
+            x = powx
+        else:
+            x = self.quantizer(powx)
         
         return x
-        
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '({}, pow = {})'.format(self.quantizer, self.power)
