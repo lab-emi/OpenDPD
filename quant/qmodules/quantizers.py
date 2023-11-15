@@ -69,14 +69,12 @@ class INT_Quantizer(torch.nn.Module):
         return scale, dec_num
 
     def forward(self, x):
-        if self.training:
-            scale_factor = 1 / (x.numel() * self.Qp) ** 0.5
-            scale = grad_scale(self.scale, scale_factor)
-        else:
-            scale = self.scale
-            scale, dec_num = self.round_scale2pow2(scale)
-            if scale != self.pow2_scale:
-                self.update_params()
+        scale_factor = 1 / (x.numel() * self.Qp) ** 0.5
+        scale = grad_scale(self.scale, scale_factor)
+        # scale = self.scale
+        scale, dec_num = self.round_scale2pow2(scale)
+        if scale != self.pow2_scale:
+            self.update_params()
         
         x = x / scale
         x = x.clamp(self.Qn, self.Qp)
@@ -169,11 +167,14 @@ class Drf_Act_Quantizer(nn.Module):
         elif self.bits == 1:
             return torch.sign(input)
         else:
-            output = torch.clamp(input * 0.1, 0, 1)  # clamp input to [0,1], and scale it by 0.1 first
+            # output = torch.clamp(input * 0.1, 0, 1)  # clamp input to [0,1], and scale it by 0.1 first
+            output = torch.tanh(input)
             scale = 1 / float(2 ** self.bits - 1)  # scale
             output = self.round(output / scale) * scale # quantize / dequantize
         return output
 
+    def __repr__(self):
+        return super().__repr__() + '(bits={})'.format(self.bits)
 
 class Drf_Weight_Quantizer(nn.Module):
     def __init__(self, bits, all_positive=True):
@@ -202,6 +203,10 @@ class Drf_Weight_Quantizer(nn.Module):
             output = self.round(output / scale) * scale  # quantize / dequantize
             output = 2 * output - 1
         return output
+    
+    def __repr__(self):
+        return super().__repr__() + '(bits={})'.format(self.bits)
+    
     
 ##############################################
 ## IAO Quantizer

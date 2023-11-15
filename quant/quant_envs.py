@@ -68,6 +68,7 @@ def recur_rpls_layers(args, model, layer_type=nn.Conv2d,
         weight_quantizer = create_quantizer(weight_quantizer.__class__.__name__, args.n_bits_w, all_positive=False, act_or_weight='weight')
         act_quantizer = create_quantizer(act_quantizer.__class__.__name__, args.n_bits_a, all_positive=False, act_or_weight='act')
         if isinstance(module, layer_type):
+            print('Replace {} with {}'.format(layer_type, rpls_layer_type))
             setattr(model, name, rpls_layer_type(module, weight_quantizer, act_quantizer))
         else:
             recur_rpls_layers(args, module, layer_type, rpls_layer_type, weight_quantizer, act_quantizer)
@@ -105,22 +106,22 @@ def recur_rpls_ops(args, model, op_type, rpls_op_type, *quantizers):
         if isinstance(module, op_type):
             # print('Replace {} with {}'.format(op_type, rpls_op_type))
             if isinstance(module, torch.nn.Sigmoid):
-                sigmoid_quantizer = create_op_quantizer(sigmoid_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                sigmoid_quantizer = create_op_quantizer(sigmoid_quantizer.__class__.__name__, sigmoid_quantizer.bits, sigmoid_quantizer.all_positive)
                 setattr(model, name, rpls_op_type(sigmoid_quantizer))
             elif isinstance(module, torch.nn.Tanh):
-                tanh_quantizer = create_op_quantizer(tanh_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                tanh_quantizer = create_op_quantizer(tanh_quantizer.__class__.__name__, tanh_quantizer.bits, tanh_quantizer.all_positive)
                 setattr(model, name, rpls_op_type(tanh_quantizer))
             elif isinstance(module, Mul):
-                mult_quantizer = create_op_quantizer(mult_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                mult_quantizer = create_op_quantizer(mult_quantizer.__class__.__name__, mult_quantizer.bits, mult_quantizer.all_positive)
                 setattr(model, name, rpls_op_type(mult_quantizer))
             elif isinstance(module, Add):
-                add_quantizer = create_op_quantizer(add_quantizer.__class__.__name__, args.n_bits_w, all_positive=False)
+                add_quantizer = create_op_quantizer(add_quantizer.__class__.__name__, add_quantizer.bits, add_quantizer.all_positive)
                 setattr(model, name, rpls_op_type(add_quantizer))
             elif isinstance(module, Sqrt):
-                sqrt_quantizer = create_op_quantizer(sqrt_quantizer.__class__.__name__, sqrt_quantizer.bits, all_positive=False)
+                sqrt_quantizer = create_op_quantizer(sqrt_quantizer.__class__.__name__, sqrt_quantizer.bits, sqrt_quantizer.all_positive)
                 setattr(model, name, rpls_op_type(sqrt_quantizer))
             elif isinstance(module, Pow):
-                pow_quantizer = create_op_quantizer(pow_quantizer.__class__.__name__, pow_quantizer.bits, all_positive=False)
+                pow_quantizer = create_op_quantizer(pow_quantizer.__class__.__name__, pow_quantizer.bits, pow_quantizer.all_positive)
                 setattr(model, name, rpls_op_type(module, pow_quantizer))
             else:
                 raise NotImplementedError('Operation type {} is not implemented.'.format(op_type))
@@ -220,7 +221,9 @@ class Base_GRUQuantEnv(object):
         # sigmod_quantizer = Drf_Act_Quantizer(self.n_bits_a, all_positive=False)
         # tanh_quantizer = Drf_Act_Quantizer(self.n_bits_a, all_positive=False)
         # mult_quantizer = Drf_Act_Quantizer(self.n_bits_w, all_positive=False)
-        # add_quantizer = Drf_Act_Quantizer(self.n_bits_w, all_positive=False)        
+        # add_quantizer = Drf_Act_Quantizer(self.n_bits_w, all_positive=False)
+        # sqrt_quantizer = OP_INT_Quantizer(bits=16, all_positive=False)
+        # pow_quantizer = OP_INT_Quantizer(bits=16, all_positive=False)   
         sqrt_quantizer = Identity_Quantizer(self.n_bits_w, all_positive=False)
         pow_quantizer = Identity_Quantizer(self.n_bits_w, all_positive=False)
         
@@ -289,6 +292,16 @@ class Base_GRUQuantEnv(object):
             else:
                 self.set_first_layer(module, first_layer_name)
     
+    def set_last_layer_quant(self, model, last_layer_name='fc_out'):
+        """ Set the last layer attributes of the model.
+        """
+        for name, module in model.named_children():
+            if name == last_layer_name:
+                print("quant the output")
+                module.out_quant = True
+            else:
+                self.set_last_layer_quant(module, last_layer_name)
+                
     def create_quantized_model(self, model):
         """ Create a quantized model from the original model.
         Args:
@@ -305,7 +318,8 @@ class Base_GRUQuantEnv(object):
         for layer_type, rpls_layer_type in self.fq_layers_hash.items():
             recur_rpls_layers(self.args, model, layer_type, rpls_layer_type, self.weight_quantizer, self.act_quantizer)
         
-        self.set_first_layer(model)
-        self.unquantize_last_layer(model)
+        # self.set_first_layer(model)
+        # self.unquantize_last_layer(model)
+        self.set_last_layer_quant(model)
         
         return model

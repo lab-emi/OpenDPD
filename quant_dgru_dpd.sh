@@ -35,7 +35,7 @@ patience=10
 seed=(0)
 
 # PA Model
-PA_backbone=qgru
+PA_backbone=dgru
 PA_hidden_size=8
 PA_num_layers=1
 
@@ -61,7 +61,8 @@ for i_seed in "${seed[@]}"; do
         --frame_length "$frame_length" --frame_stride "$frame_stride" --loss_type "$loss_type" --opt_type "$opt_type"\
         --batch_size "$batch_size" --batch_size_eval "$batch_size_eval" --n_epochs "$n_epochs" --lr_schedule "$lr_schedule"\
         --lr "$lr" --lr_end "$lr_end" --decay_factor "$decay_factor" --patience "$patience" \
-        "$quant_opts" --n_bits_w "$quant_n_bits_w" --n_bits_a "$quant_n_bits_a" --pretrained_model "$pretrained_model"  \
+        "$quant_opts" --n_bits_w "$quant_n_bits_w" --n_bits_a "$quant_n_bits_a" --pretrained_model "$pretrained_model" \
+        --quant_dir_label "$quant_dir_label" \
         || exit 1;
         # Run DPD
         step=run_dpd
@@ -73,6 +74,7 @@ for i_seed in "${seed[@]}"; do
           --batch_size "$batch_size" --batch_size_eval "$batch_size_eval" --n_epochs "$n_epochs" --lr_schedule "$lr_schedule"\
           --lr "$lr" --lr_end "$lr_end" --decay_factor "$decay_factor" --patience "$patience" \
           "$quant_opts" --n_bits_w "$quant_n_bits_w" --n_bits_a "$quant_n_bits_a" --pretrained_model "$pretrained_model"  \
+          --quant_dir_label "$quant_dir_label" \
           || exit 1;
     done
 done

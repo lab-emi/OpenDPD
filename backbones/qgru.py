@@ -25,18 +25,12 @@ class QGRU(nn.Module):
                           bidirectional=self.bidirectional,
                           batch_first=self.batch_first,
                           bias=self.bias)
-        
-        self.fc_hid = nn.Linear(in_features=hidden_size,
-                                out_features=hidden_size,
-                                bias=self.bias)
+
         
         self.fc_out = nn.Linear(in_features=hidden_size,
                                 out_features=self.output_size,
                                 bias=self.bias)
 
-        self.sqrt = Sqrt()
-        self.pow2 = Pow(2)
-        self.pow3 = Pow(3)
         
     def reset_parameters(self):
         for name, param in self.rnn.named_parameters():
@@ -66,17 +60,16 @@ class QGRU(nn.Module):
         # Feature Extraction
         i_x = torch.unsqueeze(x[..., 0], dim=-1)
         q_x = torch.unsqueeze(x[..., 1], dim=-1)
-        # amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
-        amp2 = self.pow2(i_x) + self.pow2(q_x)
-        # amp = torch.sqrt(amp2)
-        amp = self.sqrt(amp2)
-        # amp3 = torch.pow(amp, 3)
-        amp3 = self.pow3(amp)
+        amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
+        # amp2 = self.pow2(i_x) + self.pow2(q_x)
+        amp = torch.sqrt(amp2)
+        # amp = self.sqrt(amp2)
+        amp3 = torch.pow(amp, 3)
+        # amp3 = self.pow3(amp)
         
         x = torch.cat((i_x, q_x, amp, amp3), dim=-1)
 
         # Regressor
         out, _ = self.rnn(x, h_0)
-        out = self.fc_hid(out)
         out = self.fc_out(out)
         return out

@@ -60,6 +60,7 @@ def get_arguments():
     parser.add_argument('--n_bits_w', default=8, type=int, help='Number of bits for weights')
     parser.add_argument('--n_bits_a', default=8, type=int, help='Number of bits for activations')
     parser.add_argument('--pretrained_model', default='', help='Path to pretrained model')
+    parser.add_argument('--quant_dir_label', default='', help='Directory label for quantization')
     
 
     return parser.parse_args()

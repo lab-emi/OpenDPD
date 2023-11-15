@@ -54,23 +54,35 @@ class INT_Linear(torch.nn.Linear):
 
         self.weight = torch.nn.Parameter(m.weight.detach())        
         self.weight_quantizer = weight_quantizer
-        self.weight_quantizer.init_step_size(m.weight)
+        self.weight_quantizer.init_act_params()
         self.act_quantizer = act_quantizer
         self.act_quantizer.init_act_params()
         
+        self.out_quantizer = INT_Quantizer(bits=16, all_positive=False)
+        self.out_quantizer.init_act_params()
+        
+        self.out_quant = False
         # save the parameters 
         self.register_buffer('n_bits_w', torch.Tensor([self.weight_quantizer.bits]))
         self.register_buffer('n_bits_a', torch.Tensor([self.act_quantizer.bits]))
         
 
-    def forward(self, x):
+    def forward(self, x):    
         quantized_weight = self.weight_quantizer(self.weight)
         # self.register_buffer('quantized_weight', quantized_weight)
 
         quantized_act = self.act_quantizer(x)
         # self.register_buffer('quantized_act', quantized_act)
+        q_out = F.linear(quantized_act, quantized_weight, self.bias)
+        if self.out_quant and not self.training:
+            out = self.out_quantizer(q_out)
+        else:
+            out = q_out
 
-        return F.linear(quantized_act, quantized_weight, self.bias)
+        return out
+    
+    def __repr__(self):
+        return super().__repr__() + '(out_quant={})'.format(self.out_quant)
 
 class INT_Pass(torch.nn.Module):
     """ Quantization pass for activation; can be added to the model as a layer
