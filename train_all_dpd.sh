@@ -32,7 +32,7 @@ patience=10
 #########################
 # Train
 #########################
-seed=(0)
+seed=(0 1 2 3 4)
 
 # PA Model
 PA_backbone=dgru
@@ -40,9 +40,9 @@ PA_hidden_size=8
 PA_num_layers=1
 
 # DPD Model
-DPD_backbone=(dgru fcn gru vdlstm rvtdcnn gmp)
-DPD_hidden_size=(8 20 11 8 12 8)
-DPD_num_layers=(1 2 1 1 1 1)
+DPD_backbone=(dgru fcn gru lstm)
+DPD_hidden_size=(8 20 11 9)
+DPD_num_layers=(1 2 1 1)
 
 for i_seed in "${seed[@]}"; do
     for ((i=0; i<${#DPD_backbone[@]}; i++)); do

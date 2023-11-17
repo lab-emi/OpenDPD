@@ -19,6 +19,8 @@ class PandasLogger:
         for header, value in zip(list_header, list_value):
             row[header] = value
         self.list_log_rows.append(row)
+        # Print Log
+        print(row)
 
     def write_csv(self, logfile=None):
         if len(self.list_log_headers) == 0:
