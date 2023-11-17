@@ -157,6 +157,23 @@ class Project:
         self.add_arg("device", device)
         return device
 
+    def get_amplitude(IQ_signal):
+        I = IQ_signal[:, 0]
+        Q = IQ_signal[:, 1]
+        power = I ** 2 + Q ** 2
+        amplitude = np.sqrt(power)
+        return amplitude
+
+    def set_target_gain(input_IQ, output_IQ):
+        """Calculate the total energy of the I-Q signal."""
+        amp_in = get_amplitude(input_IQ)
+        amp_out = get_amplitude(output_IQ)
+        max_in_amp = np.max(amp_in)
+        max_out_amp = np.max(amp_out)
+        target_gain = np.mean(max_out_amp / max_in_amp)
+        return target_gain
+
+
     def build_dataloaders(self):
         from modules.data_collector import IQSegmentDataset, IQFrameDataset, load_dataset
 
