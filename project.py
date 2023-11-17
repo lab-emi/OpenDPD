@@ -192,8 +192,8 @@ class Project:
 
         # Define PyTorch Datasets
         train_set = IQFrameDataset(X_train, y_train, frame_length=self.frame_length, stride=self.frame_stride)
-        val_set = IQSegmentDataset(X_val, y_val)
-        test_set = IQSegmentDataset(X_test, y_test)
+        val_set = IQSegmentDataset(X_val, y_val, nperseg=self.args.nperseg)
+        test_set = IQSegmentDataset(X_test, y_test, nperseg=self.args.nperseg)
 
         # Define PyTorch Dataloaders
         train_loader = DataLoader(train_set, batch_size=self.batch_size, shuffle=True)
