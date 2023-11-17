@@ -82,7 +82,7 @@ def get_training_frames(segments, seq_len, stride=1):
 
 
 class IQSegmentDataset(Dataset):
-    def __init__(self, features, targets, nperseg=2560):
+    def __init__(self, features, targets, nperseg=16384):
         self.nperseg = nperseg
 
         features = self.split_segments(features)
