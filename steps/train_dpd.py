@@ -5,7 +5,7 @@ from project import Project
 from utils.util import count_net_params
 import sys
 sys.path.append('../..')
-from quant import Base_GRUQuantEnv, AttrDict
+from quant import get_quant_model
 
 def main(proj: Project):
     ###########################################################################################################
@@ -39,14 +39,7 @@ def main(proj: Project):
                               num_layers=proj.DPD_num_layers,
                               backbone_type=proj.DPD_backbone)
     
-    if proj.args.quant:
-        quant_env_args = AttrDict({
-            'n_bits_w': proj.args.n_bits_w,
-            'n_bits_a': proj.args.n_bits_a,
-            'pretrained_model': proj.args.pretrained_model,
-        })
-        quant_env = Base_GRUQuantEnv(net_dpd, quant_env_args)
-        net_dpd = quant_env.q_model
+    net_dpd = get_quant_model(proj, net_dpd)
     
     print("::: DPD Model: ", net_dpd)    
     n_net_dpd_params = count_net_params(net_dpd)
