@@ -214,8 +214,8 @@ class Base_GRUQuantEnv(object):
    
         sigmod_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
         tanh_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
-        mult_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
-        add_quantizer = OP_INT_Quantizer(self.n_bits_w, all_positive=False)
+        mult_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
+        add_quantizer = OP_INT_Quantizer(self.n_bits_a, all_positive=False)
         
 
         # sigmod_quantizer = Drf_Act_Quantizer(self.n_bits_a, all_positive=False)

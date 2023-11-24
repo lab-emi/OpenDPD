@@ -11,10 +11,10 @@ def get_quant_model(proj, net_dpd):
         })
         quant_env = Base_GRUQuantEnv(net_dpd, quant_env_args)
         if proj.args.q_pretrain:
-            print("::: Pretraining DPD Model: ", net_dpd)
             net_dpd = quant_env.pygru_model
+            print("::: Pretraining DPD Model: ", net_dpd)
         else:
-            print("::: Quantizing DPD Model: ", net_dpd)
             net_dpd = quant_env.q_model
+            print("::: Quantizing DPD Model: ", net_dpd)
             
     return net_dpd

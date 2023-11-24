@@ -42,7 +42,7 @@ def get_arguments():
     parser.add_argument('--K', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
     parser.add_argument('--PA_backbone', default='dgru',
-                        choices=['gmp', 'fcn', 'gru', 'dgru', 'qgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
+                        choices=['gmp', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'dvrjanet',
                                  'cnn1d', 'rvtdcnn', 'tcn'], help='Modeling PA Recurrent layer type')
     parser.add_argument('--PA_hidden_size', default=8, type=int,
                         help='Hidden size of PA backbone')
@@ -50,7 +50,7 @@ def get_arguments():
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
     parser.add_argument('--DPD_backbone', default='dgru',
-                        choices=['gmp', 'fcn', 'gru', 'dgru', 'qgru', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
+                        choices=['gmp', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm', 'ligru', 'pgjanet', 'cnn1d',
                                  'dvrjanet', 'rvtdcnn'], help='DPD model Recurrent layer type')
     parser.add_argument('--DPD_hidden_size', default=8, type=int, help='Hidden size of DPD backbone.')
     parser.add_argument('--DPD_num_layers', default=2, type=int, help='Number of layers of the DPD backbone.')
@@ -61,7 +61,7 @@ def get_arguments():
     parser.add_argument('--n_bits_a', default=8, type=int, help='Number of bits for activations')
     parser.add_argument('--pretrained_model', default='', help='Path to pretrained model')
     parser.add_argument('--quant_dir_label', default='', help='Directory label for quantization')
-    parser.add_argument('--q_pretrain', action='store_true', default=False, help='pretrain the model with \
+    parser.add_argument('--q_pretrain', default=False, type=bool, help='pretrain the model with \
                         self-implementation float models for quantization')
     
 

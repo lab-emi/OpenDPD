@@ -10,8 +10,8 @@ esac
 done
 
 # Global Settings
-dataset_name=DPA_200MHz
-accelerator=cuda
+dataset_name=DPA_160MHz
+accelerator=cpu
 devices=0
 
 # Hyperparameters
@@ -41,13 +41,15 @@ PA_num_layers=1
 
 # DPD Model
 DPD_backbone=(qgru)
-DPD_hidden_size=(8 20 11 8 12 8)
-DPD_num_layers=(1 2 1 1 1 1)
+DPD_hidden_size=(10)
+DPD_num_layers=(1)
 
 # Quantization
-quant_n_bits_w=8
-quant_n_bits_a=8
-pretrained_model=''
+quant_n_bits_w=16
+quant_n_bits_a=16
+# pretrained_model='/Users/ali6/projects/OpenDPD/save/DPA_160MHz/train_dpd/amp1p_426_qgru_float/DPD_S_0_M_QGRU_H_8_F_50_P_354.pt'
+pretrained_model='/Users/ali6/projects/OpenDPD/save/DPA_160MHz/train_dpd/amp2p_qgru_float/DPD_S_0_M_QGRU_H_10_F_50_P_502.pt'
+quant_dir_label='amp2p_h10_qgru_w'${quant_n_bits_w}'a'${quant_n_bits_a}
 quant_opts='--quant'
 
 for i_seed in "${seed[@]}"; do

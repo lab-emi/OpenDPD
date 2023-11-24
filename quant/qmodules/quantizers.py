@@ -1,4 +1,5 @@
 import torch
+import scalemodule
 
 def grad_scale(x, scale):
     y = x
@@ -32,18 +33,14 @@ class INT_Quantizer(torch.nn.Module):
         self.register_params()
         
     def register_params(self):
-        self.round_scale, self.dec_num = self.round_scale2pow2(self.scale)
-        self.int_num = self.bits - self.dec_num - 1
-        self.register_buffer('pow2_scale', self.round_scale)
-        self.register_buffer('integer_num', self.int_num)
-        self.register_buffer('decimal_num', self.dec_num)
-    
-    def update_params(self):
-        self.round_scale, self.dec_num = self.round_scale2pow2(self.scale)
-        self.int_num = self.bits - self.dec_num - 1
-        self.pow2_scale.copy_(self.round_scale)
-        self.integer_num.copy_(self.int_num)
-        self.decimal_num.copy_(self.dec_num)
+        self.register_buffer('pow2_scale', torch.Tensor([0.0]))
+        self.register_buffer('decimal_num', torch.Tensor([1.0]))
+        self.register_buffer('integer_num', self.bits - 1 - self.decimal_num)
+   
+    def update_params(self, pow2_scale, dec_num=None):
+        self.pow2_scale.copy_(pow2_scale)
+        self.decimal_num.copy_(dec_num)
+        self.integer_num.copy_(self.bits - 1 - dec_num)
     
     def init_act_params(self):
         integer_num = 2
@@ -69,20 +66,18 @@ class INT_Quantizer(torch.nn.Module):
         return scale, dec_num
 
     def forward(self, x):
-        scale_factor = 1 / (x.numel() * self.Qp) ** 0.5
-        scale = grad_scale(self.scale, scale_factor)
         # scale = self.scale
-        scale, dec_num = self.round_scale2pow2(scale)
-        if scale != self.pow2_scale:
-            self.update_params()
+        pow2_scale, dec_num = torch.Tensor(scalemodule.round_scale2pow2(self.scale))
+        if dec_num != self.decimal_num:
+            self.update_params(pow2_scale, dec_num)
         
-        x = x / scale
+        x = x / pow2_scale
         x = x.clamp(self.Qn, self.Qp)
         
         # zp = round_pass(self.zp)
         x_bar = round_pass(x)
 
-        x_hat = x_bar * scale
+        x_hat = x_bar * pow2_scale
                 
         return x_hat
         
