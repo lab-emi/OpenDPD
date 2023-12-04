@@ -10,13 +10,13 @@ esac
 done
 
 # Global Settings
-dataset_name=DPA_160MHz
+dataset_name=DPA_200MHz
 accelerator=cpu
 devices=0
 
 # Hyperparameters
 seed=0
-n_epochs=100
+n_epochs=2
 frame_length=50
 frame_stride=1
 loss_type=l2
@@ -35,9 +35,9 @@ patience=10
 seed=(0)
 
 # PA Model
-PA_backbone=dgru
-PA_hidden_size=8
-PA_num_layers=1
+PA_backbone=gru
+PA_hidden_size=20
+PA_num_layers=2
 
 # DPD Model
 DPD_backbone=(qgru)
@@ -47,15 +47,17 @@ DPD_num_layers=(1)
 # Quantization
 quant_n_bits_w=16
 quant_n_bits_a=16
-# pretrained_model='/Users/ali6/projects/OpenDPD/save/DPA_160MHz/train_dpd/amp1p_426_qgru_float/DPD_S_0_M_QGRU_H_8_F_50_P_354.pt'
-pretrained_model='/Users/ali6/projects/OpenDPD/save/DPA_160MHz/train_dpd/amp2p_qgru_float/DPD_S_0_M_QGRU_H_10_F_50_P_502.pt'
-quant_dir_label='amp2p_h10_qgru_w'${quant_n_bits_w}'a'${quant_n_bits_a}
+quant_dir_label='w'${quant_n_bits_w}'a'${quant_n_bits_a}
 quant_opts='--quant'
+q_pretrain='True'
 
 for i_seed in "${seed[@]}"; do
     for ((i=0; i<${#DPD_backbone[@]}; i++)); do
-        # Train DPD
+        # pre-train DPD
         step=train_dpd
+        q_pretrain='True'
+        quant_dir_label=''
+        pretrained_model=''
         python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\
         --accelerator "$accelerator" --devices "$devices"\
         --PA_backbone "$PA_backbone" --PA_hidden_size "$PA_hidden_size" --PA_num_layers "$PA_num_layers"\
@@ -64,8 +66,22 @@ for i_seed in "${seed[@]}"; do
         --batch_size "$batch_size" --batch_size_eval "$batch_size_eval" --n_epochs "$n_epochs" --lr_schedule "$lr_schedule"\
         --lr "$lr" --lr_end "$lr_end" --decay_factor "$decay_factor" --patience "$patience" \
         "$quant_opts" --n_bits_w "$quant_n_bits_w" --n_bits_a "$quant_n_bits_a" --pretrained_model "$pretrained_model" \
-        --quant_dir_label "$quant_dir_label" \
+        --quant_dir_label "$quant_dir_label" --q_pretrain "$q_pretrain" \
         || exit 1;
+
+        # quantized aware training DPD
+        step=train_dpd
+        q_pretrain='False'
+        python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\
+        --accelerator "$accelerator" --devices "$devices"\
+        --PA_backbone "$PA_backbone" --PA_hidden_size "$PA_hidden_size" --PA_num_layers "$PA_num_layers"\
+        --DPD_backbone "${DPD_backbone[$i]}" --DPD_hidden_size "${DPD_hidden_size[$i]}" --DPD_num_layers "${DPD_num_layers[$i]}"\
+        --frame_length "$frame_length" --frame_stride "$frame_stride" --loss_type "$loss_type" --opt_type "$opt_type"\
+        --batch_size "$batch_size" --batch_size_eval "$batch_size_eval" --n_epochs "$n_epochs" --lr_schedule "$lr_schedule"\
+        --lr "$lr" --lr_end "$lr_end" --decay_factor "$decay_factor" --patience "$patience" \
+        "$quant_opts" --n_bits_w "$quant_n_bits_w" --n_bits_a "$quant_n_bits_a" --pretrained_model "$pretrained_model" \
+        --quant_dir_label "$quant_dir_label" --q_pretrain "$q_pretrain" \
+
         # Run DPD
         step=run_dpd
         python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\

@@ -5,11 +5,8 @@ import copy
 from .modules.gru import GRU as PYGRU
 from .modules.ops import Mul, Add, Sqrt, Pow
 from .qmodules.quantizers import (
-    Identity_Quantizer, INT_Quantizer, OP_INT_Quantizer, 
-    Drf_Act_Quantizer, Drf_Weight_Quantizer, 
-    IAO_Quantizer, PACT_Quantizer
+    Identity_Quantizer, INT_Quantizer, OP_INT_Quantizer
     )
-from .qmodules.fp8 import FP8_Quantizer
 from .qmodules.quant_layers import INT_Conv2D, INT_Linear, INT_Pass
 from .qmodules.quant_ops import Quant_sigmoid, Quant_tanh, Quant_mult, Quant_add, Quant_sqrt, Quant_pow
 
@@ -37,16 +34,6 @@ def create_quantizer(type, n_bits, all_positive, act_or_weight):
         quantizer = INT_Quantizer(n_bits, all_positive)
     elif 'Identity_Quantizer' in type:
         quantizer = Identity_Quantizer(n_bits, all_positive)
-    elif 'Drf_Act_Quantizer' in type:
-        quantizer = Drf_Act_Quantizer(n_bits, all_positive)
-    elif 'Drf_Weight_Quantizer' in type:
-        quantizer = Drf_Weight_Quantizer(n_bits, all_positive)
-    elif 'IAO_Quantizer' in type:
-        quantizer = IAO_Quantizer(n_bits, all_positive, act_or_weight)
-    elif 'FP8_Quantizer' in type:
-        quantizer = FP8_Quantizer(n_bits, all_positive)
-    elif 'PACT_Quantizer' in type:
-        quantizer = PACT_Quantizer(n_bits, all_positive)
     else:
         raise NotImplementedError('Quantizer type {} is not implemented.'.format(type))
     return quantizer
@@ -80,12 +67,6 @@ def create_op_quantizer(type, n_bits, all_positive):
         quantizer = OP_INT_Quantizer(n_bits, all_positive)
     elif 'Identity_Quantizer' in type:
         quantizer = Identity_Quantizer(n_bits, all_positive)
-    elif 'Drf_Act_Quantizer' in type:
-        quantizer = Drf_Act_Quantizer(n_bits, all_positive)
-    elif 'IAO_Quantizer' in type:
-        quantizer = IAO_Quantizer(n_bits, all_positive, act_or_weight='weight')
-    elif 'FP8_Quantizer' in type:
-        quantizer = FP8_Quantizer(n_bits, all_positive)
     else:
         raise NotImplementedError('Quantizer type {} is not implemented.'.format(type))
     return quantizer
