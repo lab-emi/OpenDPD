@@ -16,7 +16,7 @@ devices=0
 
 # Hyperparameters
 seed=0
-n_epochs=2
+n_epochs=100
 frame_length=50
 frame_stride=1
 loss_type=l2
@@ -35,9 +35,9 @@ patience=10
 seed=(0)
 
 # PA Model
-PA_backbone=gru
-PA_hidden_size=20
-PA_num_layers=2
+PA_backbone=dgru
+PA_hidden_size=8
+PA_num_layers=1
 
 # DPD Model
 DPD_backbone=(qgru)
@@ -71,7 +71,10 @@ for i_seed in "${seed[@]}"; do
 
         # quantized aware training DPD
         step=train_dpd
-        q_pretrain='False'
+        q_pretrain=''
+        quant_dir_label='w'${quant_n_bits_w}'a'${quant_n_bits_a}
+        # TODO: fix the parameters of DPD is 502
+        pretrained_model='./save/'${dataset_name}'/train_dpd/DPD_S_'${i_seed[$i]}'_M_QGRU_H_'${DPD_hidden_size[$i]}'_F_'${frame_length}'_P_502.pt'
         python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\
         --accelerator "$accelerator" --devices "$devices"\
         --PA_backbone "$PA_backbone" --PA_hidden_size "$PA_hidden_size" --PA_num_layers "$PA_num_layers"\
