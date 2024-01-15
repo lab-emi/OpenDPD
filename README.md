@@ -1,8 +1,22 @@
-# OpenDPD
-OpenDPD is an end-to-end learning framework built in PyTorch for power amplifier (PA) modeling and digital pre-distortion. You are cordially invited to contribute to this project by providing your own backbone neural networks, pretrained models or measured PA datasets.
-![My Image](pics/OpenDPD_logo.png)
+
+![ODPD](https://github.com/lab-emi/OpenDPD/assets/90694322/7a44fbfd-b12c-413e-b50f-473bb17990b0)
+
+
+**OpenDPD** is an end-to-end learning framework built in PyTorch for power amplifier (PA) modeling and digital pre-distortion. You are cordially invited to contribute to this project by providing your own backbone neural networks, pretrained models or measured PA datasets.
+
+This repo mainly contains the training code of OpenDPD using the baseband signal from a digital transmitter.
+
 # Authors & Citation
-Yizhuo Wu, Gagan Singe, Mohammad Reza Beikmirza, Leo de Vreede, Morteza Alavi, Chang Gao
+
+Yizhuo Wu, Gagan Singh, Mohammad Reza Beikmirza, Leo de Vreede, Morteza Alavi, Chang Gao
+
+Department of Microelectronics, Delft University of Technology, 2628 CD Delft, The Netherlands 
+
+If you find this repository helpful, please cite our work.
+
+* [ISCAS 2024] OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion
+# Introduction
+<img style="float: left" src="OpenDPD.png" alt="drawing" width="200"/> The Figure shows the 
 
 # Project Structure
 ```
