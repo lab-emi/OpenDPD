@@ -14,8 +14,16 @@ Department of Microelectronics, Delft University of Technology, 2628 CD Delft, T
 
 If you find this repository helpful, please cite our work.
 
-* [ISCAS 2024] OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion
-
+```
+- [ISCAS 2024, RFIC & AI Special Session] OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion
+```
+@misc{wu2024opendpd,
+      title={OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion}, 
+      author={Yizhuo Wu and Gagan Singh and Mohammad Reza Beikmirza and Leo de Vreede and Morteza Alavi and Chang Gao},
+      year={2024},
+      archivePrefix={arXiv}
+}
+```
 # Project Structure
 ```
 .
