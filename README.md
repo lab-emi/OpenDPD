@@ -40,23 +40,23 @@ If you find this repository helpful, please cite our work.
 ## Environment
 This project was tested with PyTorch 1.13 in Ubuntu 22.04 LTS.
 
-Install Miniconda
+Install Miniconda (Linux). If you use MacOS, please download [Miniconda3-latest-MacOSX-arm64.pkg](https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh)
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod +x Miniconda3-latest-Linux-x86_64.sh
 ./Miniconda3-latest-Linux-x86_64.sh
 ```
-Create an environment and install required packages:
+Create an environment and install required packages. If you don't use CUDA, please follow the [PyTorch](https://pytorch.org/) official installation instruction.
 ```
-conda create -n pt python=3.10 numpy matplotlib pandas scipy tqdm \
-    pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
+conda create -n pt python=3.11 numpy matplotlib pandas scipy tqdm \
+    pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 ```
 Activate the environment.
 ```
 conda activate pt
 ```
 
-## E2E training
+## E2E Training
 In this section, we introduce the methods of E2E learning architecture and **corresponding command line** for them.
 
 <img style="float: left" src="OpenDPD.png" alt="drawing"/> 
@@ -69,20 +69,20 @@ As shown in above Figure, the E2E learning architecture consists of three primar
 
 Command line for step 2:
 ```
-python main.py --dataset_name DPA_200MHz --step train_pa 
+python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
 ```
 
 **3.DPD Learning:** A DPD model is cascaded before the pre-trained PA behavioral model. In this configuration, the parameters of PA model remain unaltered. During step 3, the input signal is fed to the input of cascaded model. Executing BPTT across cascaded model, the output aims to converge to the linear amplified input signal.
 
 Command line for step 3:
 ```
-python main.py --dataset_name DPA_200MHz --step train_dpd
+python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu
 ```
 ***4.Validation experiment:** If you would like to test the DPD on your own PA, you need to generate the ideal input of PA after training step 2 and 3. The geneated signal is named by its DPD model settings and saved in run_dpd file in .csv format.
 
 Command line for step 4:
 ```
-python main.py --dataset_name DPA_200MHz --step run_dpd
+python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu
 ```
 
 ## Reproduce the results in OpenDPD
