@@ -15,8 +15,6 @@ Department of Microelectronics, Delft University of Technology, 2628 CD Delft, T
 If you find this repository helpful, please cite our work.
 
 * [ISCAS 2024] OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion
-# Introduction
-<img style="float: left" src="OpenDPD.png" alt="drawing" width="200"/> The Figure shows the 
 
 # Project Structure
 ```
@@ -36,47 +34,66 @@ If you find this repository helpful, please cite our work.
 └── project.py      # A class having useful functions and storing hyperparameters
 
 ```
+
+# Introduction and Quick start
+
 ## Environment
+This project was tested with PyTorch 1.13 in Ubuntu 22.04 LTS.
 
-## Reproduction
-Example uses RFWeblab data, here args.gain = 290.
-
-For Matlab data, args.gain = 23.
-
-if other PA are used, please set --gain **mean(Output_amplitude/Input_amplitude)**.
-
-Here, the gain only reflects the amplitude gain of data sets.
-
-### 1. OFDM generator
+Install Miniconda
 ```
-python main.py --dataset_name RFWeblab --step ofdm_gen
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
 ```
-
-### 2. train PA
+Create an environment and install required packages:
 ```
-python main.py --dataset_name RFWeblab --step train_pa --phase **Your_file_Name**
+conda create -n pt python=3.10 numpy matplotlib pandas scipy tqdm \
+    pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
+```
+Activate the environment.
+```
+conda activate pt
 ```
 
-### 3.train DPD
-if the second step isn't skipped:
+## E2E training
+In this section, we introduce the methods of E2E learning architecture and **corresponding command line** for them.
+
+<img style="float: left" src="OpenDPD.png" alt="drawing"/> 
+
+As shown in above Figure, the E2E learning architecture consists of three primary steps:
+
+**1.Data Acuisition & Pre-Processing:** The baseband I/Q signal is send and sourced from the PA. To address gradient vanishing issue and enhance training, features and labels are split into shorter frames. In this repo, datasets dictionary concludes three different bandwidth signal from one digital transmitter. And for training process, we split the samples acorrding to training:test:validation of 8:2:2 ratio.
+
+**2.PA Modeling:** Using framed input and target output, a PA behavioral model is trained in a sequence-to-sequence learning way via Backpropogation Through Time **(BPTT)**. 
+
+Command line for step 2:
 ```
-python main.py --dataset_name RFWeblab --step train_dpd --phase **Your_file_Name**
-```
-else we have a prepared RFWeblab PA model:
-```
-python main.py --dataset_name RFWeblab --step train_dpd --phase **Your_file_Name** --PA_model_phase **Your_file_Name**
+python main.py --dataset_name DPA_200MHz --step train_pa 
 ```
 
-### 4.Generate ideal input and check simulated ACPR
+**3.DPD Learning:** A DPD model is cascaded before the pre-trained PA behavioral model. In this configuration, the parameters of PA model remain unaltered. During step 3, the input signal is fed to the input of cascaded model. Executing BPTT across cascaded model, the output aims to converge to the linear amplified input signal.
 
+Command line for step 3:
 ```
-python main.py --dataset_name RFWeblab --step ideal_input_gen --phase **Your_file_Name** --PA_model_phase **Your_file_Name**
+python main.py --dataset_name DPA_200MHz --step train_dpd
+```
+***4.Validation experiment:** If you would like to test the DPD on your own PA, you need to generate the ideal input of PA after training step 2 and 3. The geneated signal is named by its DPD model settings and saved in run_dpd file in .csv format.
+
+Command line for step 4:
+```
+python main.py --dataset_name DPA_200MHz --step run_dpd
 ```
 
-While checking simulated ACPR of RNN-based model,please set the length of testIn as fft length.
+## Reproduce the results in OpenDPD
 
-While checking simulated ACPR of GMP, please set the length of testIn as fftlength+frame_length
-
-While checking simulated ACPR of CNN-based model, please change the length of paoutput_len and use the whole testIn data.
+1. random seed PA training
+```
+bash train_all_pa.sh
+```
+2. DPD learning
+```
+bash train_all_dpd.sh
+```
 
 
