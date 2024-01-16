@@ -21,7 +21,6 @@ If you find this repository helpful, please cite our work.
       year={2024},
       archivePrefix={arXiv}
 }
-
 ```
 # Project Structure
 ```
