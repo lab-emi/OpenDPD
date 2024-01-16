@@ -63,7 +63,7 @@ In this section, we introduce the methods of E2E learning architecture and **cor
 
 As shown in above Figure, the E2E learning architecture consists of three primary steps:
 
-**1.Data Acuisition & Pre-Processing:** The baseband I/Q signal is send and sourced from the PA. To address gradient vanishing issue and enhance training, features and labels are split into shorter frames. In this repo, datasets dictionary concludes three different bandwidth signal from one digital transmitter. And for training process, we split the samples acorrding to training:test:validation of 8:2:2 ratio.
+**1.Data Acuisition & Pre-Processing:** The baseband I/Q signals are send and sourced from the PA. To address gradient vanishing issue and enhance training, features and labels are split into shorter frames. In this repo, datasets dictionary concludes three different bandwidth signal from one digital transmitter. And for training process, we split the samples acorrding to training:test:validation of 8:2:2 ratio.
 
 **2.PA Modeling:** Using framed input and target output, a PA behavioral model is trained in a sequence-to-sequence learning way via Backpropogation Through Time **(BPTT)**. 
 
@@ -78,7 +78,7 @@ Command line for step 3:
 ```
 python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu
 ```
-***4.Validation experiment:** If you would like to test the DPD on your own PA, you need to generate the ideal input of PA after training step 2 and 3. The geneated signal is named by its DPD model settings and saved in run_dpd file in .csv format.
+***4.Validation experiment:** If you would like to test the DPD on your own PA, you need to generate the ideal input for PA after training step 2 and 3. The geneated signal is named by its DPD model settings and saved in run_dpd file in .csv format.
 
 Command line for step 4:
 ```
@@ -87,13 +87,16 @@ python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu
 
 ## Reproduce the results in OpenDPD
 
-1. random seed PA training
+1. Random Seed PA Training: To reproduce the PA modeling results in **OpenDPD** Figure.4(a), the following command line can be used.
 ```
 bash train_all_pa.sh
 ```
-2. DPD learning
+This file will train all kinds of PA model around 500 parameters with 5 random seed. Figure.4(a) shows the average results from these 5 random seed.
+
+2. DPD learning: To reproduce the DPD learning results in **OpenDPD** Figure.4 (b) and Figure.4 (d) and Table 1, the following command line can be used.
 ```
 bash train_all_dpd.sh
 ```
+This file will train all kinds of DPD model around 500 parameters.
 
 
