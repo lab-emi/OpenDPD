@@ -13,8 +13,6 @@ Yizhuo Wu, Gagan Singh, Mohammad Reza Beikmirza, Leo de Vreede, Morteza Alavi, C
 Department of Microelectronics, Delft University of Technology, 2628 CD Delft, The Netherlands 
 
 If you find this repository helpful, please cite our work.
-
-```
 - [ISCAS 2024, RFIC & AI Special Session] OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion
 ```
 @misc{wu2024opendpd,
@@ -23,6 +21,7 @@ If you find this repository helpful, please cite our work.
       year={2024},
       archivePrefix={arXiv}
 }
+
 ```
 # Project Structure
 ```
