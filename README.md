@@ -17,9 +17,11 @@ If you find this repository helpful, please cite our work.
 ```
 @misc{wu2024opendpd,
       title={OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion}, 
-      author={Yizhuo Wu and Gagan Singh and Mohammad Reza Beikmirza and Leo de Vreede and Morteza Alavi and Chang Gao},
+      author={Yizhuo Wu and Gagan Deep Singh and Mohammadreza Beikmirza and Leo de Vreede and Morteza Alavi and Chang Gao},
       year={2024},
-      archivePrefix={arXiv}
+      eprint={2401.08318},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
 }
 ```
 # Project Structure
