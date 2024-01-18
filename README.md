@@ -2,7 +2,7 @@
 ![ODPD](https://github.com/lab-emi/OpenDPD/assets/90694322/7a44fbfd-b12c-413e-b50f-473bb17990b0)
 
 
-**OpenDPD** is an end-to-end learning framework built in PyTorch for power amplifier (PA) modeling and digital pre-distortion. You are cordially invited to contribute to this project by providing your own backbone neural networks, pretrained models or measured PA datasets.
+**OpenDPD** is an end-to-end learning framework built in PyTorch for modeling power amplifiers (PA) and digital pre-distortion. You are cordially invited to contribute to this project by providing your own backbone neural networks, pre-trained models, or measured PA datasets.
 
 This repo mainly contains the training code of OpenDPD using the baseband signal from a digital transmitter.
 
@@ -13,7 +13,7 @@ Yizhuo Wu, Gagan Singh, Mohammad Reza Beikmirza, Leo de Vreede, Morteza Alavi, C
 Department of Microelectronics, Delft University of Technology, 2628 CD Delft, The Netherlands 
 
 If you find this repository helpful, please cite our work.
-- [ISCAS 2024, RFIC & AI Special Session] OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion
+- [ISCAS 2024, RFIC & AI Special Session] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://arxiv.org/abs/2401.08318)
 ```
 @misc{wu2024opendpd,
       title={OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion}, 
@@ -43,7 +43,7 @@ If you find this repository helpful, please cite our work.
 
 ```
 
-# Introduction and Quick start
+# Introduction and Quick Start
 
 ## Environment
 This project was tested with PyTorch 1.13 in Ubuntu 22.04 LTS.
@@ -54,7 +54,7 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod +x Miniconda3-latest-Linux-x86_64.sh
 ./Miniconda3-latest-Linux-x86_64.sh
 ```
-Create an environment and install required packages. If you don't use CUDA, please follow the [PyTorch](https://pytorch.org/) official installation instruction.
+Create an environment and install the required packages. If you don't use CUDA, please follow the [PyTorch](https://pytorch.org/) official installation instruction.
 ```
 conda create -n pt python=3.11 numpy matplotlib pandas scipy tqdm \
     pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
@@ -71,22 +71,22 @@ In this section, we introduce the methods of E2E learning architecture and **cor
 
 As shown in above Figure, the E2E learning architecture consists of three primary steps:
 
-**1.Data Acuisition & Pre-Processing:** The baseband I/Q signals are send and sourced from the PA. To address gradient vanishing issue and enhance training, features and labels are split into shorter frames. In this repo, datasets dictionary concludes three different bandwidth signal from one digital transmitter. And for training process, we split the samples acorrding to training:test:validation of 8:2:2 ratio.
+**1.Data Acquisition & Pre-Processing:** The baseband I/Q signals are sent and sourced from the PA. To address the gradient vanishing issue and enhance training, features and labels are split into shorter frames. In this repo, the datasets dictionary concludes three different bandwidth signals from one digital transmitter. And for the training process, we split the samples according to training:test:validation of 8:2:2 ratio.
 
-**2.PA Modeling:** Using framed input and target output, a PA behavioral model is trained in a sequence-to-sequence learning way via Backpropogation Through Time **(BPTT)**. 
+**2.PA Modeling:** Using framed input and target output, a PA behavioral model is trained in a sequence-to-sequence learning way via backpropagation Through Time **(BPTT)**. 
 
 Command line for step 2:
 ```
 python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
 ```
 
-**3.DPD Learning:** A DPD model is cascaded before the pre-trained PA behavioral model. In this configuration, the parameters of PA model remain unaltered. During step 3, the input signal is fed to the input of cascaded model. Executing BPTT across cascaded model, the output aims to converge to the linear amplified input signal.
+**3.DPD Learning:** A DPD model is cascaded before the pre-trained PA behavioral model. In this configuration, the parameters of the PA model remain unaltered. During step 3, the input signal is fed to the input of the cascaded model. Executing BPTT across a cascaded model, the output aims to converge to the linear amplified input signal.
 
 Command line for step 3:
 ```
 python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu
 ```
-***4.Validation experiment:** If you would like to test the DPD on your own PA, you need to generate the ideal input for PA after training step 2 and 3. The geneated signal is named by its DPD model settings and saved in run_dpd file in .csv format.
+***4.Validation experiment:** If you would like to test the DPD on your own PA, you need to generate the ideal input for PA after training steps 2 and 3. The generated signal is named by its DPD model settings and saved in a run_dpd file in .csv format.
 
 Command line for step 4:
 ```
