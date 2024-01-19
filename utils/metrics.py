@@ -1,5 +1,8 @@
-from typing import Tuple
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "Apache-2.0 License"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
+from typing import Tuple
 import numpy as np
 
 

@@ -1,6 +1,5 @@
 __author__ = "Yizhuo Wu, Chang Gao"
-__license__ = "MIT License"
-__version__ = "1.0"
+__license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import torch
