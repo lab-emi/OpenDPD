@@ -1,5 +1,6 @@
 
-![ODPD](https://github.com/lab-emi/OpenDPD/assets/90694322/7a44fbfd-b12c-413e-b50f-473bb17990b0)
+![OpenDPD](https://github.com/lab-emi/OpenDPD/assets/90694322/85aeba7c-a9f3-423d-b4ed-9b8efed09b33)
+
 
 
 **OpenDPD** is an end-to-end learning framework built in PyTorch for modeling power amplifiers (PA) and digital pre-distortion. You are cordially invited to contribute to this project by providing your own backbone neural networks, pre-trained models, or measured PA datasets.
