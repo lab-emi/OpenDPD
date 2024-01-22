@@ -47,7 +47,7 @@ If you find this repository helpful, please cite our work.
 # Introduction and Quick Start
 
 ## Environment
-This project was tested with PyTorch 1.13 in Ubuntu 22.04 LTS.
+This project was tested with PyTorch 2.1 in Ubuntu 22.04 LTS.
 
 Install Miniconda (Linux). If you use MacOS, please download [Miniconda3-latest-MacOSX-arm64.pkg](https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh)
 ```
