@@ -65,7 +65,7 @@ Activate the environment.
 conda activate pt
 ```
 
-## E2E Training
+## End-to-End (E2E) Training
 In this section, we introduce the methods of E2E learning architecture and **corresponding command line** for them.
 
 <img style="float: left" src="OpenDPD.png" alt="drawing"/> 
