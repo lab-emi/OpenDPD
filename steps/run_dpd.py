@@ -1,3 +1,7 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "Apache-2.0 License"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import os
 import pandas as pd
 import torch
@@ -64,3 +68,4 @@ def main(proj: Project):
     pa_in = pd.DataFrame({'I': X_test[:, 0], 'Q': X_test[:, 1], 'I_dpd': dpd_out[:, 0], 'Q_dpd': dpd_out[:, 1]})
     path_file_pa_in = os.path.join('dpd_out', dpd_model_id + '.csv')
     pa_in.to_csv(path_file_pa_in, index=False)
+    print("DPD outputs saved to the ./dpd_out folder.")

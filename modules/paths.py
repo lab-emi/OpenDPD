@@ -1,6 +1,9 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "Apache-2.0 License"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import argparse
 import os
-import typing
 
 
 def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, train_stat=None, val_stat=None,
