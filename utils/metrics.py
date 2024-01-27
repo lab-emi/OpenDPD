@@ -203,3 +203,101 @@ def IQ_to_complex(IQ_signal):
     complex_signals = I_values + 1j * Q_values
 
     return complex_signals
+
+def moving_average(data, window_size):
+        """Compute the moving average of a given dataset."""
+        import pandas as pd
+
+        return pd.Series(data).rolling(window=window_size).mean().to_numpy()[window_size - 1:]
+
+
+
+def plot_psd(complex_signal_1, complex_signal_2, label_1="wo_DPD", label_2="with_DPD", fs=800e6, nperseg=2560, smoothing_window=10):
+    """
+    Plots the combined PSD of two I-Q signals.
+
+    Parameters:
+    - complex_signal_1: Complex array representing the first I-Q signal (Without DPD).
+    - complex_signal_2: Complex array representing the second I-Q signal (With DPD).
+    - fs: Sample rate (default is 800e6).
+    - nperseg: Number of data points used in each block for the FFT in the Welch method (default is 2560).
+    """
+    import numpy as np
+    from scipy.signal import welch
+    import matplotlib.pyplot as plt
+
+    # Use only the first 2560 data points for both signals
+    complex_signal_1_subset = complex_signal_1[:nperseg]
+    complex_signal_2_subset = complex_signal_2[:nperseg]
+
+    # Compute the Power Spectral Density (PSD) using the Welch method
+    frequencies_signal_1_subset, psd_signal_1_subset = welch(complex_signal_1_subset, fs=fs, nperseg=nperseg,
+                                                             return_onesided=False)
+    frequencies_signal_2_subset, psd_signal_2_subset = welch(complex_signal_2_subset, fs=fs, nperseg=nperseg,
+                                                             return_onesided=False)
+
+    # Make the frequency axis monotonic
+    half_nfft = int(nperseg / 2)
+    frequencies_signal_1_subset = np.concatenate((frequencies_signal_1_subset[half_nfft:], frequencies_signal_1_subset[:half_nfft]))
+    frequencies_signal_2_subset = np.concatenate((frequencies_signal_2_subset[half_nfft:], frequencies_signal_2_subset[:half_nfft]))
+
+    # Make the PSD axis monotonic
+    psd_signal_1_subset = np.concatenate(
+        (psd_signal_1_subset[half_nfft:], psd_signal_1_subset[:half_nfft]))
+    psd_signal_2_subset = np.concatenate(
+        (psd_signal_2_subset[half_nfft:], psd_signal_2_subset[:half_nfft]))
+
+    # Normalize the PSD for both signals
+    psd_signal_1_normalized_subset = 10 * np.log10(psd_signal_1_subset / np.max(psd_signal_1_subset))
+    psd_signal_2_normalized_subset = 10 * np.log10(psd_signal_2_subset / np.max(psd_signal_2_subset))
+
+    # Apply moving average to smooth the data
+    psd_signal_1_smoothed = moving_average(psd_signal_1_normalized_subset, smoothing_window)
+    psd_signal_2_smoothed = moving_average(psd_signal_2_normalized_subset, smoothing_window)
+
+    # Adjust frequencies for the valid convolution output
+    frequencies_signal_1_adjusted = frequencies_signal_1_subset[int(smoothing_window/2):-int(smoothing_window/2)+1]
+    frequencies_signal_2_adjusted = frequencies_signal_2_subset[int(smoothing_window/2):-int(smoothing_window/2)+1]
+
+    # Plot the normalized PSD of both signals on the same plot
+    plt.figure(figsize=(10, 6))
+
+    # Signal 1
+    plt.plot(frequencies_signal_1_adjusted / 1e6, psd_signal_1_smoothed, label=label_1, color='blue')
+
+    # Signal 2
+    plt.plot(frequencies_signal_2_adjusted / 1e6, psd_signal_2_smoothed, label=label_2, color='red',
+             linestyle='--')
+
+    plt.title('Normalized Power Spectral Density (PSD)')
+    plt.xlabel('Frequency (MHz)')
+    plt.ylabel('Normalized PSD (dB)')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+    return (frequencies_signal_1_subset, psd_signal_1_subset), (frequencies_signal_2_subset, psd_signal_2_subset)
+
+def plt_constellation(complex_signal_1, complex_signal_2, sample_rate=int(800e6), nperseg=2560):
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    # Convert to Complex Array
+
+    spectrum_prediction = np.fft.fft(complex_signal_1, n=nperseg, axis=-1)
+    spectrum_prediction = np.fft.fftshift(spectrum_prediction, axes=-1)
+    spectrum_ground_truth = np.fft.fft(complex_signal_2, n=nperseg, axis=-1)
+    spectrum_ground_truth = np.fft.fftshift(spectrum_ground_truth, axes=-1)
+    spectrum_prediction = np.divide(spectrum_prediction, (np.abs(spectrum_prediction)).max())
+    spectrum_ground_truth = np.divide(spectrum_ground_truth, (np.abs(spectrum_ground_truth)).max()) * (np.abs(spectrum_prediction)).max()
+    fig, ax = plt.subplots()
+    ax.scatter(np.real(spectrum_prediction), np.imag(spectrum_prediction), c='blue', label="wo_DPD",
+                   alpha=0.3, edgecolors='none')
+    ax.scatter(np.real(spectrum_ground_truth), np.imag(spectrum_ground_truth), c='red', label="with_DPD",
+               alpha=0.3, edgecolors='none')
+
+    ax.legend()
+    ax.grid(True)
+
+    plt.show()
