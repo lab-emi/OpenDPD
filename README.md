@@ -18,7 +18,7 @@ If you find this repository helpful, please cite our work.
 ```
 @article{wu2024opendpd,
   title={Open{DPD}: {A}n {O}pen-{S}ource {E}nd-to-{E}nd {L}earning \& {B}enchmarking {F}ramework for {W}ideband {P}ower {A}mplifier {M}odeling and {D}igital {P}re-{D}istortion},
-  author={Wu, Yizhuo and Singh, Gagan Deep and Beikmirza, Mohammadreza and de Vreede, Leo and Alavi, Morteza and Gao, Chang},
+  author={Wu, Yizhuo and Singh, Gagan Deep and Beikmirza, Mohammadreza and C. N. de Vreede, Leo and Alavi, Morteza and Gao, Chang},
   journal={arXiv preprint arXiv:2401.08318},
   year={2024}
 }
