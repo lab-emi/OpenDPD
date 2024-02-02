@@ -14,7 +14,7 @@ Yizhuo Wu, Gagan Singh, Mohammad Reza Beikmirza, Leo de Vreede, Morteza Alavi, C
 Department of Microelectronics, Delft University of Technology, 2628 CD Delft, The Netherlands 
 
 If you find this repository helpful, please cite our work.
-- [ISCAS 2024, RFIC & AI Special Session] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://arxiv.org/abs/2401.08318)
+- [ISCAS 2024] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://arxiv.org/abs/2401.08318)
 ```
 @article{wu2024opendpd,
   title={Open{DPD}: {A}n {O}pen-{S}ource {E}nd-to-{E}nd {L}earning \& {B}enchmarking {F}ramework for {W}ideband {P}ower {A}mplifier {M}odeling and {D}igital {P}re-{D}istortion},
@@ -22,6 +22,7 @@ If you find this repository helpful, please cite our work.
   journal={arXiv preprint arXiv:2401.08318},
   year={2024}
 }
+- [IMS 2024] MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers
 ```
 # Project Structure
 ```
