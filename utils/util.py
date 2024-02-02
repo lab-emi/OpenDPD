@@ -1,3 +1,7 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "Apache-2.0 License"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import numpy as np
 
 

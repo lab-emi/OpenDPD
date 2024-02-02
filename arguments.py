@@ -1,6 +1,5 @@
 __author__ = "Yizhuo Wu, Chang Gao"
-__license__ = "MIT License"
-__version__ = "1.0"
+__license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import argparse
@@ -17,7 +16,7 @@ def get_arguments():
     parser.add_argument('--step', default='train_pa', help='Step to run.')
     parser.add_argument('--eval_val', default=1, type=int, help='Whether evaluate val set during training.')
     parser.add_argument('--eval_test', default=1, type=int, help='Whether evaluate test set during training.')
-    parser.add_argument('--accelerator', default='cuda', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
+    parser.add_argument('--accelerator', default='cpu', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
     parser.add_argument('--devices', default=0, type=int, help='Which accelerator to train on.')
     parser.add_argument('--re_level', default='soft', choices=['soft', 'hard'], help='Level of reproducibility.')
     parser.add_argument('--use_segments', action='store_true', default=False,

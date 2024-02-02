@@ -1,3 +1,7 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "Apache-2.0 License"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import os
 import pandas as pd
 import torch
@@ -79,3 +83,4 @@ def main(proj: Project):
         if not os.path.exists(os.path.join('dpd_out', proj.args.quant_dir_label)):
             os.makedirs(os.path.join('dpd_out', proj.args.quant_dir_label))
     pa_in.to_csv(path_file_pa_in, index=False)
+    print("DPD outputs saved to the ./dpd_out folder.")
