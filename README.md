@@ -22,8 +22,9 @@ If you find this repository helpful, please cite our work.
   journal={arXiv preprint arXiv:2401.08318},
   year={2024}
 }
-- [IMS 2024] MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers
 ```
+- [IMS 2024] MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers
+
 # Project Structure
 ```
 .
