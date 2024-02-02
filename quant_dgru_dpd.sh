@@ -51,9 +51,16 @@ quant_dir_label='w'${quant_n_bits_w}'a'${quant_n_bits_a}
 quant_opts='--quant'
 q_pretrain='True'
 
+function echo_green {
+    tput setaf 2
+    echo $1
+    tput sgr0
+}
 for i_seed in "${seed[@]}"; do
     for ((i=0; i<${#DPD_backbone[@]}; i++)); do
         # pre-train DPD
+        # echo with green color said the pre-train is running
+        echo_green "==== Pre-training DPD with backbone ${DPD_backbone[$i]} and hidden size ${DPD_hidden_size[$i]} ====" 
         step=train_dpd
         q_pretrain='True'
         quant_dir_label=''
@@ -71,10 +78,12 @@ for i_seed in "${seed[@]}"; do
 
         # quantized aware training DPD
         step=train_dpd
+        echo_green "==== Quantized aware training DPD with backbone ${DPD_backbone[$i]}: hidden_size ${DPD_hidden_size[$i]}; quantization: w${quant_n_bits_w}a${quant_n_bits_a} ===="
         q_pretrain=''
         quant_dir_label='w'${quant_n_bits_w}'a'${quant_n_bits_a}
-        # TODO: fix the parameters of DPD is 502
-        pretrained_model='./save/'${dataset_name}'/train_dpd/DPD_S_'${i_seed[$i]}'_M_QGRU_H_'${DPD_hidden_size[$i]}'_F_'${frame_length}'_P_502.pt'
+
+    # please manually change the path of the pre-trained model if the DPD model size is changed
+    pretrained_model='./save/'${dataset_name}'/train_dpd/DPD_S_'${i_seed[$i]}'_M_QGRU_H_'${DPD_hidden_size[$i]}'_F_'${frame_length}'_P_502.pt'
         python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\
         --accelerator "$accelerator" --devices "$devices"\
         --PA_backbone "$PA_backbone" --PA_hidden_size "$PA_hidden_size" --PA_num_layers "$PA_num_layers"\
@@ -86,6 +95,7 @@ for i_seed in "${seed[@]}"; do
         --quant_dir_label "$quant_dir_label" --q_pretrain "$q_pretrain" \
 
         # Run DPD
+        echo_green "==== Run DPD with backbone ${DPD_backbone[$i]}: hidden_size ${DPD_hidden_size[$i]}; quantization: w${quant_n_bits_w}a${quant_n_bits_a} ===="
         step=run_dpd
         python main.py --dataset_name "$dataset_name" --seed "$i_seed" --step "$step"\
           --accelerator "$accelerator" --devices "$devices"\

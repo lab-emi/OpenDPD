@@ -1,5 +1,4 @@
 import torch
-import scalemodule
 
 def grad_scale(x, scale):
     y = x
@@ -67,7 +66,7 @@ class INT_Quantizer(torch.nn.Module):
 
     def forward(self, x):
         # scale = self.scale
-        pow2_scale, dec_num = torch.Tensor(scalemodule.round_scale2pow2(self.scale))
+        pow2_scale, dec_num = self.round_scale2pow2(self.scale)
         if dec_num != self.decimal_num:
             self.update_params(pow2_scale, dec_num)
         

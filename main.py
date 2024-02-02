@@ -1,6 +1,6 @@
-__author__ = "Yizhuo Wu, Chang Gao"
+__author__ = "Yizhuo Wu, Chang Gao, Ang Li"
 __license__ = "Apache-2.0 License"
-__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl, a.li-2@tudelft.nl"
 
 from steps import train_pa, train_dpd, run_dpd
 from project import Project
