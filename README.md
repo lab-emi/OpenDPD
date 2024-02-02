@@ -107,3 +107,34 @@ bash train_all_dpd.sh
 This file will train all kinds of DPD model around 500 parameters.
 
 
+## MP-DPD
+
+In order to efficiently run DPD on hardware, we're introducing MP-DPD, a method that allows the training of a fixed-point quantized DPD model without a significant loss in accuracy. Let's break down the process into 3 steps:
+
+1. **Pretrain a DPD Model**:
+
+```bash
+python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --q_pretrain True
+```
+
+2. **Quantization Aware Training of the Pretrained Model**:
+
+```bash
+# 16-bit Quantization
+# Replace ${pretrained_model_from_previous_step} with the path to the pretrained model
+# Replace ${label_for_quantized_model} with a label for the quantized model
+python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --pretrained_model ${pretrained_model_from_previous_step} --quant_dir_label ${label_for_quantized_model}
+```
+
+3. **Output of the Quantized DPD Model**:
+
+```bash
+# Make sure the ${label_for_quantized_model} is the same as the one in Step 2
+python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --quant_dir_label ${label_for_quantized_model}
+```
+
+Also, you can reproduce the MP-DPD results with this script:
+
+```bash
+bash quant_dgru_dpd.sh
+```

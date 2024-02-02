@@ -11,6 +11,10 @@ from project import Project
 from utils.util import count_net_params
 from modules.data_collector import load_dataset
 
+import sys
+sys.path.append('../..')
+from quant import get_quant_model
+from quant.utlis import register_activation_hooks
 
 def main(proj: Project):
     ###########################################################################################################
@@ -33,12 +37,19 @@ def main(proj: Project):
                               hidden_size=proj.DPD_hidden_size,
                               num_layers=proj.DPD_num_layers,
                               backbone_type=proj.DPD_backbone)
+
+    net_dpd = get_quant_model(proj, net_dpd)
+    
     n_net_dpd_params = count_net_params(net_dpd)
     print("::: Number of DPD Model Parameters: ", n_net_dpd_params)
     dpd_model_id = proj.gen_dpd_model_id(n_net_dpd_params)
 
     # Load Pretrained DPD Model
     path_dpd_model = os.path.join('save', proj.dataset_name, 'train_dpd', dpd_model_id + '.pt')
+
+    if proj.args.quant:
+        path_dpd_model = os.path.join('save', proj.dataset_name, 'train_dpd', proj.args.quant_dir_label, dpd_model_id + '.pt')
+        print("::: Loading Quantized DPD Model: ", path_dpd_model)
     net_dpd.load_state_dict(torch.load(path_dpd_model))
 
     # Get parameter count
@@ -67,5 +78,9 @@ def main(proj: Project):
     ###########################################################################################################
     pa_in = pd.DataFrame({'I': X_test[:, 0], 'Q': X_test[:, 1], 'I_dpd': dpd_out[:, 0], 'Q_dpd': dpd_out[:, 1]})
     path_file_pa_in = os.path.join('dpd_out', dpd_model_id + '.csv')
+    if proj.args.quant:
+        path_file_pa_in = os.path.join('dpd_out', proj.args.quant_dir_label, dpd_model_id + '.csv')
+        if not os.path.exists(os.path.join('dpd_out', proj.args.quant_dir_label)):
+            os.makedirs(os.path.join('dpd_out', proj.args.quant_dir_label))
     pa_in.to_csv(path_file_pa_in, index=False)
     print("DPD outputs saved to the ./dpd_out folder.")
