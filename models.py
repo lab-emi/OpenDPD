@@ -22,13 +22,6 @@ class CoreModel(nn.Module):
         if backbone_type == 'gmp':
             from backbones.gmp import GMP
             self.backbone = GMP()
-        elif backbone_type == 'fcn':
-            from backbones.fcn import FCN
-            self.backbone = FCN(input_size=self.input_size,
-                                hidden_size=self.hidden_size,
-                                output_size=self.output_size,
-                                num_layers=self.num_layers,
-                                bias=self.bias)
         elif backbone_type == 'gru':
             from backbones.gru import GRU
             self.backbone = GRU(input_size=self.input_size,
@@ -80,16 +73,6 @@ class CoreModel(nn.Module):
                                    bidirectional=self.bidirectional,
                                    batch_first=self.batch_first,
                                    bias=self.bias)
-        elif backbone_type == 'ligru':
-            self.backbone = LiGRU(input_size=input_size,
-                                  hidden_size=hidden_size)
-        elif backbone_type == 'pgjanet':
-            self.backbone = PGJANET(input_size=input_size,
-                                    hidden_size=hidden_size,
-                                    output_size=self.output_size)
-        elif backbone_type == 'dvrjanet':
-            self.backbone = DVRJANET(hidden_size=hidden_size,
-                                     output_size=self.output_size)
         elif backbone_type == 'rvtdcnn':
             self.backbone = RVTDCNN(fc_hid_size=hidden_size)
         else:
