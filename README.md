@@ -66,28 +66,28 @@ conda activate pt
 ```
 
 ## End-to-End (E2E) Training
-In this section, we introduce the methods of E2E learning architecture and **corresponding command line** for them.
+In this section, we introduce the methods of E2E learning architecture and the **corresponding command line** for them.
 
 <img style="float: left" src="OpenDPD.png" alt="drawing"/> 
 
-As shown in above Figure, the E2E learning architecture consists of three primary steps:
+The End-to-End (E2E) learning framework encompasses three principal components, as outlined:
 
-**1.Data Acquisition & Pre-Processing:** The baseband I/Q signals are sent and sourced from the PA. To address the gradient vanishing issue and enhance training, features and labels are split into shorter frames. In this repo, the datasets dictionary concludes three different bandwidth signals from one digital transmitter. And for the training process, we split the samples according to training:test:validation of 8:2:2 ratio.
+**1.Data Acquisition & Pre-Processing:** This phase involves the collection and preprocessing of baseband I/Q signals from the Power Amplifier (PA). To mitigate the issue of gradient vanishing and to augment the efficacy of the training process, the raw data is segmented into shorter frames. The dataset dictionary includes three distinct signal bandwidths from a digital transmitter. The dataset is partitioned in a ratio of 8:2:2 for training, testing, and validation, respectively, to facilitate the learning process.
 
-**2.PA Modeling:** Using framed input and target output, a PA behavioral model is trained in a sequence-to-sequence learning way via backpropagation Through Time **(BPTT)**. 
+**2.PA Modeling:** The process involves training a behavioral model of the PA using the framed input and target output through a sequence-to-sequence learning approach, employing Backpropagation Through Time (BPTT) for optimization. 
 
 Command line for step 2:
 ```
 python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
 ```
 
-**3.DPD Learning:** A DPD model is cascaded before the pre-trained PA behavioral model. In this configuration, the parameters of the PA model remain unaltered. During step 3, the input signal is fed to the input of the cascaded model. Executing BPTT across a cascaded model, the output aims to converge to the linear amplified input signal.
+**3.DPD Learning:** Subsequently, a Digital Pre-Distortion (DPD) model is integrated prior to the pre-trained PA behavioral model. The input signal is fed to the input of the cascaded model, and through the application of BPTT, the goal is to align the output signal with the amplified linear input signal.
 
 Command line for step 3:
 ```
 python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu
 ```
-***4.Validation experiment:** If you would like to test the DPD on your own PA, you need to generate the ideal input for PA after training steps 2 and 3. The generated signal is named by its DPD model settings and saved in a run_dpd file in .csv format.
+***4.Validation experiment:** To assess the DPD model's performance on another PA, it is necessary to generate an ideal input signal post the training of the aforementioned phases. The resultant signal is denominated according to the DPD model specifications and archived in a .csv format within a run_dpd file.
 
 Command line for step 4:
 ```
@@ -111,7 +111,7 @@ This file will train all kinds of DPD model around 500 parameters.
 
 ## MP-DPD
 
-In order to efficiently run DPD on hardware, we're introducing MP-DPD, a method that allows the training of a fixed-point quantized DPD model without a significant loss in accuracy. Let's break down the process into 3 steps:
+Additionally, the manuscript introduces MP-DPD, a technique designed to train a fixed-point quantized DPD model without significantly compromising accuracy, ensuring efficient hardware implementation. To reproduce the results in MP-DPD, following command line for each step can be used: 
 
 1. **Pretrain a DPD Model**:
 
