@@ -11,7 +11,7 @@ done
 
 # Global Settings
 dataset_name=DPA_200MHz
-accelerator=cuda
+accelerator=cpu
 devices=0
 
 # Hyperparameters
@@ -56,6 +56,11 @@ function echo_green {
     echo $1
     tput sgr0
 }
+
+# Train a PA model
+echo_green "==== Train PA model ===="
+python main.py --dataset_name ${dataset_name} --step train_pa --accelerator ${accelerator} --n_epochs ${n_epochs} || exit 1;
+
 for i_seed in "${seed[@]}"; do
     for ((i=0; i<${#DPD_backbone[@]}; i++)); do
         # pre-train DPD

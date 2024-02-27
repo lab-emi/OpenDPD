@@ -138,5 +138,5 @@ python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu --DPD_
 Also, you can reproduce the MP-DPD results with this script:
 
 ```bash
-bash quant_dgru_dpd.sh
+bash quant_mp_dpd.sh
 ```
