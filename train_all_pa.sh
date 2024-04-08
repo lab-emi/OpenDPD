@@ -1,13 +1,15 @@
 #!/bin/bash
 
+#!/bin/bash
+
+# Source the conda configuration script to make the 'conda' command availabl
+
+# Activate the conda environment
+conda activate ~/miniconda3/envs/OpenDPD
+
+
+
 # Arguments
-while getopts g: option
-do
-case "${option}"
-in
-g) gpu_device=${OPTARG};;
-esac
-done
 
 # Global Settings
 dataset_name=DPA_200MHz
@@ -35,9 +37,9 @@ patience=10
 seed=(0 1 2 3 4)
 
 # PA Model
-PA_backbone=(fcn gru vdlstm rvtdcnn gmp)
-PA_hidden_size=(20 11 8 12 8)
-PA_num_layers=(2 1 1 1 1)
+PA_backbone=(gru vdlstm rvtdcnn gmp)
+PA_hidden_size=(11 8 12 8)
+PA_num_layers=(1 1 1 1)
 
 for i_seed in "${seed[@]}"; do
     for ((i=0; i<${#PA_backbone[@]}; i++)); do
