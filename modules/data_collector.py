@@ -1,6 +1,5 @@
 __author__ = "Yizhuo Wu, Chang Gao"
-__license__ = "MIT License"
-__version__ = "1.0"
+__license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import os
@@ -8,7 +7,6 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from sklearn.model_selection import train_test_split
 
 
 def load_dataset(dataset_name):
@@ -82,7 +80,7 @@ def get_training_frames(segments, seq_len, stride=1):
 
 
 class IQSegmentDataset(Dataset):
-    def __init__(self, features, targets, nperseg=2560):
+    def __init__(self, features, targets, nperseg=16384):
         self.nperseg = nperseg
 
         features = self.split_segments(features)
@@ -130,14 +128,6 @@ class IQFrameDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.features[idx], self.targets[idx]
-
-
-def split(In, Out):
-    # Get train, validation and test dataset
-    X_train, X_tnv, y_train, y_tnv = train_test_split(In, Out, test_size=0.4, random_state=42)
-    X_val, X_test, y_val, y_test = train_test_split(X_tnv, y_tnv, test_size=0.5, random_state=42)
-
-    return X_train, y_train, X_val, y_val, X_test, y_test
 
 
 def data_prepare(X, y, frame_length, degree):

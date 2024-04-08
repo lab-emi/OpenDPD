@@ -1,9 +1,15 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "Apache-2.0 License"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import os
 import torch
 import models as model
 from project import Project
 from utils.util import count_net_params
-
+import sys
+sys.path.append('../..')
+from quant import get_quant_model
 
 def main(proj: Project):
     ###########################################################################################################
@@ -36,6 +42,10 @@ def main(proj: Project):
                               hidden_size=proj.DPD_hidden_size,
                               num_layers=proj.DPD_num_layers,
                               backbone_type=proj.DPD_backbone)
+    
+    net_dpd = get_quant_model(proj, net_dpd)
+    
+    print("::: DPD Model: ", net_dpd)    
     n_net_dpd_params = count_net_params(net_dpd)
     print("::: Number of DPD Model Parameters: ", n_net_dpd_params)
     dpd_model_id = proj.gen_dpd_model_id(n_net_dpd_params)

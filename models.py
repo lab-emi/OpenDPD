@@ -1,15 +1,10 @@
 __author__ = "Yizhuo Wu, Chang Gao"
-__license__ = "MIT License"
-__version__ = "1.0"
+__license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import torch
 import torch.nn as nn
-from backbones.pgjanet import PGJANET
-from backbones.dvrjanet import DVRJANET
-from backbones.ligru import LiGRU
 from backbones.rvtdcnn import RVTDCNN
-# from backbones.tcn import TCN
 
 
 class CoreModel(nn.Module):
@@ -27,13 +22,6 @@ class CoreModel(nn.Module):
         if backbone_type == 'gmp':
             from backbones.gmp import GMP
             self.backbone = GMP()
-        elif backbone_type == 'fcn':
-            from backbones.fcn import FCN
-            self.backbone = FCN(input_size=self.input_size,
-                                hidden_size=self.hidden_size,
-                                output_size=self.output_size,
-                                num_layers=self.num_layers,
-                                bias=self.bias)
         elif backbone_type == 'gru':
             from backbones.gru import GRU
             self.backbone = GRU(input_size=self.input_size,
@@ -46,6 +34,22 @@ class CoreModel(nn.Module):
         elif backbone_type == 'dgru':
             from backbones.dgru import DGRU
             self.backbone = DGRU(hidden_size=self.hidden_size,
+                                 output_size=self.output_size,
+                                 num_layers=self.num_layers,
+                                 bidirectional=self.bidirectional,
+                                 batch_first=self.batch_first,
+                                 bias=self.bias)
+        elif backbone_type == 'qgru':
+            from backbones.qgru import QGRU
+            self.backbone = QGRU(hidden_size=self.hidden_size,
+                                 output_size=self.output_size,
+                                 num_layers=self.num_layers,
+                                 bidirectional=self.bidirectional,
+                                 batch_first=self.batch_first,
+                                 bias=self.bias)
+        elif backbone_type == 'qgru_amp1':
+            from backbones.qgru_amp1 import QGRU
+            self.backbone = QGRU(hidden_size=self.hidden_size,
                                  output_size=self.output_size,
                                  num_layers=self.num_layers,
                                  bidirectional=self.bidirectional,
@@ -69,16 +73,6 @@ class CoreModel(nn.Module):
                                    bidirectional=self.bidirectional,
                                    batch_first=self.batch_first,
                                    bias=self.bias)
-        elif backbone_type == 'ligru':
-            self.backbone = LiGRU(input_size=input_size,
-                                  hidden_size=hidden_size)
-        elif backbone_type == 'pgjanet':
-            self.backbone = PGJANET(input_size=input_size,
-                                    hidden_size=hidden_size,
-                                    output_size=self.output_size)
-        elif backbone_type == 'dvrjanet':
-            self.backbone = DVRJANET(hidden_size=hidden_size,
-                                     output_size=self.output_size)
         elif backbone_type == 'rvtdcnn':
             self.backbone = RVTDCNN(fc_hid_size=hidden_size)
         else:

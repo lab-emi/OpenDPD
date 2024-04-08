@@ -1,6 +1,9 @@
+__author__ = "Yizhuo Wu, Chang Gao"
+__license__ = "Apache-2.0 License"
+__email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
+
 import argparse
 import os
-import typing
 
 
 def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, train_stat=None, val_stat=None,
@@ -57,9 +60,9 @@ def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, 
 
 
 def gen_dir_paths(args: argparse.Namespace):
-    path_dir_save = os.path.join('./save', args.dataset_name, args.step)  # Best model save dir
-    path_dir_log_hist = os.path.join('./log', args.dataset_name, args.step, 'history')  # Log dir to save training history
-    path_dir_log_best = os.path.join('./log', args.dataset_name, args.step, 'best')  # Log dir to save info of the best epoch
+    path_dir_save = os.path.join('./save', args.dataset_name, args.step, args.quant_dir_label)  # Best model save dir
+    path_dir_log_hist = os.path.join('./log', args.dataset_name, args.step, args.quant_dir_label, 'history')  # Log dir to save training history
+    path_dir_log_best = os.path.join('./log', args.dataset_name, args.step, args.quant_dir_label, 'best')  # Log dir to save info of the best epoch
     dir_paths = (path_dir_save, path_dir_log_hist, path_dir_log_best)
     return dir_paths
 
