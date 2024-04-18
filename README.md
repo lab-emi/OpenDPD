@@ -24,7 +24,18 @@ If you find this repository helpful, please cite our work.
 }
 ```
 - [IMS 2024] MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers
-
+```
+@ARTICLE{10502240,
+  author={Wu, Yizhuo and Li, Ang and Beikmirza, Mohammadreza and Singh, Gagan Deep and Chen, Qinyu and de Vreede, Leo C. N. and Alavi, Morteza and Gao, Chang},
+  journal={IEEE Microwave and Wireless Technology Letters}, 
+  title={MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Predistortion of Wideband Power Amplifiers}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-4},
+  keywords={Deep neural network (DNN);digital predistortion (DPD);digital transmitter (DTX);power amplifier (PA);quantization},
+  doi={10.1109/LMWT.2024.3386330}}
+```
 # Project Structure
 ```
 .
