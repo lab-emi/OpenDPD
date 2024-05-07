@@ -16,7 +16,7 @@ Department of Microelectronics, Delft University of Technology, 2628 CD Delft, T
 If you find this repository helpful, please cite our work.
 - [ISCAS 2024] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://arxiv.org/abs/2401.08318)
 ```
-@article{wu2024opendpd,
+@article{Wu2024ISCAS,
   title={Open{DPD}: {A}n {O}pen-{S}ource {E}nd-to-{E}nd {L}earning \& {B}enchmarking {F}ramework for {W}ideband {P}ower {A}mplifier {M}odeling and {D}igital {P}re-{D}istortion},
   author={Wu, Yizhuo and Singh, Gagan Deep and Beikmirza, Mohammadreza and C. N. de Vreede, Leo and Alavi, Morteza and Gao, Chang},
   journal={arXiv preprint arXiv:2401.08318},
@@ -25,7 +25,7 @@ If you find this repository helpful, please cite our work.
 ```
 - [IMS/MWTL 2024] [MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers](https://ieeexplore.ieee.org/document/10502240)
 ```
-@ARTICLE{10502240,
+@ARTICLE{Wu2024IMS,
   author={Wu, Yizhuo and Li, Ang and Beikmirza, Mohammadreza and Singh, Gagan Deep and Chen, Qinyu and de Vreede, Leo C. N. and Alavi, Morteza and Gao, Chang},
   journal={IEEE Microwave and Wireless Technology Letters}, 
   title={MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Predistortion of Wideband Power Amplifiers}, 
