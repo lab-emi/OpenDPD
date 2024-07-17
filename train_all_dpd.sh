@@ -11,7 +11,7 @@ done
 
 # Global Settings
 dataset_name=DPA_200MHz
-accelerator=cuda
+accelerator=cpu
 devices=0
 
 # Hyperparameters

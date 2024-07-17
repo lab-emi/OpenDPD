@@ -13,7 +13,7 @@ conda activate ~/miniconda3/envs/OpenDPD
 
 # Global Settings
 dataset_name=DPA_200MHz
-accelerator=cuda
+accelerator=cpu
 devices=0
 
 # Hyperparameters
