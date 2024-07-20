@@ -87,7 +87,7 @@ The End-to-End (E2E) learning framework encompasses three principal components, 
 
 **2.PA Modeling:** The process involves training a behavioral model of the PA using the framed input and target output through a sequence-to-sequence learning approach, employing Backpropagation Through Time (BPTT) for optimization. 
 
-Command line for step 2:
+Command line for step 2 (Change accelerator to cuda if you want to use NVIDIA GPU acceleration):
 ```
 python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
 ```
