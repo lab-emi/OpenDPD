@@ -16,12 +16,17 @@ Department of Microelectronics, Delft University of Technology, 2628 CD Delft, T
 If you find this repository helpful, please cite our work.
 - [ISCAS 2024] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://ieeexplore.ieee.org/abstract/document/10558162)
 ```
-@article{Wu2024ISCAS,
-  title={Open{DPD}: {A}n {O}pen-{S}ource {E}nd-to-{E}nd {L}earning \& {B}enchmarking {F}ramework for {W}ideband {P}ower {A}mplifier {M}odeling and {D}igital {P}re-{D}istortion},
-  author={Wu, Yizhuo and Singh, Gagan Deep and Beikmirza, Mohammadreza and C. N. de Vreede, Leo and Alavi, Morteza and Gao, Chang},
-  journal={arXiv preprint arXiv:2401.08318},
-  year={2024}
-}
+@INPROCEEDINGS{Wu2024ISCAS,
+  author={Wu, Yizhuo and Singh, Gagan Deep and Beikmirza, Mohammadreza and de Vreede, Leo C. N. and Alavi, Morteza and Gao, Chang},
+  booktitle={2024 IEEE International Symposium on Circuits and Systems (ISCAS)}, 
+  title={OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-5},
+  keywords={Codes;Transmitters;OFDM;Power amplifiers;Artificial neural networks;Documentation;Benchmark testing;digital pre-distortion;behavioral modeling;deep neural network;power amplifier;digital transmitter},
+  doi={10.1109/ISCAS58744.2024.10558162}}
+
 ```
 - [IMS/MWTL 2024] [MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers](https://ieeexplore.ieee.org/document/10502240)
 ```
