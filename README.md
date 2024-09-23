@@ -8,11 +8,6 @@
 This repo mainly contains the training code of OpenDPD using the baseband signal from a digital transmitter.
 
 # Authors & Citation
-[![paper](https://img.shields.io/badge/arXiv-Paper-<COLOR>.svg)](https://arxiv.org/abs/2401.08318)
-Yizhuo Wu, Gagan Singh, Mohammad Reza Beikmirza, Leo de Vreede, Morteza Alavi, Chang Gao
-
-Department of Microelectronics, Delft University of Technology, 2628 CD Delft, The Netherlands 
-
 If you find this repository helpful, please cite our work.
 - [ISCAS 2024] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://ieeexplore.ieee.org/abstract/document/10558162)
 ```
