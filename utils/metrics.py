@@ -281,26 +281,54 @@ def plot_psd(complex_signal_1, complex_signal_2, label_1="wo_DPD", label_2="with
     plt.show()
     return (frequencies_signal_1_subset, psd_signal_1_subset), (frequencies_signal_2_subset, psd_signal_2_subset)
 
-def plt_constellation(complex_signal_1, complex_signal_2, sample_rate=int(800e6), nperseg=2560):
-
+def plt_constellation(complex_signal_1, complex_signal_2, sample_rate=int(800e6), nperseg=2560, n_subc=64, n_ch=10):
     import matplotlib.pyplot as plt
     import numpy as np
 
-    # Convert to Complex Array
+    # Size of complex_signal (nperseg)
 
     spectrum_prediction = np.fft.fft(complex_signal_1, n=nperseg, axis=-1)
     spectrum_prediction = np.fft.fftshift(spectrum_prediction, axes=-1)
     spectrum_ground_truth = np.fft.fft(complex_signal_2, n=nperseg, axis=-1)
     spectrum_ground_truth = np.fft.fftshift(spectrum_ground_truth, axes=-1)
-    spectrum_prediction = np.divide(spectrum_prediction, (np.abs(spectrum_prediction)).max())
-    spectrum_ground_truth = np.divide(spectrum_ground_truth, (np.abs(spectrum_ground_truth)).max()) * (np.abs(spectrum_prediction)).max()
+
+    X_pred = []
+    y_pred = []
+    X_gt = []
+    y_gt = []
+
+    # collect data for each subchannel and normalize
+    for i in range(n_ch):
+        left_index = int(nperseg / 2) - n_subc * int(n_ch / 2)
+
+        pred_i = spectrum_prediction[left_index + n_subc * i: left_index + n_subc * (i + 1)]
+        pred_i /= np.max([np.max(np.abs(np.real(pred_i))), np.max(np.abs(np.imag(pred_i)))])
+        X_pred.append(pred_i.real)
+        y_pred.append(pred_i.imag)
+
+        gt_i = spectrum_ground_truth[left_index + n_subc * i: left_index + n_subc * (i + 1)]
+        gt_i /= np.max([np.max(np.abs(np.real(gt_i))), np.max(np.abs(np.imag(gt_i)))])
+        X_gt.append(gt_i.real)
+        y_gt.append(gt_i.imag)
+
+    X_pred = np.concatenate(X_pred, axis=0)
+    y_pred = np.concatenate(y_pred, axis=0)
+    X_gt = np.concatenate(X_gt, axis=0)
+    y_gt = np.concatenate(y_gt, axis=0)
+
+    # Plot the constellation diagram of DPD signal and standard modulation signal
     fig, ax = plt.subplots()
-    ax.scatter(np.real(spectrum_prediction), np.imag(spectrum_prediction), c='blue', label="wo_DPD",
-                   alpha=0.3, edgecolors='none')
-    ax.scatter(np.real(spectrum_ground_truth), np.imag(spectrum_ground_truth), c='red', label="with_DPD",
+    ax.scatter(X_pred, y_pred, c='blue', label="DPD",
+               alpha=0.3, edgecolors='none')
+    ax.scatter(X_gt, y_gt, c='red', label="Standard",
                alpha=0.3, edgecolors='none')
 
     ax.legend()
     ax.grid(True)
 
     plt.show()
+    #################
+    # can also plot the constellation diagram of the signal without DPD by changing the complex_signal_2
+    # way to use: 
+    # metrics.plt_constellation(metrics.IQ_to_complex(prediction[0]), metrics.IQ_to_complex(ground_truth[0]))
+    #################
