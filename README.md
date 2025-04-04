@@ -1,14 +1,165 @@
-
-![OpenDPD](https://github.com/lab-emi/OpenDPD/assets/90694322/85aeba7c-a9f3-423d-b4ed-9b8efed09b33)
-
+![OpenDPD](pics/OpenDPDlogo_new.png)
 
 
-**OpenDPD** is an end-to-end learning framework built in PyTorch for modeling power amplifiers (PA) and digital pre-distortion. You are cordially invited to contribute to this project by providing your own backbone neural networks, pre-trained models, or measured PA datasets.
 
-This repo mainly contains the training code of OpenDPD using the baseband signal from a digital transmitter.
+**OpenDPD** is an end-to-end learning framework built in PyTorch for modeling power amplifiers (PA) and digital pre-distortion. Developed by the [Lab of Efficient Machine Intelligence](https://www.tudemi.com) @ Delft University of Technology, OpenDPD aims to bridge the gap between machine learning and RF system optimization.
+
+The framework provides a comprehensive solution for training neural network models that accurately characterize PA behavior and implement digital pre-distortion to improve linearity and efficiency. By leveraging state-of-the-art deep learning techniques, OpenDPD enables researchers and engineers to develop more energy-efficient wireless communication systems.
+
+We invite you to contribute to this project by providing your own backbone neural networks, pre-trained models, or measured PA datasets. This repository contains the complete training pipeline for OpenDPD using baseband signals from digital transmitters.
+
+# Project Structure
+```
+.
+└── backbone        # Configuration files for feature extractors and other components
+└── datasets        # Measured PA datasets
+    └──DPA_200MHz   └── # Digital Power Amplifier with 200 MHz OFDM Signals
+└── dpd_out         # Output files (automatically generated)
+└── log             # Experimental log data (automatically generated)
+└── modules         # Major functional modules
+└── save            # Saved models
+└── steps           # Implementation steps (train_pa, train_dpd, run_dpd)
+└── utils           # Utility libraries
+└── argument.py     # Command-line arguments and configuration
+└── main.py         # Main entry point
+└── model.py        # Top-level neural network models
+└── project.py      # Core class for hyperparameter management and utilities
+
+```
+
+# Environment Setup
+
+This project has been tested with PyTorch 2.6 and Ubuntu 24.04 LTS.
+
+### Setting Up Your Environment
+
+We recommend using Miniconda for environment management:
+
+```bash
+# Install Miniconda (Linux)
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+
+# For MacOS, use:
+# wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh
+
+# Create a Python environment with required packages
+conda create -n opendpd python=3.13 numpy scipy pandas matplotlib tqdm rich
+conda activate opendpd
+```
+
+### Installing PyTorch
+
+For **Linux or Windows** systems:
+- With CPU only:
+  ```bash
+  pip3 install torch torchvision torchaudio
+  ```
+- With NVIDIA GPU (CUDA 12.6):
+  ```bash
+  pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+  ```
+  Note: Ensure you have the latest NVIDIA GPU drivers installed to support CUDA 12.6
+
+For **macOS** systems:
+```bash
+pip3 install torch torchvision torchaudio
+```
+
+# End-to-End (E2E) Training
+
+This section introduces the End-to-End learning architecture and how to execute each component using command-line instructions.
+
+<img style="float: left" src="OpenDPD.png" alt="drawing"/> 
+
+The E2E learning framework consists of three main components:
+
+**1. Data Acquisition & Pre-Processing:** 
+This phase involves collecting and preprocessing baseband I/Q signals from the Power Amplifier (PA). To reduce gradient vanishing and enhance training effectiveness, we segment the raw data into shorter frames. The dataset includes signal measurements at various bandwidths from a digital transmitter. Data is partitioned in an 8:2:2 ratio for training, testing, and validation.
+
+**2. PA Modeling:** 
+This step trains a behavioral model of the PA using framed input and target output pairs through sequence-to-sequence learning. We employ Backpropagation Through Time (BPTT) for optimization.
+
+Command line for PA modeling (use `--accelerator cuda` for NVIDIAGPU acceleration):
+```bash
+python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
+```
+
+**3. DPD Learning:** 
+Here, we integrate a Digital Pre-Distortion (DPD) model before the pre-trained PA behavioral model. The input signal feeds into the cascaded model, and through BPTT, we align the output signal with the amplified linear input signal.
+
+Command line for DPD learning:
+```bash
+python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu
+```
+
+**4. Validation Experiment:** 
+To assess the DPD model's performance, we generate an ideal input signal after training. The resulting signal is stored in CSV format in the `run_dpd` directory.
+
+Command line for validation:
+```bash
+python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu
+```
+
+## Enhanced Visualization with Rich Tables
+
+OpenDPD features advanced progress visualization using Rich tables, displaying training metrics in an organized, colorful format:
+
+- Left table: General information about the training run
+- Right table: Training, validation, and test metrics with consistent formatting
+
+You can adjust the decimal precision for metric display using the `--log_precision` parameter:
+```bash
+python main.py --dataset_name DPA_200MHz --step train_pa --log_precision 4
+```
+
+## Reproducing Published Results
+
+### PA Modeling Results
+To reproduce the PA modeling results shown in **OpenDPD** Figure 4(a):
+```bash
+bash train_all_pa.sh
+```
+This script trains multiple PA models (each with approximately 500 parameters) using 5 different random seeds. Figure 4(a) displays the averaged results from these runs.
+
+### DPD Learning Results
+To reproduce the DPD learning results in Figure 4(b), Figure 4(d), and Table 1:
+```bash
+bash train_all_dpd.sh
+```
+This script trains various DPD models, each with approximately 500 parameters.
+
+## Mixed-Precision DPD (MP-DPD)
+
+MP-DPD is a technique for training fixed-point quantized DPD models without significantly compromising accuracy, enabling efficient hardware implementation. Follow these steps to reproduce the MP-DPD results:
+
+1. **Pretrain a DPD Model**:
+```bash
+python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --q_pretrain True
+```
+
+2. **Apply Quantization-Aware Training**:
+```bash
+# 16-bit Quantization example
+# Replace ${pretrained_model_from_previous_step} with the path to your pretrained model
+# Replace ${label_for_quantized_model} with your desired label for the quantized model
+python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --pretrained_model ${pretrained_model_from_previous_step} --quant_dir_label ${label_for_quantized_model}
+```
+
+3. **Generate Output from the Quantized Model**:
+```bash
+# Ensure ${label_for_quantized_model} matches what you used in step 2
+python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --quant_dir_label ${label_for_quantized_model}
+```
+
+For convenience, you can reproduce all MP-DPD results using:
+```bash
+bash quant_mp_dpd.sh
+```
 
 # Authors & Citation
-If you find this repository helpful, please cite our work.
+If you find this repository helpful, please cite our work:
 - [ISCAS 2024] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://ieeexplore.ieee.org/abstract/document/10558162)
 ```
 @INPROCEEDINGS{Wu2024ISCAS,
@@ -21,7 +172,6 @@ If you find this repository helpful, please cite our work.
   pages={1-5},
   keywords={Codes;Transmitters;OFDM;Power amplifiers;Artificial neural networks;Documentation;Benchmark testing;digital pre-distortion;behavioral modeling;deep neural network;power amplifier;digital transmitter},
   doi={10.1109/ISCAS58744.2024.10558162}}
-
 ```
 - [IMS/MWTL 2024] [MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers](https://ieeexplore.ieee.org/document/10502240)
 ```
@@ -36,118 +186,11 @@ If you find this repository helpful, please cite our work.
   keywords={Deep neural network (DNN);digital predistortion (DPD);digital transmitter (DTX);power amplifier (PA);quantization},
   doi={10.1109/LMWT.2024.3386330}}
 ```
-# Project Structure
-```
-.
-└── backbone        # Configuration Files (for feature extractor or whatever else you like).
-└── datasets        # Measured PA Datasets.
-    └──DPA_200MHz   └── # Digital Power Amplifier with 200 MHz OFDM Signals
-└── dpd_out         # Outputs of  (Automatically generated).
-└── log             # Experimental Log Data (Automatically generated).
-└── modules         # Major Modules.
-└── save            # Saved Models.
-└── steps           # Steps (train_pa, train_dpd, run_dpd, all called from main.py).
-└── utils           # Libraries of useful methods.
-└── argument.py     # Arguments
-└── main.py         # Top (Everything starts from here).
-└── model.py        # Top-level Neural Network Models
-└── project.py      # A class having useful functions and storing hyperparameters
 
-```
+# Contributors
 
-# Introduction and Quick Start
-
-## Environment
-This project was tested with PyTorch 2.1 in Ubuntu 22.04 LTS.
-
-Install Miniconda (Linux). If you use MacOS, please download [Miniconda3-latest-MacOSX-arm64.sh](https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh)
-```
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-chmod +x Miniconda3-latest-Linux-x86_64.sh
-./Miniconda3-latest-Linux-x86_64.sh
-```
-Create an environment and install the required packages. If you don't use CUDA, please follow the [PyTorch](https://pytorch.org/) official installation instruction.
-```
-conda create -n pt python=3.11 numpy matplotlib pandas scipy tqdm \
-    pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
-```
-Activate the environment.
-```
-conda activate pt
-```
-
-## End-to-End (E2E) Training
-In this section, we introduce the methods of E2E learning architecture and the **corresponding command line** for them.
-
-<img style="float: left" src="OpenDPD.png" alt="drawing"/> 
-
-The End-to-End (E2E) learning framework encompasses three principal components, as outlined:
-
-**1.Data Acquisition & Pre-Processing:** This phase involves the collection and preprocessing of baseband I/Q signals from the Power Amplifier (PA). To mitigate the issue of gradient vanishing and to augment the efficacy of the training process, the raw data is segmented into shorter frames. The dataset dictionary includes three distinct signal bandwidths from a digital transmitter. The dataset is partitioned in a ratio of 8:2:2 for training, testing, and validation, respectively, to facilitate the learning process.
-
-**2.PA Modeling:** The process involves training a behavioral model of the PA using the framed input and target output through a sequence-to-sequence learning approach, employing Backpropagation Through Time (BPTT) for optimization. 
-
-Command line for step 2 (Change accelerator to cuda if you want to use NVIDIA GPU acceleration):
-```
-python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
-```
-
-**3.DPD Learning:** Subsequently, a Digital Pre-Distortion (DPD) model is integrated prior to the pre-trained PA behavioral model. The input signal is fed to the input of the cascaded model, and through the application of BPTT, the goal is to align the output signal with the amplified linear input signal.
-
-Command line for step 3:
-```
-python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu
-```
-***4.Validation experiment:** To assess the DPD model's performance on another PA, it is necessary to generate an ideal input signal post the training of the aforementioned phases. The resultant signal is denominated according to the DPD model specifications and archived in a .csv format within a run_dpd file.
-
-Command line for step 4:
-```
-python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu
-```
-
-## Reproduce the results in OpenDPD
-
-1. Random Seed PA Training: To reproduce the PA modeling results in **OpenDPD** Figure.4(a), the following command line can be used.
-```
-bash train_all_pa.sh
-```
-This file will train all kinds of PA model around 500 parameters with 5 random seed. Figure.4(a) shows the average results from these 5 random seed.
-
-2. DPD learning: To reproduce the DPD learning results in **OpenDPD** Figure.4 (b) and Figure.4 (d) and Table 1, the following command line can be used.
-```
-bash train_all_dpd.sh
-```
-This file will train all kinds of DPD model around 500 parameters.
-
-
-## MP-DPD
-
-Additionally, the manuscript introduces MP-DPD, a technique designed to train a fixed-point quantized DPD model without significantly compromising accuracy, ensuring efficient hardware implementation. To reproduce the results in MP-DPD, following command line for each step can be used: 
-
-1. **Pretrain a DPD Model**:
-
-```bash
-python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --q_pretrain True
-```
-
-2. **Quantization Aware Training of the Pretrained Model**:
-
-```bash
-# 16-bit Quantization
-# Replace ${pretrained_model_from_previous_step} with the path to the pretrained model
-# Replace ${label_for_quantized_model} with a label for the quantized model
-python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --pretrained_model ${pretrained_model_from_previous_step} --quant_dir_label ${label_for_quantized_model}
-```
-
-3. **Output of the Quantized DPD Model**:
-
-```bash
-# Make sure the ${label_for_quantized_model} is the same as the one in Step 2
-python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --quant_dir_label ${label_for_quantized_model}
-```
-
-Also, you can reproduce the MP-DPD results with this script:
-
-```bash
-bash quant_mp_dpd.sh
-```
+- **Chang Gao** - Project Lead
+- **Yizhuo Wu** - Core Developer
+- **Ang Li** - Core Developer
+- **Huanqiang Duan** - Contributor
+- **Ruishen Yang** - Contributor

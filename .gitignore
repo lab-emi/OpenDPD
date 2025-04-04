@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+.venv
+env/
+opendpd_env/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# PyTorch specific
+*.pt
+*.pth
+*.onnx
+*.h5
+
+# OpenDPD specific
+dpd_out/
+log/
+save/
+
+# Allow sample data but not large datasets
+datasets/**/data/*.csv
+datasets/**/data/*.npy
+datasets/**/data/*.npz
+datasets/**/data/*.mat
+!datasets/**/data/sample*
+
+# IDE specific files
+.idea/
+*.sublime-project
+*.sublime-workspace
+.spyderproject
+.spyproject
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+*.out
+tensorboard/
+runs/
+wandb/
+
+# Temporary files
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+*.bak
+*.tmp
+
+# Keep empty directories
+!*/.gitkeep 
