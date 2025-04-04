@@ -11,7 +11,7 @@ def get_arguments():
     # Dataset & Log
     parser.add_argument('--dataset_name', default=None, help='Dataset names')
     parser.add_argument('--filename', default='', help='Filename to save model and log to.')
-    parser.add_argument('--log_precision', default=8, type=int, help='Number of decimals in the log files.')
+    parser.add_argument('--log_precision', default=8, type=int, help='Number of decimal places for metrics in log tables')
     # Training Process
     parser.add_argument('--step', default='train_pa', help='Step to run.')
     parser.add_argument('--eval_val', default=1, type=int, help='Whether evaluate val set during training.')
