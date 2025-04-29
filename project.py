@@ -78,6 +78,9 @@ class Project:
                     'F': f"{self.frame_length:d}",
                     'P': f"{n_net_params:d}"
                     }
+        if 'delta' in self.DPD_backbone:
+            dict_dpd['THX'] = f"{self.thx:.3f}"
+            dict_dpd['THH'] = f"{self.thh:.3f}"
         dict_dpdmodel_id = dict(list(dict_dpd.items()))
 
         # DPD Model ID

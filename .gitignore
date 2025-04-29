@@ -85,3 +85,5 @@ wandb/
 
 # Keep empty directories
 !*/.gitkeep 
+
+steps/__pycache__/

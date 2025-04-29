@@ -2,11 +2,11 @@ __author__ = "Yizhuo Wu, Chang Gao"
 __license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
-from typing import Tuple
+from typing import Tuple, Union
 import numpy as np
 
 
-def magnitude_spectrum(input_signal: np.ndarray[np.complex128],
+def magnitude_spectrum(input_signal: Union[np.ndarray, np.complex128],
                        sample_rate: int,
                        nfft: int,
                        shift: bool = False) -> Tuple[np.ndarray, np.ndarray]:

@@ -13,7 +13,7 @@ from typing import Dict, Any, Callable
 import argparse
 
 
-def net_train(log: dict[str, Any],
+def net_train(log: Dict[str, Any],
               net: nn.Module,
               dataloader: DataLoader,
               optimizer: Optimizer,
