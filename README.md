@@ -186,7 +186,19 @@ If you find this repository helpful, please cite our work:
   keywords={Deep neural network (DNN);digital predistortion (DPD);digital transmitter (DTX);power amplifier (PA);quantization},
   doi={10.1109/LMWT.2024.3386330}}
 ```
-
+- [IMS/MWTL 2025] [DeltaDPD: Exploiting Dynamic Temporal Sparsity in Recurrent Neural Networks for Energy-Efficient Wideband Digital Predistortion](https://ieeexplore.ieee.org/abstract/document/11006082/)
+```
+@article{Wu2025MWTL,
+   title={DeltaDPD: Exploiting Dynamic Temporal Sparsity in Recurrent Neural Networks for Energy-Efficient Wideband Digital Predistortion},
+   ISSN={2771-957X},
+   url={http://dx.doi.org/10.1109/LMWT.2025.3565004},
+   DOI={10.1109/lmwt.2025.3565004},
+   journal={IEEE Microwave and Wireless Technology Letters},
+   publisher={Institute of Electrical and Electronics Engineers (IEEE)},
+   author={Wu, Yizhuo and Zhu, Yi and Qian, Kun and Chen, Qinyu and Zhu, Anding and Gajadharsing, John and de Vreede, Leo C. N. and Gao, Chang},
+   year={2025},
+   pages={1–4} }
+```
 # Contributors
 
 - **Chang Gao** - Project Lead
