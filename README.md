@@ -74,7 +74,7 @@ pip3 install torch torchvision torchaudio
 
 This section introduces the End-to-End learning architecture and how to execute each component using command-line instructions.
 
-<img style="float: left" src="OpenDPD.png" alt="drawing"/> 
+<img style="float: left" src="OpenDPDv2.png" alt="drawing"/> 
 
 The E2E learning framework consists of three main components:
 
@@ -90,19 +90,33 @@ python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
 ```
 
 **3. DPD Learning:** 
-Here, we integrate a Digital Pre-Distortion (DPD) model before the pre-trained PA behavioral model. The input signal feeds into the cascaded model, and through BPTT, we align the output signal with the amplified linear input signal.
+Here, we integrate a Digital Pre-Distortion (DPD) model before the pre-trained PA behavioral model. The input signal feeds into the cascaded model, and through BPTT, we align the output signal with the amplified linear input signal. In OpenDPDv2, we add the deltarnn backbones for temporally-sparse DPD learning.
 
 Command line for DPD learning:
 ```bash
 python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu
 ```
+**4. Quantization-Aware Learning:** 
+Quantization-Aware is a technique for training fixed-point quantized DPD models without significantly compromising accuracy, enabling efficient hardware implementation. 
 
-**4. Validation Experiment:** 
+```bash
+# 16-bit Quantization example
+# Replace ${pretrained_model_from_previous_step} with the path to your pretrained model
+# Replace ${label_for_quantized_model} with your desired label for the quantized model
+python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --pretrained_model ${pretrained_model_from_previous_step} --quant_dir_label ${label_for_quantized_model}
+```
+
+**5. Validation Experiment:** 
 To assess the DPD model's performance, we generate an ideal input signal after training. The resulting signal is stored in CSV format in the `run_dpd` directory.
 
 Command line for validation:
 ```bash
 python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu
+```
+Command line for validation with quantization:
+```bash
+# Ensure ${label_for_quantized_model} matches what you used in step 4
+python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --quant_dir_label ${label_for_quantized_model}
 ```
 
 ## Enhanced Visualization with Rich Tables
@@ -133,27 +147,6 @@ bash train_all_dpd.sh
 This script trains various DPD models, each with approximately 500 parameters.
 
 ### Mixed-Precision DPD (MP-DPD)
-
-MP-DPD is a technique for training fixed-point quantized DPD models without significantly compromising accuracy, enabling efficient hardware implementation. Follow these steps to reproduce the MP-DPD results:
-
-1. **Pretrain a DPD Model**:
-```bash
-python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --q_pretrain True
-```
-
-2. **Apply Quantization-Aware Training**:
-```bash
-# 16-bit Quantization example
-# Replace ${pretrained_model_from_previous_step} with the path to your pretrained model
-# Replace ${label_for_quantized_model} with your desired label for the quantized model
-python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --pretrained_model ${pretrained_model_from_previous_step} --quant_dir_label ${label_for_quantized_model}
-```
-
-3. **Generate Output from the Quantized Model**:
-```bash
-# Ensure ${label_for_quantized_model} matches what you used in step 2
-python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --quant_dir_label ${label_for_quantized_model}
-```
 
 For convenience, you can reproduce all MP-DPD results using:
 ```bash
