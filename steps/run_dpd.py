@@ -33,6 +33,14 @@ def main(proj: Project):
     # Network Settings
     ###########################################################################################################
     # Instantiate DPD Model
+    net_pa = model.CoreModel(input_size=2,
+                             hidden_size=proj.PA_hidden_size,
+                             num_layers=proj.PA_num_layers,
+                             backbone_type=proj.PA_backbone,
+                             num_dvr_units=proj.num_dvr_units)
+    n_net_pa_params = count_net_params(net_pa)
+    print("::: Number of PA Model Parameters: ", n_net_pa_params)
+    pa_model_id = proj.gen_pa_model_id(n_net_pa_params)
     net_dpd = model.CoreModel(input_size=2,  # I and Q
                               hidden_size=proj.DPD_hidden_size,
                               num_layers=proj.DPD_num_layers,
@@ -45,10 +53,10 @@ def main(proj: Project):
     dpd_model_id = proj.gen_dpd_model_id(n_net_dpd_params)
 
     # Load Pretrained DPD Model
-    path_dpd_model = os.path.join('save', proj.dataset_name, 'train_dpd', dpd_model_id + '.pt')
+    path_dpd_model = os.path.join('save', proj.dataset_name, 'train_dpd', pa_model_id.split('_P_')[0], dpd_model_id + '.pt')
 
     if proj.args.quant:
-        path_dpd_model = os.path.join('save', proj.dataset_name, 'train_dpd', proj.args.quant_dir_label, dpd_model_id + '.pt')
+        path_dpd_model = os.path.join('save', proj.dataset_name, 'train_dpd', pa_model_id.split('_P_')[0], proj.args.quant_dir_label, dpd_model_id + '.pt')
         print("::: Loading Quantized DPD Model: ", path_dpd_model)
     net_dpd.load_state_dict(torch.load(path_dpd_model))
 
