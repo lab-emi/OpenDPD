@@ -49,9 +49,9 @@ def get_arguments():
     parser.add_argument('--PA_num_layers', default=1, type=int,
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
-    parser.add_argument('--DPD_backbone', default='deltagru',
+    parser.add_argument('--DPD_backbone', default='deltagru_tcnskip',
                         choices=['gmp', 'deltagru', 'deltajanet', 'janet', 'snn', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm',
-                                'rvtdcnn', 'mamba', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'djanet'],
+                                'rvtdcnn', 'deltagru_tcnskip', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'djanet'],
                         help='DPD model Recurrent layer type')
     parser.add_argument('--DPD_hidden_size', default=15, type=int, help='Hidden size of DPD backbone.')
     parser.add_argument('--DPD_num_layers', default=1, type=int, help='Number of layers of the DPD backbone.')

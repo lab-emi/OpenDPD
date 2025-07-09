@@ -101,13 +101,23 @@ class CoreModel(nn.Module):
             from backbones.pgjanet import PGJANET
             self.backbone = PGJANET(hidden_size=self.hidden_size,
                                   output_size=self.output_size,
-                                  bias=self.bias)
+                                  bias=self.bias,
+                                  window_size=self.window_size)
         elif backbone_type == 'dvrjanet':
             from backbones.dvrjanet import DVRJANET
             self.backbone = DVRJANET(hidden_size=self.hidden_size,
                                    output_size=self.output_size,
                                    num_dvr_units=self.num_dvr_units,
                                    bias=self.bias)
+        elif backbone_type == 'deltagru_tcnskip':
+            from backbones.deltagru_tcnskip import DeltaGRU
+            self.backbone = DeltaGRU(input_size=6,
+                                             hidden_size=self.hidden_size,
+                                             output_size=self.output_size,
+                                             num_layers=self.num_layers,
+                                             thx=self.thx,
+                                             thh=self.thh,
+                                             bias=self.bias)
         else:
             raise ValueError(f"The backbone type '{self.backbone_type}' is not supported. Please add your own "
                              f"backbone under ./backbones and update models.py accordingly.")

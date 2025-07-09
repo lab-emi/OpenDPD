@@ -28,7 +28,9 @@ def main(proj: Project):
     net_pa = model.CoreModel(input_size=input_size,
                              hidden_size=proj.PA_hidden_size,
                              num_layers=proj.PA_num_layers,
-                             backbone_type=proj.PA_backbone)
+                             backbone_type=proj.PA_backbone,
+                             window_size=proj.window_size,
+                             num_dvr_units=proj.num_dvr_units)
     n_net_pa_params = count_net_params(net_pa)
     print("::: Number of PA Model Parameters: ", n_net_pa_params)
     pa_model_id = proj.gen_pa_model_id(n_net_pa_params)
@@ -41,7 +43,11 @@ def main(proj: Project):
     net_dpd = model.CoreModel(input_size=input_size,
                               hidden_size=proj.DPD_hidden_size,
                               num_layers=proj.DPD_num_layers,
-                              backbone_type=proj.DPD_backbone)
+                              backbone_type=proj.DPD_backbone,
+                              window_size=proj.window_size,
+                              num_dvr_units=proj.num_dvr_units,
+                              thx=proj.thx,
+                              thh=proj.thh)
     
     net_dpd = get_quant_model(proj, net_dpd)
     

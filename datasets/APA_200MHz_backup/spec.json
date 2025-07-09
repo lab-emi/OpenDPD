@@ -1,0 +1,7 @@
+{
+    "input_signal_fs": 983.04e6,
+    "bw_main_ch": 200e6,
+    "bw_sub_ch": 200e6,
+    "n_sub_ch": 1,
+    "nperseg": 19662
+}
