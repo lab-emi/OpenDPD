@@ -10,10 +10,10 @@ We invite you to contribute to this project by providing your own backbone neura
 
 # Version Update
 **OpenDPDv2** embeds a new temporal residual (TRes)-DeltaGRU NN DPD algorithm and a new TM3.1a 5-channel x 40 MHz (200 MHz) test signal dataset, measured from a 3.5 GHz Ampleon GaN PA at 41.5 dBm average output power, named APA_200MHz, enabling fast prototyping of accurate and power-efficient NN-based DPD algorithms by streamlining learning and optimization through DPD quantization and temporal sparsity exploitation.
-| Version    | Dataset                                      | Baseline Backbones          | Prior Works  | Proposed Work        |
-|------------|----------------------------------------------|-------------------|----------------------|----------------------|
-| OpenDPDv1 | Collected from a 40nm CMOS DTX @ 2.4 GHz<br>DPA_100MHz,<br>DPA_160MHz,<br>DPA_200MHz | GRU,<br>LSTM,<br>GMP    | RVTDCNN, <br>VDLSTM    | DGRU, TCN           |
-| OpenDPDv2  | Collected from a GaN Doherty @ 3.5 GHz<br>APA_200MHz,<br>APA_200MHz_backup |                   | PGJANET,<br>DVRJANET    | TRes-DeltaGRU |
+| Version    | Dataset                                      | Baseline Backbones          | Prior Works  | Proposed Work        | Performance <br> on APA_200MHz_backup
+|------------|----------------------------------------------|-------------------|----------------------|----------------------|---------|
+| OpenDPDv1 | Collected from a 40nm CMOS DTX @ 2.4 GHz<br>DPA_100MHz,<br>DPA_160MHz,<br>DPA_200MHz | GRU,<br>LSTM,<br>GMP    | RVTDCNN, <br>VDLSTM    | DGRU, TCN           | DGRU with 1041 params: <br> ACPR of -58.4 dBc, <br> EVM of -39.1 dB|
+| OpenDPDv2  | Collected from a GaN Doherty @ 3.5 GHz<br>APA_200MHz,<br>APA_200MHz_backup |                   | PGJANET,<br>DVRJANET    | TRes-DeltaGRU | TRes-DeltaGRU with 996 params: <br> ACPR of -59.4 dBc, <br> EVM of -42.1 dB|
 |
 
 
@@ -165,6 +165,10 @@ To reproduce the quantized (W16A16) TRes-DeltaGRU-450 DPD modeling results shown
 ```bash
 bash OpenDPDv2.sh
 ```
+
+# Experimental Setup
+<img style="float: left" src="pics\platform.png" alt="drawing"/> 
+
 
 # Authors & Citation
 If you find this repository helpful, please cite our work:
