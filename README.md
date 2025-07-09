@@ -10,6 +10,13 @@ We invite you to contribute to this project by providing your own backbone neura
 
 # Version Update
 **OpenDPDv2** embeds a new temporal residual (TRes)-DeltaGRU NN DPD algorithm and a new TM3.1a 5-channel x 40 MHz (200 MHz) test signal dataset, measured from a 3.5 GHz Ampleon GaN PA at 41.5 dBm average output power, named APA_200MHz, enabling fast prototyping of accurate and power-efficient NN-based DPD algorithms by streamlining learning and optimization through DPD quantization and temporal sparsity exploitation.
+| Version    | Dataset                                      | Baseline Backbones          | Prior Works  | Proposed Work        |
+|------------|----------------------------------------------|-------------------|----------------------|----------------------|
+| OpenDPDv1 | Collected from a 40nm CMOS DTX @ 2.4 GHz<br>DPA_100MHz, DPA_160MHz, DPA_200MHz | GRU, LSTM, GMP    | RVTDCNN, <br>VDLSTM    | DGRU, TCN           |
+| OpenDPDv2  | Collected from a GaN Doherty @ 3.5 GHz<br>APA_200MHz, APA_200MHz_backup |                   | PGJANET,<br>DVRJANET    | TRes-DeltaGRU |
+|
+
+
 
 # Project Structure
 ```
