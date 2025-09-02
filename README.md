@@ -218,3 +218,23 @@ If you find this repository helpful, please cite our work:
 - **Ang Li** - Core Developer
 - **Huanqiang Duan** - Contributor
 - **Ruishen Yang** - Contributor
+
+# FAQs
+
+**Q: The discrepancy between spec.json of APA_200MHz and the reported signal configuration in our paper.**
+
+**A:**
+The reported signal configuration in our paper — TM3.1a, 5×40 MHz (200 MHz) 256-QAM with a sampling rate of 983.04e6 Hz — is accurate. We used the spec.json file in this repository as shown because of the complexity involved in demodulating 5G NR signals.
+
+As illustrated in the figure, the structure of a 5G NR test signal is nontrivial:
+<img style="float: left" src="pics\5GNR.png" alt="drawing"/>
+Generating a multi-channel 5G NR standard test signal is even more complex. In particular, handling cyclic prefix variations requires calling MATLAB functions from Python, which would introduce unnecessary barriers for reproduction. For this reason, we currently employ the simplest demodulation approach (direct FFT) in metrics simulations.
+
+Impact on simulation results:
+i. For signals such as APA_200MHz, splitting segments at inappropriate positions may lead to incorrect ACPR calculations. To avoid this, we set spec.json to a single 200 MHz channel, preventing signal splitting errors during metrics evaluation.
+
+ii. This approach produces relatively accurate simulated ACPR and NMSE results, but some inaccuracy in EVM remains.
+
+iii. For the constellation maps provided in deltadpd and opendpdv2, we include a dedicated MATLAB script for demodulation (calculate_200MHz_256QAM_evm.m). However, note that this script applies only to this specific signal and is not generalizable.
+
+iv. In future releases, we plan to: Provide a separate branch that integrates MATLAB functions directly into Python workflows and release additional signal generation–demodulation chains wherever feasible.
