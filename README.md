@@ -231,6 +231,7 @@ As illustrated in the figure, the structure of a 5G NR test signal is nontrivial
 Generating a multi-channel 5G NR standard test signal is even more complex. In particular, handling cyclic prefix variations requires calling MATLAB functions from Python, which would introduce unnecessary barriers for reproduction. For this reason, we currently employ the simplest demodulation approach (direct FFT) in metrics simulations.
 
 Impact on simulation results:
+
 i. For signals such as APA_200MHz, splitting segments at inappropriate positions may lead to incorrect ACPR calculations. To avoid this, we set spec.json to a single 200 MHz channel, preventing signal splitting errors during metrics evaluation.
 
 ii. This approach produces relatively accurate simulated ACPR and NMSE results, but some inaccuracy in EVM remains.
