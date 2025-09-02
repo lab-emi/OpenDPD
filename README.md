@@ -224,9 +224,9 @@ If you find this repository helpful, please cite our work:
 **Q: The discrepancy between spec.json of APA_200MHz and the reported signal configuration in our paper.**
 
 **A:**
-The reported signal configuration in our paper — TM3.1a, 5×40 MHz (200 MHz) 256-QAM with a sampling rate of 983.04e6 Hz — is accurate. We used the spec.json file in this repository as shown because of the complexity involved in demodulating 5G NR signals.
+The reported signal configuration in our paper — TM3.1a, 5×40 MHz (200 MHz) 256-QAM with a sampling rate of 983.04e6 Hz — is accurate. We used the spec.json file as shown in this repository because of the complexity involved in demodulating 5G NR signals.
 
-As illustrated in the figure, the structure of a 5G NR test signal is nontrivial:
+As illustrated in the figure, the structure of a 5G NR test signal is:
 <img style="float: left" src="pics\5GNR.png" alt="drawing"/>
 Generating a multi-channel 5G NR standard test signal is even more complex. In particular, handling cyclic prefix variations requires calling MATLAB functions from Python, which would introduce unnecessary barriers for reproduction. For this reason, we currently employ the simplest demodulation approach (direct FFT) in metrics simulations.
 
