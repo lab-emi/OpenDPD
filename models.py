@@ -79,6 +79,15 @@ class CoreModel(nn.Module):
                                    bias=self.bias)
         elif backbone_type == 'rvtdcnn':
             self.backbone = RVTDCNN(fc_hid_size=hidden_size)
+        elif backbone_type == 'apnrru':
+            from backbones.apnrru import APNRRU
+            self.backbone = APNRRU(hidden_size=self.hidden_size,
+                                   bias=self.bias)
+        elif backbone_type == 'bojanet':
+            from backbones.bojanet import BOJANET
+            self.backbone = BOJANET(hidden_size=self.hidden_size,
+                                   output_size=self.output_size,
+                                   bias=self.bias)
         elif backbone_type == 'deltagru':
             from backbones.deltagru import DeltaGRU
             self.backbone = DeltaGRU(input_size=6,
