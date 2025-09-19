@@ -2,6 +2,11 @@ __author__ = "Yizhuo Wu, Chang Gao, Ang Li"
 __license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl, a.li-2@tudelft.nl"
 
+import os
+
+# Prevent duplicate OpenMP runtime initialization on macOS (libomp vs. Apple's libomp)
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 from steps import train_pa, train_dpd, run_dpd
 from project import Project
 

@@ -91,7 +91,7 @@ This phase involves collecting and preprocessing baseband I/Q signals from the P
 **2. PA Modeling:** 
 This step trains a behavioral model of the PA using framed input and target output pairs through sequence-to-sequence learning. We employ Backpropagation Through Time (BPTT) for optimization.
 
-Command line for PA modeling (use `--accelerator cuda` for NVIDIAGPU acceleration):
+Command line for PA modeling (use `--accelerator cuda` for NVIDIA GPU acceleration or `--accelerator mps` for Apple Silicon GPU acceleration):
 ```bash
 python main.py --dataset_name DPA_200MHz --step train_pa --accelerator cpu
 ```
