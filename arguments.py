@@ -40,7 +40,7 @@ def get_arguments():
     # GMP Hyperparameters
     parser.add_argument('--K', default=4, type=int, help='Degree of GMP model')
     # Power Amplifier Model Settings
-    parser.add_argument('--PA_backbone', default='dgru',
+    parser.add_argument('--PA_backbone', default='gru',
                         choices=['gmp','deltagru', 'deltajanet', 'janet', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm',
                                 'rvtdcnn', 'mamba', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'apnrnn', 'djanet'],
                         help='Modeling PA Recurrent layer type')

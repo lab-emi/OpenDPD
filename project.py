@@ -257,7 +257,6 @@ class Project:
                                                             mode='min',
                                                             factor=self.decay_factor,
                                                             patience=self.patience,
-                                                            verbose=True,
                                                             threshold=1e-4,
                                                             min_lr=self.lr_end)
         return optimizer, lr_scheduler
