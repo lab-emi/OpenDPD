@@ -1,4 +1,7 @@
 function evm = calculate_200MHz_256QAM_evm(RX_data, reference_points)
+%__author__ = "Yizhuo Wu"
+%__license__ = "Apache-2.0 License"
+%__email__ = "yizhuo.wu@tudelft.nl"
 ff = fftshift(fft(RX_data));
 % ff(1:39295) = 0;
 % ff(58978:end) = 0;
