@@ -221,6 +221,7 @@ If you find this repository helpful, please cite our work:
 - **Ang Li** - Core Developer
 - **Huanqiang Duan** - Contributor
 - **Ruishen Yang** - Contributor
+- **Qian Wu (qian.wu@ucdconnect.ie)** - Contributor
 
 # FAQs
 
