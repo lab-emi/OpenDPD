@@ -14,7 +14,7 @@ We invite you to contribute to this project by providing your own backbone neura
 |------------|----|-------------------|----------------------|---------|
 | OpenDPDv1 | Algorithms <br>  [![paper](https://img.shields.io/badge/OpenDPD-ISCAS2024-orange)](https://ieeexplore.ieee.org/abstract/document/10558162) <br> [![paper](https://img.shields.io/badge/MP--DPD-MWTL2024-orange)](https://ieeexplore.ieee.org/document/10502240) <br> [![paper](https://img.shields.io/badge/DeltaDPD-MWTL2025-orange)](https://ieeexplore.ieee.org/abstract/document/11006082) <br> [![paper](https://img.shields.io/badge/TCN--DPD-IMS2025-orange)](https://www.arxiv.org/abs/2506.12165) <br> Hardware [![paper](https://img.shields.io/badge/DPD--NeuralEngine-ISCAS2025-blue)](https://ieeexplore.ieee.org/document/11043563) <br> [![paper](https://img.shields.io/badge/SparseDPD-FPL2025-blue)](https://arxiv.org/abs/2506.16591)|Collected from a 40nm CMOS DTX @ 2.4 GHz<br>DPA_100MHz,<br>DPA_160MHz,<br>DPA_200MHz | GRU,<br>LSTM,<br>GMP,<br>RVTDCNN, <br>VDLSTM,<br> DGRU,<br> TCN        | DGRU with 1041 params: <br> ACPR of -58.4 dBc, <br> EVM of -39.1 dB|
 | OpenDPDv2  |   [![paper](https://img.shields.io/badge/OpenDPDv2-arXiv-red)](https://arxiv.org/abs/2507.06849)|Collected from a GaN Doherty @ 3.5 GHz<br>APA_200MHz,<br>APA_200MHz_b |  PGJANET,<br>DVRJANET,<br>TRes-DeltaGRU | TRes-DeltaGRU with 996 params: <br> ACPR of -59.4 dBc, <br> EVM of -42.1 dB|
-|Experiment code|[![paper](https://img.shields.io/badge/OpenDPDv2-arXiv-red)](https://arxiv.org/abs/2507.06849)[![paper](https://img.shields.io/badge/RLDPD-TMTT-red)](https://ieeexplore.ieee.org/abstract/document/11131244)| Controlling, <br>I/Q data upload/download MATLAB code | Rohde & Schwarz SMW200A, <br> Keysight N9042B,| Matlab/.m 
+|Experiment code|[![paper](https://img.shields.io/badge/OpenDPDv2-arXiv-red)](https://arxiv.org/abs/2507.06849)[![paper](https://img.shields.io/badge/QianWu-UCD-red)](https://ieeexplore.ieee.org/author/37088931208)| Controlling, <br>I/Q data upload/download MATLAB code | Rohde & Schwarz SMW200A, <br> Keysight N9042B,| Matlab/.m 
 
 
 
@@ -221,6 +221,7 @@ If you find this repository helpful, please cite our work:
 - **Ang Li** - Core Developer
 - **Huanqiang Duan** - Contributor
 - **Ruishen Yang** - Contributor
+- **Qian Wu (qian.wu@ucdconnect.ie)** - Contributor
 
 # FAQs
 
