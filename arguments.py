@@ -42,7 +42,8 @@ def get_arguments():
     # Power Amplifier Model Settings
     parser.add_argument('--PA_backbone', default='gru',
                         choices=['gmp','deltagru', 'deltajanet', 'janet', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm',
-                                'rvtdcnn', 'mamba', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'apnrnn', 'djanet'],
+                                'rvtdcnn', 'mamba', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'apnrnn', 'djanet',
+                                'tcnn', 'neuraltx', 'mcldnn'],
                         help='Modeling PA Recurrent layer type')
     parser.add_argument('--PA_hidden_size', default=23, type=int,
                         help='Hidden size of PA backbone')
@@ -51,7 +52,8 @@ def get_arguments():
     # Digital Predistortion Model Settings
     parser.add_argument('--DPD_backbone', default='deltagru_tcnskip',
                         choices=['gmp', 'deltagru', 'deltajanet', 'janet', 'snn', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm',
-                                'rvtdcnn', 'deltagru_tcnskip', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'djanet'],
+                                'rvtdcnn', 'deltagru_tcnskip', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'djanet',
+                                'tcnn', 'neuraltx', 'mcldnn'],
                         help='DPD model Recurrent layer type')
     parser.add_argument('--DPD_hidden_size', default=15, type=int, help='Hidden size of DPD backbone.')
     parser.add_argument('--DPD_num_layers', default=1, type=int, help='Number of layers of the DPD backbone.')
