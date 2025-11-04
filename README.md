@@ -2,11 +2,17 @@
 
 
 
-**OpenDPD** is an end-to-end learning framework built in PyTorch for modeling power amplifiers (PA) and digital pre-distortion. Developed by the [Lab of Efficient Machine Intelligence](https://www.tudemi.com) @ Delft University of Technology, OpenDPD aims to bridge the gap between machine learning and RF system optimization.
+**OpenDPD** is an end-to-end learning framework built in PyTorch for modeling power amplifiers (PA) and digital pre-distortion. Developed by the [Lab of Efficient Machine Intelligence](https://www.tudemi.com) @ Delft University of Technology, OpenDPD now ships as both a pip-installable package and a full research codebase.
+- `pip install opendpd` exposes high-level Python APIs (`train_pa`, `train_dpd`, `create_dataset`, etc.) and an `opendpd-cli` entry point for quick experiments.
+- The repository provides automation scripts, dataset tooling, quantization utilities, and reproducible baselines for RF researchers.
+- Documentation includes rich examples (Python scripts + Jupyter notebooks) and detailed setup instructions for advanced users.
 
-The framework provides a comprehensive solution for training neural network models that accurately characterize PA behavior and implement digital pre-distortion to improve linearity and efficiency. By leveraging state-of-the-art deep learning techniques, OpenDPD enables researchers and engineers to develop more energy-efficient wireless communication systems.
+We invite you to contribute new backbone networks, pre-trained models, or measured PA datasets. This repository contains the complete training pipeline for OpenDPD using baseband signals from digital transmitters.
 
-We invite you to contribute to this project by providing your own backbone neural networks, pre-trained models, or measured PA datasets. This repository contains the complete training pipeline for OpenDPD using baseband signals from digital transmitters.
+# Quick Start
+Start with the Google Colab tutorial by clicking the badge below for a zero-install guided walkthrough of OpenDPD’s workflow.
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1o5X8hztWyMKaMhPs2gUf2fZABCq2nUjn?usp=sharing)
 
 # Version Update
 **OpenDPDv2** embeds a new temporal residual (TRes)-DeltaGRU NN DPD algorithm and a new TM3.1a 5-channel x 40 MHz (200 MHz) test signal dataset, measured from a 3.5 GHz Ampleon GaN PA at 41.5 dBm average output power, named APA_200MHz, enabling fast prototyping of accurate and power-efficient NN-based DPD algorithms by streamlining learning and optimization through DPD quantization and temporal sparsity exploitation.
@@ -21,26 +27,26 @@ We invite you to contribute to this project by providing your own backbone neura
 
 
 
-# Project Structure
+# Advanced Usage (From Source)
+
+## Repository Layout
 ```
 .
-└── backbone        # Configuration files for feature extractors and other components
-└── datasets        # Measured PA datasets
-    └──DPA_200MHz   └── # Digital Power Amplifier with 200 MHz OFDM Signals
-└── dpd_out         # Output files (automatically generated)
-└── log             # Experimental log data (automatically generated)
-└── modules         # Major functional modules
-└── save            # Saved models
-└── steps           # Implementation steps (train_pa, train_dpd, run_dpd)
-└── utils           # Utility libraries
-└── argument.py     # Command-line arguments and configuration
-└── main.py         # Main entry point
-└── model.py        # Top-level neural network models
-└── project.py      # Core class for hyperparameter management and utilities
-
+├── backbones/       # Neural backbone implementations
+├── bash_scripts/    # Batch experiment scripts (train_all_*.sh, quant_*.sh)
+├── datasets/        # Built-in PA datasets (CSV + spec.json)
+├── examples/        # API examples and tutorials
+├── modules/         # Data pipeline, logging, and training utilities
+├── opendpd/         # Python package exposing the high-level API
+├── quant/           # Quantization-aware training components
+├── steps/           # CLI entry points (train_pa, train_dpd, run_dpd)
+├── utils/           # Miscellaneous helper functions
+├── Makefile         # Convenience targets (install, clean, etc.)
+├── main.py          # Legacy CLI entry mirrored by opendpd-cli
+└── project.py       # Core configuration & training orchestration
 ```
 
-# Environment Setup
+## Environment Setup
 
 This project has been tested with PyTorch 2.6 and Ubuntu 24.04 LTS.
 
