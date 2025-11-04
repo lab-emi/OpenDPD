@@ -10,6 +10,7 @@ def get_arguments():
     parser = argparse.ArgumentParser(description='Train a GRU network.')
     # Dataset & Log
     parser.add_argument('--dataset_name', default=None, help='Dataset names')
+    parser.add_argument('--dataset_path', default=None, help='Path to custom dataset (CSV file or directory)')
     parser.add_argument('--filename', default='', help='Filename to save model and log to.')
     parser.add_argument('--log_precision', default=8, type=int, help='Number of decimals in the log files.')
     # Training Process
@@ -17,7 +18,7 @@ def get_arguments():
     parser.add_argument('--eval_val', default=1, type=int, help='Whether evaluate val set during training.')
     parser.add_argument('--eval_test', default=1, type=int, help='Whether evaluate test set during training.')
     parser.add_argument('--accelerator', default='cuda', choices=["cpu", "cuda", "mps"], help='Accelerator types.')
-    parser.add_argument('--devices', default=4, type=int, help='Which accelerator to train on.')
+    parser.add_argument('--devices', default=0, type=int, help='Which accelerator to train on.')
     parser.add_argument('--re_level', default='soft', choices=['soft', 'hard'], help='Level of reproducibility.')
     parser.add_argument('--use_segments', action='store_true', default=False,
                         help='Whether partition training sequences into segments of length nperseg before doing the framing.')
@@ -50,7 +51,7 @@ def get_arguments():
     parser.add_argument('--PA_num_layers', default=1, type=int,
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
-    parser.add_argument('--DPD_backbone', default='deltagru_tcnskip',
+    parser.add_argument('--DPD_backbone', default='gru',
                         choices=['gmp', 'deltagru', 'deltajanet', 'janet', 'snn', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm',
                                 'rvtdcnn', 'deltagru_tcnskip', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'djanet',
                                 'tcnn', 'neuraltx', 'mcldnn'],

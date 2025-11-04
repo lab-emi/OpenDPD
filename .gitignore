@@ -19,6 +19,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+build/
 
 # Virtual environments
 venv/
@@ -87,3 +88,6 @@ wandb/
 !*/.gitkeep 
 
 steps/__pycache__/
+
+PACKAGE_INSTALLATION.md
+PyPI.md

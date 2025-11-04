@@ -1,0 +1,17 @@
+{
+    "split_ratios": {
+        "train": 0.6,
+        "val": 0.2,
+        "test": 0.2
+    },
+    "nperseg": 2560,
+    "n_sub_ch": 1,
+    "csv_filename": "data.csv",
+    "split_indices": {
+        "train_end": 58982,
+        "val_end": 78642
+    },
+    "input_signal_fs": 800000000.0,
+    "bw_main_ch": 200000000.0,
+    "dataset_format": "single_csv"
+}

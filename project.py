@@ -123,15 +123,47 @@ class Project:
         print("--------------------------------------------------------------------")
 
     def load_spec(self):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
         # Get relative path to the spec file
-        path_spec = os.path.join('datasets', self.dataset_name, 'spec.json')
+        spec = {}
+        if hasattr(self, 'dataset_path') and self.dataset_path:
+            # Custom dataset path
+            dataset_path = os.path.abspath(self.dataset_path)
+            self.dataset_path = dataset_path
+            if os.path.isfile(dataset_path) and dataset_path.endswith('.csv'):
+                # Single CSV file - create minimal spec
+                spec = {
+                    'dataset_format': 'single_csv',
+                    'split_ratios': {
+                        'train': 0.6,
+                        'val': 0.2,
+                        'test': 0.2
+                    },
+                    'nperseg': 2560  # Default value
+                }
+                path_spec = None
+            elif os.path.isdir(dataset_path):
+                path_spec = os.path.join(dataset_path, 'spec.json')
+            else:
+                raise ValueError(f"Invalid dataset path: {self.dataset_path}")
+        else:
+            # Standard dataset name
+            path_spec = os.path.join(base_dir, 'datasets', self.dataset_name, 'spec.json')
 
         # Load the spec
-        with open(path_spec) as config_file:
-            spec = json.load(config_file)
-        for k, v in spec.items():
-            setattr(self, k, v)
-            self.hparams[k] = v
+        if path_spec and os.path.exists(path_spec):
+            with open(path_spec) as config_file:
+                spec = json.load(config_file)
+        elif path_spec and hasattr(self, 'dataset_path') and self.dataset_path:
+            raise FileNotFoundError(f"spec.json not found in dataset path: {self.dataset_path}")
+        elif path_spec:
+            # No spec file and no dataset_path - this shouldn't happen
+            raise FileNotFoundError(f"spec.json not found for dataset: {self.dataset_name}")
+        
+        if spec:
+            for k, v in spec.items():
+                setattr(self, k, v)
+                self.hparams[k] = v
 
     def add_arg(self, key: str, value: Any):
         setattr(self, key, value)
@@ -180,7 +212,10 @@ class Project:
         from modules.data_collector import IQSegmentDataset, IQFrameDataset, load_dataset
 
         # Load Dataset
-        X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_name=self.dataset_name)
+        if hasattr(self, 'dataset_path') and self.dataset_path:
+            X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_path=self.dataset_path)
+        else:
+            X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_name=self.dataset_name)
 
         # Apply the PA Gain if training DPD
         self.target_gain = set_target_gain(X_train, y_train)

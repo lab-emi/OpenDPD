@@ -1,4 +1,10 @@
 {
+    "dataset_format": "split_csv",
+    "split_ratios": {
+        "train": 0.6,
+        "val": 0.2,
+        "test": 0.2
+    },
     "input_signal_fs": 800e6,
     "input_signal_bw": 100e6,
     "input_signal_sub_ch_bw": 20e6,
