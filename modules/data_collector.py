@@ -3,20 +3,140 @@ __license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import os
+import json
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
 
-def load_dataset(dataset_name):
-    path_dataset = os.path.join('datasets', dataset_name)
-    X_train = pd.read_csv(os.path.join(path_dataset, 'train_input.csv')).to_numpy()
-    y_train = pd.read_csv(os.path.join(path_dataset, 'train_output.csv')).to_numpy()
-    X_val = pd.read_csv(os.path.join(path_dataset, 'val_input.csv')).to_numpy()
-    y_val = pd.read_csv(os.path.join(path_dataset, 'val_output.csv')).to_numpy()
-    X_test = pd.read_csv(os.path.join(path_dataset, 'test_input.csv')).to_numpy()
-    y_test = pd.read_csv(os.path.join(path_dataset, 'test_output.csv')).to_numpy()
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def load_dataset(dataset_name=None, dataset_path=None):
+    """
+    Load dataset from either split CSV files or a single CSV file.
+    
+    Supports two formats:
+    1. Split CSV format: Separate train_input.csv, train_output.csv, etc.
+    2. Single CSV format: One CSV with columns [I_in, Q_in, I_out, Q_out]
+       and split ratios defined in spec.json
+    
+    Args:
+        dataset_name: Name of dataset in datasets/ folder
+        dataset_path: Direct path to dataset directory or CSV file
+        
+    Returns:
+        Tuple of (X_train, y_train, X_val, y_val, X_test, y_test)
+    """
+    # Determine dataset path
+    if dataset_name:
+        path_dataset = BASE_DIR / 'datasets' / dataset_name
+    elif dataset_path:
+        path_dataset = Path(dataset_path).expanduser()
+        if not path_dataset.is_absolute():
+            path_dataset = (Path.cwd() / path_dataset).resolve()
+    else:
+        raise ValueError("Either dataset_name or dataset_path must be provided")
+    
+    # Check if it's a single CSV file or a directory
+    if path_dataset.is_file() and path_dataset.suffix.lower() == '.csv':
+        # Single CSV file format
+        return _load_single_csv(str(path_dataset))
+    
+    # Check for spec.json to determine format
+    spec_path = path_dataset / 'spec.json'
+    if spec_path.exists():
+        with open(spec_path, 'r') as f:
+            spec = json.load(f)
+        dataset_format = spec.get('dataset_format', 'split_csv')
+    else:
+        # Default to split CSV format if no spec.json
+        dataset_format = 'split_csv'
+    
+    if dataset_format == 'single_csv':
+        # Single CSV with split info in spec.json
+        csv_file = spec.get('csv_filename', 'data.csv')
+        csv_path = path_dataset / csv_file
+        return _load_single_csv_with_spec(str(csv_path), spec)
+    else:
+        # Split CSV format (original format)
+        return _load_split_csv(path_dataset)
+
+
+def _load_split_csv(path_dataset):
+    """Load dataset from split CSV files (original format)"""
+    path_dataset = Path(path_dataset)
+    X_train = pd.read_csv(path_dataset / 'train_input.csv').to_numpy()
+    y_train = pd.read_csv(path_dataset / 'train_output.csv').to_numpy()
+    X_val = pd.read_csv(path_dataset / 'val_input.csv').to_numpy()
+    y_val = pd.read_csv(path_dataset / 'val_output.csv').to_numpy()
+    X_test = pd.read_csv(path_dataset / 'test_input.csv').to_numpy()
+    y_test = pd.read_csv(path_dataset / 'test_output.csv').to_numpy()
+    return X_train, y_train, X_val, y_val, X_test, y_test
+
+
+def _load_single_csv(csv_path):
+    """
+    Load dataset from a single CSV file.
+    Expected columns: I_in, Q_in, I_out, Q_out
+    Uses default split ratios: 60% train, 20% val, 20% test
+    """
+    df = pd.read_csv(csv_path)
+    
+    # Validate columns
+    required_cols = ['I_in', 'Q_in', 'I_out', 'Q_out']
+    if not all(col in df.columns for col in required_cols):
+        raise ValueError(f"CSV must contain columns: {required_cols}. Found: {df.columns.tolist()}")
+    
+    # Default split ratios
+    train_ratio = 0.6
+    val_ratio = 0.2
+    
+    return _split_dataframe(df, train_ratio, val_ratio)
+
+
+def _load_single_csv_with_spec(csv_path, spec):
+    """
+    Load dataset from a single CSV file with split ratios from spec.json
+    """
+    df = pd.read_csv(csv_path)
+    
+    # Validate columns
+    required_cols = ['I_in', 'Q_in', 'I_out', 'Q_out']
+    if not all(col in df.columns for col in required_cols):
+        raise ValueError(f"CSV must contain columns: {required_cols}. Found: {df.columns.tolist()}")
+    
+    # Get split ratios from spec (default: 60% train, 20% val, 20% test)
+    split_ratios = spec.get('split_ratios', {"train": 0.6, "val": 0.2, "test": 0.2})
+    train_ratio = split_ratios.get('train', 0.6)
+    val_ratio = split_ratios.get('val', 0.2)
+    
+    return _split_dataframe(df, train_ratio, val_ratio)
+
+
+def _split_dataframe(df, train_ratio, val_ratio):
+    """
+    Split a dataframe into train, validation, and test sets
+    """
+    n_total = len(df)
+    n_train = int(n_total * train_ratio)
+    n_val = int(n_total * val_ratio)
+    
+    # Split the data
+    train_data = df.iloc[:n_train]
+    val_data = df.iloc[n_train:n_train + n_val]
+    test_data = df.iloc[n_train + n_val:]
+    
+    # Extract input (I, Q) and output (I, Q) as numpy arrays
+    X_train = train_data[['I_in', 'Q_in']].to_numpy()
+    y_train = train_data[['I_out', 'Q_out']].to_numpy()
+    X_val = val_data[['I_in', 'Q_in']].to_numpy()
+    y_val = val_data[['I_out', 'Q_out']].to_numpy()
+    X_test = test_data[['I_in', 'Q_in']].to_numpy()
+    y_test = test_data[['I_out', 'Q_out']].to_numpy()
+    
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 
@@ -26,22 +146,23 @@ def prepare_segments(args):
     if the last section is not of length nperseg.
     """
     nperseg = args.nperseg
-    path_dataset = os.path.join('datasets', args.dataset_name)
-    train_input = pd.read_csv(os.path.join(path_dataset, 'train_input.csv'))
-    train_output = pd.read_csv(os.path.join(path_dataset, 'train_output.csv'))
-    val_input = pd.read_csv(os.path.join(path_dataset, 'val_input.csv'))
-    val_output = pd.read_csv(os.path.join(path_dataset, 'val_output.csv'))
-    test_input = pd.read_csv(os.path.join(path_dataset, 'test_input.csv'))
-    test_output = pd.read_csv(os.path.join(path_dataset, 'test_output.csv'))
+    path_dataset = BASE_DIR / 'datasets' / args.dataset_name
+    train_input = pd.read_csv(path_dataset / 'train_input.csv')
+    train_output = pd.read_csv(path_dataset / 'train_output.csv')
+    val_input = pd.read_csv(path_dataset / 'val_input.csv')
+    val_output = pd.read_csv(path_dataset / 'val_output.csv')
+    test_input = pd.read_csv(path_dataset / 'test_input.csv')
+    test_output = pd.read_csv(path_dataset / 'test_output.csv')
 
     def split_segments(IQ_data):
         num_samples = IQ_data.shape[0]
         segments = []
         for i in range(0, num_samples, nperseg):
             segment = IQ_data[i:i + nperseg]
+            segment = np.asarray(segment)
             if segment.shape[0] < nperseg:
-                padding_shape = (nperseg - segment.shape[0], 2)
-                segment = torch.vstack((segment, torch.zeros(padding_shape)))
+                padding_shape = (nperseg - segment.shape[0], segment.shape[1])
+                segment = np.vstack((segment, np.zeros(padding_shape, dtype=segment.dtype)))
             segments.append(segment)
         return np.array(segments)
 
@@ -93,9 +214,10 @@ class IQSegmentDataset(Dataset):
         segments = []
         for i in range(0, num_samples, self.nperseg):
             segment = sequence[i:i + self.nperseg]
-            if len(segment) < self.nperseg:
-                padding_shape = (self.nperseg - segment.shape[0], 2)
-                segment = torch.vstack((segment, torch.zeros(padding_shape)))
+            segment = np.asarray(segment)
+            if segment.shape[0] < self.nperseg:
+                padding_shape = (self.nperseg - segment.shape[0], segment.shape[1])
+                segment = np.vstack((segment, np.zeros(padding_shape, dtype=segment.dtype)))
             segments.append(segment)
         return np.array(segments)
 

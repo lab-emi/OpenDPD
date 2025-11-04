@@ -1,0 +1,29 @@
+# MANIFEST.in - Include additional files in the distribution
+
+# Include documentation
+include README.md
+include LICENSE
+
+# Include dataset specifications and CSV files
+recursive-include opendpd/datasets *.json *.csv
+recursive-include datasets *.json *.csv
+recursive-include backbones *
+
+# Include backbone configurations
+recursive-include opendpd/backbones *.json
+recursive-include bash_scripts *.sh
+
+# Exclude unnecessary files
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+exclude .gitignore
+exclude .git
+recursive-exclude Matlab *
+recursive-exclude slprj *
+recursive-exclude pics *
+recursive-exclude save *
+recursive-exclude log *
+recursive-exclude dpd_out *
+exclude *.sh
+

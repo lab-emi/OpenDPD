@@ -84,7 +84,7 @@ pip3 install torch torchvision torchaudio
 
 This section introduces the End-to-End learning architecture and how to execute each component using command-line instructions.
 
-<img style="float: left" src="OpenDPDv2.png" alt="drawing"/> 
+<img style="float: left" src="pics/OpenDPDv2.png" alt="drawing"/> 
 
 The E2E learning framework consists of three main components:
 
@@ -146,13 +146,13 @@ python main.py --dataset_name DPA_200MHz --step train_pa --log_precision 4
 ### OpenDPDv1
 To reproduce the PA modeling results shown in **OpenDPD** Figure 4(a):
 ```bash
-bash train_all_pa.sh
+bash bash_scripts/train_all_pa.sh
 ```
 This script trains multiple PA models (each with approximately 500 parameters) using 5 different random seeds. Figure 4(a) displays the averaged results from these runs.
 
 To reproduce the DPD learning results in Figure 4(b), Figure 4(d), and Table 1:
 ```bash
-bash train_all_dpd.sh
+bash bash_scripts/train_all_dpd.sh
 ```
 This script trains various DPD models, each with approximately 500 parameters.
 
@@ -160,13 +160,13 @@ This script trains various DPD models, each with approximately 500 parameters.
 
 For convenience, you can reproduce all MP-DPD results using:
 ```bash
-bash quant_mp_dpd.sh
+bash bash_scripts/quant_mp_dpd.sh
 ```
 
 ### OpenDPDv2
 To reproduce the quantized (W16A16) TRes-DeltaGRU-450 DPD modeling results shown in **OpenDPDv2** Table 1:
 ```bash
-bash OpenDPDv2.sh
+bash bash_scripts/OpenDPDv2.sh
 ```
 
 # Experimental Setup
