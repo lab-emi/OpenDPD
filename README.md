@@ -14,6 +14,12 @@ Start with the Google Colab tutorial by clicking the badge below for a zero-inst
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1o5X8hztWyMKaMhPs2gUf2fZABCq2nUjn?usp=sharing)
 
+# Demo Video
+Watch our [Demo Video](https://www.youtube.com/watch?v=_IFQx0IDHE4) to see a real OpenDPDv2-trained neural DPD model in action achieving close to -60 dBc ACPR on a 200 MHz 256-QAM 5G NR signal with a -41.5 dBm average output power GaN PA.
+
+[![OpenDPD Introduction Video](https://img.youtube.com/vi/_IFQx0IDHE4/0.jpg)](https://www.youtube.com/watch?v=_IFQx0IDHE4)
+
+
 # Version Update
 **OpenDPDv2** embeds a new temporal residual (TRes)-DeltaGRU NN DPD algorithm and a new TM3.1a 5-channel x 40 MHz (200 MHz) test signal dataset, measured from a 3.5 GHz Ampleon GaN PA at 41.5 dBm average output power, named APA_200MHz, enabling fast prototyping of accurate and power-efficient NN-based DPD algorithms by streamlining learning and optimization through DPD quantization and temporal sparsity exploitation.
 | Version    | Related Papers|Dataset                                      |    Supported Backbones      | Performance <br> on APA_200MHz
