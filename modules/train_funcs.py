@@ -24,24 +24,41 @@ def net_train(log: Dict[str, Any],
     net = net.train()
     # Statistics
     losses = []
+    # Check if optimizer requires closure (e.g., LBFGS)
+    use_closure = isinstance(optimizer, torch.optim.LBFGS)
     # Iterate through batches
     for features, targets in tqdm(dataloader):
         # Move features and targets to the proper device
         features = features.to(device)
         targets = targets.to(device)
-        # Initialize all gradients to zero
-        optimizer.zero_grad()
-        # Forward Propagation
-        out = net(features)
-        # Calculate the Loss Function
-        loss = criterion(out, targets)
-        # Backward propagation
-        loss.backward()
-        # Gradient clipping
-        if grad_clip_val != 0:
-            nn.utils.clip_grad_norm_(net.parameters(), grad_clip_val)
-        # Update parameters
-        optimizer.step()
+
+        if use_closure:
+            # LBFGS requires a closure that re-evaluates the model
+            def closure():
+                optimizer.zero_grad()
+                out = net(features)
+                loss = criterion(out, targets)
+                loss.backward()
+                if grad_clip_val != 0:
+                    nn.utils.clip_grad_norm_(net.parameters(), grad_clip_val)
+                return loss
+            loss = optimizer.step(closure)
+        else:
+            # Standard optimizer step
+            # Initialize all gradients to zero
+            optimizer.zero_grad()
+            # Forward Propagation
+            out = net(features)
+            # Calculate the Loss Function
+            loss = criterion(out, targets)
+            # Backward propagation
+            loss.backward()
+            # Gradient clipping
+            if grad_clip_val != 0:
+                nn.utils.clip_grad_norm_(net.parameters(), grad_clip_val)
+            # Update parameters
+            optimizer.step()
+
         # Detach loss from the graph indicating the end of forward propagation
         loss.detach()
         # Get losses

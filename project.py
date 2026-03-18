@@ -284,6 +284,28 @@ class Project:
         elif self.opt_type == 'adabound':
             import adabound  # Run pip install adabound (https://github.com/Luolc/AdaBound)
             optimizer = adabound.AdaBound(net.parameters(), lr=self.lr, final_lr=0.1)
+        elif self.opt_type == 'adadelta':
+            optimizer = optim.Adadelta(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'adafactor':
+            optimizer = optim.Adafactor(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'adagrad':
+            optimizer = optim.Adagrad(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'sparseadam':
+            optimizer = optim.SparseAdam(list(net.parameters()), lr=self.lr)
+        elif self.opt_type == 'adamax':
+            optimizer = optim.Adamax(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'asgd':
+            optimizer = optim.ASGD(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'lbfgs':
+            optimizer = optim.LBFGS(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'muon':
+            optimizer = optim.Muon(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'nadam':
+            optimizer = optim.NAdam(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'radam':
+            optimizer = optim.RAdam(net.parameters(), lr=self.lr)
+        elif self.opt_type == 'rprop':
+            optimizer = optim.Rprop(net.parameters(), lr=self.lr)
         else:
             raise RuntimeError('Please use a valid optimizer.')
 

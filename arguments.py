@@ -30,8 +30,12 @@ def get_arguments():
     # General Hyperparameters
     parser.add_argument('--seed', default=0, type=int, help='Global random number seed.')
     parser.add_argument('--loss_type', default='l2', choices=['l1', 'l2'], help='Type of loss function.')
-    parser.add_argument('--opt_type', default='adamw', choices=['sgd', 'adam', 'adamw', 'adabound', 'rmsprop'], help='Type of optimizer.')
-    parser.add_argument('--batch_size', default=256, type=int, help='Batch size for training.')
+    parser.add_argument('--opt_type', default='adamw',
+                        choices=['sgd', 'adam', 'adamw', 'adabound', 'rmsprop',
+                                 'adadelta', 'adafactor', 'adagrad', 'sparseadam',
+                                 'adamax', 'asgd', 'lbfgs', 'muon', 'nadam', 'radam', 'rprop'],
+                        help='Type of optimizer.')
+    parser.add_argument('--batch_size', default=128, type=int, help='Batch size for training.')
     parser.add_argument('--batch_size_eval', default=256, type=int, help='Batch size for evaluation.')
     parser.add_argument('--n_epochs', default=100, type=int, help='Number of epochs to train for.')
     parser.add_argument('--lr_schedule', default=0, type=int, help='Whether enable learning rate scheduling')
