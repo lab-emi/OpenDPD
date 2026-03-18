@@ -89,7 +89,15 @@ All optimizers use the same learning rate (5e-4) and training configuration for 
 | **ASGD** | Averaged | Averaged SGD; averages parameters over iterations |
 | **LBFGS** | Quasi-Newton | Limited-memory BFGS; uses closure-based step |
 
-### 7.2 Failed (2/15)
+### 7.2 External Optimizers
+
+| Optimizer | Package | Type | Key Characteristics |
+|-----------|---------|------|-------------------|
+| **Levenberg-Marquardt** | `torch-levenberg-marquardt` | Second-order | Damped Gauss-Newton; computes full Jacobian, solves normal equations via QR |
+
+**Note:** LM is not a `torch.optim.Optimizer`. It wraps the model via `LevenbergMarquardtModule` and manages optimization internally. PyTorch's fused `nn.GRU` kernel is incompatible with functorch's `functional_call` (required for Jacobian computation), so a pure-tensor GRU cell implementation is used. Due to the O(N*P) Jacobian memory cost, LM was run with `frame_length=20` and `batch_size=32` (vs. `frame_length=200` and `batch_size=256` for torch.optim optimizers).
+
+### 7.3 Failed (2/15)
 
 | Optimizer | Reason |
 |-----------|--------|
@@ -116,7 +124,15 @@ All optimizers use the same learning rate (5e-4) and training configuration for 
 | 12 | SGD | 99 | -27.41 | -16.71 | -17.71 | 0.64 |
 | 13 | LBFGS | 0 | -27.32 | -6.03 | -6.13 | 2.71 |
 
-### 8.2 Convergence: Validation ACLR_AVG (dB) at Key Epochs
+### 8.2 Levenberg-Marquardt (External, Different Training Config)
+
+| Optimizer | Best Epoch | ACLR_AVG (dB) | EVM (dB) | NMSE (dB) | Time (min) | Config |
+|-----------|-----------|---------------|----------|-----------|------------|--------|
+| Levenberg-Marquardt | 19 | -46.73 | 0.84 | 14.04 | 91.01 | frame=20, batch=32, lr=1.0 |
+
+**Caveat:** LM used `frame_length=20` (vs. 200 for all other optimizers) due to the O(N*P) Jacobian memory constraint. This reduces temporal context per sample and makes direct comparison imprecise. Additionally, LM briefly reached -51.08 dB validation ACLR at epoch 19, but the model destabilized at epoch 20 (training loss jumped 18x) and never recovered, settling at ~-27 dB for the remaining 80 epochs. The positive EVM (+0.84 dB) and NMSE (+14.04 dB) at the best ACLR epoch indicate overfitting to spectral metrics at the expense of signal fidelity.
+
+### 8.3 Convergence: Validation ACLR_AVG (dB) at Key Epochs
 
 | Optimizer | Ep 1 | Ep 10 | Ep 25 | Ep 50 | Ep 75 | Ep 100 |
 |-----------|------|-------|-------|-------|-------|--------|
@@ -162,13 +178,23 @@ Five optimizers failed to meaningfully train the GRU DPD with lr=5e-4:
 - **ASGD** (-29.85 dB at epoch 0, degrading): Parameter averaging over iterations hurts when the optimizer hasn't converged, as early bad iterates corrupt the average.
 - **LBFGS** (-27.32 dB, flat across all epochs): Despite being a quasi-Newton method, LBFGS struggles in the mini-batch setting. The curvature estimates from stochastic gradients are noisy and misleading. LBFGS also took 4x longer per epoch due to its closure-based multi-evaluation step.
 
+### Levenberg-Marquardt (Second-Order)
+
+Levenberg-Marquardt achieves competitive ACLR (-46.73 dB test, -51.08 dB val peak) in only 19 epochs, demonstrating the fast convergence potential of second-order methods. However, it has critical drawbacks for RNN-based DPD:
+
+1. **Instability**: The model destabilized after epoch 20, with training loss jumping 18x. LM's Gauss-Newton Hessian approximation assumes a nearly linear residual structure, which breaks down on the non-convex RNN loss surface.
+2. **Poor signal fidelity**: At the best ACLR epoch, EVM (+0.84 dB) and NMSE (+14.04 dB) are both positive, meaning the predistorted signal is spectrally clean but the time-domain waveform is severely distorted. This is not useful for practical DPD.
+3. **Extreme computational cost**: 91 min for 100 epochs (140x slower than AdamW) due to per-batch Jacobian computation. This was with reduced `frame_length=20` — the standard `frame_length=200` was intractable.
+4. **Architecture constraints**: Required a custom pure-tensor GRU implementation because PyTorch's fused GRU kernel is incompatible with functorch's `functional_call`.
+
 ### Key Takeaways
 
 1. **Use AdamW (default) or Adam** for GRU DPD training. They consistently achieve the best linearization performance.
 2. **The Adam family is robust to default hyperparameters**: All five Adam variants work well with lr=5e-4, no warmup, no scheduling.
 3. **Rprop converges fastest in early epochs** but plateaus 5 dB below Adam. It could be useful for rapid prototyping or when training time is severely constrained.
 4. **SGD, Adadelta, Adagrad, ASGD, and LBFGS are not recommended** for DPD training at this learning rate. They may perform better with extensive hyperparameter tuning, but the Adam family works well out of the box.
-5. **SparseAdam and Muon are not applicable** to standard GRU models due to architecture constraints (sparse gradients and 2D-only parameters, respectively).
+5. **Levenberg-Marquardt is not recommended** for RNN-based DPD despite fast early convergence. The instability, poor EVM/NMSE, and extreme computational cost make it impractical. It may work better for feedforward DPD models where the loss surface is more convex.
+6. **SparseAdam and Muon are not applicable** to standard GRU models due to architecture constraints (sparse gradients and 2D-only parameters, respectively).
 
 ## 10. Reproducing These Results
 
@@ -200,6 +226,12 @@ python main.py --step train_dpd --dataset_name APA_200MHz --PA_backbone gru --PA
 python main.py --step train_dpd --dataset_name APA_200MHz --PA_backbone gru --PA_hidden_size 23 --DPD_backbone gru --DPD_hidden_size 11 --n_epochs 100 --batch_size 256 --opt_type adagrad
 python main.py --step train_dpd --dataset_name APA_200MHz --PA_backbone gru --PA_hidden_size 23 --DPD_backbone gru --DPD_hidden_size 11 --n_epochs 100 --batch_size 256 --opt_type asgd
 python main.py --step train_dpd --dataset_name APA_200MHz --PA_backbone gru --PA_hidden_size 23 --DPD_backbone gru --DPD_hidden_size 11 --n_epochs 100 --batch_size 256 --opt_type lbfgs
+```
+
+### Levenberg-Marquardt (requires `pip install torch-levenberg-marquardt`)
+
+```bash
+python benchmark/run_lm_benchmark.py --n_epochs 100 --batch_size 32 --frame_length 20
 ```
 
 ### Running Full Benchmark

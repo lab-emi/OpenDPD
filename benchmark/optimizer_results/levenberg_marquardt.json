@@ -1,0 +1,19 @@
+{
+  "optimizer": "levenberg_marquardt",
+  "status": "OK",
+  "time_s": 5460.726363658905,
+  "best_epoch": 19,
+  "learning_rate": 1.0,
+  "solve_method": "qr",
+  "attempts_per_step": 10,
+  "TEST_ACLR_AVG": -46.733455238944956,
+  "TEST_ACLR_L": -46.59647442497204,
+  "TEST_ACLR_R": -46.870436052917874,
+  "TEST_EVM": 0.8420841386782142,
+  "TEST_NMSE": 14.03867244720459,
+  "TEST_LOSS": 1.7151377201080322,
+  "VAL_ACLR_AVG": -51.08406171543555,
+  "VAL_EVM": 0.9097738359714257,
+  "TRAIN_LOSS": 8.217510707596083e-05,
+  "EPOCH": 19.0
+}
