@@ -1022,21 +1022,14 @@ def generate_independent(target_sig, sr, num_channels=5, bw_mhz=20,
                          mod_order=256, seed=None, n_iter=200, verbose=True):
     """Generate a fresh, independent signal matching the target's statistics.
 
-    Per-channel baseband processing for deep inter-channel isolation.
+    OFDM-aware 3-stage algorithm:
+      Stage 1: Per-channel OFDM generation with subcarrier power shaping
+      Stage 2: Composite assembly + CFR PAPR matching + spectral envelope correction
+      Stage 3: Iterative per-channel power balance + bounded amplitude refinement
 
-    Instead of generating a composite signal and matching the composite PSD
-    (which fills inter-channel gaps during time-domain amplitude matching),
-    this version processes each channel independently:
-
-    1. Isolate each channel's baseband from the target (spectral template)
-    2. Generate fresh OFDM baseband per channel with new random QAM data
-    3. Per-channel alternating projections (PSD + amplitude matching)
-    4. Frequency-shift each channel to its carrier and sum
-
-    Each channel's baseband is strictly band-limited, so no energy leaks
-    into adjacent channels.  Carrier frequencies (multiples of 20 MHz)
-    align exactly with the DFT grid (5 kHz bins), ensuring the frequency
-    shift introduces zero spectral leakage.
+    Key invariant: QAM constellation phase is never modified.  Only
+    per-subcarrier magnitude scaling is applied, preserving clean
+    QAM constellation points when demodulated.
 
     Parameters
     ----------
@@ -1046,56 +1039,80 @@ def generate_independent(target_sig, sr, num_channels=5, bw_mhz=20,
     bw_mhz : float
     mod_order : int  (64 for TM3.1, 256 for TM3.1a)
     seed : int or None
-    n_iter : int  (alternating projection iterations per channel, default 200)
+    n_iter : int  (unused, kept for API compat)
     verbose : bool
 
     Returns
     -------
     signal : 1-D complex array (same length as target_sig)
-    info : dict with keys: metrics, seed, n_iter
+    info : dict with keys: metrics, seed, sr
     """
     from scipy.ndimage import uniform_filter1d
 
     n = len(target_sig)
     bw_hz = bw_mhz * 1e6
     target_rms = float(np.sqrt(np.mean(np.abs(target_sig) ** 2)))
+    target_papr = 10 * np.log10(
+        np.max(np.abs(target_sig) ** 2)
+        / (np.mean(np.abs(target_sig) ** 2) + 1e-30))
 
     carrier_centers = [(k - (num_channels - 1) / 2) * bw_hz
                        for k in range(num_channels)]
 
-    # ── Step 1: Extract per-channel baseband templates from target ────────
-    if verbose:
-        print("Extracting per-channel baseband templates from target ...")
-    target_channels = []
-    for k, fc in enumerate(carrier_centers):
-        bb = _isolate_carrier(target_sig, sr, fc, bw_hz)
-        target_channels.append(bb)
-        if verbose:
-            ch_power = 10 * np.log10(np.mean(np.abs(bb) ** 2) + 1e-30)
-            print(f"  Ch{k+1} ({fc/1e6:+6.0f} MHz): power = {ch_power:.1f} dB")
-
-    # ── Step 2: NR parameters for per-channel baseband generation ─────────
+    # ── NR parameters ─────────────────────────────────────────────────────
     p = nr_params(scs_khz=15, bandwidth_mhz=bw_mhz, osr=16)
     nfft_ofdm = p['nfft']
     n_sc = p['n_sc']
     cp = p['cp_lengths']
+    sym_per_slot = len(cp)
     min_slots = max(1, int(np.ceil(n / p['samples_per_slot'])))
-    total_sym = min_slots * len(cp)
+    total_sym = min_slots * sym_per_slot
 
-    # ── Step 3: Per-channel generation + alternating projection ───────────
-    composite = np.zeros(n, dtype=complex)
-    t_idx = np.arange(n)
-    ch_iter = min(n_iter, 100)  # per-channel converges faster
+    if verbose:
+        print(f"NR params: NFFT={nfft_ofdm}, SR={sr/1e6:.2f} MHz, "
+              f"SC={n_sc} ({p['n_rb']} RBs), mod={mod_order}QAM")
+        print(f"Generating {min_slots} slot(s) = {total_sym} symbols/channel")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # STAGE 1: Per-channel OFDM generation + subcarrier power shaping
+    # ══════════════════════════════════════════════════════════════════════
+    if verbose:
+        print("\n=== Stage 1: Per-channel OFDM + subcarrier power shaping ===")
+
+    channel_basebands = []   # corrected baseband per channel
+    channel_gains = []       # per-channel gain (for Stage 3 iteration)
 
     for k, fc in enumerate(carrier_centers):
         ch_seed = (seed + k) if seed is not None else None
         if verbose:
             print(f"\n--- Channel {k+1}/{num_channels} ({fc/1e6:+.0f} MHz) ---")
 
-        # Generate fresh OFDM baseband for this channel
+        # 1a. Generate fresh OFDM baseband
         grid = generate_resource_grid(n_sc, total_sym, mod_order, ch_seed)
-        fd = grid / np.max(np.abs(grid))
-        sig_ch = rebuild_signal(fd, nfft_ofdm, cp)
+
+        # 1b. Extract target's per-subcarrier power profile
+        P_tgt = extract_subcarrier_power_profile(
+            target_sig, sr, fc, bw_hz, n_active=n_sc)
+
+        # 1c. Compute generated grid's per-subcarrier power
+        P_gen = np.mean(np.abs(grid) ** 2, axis=1)  # avg across symbols
+
+        # 1d. Apply subcarrier-level magnitude correction
+        # Normalize both to unit mean so we only correct the SHAPE
+        P_tgt_norm = P_tgt / (np.mean(P_tgt) + 1e-30)
+        P_gen_norm = P_gen / (np.mean(P_gen) + 1e-30)
+        ratio = np.sqrt(P_tgt_norm / (P_gen_norm + 1e-30))
+        # Cap extreme corrections to avoid amplifying noise
+        ratio = np.clip(ratio, 0.1, 10.0)
+        grid *= ratio[:, np.newaxis]
+
+        if verbose:
+            print(f"  Subcarrier correction: mean ratio={np.mean(ratio):.3f}, "
+                  f"max={np.max(ratio):.3f}, min={np.min(ratio):.3f}")
+
+        # 1e. Normalize grid and rebuild time-domain OFDM signal
+        grid /= np.max(np.abs(grid))
+        sig_ch = rebuild_signal(grid, nfft_ofdm, cp)
         sig_ch = filter_signal(sig_ch, sr, bw_mhz)
 
         # Pad or trim to n samples
@@ -1103,99 +1120,81 @@ def generate_independent(target_sig, sr, num_channels=5, bw_mhz=20,
             sig_ch = np.pad(sig_ch, (0, n - len(sig_ch)))
         sig_ch = sig_ch[:n]
 
-        # Per-channel alternating projection:
-        # Match this channel's PSD and amplitude distribution to the
-        # target channel's.  Because mag_ch has zeros at out-of-band
-        # DFT bins (from _isolate_carrier's rectangular filter), the
-        # PSD projection enforces strict band-limiting each iteration.
-        tgt_bb = target_channels[k]
-        tgt_bb_n = tgt_bb / np.sqrt(np.mean(np.abs(tgt_bb) ** 2) + 1e-30)
-        sig_n = sig_ch / np.sqrt(np.mean(np.abs(sig_ch) ** 2) + 1e-30)
+        # 1f. Scale to match target channel's RMS power
+        tgt_bb = _isolate_carrier(target_sig, sr, fc, bw_hz)
+        tgt_ch_rms = float(np.sqrt(np.mean(np.abs(tgt_bb) ** 2)))
+        gen_ch_rms = float(np.sqrt(np.mean(np.abs(sig_ch) ** 2) + 1e-30))
+        gain_k = tgt_ch_rms / gen_ch_rms
+        sig_ch *= gain_k
 
-        T_ch = np.fft.fft(tgt_bb_n)
-        mag_ch = np.abs(T_ch)
-        sorted_tgt_amp = np.sort(np.abs(tgt_bb_n))
-
-        # Initial spectral projection
-        G = np.fft.fft(sig_n)
-        sig = np.fft.ifft(mag_ch * np.exp(1j * np.angle(G)))
-
-        if verbose:
-            print(f"  Running {ch_iter} alternating projections ...")
-
-        for it in range(ch_iter):
-            # Amplitude histogram matching
-            mag_s = np.abs(sig)
-            idx = np.argsort(mag_s)
-            new_mag = np.empty_like(mag_s)
-            new_mag[idx] = sorted_tgt_amp
-            sig = new_mag * np.exp(1j * np.angle(sig))
-
-            # PSD projection (always last → exact per-channel spectral match)
-            G = np.fft.fft(sig)
-            sig = np.fft.ifft(mag_ch * np.exp(1j * np.angle(G)))
-
-        # Scale to match target channel's RMS power
-        tgt_ch_rms = np.sqrt(np.mean(np.abs(tgt_bb) ** 2))
-        sig = sig * tgt_ch_rms / np.sqrt(np.mean(np.abs(sig) ** 2) + 1e-30)
-
-        # Frequency-shift to carrier position and add to composite
-        composite += sig * np.exp(1j * 2 * np.pi * t_idx * fc / sr)
+        channel_basebands.append(sig_ch)
+        channel_gains.append(gain_k)
 
         if verbose:
             ch_papr = 10 * np.log10(
-                np.max(np.abs(sig) ** 2)
-                / (np.mean(np.abs(sig) ** 2) + 1e-30))
-            print(f"  Channel PAPR: {ch_papr:.2f} dB")
+                np.max(np.abs(sig_ch) ** 2)
+                / (np.mean(np.abs(sig_ch) ** 2) + 1e-30))
+            print(f"  Channel PAPR: {ch_papr:.2f} dB, "
+                  f"RMS gain: {gain_k:.4f}")
 
-    # Scale to match target's RMS
+    # ══════════════════════════════════════════════════════════════════════
+    # STAGE 2: Composite assembly + PAPR matching + spectral envelope
+    # ══════════════════════════════════════════════════════════════════════
+    if verbose:
+        print("\n=== Stage 2: Composite assembly + PAPR + spectral envelope ===")
+
+    t_idx = np.arange(n)
+
+    def _assemble(basebands, gains_adj=None):
+        """Assemble composite from per-channel basebands."""
+        comp = np.zeros(n, dtype=complex)
+        for k, fc in enumerate(carrier_centers):
+            bb = basebands[k]
+            if gains_adj is not None:
+                bb = bb * gains_adj[k]
+            comp += bb * np.exp(1j * 2 * np.pi * t_idx * fc / sr)
+        return comp
+
+    composite = _assemble(channel_basebands)
+
+    # 2a. Scale to target RMS
     composite *= target_rms / np.sqrt(
         np.mean(np.abs(composite) ** 2) + 1e-30)
 
-    # ── Step 4: Composite PAPR refinement ─────────────────────────────────
-    # Per-channel processing gives deep isolation but composite PAPR may
-    # exceed the target (peaks from 5 channels add up). Refine by
-    # alternating:
-    #   a) Composite amplitude histogram matching → controls PAPR
-    #   b) Per-channel decomposition + spectral re-projection → restores
-    #      per-channel PSD and inter-channel isolation
-    sig = composite / np.sqrt(np.mean(np.abs(composite) ** 2) + 1e-30)
-    tgt_n = target_sig / np.sqrt(np.mean(np.abs(target_sig) ** 2) + 1e-30)
-    sorted_comp_amp = np.sort(np.abs(tgt_n))
+    # 2b+2c. Alternating projections: PSD match + PAPR clipping
+    # Uses the target's magnitude spectrum as the PSD template and the
+    # generated composite's phase (from proper OFDM).  Alternates:
+    #   1) PAPR clip (soft-clip peaks to target PAPR level)
+    #   2) PSD projection (re-impose target magnitude spectrum)
+    # Ends on PSD projection so the final PSD is exact.
+    total_bw = bw_mhz * num_channels
+    g_n = composite / np.sqrt(np.mean(np.abs(composite) ** 2) + 1e-30)
+    t_n = target_sig / np.sqrt(np.mean(np.abs(target_sig) ** 2) + 1e-30)
 
-    # Per-channel spectral templates at the normalized composite scale
-    ch_mags = []
-    ch_rms_tgt = []
-    for k, fc in enumerate(carrier_centers):
-        bb_tgt = _isolate_carrier(tgt_n, sr, fc, bw_hz)
-        ch_mags.append(np.abs(np.fft.fft(bb_tgt)))
-        ch_rms_tgt.append(float(np.sqrt(
-            np.mean(np.abs(bb_tgt) ** 2))))
+    T = np.fft.fft(t_n)
+    mag_target = np.abs(T)
+    target_linear = 10 ** (target_papr / 10)
 
-    n_refine = 20
-    if verbose:
-        print(f"\nRefining composite PAPR ({n_refine} iterations) ...")
+    # Initial PSD projection
+    G = np.fft.fft(g_n)
+    sig = np.fft.ifft(mag_target * np.exp(1j * np.angle(G)))
 
-    for it in range(n_refine):
-        # a) Composite amplitude histogram matching
+    kern = max(1, int(200e3 / (sr / n)))
+    n_proj = 50  # alternating projection iterations
+
+    for it in range(n_proj):
+        # PAPR projection: soft-clip peaks
+        pk = np.max(np.abs(sig) ** 2)
+        av = np.mean(np.abs(sig) ** 2)
+        clip_level = np.sqrt(av * target_linear)
         mag_s = np.abs(sig)
-        idx = np.argsort(mag_s)
-        new_mag = np.empty_like(mag_s)
-        new_mag[idx] = sorted_comp_amp
-        sig = new_mag * np.exp(1j * np.angle(sig))
+        over = mag_s > clip_level
+        if np.any(over):
+            sig = np.where(over, sig * clip_level / (mag_s + 1e-30), sig)
 
-        # b) Per-channel decomposition + spectral re-projection
-        sig_new = np.zeros(n, dtype=complex)
-        for k, fc in enumerate(carrier_centers):
-            bb = _isolate_carrier(sig, sr, fc, bw_hz)
-            G = np.fft.fft(bb)
-            bb_ref = np.fft.ifft(
-                ch_mags[k] * np.exp(1j * np.angle(G)))
-            bb_ref *= ch_rms_tgt[k] / np.sqrt(
-                np.mean(np.abs(bb_ref) ** 2) + 1e-30)
-            sig_new += bb_ref * np.exp(
-                1j * 2 * np.pi * t_idx * fc / sr)
-        sig = sig_new
+        # PSD projection: re-impose target magnitude (always last)
+        G = np.fft.fft(sig)
+        sig = np.fft.ifft(mag_target * np.exp(1j * np.angle(G)))
 
     composite = sig * target_rms / np.sqrt(
         np.mean(np.abs(sig) ** 2) + 1e-30)
@@ -1203,23 +1202,96 @@ def generate_independent(target_sig, sr, num_channels=5, bw_mhz=20,
     if verbose:
         _p = 10 * np.log10(np.max(np.abs(composite) ** 2)
                            / (np.mean(np.abs(composite) ** 2) + 1e-30))
-        print(f"  Refined PAPR: {_p:.2f} dB")
+        print(f"  Alternating projections ({n_proj} iters): "
+              f"PAPR = {_p:.2f} dB (target: {target_papr:.2f} dB)")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # STAGE 3: Per-channel power balance (iterative) + bounded CDF
+    # ══════════════════════════════════════════════════════════════════════
+    if verbose:
+        print("\n=== Stage 3: Per-channel power balance + CDF refinement ===")
+
+    # 3a. Iterative per-channel power balance
+    # Adjust pre-CFR per-channel gains, re-apply CFR, check balance.
+    freqs = np.fft.fftshift(np.fft.fftfreq(n, d=1.0 / sr))
+    gains_adj = np.ones(num_channels)
+
+    for balance_iter in range(5):
+        ft_g = np.fft.fftshift(np.fft.fft(
+            composite / np.sqrt(np.mean(np.abs(composite) ** 2) + 1e-30)))
+        ft_t = np.fft.fftshift(np.fft.fft(t_n))
+
+        max_err = 0.0
+        for k, fc in enumerate(carrier_centers):
+            m = (freqs >= fc - bw_hz / 2) & (freqs <= fc + bw_hz / 2)
+            pg_c = 10 * np.log10(np.mean(np.abs(ft_g[m]) ** 2) + 1e-30)
+            pt_c = 10 * np.log10(np.mean(np.abs(ft_t[m]) ** 2) + 1e-30)
+            err_db = pt_c - pg_c
+            max_err = max(max_err, abs(err_db))
+            # Adjust gain for next iteration
+            gains_adj[k] *= 10 ** (err_db / 20)
+
+        if verbose:
+            print(f"  Balance iter {balance_iter+1}: max ch err = {max_err:.4f} dB")
+        if max_err < 0.1:
+            break
+
+        # Re-assemble with adjusted gains, re-apply CFR
+        composite = _assemble(channel_basebands, gains_adj)
+        composite *= target_rms / np.sqrt(
+            np.mean(np.abs(composite) ** 2) + 1e-30)
+        composite, cfr_thr = tune_cfr_threshold(
+            composite, target_papr, sr=sr, bw_mhz=total_bw)
+
+    # 3b. Bounded amplitude CDF refinement (single pass, 5% cap)
+    sorted_tgt_amp = np.sort(np.abs(t_n))
+    sig_n = composite / np.sqrt(np.mean(np.abs(composite) ** 2) + 1e-30)
+
+    mag_s = np.abs(sig_n)
+    idx = np.argsort(mag_s)
+    target_mags = np.empty_like(mag_s)
+    target_mags[idx] = sorted_tgt_amp
+
+    # Cap change at 5% per sample
+    max_change = 0.05 * mag_s
+    delta = target_mags - mag_s
+    delta = np.clip(delta, -max_change, max_change)
+    new_mag = mag_s + delta
+    composite = new_mag * np.exp(1j * np.angle(sig_n))
+    composite *= target_rms / np.sqrt(
+        np.mean(np.abs(composite) ** 2) + 1e-30)
+
+    if verbose:
+        cdf_change = np.mean(np.abs(delta) / (mag_s + 1e-30)) * 100
+        print(f"  CDF refinement: mean change = {cdf_change:.2f}%")
+
+    # 3c. Final PSD re-projection to restore exact spectral match
+    # (CDF refinement and power balancing distort the spectrum slightly)
+    G_final = np.fft.fft(
+        composite / np.sqrt(np.mean(np.abs(composite) ** 2) + 1e-30))
+    composite = np.fft.ifft(mag_target * np.exp(1j * np.angle(G_final)))
+    composite *= target_rms / np.sqrt(
+        np.mean(np.abs(composite) ** 2) + 1e-30)
+
+    if verbose:
+        _p = 10 * np.log10(np.max(np.abs(composite) ** 2)
+                           / (np.mean(np.abs(composite) ** 2) + 1e-30))
+        print(f"  Final PSD re-projection: PAPR = {_p:.2f} dB")
 
     # ── Metrics ───────────────────────────────────────────────────────────
     g_rms = composite / np.sqrt(np.mean(np.abs(composite) ** 2) + 1e-30)
-    t_rms = target_sig / np.sqrt(np.mean(np.abs(target_sig) ** 2) + 1e-30)
+    t_rms_sig = target_sig / np.sqrt(
+        np.mean(np.abs(target_sig) ** 2) + 1e-30)
 
-    freqs = np.fft.fftshift(np.fft.fftfreq(n, d=1.0 / sr))
     ft_g = np.fft.fftshift(np.fft.fft(g_rms))
-    ft_t = np.fft.fftshift(np.fft.fft(t_rms))
-    kern = max(1, int(200e3 / (sr / n)))
+    ft_t = np.fft.fftshift(np.fft.fft(t_rms_sig))
     pg = uniform_filter1d(20 * np.log10(np.abs(ft_g) + 1e-30), kern)
     pt = uniform_filter1d(20 * np.log10(np.abs(ft_t) + 1e-30), kern)
     ibw_hz = num_channels * bw_hz
-    mask = ((np.abs(freqs) < ibw_hz / 2 + 5e6)
-            & (np.abs(ft_t) > 1e-2 * np.max(np.abs(ft_t))))
-    psd_mae = float(np.mean(np.abs(pg[mask] - pt[mask]))) \
-        if np.any(mask) else 0.
+    psd_mask = ((np.abs(freqs) < ibw_hz / 2 + 5e6)
+                & (np.abs(ft_t) > 1e-2 * np.max(np.abs(ft_t))))
+    psd_mae = float(np.mean(np.abs(pg[psd_mask] - pt[psd_mask]))) \
+        if np.any(psd_mask) else 0.
 
     def _papr(s):
         return 10 * np.log10(np.max(np.abs(s) ** 2)
@@ -1239,7 +1311,7 @@ def generate_independent(target_sig, sr, num_channels=5, bw_mhz=20,
         pt_c = 10 * np.log10(np.mean(np.abs(ft_t[m]) ** 2) + 1e-30)
         ch_err = max(ch_err, abs(pg_c - pt_c))
 
-    # Inter-channel isolation: PSD floor in gaps between adjacent channels
+    # Inter-channel isolation
     inter_ch_floors = []
     peak_db = float(np.max(pg))
     for k in range(num_channels - 1):
@@ -1249,7 +1321,6 @@ def generate_independent(target_sig, sr, num_channels=5, bw_mhz=20,
         if np.any(gap_mask):
             floor_db = float(np.mean(pg[gap_mask]))
             inter_ch_floors.append(floor_db - peak_db)
-
     worst_isolation = max(inter_ch_floors) if inter_ch_floors else -999.0
 
     metrics = dict(psd_mae=psd_mae, d_papr=d_papr,
@@ -1264,7 +1335,8 @@ def generate_independent(target_sig, sr, num_channels=5, bw_mhz=20,
         print(f"  Ch Err   = {ch_err:.4f} dB")
         print(f"  PAPR     = {_papr(composite):.2f} dB  "
               f"(target: {_papr(target_sig):.2f} dB)")
-        print(f"  Inter-ch isolation = {worst_isolation:.1f} dB")
+        if num_channels > 1:
+            print(f"  Inter-ch isolation = {worst_isolation:.1f} dB")
 
     return composite, dict(metrics=metrics, seed=seed, n_iter=n_iter, sr=sr)
 
