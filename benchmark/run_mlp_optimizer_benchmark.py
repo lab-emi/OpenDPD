@@ -199,9 +199,26 @@ def run_lm(args, val_loader, test_loader, spec, device):
     print(f"  Solve: {args.lm_solve} | Attempts: {args.lm_attempts}")
     print(f"{'='*60}")
 
-    net_cas, net_dpd, dpd_params = build_cascaded_model(
-        args.dataset_name, args.pa_hidden_size, args.dpd_hidden_size, args.seed, device,
-        pa_backbone=args.pa_backbone)
+    # Build LM-compatible cascaded model: FCN DPD + FunctorchGRU PA
+    # (nn.GRU is incompatible with functorch's functional_call)
+    input_size = 2
+    net_pa_orig = model.CoreModel(input_size=input_size, hidden_size=args.pa_hidden_size,
+                                  num_layers=1, backbone_type='gru')
+    pa_params = count_net_params(net_pa_orig)
+    pa_path = os.path.join('save', args.dataset_name, 'train_pa',
+                           f'PA_S_{args.seed}_M_GRU_H_{args.pa_hidden_size}_F_200_P_{pa_params}.pt')
+    net_pa_orig.load_state_dict(torch.load(pa_path, map_location='cpu'))
+    print(f"  Loaded PA model: {pa_path}")
+
+    net_dpd = model.CoreModel(input_size=input_size, hidden_size=args.dpd_hidden_size,
+                              num_layers=1, backbone_type='fcn')
+    dpd_params = count_net_params(net_dpd)
+    print(f"  FCN DPD parameters: {dpd_params}")
+
+    net_cas = LMCascadedFCN(dpd_model=net_dpd, pa_hidden_size=args.pa_hidden_size)
+    copy_gru_weights(net_pa_orig.backbone, net_cas.pa)
+    net_cas.freeze_pa()
+    net_cas = net_cas.to(device)
 
     # Rebuild train loader with LM batch size
     X_train, y_train, _, _, _, _ = load_dataset(dataset_name=args.dataset_name)
@@ -289,8 +306,8 @@ def run_lm(args, val_loader, test_loader, spec, device):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_name', default='APA_200MHz')
-    parser.add_argument('--pa_hidden_size', type=int, default=64)
-    parser.add_argument('--pa_backbone', default='fcn', choices=['gru', 'fcn'])
+    parser.add_argument('--pa_hidden_size', type=int, default=23)
+    parser.add_argument('--pa_backbone', default='gru', choices=['gru', 'fcn'])
     parser.add_argument('--dpd_hidden_size', type=int, default=8)
     parser.add_argument('--n_epochs', type=int, default=100)
     parser.add_argument('--frame_length', type=int, default=200)
