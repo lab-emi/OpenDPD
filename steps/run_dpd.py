@@ -44,7 +44,11 @@ def main(proj: Project):
     net_dpd = model.CoreModel(input_size=2,  # I and Q
                               hidden_size=proj.DPD_hidden_size,
                               num_layers=proj.DPD_num_layers,
-                              backbone_type=proj.DPD_backbone)
+                              backbone_type=proj.DPD_backbone,
+                              window_size=proj.window_size,
+                              num_dvr_units=proj.num_dvr_units,
+                              thx=proj.thx,
+                              thh=proj.thh)
 
     net_dpd = get_quant_model(proj, net_dpd)
     
