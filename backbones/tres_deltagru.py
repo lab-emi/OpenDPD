@@ -1,12 +1,19 @@
-import torch
-from torch import Tensor
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import csv
+import math
 import os
+
+import numpy as np
+import torch
+import torch.nn as nn
+from torch import Tensor
+
 from quant.modules.ops import Add, Mul
-from torch import nn
+
+try:
+    from backbones.triton_deltagru import can_use_triton_deltagru, triton_deltagru
+except ImportError:  # Triton is optional; the eager implementation is portable.
+    can_use_triton_deltagru = None
+    triton_deltagru = None
+
 
 class TResDeltaGRU(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, num_layers, thx=0, thh=0,
@@ -47,10 +54,16 @@ class TResDeltaGRU(nn.Module):
                       bias=False),
             nn.Hardswish(),
         )
-        self.set_debug(1)
+        # Statistics are diagnostic side effects, not part of the network.  They
+        # used to add four reductions per recurrent timestep during every train
+        # step.  Keep them opt-in and collect them inside the fused kernel when
+        # explicitly enabled.
+        self.set_debug(0)
 
     def set_debug(self, value):
+        value = int(value)
         setattr(self, "debug", value)
+        self.rnn.debug = value
         self.rnn.statistics = {
             "num_dx_zeros": 0,
             "num_dx_numel": 0,
@@ -86,7 +99,7 @@ class TResDeltaGRU(nn.Module):
                 nn.init.constant_(param, 0)
         
 
-    def forward(self, x, h_0):
+    def forward(self, x, h_0=None):
         skip_x = self.tcn(x.transpose(1,2)).transpose(1,2)
         last_step = torch.roll(x, shifts=-1, dims=1)
         # Feature Extraction
@@ -98,7 +111,11 @@ class TResDeltaGRU(nn.Module):
         amp = torch.sqrt(amp2)
         amp3 = torch.pow(amp, 3)
         x = torch.cat((i_x, q_x, amp, amp3, i_last, q_last), dim=-1)
-        out = self.rnn(x, h_0)   
+        # The old call passed ``h_0`` as x_p_0 while leaving the other recurrent
+        # states unset; process_inputs_first consequently discarded it and made
+        # all-zero states.  Calling without it preserves that behaviour and
+        # avoids an unnecessary allocation/copy in CoreModel.
+        out = self.rnn(x)
         out = self.fc_out(out)+skip_x
         return out
 
@@ -147,6 +164,7 @@ class DeltaGRULayer(nn.Module):
         self.x_p_length = max(self.input_size, self.hidden_size)
         self.batch_first = True
         self.debug = 1
+        self.use_triton = os.environ.get("OPENDPD_DISABLE_TRITON_DELTAGRU", "0") != "1"
         # Statistics
         self.abs_sum_delta_hid = torch.zeros(1)
         self.sp_dx = 0
@@ -246,29 +264,23 @@ class DeltaGRULayer(nn.Module):
 
         input_size = input.size(-1)
 
-        th_x = torch.tensor(self.th_x, dtype=input.dtype)
-        th_h = torch.tensor(self.th_h, dtype=input.dtype)
+        th_x = self.th_x
+        th_h = self.th_h
 
         inputs = input.unbind(0)
 
         output = []
-
-        reg = torch.zeros(1, dtype=input.dtype, device=input.device).squeeze()
 
         x_p = x_p_0[:, :input_size]
         h = h_0
         h_p = h_p_0
         dm_nh = dm_nh_0
         dm = dm_0
-        l1_norm_delta_h = torch.zeros(1, dtype=input.dtype, device=input.device)
-
         seq_len = len(inputs)
         for t in range(seq_len):
             x = inputs[t]
 
             delta_x, delta_h, delta_x_abs, delta_h_abs = self.compute_deltas(x, x_p, h, h_p, th_x, th_h)
-            reg += torch.sum(torch.abs(delta_h))
-
             if self.debug:
                 zero_mask_delta_x = torch.as_tensor(delta_x == 0, dtype=x.dtype)
                 zero_mask_delta_h = torch.as_tensor(delta_h == 0, dtype=x.dtype)
@@ -278,8 +290,6 @@ class DeltaGRULayer(nn.Module):
                 self.statistics["num_dh_numel"] += torch.numel(delta_h)
 
             x_p, h_p = self.update_states(delta_x_abs, delta_h_abs, x, h, x_p, h_p, th_x, th_h)
-
-            l1_norm_delta_h += torch.sum(torch.abs(delta_h))
 
             dm, dm_r, dm_z, dm_n, dm_nh = self.compute_gates(delta_x, delta_h, dm, dm_nh)
 
@@ -295,6 +305,42 @@ class DeltaGRULayer(nn.Module):
 
     def forward(self, input: Tensor, x_p_0: Tensor = None, h_0: Tensor = None, h_p_0: Tensor = None,
                 dm_nh_0: Tensor = None, dm_0: Tensor = None):
+        states = (x_p_0, h_0, h_p_0, dm_nh_0, dm_0)
+        if self._can_use_triton(input) and self._states_can_use_triton(input, states):
+            batch_size = input.size(0)
+            if x_p_0 is None or h_0 is None or h_p_0 is None or dm_nh_0 is None or dm_0 is None:
+                x_p_0 = input.new_zeros((self.num_layers, batch_size, self.x_p_length))
+                h_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
+                h_p_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
+                dm_nh_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
+                dm_0 = input.new_zeros((self.num_layers, batch_size, self.weight_ih_height))
+
+            collect_stats = bool(self.debug)
+            stats = torch.zeros(2, dtype=torch.int64, device=input.device) if collect_stats else torch.empty(
+                2, dtype=torch.int64, device=input.device
+            )
+            output = triton_deltagru(
+                input.contiguous(),
+                x_p_0[0, :, :self.input_size].contiguous(),
+                h_0[0].contiguous(),
+                h_p_0[0].contiguous(),
+                dm_nh_0[0].contiguous(),
+                dm_0[0].contiguous(),
+                self.x2h.weight,
+                self.h2h.weight,
+                stats,
+                self.th_x,
+                self.th_h,
+                collect_stats,
+            )
+            if collect_stats:
+                # Match the eager diagnostic counters, which use input dtype.
+                self.statistics["num_dx_zeros"] += stats[0].to(input.dtype)
+                self.statistics["num_dh_zeros"] += stats[1].to(input.dtype)
+                self.statistics["num_dx_numel"] += input.numel()
+                self.statistics["num_dh_numel"] += batch_size * input.size(1) * self.hidden_size
+            return output
+
         x, x_p_0, h_0, h_p_0, dm_nh_0, dm_0 = self.process_inputs_first(input, x_p_0, h_0, h_p_0, dm_nh_0, dm_0)
 
         for l in range(self.num_layers):
@@ -302,3 +348,64 @@ class DeltaGRULayer(nn.Module):
 
         x = x.transpose(0, 1)
         return x
+
+    def _can_use_triton(self, input: Tensor) -> bool:
+        """The fused path is for the dense-float, one-layer CUDA cell.
+
+        Quantization-aware training replaces these exact module types with
+        fake-quantized subclasses/operations.  Reassociating those quantization
+        boundaries would change the model, so QAT deliberately stays eager.
+        """
+
+        return (
+            self.use_triton
+            and self.num_layers == 1
+            and can_use_triton_deltagru is not None
+            and not torch.is_autocast_enabled()
+            and not math.isnan(self.th_x)
+            and not math.isnan(self.th_h)
+            and input.ndim == 3
+            and input.size(-1) == self.input_size
+            and type(self.x2h) is nn.Linear
+            and type(self.h2h) is nn.Linear
+            and self.x2h.bias is None
+            and self.h2h.bias is None
+            and self.x2h.weight.shape == (self.weight_ih_height, self.input_size)
+            and self.h2h.weight.shape == (self.weight_ih_height, self.hidden_size)
+            and self.x2h.weight.device == input.device
+            and self.h2h.weight.device == input.device
+            and self.x2h.weight.dtype == input.dtype
+            and self.h2h.weight.dtype == input.dtype
+            and self.x2h.weight.is_contiguous()
+            and self.h2h.weight.is_contiguous()
+            and type(self.sigmoid) is nn.Sigmoid
+            and type(self.tanh) is nn.Tanh
+            and type(self.add) is Add
+            and type(self.mul) is Mul
+            and can_use_triton_deltagru(input, self.hidden_size)
+        )
+
+    def _states_can_use_triton(self, input: Tensor, states: tuple) -> bool:
+        # The eager path discards every supplied state when any one is missing.
+        # The fused path does the same, so that case is always safe.
+        if any(state is None for state in states):
+            return True
+
+        x_p_0, h_0, h_p_0, dm_nh_0, dm_0 = states
+        if not all(isinstance(state, Tensor) for state in states):
+            return False
+        batch_size = input.size(0)
+        common = (self.num_layers, batch_size)
+        expected_shapes = (
+            common + (self.x_p_length,),
+            common + (self.hidden_size,),
+            common + (self.hidden_size,),
+            common + (self.hidden_size,),
+            common + (self.weight_ih_height,),
+        )
+        return all(
+            tuple(state.shape) == shape
+            and state.device == input.device
+            and state.dtype == input.dtype
+            for state, shape in zip(states, expected_shapes)
+        )

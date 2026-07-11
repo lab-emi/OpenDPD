@@ -1,0 +1,382 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "TRes-DeltaGRU end-to-end training optimization",
+    "description": "A controlled speed and numerical-equivalence study of OpenDPD TRes-DeltaGRU training.",
+    "generatedAt": "2026-07-11T13:45:00Z",
+    "filters": [],
+    "cards": [
+      {
+        "id": "production_speedup",
+        "description": "Process workload speedup for 357 training updates plus validation, test, RF metrics, and artifacts.",
+        "dataset": "headline",
+        "sourceId": "e2e_summary",
+        "metrics": [
+          {"label": "End-to-end speedup", "field": "total_speedup"},
+          {"label": "Training speedup", "field": "train_speedup"}
+        ]
+      },
+      {
+        "id": "output_equivalence",
+        "description": "Relative L2 difference between the original and optimized cascaded neural-network outputs.",
+        "dataset": "headline",
+        "sourceId": "e2e_summary",
+        "metrics": [
+          {"label": "Cascade output rel-L2", "field": "cascade_relative_l2"},
+          {"label": "Maximum absolute error", "field": "cascade_max_abs"}
+        ]
+      },
+      {
+        "id": "rf_equivalence",
+        "description": "Largest absolute difference across ACLR-left, ACLR-right, ACLR-average, EVM, and NMSE.",
+        "dataset": "headline",
+        "sourceId": "e2e_summary",
+        "metrics": [
+          {"label": "Maximum RF-metric delta", "field": "maximum_rf_delta"},
+          {"label": "Acceptance limit", "field": "rf_limit"}
+        ]
+      },
+      {
+        "id": "checkpoint_equivalence",
+        "description": "Comparison of every tensor in the selected best DPD state dictionary.",
+        "dataset": "headline",
+        "sourceId": "e2e_summary",
+        "metrics": [
+          {"label": "DPD checkpoint", "field": "checkpoint_result"},
+          {"label": "Best epoch", "field": "best_epoch_result"}
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "gate_total_time",
+        "title": "Three-epoch controlled workload time",
+        "subtitle": "All arms used the same fixture and recorded batches; the direct Triton arm was rejected by the output-equivalence gate.",
+        "headerMarkdown": "Lower is faster. The strict whole-cascade graph is the fastest **accepted** method.",
+        "type": "bar",
+        "dataset": "candidate_arms",
+        "sourceId": "e2e_summary",
+        "valueFormat": "number",
+        "encodings": {
+          "x": {"field": "implementation", "type": "nominal", "label": "Implementation"},
+          "y": {"field": "total_s", "type": "quantitative", "label": "Total time", "unit": "s", "format": "number"},
+          "tooltip": [
+            {"field": "train_s", "type": "quantitative", "label": "Training time", "format": "number"},
+            {"field": "total_speedup", "type": "quantitative", "label": "Total speedup", "format": "number"},
+            {"field": "cascade_output_relative_l2", "type": "quantitative", "label": "Output rel-L2", "format": "number"},
+            {"field": "accepted", "type": "nominal", "label": "Accepted"}
+          ]
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "candidate_decision",
+        "title": "Optimization candidate decision",
+        "subtitle": "The acceptance decision combines speed, final neural output, checkpoint, and RF metrics.",
+        "dataset": "candidate_arms",
+        "sourceId": "e2e_summary",
+        "defaultSort": {"field": "total_s", "direction": "asc"},
+        "columns": [
+          {"field": "implementation", "label": "Implementation", "type": "text"},
+          {"field": "total_s", "label": "Total s", "type": "number", "format": "number", "align": "right"},
+          {"field": "train_s", "label": "Train s", "type": "number", "format": "number", "align": "right"},
+          {"field": "total_speedup", "label": "Speedup", "type": "number", "format": "number", "align": "right"},
+          {"field": "cascade_output_relative_l2_display", "label": "Output rel-L2", "type": "text", "align": "right"},
+          {"field": "maximum_absolute_metric_delta_db_display", "label": "Max RF delta, dB", "type": "text", "align": "right"},
+          {"field": "accepted", "label": "Accepted", "type": "text", "align": "center"}
+        ]
+      },
+      {
+        "id": "rf_metric_equivalence",
+        "title": "Production-density RF metric equivalence",
+        "subtitle": "Candidate minus original; lower absolute delta is better.",
+        "dataset": "rf_metrics",
+        "sourceId": "e2e_summary",
+        "defaultSort": {"field": "metric", "direction": "asc"},
+        "columns": [
+          {"field": "metric", "label": "Metric", "type": "text"},
+          {"field": "original_db", "label": "Original dB", "type": "number", "format": "number", "align": "right"},
+          {"field": "optimized_db", "label": "Optimized dB", "type": "number", "format": "number", "align": "right"},
+          {"field": "delta_db_display", "label": "Delta dB", "type": "text", "align": "right"},
+          {"field": "absolute_delta_db_display", "label": "Absolute delta dB", "type": "text", "align": "right"}
+        ]
+      },
+      {
+        "id": "implementation_summary",
+        "title": "Implemented optimizations and safeguards",
+        "subtitle": "All changes retain the original module parameters and checkpoint structure.",
+        "dataset": "implementation_changes",
+        "sourceId": "benchmark_code",
+        "defaultSort": {"field": "priority", "direction": "asc"},
+        "columns": [
+          {"field": "priority", "label": "Priority", "type": "number", "align": "right"},
+          {"field": "component", "label": "Component", "type": "text"},
+          {"field": "change", "label": "Change", "type": "text"},
+          {"field": "equivalence", "label": "Equivalence behavior", "type": "text"}
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "e2e_summary",
+        "label": "Reviewed end-to-end benchmark summary",
+        "path": "benchmark/results/end_to_end_summary.json"
+      },
+      {
+        "id": "benchmark_code",
+        "label": "Reproducible benchmark and implementation",
+        "path": "benchmark/benchmark_end_to_end.py"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# TRes-DeltaGRU end-to-end training optimization",
+        "layout": "full"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "sourceId": "e2e_summary",
+        "body": "## Executive Summary\n\nThe recommended strict path is guarded whole-cascade CUDA-graph training, enabled with `--cuda_graph_training`. On the 357-update production-density workload it reduced total time from **95.78 s to 14.51 s and 13.96 s** across two runs (**6.60–6.86×**) and training time from **86.86 s to 12.41 s and 11.81 s** (**7.00–7.35×**). The selected DPD checkpoint was bitwise identical, cascade output relative L2 error was **1.70e-6**, and the largest ACLR/NMSE/EVM difference was **4.27e-6 dB**."
+      },
+      {
+        "id": "headline_metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "production_speedup",
+          "output_equivalence",
+          "rf_equivalence",
+          "checkpoint_equivalence"
+        ]
+      },
+      {
+        "id": "key_findings",
+        "type": "markdown",
+        "sourceId": "e2e_summary",
+        "body": "## Key findings\n\n- The isolated persistent Triton backbone remains the fastest kernel-level method at **97.11×**, but long training amplifies its small FP32 differences around delta thresholds.\n- Direct persistent-Triton end-to-end training reached **13.40× total** and **46.77× training** speedup in the three-epoch gate, yet its final cascade output relative L2 error reached **1.04e-2**. It was rejected even though its RF metrics stayed within 0.035 dB.\n- Capturing the existing clean-eager cascade preserves its PyTorch/cuDNN arithmetic and removes recurrent launch overhead. It is slower than direct Triton but passes every output, checkpoint, and RF-metric gate.\n- Loop/data cleanups alone are bitwise exact and improve total time **1.33×**."
+      },
+      {
+        "id": "timing_chart",
+        "type": "chart",
+        "chartId": "gate_total_time",
+        "layout": "full"
+      },
+      {
+        "id": "selection_rationale",
+        "type": "markdown",
+        "sourceId": "e2e_summary",
+        "body": "## Why the strict graph is the recommendation\n\nThe graph records the original eager TRes-DeltaGRU, MSE loss, gradient clearing, frozen-PA input backward, and DPD backward. It replays those exact kernels at fixed shapes while leaving batch copies, gradient clipping, AdamW, scheduling, validation, testing, and checkpoint selection outside the graph. Full and partial batches share stable gradient buffers and one capture stream. Unsupported calls fall back to clean eager training; evaluation restores the fused inference path."
+      },
+      {
+        "id": "candidate_table",
+        "type": "table",
+        "tableId": "candidate_decision",
+        "layout": "full"
+      },
+      {
+        "id": "equivalence_findings",
+        "type": "markdown",
+        "sourceId": "e2e_summary",
+        "body": "## Output and RF equivalence\n\nThe production-density optimized checkpoint matched every original state-dict tensor exactly. The remaining output difference comes from using the faster fused inference kernel on the same weights: **4.95e-6 maximum absolute** and **1.70e-6 relative L2** at the cascade output. All five reported RF metrics were effectively unchanged, with absolute deltas between zero and **4.27e-6 dB**, far below the predeclared **0.05 dB** ceiling."
+      },
+      {
+        "id": "rf_table",
+        "type": "table",
+        "tableId": "rf_metric_equivalence",
+        "layout": "full"
+      },
+      {
+        "id": "scope_definitions",
+        "type": "markdown",
+        "sourceId": "e2e_summary",
+        "body": "## Scope, data, and metric definitions\n\nThe controlled workload uses bundled `DPA_200MHz` data, a TRes-DeltaGRU H15 DPD (`thx=.01`, `thh=.05`), a frozen DGRU H23 PA, FP32, B64×T200, AdamW at 5e-3, and gradient clipping at 200. The production-density arm uses all 22,841 stride-one frames (357 updates); the multi-epoch gate uses stride 16 (23 updates per epoch for three epochs). NMSE is the repository's mean per-segment normalized MSE in dB. EVM is its subchannel spectral-magnitude error in dB. ACLR-left/right compare adjacent-channel power with the strongest main subchannel; ACLR-average is their mean."
+      },
+      {
+        "id": "methodology",
+        "type": "markdown",
+        "sourceId": "benchmark_code",
+        "body": "## Methodology\n\nThe exact original is detached commit `0976ce39`. A single deterministic PA surrogate was trained for 100 epochs because the repository ships no PA checkpoint; its SHA-256 fixture was reused unchanged by every arm. DPD initialization, frame order, full/partial batches, validation/test segments, optimizer hyperparameters, TF32 setting, and hard-determinism policy were fixed. Each run saves the exact permutations, best DPD checkpoint, DPD output, cascaded output, ground truth, phase timings, trajectory, and RF metrics. The comparison script rejects a fixture/order mismatch before evaluating speed or numerical results. Regression validation passed **164 standard tests plus 19 extended all-dataset/all-backbone tests**."
+      },
+      {
+        "id": "implemented_changes",
+        "type": "table",
+        "tableId": "implementation_summary",
+        "layout": "full"
+      },
+      {
+        "id": "limitations",
+        "type": "markdown",
+        "sourceId": "e2e_summary",
+        "body": "## Limitations and robustness\n\n- The bundled repository has no published PA checkpoint. The surrogate makes the original-versus-optimized comparison controlled, but its absolute RF quality must not be presented as a reproduction of published results.\n- The longest comparison is one 357-update epoch; the multi-epoch gate covers 69 updates. This is not a complete 240- or 300-epoch convergence study.\n- Whole-cascade graph training is deliberately opt-in and specialized to the FP32 TRes-DeltaGRU → frozen-DGRU cascade with mean MSE. CPU, AMP, QAT, changed modules, diagnostic delta collection, capture failure, and unsupported shapes use eager fallbacks.\n- Existing EVM behavior was preserved: `calculate_metrics` does not pass the dataset sample rate, so EVM uses its 800 MHz default. Correcting that is a separate semantic change.\n- One original production-density timing and two optimized timings were collected on a power-managed laptop GPU; use the observed range rather than treating one decimal speedup as universal."
+      },
+      {
+        "id": "recommendations",
+        "type": "markdown",
+        "body": "## Recommended next steps\n\n1. Use `--cuda_graph_training` (or `cuda_graph_training=True` through the API) when strict training-result equivalence is required.\n2. Keep direct persistent Triton available for inference and experiments where endpoint metric equivalence is sufficient, but do not label its multi-epoch neural outputs strict-equivalent at nonzero thresholds.\n3. Stage the real production PA checkpoint and run the full intended epoch schedule on the target GPU before a release claim. Preserve the same fixture/order comparison and checkpoint/output/RF gates.\n4. If workload shapes or precision modes change, rerun the supplied end-to-end harness; the graph path will safely fall back, but its speedup is shape- and hardware-dependent."
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "body": "## Further questions\n\nThe main unresolved question is full-schedule convergence with the real PA checkpoint. A secondary opportunity is a GPU-resident frame sampler for much larger datasets, where per-batch host staging may become material after recurrent launch overhead has been removed."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-11T13:45:00Z",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "total_speedup": "6.60–6.86×",
+          "train_speedup": "7.00–7.35×",
+          "cascade_relative_l2": "≤ 1.70e-6",
+          "cascade_max_abs": "≤ 4.95e-6",
+          "maximum_rf_delta": "≤ 4.27e-6 dB",
+          "rf_limit": "0.05 dB",
+          "checkpoint_result": "Bitwise exact",
+          "best_epoch_result": "Same"
+        }
+      ],
+      "candidate_arms": [
+        {
+          "implementation": "Exact original",
+          "total_s": 32.03585798398126,
+          "train_s": 17.237055696023162,
+          "total_speedup": 1.0,
+          "train_speedup": 1.0,
+          "cascade_output_relative_l2": 0.0,
+          "cascade_output_relative_l2_display": "0",
+          "maximum_absolute_metric_delta_db": 0.0,
+          "maximum_absolute_metric_delta_db_display": "0",
+          "accepted": "Yes",
+          "batch_count": 69,
+          "checkpoint_max_abs": 0.0
+        },
+        {
+          "implementation": "Clean eager pipeline",
+          "total_s": 24.029687639005715,
+          "train_s": 13.491934273974039,
+          "total_speedup": 1.3331782945018265,
+          "train_speedup": 1.2775822462516342,
+          "cascade_output_relative_l2": 0.0,
+          "cascade_output_relative_l2_display": "0",
+          "maximum_absolute_metric_delta_db": 0.0,
+          "maximum_absolute_metric_delta_db_display": "0",
+          "accepted": "Yes",
+          "batch_count": 69,
+          "checkpoint_max_abs": 0.0
+        },
+        {
+          "implementation": "Strict whole-cascade graph",
+          "total_s": 5.458723943011137,
+          "train_s": 3.434560444991803,
+          "total_speedup": 5.868744841914403,
+          "train_speedup": 5.018707916804272,
+          "cascade_output_relative_l2": 0.0000020480301293249045,
+          "cascade_output_relative_l2_display": "2.05e-6",
+          "maximum_absolute_metric_delta_db": 0.0000024523588528779783,
+          "maximum_absolute_metric_delta_db_display": "2.45e-6",
+          "accepted": "Yes",
+          "batch_count": 69,
+          "checkpoint_max_abs": 0.0
+        },
+        {
+          "implementation": "Direct persistent Triton",
+          "total_s": 2.3912337490182836,
+          "train_s": 0.36852700999588706,
+          "total_speedup": 13.397208866399414,
+          "train_speedup": 46.77284222997803,
+          "cascade_output_relative_l2": 0.010411809662242288,
+          "cascade_output_relative_l2_display": "1.04e-2",
+          "maximum_absolute_metric_delta_db": 0.03461828059020533,
+          "maximum_absolute_metric_delta_db_display": "3.46e-2",
+          "accepted": "No",
+          "batch_count": 69,
+          "checkpoint_max_abs": 0.000812530517578125
+        }
+      ],
+      "rf_metrics": [
+        {"metric": "ACLR left", "original_db": -33.009569123033046, "optimized_db": -33.009571182277476, "delta_db": -0.0000020592444300859825, "delta_db_display": "-2.06e-6", "absolute_delta_db": 0.0000020592444300859825, "absolute_delta_db_display": "2.06e-6"},
+        {"metric": "ACLR right", "original_db": -32.416537505570915, "optimized_db": -32.41654177506668, "delta_db": -0.0000042694957684830115, "delta_db_display": "-4.27e-6", "absolute_delta_db": 0.0000042694957684830115, "absolute_delta_db_display": "4.27e-6"},
+        {"metric": "ACLR average", "original_db": -32.71305331430198, "optimized_db": -32.71305647867208, "delta_db": -0.000003164370099284497, "delta_db_display": "-3.16e-6", "absolute_delta_db": 0.000003164370099284497, "absolute_delta_db_display": "3.16e-6"},
+        {"metric": "EVM", "original_db": -25.64965659922391, "optimized_db": -25.649657576831792, "delta_db": -0.0000009776078826462253, "delta_db_display": "-9.78e-7", "absolute_delta_db": 0.0000009776078826462253, "absolute_delta_db_display": "9.78e-7"},
+        {"metric": "NMSE", "original_db": -24.16977882385254, "optimized_db": -24.16977882385254, "delta_db": 0.0, "delta_db_display": "0", "absolute_delta_db": 0.0, "absolute_delta_db_display": "0"}
+      ],
+      "implementation_changes": [
+        {"priority": 1, "component": "Whole cascade", "change": "Opt-in fixed-shape CUDA graph of clean-eager forward, MSE, gradient zeroing, and backward", "equivalence": "Original kernels; clean-eager fallback; clip and AdamW remain outside"},
+        {"priority": 2, "component": "Frozen DGRU PA", "change": "Exact cuDNN CUDA-graph forward and input-backward replay", "equivalence": "Bitwise output/input gradient in focused tests; guarded eager fallback"},
+        {"priority": 3, "component": "Training loop", "change": "One loss-vector device-to-host transfer per epoch; set-to-none gradients; trainable-only clip/optimizer", "equivalence": "Bitwise CPU trajectory and logged loss in lockstep tests"},
+        {"priority": 4, "component": "Evaluation", "change": "Inference mode and consolidated output/target transfers", "equivalence": "Exact outputs, targets, and loss in tests"},
+        {"priority": 5, "component": "Data", "change": "Vectorized frame construction and CUDA pinned/nonblocking loader path", "equivalence": "Exact frame order/content/dtype with independent storage"},
+        {"priority": 6, "component": "Persistent Triton TRes", "change": "Fused recurrence and custom BPTT for supported FP32 NVIDIA shapes", "equivalence": "Minor one-step FP error; rejected as strict multi-epoch training path at nonzero thresholds"}
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "e2e_summary",
+      "label": "Reviewed end-to-end benchmark summary",
+      "path": "benchmark/results/end_to_end_summary.json",
+      "query": {
+        "engine": "duckdb",
+        "id": "opendpd-e2e-2026-07-11",
+        "sql": "SELECT * FROM read_json_auto('benchmark/results/end_to_end_summary.json');",
+        "description": "Controlled original, clean-eager, strict CUDA-graph, and direct-Triton benchmark results derived from saved run JSON, checkpoints, outputs, and batch permutations.",
+        "language": "sql",
+        "executed_at": "2026-07-11T13:42:00Z",
+        "tables_used": [
+          "benchmark/results/e2e_dpa200_stride1_comparison_graph.json",
+          "benchmark/results/e2e_dpa200_stride1_comparison_graph_repeat.json",
+          "benchmark/results/e2e_dpa200_stride16_comparison_eager.json",
+          "benchmark/results/e2e_dpa200_stride16_comparison_graph.json",
+          "benchmark/results/e2e_dpa200_stride16_comparison_fused.json",
+          "benchmark/results/tres_deltagru_rtx4090_laptop.json"
+        ],
+        "filters": [
+          "DPA_200MHz bundled dataset",
+          "FP32 with TF32 disabled and hard deterministic policy",
+          "Same serialized PA/DPD fixture and recorded batch permutations",
+          "Plots and progress display excluded"
+        ],
+        "metric_definitions": [
+          "Total speedup = original measured workload seconds / optimized measured workload seconds.",
+          "Training speedup = original synchronized net_train seconds / optimized synchronized net_train seconds.",
+          "Output relative L2 = L2(candidate - reference) / L2(reference), evaluated on saved best-checkpoint test outputs.",
+          "Maximum RF delta = max absolute candidate-minus-reference delta over ACLR-left, ACLR-right, ACLR-average, EVM, and NMSE, in dB."
+        ]
+      }
+    },
+    {
+      "id": "benchmark_code",
+      "label": "Reproducible benchmark and implementation",
+      "path": "benchmark/benchmark_end_to_end.py",
+      "query": {
+        "engine": "duckdb",
+        "id": "benchmark-end-to-end-py",
+        "sql": "SELECT content FROM read_text('benchmark/benchmark_end_to_end.py');",
+        "description": "Loads repository data/models/metrics, prepares the immutable fixture, replays recorded batch orders, records phase timings and artifacts, and compares outputs, checkpoints, and RF metrics.",
+        "language": "sql",
+        "executed_at": "2026-07-11T13:42:00Z",
+        "tables_used": [
+          "benchmark/benchmark_end_to_end.py",
+          "modules/cuda_graph_training.py",
+          "modules/train_funcs.py",
+          "backbones/cuda_graph_frozen_dgru.py",
+          "backbones/triton_deltagru.py"
+        ],
+        "filters": ["No architecture or state-dict changes", "Unsupported graph or kernel calls fall back to eager PyTorch"],
+        "metric_definitions": ["The benchmark preserves the repository's existing ACLR, EVM, and NMSE implementations without semantic corrections."]
+      }
+    }
+  ],
+  "package_info": {
+    "originUrl": "artifact://opendpd-tres-deltagru-e2e-2026-07-11"
+  }
+}

@@ -147,11 +147,14 @@ class CoreModel(nn.Module):
             pass
 
     def forward(self, x, h_0=None):
-        device = x.device
         batch_size = x.size(0)  # NOTE: dim of x must be (batch, time, feat)/(N, T, F)
 
-        if h_0 is None:  # Create initial hidden states if necessary
-            h_0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(device)
+        if h_0 is None and self.backbone_type != 'tres_deltagru':
+            # Create directly on the input device.  TRes-DeltaGRU owns five
+            # recurrent states internally and historically discarded this one.
+            h_0 = torch.zeros(
+                self.num_layers, batch_size, self.hidden_size, device=x.device
+            )
 
         # Forward Propagate through the RNN
         out = self.backbone(x, h_0)

@@ -7,8 +7,8 @@ from torch import nn
 
 
 class DGRU(nn.Module):
-    def __init__(self, hidden_size, output_size, num_layers, bidirectional=False, batch_first=True,
-                 bias=True):
+    def __init__(self, hidden_size, output_size, num_layers,
+                 bidirectional=False, batch_first=True, bias=True):
         super(DGRU, self).__init__()
         self.hidden_size = hidden_size
         self.input_size = 6
@@ -39,10 +39,14 @@ class DGRU(nn.Module):
                 nn.init.constant_(param, 0)
             if 'weight' in name:
                 for i in range(0, num_gates):
-                    nn.init.orthogonal_(param[i * self.hidden_size:(i + 1) * self.hidden_size, :])
+                    start = i * self.hidden_size
+                    end = (i + 1) * self.hidden_size
+                    nn.init.orthogonal_(param[start:end, :])
             if 'weight_ih_l0' in name:
                 for i in range(0, num_gates):
-                    nn.init.xavier_uniform_(param[i * self.hidden_size:(i + 1) * self.hidden_size, :])
+                    start = i * self.hidden_size
+                    end = (i + 1) * self.hidden_size
+                    nn.init.xavier_uniform_(param[start:end, :])
 
         for name, param in self.fc_out.named_parameters():
             if 'weight' in name:
@@ -56,7 +60,7 @@ class DGRU(nn.Module):
             if 'bias' in name:
                 nn.init.constant_(param, 0)
 
-    def forward(self, x, h_0):
+    def _forward_eager(self, x, h_0):
         # Feature Extraction
         i_x = torch.unsqueeze(x[..., 0], dim=-1)
         q_x = torch.unsqueeze(x[..., 1], dim=-1)
@@ -72,3 +76,15 @@ class DGRU(nn.Module):
         out = torch.cat((out, x), dim=-1)
         out = self.fc_out(out)
         return out
+
+    def forward(self, x, h_0):
+        # A frozen PA needs gradients only with respect to its input.  For the
+        # common fixed-shape CUDA training path, replay the exact eager/cuDNN
+        # kernels and their input backward to remove launch overhead.  The
+        # helper returns None for every unsupported or unsafe call.
+        from backbones.cuda_graph_frozen_dgru import try_cuda_graph_frozen_dgru
+
+        graph_output = try_cuda_graph_frozen_dgru(self, x, h_0)
+        if graph_output is not None:
+            return graph_output
+        return self._forward_eager(x, h_0)

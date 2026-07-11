@@ -51,8 +51,9 @@ def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, 
             log_stat['THX'] = net.dpd_model.backbone.thx
             log_stat['THH'] = net.dpd_model.backbone.thh
             
-            # Add sparsity metrics if available
-            if 'delta' in net.dpd_model.backbone_type:
+            # Statistics are opt-in because collecting them in an eager
+            # recurrent cell adds reductions at every timestep.
+            if getattr(net.dpd_model.backbone.rnn, 'debug', 0):
                 sparsity_metrics = net.dpd_model.backbone.get_temporal_sparsity()
                 sparsity_log = {f'{k}': v for k, v in sparsity_metrics.items()}
                 log_stat.update(sparsity_log)

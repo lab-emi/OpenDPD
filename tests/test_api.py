@@ -84,6 +84,30 @@ class TestCreateDataset:
 
 
 class TestApiTraining:
+    def test_cuda_graph_training_flag_is_explicit_opt_in(self, preserved_argv):
+        from arguments import get_arguments
+
+        sys.argv = ['opendpd']
+        assert get_arguments().cuda_graph_training is False
+        sys.argv = ['opendpd', '--cuda_graph_training']
+        assert get_arguments().cuda_graph_training is True
+
+    def test_boolean_kwargs_are_emitted_as_flags(self, preserved_argv):
+        from opendpd import api
+
+        sys.argv = ['opendpd']
+        api._append_cli_kwargs({
+            "collect_delta_stats": True,
+            "cuda_graph_training": True,
+            "plot": False,
+            "frame_stride": 16,
+            "unused": None,
+        })
+        assert sys.argv == [
+            'opendpd', '--collect_delta_stats', '--cuda_graph_training',
+            '--frame_stride', '16'
+        ]
+
     def test_train_pa_smoke(self, tmp_path, monkeypatch, preserved_argv):
         from pathlib import Path
 

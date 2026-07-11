@@ -1,0 +1,92 @@
+{
+  "recorded_date": "2026-07-11",
+  "source_base_revision": "0976ce39fc664727ab7ab640ccb349679f05d84f",
+  "source_state": "dirty: includes the TRes-DeltaGRU optimization in this working tree",
+  "command": ".venv/bin/python benchmark/benchmark_tres_deltagru.py",
+  "system": {
+    "platform": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+    "python": "3.13.14",
+    "torch": "2.13.0+cu132",
+    "triton": "3.7.1",
+    "device": "NVIDIA GeForce RTX 4090 Laptop GPU",
+    "compute_capability": "8.9",
+    "driver": "610.74",
+    "cuda": "13.2",
+    "cudnn": 92000,
+    "matmul_tf32": false,
+    "cudnn_tf32": false
+  },
+  "config": {
+    "batch_size": 64,
+    "sequence_length": 200,
+    "hidden_size": 15,
+    "thx": 0.01,
+    "thh": 0.05,
+    "dtype": "float32",
+    "optimizer": "AdamW",
+    "learning_rate": 0.0005,
+    "grad_clip": 200.0,
+    "warmup_steps": 5,
+    "blocks": 7,
+    "reference_steps_per_block": 5,
+    "fused_steps_per_block": 100,
+    "seed": 0
+  },
+  "equivalence": {
+    "check_batch_size": 8,
+    "output": {
+      "max_abs": 6.079673767089844e-06,
+      "mean_abs": 8.64025196278817e-07,
+      "relative_l2": 1.3402454897004645e-06
+    },
+    "input_gradient": {
+      "max_abs": 1.461885403841734e-07,
+      "mean_abs": 5.326960206275544e-09,
+      "relative_l2": 1.4971470591262914e-05
+    },
+    "loss_abs": 1.1920928955078125e-07,
+    "maximum_parameter_gradient_error": {
+      "parameter": "backbone.rnn.x2h.weight",
+      "max_abs": 7.152557373046875e-07,
+      "relative_l2": 8.59947533626837e-07
+    }
+  },
+  "results": [
+    {
+      "implementation": "eager-clean",
+      "steps_per_block": 5,
+      "block_ms_per_step": [
+        164.302,
+        164.948,
+        176.296,
+        158.841,
+        164.257,
+        169.615,
+        163.938
+      ],
+      "median_ms": 164.302,
+      "iqr_block_means_ms": 3.184,
+      "sequence_positions_per_second": 77905,
+      "peak_allocated_mib": 25.3,
+      "speedup": 1.0
+    },
+    {
+      "implementation": "triton-fused",
+      "steps_per_block": 100,
+      "block_ms_per_step": [
+        1.692,
+        1.762,
+        1.707,
+        1.690,
+        1.752,
+        1.684,
+        1.675
+      ],
+      "median_ms": 1.692,
+      "iqr_block_means_ms": 0.043,
+      "sequence_positions_per_second": 7565624,
+      "peak_allocated_mib": 27.5,
+      "speedup": 97.11
+    }
+  ]
+}

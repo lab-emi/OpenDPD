@@ -50,6 +50,8 @@ def main(proj: Project):
                               thh=proj.thh)
     
     net_dpd = get_quant_model(proj, net_dpd)
+    if proj.collect_delta_stats and hasattr(net_dpd.backbone, 'set_debug'):
+        net_dpd.backbone.set_debug(1)
     
     print("::: DPD Model: ", net_dpd)    
     n_net_dpd_params = count_net_params(net_dpd)

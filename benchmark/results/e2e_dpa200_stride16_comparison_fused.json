@@ -1,0 +1,140 @@
+{
+  "acceptance_limits": {
+    "metric_abs_db": 0.05,
+    "prediction_relative_l2": 0.0001
+  },
+  "best_epoch": {
+    "candidate": 2,
+    "reference": 2
+  },
+  "candidate_dir": "/home/cgao/OpenDPD/benchmark/results/e2e_dpa200_stride16_fused_optimized",
+  "checkpoint_errors": {
+    "max_abs": 0.000812530517578125,
+    "max_relative_l2": 0.000433965497494589,
+    "per_parameter": {
+      "backbone.fc_out.weight": {
+        "max_abs": 6.851553916931152e-05,
+        "mean_abs": 1.1124896506468455e-05,
+        "relative_l2": 5.879501418911826e-05
+      },
+      "backbone.rnn.h2h.weight": {
+        "max_abs": 0.000812530517578125,
+        "mean_abs": 6.815653639259161e-05,
+        "relative_l2": 0.0004310249302845425
+      },
+      "backbone.rnn.x2h.weight": {
+        "max_abs": 0.0005841851234436035,
+        "mean_abs": 5.633185652119142e-05,
+        "relative_l2": 0.0003386890819192577
+      },
+      "backbone.tcn.0.weight": {
+        "max_abs": 0.0003204345703125,
+        "mean_abs": 9.497876615367002e-05,
+        "relative_l2": 0.000433965497494589
+      },
+      "backbone.tcn.2.weight": {
+        "max_abs": 4.6133995056152344e-05,
+        "mean_abs": 2.179791529973348e-05,
+        "relative_l2": 4.036303903899724e-05
+      }
+    }
+  },
+  "checks": {
+    "all_metric_deltas": true,
+    "cascade_prediction_relative_l2": false,
+    "dpd_prediction_relative_l2": false,
+    "same_batch_orders": true,
+    "same_fixture": true
+  },
+  "format_version": 1,
+  "metric_deltas_db": {
+    "ACLR_AVG": 0.006698572828423011,
+    "ACLR_L": 0.03461828059020533,
+    "ACLR_R": -0.021221134933355756,
+    "EVM": 0.012357549066297935,
+    "NMSE": 0.0137481689453125
+  },
+  "output_errors": {
+    "cascade": {
+      "max_abs": 0.08647939562797546,
+      "mean_abs": 0.0020805334110851467,
+      "relative_l2": 0.010411809662242288
+    },
+    "dpd": {
+      "max_abs": 0.02469591051340103,
+      "mean_abs": 0.000626542989095924,
+      "relative_l2": 0.00998412625107149
+    },
+    "ground_truth": {
+      "max_abs": 0.0,
+      "mean_abs": 0.0,
+      "relative_l2": 0.0
+    }
+  },
+  "passed": false,
+  "reference_dir": "/home/cgao/OpenDPD/benchmark/results/e2e_dpa200_stride16_original",
+  "speed": {
+    "total_candidate_s": 2.3912337490182836,
+    "total_reference_s": 32.03585798398126,
+    "total_speedup": 13.397208866399414,
+    "train_candidate_s": 0.36852700999588706,
+    "train_reference_s": 17.237055696023162,
+    "train_speedup": 46.77284222997803
+  },
+  "trajectory_deltas": [
+    {
+      "epoch": 0,
+      "test": {
+        "ACLR_AVG": 3.4868965421708253e-06,
+        "ACLR_L": -5.957348992779998e-06,
+        "ACLR_R": 1.2931142080674363e-05,
+        "EVM": -3.5088017185103126e-06,
+        "NMSE": -9.5367431640625e-07
+      },
+      "train_loss": -1.1337840055691828e-08,
+      "val": {
+        "ACLR_AVG": 4.009756192857594e-06,
+        "ACLR_L": -9.952995164042022e-06,
+        "ACLR_R": 1.7972507553309924e-05,
+        "EVM": -1.8950754885338483e-06,
+        "NMSE": -1.9073486328125e-06
+      }
+    },
+    {
+      "epoch": 1,
+      "test": {
+        "ACLR_AVG": 6.151231414008862e-06,
+        "ACLR_L": 7.856817546780803e-06,
+        "ACLR_R": 4.445645281236921e-06,
+        "EVM": 1.222947293655352e-06,
+        "NMSE": 3.814697265625e-06
+      },
+      "train_loss": -6.883688591363679e-09,
+      "val": {
+        "ACLR_AVG": 7.795667166021758e-06,
+        "ACLR_L": 2.1923756570174646e-06,
+        "ACLR_R": 1.3398958682131479e-05,
+        "EVM": 2.696059411277929e-07,
+        "NMSE": 0.0
+      }
+    },
+    {
+      "epoch": 2,
+      "test": {
+        "ACLR_AVG": 0.006698572828423011,
+        "ACLR_L": 0.03461828059020533,
+        "ACLR_R": -0.021221134933355756,
+        "EVM": 0.012357549066297935,
+        "NMSE": 0.0137481689453125
+      },
+      "train_loss": 5.159810509370796e-06,
+      "val": {
+        "ACLR_AVG": -0.04601728180674769,
+        "ACLR_L": 0.014291041994521692,
+        "ACLR_R": -0.10632560560800997,
+        "EVM": 0.0012613322206895816,
+        "NMSE": -0.0032596588134765625
+      }
+    }
+  ]
+}

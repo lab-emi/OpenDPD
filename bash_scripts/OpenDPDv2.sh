@@ -40,6 +40,11 @@ lr=${LR:-5e-3}
 lr_end=${LR_END:-1e-4}
 decay_factor=${DECAY_FACTOR:-0.5}
 patience=${PATIENCE:-10}
+cuda_graph_training=${CUDA_GRAPH_TRAINING:-1}
+cuda_graph_opts=()
+if [[ "${cuda_graph_training}" == "1" ]]; then
+  cuda_graph_opts+=(--cuda_graph_training)
+fi
 
 seed_values=(0)
 PA_backbone=dgru
@@ -107,7 +112,8 @@ for i_seed in "${seed_values[@]}"; do
       --decay_factor "${decay_factor}" \
       --patience "${patience}" \
       --thx "${thx}" \
-      --thh "${thh}"
+      --thh "${thh}" \
+      "${cuda_graph_opts[@]}"
 
     quant_dir_label="w${quant_n_bits_w}a${quant_n_bits_a}"
 

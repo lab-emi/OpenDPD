@@ -1,0 +1,165 @@
+{
+  "recorded_date": "2026-07-11",
+  "source_base_revision": "0976ce39fc664727ab7ab640ccb349679f05d84f",
+  "system": {
+    "gpu": "NVIDIA GeForce RTX 4090 Laptop GPU",
+    "python": "3.13.14",
+    "torch": "2.13.0+cu132",
+    "cuda": "13.2",
+    "triton": "3.7.1",
+    "precision": "FP32",
+    "tf32": false,
+    "hard_determinism": true
+  },
+  "benchmark_contract": {
+    "dataset": "DPA_200MHz",
+    "pa": "DGRU H23, one deterministic 100-epoch surrogate fixture shared by every arm",
+    "pa_fixture_sha256": "394fa38ca6f2f39e334f7231fd74f67dd35f276bc2d47a98a26791ccc409b40c",
+    "dpd": "TRes-DeltaGRU H15",
+    "thresholds": {
+      "thx": 0.01,
+      "thh": 0.05
+    },
+    "frame_length": 200,
+    "batch_size": 64,
+    "optimizer": "AdamW",
+    "learning_rate": 0.005,
+    "gradient_clip": 200.0,
+    "acceptance": {
+      "prediction_relative_l2_max": 0.0001,
+      "rf_metric_absolute_delta_db_max": 0.05,
+      "same_fixture": true,
+      "same_batch_orders": true
+    }
+  },
+  "production_density": {
+    "frame_stride": 1,
+    "train_frames": 22841,
+    "train_batches": 357,
+    "epochs": 1,
+    "reference": {
+      "total_s": 95.78045028200722,
+      "train_s": 86.86389361001784,
+      "test_metrics_db": {
+        "ACLR_L": -33.009569123033046,
+        "ACLR_R": -32.416537505570915,
+        "ACLR_AVG": -32.71305331430198,
+        "EVM": -25.64965659922391,
+        "NMSE": -24.16977882385254
+      }
+    },
+    "strict_graph_runs": [
+      {
+        "total_s": 14.511434557003668,
+        "train_s": 12.411166226986097,
+        "total_speedup": 6.600343329652451,
+        "train_speedup": 6.99885023062105
+      },
+      {
+        "total_s": 13.95791669600294,
+        "train_s": 11.811336595012108,
+        "total_speedup": 6.862087829298724,
+        "train_speedup": 7.354281449120687
+      }
+    ],
+    "equivalence": {
+      "checkpoint_max_abs": 0.0,
+      "checkpoint_max_relative_l2": 0.0,
+      "cascade_output_max_abs": 0.000004947185516357422,
+      "cascade_output_relative_l2": 0.0000017005846856815116,
+      "dpd_output_max_abs": 0.0000009201467037200928,
+      "dpd_output_relative_l2": 0.0000015120332981750944,
+      "metric_deltas_db": {
+        "ACLR_L": -0.0000020592444300859825,
+        "ACLR_R": -0.0000042694957684830115,
+        "ACLR_AVG": -0.000003164370099284497,
+        "EVM": -0.0000009776078826462253,
+        "NMSE": 0.0
+      },
+      "maximum_absolute_metric_delta_db": 0.0000042694957684830115,
+      "passed": true
+    }
+  },
+  "three_epoch_gate": {
+    "frame_stride": 16,
+    "train_batches_per_epoch": 23,
+    "epochs": 3,
+    "arms": [
+      {
+        "implementation": "Exact committed original",
+        "total_s": 32.03585798398126,
+        "train_s": 17.237055696023162,
+        "total_speedup": 1.0,
+        "train_speedup": 1.0,
+        "cascade_output_relative_l2": 0.0,
+        "maximum_absolute_metric_delta_db": 0.0,
+        "accepted": true
+      },
+      {
+        "implementation": "Clean eager pipeline",
+        "total_s": 24.029687639005715,
+        "train_s": 13.491934273974039,
+        "total_speedup": 1.3331782945018265,
+        "train_speedup": 1.2775822462516342,
+        "cascade_output_relative_l2": 0.0,
+        "maximum_absolute_metric_delta_db": 0.0,
+        "accepted": true
+      },
+      {
+        "implementation": "Strict whole-cascade CUDA graph",
+        "total_s": 5.458723943011137,
+        "train_s": 3.434560444991803,
+        "total_speedup": 5.868744841914403,
+        "train_speedup": 5.018707916804272,
+        "cascade_output_relative_l2": 0.0000020480301293249045,
+        "maximum_absolute_metric_delta_db": 0.0000024523588528779783,
+        "accepted": true
+      },
+      {
+        "implementation": "Direct persistent Triton training",
+        "total_s": 2.3912337490182836,
+        "train_s": 0.36852700999588706,
+        "total_speedup": 13.397208866399414,
+        "train_speedup": 46.77284222997803,
+        "cascade_output_relative_l2": 0.010411809662242288,
+        "maximum_absolute_metric_delta_db": 0.03461828059020533,
+        "accepted": false,
+        "rejection_reason": "RF metrics passed, but the final output exceeded the predeclared relative-L2 equivalence limit after three epochs."
+      }
+    ]
+  },
+  "isolated_results": {
+    "tres_backbone_training_step": {
+      "reference_ms": 164.302,
+      "optimized_ms": 1.692,
+      "speedup": 97.11
+    },
+    "frozen_dgru_forward_input_backward": {
+      "reference_ms": 1.2673,
+      "optimized_ms": 0.3261,
+      "speedup": 3.886,
+      "output_and_input_gradient_bitwise": true
+    }
+  },
+  "validation": {
+    "pytest_non_extended_passed": 164,
+    "pytest_extended_passed": 19,
+    "pytest_total_passed": 183,
+    "benchmark_repeat_count_production_optimized": 2,
+    "diff_check_clean": true
+  },
+  "raw_sources": [
+    "benchmark/results/e2e_dpa200_stride1_comparison_graph.json",
+    "benchmark/results/e2e_dpa200_stride1_comparison_graph_repeat.json",
+    "benchmark/results/e2e_dpa200_stride16_comparison_eager.json",
+    "benchmark/results/e2e_dpa200_stride16_comparison_graph.json",
+    "benchmark/results/e2e_dpa200_stride16_comparison_fused.json",
+    "benchmark/results/tres_deltagru_rtx4090_laptop.json"
+  ],
+  "limitations": [
+    "The repository contained no pretrained PA checkpoint, so all arms used the same deterministic surrogate PA trained once on the bundled dataset.",
+    "The production-density comparison covers one 357-update epoch, while the multi-epoch gate covers three 23-update epochs; it is not a 240- or 300-epoch convergence study.",
+    "The strict CUDA-graph path is an explicit opt-in specialized to the measured FP32 TRes-DeltaGRU to frozen-DGRU cascade and MSE training.",
+    "Existing EVM semantics were preserved: calculate_metrics does not forward the dataset sample rate to EVM, so its default 800 MHz is used."
+  ]
+}

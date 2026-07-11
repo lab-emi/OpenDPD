@@ -40,6 +40,13 @@ def get_arguments():
     parser.add_argument('--decay_factor', default=0.1, type=float, help='Learning rate')
     parser.add_argument('--patience', default=10, type=float, help='Learning rate')
     parser.add_argument('--grad_clip_val', default=200, type=float, help='Gradient clipping.')
+    parser.add_argument(
+        '--cuda_graph_training', action='store_true', default=False,
+        help=(
+            'Opt in to guarded whole-step CUDA-graph replay for supported '
+            'TRes-DeltaGRU DPD training.'
+        ),
+    )
     # GMP Hyperparameters
     parser.add_argument('--K', default=5, type=int, help='Degree of GMP model')
     parser.add_argument('--gmp_memory_length', default=11, type=int, help='Memory length of GMP model')
@@ -76,6 +83,8 @@ def get_arguments():
                         help='Threshold for input deltas')
     parser.add_argument('--thh', type=float, default=0.0,
                         help='Threshold for hidden state deltas')
+    parser.add_argument('--collect_delta_stats', action='store_true', default=False,
+                        help='Collect temporal delta sparsity diagnostics during training (adds overhead).')
 
     # Optionally, you might want to add DVR-specific arguments
     parser.add_argument('--num_dvr_units', default=3, type=int,

@@ -216,9 +216,19 @@ class Project:
         test_set = IQSegmentDataset(X_test, y_test, nperseg=self.args.nperseg)
 
         # Define PyTorch Dataloaders
-        train_loader = DataLoader(train_set, batch_size=self.batch_size, shuffle=True)
-        val_loader = DataLoader(val_set, batch_size=self.batch_size_eval, shuffle=False)
-        test_loader = DataLoader(test_set, batch_size=self.batch_size_eval, shuffle=False)
+        pin_memory = self.device.type == 'cuda'
+        train_loader = DataLoader(
+            train_set, batch_size=self.batch_size, shuffle=True,
+            pin_memory=pin_memory
+        )
+        val_loader = DataLoader(
+            val_set, batch_size=self.batch_size_eval, shuffle=False,
+            pin_memory=pin_memory
+        )
+        test_loader = DataLoader(
+            test_set, batch_size=self.batch_size_eval, shuffle=False,
+            pin_memory=pin_memory
+        )
 
         return (train_loader, val_loader, test_loader), input_size
 
@@ -255,18 +265,27 @@ class Project:
             raise AttributeError('Please use a valid loss function. Check argument.py.')
 
     def build_optimizer(self, net: nn.Module):
+        # Frozen PA parameters in a cascaded DPD model never receive gradients;
+        # excluding them avoids needless optimizer and clipping traversal while
+        # leaving the DPD updates unchanged.
+        trainable_params = tuple(
+            parameter for parameter in net.parameters() if parameter.requires_grad
+        )
+        if not trainable_params:
+            raise ValueError("Cannot build an optimizer without trainable parameters")
+
         # Optimizer
         if self.opt_type == 'adam':
-            optimizer = optim.Adam(net.parameters(), lr=self.lr)
+            optimizer = optim.Adam(trainable_params, lr=self.lr)
         elif self.opt_type == 'sgd':
-            optimizer = optim.SGD(net.parameters(), lr=self.lr, momentum=0.9)
+            optimizer = optim.SGD(trainable_params, lr=self.lr, momentum=0.9)
         elif self.opt_type == 'rmsprop':
-            optimizer = optim.RMSprop(net.parameters(), lr=self.lr)
+            optimizer = optim.RMSprop(trainable_params, lr=self.lr)
         elif self.opt_type == 'adamw':
-            optimizer = optim.AdamW(net.parameters(), lr=self.lr)
+            optimizer = optim.AdamW(trainable_params, lr=self.lr)
         elif self.opt_type == 'adabound':
             import adabound  # Run pip install adabound (https://github.com/Luolc/AdaBound)
-            optimizer = adabound.AdaBound(net.parameters(), lr=self.lr, final_lr=0.1)
+            optimizer = adabound.AdaBound(trainable_params, lr=self.lr, final_lr=0.1)
         else:
             raise RuntimeError('Please use a valid optimizer.')
 
@@ -352,7 +371,8 @@ class Project:
                             criterion=criterion,
                             dataloader=train_loader,
                             grad_clip_val=self.grad_clip_val,
-                            device=self.device)
+                            device=self.device,
+                            cuda_graph_training=self.cuda_graph_training)
 
             # -----------
             # Validation

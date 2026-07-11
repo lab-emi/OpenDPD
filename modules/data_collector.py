@@ -233,18 +233,40 @@ class IQSegmentDataset(Dataset):
 class IQFrameDataset(Dataset):
     def __init__(self, features, targets, frame_length, stride=1):
         # Convert segments into frames
-        self.features = torch.Tensor(self.get_frames(features, frame_length, stride))
-        self.targets = torch.Tensor(self.get_frames(targets, frame_length, stride))
+        # ``torch.Tensor(data)`` historically converts every input dtype to
+        # float32.  Keep that behavior while forcing independent storage.
+        self.features = torch.tensor(
+            self.get_frames(features, frame_length, stride), dtype=torch.float32
+        )
+        self.targets = torch.tensor(
+            self.get_frames(targets, frame_length, stride), dtype=torch.float32
+        )
 
     @staticmethod
     def get_frames(sequence, frame_length, stride_length):
-            frames = []
-            sequence_length = len(sequence)
-            num_frames = (sequence_length - frame_length) // stride_length + 1
-            for i in range(num_frames):
-                frame = sequence[i * stride_length: i * stride_length + frame_length]
-                frames.append(frame)
-            return np.stack(frames)
+        sequence = np.asarray(sequence)
+        if frame_length <= 0:
+            raise ValueError("frame_length must be positive")
+        if stride_length <= 0:
+            raise ValueError("stride_length must be positive")
+        if len(sequence) < frame_length:
+            raise ValueError("frame_length cannot exceed the sequence length")
+
+        # sliding_window_view creates every overlapping frame at once.  For a
+        # two-dimensional IQ sequence it initially places the window axis last
+        # (N, IQ, frame); move it behind the sample axis to recover the exact
+        # historical (N, frame, IQ) order, then apply the requested stride.
+        frames = np.lib.stride_tricks.sliding_window_view(
+            sequence, window_shape=frame_length, axis=0
+        )
+        if sequence.ndim > 1:
+            frames = np.moveaxis(frames, -1, 1)
+        frames = frames[::stride_length]
+
+        # Window arrays alias the source by construction.  Return a contiguous
+        # copy so neither the dataset nor callers observe storage aliasing.
+        return np.array(frames, copy=True, order='C')
+
     def __len__(self):
         return len(self.features)
 
