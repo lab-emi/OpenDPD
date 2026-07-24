@@ -126,6 +126,13 @@ class CoreModel(nn.Module):
                                              thx=self.thx,
                                              thh=self.thh,
                                              bias=self.bias)
+        elif backbone_type == 'tres_gru':
+            from backbones.tres_gru import TResGRU
+            self.backbone = TResGRU(input_size=6,
+                                    hidden_size=self.hidden_size,
+                                    output_size=self.output_size,
+                                    num_layers=self.num_layers,
+                                    bias=self.bias)
         elif backbone_type == 'tcn':
             from backbones.tcn import TCN
             self.backbone = TCN(hidden_channels=self.hidden_size)

@@ -230,9 +230,21 @@ def main():
     # Step 1:  Identify DPD via ILA + QR
     # -----------------------------------------------------------------------
     K, Q = args.K, args.Q
-    n_complex_coeffs = K * Q
+    if args.model == 'gmp':
+        def build_basis(x):
+            return build_gmp_basis(x, args.Ka, args.La, args.Kb, args.Lb,
+                                   args.Mb, args.Kc, args.Lc, args.Mc)
+        n_complex_coeffs = (args.Ka * args.La + args.Kb * args.Lb * args.Mb
+                            + args.Kc * args.Lc * args.Mc)
+        print(f"\n=== Volterra GMP DPD via QR (Ka={args.Ka}, La={args.La}, "
+              f"Kb={args.Kb}, Lb={args.Lb}, Mb={args.Mb}, "
+              f"Kc={args.Kc}, Lc={args.Lc}, Mc={args.Mc}) ===")
+    else:
+        def build_basis(x):
+            return build_mp_basis(x, K, Q)
+        n_complex_coeffs = K * Q
+        print(f"\n=== Volterra MP DPD via QR (K={K}, Q={Q}) ===")
     n_real_params = 2 * n_complex_coeffs
-    print(f"\n=== Volterra MP DPD via QR (K={K}, Q={Q}) ===")
     print(f"Complex coefficients : {n_complex_coeffs}")
     print(f"Real parameters      : {n_real_params}")
 
@@ -244,7 +256,7 @@ def main():
     z_norm = z_train_c / target_gain
 
     # Build basis from normalised PA output (postdistorter input)
-    Phi_train = build_mp_basis(z_norm, K, Q)
+    Phi_train = build_basis(z_norm)
 
     # Solve  x_train = Phi_train * w  via least squares (uses QR/SVD internally)
     w, residuals, rank, sv = np.linalg.lstsq(Phi_train, x_train_c, rcond=None)
@@ -256,7 +268,7 @@ def main():
     x_test_c = iq_to_complex(X_test)
 
     # Build basis from test input (predistorter)
-    Phi_test = build_mp_basis(x_test_c, K, Q)
+    Phi_test = build_basis(x_test_c)
     x_dpd_c = Phi_test @ w                     # predistorted signal
     x_dpd_iq = complex_to_iq(x_dpd_c)
 
@@ -285,7 +297,7 @@ def main():
 
     # Also run on val set
     x_val_c = iq_to_complex(X_val)
-    Phi_val = build_mp_basis(x_val_c, K, Q)
+    Phi_val = build_basis(x_val_c)
     x_dpd_val_c = Phi_val @ w
     x_dpd_val_iq = complex_to_iq(x_dpd_val_c)
     pa_val_iq = run_pa_model(x_dpd_val_iq, pa_net, device, nperseg)
