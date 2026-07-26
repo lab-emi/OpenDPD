@@ -1,0 +1,1904 @@
+{
+  "artifact_kind": "opendpd_benchmark_reproduction_run",
+  "canonical_report": "benchmark/benchmark_report.md",
+  "completion_context": {
+    "captured_at_utc": "2026-07-26T20:45:34.695466+00:00",
+    "git_branch": "benchmark-fix",
+    "git_commit": "3df35e081e6e41463fa46f21778c72a748823274",
+    "validated_unchanged": true
+  },
+  "datasets": {
+    "APA_200MHz": {
+      "dpd_models": {
+        "gmp": {
+          "artifact": {
+            "path": "benchmark_report_apa_dpd_gmp.json",
+            "sha256": "62912b11d4b370e2a0ae68f60bb03b53351e8c264bc0ddad149101beceb953d1",
+            "size_bytes": 2972
+          },
+          "basis_configuration": {
+            "Ka": 5,
+            "Kb": 4,
+            "Kc": 4,
+            "La": 20,
+            "Lb": 20,
+            "Lc": 20,
+            "Mb": 3,
+            "Mc": 2
+          },
+          "coefficient_l2_norm": 46.2047004699707,
+          "column_scale_max": 89.97786712646484,
+          "column_scale_min": 9.357341766357422,
+          "column_scaling": "l2",
+          "complex_coefficients": 500,
+          "condition_number": null,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": true,
+          "least_squares_rank": null,
+          "method": "indirect_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -43.5931687089929,
+              "aclr_left_db": -44.06568580030243,
+              "aclr_right_db": -43.120651617683365,
+              "evm_db": -46.352304380006316,
+              "nmse_db": -38.52589797973633
+            },
+            "validation": {
+              "aclr_avg_db": -42.972747788860104,
+              "aclr_left_db": -43.55596870580729,
+              "aclr_right_db": -42.38952687191292,
+              "evm_db": -46.27533200387405,
+              "nmse_db": -38.31670379638672
+            }
+          },
+          "model": {
+            "backbone": "gmp",
+            "display_name": "GMP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 1000
+          },
+          "nperseg": 19662,
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb"
+          },
+          "pa_evaluation_device": "cuda:0",
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 1000,
+          "regularization": null,
+          "retained_singular_value_min": null,
+          "sample_rate_hz": 983040000.0,
+          "singular_value_cutoff": null,
+          "singular_value_max": null,
+          "singular_value_min": null,
+          "solver": "torch.linalg.lstsq",
+          "solver_driver": "gels",
+          "solver_mode": "gels",
+          "svd_rcond": null,
+          "target_gain": 1.0,
+          "task": "dpd_ila",
+          "training_relative_residual": 0.010865671560168266
+        },
+        "gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_GRU_H_16_F_200_P_994.csv",
+              "sha256": "a6d38797ef37bbe21ce76ee9b5068b8b158172c1b3ba10729e9095278812d2e6",
+              "size_bytes": 421,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_GRU_H_16_F_200_P_994.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_GRU_H_16_F_200_P_994.pt",
+              "sha256": "e20f7c4c97ed09ea991b479812db21bef9ebdc622d4a1ad1bb2418988602d627",
+              "size_bytes": 6832,
+              "source_path": "save/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_GRU_H_16_F_200_P_994.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_GRU_H_16_F_200_P_994.csv",
+              "sha256": "f535a28e527eb0594ac0f01450ed8cbfdb685c72f19aee8705005b533e030a3e",
+              "size_bytes": 62248,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_GRU_H_16_F_200_P_994.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -51.0114043,
+              "aclr_left_db": -51.0559093,
+              "aclr_right_db": -50.9668993,
+              "evm_db": -47.42746888,
+              "loss": 1.52e-06,
+              "nmse_db": -45.13145
+            },
+            "validation": {
+              "aclr_avg_db": -51.32400487,
+              "aclr_left_db": -51.38568411,
+              "aclr_right_db": -51.26232562,
+              "evm_db": -47.68851727,
+              "loss": 1.5e-06,
+              "nmse_db": -45.17349
+            }
+          },
+          "model": {
+            "backbone": "gru",
+            "display_name": "GRU-H16",
+            "hidden_size": 16,
+            "model_id": "DPD_S_0_M_GRU_H_16_F_200_P_994",
+            "parameters": 994
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "dataset": "APA_200MHz",
+            "dpd_model_key": "gru",
+            "pa_model_key": "tres_gru",
+            "sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb"
+          },
+          "selected_epoch_zero_based": 299,
+          "selected_learning_rate": 0.00015625,
+          "task": "dpd_training",
+          "train_loss": 2.17e-06
+        },
+        "mp": {
+          "artifact": {
+            "path": "benchmark_report_apa_dpd_mp.json",
+            "sha256": "8d24721c1e3783f2247b4906e9b50ecb2feefe0040e0c93cf5ea9c6562ee3640",
+            "size_bytes": 2893
+          },
+          "basis_configuration": {
+            "K": 5,
+            "Q": 100
+          },
+          "coefficient_l2_norm": 4.383342266082764,
+          "column_scale_max": 89.97786712646484,
+          "column_scale_min": 13.769466400146484,
+          "column_scaling": "l2",
+          "complex_coefficients": 500,
+          "condition_number": null,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": true,
+          "least_squares_rank": null,
+          "method": "indirect_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -45.185983122836305,
+              "aclr_left_db": -46.0739531814713,
+              "aclr_right_db": -44.2980130642013,
+              "evm_db": -48.15347693703668,
+              "nmse_db": -42.189632415771484
+            },
+            "validation": {
+              "aclr_avg_db": -44.922360391352086,
+              "aclr_left_db": -45.558971707171324,
+              "aclr_right_db": -44.28574907553285,
+              "evm_db": -48.18950883574672,
+              "nmse_db": -42.11494827270508
+            }
+          },
+          "model": {
+            "backbone": "mp",
+            "display_name": "MP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 1000
+          },
+          "nperseg": 19662,
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb"
+          },
+          "pa_evaluation_device": "cuda:0",
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 1000,
+          "regularization": null,
+          "retained_singular_value_min": null,
+          "sample_rate_hz": 983040000.0,
+          "singular_value_cutoff": null,
+          "singular_value_max": null,
+          "singular_value_min": null,
+          "solver": "torch.linalg.lstsq",
+          "solver_driver": "gels",
+          "solver_mode": "gels",
+          "svd_rcond": null,
+          "target_gain": 1.0,
+          "task": "dpd_ila",
+          "training_relative_residual": 0.011005041189491749
+        },
+        "tres_gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv",
+              "sha256": "60137327bb949de2422c86587071a005d68ea78d94887801156a24c995483880",
+              "size_bytes": 427,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.pt",
+              "sha256": "b26552ffbafe8edcdfb6df66ec50f179b81644977f6c2f331f471d3f76b2d9fc",
+              "size_bytes": 7541,
+              "source_path": "save/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv",
+              "sha256": "11afe746632723165fbad0abc4fa4a854c5aa41587aa0d749939feac589de9e9",
+              "size_bytes": 63720,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -53.48793859,
+              "aclr_left_db": -53.46930447,
+              "aclr_right_db": -53.50657272,
+              "evm_db": -45.09727783,
+              "loss": 1.84e-06,
+              "nmse_db": -44.285923
+            },
+            "validation": {
+              "aclr_avg_db": -53.47358387,
+              "aclr_left_db": -53.20646222,
+              "aclr_right_db": -53.74070552,
+              "evm_db": -44.86538699,
+              "loss": 1.95e-06,
+              "nmse_db": -44.03681
+            }
+          },
+          "model": {
+            "backbone": "tres_gru",
+            "display_name": "TRes-GRU-H15",
+            "hidden_size": 15,
+            "model_id": "DPD_S_0_M_TRES_GRU_H_15_F_200_P_999",
+            "parameters": 999
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "dataset": "APA_200MHz",
+            "dpd_model_key": "tres_gru",
+            "pa_model_key": "tres_gru",
+            "sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb"
+          },
+          "selected_epoch_zero_based": 296,
+          "selected_learning_rate": 5e-05,
+          "task": "dpd_training",
+          "train_loss": 3.05e-06
+        }
+      },
+      "dpd_tres_deltagru_by_pa_surrogate": {
+        "tres_deltagru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "deb1fd39e3fde771614e01641ae9af14f96be47df3343611a8a941f5fe53e478",
+              "size_bytes": 462,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/APA_200MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt",
+              "sha256": "3699df3ad1fee950281b945e3f43f40015ab6f79380113b35ba981a1cff6bf5c",
+              "size_bytes": 8160,
+              "source_path": "save/APA_200MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "61e1ea3e9d31edd7d8cd63be2994f52b7b636d359bc8907d33138ac8a1c5aa16",
+              "size_bytes": 71889,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "delta_thresholds": {
+            "hidden": 0.0,
+            "input": 0.0
+          },
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -54.40097617,
+              "aclr_left_db": -54.56885076,
+              "aclr_right_db": -54.23310159,
+              "evm_db": -49.69994504,
+              "loss": 7.9e-07,
+              "nmse_db": -47.970295
+            },
+            "validation": {
+              "aclr_avg_db": -54.48738132,
+              "aclr_left_db": -55.10222104,
+              "aclr_right_db": -53.87254159,
+              "evm_db": -49.82003181,
+              "loss": 8.1e-07,
+              "nmse_db": -47.85823
+            }
+          },
+          "model": {
+            "backbone": "tres_deltagru",
+            "delta_thresholds": {
+              "hidden": 0.0,
+              "input": 0.0
+            },
+            "display_name": "TRes-DeltaGRU-H15 (THX=THH=0)",
+            "hidden_size": 15,
+            "model_id": "DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000",
+            "parameters": 999
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt",
+            "dataset": "APA_200MHz",
+            "dpd_model_key": "tres_deltagru",
+            "pa_model_key": "tres_deltagru",
+            "sha256": "b9451d33c6c4433e5c5d5a1326ab80299fe4ac51d07329e00dab183eece22650"
+          },
+          "pa_surrogate": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt",
+            "checkpoint_sha256": "b9451d33c6c4433e5c5d5a1326ab80299fe4ac51d07329e00dab183eece22650",
+            "model": {
+              "backbone": "tres_deltagru",
+              "delta_thresholds": {
+                "hidden": 0.0,
+                "input": 0.0
+              },
+              "display_name": "TRes-DeltaGRU-H27 (THX=THH=0)",
+              "hidden_size": 27,
+              "model_id": "PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751",
+              "parameters": 2751
+            },
+            "model_key": "tres_deltagru",
+            "selection_metric": "validation NMSE"
+          },
+          "selected_epoch_zero_based": 296,
+          "selected_learning_rate": 5e-05,
+          "task": "dpd_training",
+          "train_loss": 1.51e-06
+        },
+        "tres_gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "88afdf9d220f1445798caf7722627d4396e52849a04fd961c03a75bc3de0ca79",
+              "size_bytes": 462,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt",
+              "sha256": "8fc444b84bf85c7935f9d842b8753a8cdb9030672d0d5c61a5a1d8fb45d0f411",
+              "size_bytes": 8160,
+              "source_path": "save/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "fa350b8ac3620ed1abba12adffe797ca3c5c81fe3d10dbfd7488fe139369970a",
+              "size_bytes": 71864,
+              "source_path": "log/APA_200MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "delta_thresholds": {
+            "hidden": 0.0,
+            "input": 0.0
+          },
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -53.64353511,
+              "aclr_left_db": -53.87717378,
+              "aclr_right_db": -53.40989644,
+              "evm_db": -48.26290132,
+              "loss": 1.01e-06,
+              "nmse_db": -46.91838
+            },
+            "validation": {
+              "aclr_avg_db": -53.2897953,
+              "aclr_left_db": -53.47258954,
+              "aclr_right_db": -53.10700107,
+              "evm_db": -48.34864182,
+              "loss": 1.02e-06,
+              "nmse_db": -46.847137
+            }
+          },
+          "model": {
+            "backbone": "tres_deltagru",
+            "delta_thresholds": {
+              "hidden": 0.0,
+              "input": 0.0
+            },
+            "display_name": "TRes-DeltaGRU-H15 (THX=THH=0)",
+            "hidden_size": 15,
+            "model_id": "DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000",
+            "parameters": 999
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "dataset": "APA_200MHz",
+            "dpd_model_key": "tres_deltagru",
+            "pa_model_key": "tres_gru",
+            "sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb"
+          },
+          "pa_surrogate": {
+            "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "checkpoint_sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb",
+            "model": {
+              "backbone": "tres_gru",
+              "display_name": "TRes-GRU-H27",
+              "hidden_size": 27,
+              "model_id": "PA_S_0_M_TRES_GRU_H_27_F_200_P_2751",
+              "parameters": 2751
+            },
+            "model_key": "tres_gru",
+            "selection_metric": "validation NMSE"
+          },
+          "selected_epoch_zero_based": 264,
+          "selected_learning_rate": 5e-05,
+          "task": "dpd_training",
+          "train_loss": 2.13e-06
+        }
+      },
+      "pa_models": {
+        "gmp": {
+          "artifact": {
+            "path": "benchmark_report_apa_pa_gmp.json",
+            "sha256": "e9e22d371ce762aa35667760df5cfb782747f0b6b6f9c6391e7f807dce421943",
+            "size_bytes": 2803
+          },
+          "basis_configuration": {
+            "Ka": 5,
+            "Kb": 4,
+            "Kc": 4,
+            "La": 30,
+            "Lb": 30,
+            "Lc": 30,
+            "Mb": 5,
+            "Mc": 5
+          },
+          "coefficient_l2_norm": 7.8917012214660645,
+          "column_scale_max": 76.96764373779297,
+          "column_scale_min": 3.718569040298462,
+          "column_scaling": "l2",
+          "complex_coefficients": 1350,
+          "condition_number": 4101974003.5174985,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": false,
+          "least_squares_rank": 650,
+          "method": "direct_least_squares",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -27.70622397315019,
+              "aclr_left_db": -27.783035363162686,
+              "aclr_right_db": -27.629412583137697,
+              "evm_db": -42.797116668332876,
+              "nmse_db": -38.66061984321832
+            },
+            "validation": {
+              "aclr_avg_db": -27.409084690382358,
+              "aclr_left_db": -27.40526404384027,
+              "aclr_right_db": -27.412905336924446,
+              "evm_db": -43.053951759619196,
+              "nmse_db": -38.7019771115391
+            }
+          },
+          "model": {
+            "backbone": "gmp",
+            "display_name": "GMP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 2700
+          },
+          "nperseg": 19662,
+          "pa_checkpoint_binding": null,
+          "pa_evaluation_device": null,
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 2700,
+          "regularization": "truncated_svd",
+          "retained_singular_value_min": 0.0013197693042457104,
+          "sample_rate_hz": 983040000.0,
+          "singular_value_cutoff": 0.0012831207275390626,
+          "singular_value_max": 12.831207275390625,
+          "singular_value_min": 3.1280567025504524e-09,
+          "solver": "torch.linalg.svd",
+          "solver_driver": "gesvdj",
+          "solver_mode": "truncated_svd",
+          "svd_rcond": 0.0001,
+          "target_gain": 1.0,
+          "task": "pa_modeling",
+          "training_relative_residual": 0.011340372264385223
+        },
+        "gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_pa/best/PA_S_0_M_GRU_H_28_F_200_P_2746.csv",
+              "sha256": "7adb1c12e1a2e484c9426de6f31f70c9735e5b9e15efb686ec28be9bbbdc775d",
+              "size_bytes": 421,
+              "source_path": "log/APA_200MHz/train_pa/best/PA_S_0_M_GRU_H_28_F_200_P_2746.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/APA_200MHz/train_pa/PA_S_0_M_GRU_H_28_F_200_P_2746.pt",
+              "sha256": "71de3649529e335fde4d26d231728baf7e3d3b837d23a7e60768a62979312cb7",
+              "size_bytes": 13808,
+              "source_path": "save/APA_200MHz/train_pa/PA_S_0_M_GRU_H_28_F_200_P_2746.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_pa/history/PA_S_0_M_GRU_H_28_F_200_P_2746.csv",
+              "sha256": "3ada71d8783b7ec1475ea68fe2bcd33bb4931ecc6452be639bd423c1f58a4c9d",
+              "size_bytes": 62253,
+              "source_path": "log/APA_200MHz/train_pa/history/PA_S_0_M_GRU_H_28_F_200_P_2746.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "supervised_training",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -27.67541149,
+              "aclr_left_db": -27.67831335,
+              "aclr_right_db": -27.67250962,
+              "evm_db": -43.57318158,
+              "loss": 8.64e-06,
+              "nmse_db": -38.93669
+            },
+            "validation": {
+              "aclr_avg_db": -27.38332431,
+              "aclr_left_db": -27.34550046,
+              "aclr_right_db": -27.42114816,
+              "evm_db": -43.63170309,
+              "loss": 8.78e-06,
+              "nmse_db": -38.85041
+            }
+          },
+          "model": {
+            "backbone": "gru",
+            "display_name": "GRU-H28",
+            "hidden_size": 28,
+            "model_id": "PA_S_0_M_GRU_H_28_F_200_P_2746",
+            "parameters": 2746
+          },
+          "selected_epoch_zero_based": 292,
+          "selected_learning_rate": 5e-05,
+          "task": "pa_modeling",
+          "train_loss": 1.486e-05
+        },
+        "mp": {
+          "artifact": {
+            "path": "benchmark_report_apa_pa_mp.json",
+            "sha256": "dc056f90d336dbaa5e6218cdf236d58133c191508e6ceb90303faccba63e1a6d",
+            "size_bytes": 2518
+          },
+          "basis_configuration": {
+            "K": 9,
+            "Q": 150
+          },
+          "coefficient_l2_norm": 1649.8330078125,
+          "column_scale_max": 76.96764373779297,
+          "column_scale_min": 3.0452980995178223,
+          "column_scaling": "l2",
+          "complex_coefficients": 1350,
+          "condition_number": null,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": true,
+          "least_squares_rank": null,
+          "method": "direct_least_squares",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -27.831701026650798,
+              "aclr_left_db": -27.886854192144813,
+              "aclr_right_db": -27.776547861156786,
+              "evm_db": -39.95707758634159,
+              "nmse_db": -36.963532286352084
+            },
+            "validation": {
+              "aclr_avg_db": -27.38812910025664,
+              "aclr_left_db": -27.405965138204177,
+              "aclr_right_db": -27.37029306230911,
+              "evm_db": -40.23019407942715,
+              "nmse_db": -37.040538398646866
+            }
+          },
+          "model": {
+            "backbone": "mp",
+            "display_name": "MP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 2700
+          },
+          "nperseg": 19662,
+          "pa_checkpoint_binding": null,
+          "pa_evaluation_device": null,
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 2700,
+          "regularization": null,
+          "retained_singular_value_min": null,
+          "sample_rate_hz": 983040000.0,
+          "singular_value_cutoff": null,
+          "singular_value_max": null,
+          "singular_value_min": null,
+          "solver": "torch.linalg.lstsq",
+          "solver_driver": "gels",
+          "solver_mode": "gels",
+          "svd_rcond": null,
+          "target_gain": 1.0,
+          "task": "pa_modeling",
+          "training_relative_residual": 0.013689383864402771
+        },
+        "tres_deltagru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_pa/best/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv",
+              "sha256": "b71d9051ce4ee78ec8a223abf93cb2730c3f4bfa6e5a81d603bef1ec53f52410",
+              "size_bytes": 463,
+              "source_path": "log/APA_200MHz/train_pa/best/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/APA_200MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt",
+              "sha256": "b9451d33c6c4433e5c5d5a1326ab80299fe4ac51d07329e00dab183eece22650",
+              "size_bytes": 14596,
+              "source_path": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_pa/history/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv",
+              "sha256": "3c938909f1f9c247499a7a07c401a7385680db95844788eca9a8e61cec294236",
+              "size_bytes": 71953,
+              "source_path": "log/APA_200MHz/train_pa/history/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "delta_thresholds": {
+            "hidden": 0.0,
+            "input": 0.0
+          },
+          "method": "supervised_training",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -27.6760638,
+              "aclr_left_db": -27.68001247,
+              "aclr_right_db": -27.67211513,
+              "evm_db": -43.96833133,
+              "loss": 8.18e-06,
+              "nmse_db": -39.177734
+            },
+            "validation": {
+              "aclr_avg_db": -27.41638323,
+              "aclr_left_db": -27.3872018,
+              "aclr_right_db": -27.44556465,
+              "evm_db": -44.0254212,
+              "loss": 8.3e-06,
+              "nmse_db": -39.09286
+            }
+          },
+          "model": {
+            "backbone": "tres_deltagru",
+            "delta_thresholds": {
+              "hidden": 0.0,
+              "input": 0.0
+            },
+            "display_name": "TRes-DeltaGRU-H27 (THX=THH=0)",
+            "hidden_size": 27,
+            "model_id": "PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751",
+            "parameters": 2751
+          },
+          "selected_epoch_zero_based": 294,
+          "selected_learning_rate": 5e-05,
+          "task": "pa_modeling",
+          "train_loss": 1.417e-05
+        },
+        "tres_gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_pa/best/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv",
+              "sha256": "e0961441c4d10dd6292420c2032b7dff6083f24d7ba4976f7ef666351749fae5",
+              "size_bytes": 427,
+              "source_path": "log/APA_200MHz/train_pa/best/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+              "sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb",
+              "size_bytes": 14773,
+              "source_path": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/APA_200MHz/train_pa/history/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv",
+              "sha256": "4a01e2a3108a95b63af42c5a9f1035cfd6992c53a651f60efb2b21a48fadd2be",
+              "size_bytes": 63772,
+              "source_path": "log/APA_200MHz/train_pa/history/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "supervised_training",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -27.69532568,
+              "aclr_left_db": -27.75026686,
+              "aclr_right_db": -27.64038451,
+              "evm_db": -43.92993785,
+              "loss": 8.27e-06,
+              "nmse_db": -39.12926
+            },
+            "validation": {
+              "aclr_avg_db": -27.40869864,
+              "aclr_left_db": -27.40999309,
+              "aclr_right_db": -27.40740419,
+              "evm_db": -43.91182816,
+              "loss": 8.39e-06,
+              "nmse_db": -39.044727
+            }
+          },
+          "model": {
+            "backbone": "tres_gru",
+            "display_name": "TRes-GRU-H27",
+            "hidden_size": 27,
+            "model_id": "PA_S_0_M_TRES_GRU_H_27_F_200_P_2751",
+            "parameters": 2751
+          },
+          "selected_epoch_zero_based": 288,
+          "selected_learning_rate": 5e-05,
+          "task": "pa_modeling",
+          "train_loss": 1.415e-05
+        }
+      },
+      "reference_pa": {
+        "checkpoint": "save/APA_200MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+        "checkpoint_sha256": "fe08b5bdfa377af79bf1ea78fcfa0c96b10659bb050fe46ed2f3ef57dfcbc2eb",
+        "model_key": "tres_gru",
+        "selection_metric": "validation NMSE"
+      },
+      "signal": {
+        "dataset_file_sha256": {
+          "datasets/APA_200MHz/test_input.csv": "5027d3d69391ed22ad79c410831bdfed47b25045088dda0756801cf591c947bf",
+          "datasets/APA_200MHz/test_output.csv": "991c1f97f38e57c7f3614dd3f23c411791e03d5eb5eae67492455cf9e94820f6",
+          "datasets/APA_200MHz/train_input.csv": "2ca703c9e7eb39839db1fb01f91081a86e18535e53751c587cc71d2d71e9c625",
+          "datasets/APA_200MHz/train_output.csv": "e760adf3908ed1be1e610c46f056e88bad6107a81cc8b01d91306727316b5930",
+          "datasets/APA_200MHz/val_input.csv": "39bb15c9bd92549d1653498c140caff5cb2f20edffd433eafa46b4a81c491981",
+          "datasets/APA_200MHz/val_output.csv": "02f67574444c7a8ba321cde1ea919c07fef1c99fb9d25678befc019c6b6645e2"
+        },
+        "papr": {
+          "absolute_peak_db": 10.010544625499463,
+          "ccdf_db": 10.007981673494797,
+          "ccdf_probability": 1e-05,
+          "quantile_method": "numpy linear"
+        },
+        "samples": 98304,
+        "target_gain": 1.0
+      },
+      "spec_sha256": "edaf447bc2d59c2cf10df4ad5bececf057bd8822a45864ec8959ddea1a0ebf9a"
+    },
+    "DPA_160MHz": {
+      "dpd_models": {
+        "gmp": {
+          "artifact": {
+            "path": "benchmark_report_dpa_dpd_gmp.json",
+            "sha256": "56aef7fbcb816485d0d1339ed2a5bd068d609308a21d144203953ce2778328a2",
+            "size_bytes": 2998
+          },
+          "basis_configuration": {
+            "Ka": 5,
+            "Kb": 4,
+            "Kc": 4,
+            "La": 20,
+            "Lb": 20,
+            "Lc": 20,
+            "Mb": 3,
+            "Mc": 2
+          },
+          "coefficient_l2_norm": 19.907581329345703,
+          "column_scale_max": 210.84939575195312,
+          "column_scale_min": 24.099092483520508,
+          "column_scaling": "l2",
+          "complex_coefficients": 500,
+          "condition_number": null,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": true,
+          "least_squares_rank": null,
+          "method": "indirect_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -53.112459466114444,
+              "aclr_left_db": -52.616658084847344,
+              "aclr_right_db": -53.608260847381544,
+              "evm_db": -50.188747977606816,
+              "nmse_db": -43.97211837768555
+            },
+            "validation": {
+              "aclr_avg_db": -52.78473824545991,
+              "aclr_left_db": -52.35719844738584,
+              "aclr_right_db": -53.212278043533985,
+              "evm_db": -50.12855174608197,
+              "nmse_db": -44.266239166259766
+            }
+          },
+          "model": {
+            "backbone": "gmp",
+            "display_name": "GMP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 1000
+          },
+          "nperseg": 16384,
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d"
+          },
+          "pa_evaluation_device": "cuda:0",
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 1000,
+          "regularization": null,
+          "retained_singular_value_min": null,
+          "sample_rate_hz": 640000000.0,
+          "singular_value_cutoff": null,
+          "singular_value_max": null,
+          "singular_value_min": null,
+          "solver": "torch.linalg.lstsq",
+          "solver_driver": "gels",
+          "solver_mode": "gels",
+          "svd_rcond": null,
+          "target_gain": 2.295543024968947,
+          "task": "dpd_ila",
+          "training_relative_residual": 0.01053396426141262
+        },
+        "gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_GRU_H_16_F_200_P_994.csv",
+              "sha256": "0d5e9c035a56606e6eeaedd6752fc3e760b3c3490f6739d57c471375a84b3cde",
+              "size_bytes": 424,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_GRU_H_16_F_200_P_994.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_GRU_H_16_F_200_P_994.pt",
+              "sha256": "a7764785b413476b59d5f5e9528de2c8784b9abfa11f36a89383d836452dda9b",
+              "size_bytes": 6832,
+              "source_path": "save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_GRU_H_16_F_200_P_994.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_GRU_H_16_F_200_P_994.csv",
+              "sha256": "0d5ab7a838ed9b7b2442d04efa0770da9c7ff7c707b67739d6ada72cc1593902",
+              "size_bytes": 62460,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_GRU_H_16_F_200_P_994.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -57.26420765,
+              "aclr_left_db": -57.675965,
+              "aclr_right_db": -56.85245031,
+              "evm_db": -53.97904848,
+              "loss": 2.95e-06,
+              "nmse_db": -49.760174
+            },
+            "validation": {
+              "aclr_avg_db": -57.35296233,
+              "aclr_left_db": -57.60844419,
+              "aclr_right_db": -57.09748047,
+              "evm_db": -53.73140247,
+              "loss": 2.9e-06,
+              "nmse_db": -49.905857
+            }
+          },
+          "model": {
+            "backbone": "gru",
+            "display_name": "GRU-H16",
+            "hidden_size": 16,
+            "model_id": "DPD_S_0_M_GRU_H_16_F_200_P_994",
+            "parameters": 994
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "dataset": "DPA_160MHz",
+            "dpd_model_key": "gru",
+            "pa_model_key": "tres_gru",
+            "sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d"
+          },
+          "selected_epoch_zero_based": 297,
+          "selected_learning_rate": 5e-05,
+          "task": "dpd_training",
+          "train_loss": 1.097e-05
+        },
+        "mp": {
+          "artifact": {
+            "path": "benchmark_report_dpa_dpd_mp.json",
+            "sha256": "3a1353f590f28c9c4a058315fcedade248f55976912762e142e3fed6d5a6da57",
+            "size_bytes": 2908
+          },
+          "basis_configuration": {
+            "K": 5,
+            "Q": 100
+          },
+          "coefficient_l2_norm": 3.943410873413086,
+          "column_scale_max": 210.84939575195312,
+          "column_scale_min": 38.87131118774414,
+          "column_scaling": "l2",
+          "complex_coefficients": 500,
+          "condition_number": null,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": true,
+          "least_squares_rank": null,
+          "method": "indirect_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -50.9351411277973,
+              "aclr_left_db": -49.44417246777463,
+              "aclr_right_db": -52.426109787819975,
+              "evm_db": -50.50021219066906,
+              "nmse_db": -43.193756103515625
+            },
+            "validation": {
+              "aclr_avg_db": -50.63197307642169,
+              "aclr_left_db": -49.06701086616408,
+              "aclr_right_db": -52.19693528667929,
+              "evm_db": -50.42040796343259,
+              "nmse_db": -43.55812072753906
+            }
+          },
+          "model": {
+            "backbone": "mp",
+            "display_name": "MP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 1000
+          },
+          "nperseg": 16384,
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d"
+          },
+          "pa_evaluation_device": "cuda:0",
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 1000,
+          "regularization": null,
+          "retained_singular_value_min": null,
+          "sample_rate_hz": 640000000.0,
+          "singular_value_cutoff": null,
+          "singular_value_max": null,
+          "singular_value_min": null,
+          "solver": "torch.linalg.lstsq",
+          "solver_driver": "gels",
+          "solver_mode": "gels",
+          "svd_rcond": null,
+          "target_gain": 2.295543024968947,
+          "task": "dpd_ila",
+          "training_relative_residual": 0.010844217613339424
+        },
+        "tres_gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv",
+              "sha256": "58a96914a057b9e4a58468d8a84f65c435e6f65da932c94fe03a2ab0b2a1d1ed",
+              "size_bytes": 428,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.pt",
+              "sha256": "751b9a9228713a3a25fc5bef2ca6e45e6a4e5bbd979651ea5666657b03fa5062",
+              "size_bytes": 7541,
+              "source_path": "save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv",
+              "sha256": "d685adb6158f233b9f77f34a5d2375f66caadccbc65a49e1c6ebede68abde8d2",
+              "size_bytes": 63950,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_GRU_H_15_F_200_P_999.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -60.37169906,
+              "aclr_left_db": -60.27122719,
+              "aclr_right_db": -60.47217092,
+              "evm_db": -57.84510577,
+              "loss": 1.32e-06,
+              "nmse_db": -53.19377
+            },
+            "validation": {
+              "aclr_avg_db": -60.74250569,
+              "aclr_left_db": -60.45794513,
+              "aclr_right_db": -61.02706624,
+              "evm_db": -57.14251367,
+              "loss": 1.44e-06,
+              "nmse_db": -52.910625
+            }
+          },
+          "model": {
+            "backbone": "tres_gru",
+            "display_name": "TRes-GRU-H15",
+            "hidden_size": 15,
+            "model_id": "DPD_S_0_M_TRES_GRU_H_15_F_200_P_999",
+            "parameters": 999
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "dataset": "DPA_160MHz",
+            "dpd_model_key": "tres_gru",
+            "pa_model_key": "tres_gru",
+            "sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d"
+          },
+          "selected_epoch_zero_based": 296,
+          "selected_learning_rate": 5e-05,
+          "task": "dpd_training",
+          "train_loss": 1.49e-06
+        }
+      },
+      "dpd_tres_deltagru_by_pa_surrogate": {
+        "tres_deltagru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "8c583529041e534dc5cb1fbcd54c06d12f7578342c12309684da7c70521ef7d7",
+              "size_bytes": 464,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt",
+              "sha256": "a3cdb6bdf7c2fccb9a0bb7daa8fad29c659632bc6355287ad60fe199e3197e2e",
+              "size_bytes": 8160,
+              "source_path": "save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "dd135e3d4951358d37f84799b2b4752f92da9e4fb5798a34b7ff4ddddcfa5d2d",
+              "size_bytes": 72065,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_DELTAGRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "delta_thresholds": {
+            "hidden": 0.0,
+            "input": 0.0
+          },
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -61.65856766,
+              "aclr_left_db": -61.4514239,
+              "aclr_right_db": -61.86571143,
+              "evm_db": -59.39778461,
+              "loss": 1e-06,
+              "nmse_db": -54.372208
+            },
+            "validation": {
+              "aclr_avg_db": -61.92533611,
+              "aclr_left_db": -61.54620906,
+              "aclr_right_db": -62.30446316,
+              "evm_db": -58.24780618,
+              "loss": 1.11e-06,
+              "nmse_db": -54.115932
+            }
+          },
+          "model": {
+            "backbone": "tres_deltagru",
+            "delta_thresholds": {
+              "hidden": 0.0,
+              "input": 0.0
+            },
+            "display_name": "TRes-DeltaGRU-H15 (THX=THH=0)",
+            "hidden_size": 15,
+            "model_id": "DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000",
+            "parameters": 999
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt",
+            "dataset": "DPA_160MHz",
+            "dpd_model_key": "tres_deltagru",
+            "pa_model_key": "tres_deltagru",
+            "sha256": "980f4f8eb48da7d96bf5b0ce6b348755398263cc34a83fea8209dec45d0d45a7"
+          },
+          "pa_surrogate": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt",
+            "checkpoint_sha256": "980f4f8eb48da7d96bf5b0ce6b348755398263cc34a83fea8209dec45d0d45a7",
+            "model": {
+              "backbone": "tres_deltagru",
+              "delta_thresholds": {
+                "hidden": 0.0,
+                "input": 0.0
+              },
+              "display_name": "TRes-DeltaGRU-H27 (THX=THH=0)",
+              "hidden_size": 27,
+              "model_id": "PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751",
+              "parameters": 2751
+            },
+            "model_key": "tres_deltagru",
+            "selection_metric": "validation NMSE"
+          },
+          "selected_epoch_zero_based": 293,
+          "selected_learning_rate": 0.00015625,
+          "task": "dpd_training",
+          "train_loss": 1.15e-06
+        },
+        "tres_gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "549232530b4ddba266549b6ec4d6d36b329998bf625b8763fd20f91ee0cd6d4f",
+              "size_bytes": 464,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/best/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt",
+              "sha256": "f69815ba379e01c1f492e906af021282d6045854ae1860e6c1b6aae0a611b64f",
+              "size_bytes": 8160,
+              "source_path": "save/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv",
+              "sha256": "f0614b1f2a87acd1a0573388af81e71131aacea773404826bd80f24c29052f04",
+              "size_bytes": 72105,
+              "source_path": "log/DPA_160MHz/train_dpd/PA_S_0_M_TRES_GRU_H_27_F_200/history/DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "delta_thresholds": {
+            "hidden": 0.0,
+            "input": 0.0
+          },
+          "method": "direct_learning_architecture",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -61.04416081,
+              "aclr_left_db": -60.57591376,
+              "aclr_right_db": -61.51240785,
+              "evm_db": -58.84856644,
+              "loss": 1.03e-06,
+              "nmse_db": -54.244564
+            },
+            "validation": {
+              "aclr_avg_db": -61.54248186,
+              "aclr_left_db": -61.01506389,
+              "aclr_right_db": -62.06989982,
+              "evm_db": -57.93123352,
+              "loss": 1.15e-06,
+              "nmse_db": -53.868393
+            }
+          },
+          "model": {
+            "backbone": "tres_deltagru",
+            "delta_thresholds": {
+              "hidden": 0.0,
+              "input": 0.0
+            },
+            "display_name": "TRes-DeltaGRU-H15 (THX=THH=0)",
+            "hidden_size": 15,
+            "model_id": "DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000",
+            "parameters": 999
+          },
+          "pa_checkpoint_binding": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "dataset": "DPA_160MHz",
+            "dpd_model_key": "tres_deltagru",
+            "pa_model_key": "tres_gru",
+            "sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d"
+          },
+          "pa_surrogate": {
+            "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+            "checkpoint_sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d",
+            "model": {
+              "backbone": "tres_gru",
+              "display_name": "TRes-GRU-H27",
+              "hidden_size": 27,
+              "model_id": "PA_S_0_M_TRES_GRU_H_27_F_200_P_2751",
+              "parameters": 2751
+            },
+            "model_key": "tres_gru",
+            "selection_metric": "validation NMSE"
+          },
+          "selected_epoch_zero_based": 295,
+          "selected_learning_rate": 7.813e-05,
+          "task": "dpd_training",
+          "train_loss": 1.29e-06
+        }
+      },
+      "pa_models": {
+        "gmp": {
+          "artifact": {
+            "path": "benchmark_report_dpa_pa_gmp.json",
+            "sha256": "070485cf88eebe45fbb0337976e315a03c31b56b1c50ace22522d4803506f885",
+            "size_bytes": 2818
+          },
+          "basis_configuration": {
+            "Ka": 5,
+            "Kb": 4,
+            "Kc": 4,
+            "La": 30,
+            "Lb": 30,
+            "Lc": 30,
+            "Mb": 5,
+            "Mc": 5
+          },
+          "coefficient_l2_norm": 10.034621238708496,
+          "column_scale_max": 165.83279418945312,
+          "column_scale_min": 7.7007365226745605,
+          "column_scaling": "l2",
+          "complex_coefficients": 1350,
+          "condition_number": 1985705.7386572887,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": false,
+          "least_squares_rank": 918,
+          "method": "direct_least_squares",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -34.80149418436232,
+              "aclr_left_db": -35.08585122730327,
+              "aclr_right_db": -34.517137141421365,
+              "evm_db": -42.38386821531598,
+              "nmse_db": -39.40143419744728
+            },
+            "validation": {
+              "aclr_avg_db": -34.63113398986266,
+              "aclr_left_db": -34.9108251117308,
+              "aclr_right_db": -34.35144286799453,
+              "evm_db": -41.65365023479418,
+              "nmse_db": -38.908763378736715
+            }
+          },
+          "model": {
+            "backbone": "gmp",
+            "display_name": "GMP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 2700
+          },
+          "nperseg": 16384,
+          "pa_checkpoint_binding": null,
+          "pa_evaluation_device": null,
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 2700,
+          "regularization": "truncated_svd",
+          "retained_singular_value_min": 0.0011493448400869966,
+          "sample_rate_hz": 640000000.0,
+          "singular_value_cutoff": 0.0011460232734680177,
+          "singular_value_max": 11.460232734680176,
+          "singular_value_min": 5.771365067630541e-06,
+          "solver": "torch.linalg.svd",
+          "solver_driver": "gesvdj",
+          "solver_mode": "truncated_svd",
+          "svd_rcond": 0.0001,
+          "target_gain": 2.295543024968947,
+          "task": "pa_modeling",
+          "training_relative_residual": 0.010578107088804245
+        },
+        "gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_pa/best/PA_S_0_M_GRU_H_28_F_200_P_2746.csv",
+              "sha256": "7c5be39701ff59e16bdb4e23a4ad714adfdb611b6dd5a09b9079ae600016f6b3",
+              "size_bytes": 421,
+              "source_path": "log/DPA_160MHz/train_pa/best/PA_S_0_M_GRU_H_28_F_200_P_2746.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/DPA_160MHz/train_pa/PA_S_0_M_GRU_H_28_F_200_P_2746.pt",
+              "sha256": "c1d1dc696df19d7519def6dda23a22fcc82589224d43e5caef85cd84a573851f",
+              "size_bytes": 13808,
+              "source_path": "save/DPA_160MHz/train_pa/PA_S_0_M_GRU_H_28_F_200_P_2746.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_pa/history/PA_S_0_M_GRU_H_28_F_200_P_2746.csv",
+              "sha256": "5c8a49387a5b08af6eb09f044315011142dd642fd780277bac36f031ccedd95e",
+              "size_bytes": 62434,
+              "source_path": "log/DPA_160MHz/train_pa/history/PA_S_0_M_GRU_H_28_F_200_P_2746.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "supervised_training",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -34.83799881,
+              "aclr_left_db": -35.03673896,
+              "aclr_right_db": -34.63925866,
+              "evm_db": -42.82822831,
+              "loss": 4.992e-05,
+              "nmse_db": -39.49081
+            },
+            "validation": {
+              "aclr_avg_db": -34.76237982,
+              "aclr_left_db": -34.95988762,
+              "aclr_right_db": -34.56487201,
+              "evm_db": -42.19929651,
+              "loss": 5.342e-05,
+              "nmse_db": -39.080143
+            }
+          },
+          "model": {
+            "backbone": "gru",
+            "display_name": "GRU-H28",
+            "hidden_size": 28,
+            "model_id": "PA_S_0_M_GRU_H_28_F_200_P_2746",
+            "parameters": 2746
+          },
+          "selected_epoch_zero_based": 34,
+          "selected_learning_rate": 0.00125,
+          "task": "pa_modeling",
+          "train_loss": 7.127e-05
+        },
+        "mp": {
+          "artifact": {
+            "path": "benchmark_report_dpa_pa_mp.json",
+            "sha256": "a5a6cb62b210f6e22f4107ec3f17338aafc3ac351c54b8ebda6dd88620c1ba0f",
+            "size_bytes": 2539
+          },
+          "basis_configuration": {
+            "K": 9,
+            "Q": 150
+          },
+          "coefficient_l2_norm": 1562.5501708984375,
+          "column_scale_max": 165.83279418945312,
+          "column_scale_min": 8.192251205444336,
+          "column_scaling": "l2",
+          "complex_coefficients": 1350,
+          "condition_number": null,
+          "device": "cuda:0",
+          "dtype": "torch.complex64",
+          "full_rank_assumption": true,
+          "least_squares_rank": null,
+          "method": "direct_least_squares",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -34.89261561507139,
+              "aclr_left_db": -35.144338147000205,
+              "aclr_right_db": -34.640893083142586,
+              "evm_db": -40.903476587562324,
+              "nmse_db": -38.350608084028664
+            },
+            "validation": {
+              "aclr_avg_db": -34.70183472040674,
+              "aclr_left_db": -34.931857098557934,
+              "aclr_right_db": -34.47181234225553,
+              "evm_db": -40.39402625607741,
+              "nmse_db": -37.98229716673007
+            }
+          },
+          "model": {
+            "backbone": "mp",
+            "display_name": "MP",
+            "parameter_convention": "two real degrees of freedom per complex coefficient",
+            "parameters": 2700
+          },
+          "nperseg": 16384,
+          "pa_checkpoint_binding": null,
+          "pa_evaluation_device": null,
+          "parameter_count_convention": "two real degrees of freedom per complex coefficient",
+          "real_parameters": 2700,
+          "regularization": null,
+          "retained_singular_value_min": null,
+          "sample_rate_hz": 640000000.0,
+          "singular_value_cutoff": null,
+          "singular_value_max": null,
+          "singular_value_min": null,
+          "solver": "torch.linalg.lstsq",
+          "solver_driver": "gels",
+          "solver_mode": "gels",
+          "svd_rcond": null,
+          "target_gain": 2.295543024968947,
+          "task": "pa_modeling",
+          "training_relative_residual": 0.011598878540098667
+        },
+        "tres_deltagru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_pa/best/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv",
+              "sha256": "cce446f3d8d7d7d49b9c9c72f5cb9091d53c5c7c70637ed42335d3bdfbc45b90",
+              "size_bytes": 462,
+              "source_path": "log/DPA_160MHz/train_pa/best/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/DPA_160MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt",
+              "sha256": "980f4f8eb48da7d96bf5b0ce6b348755398263cc34a83fea8209dec45d0d45a7",
+              "size_bytes": 14596,
+              "source_path": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_pa/history/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv",
+              "sha256": "d315bfcd3c3f823a44a5b0e7974191139c3315cf20535b90f6696dd4b55bbadf",
+              "size_bytes": 72059,
+              "source_path": "log/DPA_160MHz/train_pa/history/PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "delta_thresholds": {
+            "hidden": 0.0,
+            "input": 0.0
+          },
+          "method": "supervised_training",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -34.89409696,
+              "aclr_left_db": -35.14318315,
+              "aclr_right_db": -34.64501077,
+              "evm_db": -43.31956339,
+              "loss": 4.677e-05,
+              "nmse_db": -39.735275
+            },
+            "validation": {
+              "aclr_avg_db": -34.70573261,
+              "aclr_left_db": -34.96491134,
+              "aclr_right_db": -34.44655387,
+              "evm_db": -42.96421325,
+              "loss": 4.832e-05,
+              "nmse_db": -39.480164
+            }
+          },
+          "model": {
+            "backbone": "tres_deltagru",
+            "delta_thresholds": {
+              "hidden": 0.0,
+              "input": 0.0
+            },
+            "display_name": "TRes-DeltaGRU-H27 (THX=THH=0)",
+            "hidden_size": 27,
+            "model_id": "PA_S_0_M_TRES_DELTAGRU_H_27_F_200_P_2751",
+            "parameters": 2751
+          },
+          "selected_epoch_zero_based": 16,
+          "selected_learning_rate": 0.0025,
+          "task": "pa_modeling",
+          "train_loss": 5.689e-05
+        },
+        "tres_gru": {
+          "artifacts": {
+            "best_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_pa/best/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv",
+              "sha256": "b6abe61b2433d6d170b1c2483b97d3275e6f93642053baf894de4a25a69afc8c",
+              "size_bytes": 425,
+              "source_path": "log/DPA_160MHz/train_pa/best/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv"
+            },
+            "checkpoint": {
+              "archived_path": "artifacts/save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+              "sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d",
+              "size_bytes": 14773,
+              "source_path": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt"
+            },
+            "history_csv": {
+              "archived_path": "artifacts/log/DPA_160MHz/train_pa/history/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv",
+              "sha256": "19102ffefe250224113d0973e5a0e9cd1bb2de8375e9f93641c85c13faea3861",
+              "size_bytes": 63971,
+              "source_path": "log/DPA_160MHz/train_pa/history/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.csv"
+            }
+          },
+          "completed_epochs": 300,
+          "method": "supervised_training",
+          "metrics": {
+            "test": {
+              "aclr_avg_db": -34.90779123,
+              "aclr_left_db": -35.15503937,
+              "aclr_right_db": -34.66054308,
+              "evm_db": -43.1446587,
+              "loss": 4.741e-05,
+              "nmse_db": -39.70443
+            },
+            "validation": {
+              "aclr_avg_db": -34.72994139,
+              "aclr_left_db": -34.99051361,
+              "aclr_right_db": -34.46936918,
+              "evm_db": -42.58117816,
+              "loss": 5.033e-05,
+              "nmse_db": -39.32285
+            }
+          },
+          "model": {
+            "backbone": "tres_gru",
+            "display_name": "TRes-GRU-H27",
+            "hidden_size": 27,
+            "model_id": "PA_S_0_M_TRES_GRU_H_27_F_200_P_2751",
+            "parameters": 2751
+          },
+          "selected_epoch_zero_based": 25,
+          "selected_learning_rate": 0.00125,
+          "task": "pa_modeling",
+          "train_loss": 5.561e-05
+        }
+      },
+      "reference_pa": {
+        "checkpoint": "save/DPA_160MHz/train_pa/PA_S_0_M_TRES_GRU_H_27_F_200_P_2751.pt",
+        "checkpoint_sha256": "e09da8eebdbf35746975ebf5013f6eb82d02adea3c9545bd50fe88a2bfe6ce6d",
+        "model_key": "tres_gru",
+        "selection_metric": "validation NMSE"
+      },
+      "signal": {
+        "dataset_file_sha256": {
+          "datasets/DPA_160MHz/test_input.csv": "7fb259816af61b34ce6a966858787ca164fd1aed287fafa6005c91ae4abcd5fb",
+          "datasets/DPA_160MHz/test_output.csv": "06eab1afc94c0ee3140cabc785ed1a81e7e3446d0a580aebc749c5853a1d07c5",
+          "datasets/DPA_160MHz/train_input.csv": "3de4709bcb4e9e5c155c075ab8e210de3b8545f73a43edaf05885b41a849a9d1",
+          "datasets/DPA_160MHz/train_output.csv": "e2d852dccac4f0db8934746f8c14aedb316edd5589c972d7a10d6dc85c0775c2",
+          "datasets/DPA_160MHz/val_input.csv": "ad04f3f272d6974429c7a5b6ee6bbcca91c180157066a5994ae7bb5912053c97",
+          "datasets/DPA_160MHz/val_output.csv": "efdfeb3d261a284024daa53378201917d1d7af96e128fa65a5c44c5266665c15"
+        },
+        "papr": {
+          "absolute_peak_db": 10.139761791608466,
+          "ccdf_db": 10.131554833438559,
+          "ccdf_probability": 1e-05,
+          "quantile_method": "numpy linear"
+        },
+        "samples": 491520,
+        "target_gain": 2.2955430249689464
+      },
+      "spec_sha256": "4e777ff275bd1b2676c5ffc6a34d3432b56aedb3ed78935734485f3f9c2f1e8b"
+    }
+  },
+  "derived_artifacts": {
+    "benchmark_delta_dpd_results.png": {
+      "sha256": "cb2f7696c4654b0b735137c4498044edf756f10c6f57db6badb693899e8cdfa6",
+      "size_bytes": 112421
+    },
+    "benchmark_report.md": {
+      "sha256": "edd5a017414006e7b678e293ae1b7e3d61390b898e28e9e9f199e34a7c5a98d7",
+      "size_bytes": 13602
+    },
+    "benchmark_results.png": {
+      "sha256": "6bf8c8f61ba5664e6fd26ee849c6ac1718b8e238e1aff92fee7fe028379219e7",
+      "size_bytes": 201177
+    }
+  },
+  "environment": {
+    "cuda": "13.2",
+    "cudnn": 92000,
+    "gpu": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+    "gpu_device_index": 0,
+    "numpy": "2.5.1",
+    "pandas": "3.0.5",
+    "platform": "Linux-7.0.0-15-generic-x86_64-with-glibc2.43",
+    "python": "3.13.14",
+    "scipy": "1.18.0",
+    "torch": "2.13.0+cu132",
+    "training_cudnn_benchmark": true,
+    "training_deterministic_algorithms": false,
+    "training_reproducibility_level": "soft"
+  },
+  "generated_at_utc": "2026-07-26T20:45:35.368238+00:00",
+  "git": {
+    "branch": "benchmark-fix",
+    "commit": "3df35e081e6e41463fa46f21778c72a748823274",
+    "dirty": true,
+    "status": [
+      "M .gitignore",
+      " M arguments.py",
+      " D benchmark/BENCHMARK_FIX_PLAN.md",
+      " D benchmark/benchmark_end_to_end.py",
+      " M benchmark/benchmark_report.md",
+      " D benchmark/benchmark_training_speed.py",
+      " D benchmark/benchmark_training_speed_report.md",
+      " D benchmark/benchmark_tres_deltagru.py",
+      " D benchmark/benchmark_volterra_qr.py",
+      " D benchmark/pa_modeling_investigation.md",
+      " D benchmark/report/artifact.json",
+      " D benchmark/results/e2e_dpa200_stride16_comparison_eager.json",
+      " D benchmark/results/e2e_dpa200_stride16_comparison_fused.json",
+      " D benchmark/results/e2e_dpa200_stride16_comparison_graph.json",
+      " D benchmark/results/e2e_dpa200_stride16_eager_optimized/batch_orders.npz",
+      " D benchmark/results/e2e_dpa200_stride16_eager_optimized/outputs.npz",
+      " D benchmark/results/e2e_dpa200_stride16_eager_optimized/result.json",
+      " D benchmark/results/e2e_dpa200_stride16_fused_optimized/batch_orders.npz",
+      " D benchmark/results/e2e_dpa200_stride16_fused_optimized/outputs.npz",
+      " D benchmark/results/e2e_dpa200_stride16_fused_optimized/result.json",
+      " D benchmark/results/e2e_dpa200_stride16_graph_optimized/batch_orders.npz",
+      " D benchmark/results/e2e_dpa200_stride16_graph_optimized/outputs.npz",
+      " D benchmark/results/e2e_dpa200_stride16_graph_optimized/result.json",
+      " D benchmark/results/e2e_dpa200_stride16_original/batch_orders.npz",
+      " D benchmark/results/e2e_dpa200_stride16_original/outputs.npz",
+      " D benchmark/results/e2e_dpa200_stride16_original/result.json",
+      " D benchmark/results/e2e_dpa200_stride1_comparison_graph.json",
+      " D benchmark/results/e2e_dpa200_stride1_comparison_graph_repeat.json",
+      " D benchmark/results/e2e_dpa200_stride1_graph_optimized/batch_orders.npz",
+      " D benchmark/results/e2e_dpa200_stride1_graph_optimized/outputs.npz",
+      " D benchmark/results/e2e_dpa200_stride1_graph_optimized/result.json",
+      " D benchmark/results/e2e_dpa200_stride1_graph_repeat/batch_orders.npz",
+      " D benchmark/results/e2e_dpa200_stride1_graph_repeat/outputs.npz",
+      " D benchmark/results/e2e_dpa200_stride1_graph_repeat/result.json",
+      " D benchmark/results/e2e_dpa200_stride1_original/batch_orders.npz",
+      " D benchmark/results/e2e_dpa200_stride1_original/outputs.npz",
+      " D benchmark/results/e2e_dpa200_stride1_original/result.json",
+      " D benchmark/results/end_to_end_summary.json",
+      " D benchmark/results/tres_deltagru_rtx4090_laptop.json",
+      " D benchmark/train_all_pa_2700.sh",
+      " D benchmark/tres_deltagru_end_to_end_report.html",
+      " D benchmark/tres_deltagru_training_speed.md",
+      " M modules/paths.py",
+      " M modules/train_funcs.py",
+      " M opendpd/api.py",
+      " M project.py",
+      " M steps/run_dpd.py",
+      " M steps/train_dpd.py",
+      " M steps/train_pa.py",
+      " M tests/test_api.py",
+      " M tests/test_cli.py",
+      " M tests/test_tres_deltagru_optimized.py",
+      "?? benchmark/benchmark_delta_dpd_results.png",
+      "?? benchmark/benchmark_results.png",
+      "?? benchmark/benchmark_volterra.py",
+      "?? benchmark/collect_benchmark_report.py",
+      "?? benchmark/reproduce_benchmark_report.sh",
+      "?? benchmark/results/benchmark_report_results.json",
+      "?? tests/test_benchmark_regressions.py",
+      "?? tests/test_metric_configuration.py"
+    ]
+  },
+  "metric_note": "EVM is the repository-specific normalized mean absolute complex-spectrum error across configured main-channel subchannels, not demodulated constellation EVM. DPD metrics are simulated through a frozen learned PA surrogate.",
+  "publication": {
+    "all_jobs_exit_zero": true,
+    "note": "The canonical manifest contains the published model subset. Source-run hashes, job totals, and archives cover the complete source run and can include experiments outside that subset; source-archive members were verified against the pre-run source hash map.",
+    "original_collector_manifest_sha256": "65daa8b3f91d51f3ecb200e0477e44d20e0e23bd8201afbdb78087aa20a2e73b",
+    "original_schema_version": 6,
+    "published_dpd_pa_surrogates": [
+      "tres_gru",
+      "tres_deltagru"
+    ],
+    "published_models": [
+      "mp",
+      "gmp",
+      "gru",
+      "tres_gru",
+      "tres_deltagru"
+    ],
+    "published_models_by_stage": {
+      "dpd": [
+        "mp",
+        "gmp",
+        "gru",
+        "tres_gru"
+      ],
+      "dpd_pa_surrogate_sensitivity": [
+        "tres_deltagru"
+      ],
+      "pa_modeling": [
+        "mp",
+        "gmp",
+        "gru",
+        "tres_gru",
+        "tres_deltagru"
+      ]
+    },
+    "published_result_count": 22,
+    "source_job_count": 24,
+    "source_result_count": 22,
+    "source_run_id": "20260726T161245Z",
+    "source_snapshot_created_during_run_utc": "2026-07-26T16:12:47.861423+00:00",
+    "source_snapshot_member_hashes_match_pre_run_context": true,
+    "total_job_duration_seconds": 16369
+  },
+  "recipes": {
+    "neural_dpd": {
+      "batch_size": 64,
+      "decay_factor": 0.5,
+      "epochs": 300,
+      "frame_length": 200,
+      "frame_stride": 1,
+      "initial_learning_rate": 0.005,
+      "loss": "MSE",
+      "lr_schedule": "ReduceLROnPlateau",
+      "minimum_learning_rate": 5e-05,
+      "optimizer": "AdamW",
+      "optimizer_betas": [
+        0.9,
+        0.999
+      ],
+      "optimizer_eps": 1e-08,
+      "optimizer_weight_decay": 0.01,
+      "patience": 5,
+      "scheduler_cooldown": 0,
+      "scheduler_eps": 1e-08,
+      "scheduler_threshold": 0.0001,
+      "scheduler_threshold_mode": "rel",
+      "seed": 0
+    },
+    "neural_dpd_pa_surrogate_sensitivity": {
+      "batch_size": 64,
+      "decay_factor": 0.5,
+      "dpd_model": {
+        "backbone": "tres_deltagru",
+        "delta_thresholds": {
+          "hidden": 0.0,
+          "input": 0.0
+        },
+        "display_name": "TRes-DeltaGRU-H15 (THX=THH=0)",
+        "hidden_size": 15,
+        "model_id": "DPD_S_0_M_TRES_DELTAGRU_H_15_F_200_P_999_THX_0.000_THH_0.000",
+        "parameters": 999
+      },
+      "epochs": 300,
+      "frame_length": 200,
+      "frame_stride": 1,
+      "initial_learning_rate": 0.005,
+      "loss": "MSE",
+      "lr_schedule": "ReduceLROnPlateau",
+      "minimum_learning_rate": 5e-05,
+      "optimizer": "AdamW",
+      "optimizer_betas": [
+        0.9,
+        0.999
+      ],
+      "optimizer_eps": 1e-08,
+      "optimizer_weight_decay": 0.01,
+      "pa_surrogates": [
+        "tres_gru",
+        "tres_deltagru"
+      ],
+      "patience": 5,
+      "scheduler_cooldown": 0,
+      "scheduler_eps": 1e-08,
+      "scheduler_threshold": 0.0001,
+      "scheduler_threshold_mode": "rel",
+      "seed": 0
+    },
+    "neural_pa": {
+      "batch_size": 64,
+      "decay_factor": 0.5,
+      "epochs": 300,
+      "frame_length": 200,
+      "frame_stride": 1,
+      "initial_learning_rate": 0.005,
+      "loss": "MSE",
+      "lr_schedule": "ReduceLROnPlateau",
+      "minimum_learning_rate": 5e-05,
+      "optimizer": "AdamW",
+      "optimizer_betas": [
+        0.9,
+        0.999
+      ],
+      "optimizer_eps": 1e-08,
+      "optimizer_weight_decay": 0.01,
+      "patience": 5,
+      "scheduler_cooldown": 0,
+      "scheduler_eps": 1e-08,
+      "scheduler_threshold": 0.0001,
+      "scheduler_threshold_mode": "rel",
+      "seed": 0
+    },
+    "polynomial_dpd": {
+      "column_scaling": "l2",
+      "method": "indirect_learning_architecture",
+      "models": {
+        "gmp": {
+          "basis_configuration": {
+            "Ka": 5,
+            "Kb": 4,
+            "Kc": 4,
+            "La": 20,
+            "Lb": 20,
+            "Lc": 20,
+            "Mb": 3,
+            "Mc": 2
+          },
+          "complex_coefficients": 500,
+          "real_parameters": 1000
+        },
+        "mp": {
+          "basis_configuration": {
+            "K": 5,
+            "Q": 100
+          },
+          "complex_coefficients": 500,
+          "real_parameters": 1000
+        }
+      },
+      "parameter_convention": "two real degrees of freedom per complex coefficient",
+      "solver": "torch.linalg.lstsq",
+      "solver_driver": "gels"
+    },
+    "polynomial_pa": {
+      "column_scaling": "l2",
+      "method": "direct_least_squares",
+      "models": {
+        "gmp": {
+          "basis_configuration": {
+            "Ka": 5,
+            "Kb": 4,
+            "Kc": 4,
+            "La": 30,
+            "Lb": 30,
+            "Lc": 30,
+            "Mb": 5,
+            "Mc": 5
+          },
+          "complex_coefficients": 1350,
+          "real_parameters": 2700
+        },
+        "mp": {
+          "basis_configuration": {
+            "K": 9,
+            "Q": 150
+          },
+          "complex_coefficients": 1350,
+          "real_parameters": 2700
+        }
+      },
+      "parameter_convention": "two real degrees of freedom per complex coefficient",
+      "solvers": {
+        "gmp": {
+          "driver": "gesvdj",
+          "implementation": "torch.linalg.svd",
+          "mode": "truncated_svd",
+          "regularization": {
+            "relative_cutoff": 0.0001,
+            "type": "truncated_svd"
+          }
+        },
+        "mp": {
+          "driver": "gels",
+          "implementation": "torch.linalg.lstsq",
+          "mode": "gels",
+          "regularization": null
+        }
+      }
+    }
+  },
+  "run_file_sha256": {
+    "commands.log": "cc18c355294a0e2d9bb7056e8c06bbfd12492664eb3968976bfe913090ceb1b0",
+    "context_before.json": "9d578fbc05fa1d943193d5397dd6741c65b1658baaaea9f773a2d50ccfe20808",
+    "git_branch_before.txt": "758faa270e2de48355d38d5ec23cc5b5d89f668c8cd8b68c0a3b10af638fbb97",
+    "git_commit_before.txt": "c3001cec76c14bb641eeb21bbbf88dd42bd33fe6d73be1dc3bb1759dc646e98c",
+    "git_status_before.txt": "e6225bec19c0425e36bb3bb9bd49e2347500bf842b9f229f02d090538a4ece7b",
+    "jobs.tsv": "d580289f06f1be5f571bc9a8467910a41a0c0eb839834c6683b7468947cfa66c",
+    "pa_checkpoint_bindings.tsv": "cbbae37c50cfeb831d338e75b52bec9653657d90f4ae5544475c87e4f67f3770",
+    "recipe.json": "aa372944dbd085fca23f859edd1de5df3800282867f5263696c14d3e57dc991c",
+    "source_snapshot.tar.gz": "7ecc3ae72750b24ece1e2aa0814f539a7cf672b11da2f37d31e67f7a517f4811"
+  },
+  "schema_version": 6,
+  "source_file_sha256": {
+    "arguments.py": "2d00505312ab0d87d58dcebaebaf3ab15d77b1c29e79ced7c8ec2bda0f9e7f6d",
+    "backbones/__init__.py": "c36ccba9afef9c5c2aad3776939a9746379c435054afd8673fc6096ad3e6d12c",
+    "backbones/apnrru.py": "9ec899243bc04a497cf479c49dea8bd875e50884c7cc0157581828fdde2a4e59",
+    "backbones/bojanet.py": "f1ae8fc298935afe9764836bda769cf31437cc325ddc1141927153dab68fc3c2",
+    "backbones/cuda_graph_frozen_dgru.py": "033e326dfa4782cd13e0c37f62d0581d8a8513a536b39130bfc9d3ee69b2682c",
+    "backbones/deltagru.py": "7582250e17a4bb5b27d3244bf06145388a0506c3e83205db6df79d259f6ed4e1",
+    "backbones/deltajanet.py": "7f2a48ffb375d403434aace161f858319ae981e90b7828ec5e665c0d6d9ec950",
+    "backbones/dgru.py": "6bcb7dcff9abba5424c1312515570eef3614b4c62bb7f8c228772a467d2720ef",
+    "backbones/dvrjanet.py": "e7112cbc194b1b95bc96b84075457a17ef7671cab38279b8086c65297873aee4",
+    "backbones/gmp.py": "53339dc48a8da7333a11756996223a4921759298604159ad7f2499e0c945585c",
+    "backbones/gru.py": "9e1e17ac9ad936bf91c821703a9137260e9df352541155262a5c0a8c0e1a6e30",
+    "backbones/lstm.py": "7cc761002c83f09f2e38878547a3c065c01fbfb64ee4db9c1cbe8510d17c1bed",
+    "backbones/mcldnn.py": "1cc9af20c6c35f4efe5fec95375b077a4e10563a4b5c2fa501cc3dde8940c464",
+    "backbones/pgjanet.py": "672f20e50e920826e570640efe6172e9f02d5e35eb5b66a607beddacf9ebfbfb",
+    "backbones/qgru.py": "5b029c99e8145628834dd0cc88cd68b9d1c9e1ef3174c8a85a8d46b68ccf6536",
+    "backbones/qgru_amp1.py": "21296ba3777722f5ff7d0ee9c0a1dfcd8d31c1da65c836d9577bdd10d49d245c",
+    "backbones/rvtdcnn.py": "d98b2a3e2161e4e74ebc37dc65f5cdd0a247644e363393d57fc4bc245e001923",
+    "backbones/tcn.py": "3d3c7048b36591409d90a7b0e4c4fb7ea73a01018ef73192e42df252c66cd827",
+    "backbones/tres_deltagru.py": "0351d322ce3ae615d0f1adfde2b76e8afaa0d85d6f9dc92f511905eca7762925",
+    "backbones/tres_gru.py": "0c03c302a7e98751f654f0e56da86498b9fc01723717c01e83dd98571be1d1e6",
+    "backbones/triton_deltagru.py": "1404d1bb55b512164eac1f281f318d7744cb682ee95fc25c170d6d5d1a9f4718",
+    "backbones/vdlstm.py": "bf268d65f47ecd18c31e68aaadcb3a26a433d7483b0fe888e39ef89f33d05619",
+    "benchmark/benchmark_report.md": "8d1b0ec5b368da42d3b35f4b71f3c31aafe14542e4167de793c8b73856c062c3",
+    "benchmark/benchmark_volterra.py": "79cb35031113908fdd177174c34383dad381f8e48b4eab008b4c14ef5988285b",
+    "benchmark/collect_benchmark_report.py": "f75caaa35812e8cf15635af523627e14b5740bddfef3c02535262c25aa81be95",
+    "benchmark/reproduce_benchmark_report.sh": "266949c88a18f4b7072c0809d0900bcd7abe3ac9584215b41fba932d3d162654",
+    "main.py": "07194242bd0b7fa8d1d05f1661daee42fc668ccea72fed04e661942e15239c26",
+    "models.py": "e1a7887a5e8621620088046e8aac4429247f039cddfedcb603b01fee57a979f7",
+    "modules/__init__.py": "c36ccba9afef9c5c2aad3776939a9746379c435054afd8673fc6096ad3e6d12c",
+    "modules/cuda_graph_training.py": "dc6d9c436eb8a06145f9e5472cd6cb72deebcc2b08f44a278a3be21409dde620",
+    "modules/data_collector.py": "7f3b55f38f80820c10d399d161b8cd233bfaf8837dc43613dd1410d6ed649a4a",
+    "modules/loggers.py": "192d4851f41581e211a32430856e630cb3e92fcb88e73525ec555acb0a76b3d6",
+    "modules/paths.py": "43c3cec2727db9c0b6206831440e9a26992a1366d151ab025ef2f35536403d66",
+    "modules/train_funcs.py": "c3c6057f8822ccd470b626e775fb66e6116954f4185265523f05146fb5ab2432",
+    "opendpd/__init__.py": "5535b674cf7a2b92563577dc5dc0036301e8a8ec06e10e718f858b976c7f1fee",
+    "opendpd/api.py": "e68edf808ee2feaa17c9563bc8adbb5b956e097649f3382449af31a308f8a66c",
+    "opendpd/cli.py": "1142070bd94de6dfe61e241f66391ee4f2779bae215d030d2143aa59f07997d1",
+    "project.py": "759a7c4d1d1d73a4444e83b83269ce346a3b1a849048c8ed8fc21ddc751098df",
+    "quant/__init__.py": "77870e58c91b6f96aa99dcfbd51cbc2af0647bc5471f6f1bce75fe3dc9844366",
+    "quant/modules/__init__.py": "5041f5f1c0c70267661470188147ee9c59b88dc75b1c9ba43a0f64f6c63a5929",
+    "quant/modules/gru.py": "768312fd67030bb909f3340ea61da470a8c6092094e2a161cd6fbb544f9416d4",
+    "quant/modules/ops.py": "2766edd66d3b4578c6c9b8c741950914de1f189db497351caf49ba5d00846eb9",
+    "quant/qmodules/__init__.py": "c65bf92be624ac36c266227fd10b217652ab4e188c4ac12b1c3d4c1a318ef1ad",
+    "quant/qmodules/quant_layers.py": "24352078f035768a8d640550f68b5f44048fa1f7d2cbaae09f50376fdd36a54c",
+    "quant/qmodules/quant_ops.py": "99ec701d2b7d095f3e75114e59a0843fdda849cf2ea82abdee096e67c822e6ac",
+    "quant/qmodules/quantizers.py": "1c44adfef579bf97afb314dd10074ba6eacc5207349873665b4e9e1ba2719e8b",
+    "quant/quant_envs.py": "803436d91459e76c0530951f1f068fe85385abac753a233b4d43a4553ade70c5",
+    "quant/utlis/__init__.py": "ce2b4d895b803d84d02351b68a1ebf536ebda3de11bb621637aa478610dd5973",
+    "quant/utlis/hooks.py": "4cf0063c4aa4c007b5f448d7427a7491e09793ed985a0337c1f170f452e0b3fc",
+    "quant/utlis/measures.py": "6b06453d2e8e68db39262eff3fe724764dcf5f8d15af1f4f8ebfdfa844b19649",
+    "setup.py": "ee47c04e451de6cf7fb05290cf8535a8311dc202ebaeedd41ae767b2513668cc",
+    "steps/__init__.py": "c36ccba9afef9c5c2aad3776939a9746379c435054afd8673fc6096ad3e6d12c",
+    "steps/plot.py": "0bd2c05b45df599d4d36f6393ada2454344f4bce84bbdadb6c586faee0a0bcdb",
+    "steps/run_dpd.py": "3d6dacc3fc11f17de6622a7ceadca6033a0fad279a86113eff61a7e8c08891be",
+    "steps/train_dpd.py": "03326bb221271531eb2db355604d0174d554f67d91211a9e32f5811760775f4f",
+    "steps/train_pa.py": "689fe78e150fa6600dca31f60d7b4f7493eb3f9b879fb4beabeb25b9ac381c1c",
+    "test_installation.py": "2fa9123da50e24dadc8bbe659440e7a2f9bd11d2482523ac1a323ffcfb490b0f",
+    "utils/__init__.py": "c36ccba9afef9c5c2aad3776939a9746379c435054afd8673fc6096ad3e6d12c",
+    "utils/metrics.py": "19e525834c96371e9837f909b8e848d4b32ff49ef52855e3281ec3f7682cd992",
+    "utils/plotting.py": "2ac10c110559b7ed999647ecdd9f06bde50044a8a1c807d33876f91729deedcf",
+    "utils/split_dataset.py": "472a9956db640dad7fb24e605d7722796d067366081d4e48d06a6e96f65ccc03",
+    "utils/util.py": "dcfe263cf2b3bb55e18f13439c3aed196a49d975ed3bfbab81f781a4cbcfef8b"
+  },
+  "source_snapshot": {
+    "file_count": 62,
+    "path": "source_snapshot.tar.gz",
+    "sha256": "7ecc3ae72750b24ece1e2aa0814f539a7cf672b11da2f37d31e67f7a517f4811"
+  },
+  "started_at_utc": "2026-07-26T16:12:47.178818+00:00"
+}

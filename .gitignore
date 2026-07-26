@@ -47,6 +47,7 @@ opendpd_env/
 dpd_out/
 log/
 save/
+benchmark/results/reproduced/
 
 # Allow sample data but not large datasets
 datasets/**/data/*.csv

@@ -4,6 +4,7 @@ __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import argparse
 import os
+import warnings
 
 
 def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, train_stat=None, val_stat=None,
@@ -45,19 +46,30 @@ def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, 
                 'HIDDEN_SIZE': hidden_size,
                 }
     
-                    # Add threshold values to log
-    if args.step == 'train_dpd':
-        if 'delta' in net.dpd_model.backbone_type:
-            log_stat['THX'] = net.dpd_model.backbone.thx
-            log_stat['THH'] = net.dpd_model.backbone.thh
+    # Record delta thresholds for both PA and DPD training.  They are runtime
+    # model settings rather than checkpoint tensors, so the CSV evidence is
+    # what lets a benchmark prove which thresholds were actually used.
+    delta_model = None
+    if args.step == 'train_pa' and 'delta' in net.backbone_type:
+        delta_model = net
+    elif args.step == 'train_dpd' and 'delta' in net.dpd_model.backbone_type:
+        delta_model = net.dpd_model
+
+    if delta_model is not None:
+        log_stat['THX'] = delta_model.backbone.thx
+        log_stat['THH'] = delta_model.backbone.thh
             
-            # Statistics are opt-in because collecting them in an eager
-            # recurrent cell adds reductions at every timestep.
-            if getattr(net.dpd_model.backbone.rnn, 'debug', 0):
-                sparsity_metrics = net.dpd_model.backbone.get_temporal_sparsity()
-                sparsity_log = {f'{k}': v for k, v in sparsity_metrics.items()}
-                log_stat.update(sparsity_log)
-                net.dpd_model.backbone.set_debug(1)
+        # Statistics are opt-in because collecting them in an eager recurrent
+        # cell adds reductions at every timestep.
+        if (
+            getattr(delta_model.backbone.rnn, 'debug', 0)
+            and hasattr(delta_model.backbone, 'get_temporal_sparsity')
+            and hasattr(delta_model.backbone, 'set_debug')
+        ):
+            sparsity_metrics = delta_model.backbone.get_temporal_sparsity()
+            sparsity_log = {f'{k}': v for k, v in sparsity_metrics.items()}
+            log_stat.update(sparsity_log)
+            delta_model.backbone.set_debug(1)
 
     # Merge stat dicts into the log dict
     if train_stat is not None:
@@ -94,6 +106,33 @@ def gen_file_paths(path_dir_save: str, path_dir_log_hist: str, path_dir_log_best
     path_file_log_best = os.path.join(path_dir_log_best, model_id + '.csv')  # .csv path_log_file_hist
     file_paths = (path_file_save, path_file_log_hist, path_file_log_best)
     return file_paths
+
+
+def warn_if_model_artifacts_exist(model_id: str, file_paths):
+    """Warn before an architecture-only model ID reuses existing artifacts.
+
+    Model IDs are part of the public checkpoint lookup convention, so changing
+    their format would break existing consumers.  They do not, however, encode
+    the full training recipe.  An explicit warning keeps that convention while
+    making a potentially destructive recipe collision visible before training.
+    """
+    existing_paths = [path for path in file_paths if os.path.exists(path)]
+    if not existing_paths:
+        return
+
+    formatted_paths = ", ".join(os.path.normpath(path) for path in existing_paths)
+    warnings.warn(
+        (
+            f"Existing artifact(s) for model ID '{model_id}' will be reused or "
+            f"overwritten: {formatted_paths}. This model ID does not encode the "
+            "full training recipe (for example optimizer, learning rate, "
+            "schedule, batch size, and epoch count), so the existing artifacts "
+            "may come from a different recipe. Move or rename them before "
+            "continuing if they must be preserved."
+        ),
+        RuntimeWarning,
+        stacklevel=2,
+    )
 
 
 def create_folder(folder_list):

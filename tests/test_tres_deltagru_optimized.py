@@ -45,6 +45,29 @@ def test_debug_setting_reaches_recurrent_layer():
     assert model.backbone.rnn.debug == 0
 
 
+def test_h15_matches_the_approximately_1000_parameter_dpd_budget():
+    model = build_model("cpu", fused=False, thx=0.0, thh=0.0)
+
+    assert sum(parameter.numel() for parameter in model.parameters()) == 999
+
+
+def test_pa_delta_thresholds_are_recorded():
+    model = build_model("cpu", fused=False, thx=0.0, thh=0.0)
+    args = SimpleNamespace(
+        step="train_pa",
+        n_epochs=2,
+        batch_size=2,
+        frame_length=3,
+        PA_backbone="tres_deltagru",
+        PA_hidden_size=15,
+    )
+
+    log = gen_log_stat(args, 0.0, model, None, 0)
+
+    assert log["THX"] == 0.0
+    assert log["THH"] == 0.0
+
+
 def test_opt_in_statistics_are_logged_and_reset():
     model = build_model("cpu", fused=False)
     model.backbone.set_debug(1)
@@ -64,6 +87,8 @@ def test_opt_in_statistics_are_logged_and_reset():
 
     log = gen_log_stat(args, 0.0, wrapper, None, 0)
 
+    assert log["THX"] == 0.01
+    assert log["THH"] == 0.05
     assert {"SP_T_DX", "SP_T_DH", "SP_T_DV", "HW_PARAM"} <= log.keys()
     assert model.backbone.rnn.statistics == {
         "num_dx_zeros": 0,

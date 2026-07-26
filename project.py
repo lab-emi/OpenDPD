@@ -13,7 +13,13 @@ from typing import Any, Callable
 from torch import optim
 from torch.utils.data import DataLoader
 from arguments import get_arguments
-from modules.paths import create_folder, gen_log_stat, gen_dir_paths, gen_file_paths
+from modules.paths import (
+    create_folder,
+    gen_log_stat,
+    gen_dir_paths,
+    gen_file_paths,
+    warn_if_model_artifacts_exist,
+)
 from modules.train_funcs import net_train, net_eval, calculate_metrics
 from utils import util
 from modules.loggers import PandasLogger
@@ -94,6 +100,7 @@ class Project:
     def build_logger(self, model_id: str):
         # Get Save and Log Paths
         file_paths = gen_file_paths(self.path_dir_save, self.path_dir_log_hist, self.path_dir_log_best, model_id)
+        warn_if_model_artifacts_exist(model_id, file_paths)
         self.path_save_file_best, self.path_log_file_hist, self.path_log_file_best = file_paths
         print("::: Best Model Save Path: ", self.path_save_file_best)
         print("::: Log-History     Path: ", self.path_log_file_hist)
@@ -282,7 +289,13 @@ class Project:
         elif self.opt_type == 'rmsprop':
             optimizer = optim.RMSprop(trainable_params, lr=self.lr)
         elif self.opt_type == 'adamw':
-            optimizer = optim.AdamW(trainable_params, lr=self.lr)
+            optimizer = optim.AdamW(
+                trainable_params,
+                lr=self.lr,
+                weight_decay=0.01,
+                betas=(0.9, 0.999),
+                eps=1e-8,
+            )
         elif self.opt_type == 'adabound':
             import adabound  # Run pip install adabound (https://github.com/Luolc/AdaBound)
             optimizer = adabound.AdaBound(trainable_params, lr=self.lr, final_lr=0.1)
@@ -295,7 +308,10 @@ class Project:
                                                             factor=self.decay_factor,
                                                             patience=self.patience,
                                                             threshold=1e-4,
-                                                            min_lr=self.lr_end)
+                                                            threshold_mode='rel',
+                                                            cooldown=0,
+                                                            min_lr=self.lr_end,
+                                                            eps=1e-8)
         return optimizer, lr_scheduler
 
     @staticmethod

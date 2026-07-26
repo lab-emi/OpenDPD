@@ -31,14 +31,17 @@ def get_arguments():
     parser.add_argument('--seed', default=0, type=int, help='Global random number seed.')
     parser.add_argument('--loss_type', default='l2', choices=['l1', 'l2'], help='Type of loss function.')
     parser.add_argument('--opt_type', default='adamw', choices=['sgd', 'adam', 'adamw', 'adabound', 'rmsprop'], help='Type of optimizer.')
-    parser.add_argument('--batch_size', default=256, type=int, help='Batch size for training.')
-    parser.add_argument('--batch_size_eval', default=256, type=int, help='Batch size for evaluation.')
-    parser.add_argument('--n_epochs', default=100, type=int, help='Number of epochs to train for.')
-    parser.add_argument('--lr_schedule', default=0, type=int, help='Whether enable learning rate scheduling')
-    parser.add_argument('--lr', default=5e-4, type=float, help='Learning rate')
-    parser.add_argument('--lr_end', default=1e-4, type=float, help='Learning rate')
-    parser.add_argument('--decay_factor', default=0.1, type=float, help='Learning rate')
-    parser.add_argument('--patience', default=10, type=float, help='Learning rate')
+    parser.add_argument('--batch_size', default=64, type=int, help='Batch size for training.')
+    parser.add_argument('--batch_size_eval', default=64, type=int, help='Batch size for evaluation.')
+    parser.add_argument('--n_epochs', default=300, type=int, help='Number of epochs to train for.')
+    parser.add_argument('--lr_schedule', default=1, type=int,
+                        help='Whether to enable ReduceLROnPlateau learning-rate scheduling.')
+    parser.add_argument('--lr', default=5e-3, type=float, help='Initial learning rate.')
+    parser.add_argument('--lr_end', default=5e-5, type=float, help='Minimum learning rate.')
+    parser.add_argument('--decay_factor', default=0.5, type=float,
+                        help='Learning-rate reduction factor.')
+    parser.add_argument('--patience', default=5, type=int,
+                        help='Scheduler patience in epochs.')
     parser.add_argument('--grad_clip_val', default=200, type=float, help='Gradient clipping.')
     parser.add_argument(
         '--cuda_graph_training', action='store_true', default=False,
