@@ -20,10 +20,10 @@ import hashlib
 import json
 import math
 from datetime import datetime, timezone
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -46,7 +46,6 @@ SYMBOLS_PER_SUBFRAME = 2 * len(CP_SLOT)
 SAMPLES_PER_SUBFRAME = OFDM_LTE20_SAMPLES_PER_SUBFRAME
 SCALE = NFFT / math.sqrt(N_SC)                        # ifft output -> unit average time-domain power
 MIN_CORRELATION = 0.3                                 # below this the signal is not the bound waveform
-PACKAGE_FILES = ("waveform.json", "x.npy", "symbols.npy")
 
 
 def qam64_points() -> np.ndarray:
@@ -129,30 +128,22 @@ def to_complex(iq: np.ndarray) -> np.ndarray:
 
 # --- packages -------------------------------------------------------------------------------------------
 
-def package_files(wf: Waveform) -> Dict[str, object]:
-    """Contents of a waveform package: the spec with hashes, the playable I/Q and the reference symbols."""
-    return {
-        "waveform.json": {
-            "spec": json.loads(wf.spec.model_dump_json()),
-            "sha256": wf.sha256(),
-            "n_samples": wf.period,
-            "sample_rate_hz": wf.spec.sample_rate_hz,
-            "x_format": "float32 (n, 2) I/Q columns, unit average power, play in a loop",
-            "symbols_format": "complex64 (n_symbols, 1200): occupied subcarriers k = -600..-1, +1..+600 per OFDM symbol",
-            "note": "test waveform with known symbols; no physical-channel structure; not a conformance signal",
-        },
-        "x.npy": to_iq(wf.x),
-        "symbols.npy": wf.symbols.astype(np.complex64),
-    }
-
-
 def write_package(wf: Waveform, out: Path) -> Path:
+    """A waveform package: the spec with its hash, the playable I/Q and the reference symbols."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
-    files = package_files(wf)
-    (out / "waveform.json").write_text(json.dumps(files["waveform.json"], indent=2))
-    np.save(out / "x.npy", files["x.npy"])
-    np.save(out / "symbols.npy", files["symbols.npy"])
+    doc = {
+        "spec": json.loads(wf.spec.model_dump_json()),
+        "sha256": wf.sha256(),
+        "n_samples": wf.period,
+        "sample_rate_hz": wf.spec.sample_rate_hz,
+        "x_format": "float32 (n, 2) I/Q columns, unit average power, play in a loop",
+        "symbols_format": "complex64 (n_symbols, 1200): occupied subcarriers k = -600..-1, +1..+600 per OFDM symbol",
+        "note": "test waveform with known symbols; no physical-channel structure; not a conformance signal",
+    }
+    (out / "waveform.json").write_text(json.dumps(doc, indent=2))
+    np.save(out / "x.npy", to_iq(wf.x))
+    np.save(out / "symbols.npy", wf.symbols.astype(np.complex64))
     return out / "waveform.json"
 
 
@@ -215,9 +206,6 @@ class Demodulation:
     evm_rms_pct: float
     evm_db: float
     equalizer: np.ndarray                     # complex (N_SC,): estimated gain per subcarrier
-    symbol_evm_pct: np.ndarray = field(default_factory=lambda: np.zeros(0))
-    received: Optional[np.ndarray] = None     # equalised symbols (n_symbols, N_SC) for constellation views
-    reference: Optional[np.ndarray] = None
 
 
 def _symbol_windows(wf: Waveform, offset: int, n: int) -> List[Tuple[int, int]]:
@@ -305,11 +293,9 @@ def demodulate(y: np.ndarray, wf: Waveform, *, correct_cfo: bool = True, max_ite
     err = equalised - reference
     p_ref = float(np.sum(np.abs(reference) ** 2))
     evm = math.sqrt(float(np.sum(np.abs(err) ** 2)) / p_ref) if p_ref > 0 else float("nan")
-    per_symbol = np.sqrt(np.sum(np.abs(err) ** 2, axis=1) / np.sum(np.abs(reference) ** 2, axis=1)) * 100.0
     evm_db = 20 * math.log10(evm) if evm > 0 else -300.0
     return Demodulation(offset=offset, correlation=corr, cfo_hz=cfo, n_symbols=len(windows),
-                        evm_rms_pct=evm * 100.0, evm_db=evm_db, equalizer=equalizer, symbol_evm_pct=per_symbol,
-                        received=equalised, reference=reference)
+                        evm_rms_pct=evm * 100.0, evm_db=evm_db, equalizer=equalizer)
 
 
 # --- binding a capture to the waveform ----------------------------------------------------------------

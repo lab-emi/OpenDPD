@@ -6,7 +6,6 @@ from .ofdm import (
     Waveform,
     demodulate,
     generate,
-    package_files,
     read_package,
     synchronize,
     to_baseband_rate,
@@ -14,5 +13,5 @@ from .ofdm import (
     write_package,
 )
 
-__all__ = ["Demodulation", "Waveform", "bind_input", "demodulate", "generate", "package_files", "read_package", "synchronize",
+__all__ = ["Demodulation", "Waveform", "bind_input", "demodulate", "generate", "read_package", "synchronize",
            "to_baseband_rate", "to_iq", "write_package"]
