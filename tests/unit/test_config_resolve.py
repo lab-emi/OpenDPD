@@ -2,7 +2,7 @@
 
 import pytest
 
-from opendpd.schemas import ExperimentConfig, ResolvedExperimentConfig, TaskType, TrainingConfig
+from opendpd.schemas import ModelSpec, ExperimentConfig, ResolvedExperimentConfig, TaskType, TrainingConfig
 from opendpd.schemas.examples import experiment_train_dpd_smoke, experiment_train_pa_smoke
 from opendpd.services.config import ConfigError, canonical_json, config_sha256, resolve, validate
 
@@ -34,8 +34,7 @@ def test_hash_changes_with_any_result_affecting_field():
 
 
 def test_unknown_model_reports_field_and_hint():
-    cfg = experiment_train_pa_smoke().model_copy(update={"model": {"key": "transformer", "parameters": {}}})
-    cfg = ExperimentConfig.model_validate(cfg.model_dump())
+    cfg = experiment_train_pa_smoke().model_copy(update={"model": ModelSpec(key="transformer", parameters={})})
     with pytest.raises(ConfigError) as info:
         resolve(cfg)
     issue = info.value.issues[0]

@@ -1,0 +1,36 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "config_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "created_at": "2026-09-06T08:00:00Z",
+    "dataset_id": "dpa-200mhz",
+    "device": "cpu",
+    "error": {
+      "code": "pa_checkpoint_missing",
+      "hint": "Train a PA model first or pick a run whose checkpoint exists.",
+      "message": "PA surrogate checkpoint for run-pa-0007 is not registered.",
+      "stage": "prepare",
+      "traceback_tail": null
+    },
+    "exit_code": 3,
+    "experiment_id": null,
+    "finished_at": "2026-09-06T08:00:04Z",
+    "idempotency_key": null,
+    "last_event_seq": 0,
+    "last_heartbeat_at": null,
+    "model_key": "gru",
+    "name": null,
+    "parent_run_id": null,
+    "progress_epoch": null,
+    "progress_total_epochs": null,
+    "result_id": null,
+    "run_id": "run-dpd-0009",
+    "schema_version": 1,
+    "started_at": "2026-09-06T08:00:01Z",
+    "status": "failed",
+    "status_reason": null,
+    "task": "train_dpd",
+    "worker": null
+  }
+}

@@ -1161,6 +1161,131 @@
         "title": "ModelEvidence",
         "type": "object"
       },
+      "ModelInfo": {
+        "description": "Registry descriptor as seen by clients (opendpd.core.registry.ModelDescriptor).",
+        "properties": {
+          "constraints": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Constraints"
+          },
+          "devices_tested": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Devices Tested",
+            "type": "array"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          },
+          "execution_semantics": {
+            "title": "Execution Semantics",
+            "type": "string"
+          },
+          "export_formats": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Export Formats",
+            "type": "array"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "legacy_backbone": {
+            "title": "Legacy Backbone",
+            "type": "string"
+          },
+          "lookahead_note": {
+            "title": "Lookahead Note",
+            "type": "string"
+          },
+          "lookahead_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookahead Samples"
+          },
+          "params": {
+            "items": {
+              "$ref": "#/components/schemas/ParamSpecInfo"
+            },
+            "title": "Params",
+            "type": "array"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "training_method": {
+            "title": "Training Method",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "family",
+          "legacy_backbone",
+          "training_method",
+          "roles",
+          "params",
+          "status",
+          "devices_tested",
+          "lookahead_note",
+          "execution_semantics",
+          "export_formats"
+        ],
+        "title": "ModelInfo",
+        "type": "object"
+      },
       "ModelSpec": {
         "additionalProperties": false,
         "properties": {
@@ -1246,6 +1371,74 @@
         "title": "PAReference",
         "type": "object"
       },
+      "ParamSpecInfo": {
+        "properties": {
+          "choices": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choices"
+          },
+          "default": {
+            "title": "Default"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "legacy_arg": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Legacy Arg",
+            "type": "object"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum"
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "default",
+          "description"
+        ],
+        "title": "ParamSpecInfo",
+        "type": "object"
+      },
       "QuantizationConfig": {
         "additionalProperties": false,
         "properties": {
@@ -1287,6 +1480,56 @@
           }
         },
         "title": "QuantizationConfig",
+        "type": "object"
+      },
+      "RecipeInfo": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "expected_duration": {
+            "title": "Expected Duration",
+            "type": "string"
+          },
+          "limits": {
+            "title": "Limits",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelSpec"
+          },
+          "purpose": {
+            "title": "Purpose",
+            "type": "string"
+          },
+          "recipe_id": {
+            "title": "Recipe Id",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "training": {
+            "$ref": "#/components/schemas/TrainingConfig"
+          }
+        },
+        "required": [
+          "recipe_id",
+          "title",
+          "purpose",
+          "task",
+          "model",
+          "training",
+          "description",
+          "limits",
+          "expected_duration"
+        ],
+        "title": "RecipeInfo",
         "type": "object"
       },
       "ResolutionInfo": {
@@ -2572,8 +2815,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/ModelInfo"
                   },
                   "title": "Response Models Api V1 Models Get",
                   "type": "array"
@@ -2598,8 +2840,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "additionalProperties": true,
-                    "type": "object"
+                    "$ref": "#/components/schemas/RecipeInfo"
                   },
                   "title": "Response Recipes Api V1 Recipes Get",
                   "type": "array"

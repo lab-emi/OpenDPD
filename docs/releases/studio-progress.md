@@ -11,7 +11,8 @@ repository; "pending human" means a maintainer decision is required;
 | S01 contracts & UX | done except prototype (delivered with S05) | `0f66ad0` | schemas, ADR-0001, UX spec, tokens, mock examples |
 | S02 explicit config, registry, workspace | done | `9ea598c` | `opendpd run/validate/models/recipes/datasets`, registry, resolver, adapter, workspace |
 | S03 task runtime | done (Windows/macOS cleanup not verified) | `fd63107` | SQLite store, supervisor, worker subprocess, cancel, recovery |
-| S04 local service & API | done | — | FastAPI app, sessions/CSRF/Host checks, SSE replay, OpenAPI contract, threat model |
+| S04 local service & API | done | `076de58` | FastAPI app, sessions/CSRF/Host checks, SSE replay, OpenAPI contract, threat model |
+| S05 React workbench | done (visual baselines local only) | — | `frontend/`: pages, domain components, states, Vitest + Playwright journeys, generated API types |
 
 ## S00 acceptance items
 
@@ -66,3 +67,16 @@ repository; "pending human" means a maintainer decision is required;
 | Error responses are structured, field-level, with hints | done (`error.code/message/details[]/hint`; `test_validate_reports_structured_errors_without_starting`) |
 | OpenAPI is the single contract; TypeScript types generated and checked in CI | contract committed and checked (`scripts/export_openapi.py --check` in CI); TypeScript generation lands with the frontend in S05 |
 | No request causes training inside the server process | done (all runs go through the S03 supervisor; `test_cancel_through_api` measures cancel latency < 1 s while a worker trains) |
+
+## S05 acceptance items
+
+| Item | Status |
+|---|---|
+| TypeScript strict, lint, unit and interaction tests pass without `any` / disabled rules | done (`npm run typecheck`, `npm run lint`, 21 Vitest tests; CI job `frontend`) |
+| Main forms usable by keyboard; required fields, errors and focus explicit; colour never the only encoding | done (`NewExperimentPage.test.tsx` keyboard-only submit; server errors on the field with `aria-invalid`; `StatusChip.test.tsx` label + icon) |
+| 1366×768 and 1920×1080 layouts without horizontal scroll; charts enlargeable | done (`e2e/journey.spec.ts` "fit" test on both viewports; enlarge dialog) |
+| Unconfigured, running, failed and disconnected states have an actionable next step | done (`StateBlock`, `RunDetailPage` next-step banners, `RunDetailPage.test.tsx` disconnected and failed cases) |
+| Run detail refreshable and addressable; refresh never resubmits | done (`/runs/:runId`; e2e reload keeps the run and the fake API records one submission) |
+| One real-size visualisation prototype with performance evidence | done (component gallery: PSD 2560 bins × 3 traces + I/Q window of 20 000 samples; probe asserts < 2 s, measured ≈ 210 ms per chart in headless Chromium) |
+| Frontend prototype on fixed, labelled mock (carried over from S01) | done (`/gallery` and `ResultView` on `frontend/mocks/*`, every mock result carries the MOCK badge) |
+| Visual regression baseline | Playwright screenshots of the gallery captured on Linux/Chromium and committed; **compared locally only** (CI runs `--ignore-snapshots` because font rendering differs) |

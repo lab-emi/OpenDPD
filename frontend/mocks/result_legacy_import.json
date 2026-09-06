@@ -1,0 +1,85 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "dataset": {
+      "dataset_id": "dpa-200mhz",
+      "n_samples": null,
+      "preprocessing_version": "raw-v1",
+      "processed_sha256": null,
+      "raw_sha256": null,
+      "split": "test",
+      "split_version": "contiguous-v1"
+    },
+    "device": "unknown",
+    "evidence_type": "pa_modeling",
+    "extra": {},
+    "generated_at": "2026-09-06T08:00:00Z",
+    "history": null,
+    "is_mock": false,
+    "limitations": [
+      "imported from a legacy CSV log: software version, git commit, device and data hashes unknown",
+      "EVM column present in the log but its exact profile version could not be verified"
+    ],
+    "metric_profile_id": "legacy-opendpd-v1",
+    "metric_profile_version": 1,
+    "metrics": [
+      {
+        "better": "lower",
+        "name": "NMSE",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -15.75
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_AVG",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -27.44
+      }
+    ],
+    "models": [
+      {
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": null,
+        "model": {
+          "key": "gru",
+          "parameters": {
+            "hidden_size": 23
+          }
+        },
+        "n_parameters": 1911,
+        "role": "pa",
+        "run_id": null,
+        "weights_sha256": null
+      }
+    ],
+    "n_segments": null,
+    "nperseg": null,
+    "numeric_mode": "float32",
+    "reference": {
+      "description": "measured PA output (assumed from log layout)",
+      "gain_rule": null,
+      "gain_value": null,
+      "kind": "measured_pa_output"
+    },
+    "result_id": "res-legacy-0001",
+    "run_id": null,
+    "schema_version": 1,
+    "seed": null,
+    "selected_epoch": 1,
+    "software": {
+      "git_commit": null,
+      "git_dirty": null,
+      "opendpd_version": "unknown",
+      "platform": "unknown",
+      "python_version": "unknown",
+      "torch_version": null
+    },
+    "source": "legacy-log-import",
+    "valid_sample_range": null
+  }
+}

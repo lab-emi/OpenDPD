@@ -1,0 +1,109 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "dataset": {
+      "dataset_id": "my-pa-capture",
+      "n_samples": 820,
+      "preprocessing_version": "raw-v1",
+      "processed_sha256": null,
+      "raw_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "split": "test",
+      "split_version": "contiguous-v1"
+    },
+    "device": "cpu",
+    "evidence_type": "pa_modeling",
+    "extra": {},
+    "generated_at": "2026-09-06T08:00:00Z",
+    "history": null,
+    "is_mock": true,
+    "limitations": [
+      "MOCK DATA for UI development",
+      "signal metadata missing: spectral metrics not applicable"
+    ],
+    "metric_profile_id": "legacy-opendpd-v1",
+    "metric_profile_version": 1,
+    "metrics": [
+      {
+        "better": "lower",
+        "name": "NMSE",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -21.4
+      },
+      {
+        "better": "lower",
+        "name": "EVM",
+        "reason": "sample_rate_hz, bandwidth_hz, n_sub_ch and nperseg are unknown for dataset my-pa-capture",
+        "status": "not_applicable",
+        "unit": "dB",
+        "value": null
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_L",
+        "reason": "sample_rate_hz, bandwidth_hz, n_sub_ch and nperseg are unknown for dataset my-pa-capture",
+        "status": "not_applicable",
+        "unit": "dBc",
+        "value": null
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_R",
+        "reason": "sample_rate_hz, bandwidth_hz, n_sub_ch and nperseg are unknown for dataset my-pa-capture",
+        "status": "not_applicable",
+        "unit": "dBc",
+        "value": null
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_AVG",
+        "reason": "sample_rate_hz, bandwidth_hz, n_sub_ch and nperseg are unknown for dataset my-pa-capture",
+        "status": "not_applicable",
+        "unit": "dBc",
+        "value": null
+      }
+    ],
+    "models": [
+      {
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": null,
+        "model": {
+          "key": "gru",
+          "parameters": {
+            "hidden_size": 8
+          }
+        },
+        "n_parameters": null,
+        "role": "pa",
+        "run_id": "run-pa-0003",
+        "weights_sha256": null
+      }
+    ],
+    "n_segments": null,
+    "nperseg": null,
+    "numeric_mode": "float32",
+    "reference": {
+      "description": "measured output column of the CSV",
+      "gain_rule": null,
+      "gain_value": null,
+      "kind": "measured_pa_output"
+    },
+    "result_id": "res-pa-0002",
+    "run_id": "run-pa-0003",
+    "schema_version": 1,
+    "seed": 0,
+    "selected_epoch": null,
+    "software": {
+      "git_commit": "6f026b1",
+      "git_dirty": false,
+      "opendpd_version": "2.2.0.dev0",
+      "platform": "Linux-x86_64",
+      "python_version": "3.13.14",
+      "torch_version": "2.13.0+cu132"
+    },
+    "source": "mock",
+    "valid_sample_range": null
+  }
+}

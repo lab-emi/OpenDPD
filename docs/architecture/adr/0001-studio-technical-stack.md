@@ -57,3 +57,15 @@ without a rewrite.
 - `tests/unit/test_schemas.py` validates every contract example.
 - S04 CI job diffs generated TypeScript types against the committed ones.
 - S06 packaging test installs the wheel without Node.js and opens the GUI.
+
+## Amendment (S05): concrete frontend choices
+
+| Concern | Choice | Why |
+|---|---|---|
+| Server state | TanStack Query 5 | one cache keyed by resource; invalidation on SSE status events; no hand-written cache |
+| Routing / URL state | react-router 8 | `/runs/:runId`, `?tab=`, `?status=` are the only navigation state |
+| Component library | MUI 9 (single library, tokens-derived theme) | as decided in this ADR; layout props moved to `sx` (MUI 9) |
+| Charts | `plotly.js-basic-dist-min` 4, lazy-loaded chunk | SVG scatter only; ~1.1 MB chunk loaded on first chart, not on every page |
+| Contract types | `openapi-typescript` from `docs/contracts/openapi.json`, committed, checked in CI | request/response shapes never hand-written; form payloads are `DeepPartial` so defaults stay server-side |
+| Lint | oxlint (Vite template default) with React purity rules | catches setState-in-effect and impure render; no `any`, no `ts-ignore` |
+| Tests | Vitest + Testing Library (jsdom); Playwright on the preview build with a routed mock API | L0 unit/interaction; L1 browser journeys, layout at 1366×768 / 1920×1080, chart performance probe, visual baselines (local) |

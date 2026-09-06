@@ -19,11 +19,14 @@ from opendpd.schemas import (
     DatasetManifest,
     EvaluationResult,
     ExperimentConfig,
+    ModelSpec,
     ResolvedExperimentConfig,
     RunEvent,
     RunRecord,
     RunStatus,
     TERMINAL_STATUSES,
+    TaskType,
+    TrainingConfig,
     heartbeat_is_stale,
     utcnow,
 )
@@ -142,13 +145,56 @@ def capabilities(request: Request):
                              "with recorded evidence on it. One does not imply the other.")
 
 
-@router.get("/models", tags=["system"], dependencies=[Depends(require_session)])
-def models() -> List[Dict[str, Any]]:
+class ParamSpecInfo(BaseModel):
+    name: str
+    type: str
+    default: Any
+    description: str
+    minimum: Optional[float] = None
+    maximum: Optional[float] = None
+    choices: Optional[List[Any]] = None
+    legacy_arg: Dict[str, str] = Field(default_factory=dict)
+
+
+class ModelInfo(BaseModel):
+    """Registry descriptor as seen by clients (opendpd.core.registry.ModelDescriptor)."""
+    key: str
+    display_name: str
+    family: str
+    legacy_backbone: str
+    training_method: str
+    roles: List[str]
+    params: List[ParamSpecInfo]
+    status: str
+    devices_tested: List[str]
+    lookahead_samples: Optional[int] = None
+    lookahead_note: str
+    execution_semantics: str
+    export_formats: List[str]
+    constraints: Optional[str] = None
+    reference: Optional[str] = None
+    evidence: Optional[str] = None
+
+
+class RecipeInfo(BaseModel):
+    recipe_id: str
+    title: str
+    purpose: str
+    task: TaskType
+    model: ModelSpec
+    training: TrainingConfig
+    description: str
+    limits: str
+    expected_duration: str
+
+
+@router.get("/models", response_model=List[ModelInfo], tags=["system"], dependencies=[Depends(require_session)])
+def models():
     return [m.to_dict() for m in list_models()]
 
 
-@router.get("/recipes", tags=["system"], dependencies=[Depends(require_session)])
-def recipes() -> List[Dict[str, Any]]:
+@router.get("/recipes", response_model=List[RecipeInfo], tags=["system"], dependencies=[Depends(require_session)])
+def recipes():
     return [r.to_dict() for r in list_recipes()]
 
 

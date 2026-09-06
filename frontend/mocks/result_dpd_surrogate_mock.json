@@ -1,0 +1,123 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "dataset": {
+      "dataset_id": "dpa-200mhz",
+      "n_samples": 7680,
+      "preprocessing_version": "raw-v1",
+      "processed_sha256": null,
+      "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "split": "test",
+      "split_version": "contiguous-v1"
+    },
+    "device": "cpu",
+    "evidence_type": "dpd_surrogate",
+    "extra": {},
+    "generated_at": "2026-09-06T08:00:00Z",
+    "history": null,
+    "is_mock": true,
+    "limitations": [
+      "MOCK DATA for UI development",
+      "simulated through the learned PA surrogate run-pa-0001, not a measured PA output"
+    ],
+    "metric_profile_id": "legacy-opendpd-v1",
+    "metric_profile_version": 1,
+    "metrics": [
+      {
+        "better": "lower",
+        "name": "NMSE",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -14.99
+      },
+      {
+        "better": "lower",
+        "name": "EVM",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -16.25
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_L",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -25.99
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_R",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -27.65
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_AVG",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -26.82
+      }
+    ],
+    "models": [
+      {
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": null,
+        "model": {
+          "key": "gru",
+          "parameters": {
+            "hidden_size": 15
+          }
+        },
+        "n_parameters": 887,
+        "role": "dpd",
+        "run_id": "run-dpd-0001",
+        "weights_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": null,
+        "model": {
+          "key": "gru",
+          "parameters": {
+            "hidden_size": 23
+          }
+        },
+        "n_parameters": 1911,
+        "role": "pa",
+        "run_id": "run-pa-0001",
+        "weights_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "n_segments": 3,
+    "nperseg": 2560,
+    "numeric_mode": "float32",
+    "reference": {
+      "description": "target = gain * input",
+      "gain_rule": "max|y_train| / max|x_train| (legacy set_target_gain)",
+      "gain_value": 1.0273,
+      "kind": "linear_gain_target"
+    },
+    "result_id": "res-dpd-0001",
+    "run_id": "run-dpd-0001",
+    "schema_version": 1,
+    "seed": 0,
+    "selected_epoch": null,
+    "software": {
+      "git_commit": "6f026b1",
+      "git_dirty": false,
+      "opendpd_version": "2.2.0.dev0",
+      "platform": "Linux-x86_64",
+      "python_version": "3.13.14",
+      "torch_version": "2.13.0+cu132"
+    },
+    "source": "mock",
+    "valid_sample_range": null
+  }
+}

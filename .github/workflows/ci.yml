@@ -76,6 +76,45 @@ jobs:
       - name: API contract is committed (docs/contracts/openapi.json)
         run: python scripts/export_openapi.py --check
 
+  frontend:
+    name: Frontend (types, lint, unit, build, browser journeys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Generated API types match docs/contracts/openapi.json
+        run: npm run types:check
+
+      - name: Typecheck (strict)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and interaction tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Browser journeys (mock API; visual baselines are compared locally)
+        run: |
+          npx playwright install --with-deps chromium
+          npx playwright test --ignore-snapshots
+
   build:
     name: Build & check distribution
     runs-on: ubuntu-latest
