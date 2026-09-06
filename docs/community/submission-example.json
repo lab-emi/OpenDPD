@@ -49,8 +49,7 @@
       "ACLR_R": {"n": 3, "mean": -31.22, "std": 0.95, "min": -32.05, "max": -30.18},
       "ACLR_AVG": {"n": 3, "mean": -32.37, "std": 0.66, "min": -32.89, "max": -31.62}
     },
-    "resources": {"budget_class": "unbounded", "device": "cpu", "mean_wall_clock_s": 2.25,
-                  "statement": "wall clock is a measurement on the stated device; parameter counts are theoretical; neither is power"}
+    "resources": {"budget_class": "unbounded", "device": "cpu", "mean_wall_clock_s": 2.25}
   },
   "packages": [
     {"path": "run-20260906-120000-aaaaaa-share.zip", "sha256": "7777777777777777777777777777777777777777777777777777777777777777", "run_id": "run-20260906-120000-aaaaaa"},

@@ -138,8 +138,7 @@
           "resources": {
             "budget_class": "unbounded",
             "device": "cpu",
-            "mean_wall_clock_s": 1.1670466666666666,
-            "statement": "wall clock is a measurement on the stated device; parameter counts are theoretical; neither is power"
+            "mean_wall_clock_s": 1.1670466666666666
           }
         },
         "packages": [],
@@ -160,7 +159,7 @@
         "conflict_of_interest": "the maintainers' own methods on their own data; the same review rules apply to every entry",
         "citation": "docs/community/citation.md",
         "isolated_validation": "the maintainers' weekly benchmark, not a submission",
-        "submitted_at": "2026-09-06T16:38:51.770876Z"
+        "submitted_at": "2026-09-06T16:47:20.471960Z"
       },
       "key": {
         "track": "dpd_surrogate",
@@ -177,7 +176,7 @@
       "reviews": [],
       "history": [
         {
-          "date": "2026-09-06T16:38:51.770924Z",
+          "date": "2026-09-06T16:47:20.472008Z",
           "action": "created",
           "by": "opendpd leaderboard seed (report be10351c3fea)",
           "reason": "copied from the hash-bound benchmark-v1 report; no independent recomputation",
@@ -318,8 +317,7 @@
           "resources": {
             "budget_class": "unbounded",
             "device": "cpu",
-            "mean_wall_clock_s": 0.5454793333333333,
-            "statement": "wall clock is a measurement on the stated device; parameter counts are theoretical; neither is power"
+            "mean_wall_clock_s": 0.5454793333333333
           }
         },
         "packages": [],
@@ -340,7 +338,7 @@
         "conflict_of_interest": "the maintainers' own methods on their own data; the same review rules apply to every entry",
         "citation": "docs/community/citation.md",
         "isolated_validation": "the maintainers' weekly benchmark, not a submission",
-        "submitted_at": "2026-09-06T16:38:51.770972Z"
+        "submitted_at": "2026-09-06T16:47:20.472055Z"
       },
       "key": {
         "track": "dpd_surrogate",
@@ -357,7 +355,7 @@
       "reviews": [],
       "history": [
         {
-          "date": "2026-09-06T16:38:51.770980Z",
+          "date": "2026-09-06T16:47:20.472066Z",
           "action": "created",
           "by": "opendpd leaderboard seed (report be10351c3fea)",
           "reason": "copied from the hash-bound benchmark-v1 report; no independent recomputation",
@@ -368,13 +366,13 @@
   ],
   "history": [
     {
-      "date": "2026-09-06T16:38:51.770986Z",
+      "date": "2026-09-06T16:47:20.472073Z",
       "action": "created",
       "by": "opendpd leaderboard seed (report be10351c3fea)",
       "reason": "version v2026.09 seeded with 2 reference entries",
       "previous_metrics": null
     }
   ],
-  "created_at": "2026-09-06T16:38:51.771004Z",
-  "board_sha256": "d0f41156cafe4a5af4fab911eb0dc7742e286c322f7200d502a9dc267c529040"
+  "created_at": "2026-09-06T16:47:20.472090Z",
+  "board_sha256": "4a696e5deaa7c5879082aa3930bf4e9fb5a63530507bce2cc4c6bdf59a0bfd13"
 }

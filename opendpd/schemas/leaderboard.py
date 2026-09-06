@@ -84,8 +84,7 @@ class PackageRef(StrictModel):
 class ResourceBudget(StrictModel):
     budget_class: str = "unbounded"          # the declared class entries compete in, e.g. "params<=1000"
     device: str
-    mean_wall_clock_s: Optional[float] = None   # measured: training wall clock of the reported runs
-    statement: str = "wall clock is a measurement on the stated device; parameter counts are theoretical; neither is power"
+    mean_wall_clock_s: Optional[float] = None   # measured: training wall clock of the reported runs on that device; never power
 
 
 class ResultSummary(StrictModel):

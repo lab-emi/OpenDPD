@@ -809,7 +809,7 @@ def cmd_leaderboard(args) -> int:
 
     def recomputed(card, base, by: str):
         with contextlib.redirect_stdout(sys.stderr):      # model initialisation chatter never pollutes --json output
-            return lb.recompute(card, base, by=by, kind=args.kind, workspace=Path(args.workspace) if args.workspace else None)
+            return lb.recompute(card, base, by=by, kind=args.kind)
 
     def checked(card, base, board=None):
         rec = recomputed(card, base, args.by or "unnamed") if args.recompute else None
@@ -819,11 +819,8 @@ def cmd_leaderboard(args) -> int:
         if args.leaderboard_command == "prepare":
             ws = Workspace.open(Path(args.workspace))
             card, path = lb.prepare(ws, args.runs, Path(args.out), submission_id=args.id, submitter=args.submitter, kind=args.kind)
-            if args.json:
-                _print_json({"card": card.model_dump(mode="json"), "path": str(path)})
-            else:
-                print(f"draft {card.submission_id} written to {path}: track {card.track}, {len(card.packages)} share package(s), "
-                      f"{len(card.result.seeds)} seed(s); fill in every TODO before `opendpd leaderboard check`")
+            print(f"draft {card.submission_id} written to {path}: track {card.track}, {len(card.packages)} share package(s), "
+                  f"{len(card.result.seeds)} seed(s); fill in every TODO before `opendpd leaderboard check`")
             return 0
         if args.leaderboard_command == "check":
             card = lb.load_card(Path(args.card))
@@ -1120,14 +1117,12 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--id", required=True, help="submission id, e.g. mygroup-gru-2026-09")
     q.add_argument("--submitter", required=True, help="the person or group who answers for the submission")
     q.add_argument("--kind", choices=["external", "maintainer"], default="external")
-    q.add_argument("--json", action="store_true")
     q = lp.add_parser("check", help="the review checklist (the same for everyone); --recompute re-scores every package in a fresh workspace")
     q.add_argument("card", help="submission.json (packages are resolved next to it)")
     q.add_argument("--board", default=None, help="also refuse duplicates of this board's entries")
     q.add_argument("--recompute", action="store_true")
     q.add_argument("--by", default=None, help="who recomputes")
     q.add_argument("--kind", choices=["external", "maintainer"], default="external")
-    q.add_argument("--workspace", default=None, help="recompute here instead of a temporary workspace")
     q.add_argument("--json", action="store_true")
     q = lp.add_parser("seed", help="a new board version from a hash-bound benchmark-v1 report (the maintainers' reference entries)")
     q.add_argument("report", help="benchmark report JSON")
@@ -1142,7 +1137,6 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--recompute", action="store_true")
     q.add_argument("--by", default=None)
     q.add_argument("--kind", choices=["external", "maintainer"], default="external")
-    q.add_argument("--workspace", default=None)
     q = lp.add_parser("review", help="record a review decision; --recompute makes an accepted entry independently recomputed")
     q.add_argument("board")
     q.add_argument("entry")
@@ -1152,7 +1146,6 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--notes", required=True)
     q.add_argument("--recompute", action="store_true")
     q.add_argument("--packages", default=None, help="directory of the entry's packages, relative to the board (default: next to it)")
-    q.add_argument("--workspace", default=None)
     q = lp.add_parser("amend", help="retract or correct an accepted entry; the previous numbers stay in the history")
     q.add_argument("board")
     q.add_argument("entry")

@@ -41,7 +41,7 @@ from opendpd.schemas import (
 )
 from opendpd.schemas.benchmark import MetricStats
 from opendpd.schemas.conditions import ALL_TASKS, MIN_CONDITIONS_FOR_EVIDENCE, PROTOCOL_ID, AdaptationTask
-from opendpd.services.benchmark import _machine
+from opendpd.services.benchmark import _machine, stats
 from opendpd.services.config import ConfigError
 from opendpd.services.experiments import create_run, execute_run, list_runs, load_artifacts, load_result
 from opendpd.services.recipes import get_recipe
@@ -251,12 +251,6 @@ def find_runs(ws: Workspace, plan: AdaptationPlan) -> Dict[str, RunRecord]:
 
 # --- reports ------------------------------------------------------------------------------------
 
-def _stats(values: List[float]) -> MetricStats:
-    return MetricStats(n=len(values), mean=float(statistics.fmean(values)),
-                       std=float(statistics.stdev(values)) if len(values) >= 2 else None,
-                       min=float(min(values)), max=float(max(values)))
-
-
 def build_report(ws: Workspace, plan: AdaptationPlan) -> AdaptationReport:
     """Every number is read from a run's stored result under the plan's profile; nothing is recomputed."""
     card = plan.condition_set
@@ -298,16 +292,16 @@ def build_report(ws: Workspace, plan: AdaptationPlan) -> AdaptationReport:
         group = [c for c in cells if (c.entry_id, c.task, c.condition_id, c.budget_samples)
                  == (entry.entry_id, task, condition.condition_id, budget)]
         ok = [c for c in group if c.status == "ok"]
-        stats: Dict[str, MetricStats] = {}
+        metric_stats: Dict[str, MetricStats] = {}
         for name in sorted({n for c in ok for n in c.metrics}):
             values = [c.metrics[name] for c in ok if c.metrics.get(name) is not None and math.isfinite(c.metrics[name])]
             if values:
-                stats[name] = _stats(values)
+                metric_stats[name] = stats(values)
         walls = [c.wall_clock_s for c in ok if c.wall_clock_s is not None]
         reached = [c.reached_target for c in ok if c.reached_target is not None]
         aggregates.append(CellAggregate(
             entry_id=entry.entry_id, task=task, condition_id=condition.condition_id, budget_samples=budget,
-            n_seeds=len(plan.seeds), n_ok=len(ok), n_failed=len(group) - len(ok), metrics=stats,
+            n_seeds=len(plan.seeds), n_ok=len(ok), n_failed=len(group) - len(ok), metrics=metric_stats,
             new_samples=group[0].new_samples if group else 0,
             mean_wall_clock_s=float(statistics.fmean(walls)) if walls else None,
             target_reached_fraction=(sum(reached) / len(reached)) if reached else None))
@@ -373,10 +367,10 @@ def list_reports(ws: Workspace) -> List[AdaptationReport]:
     return out
 
 
-def _fmt(stats: Optional[MetricStats]) -> str:
-    if stats is None:
+def _fmt(agg: Optional[MetricStats]) -> str:
+    if agg is None:
         return "n/a"
-    return f"{stats.mean:.2f}" + (f" ± {stats.std:.2f}" if stats.std is not None else "") + f" (n={stats.n})"
+    return f"{agg.mean:.2f}" + (f" ± {agg.std:.2f}" if agg.std is not None else "") + f" (n={agg.n})"
 
 
 def _column(task: str, budget: Optional[int]) -> str:

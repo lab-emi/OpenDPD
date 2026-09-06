@@ -17,8 +17,8 @@ Ordered by ACLR_AVG (lower is better); the other columns are not a tie-break.
 
 ## History
 
-- 2026-09-06T16:38:51.770986+00:00 created by opendpd leaderboard seed (report be10351c3fea): version v2026.09 seeded with 2 reference entries
-- 2026-09-06T16:38:51.770924+00:00 entry dpd-gru created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
-- 2026-09-06T16:38:51.770980+00:00 entry dpd-mp-ila created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
+- 2026-09-06T16:47:20.472073+00:00 created by opendpd leaderboard seed (report be10351c3fea): version v2026.09 seeded with 2 reference entries
+- 2026-09-06T16:47:20.472008+00:00 entry dpd-gru created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
+- 2026-09-06T16:47:20.472066+00:00 entry dpd-mp-ila created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
 
-Board hash: `d0f41156cafe4a5af4fab911eb0dc7742e286c322f7200d502a9dc267c529040`
+Board hash: `4a696e5deaa7c5879082aa3930bf4e9fb5a63530507bce2cc4c6bdf59a0bfd13`

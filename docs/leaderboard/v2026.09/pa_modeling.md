@@ -17,8 +17,8 @@ Ordered by NMSE (lower is better); the other columns are not a tie-break.
 
 ## History
 
-- 2026-09-06T16:38:51.547856+00:00 created by opendpd leaderboard seed (report be10351c3fea): version v2026.09 seeded with 2 reference entries
-- 2026-09-06T16:38:51.547788+00:00 entry pa-gru created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
-- 2026-09-06T16:38:51.547849+00:00 entry pa-mp-ls created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
+- 2026-09-06T16:47:20.264551+00:00 created by opendpd leaderboard seed (report be10351c3fea): version v2026.09 seeded with 2 reference entries
+- 2026-09-06T16:47:20.264450+00:00 entry pa-gru created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
+- 2026-09-06T16:47:20.264539+00:00 entry pa-mp-ls created by opendpd leaderboard seed (report be10351c3fea): copied from the hash-bound benchmark-v1 report; no independent recomputation
 
-Board hash: `cbb3f2d0ff93e06e7b144eed2cf93660cf8d681a6204756c47bea27c7480c5e8`
+Board hash: `1d7e571bf3146455927d6424fa555699c00b63e49149857dba5e865df42e9442`

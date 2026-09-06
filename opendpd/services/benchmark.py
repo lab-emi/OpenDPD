@@ -153,10 +153,20 @@ def _machine() -> Dict[str, str]:
             "os": f"{platform.system()} {platform.release()} ({platform.machine()})"}
 
 
-def _stats(values: List[float]) -> MetricStats:
+def stats(values: List[float]) -> MetricStats:
     return MetricStats(n=len(values), mean=float(statistics.fmean(values)),
                        std=float(statistics.stdev(values)) if len(values) >= 2 else None,
                        min=float(min(values)), max=float(max(values)))
+
+
+def aggregate(seeds: List[SeedScore]) -> Dict[str, MetricStats]:
+    """Per metric over the seeds; a metric missing or non-finite on any seed is left out."""
+    out: Dict[str, MetricStats] = {}
+    for name in sorted({n for s in seeds for n in s.metrics}):
+        values = [s.metrics[name] for s in seeds if s.metrics.get(name) is not None and math.isfinite(s.metrics[name])]
+        if values:
+            out[name] = stats(values)
+    return out
 
 
 def build_report(ws: Workspace, plan: BenchmarkPlan) -> BenchmarkReport:
@@ -194,13 +204,8 @@ def build_report(ws: Workspace, plan: BenchmarkPlan) -> BenchmarkReport:
                                    checkpoint_sha256=checkpoints[0].file.sha256 if checkpoints else None,
                                    surrogate_run_id=surrogate, selected_epoch=result.selected_epoch,
                                    metrics={m.name: m.value for m in result.metrics}, wall_clock_s=wall))
-        aggregate: Dict[str, MetricStats] = {}
-        for name in sorted({n for s in seeds for n in s.metrics}):
-            values = [s.metrics[name] for s in seeds if s.metrics.get(name) is not None and math.isfinite(s.metrics[name])]
-            if values:
-                aggregate[name] = _stats(values)
         entries.append(EntryResult(entry_id=entry.entry_id, task=entry.task, model=entry.model, fit=fit, seeds=seeds,
-                                   missing_seeds=missing, aggregate=aggregate, **meta))
+                                   missing_seeds=missing, aggregate=aggregate(seeds), **meta))
     audit = DataAudit(dataset_id=dataset.dataset_id, raw_sha256=dataset.raw_sha256,
                       preprocessing_version=plan.dataset.preprocessing_version, split_version=plan.dataset.split_version,
                       guard_samples=dataset.split.guard_samples if dataset.split else None)

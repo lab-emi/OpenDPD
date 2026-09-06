@@ -4,7 +4,6 @@ entries, and render every board to Markdown. Boards are files; nothing here talk
 
 from __future__ import annotations
 
-import math
 import shutil
 import statistics
 import tempfile
@@ -21,6 +20,7 @@ from opendpd.schemas.leaderboard import (
     Submitter,
 )
 from opendpd.services import experiments
+from opendpd.services.benchmark import aggregate
 from opendpd.services.evaluation import evaluate_run
 from opendpd.services.packages import PackageError, export_run, import_package, inspect_package
 from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha256_file, write_json_atomic
@@ -31,21 +31,6 @@ TASK_TRACK: Dict[TaskType, str] = {TaskType.train_pa: "pa_modeling", TaskType.ev
                                    TaskType.evaluate_measured: "dpd_measured"}
 STATEMENT_FIELDS = ("method.description", "method.licence", "data.statement", "licence.code", "licence.weights", "licence.data",
                     "licence.statement", "conflict_of_interest", "citation", "isolated_validation")
-
-
-def _stats(values: List[float]) -> MetricStats:
-    return MetricStats(n=len(values), mean=float(statistics.fmean(values)),
-                       std=float(statistics.stdev(values)) if len(values) >= 2 else None,
-                       min=float(min(values)), max=float(max(values)))
-
-
-def aggregate(seeds: List[SeedScore]) -> Dict[str, MetricStats]:
-    out: Dict[str, MetricStats] = {}
-    for name in sorted({n for s in seeds for n in s.metrics}):
-        values = [s.metrics[name] for s in seeds if s.metrics.get(name) is not None and math.isfinite(s.metrics[name])]
-        if len(values) == len(seeds):
-            out[name] = _stats(values)
-    return out
 
 
 # --- prepare ---------------------------------------------------------------------------------------------------
