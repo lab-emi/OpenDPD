@@ -144,6 +144,19 @@ def cmd_run(args) -> int:
     return {RunStatus.succeeded: 0, RunStatus.cancelled: 130}.get(record.status, 1)
 
 
+def cmd_gui(args) -> int:
+    from opendpd.studio.launcher import default_workspace, launch
+
+    workspace = Path(args.workspace) if args.workspace else default_workspace()
+    return launch(workspace, port=args.port, open_in_browser=not args.no_browser)
+
+
+def cmd_doctor(args) -> int:
+    from opendpd.studio.launcher import doctor
+
+    return doctor(Path(args.workspace) if args.workspace else None)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="opendpd", description="OpenDPD Studio command line")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -166,6 +179,16 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--workspace", required=True)
     q.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_datasets)
+
+    p = sub.add_parser("gui", help="start the local Studio service and open the workbench in your browser")
+    p.add_argument("--workspace", default=None, help="workspace directory (default: $OPENDPD_WORKSPACE or ~/opendpd-workspace)")
+    p.add_argument("--port", type=int, default=None, help=f"loopback port (default: first free from 8765)")
+    p.add_argument("--no-browser", dest="no_browser", action="store_true", help="print the URL instead of opening a browser")
+    p.set_defaults(func=cmd_gui)
+
+    p = sub.add_parser("doctor", help="check that the GUI can start: dependencies, frontend assets, workspace, port")
+    p.add_argument("--workspace", default=None)
+    p.set_defaults(func=cmd_doctor)
 
     for name, func, help_text in (("validate", cmd_validate, "validate and resolve an experiment config"),
                                   ("run", cmd_run, "run an experiment in this process (headless)")):

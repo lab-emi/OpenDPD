@@ -48,8 +48,20 @@ jobs:
             exit 1
           fi
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Wheels are self-contained: the React workbench is built here and
+      # shipped as opendpd/studio/static, so users never need Node.js.
+      - name: Build the Studio frontend
+        run: cd frontend && npm ci && npm run build
+
       - name: Build sdist and wheel
         run: python -m build
+
+      - name: Wheel carries the built frontend
+        run: python -c "import glob, zipfile; n = zipfile.ZipFile(glob.glob('dist/*.whl')[0]).namelist(); assert 'opendpd/studio/static/index.html' in n"
 
       - name: Validate distribution metadata
         run: twine check dist/*

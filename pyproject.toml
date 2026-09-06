@@ -98,6 +98,9 @@ include = [
 
 [tool.setuptools.package-data]
 datasets = ["*/spec.json", "*/*.csv"]
+# Built frontend (frontend/ -> opendpd/studio/static via `npm run build`); the
+# release workflow builds it before `python -m build` so wheels are self-contained.
+"opendpd.studio" = ["static/*", "static/assets/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

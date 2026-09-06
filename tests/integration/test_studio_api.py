@@ -240,3 +240,23 @@ def test_openapi_is_exportable_and_committed(client):
     target = Path(__file__).resolve().parents[2] / "docs" / "contracts" / "openapi.json"
     committed = json.loads(target.read_text())
     assert committed == json.loads(json.dumps(schema)), "docs/contracts/openapi.json is stale; run scripts/export_openapi.py"
+
+
+def test_minimal_frontend_payload_validates_and_submits(client, session):
+    """The form sends only what the user chose; every default comes from the server."""
+    minimal = {"task": "train_pa", "recipe_id": "pa-gru-smoke-v1", "dataset": {"id": "dpa-200mhz"},
+               "model": {"key": "gru", "parameters": {"hidden_size": 23, "num_layers": 1}},
+               "training": {"epochs": 1, "frame_length": 50, "frame_stride": 16, "batch_size_eval": 256},
+               "execution": {"device": "cpu"}}
+    report = client.post("/api/v1/experiments/validate", json={"config": minimal}).json()
+    assert report["ok"], report["errors"]
+    resolved = report["resolved"]
+    assert resolved["evaluation"]["evidence_type"] == "pa_modeling"
+    assert resolved["evaluation"]["checkpoint_selection_metric"] == "NMSE"
+    assert resolved["training"]["learning_rate"] == 0.005 and resolved["dataset"]["split_version"]
+    wrong = dict(minimal, evaluation={"evidence_type": "dpd_measured"})
+    assert client.post("/api/v1/experiments/validate", json={"config": wrong}).json()["ok"] is False
+    r = client.post("/api/v1/runs", json={"config": minimal, "name": "minimal payload"})
+    assert r.status_code == 201, r.text
+    final = wait_terminal(client, r.json()["run_id"])
+    assert final["status"] == "succeeded", final

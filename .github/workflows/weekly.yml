@@ -42,6 +42,14 @@ jobs:
       - name: Install OpenDPD
         run: pip install -e ".[dev,gui]"
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Gives macOS automated evidence for the packaged service (not for a real browser launch).
+      - name: Build the Studio frontend
+        run: cd frontend && npm ci && npm run build
+
       # Runs the complete suite, including tests marked "extended"
       # (all-backbone training smoke tests and all-dataset E2E chains).
       - name: Run full test suite

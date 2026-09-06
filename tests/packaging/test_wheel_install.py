@@ -80,3 +80,56 @@ def test_wheel_runs_headless_from_external_workspace(installed_python):
     site = Path(subprocess.run([str(python), "-c", "import opendpd, os; print(os.path.dirname(opendpd.__file__))"],
                                capture_output=True, text=True, env=env).stdout.strip())
     assert not (site.parent / "save").exists() and not (work / "save").exists()
+
+
+STATIC_INDEX = REPO_ROOT / "opendpd" / "studio" / "static" / "index.html"
+
+
+@pytest.mark.skipif(not STATIC_INDEX.exists(), reason="frontend not built (run `npm run build` in frontend/)")
+def test_wheel_ships_gui_and_one_command_serves_it(installed_python):
+    """`opendpd gui --no-browser` from the wheel: healthy, ready, serves the page, exits clean."""
+    import json
+    import socket
+    import time
+    import urllib.request
+
+    python, work, env = installed_python
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    ws = work / "gui 工作区 with spaces"
+    env_gui = dict(env, PYTHONUNBUFFERED="1")
+    proc = subprocess.Popen([str(python), "-m", "opendpd.commands", "gui", "--no-browser", "--port", str(port),
+                             "--workspace", str(ws)], cwd=work, env=env_gui, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, text=True)
+    try:
+        deadline = time.monotonic() + 60
+        healthy = None
+        while time.monotonic() < deadline and healthy is None:
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/healthz", timeout=1) as r:
+                    healthy = json.loads(r.read())
+            except Exception:
+                time.sleep(0.2)
+        assert healthy == {"status": "ok"}, "service never became healthy"
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/readyz", timeout=5) as r:
+            ready = json.loads(r.read())
+        assert ready["ready"] is True and ready["frontend"]["present"] is True, ready
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5) as r:
+            html = r.read().decode()
+        assert "<div id=\"root\">" in html and "/assets/" in html
+        # lock file exists while running, printed URL carries the bootstrap token
+        assert (ws / ".studio.lock").exists()
+    finally:
+        proc.terminate()
+        try:
+            out, _ = proc.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            out, _ = proc.communicate()
+            pytest.fail("gui did not stop within 30 s after SIGTERM")
+    assert "OpenDPD Studio: http://127.0.0.1:" in out and "/bootstrap?token=" in out, out[-2000:]
+    assert not (ws / ".studio.lock").exists(), "lock must be released on exit"
+    site = Path(subprocess.run([str(python), "-c", "import opendpd.studio, os; print(os.path.dirname(opendpd.studio.__file__))"],
+                               capture_output=True, text=True, env=env).stdout.strip())
+    assert (Path(site) / "static" / "build-info.json").exists(), "wheel must carry the built frontend"

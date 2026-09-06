@@ -552,7 +552,7 @@ export interface components {
         EvaluationConfig: {
             /** Checkpoint Selection Metric */
             checkpoint_selection_metric?: string | null;
-            evidence_type: components["schemas"]["EvidenceType"];
+            evidence_type?: components["schemas"]["EvidenceType"] | null;
             /**
              * Profile Id
              * @default legacy-opendpd-v1
@@ -665,7 +665,7 @@ export interface components {
         ExperimentConfig: {
             dataset: components["schemas"]["DatasetRef"];
             dpd_reference?: components["schemas"]["DPDReference"] | null;
-            evaluation: components["schemas"]["EvaluationConfig"];
+            evaluation?: components["schemas"]["EvaluationConfig"];
             execution?: components["schemas"]["ExecutionConfig"];
             model: components["schemas"]["ModelSpec"];
             /** Name */
@@ -917,7 +917,7 @@ export interface components {
         ResolvedExperimentConfig: {
             dataset: components["schemas"]["DatasetRef"];
             dpd_reference?: components["schemas"]["DPDReference"] | null;
-            evaluation: components["schemas"]["EvaluationConfig"];
+            evaluation?: components["schemas"]["EvaluationConfig"];
             execution?: components["schemas"]["ExecutionConfig"];
             model: components["schemas"]["ModelSpec"];
             /** Name */

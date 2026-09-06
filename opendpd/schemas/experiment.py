@@ -66,7 +66,9 @@ class TrainingConfig(StrictModel):
 
 class EvaluationConfig(StrictModel):
     profile_id: Slug = "legacy-opendpd-v1"
-    evidence_type: EvidenceType
+    # None = derived from the task (train_pa -> pa_modeling, train_dpd/run_dpd -> dpd_surrogate);
+    # a value that contradicts the task is rejected.
+    evidence_type: Optional[EvidenceType] = None
     # Which *validation* metric selects the checkpoint. Filled by resolution.
     checkpoint_selection_metric: Optional[str] = None
 
@@ -110,7 +112,7 @@ class ExperimentConfig(StrictModel):
     dataset: DatasetRef
     model: ModelSpec
     training: TrainingConfig = Field(default_factory=TrainingConfig)
-    evaluation: EvaluationConfig
+    evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
     pa_reference: Optional[PAReference] = None
     dpd_reference: Optional[DPDReference] = None
@@ -119,7 +121,11 @@ class ExperimentConfig(StrictModel):
 
     @model_validator(mode="after")
     def _task_rules(self) -> "ExperimentConfig":
-        t, ev = self.task, self.evaluation.evidence_type
+        t = self.task
+        if self.evaluation.evidence_type is None:
+            derived = EvidenceType.pa_modeling if t == TaskType.train_pa else EvidenceType.dpd_surrogate
+            self.evaluation = self.evaluation.model_copy(update={"evidence_type": derived})
+        ev = self.evaluation.evidence_type
         if t == TaskType.train_pa:
             if ev != EvidenceType.pa_modeling:
                 raise ValueError("train_pa produces pa_modeling evidence")

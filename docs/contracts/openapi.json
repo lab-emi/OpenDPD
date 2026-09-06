@@ -512,7 +512,14 @@
             "title": "Checkpoint Selection Metric"
           },
           "evidence_type": {
-            "$ref": "#/components/schemas/EvidenceType"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "profile_id": {
             "default": "legacy-opendpd-v1",
@@ -521,9 +528,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "evidence_type"
-        ],
         "title": "EvaluationConfig",
         "type": "object"
       },
@@ -909,8 +913,7 @@
         "required": [
           "task",
           "dataset",
-          "model",
-          "evaluation"
+          "model"
         ],
         "title": "ExperimentConfig",
         "type": "object"
@@ -1668,7 +1671,6 @@
           "task",
           "dataset",
           "model",
-          "evaluation",
           "resolution"
         ],
         "title": "ResolvedExperimentConfig",

@@ -70,6 +70,17 @@ jobs:
       - name: Install OpenDPD
         run: pip install -e ".[dev,gui]"
 
+      # The packaging layer (tests/packaging) checks that the wheel carries the
+      # built frontend and that `opendpd gui` serves it from a clean venv.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the Studio frontend
+        run: cd frontend && npm ci && npm run build
+
       - name: Run unit and smoke tests
         run: pytest tests/ -v -m "not extended" --durations=10
 
@@ -129,6 +140,15 @@ jobs:
       - name: Install build tooling
         run: pip install build twine
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the Studio frontend
+        run: cd frontend && npm ci && npm run build
+
       - name: Build sdist and wheel
         run: python -m build
 
@@ -137,6 +157,21 @@ jobs:
       # after a release tag has already been pushed.
       - name: Validate distribution metadata
         run: twine check dist/*
+
+      - name: Wheel and sdist carry the built frontend
+        run: |
+          python - <<'PY'
+          import glob, sys, tarfile, zipfile
+          wheel = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          assert "opendpd/studio/static/index.html" in names, names[:20]
+          assert any(n.startswith("opendpd/studio/static/assets/") for n in names)
+          assert "opendpd/studio/static/build-info.json" in names
+          sdist = glob.glob("dist/*.tar.gz")[0]
+          snames = tarfile.open(sdist).getnames()
+          assert any(n.endswith("opendpd/studio/static/index.html") for n in snames), snames[:20]
+          print("frontend present in", wheel, "and", sdist)
+          PY
 
       # Guard against pyproject `version` and opendpd.__version__ drifting
       # apart — the publish workflow trusts the tag against __version__.

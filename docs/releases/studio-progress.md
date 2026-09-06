@@ -12,7 +12,8 @@ repository; "pending human" means a maintainer decision is required;
 | S02 explicit config, registry, workspace | done | `9ea598c` | `opendpd run/validate/models/recipes/datasets`, registry, resolver, adapter, workspace |
 | S03 task runtime | done (Windows/macOS cleanup not verified) | `fd63107` | SQLite store, supervisor, worker subprocess, cancel, recovery |
 | S04 local service & API | done | `076de58` | FastAPI app, sessions/CSRF/Host checks, SSE replay, OpenAPI contract, threat model |
-| S05 React workbench | done (visual baselines local only) | — | `frontend/`: pages, domain components, states, Vitest + Playwright journeys, generated API types |
+| S05 React workbench | done (visual baselines local only) | `c002ca2` + `c5f5b83` | `frontend/`: pages, domain components, states, Vitest + Playwright journeys, generated API types |
+| S06 packaging & one-command launch | done on Linux; **macOS/Windows not verified** | — | `opendpd gui`, `opendpd doctor`, wheel/sdist carry the built frontend, packaged L2 test |
 
 ## S00 acceptance items
 
@@ -80,3 +81,15 @@ repository; "pending human" means a maintainer decision is required;
 | One real-size visualisation prototype with performance evidence | done (component gallery: PSD 2560 bins × 3 traces + I/Q window of 20 000 samples; probe asserts < 2 s, measured ≈ 210 ms per chart in headless Chromium) |
 | Frontend prototype on fixed, labelled mock (carried over from S01) | done (`/gallery` and `ResultView` on `frontend/mocks/*`, every mock result carries the MOCK badge) |
 | Visual regression baseline | Playwright screenshots of the gallery captured on Linux/Chromium and committed; **compared locally only** (CI runs `--ignore-snapshots` because font rendering differs) |
+
+## S06 acceptance items
+
+| Item | Status |
+|---|---|
+| Wheel installed outside the repo without Node.js; one command opens a usable GUI | done on Linux (`test_wheel_ships_gui_and_one_command_serves_it`: fresh venv, `opendpd gui --no-browser`, healthy → ready → page served → clean exit) |
+| sdist also carries usable static assets, or generates them in an explicit build stage | done: `MANIFEST.in` includes `opendpd/studio/static`; CI `build` job builds the frontend before `python -m build` and asserts both artifacts contain it; a source checkout without the build shows a diagnostic page and `opendpd doctor` names the fix |
+| Offline after install: example, fonts, icons, charts, training and export work | fonts are system stacks, icons are bundled SVG, Plotly is bundled; `tests/unit/test_offline_assets.py` asserts no external loads in the built assets. Export is S11 |
+| Port in use, no default browser, no desktop, duplicate start, paths with spaces/Chinese | done: explicit busy port → exit 2 with message; auto-port skips busy ports; `webbrowser` failure never aborts (URL printed); second start reuses the running instance via `.studio.lock`; tests use workspaces named with spaces and Chinese characters |
+| Browser opens only after the health check; missing/mismatched static shows a diagnostic, never a blank page | done (`test_browser_opens_only_after_health_check_with_bootstrap_url`; `/readyz` reports frontend presence and version; SPA route returns the diagnostic page when assets are missing or mismatched) |
+| Real browser launch on three platforms | Linux: verified 2026-09-06 in a real desktop browser against `opendpd gui` (bootstrap URL → register example → new experiment validated server-side → 3-epoch run with live metrics → result with evidence badge); the first real pass found and fixed two defects (`evaluation` was required in the contract; a port left in TIME_WAIT was reported busy). **macOS and Windows: pending human** |
+| Access session and file boundary active; no "open all local files for the demo" | done (S04 boundary unchanged; artifacts by id only) |
