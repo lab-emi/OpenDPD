@@ -22,7 +22,7 @@ wheels/
 build/
 plots/
 datasets/MATLAB
-docs/
+docs/_build/
 
 # Virtual environments
 venv/
@@ -96,3 +96,6 @@ steps/__pycache__/
 PACKAGE_INSTALLATION.md
 PyPI.md
 adc/*
+
+# MkDocs build output
+site/

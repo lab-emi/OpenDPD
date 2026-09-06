@@ -24,6 +24,7 @@ python examples/api_usage_example.py
 ```
 
 This script demonstrates:
+
 1. Training a PA model
 2. Training a DPD model
 3. Running the trained DPD model
@@ -99,4 +100,3 @@ opendpd.train_pa(dataset_path='my_data.csv', n_epochs=50)
 - API Quick Start: See `../API_QUICKSTART.md`
 - Full Documentation: See `../PACKAGE_INSTALLATION.md`
 - Main README: See `../README.md`
-
