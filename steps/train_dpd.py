@@ -39,7 +39,7 @@ def main(proj: Project):
 
     # Load Pretrained PA Model
     path_pa_model = os.path.join('save', proj.dataset_name, 'train_pa', pa_model_id + '.pt')
-    net_pa.load_state_dict(torch.load(path_pa_model, map_location='cpu'))
+    net_pa.load_state_dict(torch.load(path_pa_model, map_location='cpu', weights_only=True))
 
     # Instantiate DPD Model
     net_dpd = model.CoreModel(input_size=input_size,
@@ -96,7 +96,10 @@ def main(proj: Project):
         # Load actual measured PA output from CSV for plotting
         # (not the PA model prediction, which smooths out spectral regrowth)
         from modules.data_collector import load_dataset as _load_raw
-        _, _, _, y_val_raw, _, y_test_raw = _load_raw(dataset_name=proj.dataset_name)
+        if getattr(proj, 'dataset_path', None):
+            _, _, _, y_val_raw, _, y_test_raw = _load_raw(dataset_path=proj.dataset_path)
+        else:
+            _, _, _, y_val_raw, _, y_test_raw = _load_raw(dataset_name=proj.dataset_name)
         nperseg = proj.args.nperseg
 
         pa_only_data = {}

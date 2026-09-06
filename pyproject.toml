@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opendpd"
-version = "2.1.0"
+version = "2.2.0.dev0"
 description = "An end-to-end learning framework for modeling power amplifiers and digital pre-distortion"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -73,6 +73,7 @@ Issues = "https://github.com/lab-emi/OpenDPD/issues"
 
 [project.scripts]
 opendpd-cli = "opendpd.cli:main"
+opendpd = "opendpd.cli:studio_main"
 
 [tool.setuptools]
 py-modules = ["arguments", "project", "models", "main"]

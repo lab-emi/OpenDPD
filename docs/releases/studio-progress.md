@@ -8,7 +8,8 @@ repository; "pending human" means a maintainer decision is required;
 | Stage | Status | Commit | Notes |
 |---|---|---|---|
 | S00 baseline & governance | done except maintainer approvals | `6f026b1` | `docs/baseline/baseline-report.md` |
-| S01 contracts & UX | done except prototype (delivered with S05) | — | schemas, ADR-0001, UX spec, tokens, mock examples |
+| S01 contracts & UX | done except prototype (delivered with S05) | `0f66ad0` | schemas, ADR-0001, UX spec, tokens, mock examples |
+| S02 explicit config, registry, workspace | done | — | `opendpd run/validate/models/recipes/datasets`, registry, resolver, adapter, workspace |
 
 ## S00 acceptance items
 
@@ -29,3 +30,14 @@ repository; "pending human" means a maintainer decision is required;
 | Every result expresses `pa_modeling` / `dpd_surrogate` / `dpd_measured` with source and profile version | done (`EvaluationResult` validators) |
 | Schema examples: missing metadata, N/A metric, interrupted run, log disconnect, legacy import | done (`opendpd/schemas/examples.py`, 49 tests) |
 | Frontend prototype on fixed, labelled mock | deferred to S05 (mock fixtures are generated from the same examples) |
+
+## S02 acceptance items
+
+| Item | Status |
+|---|---|
+| Two experiments in sequence do not leak configuration; parallel workers do not share output files | done (`tests/integration/test_cli_run.py::test_sequential_runs_do_not_leak_configuration`; each run has its own directory) |
+| GUI / CLI / Python API normalise identically; defaults have one source | done (`opendpd.services.config.resolve`; `test_training_defaults_have_one_source`; legacy-CLI numeric equality test) |
+| Model list from the registry; CLI choices and GUI options not hand-written twice; unknown models cannot be submitted | done for the new path (`opendpd models`, `test_registry_covers_every_working_legacy_backbone`); the legacy parser keeps its own list for compatibility |
+| MP/GMP-style non-neural methods can express their own fitting logic | registry has `training_method`; least-squares MP/GMP integration is S12 work — **open** |
+| Legacy commands and public API compatibility tests pass; deprecations announced | done (existing suite passes; nothing deprecated yet) |
+| Plain `pip install opendpd` needs no GUI dependency; runs work from a read-only install into an external workspace | done (`tests/packaging/test_wheel_install.py`, `tests/unit/test_lazy_imports.py`) |

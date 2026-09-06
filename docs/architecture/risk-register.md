@@ -16,5 +16,5 @@ current status. Update when a stage closes.
 | R9 | Hardware scope creep | several instrument drivers in parallel | manual capture import first, then one adapter | out of first version |
 | R10 | Standards work delays release | waiting for "full 3GPP" | S15 delivers one profile, does not block G2 | deferred |
 | R11 | Leaderboard without community | only maintainer models | external trial first; otherwise "reference benchmark" | deferred |
-| R12 | Legacy `sys.argv` API misuse | concurrent API calls corrupt each other | explicit config path (S02); legacy API kept single-threaded and documented | known, baseline |
-| R13 | Legacy paths depend on CWD | artifacts land wherever the process runs | worker runs inside its own run directory; new services use explicit workspace paths | known, baseline |
+| R12 | Legacy `sys.argv` API misuse | concurrent API calls corrupt each other | explicit config path (S02); legacy API kept single-threaded and documented | mitigated in S02: new path never reads `sys.argv` (`Project(args=...)`) |
+| R13 | Legacy paths depend on CWD | artifacts land wherever the process runs | worker runs inside its own run directory; new services use explicit workspace paths | mitigated in S02: `run_in_directory` confines every run; packaging test checks no writes elsewhere |
