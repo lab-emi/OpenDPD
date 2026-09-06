@@ -30,6 +30,7 @@ from opendpd.schemas import (
     ComparisonReport,
     DatasetManifest,
     EvaluationResult,
+    ExecutionEvidence,
     ResolvedExperimentConfig,
     RunStatus,
     ScalingInfo,
@@ -48,6 +49,7 @@ from opendpd.services.experiments import (
     load_result,
     load_run,
 )
+from opendpd.services.streaming import is_streaming, segments, stream_outputs
 from opendpd.services.legacy_adapter import build_namespace, load_checkpoint, run_in_directory
 from opendpd.services.workspace import Workspace, WorkspaceError, sha256_file, write_json_atomic
 
@@ -58,7 +60,7 @@ class Predictions:
     def __init__(self, prediction: np.ndarray, ground_truth: np.ndarray, n_valid: int, target_gain: Optional[float],
                  *, x: Optional[np.ndarray] = None, u: Optional[np.ndarray] = None,
                  surrogate_without_dpd: Optional[np.ndarray] = None, measured: Optional[np.ndarray] = None,
-                 fitted_peak_abs: Optional[float] = None):
+                 fitted_peak_abs: Optional[float] = None, execution: Optional[ExecutionEvidence] = None):
         self.prediction = prediction          # PA model output (train_pa) or y = PA_surrogate(u) (DPD tasks)
         self.ground_truth = ground_truth      # measured y (train_pa) or the linear target gain * x (DPD tasks)
         self.n_valid = n_valid
@@ -68,6 +70,7 @@ class Predictions:
         self.surrogate_without_dpd = surrogate_without_dpd   # DPD tasks: PA_surrogate(x)
         self.measured = measured              # measured PA output of the test split
         self.fitted_peak_abs = fitted_peak_abs   # DPD tasks: max |x| the surrogate was trained on
+        self.execution = execution            # streaming variants: how the signal was consumed (S18)
 
 
 def _amplitude(iq: np.ndarray) -> np.ndarray:
@@ -188,9 +191,23 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
                     us.append(net.dpd_model(features).cpu())
                     y0s.append(net.pa_model(features).cpu())
         extra = dict(x=torch.cat(xs).numpy(), measured=ground_truth)
+        x_test, y_test = load_dataset(dataset_path=ns.dataset_path)[4:6]
+        nperseg = proj.args.nperseg
+        if is_streaming(resolved.model.key):
+            # the variant consumes the continuous test split chunk by chunk; the PA surrogate of a DPD task stays
+            # the offline module (it is not the model under evaluation)
+            evaluated = net.dpd_model if dpd_task else net
+            y_stream, extra["execution"] = stream_outputs(
+                evaluated.cpu(), resolved.model.key, np.asarray(x_test, dtype=np.float32),
+                chunk_samples=resolved.evaluation.chunk_samples, sample_rate_hz=dataset.signal.sample_rate_hz)
+            streamed = segments(y_stream, nperseg)
+            if dpd_task:
+                with torch.inference_mode():
+                    prediction = net.pa_model.cpu()(torch.from_numpy(streamed)).numpy()
+                us = [torch.from_numpy(streamed)]
+            else:
+                prediction = streamed
         if dpd_task:
-            x_test, y_test = load_dataset(dataset_path=ns.dataset_path)[4:6]
-            nperseg = proj.args.nperseg
             # The reference is the linear target gain * x for every DPD task (the legacy loader only builds it
             # for train_dpd; a run_dpd would otherwise be scored against the measured PA output).
             ground_truth = IQSegmentDataset(x_test, proj.target_gain * x_test, nperseg=nperseg).targets.numpy()
@@ -262,7 +279,8 @@ def result_for(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, m
     evidence = {} if resolved.task in (TaskType.train_pa, TaskType.evaluate_pa) \
         else _surrogate_evidence(ws, run_id, resolved, manifest, dataset, predictions, profile_id)
     return build_result(ws, run_id, resolved, manifest, profile=profile, metrics=metrics,
-                        n_valid=predictions.n_valid, target_gain=predictions.target_gain, **evidence)
+                        n_valid=predictions.n_valid, target_gain=predictions.target_gain, execution=predictions.execution,
+                        **evidence)
 
 
 def write_plots(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, predictions: Predictions) -> List[Path]:

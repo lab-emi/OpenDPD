@@ -20,13 +20,14 @@ import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router'
 import { artifactUrl } from '@/api/client'
 import { useRunStream } from '@/api/events'
-import { keys, useCancelRun, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
+import { keys, useCancelRun, useModels, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
 import { isTerminal, type LineageLink, type LineageRelation, type RunView } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { LogViewer } from '@/components/LogViewer'
@@ -122,6 +123,7 @@ export function RunDetailPage() {
               {t('run.measure')}
             </Button>
           )}
+          {r.status === 'succeeded' && (r.task === 'train_pa' || r.task === 'train_dpd') && <StreamButton run={r} />}
           {r.status === 'succeeded' && r.result_id && (
             <Button component={RouterLink} to={`/results/${encodeURIComponent(r.run_id)}`} variant="contained" size="small">
               {t('run.result')}
@@ -269,6 +271,38 @@ function LineageCard({ runId }: { runId: string }) {
         </>
       )}
     </Paper>
+  )
+}
+
+/** evaluate_pa / run_dpd with the registered streaming variant of the run's model: a separate result under
+ * streaming semantics (S18); offered only when the registry names such a variant. */
+function StreamButton({ run }: { run: RunView }) {
+  const navigate = useNavigate()
+  const models = useModels()
+  const submit = useSubmitRun()
+  const idempotencyKey = useRef(crypto.randomUUID())
+  const variant = (models.data ?? []).find((m) => m.weights_from === run.model_key && m.execution_semantics === 'streaming_stateful')
+  if (!variant) return null
+  const config = {
+    task: (run.task === 'train_pa' ? 'evaluate_pa' : 'run_dpd') as 'evaluate_pa' | 'run_dpd',
+    dataset: { id: run.dataset_id ?? '' },
+    model: { key: variant.key },
+    evaluation: { evidence_type: (run.task === 'train_pa' ? 'pa_modeling' : 'dpd_surrogate') as 'pa_modeling' | 'dpd_surrogate' },
+    ...(run.task === 'train_pa' ? { pa_reference: { run_id: run.run_id } } : { dpd_reference: { run_id: run.run_id } }),
+  }
+  return (
+    <Tooltip title={t('run.stream.help', { variant: variant.key })}>
+      <span>
+        <Button
+          variant="outlined"
+          size="small"
+          disabled={submit.isPending}
+          onClick={() => submit.mutate({ config, idempotency_key: idempotencyKey.current }, { onSuccess: (created) => navigate(`/runs/${encodeURIComponent(created.run_id)}`) })}
+        >
+          {t('run.stream')}
+        </Button>
+      </span>
+    </Tooltip>
   )
 }
 

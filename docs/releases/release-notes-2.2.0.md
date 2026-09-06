@@ -66,6 +66,16 @@ platform automatically. Version string in the candidate: `2.2.0.dev0`.
   through another condition's PA. Reports below the evidence bar (three
   measured conditions from independent batches) call themselves a rehearsal
   (`docs/protocols/conditions-v1.md`).
+- **Streaming execution contract (`streaming-v1`)**: `reset / state / chunk /
+  flush` over I/Q streams with declared look-ahead (samples and seconds, an
+  information bound that is not a latency), history, measured warm-up and
+  tail policy; `gru_stream` and `gmp_stream` execute the weights of `gru` and
+  `gmp` with the state carried across chunks (`opendpd stream <run>`, the run
+  page's "Score under streaming semantics"). Every streaming result records
+  its chunk-consistency check against the full-sequence run of the same
+  variant and is never ranked against, or inherited from, the offline
+  segment scores (`docs/architecture/streaming.md`,
+  `docs/releases/streaming-semantics-report.md`).
 - **Thread budget**: `execution.num_threads` is applied by the shared executor
   (torch intra-op threads) on every path; unset keeps torch's default. Run
   records stamp `started_at`/`finished_at` with the executor's own clock on
@@ -108,6 +118,10 @@ Tutorials: `docs/tutorials/gui-quickstart.md`, `docs/tutorials/headless-cli.md`,
 - No physical PA has been measured with the S16 path yet: the protocol is
   verified on synthetic and mock captures only, and no real instrument adapter
   exists (`docs/protocols/measured-dpd.md` §7).
+- Streaming variants exist for `gru` and `gmp` only and are experimental
+  until a maintainer approves them; models with a look-ahead (`tres_gru`,
+  `tres_deltagru`, `tcn`) state their buffering cost but have no streaming
+  variant (`docs/releases/streaming-semantics-report.md`).
 - No condition set meets the `conditions-v1` evidence bar: the built-in APA
   card has two capture batches, the three-condition cards are synthetic, and
   nobody outside the implementation has recomputed a report

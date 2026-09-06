@@ -10,6 +10,7 @@
     "dpd_reference": null,
     "evaluation": {
       "checkpoint_selection_metric": null,
+      "chunk_samples": null,
       "evidence_type": "dpd_surrogate",
       "profile_id": "legacy-opendpd-v1"
     },

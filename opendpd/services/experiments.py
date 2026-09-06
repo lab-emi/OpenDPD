@@ -39,6 +39,7 @@ from opendpd.schemas import (
     LineageLink,
     LineageRelation,
     MeasurementEvidence,
+    ExecutionEvidence,
     MetricProfile,
     MetricValue,
     ModelEvidence,
@@ -249,7 +250,7 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
         updates["pa_reference"] = dpd_resolved.pa_reference if config.pa_reference is None \
             else _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=None)
         if config.model != dpd_resolved.model:
-            updates["model"] = dpd_resolved.model
+            updates["model"] = _executed_model(config.model, dpd_resolved.model)
         # The legacy run_dpd step derives checkpoint ids from seed / frame_length
         # (and quantisation) of the *current* arguments: inherit them from the DPD run.
         updates["training"] = dpd_resolved.training
@@ -268,7 +269,7 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
                                                          "pa_reference.run_id")
         updates["pa_reference"] = PAReference(run_id=pa_record.run_id, checkpoint_artifact_id=pa_ckpt.artifact_id,
                                               checkpoint_sha256=pa_ckpt.file.sha256, model=pa_resolved.model)
-        updates["model"] = pa_resolved.model
+        updates["model"] = _executed_model(config.model, pa_resolved.model)
         updates["training"] = pa_resolved.training.model_copy(update={"train_samples": None})
         updates["quantization"] = pa_resolved.quantization
     if config.initialization is not None and config.task in (TaskType.train_pa, TaskType.train_dpd):
@@ -672,7 +673,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                  target_gain: Optional[float], signal_chain: Optional[List[SignalStage]] = None,
                  baselines: Optional[List[BaselineScore]] = None, surrogate_coverage: Optional[SurrogateCoverage] = None,
                  scaling: Optional[ScalingInfo] = None, measurement: Optional[MeasurementEvidence] = None,
-                 limitations: Optional[List[str]] = None) -> EvaluationResult:
+                 execution: Optional[ExecutionEvidence] = None, limitations: Optional[List[str]] = None) -> EvaluationResult:
     """Assemble the evidence around metrics scored by ``opendpd.core.metrics``."""
     run_dir = ws.run_dir(run_id)
     dataset = ws.get_dataset(resolved.dataset.id)
@@ -733,6 +734,12 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         limitations.append(f"zero-update transfer: DPD trained on dataset {source} applied to dataset "
                            f"{dataset.dataset_id} without any update")
 
+    if execution is not None:
+        from opendpd.services.streaming import streaming_limitations
+        limitations.extend(streaming_limitations(resolved.model.key, execution))
+    from opendpd.core.registry import get_model
+    semantics = get_model(resolved.model.key).execution_semantics
+
     models = []
     source, is_mock = "opendpd-studio", False
     if measured:
@@ -746,6 +753,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                     gain_value=target_gain)
         models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
                                     n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
+                                    execution_semantics=semantics,
                                     training_path="ila_least_squares" if least_squares else "gradient_dla"))
         if resolved.measurement is not None and resolved.measurement.source == "mock_adapter":
             source, is_mock = "mock", True
@@ -755,6 +763,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                     description="measured PA output of the test split (dataset *_output)")
         models.append(ModelEvidence(role="pa", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
                                     n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
+                                    execution_semantics=semantics,
                                     training_path="least_squares" if least_squares else "gradient"))
     else:
         evidence = EvidenceType.dpd_surrogate
@@ -764,6 +773,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         pa = resolved.pa_reference
         models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
                                     n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
+                                    execution_semantics=semantics,
                                     training_path="ila_least_squares" if least_squares else "gradient_dla"))
         pa_manifest = load_artifacts(ws, pa.run_id)
         pa_artifact = next((a for a in (pa_manifest.artifacts if pa_manifest else [])
@@ -786,7 +796,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         dataset=DatasetEvidence(dataset_id=dataset.dataset_id, split="test", raw_sha256=dataset.raw_sha256,
                                 preprocessing_version=resolved.dataset.preprocessing_version,
                                 split_version=resolved.dataset.split_version, n_samples=n_valid),
-        models=models, reference=reference,
+        models=models, reference=reference, execution=execution,
         valid_sample_range=(0, n_valid), n_segments=n_segments, nperseg=nperseg,
         metrics=metrics, selected_epoch=selected_epoch, history=history,
         software=software_provenance(), device=resolved.execution.device, seed=resolved.training.seed,
@@ -863,6 +873,15 @@ def _link(records: Dict[str, RunRecord], run_id: str, relation: LineageRelation,
     record = records.get(run_id)
     return LineageLink(run_id=run_id, relation=relation, task=record.task if record else None,
                        status=record.status if record else None, checkpoint_sha256=sha)
+
+
+def _executed_model(requested: ModelSpec, trained: ModelSpec) -> ModelSpec:
+    """The weights define the architecture: a run that only applies or scores them carries the trained model, unless
+    the request names a registered streaming variant of that model (plan S18), which executes the same weights."""
+    from opendpd.core.registry import get_model
+    if requested.key != trained.key and get_model(requested.key).weights_from == trained.key:
+        return ModelSpec(key=requested.key, parameters=dict(trained.parameters))
+    return trained
 
 
 def _is_least_squares(key: str) -> bool:

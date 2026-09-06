@@ -173,6 +173,7 @@ class ModelInfo(BaseModel):
     lookahead_samples: Optional[int] = None
     lookahead_note: str
     execution_semantics: str
+    weights_from: Optional[str] = None
     export_formats: List[str]
     constraints: Optional[str] = None
     reference: Optional[str] = None

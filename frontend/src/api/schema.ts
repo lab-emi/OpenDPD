@@ -1412,6 +1412,8 @@ export interface components {
         EvaluationConfig: {
             /** Checkpoint Selection Metric */
             checkpoint_selection_metric?: string | null;
+            /** Chunk Samples */
+            chunk_samples?: number | null;
             evidence_type?: components["schemas"]["EvidenceType"] | null;
             /**
              * Profile Id
@@ -1427,6 +1429,7 @@ export interface components {
             /** Device */
             device: string;
             evidence_type: components["schemas"]["EvidenceType"];
+            execution?: components["schemas"]["ExecutionEvidence"] | null;
             /** Extra */
             extra?: {
                 [key: string]: number | string | boolean;
@@ -1546,6 +1549,35 @@ export interface components {
             device_index: number;
             /** Num Threads */
             num_threads?: number | null;
+        };
+        /**
+         * ExecutionEvidence
+         * @description How the evaluated model consumed the signal (plan S18). Present for streaming variants only; offline
+         *     results are segment-wise from a zero state and say so through ``ModelEvidence.execution_semantics``.
+         */
+        ExecutionEvidence: {
+            /** Chunk Samples */
+            chunk_samples: number;
+            consistency: components["schemas"]["StreamConsistency"];
+            /** History Samples */
+            history_samples?: number | null;
+            /** Lookahead S */
+            lookahead_s?: number | null;
+            /** Lookahead Samples */
+            lookahead_samples: number;
+            /** Note */
+            note: string;
+            /** Semantics */
+            semantics: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "recurrent" | "window" | "none";
+            /** Tail Policy */
+            tail_policy: string;
+            /** Warmup Samples */
+            warmup_samples?: number | null;
         };
         /** ExperimentConfig */
         ExperimentConfig: {
@@ -1986,6 +2018,8 @@ export interface components {
             status: string;
             /** Training Method */
             training_method: string;
+            /** Weights From */
+            weights_from?: string | null;
         };
         /** ModelSpec */
         ModelSpec: {
@@ -2608,6 +2642,25 @@ export interface components {
              * @default contiguous-v1
              */
             version: string;
+        };
+        /**
+         * StreamConsistency
+         * @description Max |streamed - full-sequence| of the same variant from the same reset, over the valid range.
+         */
+        StreamConsistency: {
+            /** Chunk Samples */
+            chunk_samples: number;
+            /** Max Abs Error */
+            max_abs_error: number;
+            /**
+             * Reference
+             * @default full_sequence_same_reset
+             */
+            reference: string;
+            /** Tolerance */
+            tolerance: number;
+            /** Within Tolerance */
+            within_tolerance: boolean;
         };
         /** SubmitRunRequest */
         SubmitRunRequest: {

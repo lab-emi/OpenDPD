@@ -7,6 +7,7 @@ import ofdmProfile from '@mocks/metric_profile_ofdm_evm.json'
 import resultMock from '@mocks/result_pa_modeling_mock.json'
 import dpdMock from '@mocks/result_dpd_surrogate_mock.json'
 import measuredMock from '@mocks/result_dpd_measured_mock.json'
+import streamingMock from '@mocks/result_pa_streaming_mock.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { ResultDetailPage } from './ResultDetailPage'
 
@@ -175,4 +176,22 @@ test('a measured result shows the attestation, the declared conditions, every ca
   expect(within(chain).queryByText('simulated')).not.toBeInTheDocument()
   expect(within(chain).getByText(/mock instrument adapter/)).toBeInTheDocument()
   expect(screen.getByRole('region', { name: 'Baselines under the same reference' })).toHaveTextContent('Measured PA without DPD')
+})
+
+test('a streaming result shows how the signal was consumed: chunk consistency, look-ahead as samples and time, warm-up', async () => {
+  const streaming = streamingMock.data
+  mockApi({
+    [`GET /api/v1/results/${streaming.run_id}`]: () => streaming,
+    [`GET /api/v1/results/${streaming.run_id}/profiles`]: () => ['legacy-opendpd-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
+  })
+  renderWithProviders(<ResultDetailPage />, { route: `/results/${streaming.run_id}`, path: '/results/:runId' })
+  const panel = await screen.findByTestId('execution')
+  expect(within(panel).getByTestId('chunk-consistency')).toHaveTextContent('chunks of 1024 samples, the outputs match the full-sequence run of the same variant within 1e-4')
+  expect(within(panel).getByText('streaming_stateful · recurrent state carried across chunks')).toBeInTheDocument()
+  expect(within(panel).getByText('0 samples · 0 µs')).toBeInTheDocument()
+  expect(within(panel).getByText('612 samples')).toBeInTheDocument()
+  expect(within(panel).getByText(/not the measured latency of an implementation/)).toBeInTheDocument()
+  expect(screen.getByText(/not comparable with offline_segmented results of gru/)).toBeInTheDocument()
+  expect(screen.getByText(/gru_stream .* streaming_stateful/)).toBeInTheDocument()
 })

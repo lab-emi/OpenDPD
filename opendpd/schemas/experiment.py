@@ -77,6 +77,8 @@ class EvaluationConfig(StrictModel):
     evidence_type: Optional[EvidenceType] = None
     # Which *validation* metric selects the checkpoint. Filled by resolution.
     checkpoint_selection_metric: Optional[str] = None
+    # Streaming variants only (plan S18): samples per chunk fed to the stream; None = the contract's default
+    chunk_samples: Optional[int] = Field(default=None, ge=1)
 
 
 class ExecutionConfig(StrictModel):

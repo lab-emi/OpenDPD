@@ -73,6 +73,9 @@ class ModelDescriptor:
     lookahead_samples: Optional[int]     # None = not characterised
     lookahead_note: str
     execution_semantics: str = "offline_segmented"
+    # streaming variants (plan S18): the key whose trained weights this variant executes; such a variant is never
+    # trained itself, its results are never compared with the offline key's, and it keeps its own evidence
+    weights_from: Optional[str] = None
     export_formats: Tuple[str, ...] = ()
     constraints: Optional[str] = None
     reference: Optional[str] = None
@@ -275,7 +278,39 @@ MODELS: Tuple[ModelDescriptor, ...] = (
     ),
 )
 
+STREAMING = "streaming_stateful"
+_STREAM_CONSTRAINT = ("evaluation variant of '{base}': its weights come from a finished {base} run (evaluate_pa, run_dpd); "
+                      "training it directly is refused; its scores are re-evaluated under streaming semantics and are "
+                      "neither compared with nor inherited from {base}'s offline_segmented results")
+
+MODELS += (
+    ModelDescriptor(
+        key="gru_stream", display_name="GRU (streaming, stateful)", family="recurrent", legacy_backbone="gru",
+        training_method="gradient", roles=("pa", "dpd"), params=(_hidden(23), _layers()), status="experimental",
+        devices_tested=("cpu",), lookahead_samples=0,
+        lookahead_note=CAUSAL + "; the hidden state is carried across chunks instead of being reset at every segment",
+        execution_semantics=STREAMING, weights_from="gru", constraints=_STREAM_CONSTRAINT.format(base="gru"),
+        reference="OpenDPD (ISCAS 2024); streaming contract docs/architecture/streaming.md",
+        evidence="tests/unit/test_streaming.py, tests/integration/test_streaming_eval.py (CPU)",
+    ),
+    ModelDescriptor(
+        key="gmp_stream", display_name="GMP (streaming, windowed)", family="polynomial", legacy_backbone="gmp",
+        training_method="gradient", roles=("pa", "dpd"), params=(), status="experimental", devices_tested=("cpu",),
+        lookahead_samples=0,
+        lookahead_note="causal; the 20-sample history (memory 11 with envelope windows lagging by another 10, measured) is "
+                       "carried across chunks instead of being zero-filled at every segment start",
+        execution_semantics=STREAMING, weights_from="gmp", constraints=_STREAM_CONSTRAINT.format(base="gmp"),
+        reference="OpenDPD (ISCAS 2024); streaming contract docs/architecture/streaming.md",
+        evidence="tests/unit/test_streaming.py, tests/integration/test_streaming_eval.py (CPU)",
+    ),
+)
+
 _BY_KEY: Dict[str, ModelDescriptor] = {m.key: m for m in MODELS}
+
+
+def streaming_variant_of(key: str) -> Optional[ModelDescriptor]:
+    """The registered streaming variant that executes ``key``'s weights, if any."""
+    return next((m for m in MODELS if m.weights_from == key and m.execution_semantics == STREAMING), None)
 
 
 def list_models() -> List[ModelDescriptor]:

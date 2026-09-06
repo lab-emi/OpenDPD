@@ -155,6 +155,13 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
                                   "one of: " + ", ".join(sorted(PROFILES))))
 
     model = get_model(config.model.key) if not issues else None
+    if model is not None and model.weights_from is not None and config.task in (TaskType.train_pa, TaskType.train_dpd):
+        issues.append(ConfigIssue("model.key", f"model '{model.key}' is a streaming variant that executes the weights of "
+                                  f"'{model.weights_from}'; it is not trained",
+                                  f"train {model.weights_from}, then `opendpd stream <run>` (evaluate_pa / run_dpd with model {model.key})"))
+    if config.evaluation.chunk_samples is not None and (model is None or model.weights_from is None):
+        issues.append(ConfigIssue("evaluation.chunk_samples", "chunk_samples applies to streaming variants only",
+                                  "remove the field, or evaluate with a model whose execution_semantics is streaming_stateful"))
     least_squares = model is not None and model.training_method == "least_squares"
     if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task in (TaskType.train_pa, TaskType.train_dpd) and not least_squares:
         warn.append(ConfigIssue("training.epochs",

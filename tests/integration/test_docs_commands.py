@@ -26,7 +26,7 @@ pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
 TUTORIALS = [ROOT / "docs" / "tutorials" / "gui-quickstart.md", ROOT / "docs" / "tutorials" / "headless-cli.md",
              ROOT / "docs" / "tutorials" / "waveform-evaluation.md", ROOT / "docs" / "tutorials" / "measured-dpd.md",
-             ROOT / "docs" / "tutorials" / "adaptation-benchmark.md"]
+             ROOT / "docs" / "tutorials" / "adaptation-benchmark.md", ROOT / "docs" / "tutorials" / "streaming.md"]
 OTHER_CI_SOURCES = [ROOT / ".github" / "workflows" / "weekly.yml", ROOT / "tests" / "integration" / "test_benchmark_protocol.py"]
 NESTED = {"datasets", "benchmark", "waveforms", "measurements", "instruments", "adaptation"}
 
@@ -221,6 +221,14 @@ def test_documented_commands_run_end_to_end(tmp_path):
     proc = run("adaptation", "report", str(plan), "--workspace", str(ws), "--markdown", str(adaptation_md))
     assert "evidence bar NOT met" in proc.stdout and "14 cells, 0 without a number" in proc.stdout
     assert "rehearsal of the protocol" in adaptation_md.read_text() and (ws / "adaptation").glob("*.report.json")
+
+    # docs/tutorials/streaming.md: the PA run re-scored under its streaming variant, with the evidence on the result
+    streamed = json.loads(run("stream", pa_id, "--workspace", str(ws), "--chunk", "512", "--json").stdout)
+    assert streamed["run"]["status"] == "succeeded" and streamed["run"]["task"] == "evaluate_pa"
+    execution = streamed["result"]["execution"]
+    assert execution["semantics"] == "streaming_stateful" and execution["chunk_samples"] == 512
+    assert execution["consistency"]["within_tolerance"] and execution["lookahead_samples"] == 0
+    assert streamed["result"]["models"][0]["model"]["key"] == "gru_stream"
 
     package = json.loads(run("export", pa_id, "--workspace", str(ws), "--kind", "share", "--json").stdout)
     zip_path = Path(package["path"])

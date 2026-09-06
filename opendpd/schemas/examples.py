@@ -52,6 +52,8 @@ from .experiment import (
 from .measurement import MOCK_ATTESTATION, CaptureAlignment, CaptureRef, MeasurementConditions, MeasurementConfig, MeasurementEvidence
 from .metrics import MetricProfile
 from .results import (
+    ExecutionEvidence,
+    StreamConsistency,
     BaselineScore,
     ComparisonPair,
     ComparisonReport,
@@ -582,6 +584,25 @@ def adaptation_report_mock() -> AdaptationReport:
     return report.sealed()
 
 
+def result_pa_streaming_mock() -> EvaluationResult:
+    """The PA mock re-scored under streaming semantics (gru_stream): a separate result with execution evidence."""
+    base = result_pa_modeling_mock()
+    execution = ExecutionEvidence(
+        semantics="streaming_stateful", state="recurrent", chunk_samples=1024, lookahead_samples=0, lookahead_s=0.0,
+        history_samples=None, warmup_samples=612, tail_policy="zero_pad",
+        consistency=StreamConsistency(chunk_samples=1024, max_abs_error=2.4e-6, tolerance=1e-4, within_tolerance=True),
+        note=("algorithmic look-ahead: the future samples an output needs (an information bound); not the measured "
+              "latency of an implementation"))
+    models = [m.model_copy(update={"model": ModelSpec(key="gru_stream", parameters=m.model.parameters),
+                                   "execution_semantics": "streaming_stateful"}) for m in base.models]
+    return base.model_copy(update={
+        "result_id": "res-pa-0001-stream", "run_id": "run-pa-0001-stream", "models": models, "execution": execution,
+        "metrics": [m.model_copy(update={"value": None if m.value is None else round(m.value - 0.4, 4)}) for m in base.metrics],
+        "limitations": base.limitations + ["streaming variant gru_stream: recurrent state carried across chunks of 1024 samples; "
+                                           "scored under streaming semantics, not comparable with offline_segmented results of gru "
+                                           "and not inherited from them"]})
+
+
 def all_examples() -> Dict[str, object]:
     """Name -> model instance; names double as mock fixture file names."""
     return {
@@ -603,6 +624,7 @@ def all_examples() -> Dict[str, object]:
         "run_failed": run_failed(),
         "events_running": events_running(),
         "result_pa_modeling_mock": result_pa_modeling_mock(),
+        "result_pa_streaming_mock": result_pa_streaming_mock(),
         "result_metric_not_applicable_mock": result_metric_not_applicable_mock(),
         "result_dpd_surrogate_mock": result_dpd_surrogate_mock(),
         "result_dpd_measured_mock": result_dpd_measured_mock(),

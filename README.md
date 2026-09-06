@@ -33,7 +33,9 @@ measured DPD evidence from captures of a physical PA (and the mock instrument
 adapter to rehearse it) in [docs/tutorials/measured-dpd.md](docs/tutorials/measured-dpd.md);
 adaptation across conditions (zero update, few-shot, full retrain, with
 failures and costs kept) in
-[docs/tutorials/adaptation-benchmark.md](docs/tutorials/adaptation-benchmark.md).
+[docs/tutorials/adaptation-benchmark.md](docs/tutorials/adaptation-benchmark.md);
+streaming semantics (state carried across chunks, look-ahead as samples and
+time, chunk consistency) in [docs/tutorials/streaming.md](docs/tutorials/streaming.md).
 What is verified where: [support matrix](docs/releases/support-matrix.md),
 [performance report](docs/releases/performance-report.md),
 [hardening report](docs/releases/hardening-report.md); status per plan stage:

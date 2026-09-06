@@ -1727,6 +1727,18 @@
             ],
             "title": "Checkpoint Selection Metric"
           },
+          "chunk_samples": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chunk Samples"
+          },
           "evidence_type": {
             "anyOf": [
               {
@@ -1767,6 +1779,16 @@
           },
           "evidence_type": {
             "$ref": "#/components/schemas/EvidenceType"
+          },
+          "execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "extra": {
             "additionalProperties": {
@@ -2112,6 +2134,96 @@
           }
         },
         "title": "ExecutionConfig",
+        "type": "object"
+      },
+      "ExecutionEvidence": {
+        "additionalProperties": false,
+        "description": "How the evaluated model consumed the signal (plan S18). Present for streaming variants only; offline\nresults are segment-wise from a zero state and say so through ``ModelEvidence.execution_semantics``.",
+        "properties": {
+          "chunk_samples": {
+            "minimum": 1.0,
+            "title": "Chunk Samples",
+            "type": "integer"
+          },
+          "consistency": {
+            "$ref": "#/components/schemas/StreamConsistency"
+          },
+          "history_samples": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History Samples"
+          },
+          "lookahead_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookahead S"
+          },
+          "lookahead_samples": {
+            "minimum": 0.0,
+            "title": "Lookahead Samples",
+            "type": "integer"
+          },
+          "note": {
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "semantics": {
+            "minLength": 1,
+            "title": "Semantics",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "recurrent",
+              "window",
+              "none"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "tail_policy": {
+            "minLength": 1,
+            "title": "Tail Policy",
+            "type": "string"
+          },
+          "warmup_samples": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warmup Samples"
+          }
+        },
+        "required": [
+          "semantics",
+          "state",
+          "chunk_samples",
+          "lookahead_samples",
+          "tail_policy",
+          "consistency",
+          "note"
+        ],
+        "title": "ExecutionEvidence",
         "type": "object"
       },
       "ExperimentConfig": {
@@ -3424,6 +3536,17 @@
           "training_method": {
             "title": "Training Method",
             "type": "string"
+          },
+          "weights_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weights From"
           }
         },
         "required": [
@@ -5182,6 +5305,44 @@
           "ratios"
         ],
         "title": "SplitSpec",
+        "type": "object"
+      },
+      "StreamConsistency": {
+        "additionalProperties": false,
+        "description": "Max |streamed - full-sequence| of the same variant from the same reset, over the valid range.",
+        "properties": {
+          "chunk_samples": {
+            "minimum": 1.0,
+            "title": "Chunk Samples",
+            "type": "integer"
+          },
+          "max_abs_error": {
+            "minimum": 0.0,
+            "title": "Max Abs Error",
+            "type": "number"
+          },
+          "reference": {
+            "default": "full_sequence_same_reset",
+            "title": "Reference",
+            "type": "string"
+          },
+          "tolerance": {
+            "exclusiveMinimum": 0.0,
+            "title": "Tolerance",
+            "type": "number"
+          },
+          "within_tolerance": {
+            "title": "Within Tolerance",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "chunk_samples",
+          "max_abs_error",
+          "tolerance",
+          "within_tolerance"
+        ],
+        "title": "StreamConsistency",
         "type": "object"
       },
       "SubmitRunRequest": {

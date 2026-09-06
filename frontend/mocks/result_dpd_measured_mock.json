@@ -61,6 +61,7 @@
     },
     "device": "cpu",
     "evidence_type": "dpd_measured",
+    "execution": null,
     "extra": {},
     "generated_at": "2026-09-06T08:00:00Z",
     "history": null,

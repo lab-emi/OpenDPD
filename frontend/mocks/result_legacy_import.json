@@ -14,6 +14,7 @@
     },
     "device": "unknown",
     "evidence_type": "pa_modeling",
+    "execution": null,
     "extra": {},
     "generated_at": "2026-09-06T08:00:00Z",
     "history": null,

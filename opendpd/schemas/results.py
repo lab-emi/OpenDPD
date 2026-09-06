@@ -79,6 +79,32 @@ class ScalingInfo(StrictModel):
     physical_calibration: bool = False
 
 
+class StreamConsistency(StrictModel):
+    """Max |streamed - full-sequence| of the same variant from the same reset, over the valid range."""
+
+    reference: str = "full_sequence_same_reset"
+    chunk_samples: int = Field(ge=1)
+    max_abs_error: float = Field(ge=0)
+    tolerance: float = Field(gt=0)
+    within_tolerance: bool
+
+
+class ExecutionEvidence(StrictModel):
+    """How the evaluated model consumed the signal (plan S18). Present for streaming variants only; offline
+    results are segment-wise from a zero state and say so through ``ModelEvidence.execution_semantics``."""
+
+    semantics: str = Field(min_length=1)
+    state: Literal["recurrent", "window", "none"]
+    chunk_samples: int = Field(ge=1)
+    lookahead_samples: int = Field(ge=0)
+    lookahead_s: Optional[float] = Field(default=None, ge=0)   # lookahead_samples / sample rate: a bound, not a latency
+    history_samples: Optional[int] = Field(default=None, ge=0)
+    warmup_samples: Optional[int] = Field(default=None, ge=0)  # measured on this signal (None = not measured)
+    tail_policy: str = Field(min_length=1)
+    consistency: StreamConsistency
+    note: str = Field(min_length=1)
+
+
 class DatasetEvidence(StrictModel):
     dataset_id: Slug
     split: Literal["train", "val", "test"]
@@ -130,7 +156,8 @@ class EvaluationResult(StrictModel):
     baselines: List[BaselineScore] = Field(default_factory=list)
     surrogate_coverage: Optional[SurrogateCoverage] = None
     scaling: Optional[ScalingInfo] = None
-    measurement: Optional[MeasurementEvidence] = None       # dpd_measured only: conditions, captures, alignment
+    measurement: Optional[MeasurementEvidence] = None   # dpd_measured only: conditions, captures, alignment
+    execution: Optional[ExecutionEvidence] = None       # streaming variants only (S18)
     extra: Dict[str, ParamValue] = Field(default_factory=dict)
 
     def metric(self, name: str) -> MetricValue:

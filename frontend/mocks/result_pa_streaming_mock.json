@@ -14,7 +14,24 @@
     },
     "device": "cpu",
     "evidence_type": "pa_modeling",
-    "execution": null,
+    "execution": {
+      "chunk_samples": 1024,
+      "consistency": {
+        "chunk_samples": 1024,
+        "max_abs_error": 2.4e-06,
+        "reference": "full_sequence_same_reset",
+        "tolerance": 0.0001,
+        "within_tolerance": true
+      },
+      "history_samples": null,
+      "lookahead_s": 0.0,
+      "lookahead_samples": 0,
+      "note": "algorithmic look-ahead: the future samples an output needs (an information bound); not the measured latency of an implementation",
+      "semantics": "streaming_stateful",
+      "state": "recurrent",
+      "tail_policy": "zero_pad",
+      "warmup_samples": 612
+    },
     "extra": {},
     "generated_at": "2026-09-06T08:01:00Z",
     "history": {
@@ -25,7 +42,8 @@
     "is_mock": true,
     "limitations": [
       "MOCK DATA for UI development; not a computed result",
-      "3-epoch smoke recipe"
+      "3-epoch smoke recipe",
+      "streaming variant gru_stream: recurrent state carried across chunks of 1024 samples; scored under streaming semantics, not comparable with offline_segmented results of gru and not inherited from them"
     ],
     "measurement": null,
     "metric_profile_id": "legacy-opendpd-v1",
@@ -37,7 +55,7 @@
         "reason": null,
         "status": "ok",
         "unit": "dB",
-        "value": -16.092247
+        "value": -16.4922
       },
       {
         "better": "lower",
@@ -45,7 +63,7 @@
         "reason": null,
         "status": "ok",
         "unit": "dB",
-        "value": -16.731844
+        "value": -17.1318
       },
       {
         "better": "lower",
@@ -53,7 +71,7 @@
         "reason": null,
         "status": "ok",
         "unit": "dBc",
-        "value": -29.788186
+        "value": -30.1882
       },
       {
         "better": "lower",
@@ -61,7 +79,7 @@
         "reason": null,
         "status": "ok",
         "unit": "dBc",
-        "value": -26.347937
+        "value": -26.7479
       },
       {
         "better": "lower",
@@ -69,15 +87,15 @@
         "reason": null,
         "status": "ok",
         "unit": "dBc",
-        "value": -28.068062
+        "value": -28.4681
       }
     ],
     "models": [
       {
-        "execution_semantics": "offline_segmented",
+        "execution_semantics": "streaming_stateful",
         "lookahead_samples": null,
         "model": {
-          "key": "gru",
+          "key": "gru_stream",
           "parameters": {
             "hidden_size": 23,
             "num_layers": 1
@@ -99,8 +117,8 @@
       "gain_value": null,
       "kind": "measured_pa_output"
     },
-    "result_id": "res-pa-0001",
-    "run_id": "run-pa-0001",
+    "result_id": "res-pa-0001-stream",
+    "run_id": "run-pa-0001-stream",
     "scaling": null,
     "schema_version": 1,
     "seed": 0,

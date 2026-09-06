@@ -65,3 +65,11 @@ browser launch on macOS/Windows is a human checklist item (plan S06).
 | synthetic three-condition cards (`drive`) | verified (automated, rehearsal only) | `tests/integration/test_adaptation.py` (18 cells, refusals kept, hash binding, warm start, budget, transfer), `test_docs_commands.py` (tutorial) |
 | `apa-200mhz-batches-v1` (built in, two capture batches) | audited, below the bar | `opendpd adaptation card apa-200mhz-batches-v1`; two conditions |
 | a measured card that meets the bar (≥ 3 conditions, independent batches) | **pending human** | no such data in this repository (`docs/protocols/conditions-v1.md` §7) |
+
+## Streaming variants (S18)
+
+| Variant | Executes | Status | Evidence |
+|---|---|---|---|
+| `gru_stream` | `gru` weights, hidden state carried across chunks | verified (automated, CPU), **experimental** | `tests/unit/test_streaming.py`, `tests/integration/test_streaming_eval.py`, `docs/releases/streaming-semantics-report.md` |
+| `gmp_stream` | `gmp` weights, 20-sample history carried across chunks | verified (automated, CPU), **experimental** | same |
+| look-ahead models (`tres_gru`, `tres_deltagru`, `tcn`) | — | no streaming variant | look-ahead stated in the registry and in every result; buffering cost in the semantics report |

@@ -160,3 +160,34 @@ test('a succeeded run_dpd run offers the measured-capture import: files are uplo
   expect(measurement.conditions).toMatchObject({ pa: 'GaN Doherty unit 2', capture_chain: 'SMW200A -> PA -> 30 dB pad -> FSW', drive: 'generator -12 dBm', sample_rate_hz: datasetMock.data.signal.sample_rate_hz, calibration: 'none' })
   expect(typeof measurement.conditions.measured_at).toBe('string')
 })
+
+test('a succeeded PA run whose model has a streaming variant can be scored under streaming semantics', async () => {
+  installFakeEventSource()
+  const pa: RunView = { ...running, run_id: 'run-pa-0009', task: 'train_pa', model_key: 'gru', status: 'succeeded', result_id: 'res-pa-0009', finished_at: '2026-09-06T08:10:00Z' }
+  const streamed: RunView = { ...running, run_id: 'run-stream-0001', task: 'evaluate_pa', model_key: 'gru_stream', status: 'queued', started_at: null, worker: null, result_id: null }
+  const variant = { key: 'gru_stream', display_name: 'GRU (streaming, stateful)', family: 'recurrent', legacy_backbone: 'gru', training_method: 'gradient', roles: ['pa', 'dpd'], params: [], status: 'experimental', devices_tested: ['cpu'], lookahead_samples: 0, lookahead_note: 'causal', execution_semantics: 'streaming_stateful', weights_from: 'gru', export_formats: [], constraints: null, reference: null, evidence: null }
+  const { calls } = mockApi(
+    routes(pa, {
+      'GET /api/v1/models': () => [{ ...variant, key: 'gru', display_name: 'GRU', execution_semantics: 'offline_segmented', weights_from: null }, variant],
+      'GET /api/v1/runs': () => [pa],
+      'POST /api/v1/runs': () => ({ status: 201, body: streamed }),
+      [`GET /api/v1/runs/${streamed.run_id}`]: () => streamed,
+      [`GET /api/v1/runs/${streamed.run_id}/lineage`]: () => ({ run_id: streamed.run_id, parents: [], children: [] }),
+    }),
+  )
+  renderWithProviders(<RunDetailPage />, { route: `/runs/${pa.run_id}`, path: '/runs/:runId' })
+  await userEvent.click(await screen.findByRole('button', { name: 'Score under streaming semantics' }))
+  await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true))
+  const body = calls.find((c) => c.method === 'POST')!.body as { config: Record<string, unknown> }
+  expect(body.config).toMatchObject({ task: 'evaluate_pa', model: { key: 'gru_stream' }, pa_reference: { run_id: 'run-pa-0009' }, dataset: { id: pa.dataset_id } })
+  await screen.findByText('run-stream-0001')
+})
+
+test('a run whose model has no streaming variant offers no streaming action', async () => {
+  installFakeEventSource()
+  const lstm: RunView = { ...running, run_id: 'run-pa-0010', task: 'train_pa', model_key: 'lstm', status: 'succeeded', result_id: 'res-pa-0010', finished_at: '2026-09-06T08:10:00Z' }
+  mockApi(routes(lstm, { 'GET /api/v1/models': () => [], 'GET /api/v1/runs': () => [lstm] }))
+  renderWithProviders(<RunDetailPage />, { route: `/runs/${lstm.run_id}`, path: '/runs/:runId' })
+  await screen.findByRole('link', { name: 'Open result' })
+  expect(screen.queryByRole('button', { name: 'Score under streaming semantics' })).not.toBeInTheDocument()
+})

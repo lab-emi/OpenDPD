@@ -22,7 +22,7 @@ import { Link as RouterLink, useParams } from 'react-router'
 import { API, artifactUrl } from '@/api/client'
 import { useExportRun, useMetricProfiles, useResult, useResultProfiles } from '@/api/hooks'
 import { offeredProfiles } from '@/api/profiles'
-import type { BaselineScore, EvaluationResult, MetricProfile, MetricValue } from '@/api/types'
+import type { BaselineScore, EvaluationResult, ExecutionEvidence, MetricProfile, MetricValue } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
@@ -155,6 +155,43 @@ function SignalChain({ result }: { result: EvaluationResult }) {
 }
 
 /** dpd_measured: what the operator declared, how each capture was aligned, and the level difference (S16). */
+/** How a streaming variant consumed the signal (S18): chunking, look-ahead as samples and time, warm-up, consistency. */
+function ExecutionPanel({ result }: { result: EvaluationResult }) {
+  const e: ExecutionEvidence | null | undefined = result.execution
+  if (!e) return null
+  const micro = typeof e.lookahead_s === 'number' ? `${(e.lookahead_s * 1e6).toLocaleString(undefined, { maximumFractionDigits: 4 })} µs` : t('common.na')
+  const facts: Array<[string, string]> = [
+    [t('results.detail.execution.semantics'), `${e.semantics} · ${t(`results.detail.execution.state.${e.state}` as MessageKey)}`],
+    [t('results.detail.execution.chunk'), t('results.detail.execution.samples', { n: e.chunk_samples })],
+    [t('results.detail.execution.lookahead'), `${t('results.detail.execution.samples', { n: e.lookahead_samples })} · ${micro}`],
+    [t('results.detail.execution.history'), typeof e.history_samples === 'number' ? t('results.detail.execution.samples', { n: e.history_samples }) : t('common.na')],
+    [t('results.detail.execution.warmup'), typeof e.warmup_samples === 'number' ? t('results.detail.execution.samples', { n: e.warmup_samples }) : t('results.detail.execution.notMeasured')],
+    [t('results.detail.execution.tail'), e.tail_policy],
+  ]
+  const c = e.consistency
+  return (
+    <Paper sx={{ p: 2 }} component="section" aria-label={t('results.detail.execution')} data-testid="execution">
+      <Typography variant="h3" component="h2" gutterBottom>
+        {t('results.detail.execution')}
+      </Typography>
+      <Alert severity={c.within_tolerance ? 'success' : 'error'} sx={{ mb: 2 }} data-testid="chunk-consistency">
+        {t(c.within_tolerance ? 'results.detail.execution.consistent' : 'results.detail.execution.inconsistent', { chunk: c.chunk_samples, error: c.max_abs_error.toExponential(2), tolerance: c.tolerance.toExponential(0) })}
+      </Alert>
+      <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }}>
+        {facts.map(([k, v]) => (
+          <div key={k} style={{ display: 'contents' }}>
+            <dt style={{ color: '#4B5563' }}>{k}</dt>
+            <dd style={{ margin: 0 }}>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+        {e.note}
+      </Typography>
+    </Paper>
+  )
+}
+
 function MeasurementPanel({ result }: { result: EvaluationResult }) {
   const m = result.measurement
   if (!m) return null
@@ -338,6 +375,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
         ))}
       </Grid>
       <SignalChain result={result} />
+      <ExecutionPanel result={result} />
       <MeasurementPanel result={result} />
       <Baselines result={result} />
       {result.surrogate_coverage && (

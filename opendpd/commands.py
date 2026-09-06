@@ -473,6 +473,42 @@ def cmd_apply(args) -> int:
     return {RunStatus.succeeded: 0, RunStatus.cancelled: 130}.get(record.status, 1)
 
 
+def cmd_stream(args) -> int:
+    """Score a finished PA or DPD run's weights under streaming semantics (its registered streaming variant)."""
+    import contextlib
+
+    from opendpd.services.config import ConfigError
+    from opendpd.services.experiments import create_run, execute_run, load_result
+    from opendpd.services.streaming import describe, stream_config
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        config = stream_config(ws, args.run_id, chunk_samples=args.chunk, device=args.device, profile_id=args.profile)
+        record = create_run(ws, config)
+    except ConfigError as err:
+        for issue in err.issues:
+            print(f"error: {issue.field}: {issue.message}" + (f" ({issue.hint})" if issue.hint else ""), file=sys.stderr)
+        return 2
+    except (WorkspaceError, ValueError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    with contextlib.redirect_stdout(sys.stderr):
+        record = execute_run(ws, record.run_id)
+    result = load_result(ws, record.run_id)
+    if args.json:
+        _print_json({"run": record.model_dump(mode="json"), "result": result.model_dump(mode="json") if result else None})
+    else:
+        print(f"run {record.run_id} {record.status.value}" + (f": {record.error.message}" if record.error else ""))
+        if result is not None:
+            print(f"  {config.model.key}: " + describe(result.execution.model_dump(mode="json")))
+            for m in result.metrics:
+                print(f"  {m.name:<10} {m.value if m.value is None else f'{m.value:.4f}'} {m.unit}")
+            for lim in result.limitations:
+                print(f"  - {lim}")
+    return 0 if record.status.value == "succeeded" else 1
+
+
 def cmd_export(args) -> int:
     from opendpd.services.packages import PackageError, export_run
     from opendpd.services.workspace import Workspace, WorkspaceError
@@ -755,6 +791,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", default="cpu")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_apply)
+
+    p = sub.add_parser("stream", help="score a finished PA or DPD run under streaming semantics (its registered streaming variant)")
+    p.add_argument("run_id", help="a succeeded train_pa or train_dpd run whose model has a streaming variant (gru, gmp)")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--chunk", type=int, default=None, help="samples per chunk (default: the contract's 1024)")
+    p.add_argument("--profile", default=None, help="metric profile for the primary result (default: the run's)")
+    p.add_argument("--device", default="cpu")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_stream)
 
     p = sub.add_parser("export", help="write a reproducible experiment package (full: private and complete; share: redacted)")
     p.add_argument("run_id")
