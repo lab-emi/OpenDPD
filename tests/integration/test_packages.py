@@ -2,6 +2,7 @@
 refusal of damaged packages, reports."""
 
 import json
+import shlex
 import socket
 import zipfile
 from pathlib import Path
@@ -94,9 +95,11 @@ def test_full_package_round_trips_into_a_new_workspace_and_re_evaluates(ws, pa_r
     assert "reproducibility mode" in manifest.retraining_note
     assert inspect_package(out).run_id == dpd_run.run_id
 
-    ws2 = Workspace.create(tmp_path / "ws2")
+    ws2 = Workspace.create(tmp_path / "imported 工作区 with spaces")
     report = import_package(ws2, out)
     assert report.dataset_status == "imported" and set(report.imported_runs) == {dpd_run.run_id, pa_run.run_id}
+    assert shlex.split(report.evaluate_command) == ["opendpd", "evaluate", dpd_run.run_id, "--workspace", str(ws2.root),
+                                                    "--profile", manifest.metric_profile_id]
     assert ws2.get_dataset("capture").raw_sha256 == ws.get_dataset("capture").raw_sha256
     assert load_run(ws2, dpd_run.run_id).status == RunStatus.succeeded
     assert _assert_artifacts_present(ws2, dpd_run.run_id).complete

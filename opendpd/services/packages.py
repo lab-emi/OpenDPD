@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import shlex
 import shutil
 import stat
 import socket
@@ -427,7 +428,8 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
                 imported.append(ref.run_id)
         _extract(zf, f"run/{run_id}/", ws.run_dir(run_id), sizes)
     RunRecord.model_validate(read_json(ws.run_dir(run_id) / "run.json"))    # what was imported is a valid record
-    evaluate = f"opendpd evaluate {run_id} --workspace {ws.root} --profile {manifest.metric_profile_id or 'legacy-opendpd-v1'}"
+    evaluate = shlex.join(["opendpd", "evaluate", run_id, "--workspace", str(ws.root),
+                           "--profile", manifest.metric_profile_id or "legacy-opendpd-v1"])
     if dataset_status == "missing":
         note = ("imported without the data: results and configuration are readable, re-evaluation needs the dataset "
                 "listed under missing")
@@ -457,4 +459,3 @@ def receive_package(ws: Workspace, filename: str, chunks: Iterable[bytes], max_b
                 raise PackageError("too_large", f"package exceeds {max_bytes} bytes")
             f.write(chunk)
     return target
-
