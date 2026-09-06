@@ -234,7 +234,8 @@ Quantization-Aware is a technique for training fixed-point quantized DPD models 
 
 ```bash
 # 16-bit Quantization example
-# Replace ${pretrained_model_from_previous_step} with the path to your pretrained model
+# The quantized model is fine-tuned from a float DPD of the same backbone: train it first with
+# `--step train_dpd --DPD_backbone qgru` and pass its checkpoint (save/.../DPD_*_M_QGRU_*.pt) as ${pretrained_model_from_previous_step}
 # Replace ${label_for_quantized_model} with your desired label for the quantized model
 python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --pretrained_model ${pretrained_model_from_previous_step} --quant_dir_label ${label_for_quantized_model}
 ```
