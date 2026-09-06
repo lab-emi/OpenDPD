@@ -174,6 +174,10 @@ class Supervisor:
         config = ExperimentConfig.model_validate(json.loads((run_dir / experiments.USER_CONFIG_FILE).read_text()))
         return self.submit(config, name=name, parent_run_id=run_id)
 
+    @property
+    def alive(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
     def active_run_ids(self) -> List[str]:
         with self._lock:
             return list(self._active)

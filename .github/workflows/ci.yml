@@ -73,6 +73,9 @@ jobs:
       - name: Run unit and smoke tests
         run: pytest tests/ -v -m "not extended" --durations=10
 
+      - name: API contract is committed (docs/contracts/openapi.json)
+        run: python scripts/export_openapi.py --check
+
   build:
     name: Build & check distribution
     runs-on: ubuntu-latest

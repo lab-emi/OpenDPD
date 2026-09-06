@@ -1,0 +1,3252 @@
+{
+  "components": {
+    "schemas": {
+      "Artifact": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "file": {
+            "$ref": "#/components/schemas/FileRef"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ArtifactKind"
+          },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "kind",
+          "file"
+        ],
+        "title": "Artifact",
+        "type": "object"
+      },
+      "ArtifactKind": {
+        "enum": [
+          "checkpoint",
+          "log_history",
+          "log_best",
+          "worker_log",
+          "dpd_output",
+          "plot",
+          "config",
+          "provenance",
+          "events",
+          "result",
+          "export",
+          "other"
+        ],
+        "title": "ArtifactKind",
+        "type": "string"
+      },
+      "ArtifactManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/Artifact"
+            },
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "complete": {
+            "default": false,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "ArtifactManifest",
+        "type": "object"
+      },
+      "BetterDirection": {
+        "enum": [
+          "lower",
+          "higher"
+        ],
+        "title": "BetterDirection",
+        "type": "string"
+      },
+      "BootstrapRequest": {
+        "properties": {
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "BootstrapRequest",
+        "type": "object"
+      },
+      "Capabilities": {
+        "properties": {
+          "devices": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceInfo"
+            },
+            "title": "Devices",
+            "type": "array"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workspace": {
+            "title": "Workspace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "devices",
+          "workspace",
+          "note"
+        ],
+        "title": "Capabilities",
+        "type": "object"
+      },
+      "DPDReference": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint_artifact_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Artifact Id"
+          },
+          "checkpoint_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Sha256"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "DPDReference",
+        "type": "object"
+      },
+      "DatasetEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "n_samples": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Samples"
+          },
+          "preprocessing_version": {
+            "title": "Preprocessing Version",
+            "type": "string"
+          },
+          "processed_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed Sha256"
+          },
+          "raw_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Sha256"
+          },
+          "split": {
+            "enum": [
+              "train",
+              "val",
+              "test"
+            ],
+            "title": "Split",
+            "type": "string"
+          },
+          "split_version": {
+            "title": "Split Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "split",
+          "preprocessing_version",
+          "split_version"
+        ],
+        "title": "DatasetEvidence",
+        "type": "object"
+      },
+      "DatasetManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Columns"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "display_name": {
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/FileRef"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "n_samples": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Samples"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/DatasetOrigin"
+          },
+          "preprocessing_version": {
+            "default": "raw-v1",
+            "title": "Preprocessing Version",
+            "type": "string"
+          },
+          "raw_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Sha256"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/SignalSpec",
+            "default": {
+              "amplitude_units": "unknown"
+            }
+          },
+          "source": {
+            "$ref": "#/components/schemas/DatasetSource"
+          },
+          "split": {
+            "$ref": "#/components/schemas/SplitSpec"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "display_name",
+          "origin",
+          "source",
+          "split"
+        ],
+        "title": "DatasetManifest",
+        "type": "object"
+      },
+      "DatasetOrigin": {
+        "enum": [
+          "measured",
+          "synthetic",
+          "unknown"
+        ],
+        "title": "DatasetOrigin",
+        "type": "string"
+      },
+      "DatasetRef": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "preprocessing_version": {
+            "default": "raw-v1",
+            "title": "Preprocessing Version",
+            "type": "string"
+          },
+          "split_version": {
+            "default": "contiguous-v1",
+            "title": "Split Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "DatasetRef",
+        "type": "object"
+      },
+      "DatasetSource": {
+        "additionalProperties": false,
+        "properties": {
+          "imported_at": {
+            "format": "date-time",
+            "title": "Imported At",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DatasetSourceKind"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "original_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Path"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "DatasetSource",
+        "type": "object"
+      },
+      "DatasetSourceKind": {
+        "enum": [
+          "builtin",
+          "csv_import",
+          "numpy_import",
+          "legacy_dir_import"
+        ],
+        "title": "DatasetSourceKind",
+        "type": "string"
+      },
+      "DeviceInfo": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "detected": {
+            "title": "Detected",
+            "type": "boolean"
+          },
+          "device": {
+            "title": "Device",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "tested_models": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tested Models",
+            "type": "array"
+          }
+        },
+        "required": [
+          "device",
+          "detected"
+        ],
+        "title": "DeviceInfo",
+        "type": "object"
+      },
+      "EvaluationConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint_selection_metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Selection Metric"
+          },
+          "evidence_type": {
+            "$ref": "#/components/schemas/EvidenceType"
+          },
+          "profile_id": {
+            "default": "legacy-opendpd-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_type"
+        ],
+        "title": "EvaluationConfig",
+        "type": "object"
+      },
+      "EvaluationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset": {
+            "$ref": "#/components/schemas/DatasetEvidence"
+          },
+          "device": {
+            "minLength": 1,
+            "title": "Device",
+            "type": "string"
+          },
+          "evidence_type": {
+            "$ref": "#/components/schemas/EvidenceType"
+          },
+          "extra": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Extra",
+            "type": "object"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_mock": {
+            "default": false,
+            "title": "Is Mock",
+            "type": "boolean"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "metric_profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Metric Profile Id",
+            "type": "string"
+          },
+          "metric_profile_version": {
+            "minimum": 1.0,
+            "title": "Metric Profile Version",
+            "type": "integer"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricValue"
+            },
+            "minItems": 1,
+            "title": "Metrics",
+            "type": "array"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelEvidence"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "n_segments": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Segments"
+          },
+          "nperseg": {
+            "anyOf": [
+              {
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nperseg"
+          },
+          "numeric_mode": {
+            "default": "float32",
+            "title": "Numeric Mode",
+            "type": "string"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/SignalReference"
+          },
+          "result_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Result Id",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "selected_epoch": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Epoch"
+          },
+          "software": {
+            "$ref": "#/components/schemas/SoftwareProvenance"
+          },
+          "source": {
+            "enum": [
+              "opendpd-studio",
+              "legacy-log-import",
+              "mock"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "valid_sample_range": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Sample Range"
+          }
+        },
+        "required": [
+          "result_id",
+          "source",
+          "evidence_type",
+          "metric_profile_id",
+          "metric_profile_version",
+          "dataset",
+          "reference",
+          "metrics",
+          "software",
+          "device"
+        ],
+        "title": "EvaluationResult",
+        "type": "object"
+      },
+      "EventPage": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/RunEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "last_seq": {
+            "title": "Last Seq",
+            "type": "integer"
+          },
+          "terminal": {
+            "title": "Terminal",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "events",
+          "last_seq",
+          "terminal"
+        ],
+        "title": "EventPage",
+        "type": "object"
+      },
+      "EvidenceType": {
+        "description": "What kind of evidence a result represents. Never inferred, always declared.",
+        "enum": [
+          "pa_modeling",
+          "dpd_surrogate",
+          "dpd_measured"
+        ],
+        "title": "EvidenceType",
+        "type": "string"
+      },
+      "ExecutionConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "cuda_graph_training": {
+            "default": false,
+            "title": "Cuda Graph Training",
+            "type": "boolean"
+          },
+          "device": {
+            "default": "cpu",
+            "enum": [
+              "cpu",
+              "cuda",
+              "mps"
+            ],
+            "title": "Device",
+            "type": "string"
+          },
+          "device_index": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Device Index",
+            "type": "integer"
+          },
+          "num_threads": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Threads"
+          }
+        },
+        "title": "ExecutionConfig",
+        "type": "object"
+      },
+      "ExperimentConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset": {
+            "$ref": "#/components/schemas/DatasetRef"
+          },
+          "dpd_reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DPDReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evaluation": {
+            "$ref": "#/components/schemas/EvaluationConfig"
+          },
+          "execution": {
+            "$ref": "#/components/schemas/ExecutionConfig"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelSpec"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "pa_reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PAReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantizationConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "training": {
+            "$ref": "#/components/schemas/TrainingConfig"
+          }
+        },
+        "required": [
+          "task",
+          "dataset",
+          "model",
+          "evaluation"
+        ],
+        "title": "ExperimentConfig",
+        "type": "object"
+      },
+      "FileRef": {
+        "additionalProperties": false,
+        "description": "A file inside a known container (workspace, run or dataset directory).\nPaths are relative POSIX paths; absolute paths and ``..`` are rejected so\na manifest can never point outside its container.",
+        "properties": {
+          "path": {
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "FileRef",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ImportBuiltinRequest": {
+        "properties": {
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ImportBuiltinRequest",
+        "type": "object"
+      },
+      "LogPage": {
+        "properties": {
+          "eof": {
+            "title": "Eof",
+            "type": "boolean"
+          },
+          "lines": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "next_offset": {
+            "title": "Next Offset",
+            "type": "integer"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "lines",
+          "next_offset",
+          "eof",
+          "size"
+        ],
+        "title": "LogPage",
+        "type": "object"
+      },
+      "MetricStatus": {
+        "enum": [
+          "ok",
+          "not_applicable",
+          "missing_reference",
+          "invalid",
+          "failed"
+        ],
+        "title": "MetricStatus",
+        "type": "string"
+      },
+      "MetricValue": {
+        "additionalProperties": false,
+        "description": "One formal metric. ``value`` is only present when ``status`` is ``ok``\nand is always finite; every other status carries a reason. This is how\n\"null / not applicable / failed / infinite\" get explicit meanings and how\nzero-filling of missing metrics is made impossible.",
+        "properties": {
+          "better": {
+            "$ref": "#/components/schemas/BetterDirection"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MetricStatus",
+            "default": "ok"
+          },
+          "unit": {
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "name",
+          "unit",
+          "better"
+        ],
+        "title": "MetricValue",
+        "type": "object"
+      },
+      "ModelEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_semantics": {
+            "default": "offline_segmented",
+            "title": "Execution Semantics",
+            "type": "string"
+          },
+          "lookahead_samples": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookahead Samples"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelSpec"
+          },
+          "n_parameters": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Parameters"
+          },
+          "role": {
+            "enum": [
+              "pa",
+              "dpd"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "weights_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weights Sha256"
+          }
+        },
+        "required": [
+          "role",
+          "model"
+        ],
+        "title": "ModelEvidence",
+        "type": "object"
+      },
+      "ModelSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Parameters",
+            "type": "object"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "ModelSpec",
+        "type": "object"
+      },
+      "PAReference": {
+        "additionalProperties": false,
+        "description": "The frozen PA surrogate a DPD task trains or evaluates through.",
+        "properties": {
+          "checkpoint_artifact_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Artifact Id"
+          },
+          "checkpoint_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Sha256"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "PAReference",
+        "type": "object"
+      },
+      "QuantizationConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "default": false,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "label": {
+            "default": "",
+            "title": "Label",
+            "type": "string"
+          },
+          "n_bits_a": {
+            "default": 8,
+            "maximum": 32.0,
+            "minimum": 2.0,
+            "title": "N Bits A",
+            "type": "integer"
+          },
+          "n_bits_w": {
+            "default": 8,
+            "maximum": 32.0,
+            "minimum": 2.0,
+            "title": "N Bits W",
+            "type": "integer"
+          },
+          "pretrained_run_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pretrained Run Id"
+          }
+        },
+        "title": "QuantizationConfig",
+        "type": "object"
+      },
+      "ResolutionInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "config_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Config Sha256",
+            "type": "string"
+          },
+          "defaults_source": {
+            "title": "Defaults Source",
+            "type": "string"
+          },
+          "resolved_at": {
+            "format": "date-time",
+            "title": "Resolved At",
+            "type": "string"
+          },
+          "resolver_version": {
+            "title": "Resolver Version",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "resolver_version",
+          "defaults_source",
+          "config_sha256"
+        ],
+        "title": "ResolutionInfo",
+        "type": "object"
+      },
+      "ResolvedExperimentConfig": {
+        "additionalProperties": false,
+        "description": "Same shape as ``ExperimentConfig`` but every result-affecting default is\nexplicit, model parameters are complete, and the checkpoint selection\nmetric is set. Produced only by ``opendpd.services.config.resolve``.",
+        "properties": {
+          "dataset": {
+            "$ref": "#/components/schemas/DatasetRef"
+          },
+          "dpd_reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DPDReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evaluation": {
+            "$ref": "#/components/schemas/EvaluationConfig"
+          },
+          "execution": {
+            "$ref": "#/components/schemas/ExecutionConfig"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelSpec"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "pa_reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PAReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quantization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuantizationConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
+          },
+          "resolution": {
+            "$ref": "#/components/schemas/ResolutionInfo"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "training": {
+            "$ref": "#/components/schemas/TrainingConfig"
+          }
+        },
+        "required": [
+          "task",
+          "dataset",
+          "model",
+          "evaluation",
+          "resolution"
+        ],
+        "title": "ResolvedExperimentConfig",
+        "type": "object"
+      },
+      "RunError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[a-z][a-z0-9_]{1,63}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          },
+          "message": {
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "traceback_tail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Traceback Tail"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "RunError",
+        "type": "object"
+      },
+      "RunEvent": {
+        "additionalProperties": false,
+        "description": "Append-only, strictly increasing ``seq`` per run. Clients resume from\nthe last ``seq`` they saw; when the server can no longer replay from that\npoint it answers with a snapshot requirement instead of guessing.",
+        "properties": {
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "minimum": 1.0,
+            "title": "Seq",
+            "type": "integer"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/RunEventType"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "ts",
+          "type"
+        ],
+        "title": "RunEvent",
+        "type": "object"
+      },
+      "RunEventType": {
+        "enum": [
+          "status",
+          "progress",
+          "metric",
+          "log",
+          "artifact",
+          "checkpoint",
+          "heartbeat",
+          "error"
+        ],
+        "title": "RunEventType",
+        "type": "string"
+      },
+      "RunStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed",
+          "cancel_requested",
+          "cancelled",
+          "interrupted"
+        ],
+        "title": "RunStatus",
+        "type": "string"
+      },
+      "RunView": {
+        "additionalProperties": false,
+        "properties": {
+          "config_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Sha256"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "exit_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Code"
+          },
+          "experiment_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Id"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "heartbeat_stale": {
+            "default": false,
+            "title": "Heartbeat Stale",
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "last_event_seq": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Last Event Seq",
+            "type": "integer"
+          },
+          "last_heartbeat_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Heartbeat At"
+          },
+          "model_key": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Key"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
+          "progress_epoch": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Epoch"
+          },
+          "progress_total_epochs": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress Total Epochs"
+          },
+          "result_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Id"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "status_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Reason"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "worker": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run_id",
+          "task",
+          "status",
+          "created_at"
+        ],
+        "title": "RunView",
+        "type": "object"
+      },
+      "SessionInfo": {
+        "properties": {
+          "authenticated": {
+            "title": "Authenticated",
+            "type": "boolean"
+          },
+          "csrf_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csrf Token"
+          },
+          "version": {
+            "default": "2.2.0.dev0",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authenticated"
+        ],
+        "title": "SessionInfo",
+        "type": "object"
+      },
+      "SignalReference": {
+        "additionalProperties": false,
+        "description": "What the evaluated signal was compared against.",
+        "properties": {
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "gain_rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain Rule"
+          },
+          "gain_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain Value"
+          },
+          "kind": {
+            "enum": [
+              "linear_gain_target",
+              "measured_pa_output",
+              "pa_surrogate_output"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "description"
+        ],
+        "title": "SignalReference",
+        "type": "object"
+      },
+      "SignalSpec": {
+        "additionalProperties": false,
+        "description": "Signal metadata needed by evaluation profiles. Unknown values stay\n``None``; they are never guessed. ``missing_for_legacy_evaluation`` names\nwhat the legacy profile still needs.",
+        "properties": {
+          "amplitude_units": {
+            "default": "unknown",
+            "enum": [
+              "normalized",
+              "volts",
+              "unknown"
+            ],
+            "title": "Amplitude Units",
+            "type": "string"
+          },
+          "bandwidth_hz": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bandwidth Hz"
+          },
+          "modulation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modulation"
+          },
+          "n_sub_ch": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Sub Ch"
+          },
+          "nperseg": {
+            "anyOf": [
+              {
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nperseg"
+          },
+          "sample_rate_hz": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate Hz"
+          },
+          "standard": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard"
+          },
+          "sub_channel_bandwidth_hz": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Channel Bandwidth Hz"
+          }
+        },
+        "title": "SignalSpec",
+        "type": "object"
+      },
+      "SoftwareProvenance": {
+        "additionalProperties": false,
+        "properties": {
+          "git_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Commit"
+          },
+          "git_dirty": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Dirty"
+          },
+          "opendpd_version": {
+            "title": "Opendpd Version",
+            "type": "string"
+          },
+          "platform": {
+            "title": "Platform",
+            "type": "string"
+          },
+          "python_version": {
+            "title": "Python Version",
+            "type": "string"
+          },
+          "torch_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Torch Version"
+          }
+        },
+        "required": [
+          "opendpd_version",
+          "python_version",
+          "platform"
+        ],
+        "title": "SoftwareProvenance",
+        "type": "object"
+      },
+      "SplitSpec": {
+        "additionalProperties": false,
+        "description": "Contiguous train/val/test split performed *before* framing, with an\noptional guard band so overlapping frames never straddle a boundary.",
+        "properties": {
+          "boundaries": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "propertyNames": {
+                  "enum": [
+                    "train",
+                    "val",
+                    "test"
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boundaries"
+          },
+          "guard_samples": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Guard Samples",
+            "type": "integer"
+          },
+          "method": {
+            "const": "contiguous",
+            "default": "contiguous",
+            "title": "Method",
+            "type": "string"
+          },
+          "ratios": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "propertyNames": {
+              "enum": [
+                "train",
+                "val",
+                "test"
+              ]
+            },
+            "title": "Ratios",
+            "type": "object"
+          },
+          "version": {
+            "default": "contiguous-v1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ratios"
+        ],
+        "title": "SplitSpec",
+        "type": "object"
+      },
+      "SubmitRunRequest": {
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/ExperimentConfig"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "title": "SubmitRunRequest",
+        "type": "object"
+      },
+      "TaskType": {
+        "enum": [
+          "train_pa",
+          "train_dpd",
+          "run_dpd"
+        ],
+        "title": "TaskType",
+        "type": "string"
+      },
+      "TrainingConfig": {
+        "additionalProperties": false,
+        "description": "Defaults mirror the OpenDPDv2 recipe (arguments.py); they are the\nsingle source of defaults for every entry point.",
+        "properties": {
+          "batch_size": {
+            "default": 64,
+            "minimum": 1.0,
+            "title": "Batch Size",
+            "type": "integer"
+          },
+          "batch_size_eval": {
+            "default": 64,
+            "minimum": 1.0,
+            "title": "Batch Size Eval",
+            "type": "integer"
+          },
+          "decay_factor": {
+            "default": 0.5,
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Decay Factor",
+            "type": "number"
+          },
+          "epochs": {
+            "default": 300,
+            "minimum": 1.0,
+            "title": "Epochs",
+            "type": "integer"
+          },
+          "eval_test": {
+            "default": true,
+            "title": "Eval Test",
+            "type": "boolean"
+          },
+          "eval_val": {
+            "default": true,
+            "title": "Eval Val",
+            "type": "boolean"
+          },
+          "frame_length": {
+            "default": 200,
+            "minimum": 1.0,
+            "title": "Frame Length",
+            "type": "integer"
+          },
+          "frame_stride": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Frame Stride",
+            "type": "integer"
+          },
+          "grad_clip": {
+            "default": 200.0,
+            "minimum": 0.0,
+            "title": "Grad Clip",
+            "type": "number"
+          },
+          "learning_rate": {
+            "default": 0.005,
+            "exclusiveMinimum": 0.0,
+            "title": "Learning Rate",
+            "type": "number"
+          },
+          "loss": {
+            "default": "l2",
+            "enum": [
+              "l2",
+              "l1"
+            ],
+            "title": "Loss",
+            "type": "string"
+          },
+          "lr_end": {
+            "default": 5e-05,
+            "exclusiveMinimum": 0.0,
+            "title": "Lr End",
+            "type": "number"
+          },
+          "lr_schedule": {
+            "default": true,
+            "title": "Lr Schedule",
+            "type": "boolean"
+          },
+          "optimizer": {
+            "default": "adamw",
+            "enum": [
+              "adamw",
+              "adam",
+              "sgd",
+              "rmsprop"
+            ],
+            "title": "Optimizer",
+            "type": "string"
+          },
+          "patience": {
+            "default": 5,
+            "minimum": 0.0,
+            "title": "Patience",
+            "type": "integer"
+          },
+          "reproducibility": {
+            "default": "soft",
+            "enum": [
+              "soft",
+              "hard"
+            ],
+            "title": "Reproducibility",
+            "type": "string"
+          },
+          "seed": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Seed",
+            "type": "integer"
+          }
+        },
+        "title": "TrainingConfig",
+        "type": "object"
+      },
+      "ValidateRequest": {
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "title": "ValidateRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkerInfo": {
+        "additionalProperties": false,
+        "description": "Identity of the worker process. PID alone is never trusted: the\nprocess creation time must match too (PIDs are recycled).",
+        "properties": {
+          "create_time": {
+            "title": "Create Time",
+            "type": "number"
+          },
+          "host": {
+            "minLength": 1,
+            "title": "Host",
+            "type": "string"
+          },
+          "pid": {
+            "minimum": 1.0,
+            "title": "Pid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pid",
+          "create_time",
+          "host"
+        ],
+        "title": "WorkerInfo",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "OpenDPD Studio API",
+    "version": "2.2.0.dev0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/artifacts/{run_id}/{artifact_id}": {
+      "get": {
+        "description": "Download by *registered id* only; paths are never accepted from clients.",
+        "operationId": "artifact_download_api_v1_artifacts__run_id___artifact_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "title": "Artifact Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Artifact Download",
+        "tags": [
+          "artifacts"
+        ]
+      }
+    },
+    "/api/v1/datasets": {
+      "get": {
+        "operationId": "datasets_list_api_v1_datasets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DatasetManifest"
+                  },
+                  "title": "Response Datasets List Api V1 Datasets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Datasets List",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/import-builtin": {
+      "post": {
+        "operationId": "dataset_import_builtin_api_v1_datasets_import_builtin_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportBuiltinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetManifest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Import Builtin",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_id}": {
+      "get": {
+        "operationId": "dataset_get_api_v1_datasets__dataset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetManifest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Get",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/experiments/validate": {
+      "post": {
+        "description": "Resolve and bind without starting anything; config problems are data, not 4xx.",
+        "operationId": "experiments_validate_api_v1_experiments_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Experiments Validate Api V1 Experiments Validate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Experiments Validate",
+        "tags": [
+          "experiments"
+        ]
+      }
+    },
+    "/api/v1/models": {
+      "get": {
+        "operationId": "models_api_v1_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Models Api V1 Models Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Models",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/recipes": {
+      "get": {
+        "operationId": "recipes_api_v1_recipes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Recipes Api V1 Recipes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Recipes",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/results/{run_id}": {
+      "get": {
+        "operationId": "results_get_api_v1_results__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Results Get",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/runs": {
+      "get": {
+        "operationId": "runs_list_api_v1_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RunStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunView"
+                  },
+                  "title": "Response Runs List Api V1 Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs List",
+        "tags": [
+          "runs"
+        ]
+      },
+      "post": {
+        "operationId": "runs_submit_api_v1_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Submit",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}": {
+      "get": {
+        "operationId": "runs_get_api_v1_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Get",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/artifacts": {
+      "get": {
+        "operationId": "runs_artifacts_api_v1_runs__run_id__artifacts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactManifest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Artifacts",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/cancel": {
+      "post": {
+        "operationId": "runs_cancel_api_v1_runs__run_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Cancel",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/config": {
+      "get": {
+        "operationId": "runs_config_api_v1_runs__run_id__config_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolvedExperimentConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Config",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/events": {
+      "get": {
+        "description": "Server-Sent Events: ``id`` is the event seq; ``event: end`` closes a finished run.",
+        "operationId": "events_stream_api_v1_runs__run_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Events Stream",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/events/list": {
+      "get": {
+        "operationId": "events_list_api_v1_runs__run_id__events_list_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 500,
+              "maximum": 5000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Events List",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/logs": {
+      "get": {
+        "description": "Page through logs/worker.log by byte offset (safe for very large logs).\n\nA trailing line without newline is returned only once the run has finished\n(while running it may still be written).",
+        "operationId": "runs_logs_api_v1_runs__run_id__logs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 2000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Logs",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/retry": {
+      "post": {
+        "operationId": "runs_retry_api_v1_runs__run_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Retry",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/session": {
+      "get": {
+        "operationId": "session_info_api_v1_session_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Session Info",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/v1/session/bootstrap": {
+      "post": {
+        "operationId": "session_bootstrap_api_v1_session_bootstrap_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BootstrapRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Session Bootstrap",
+        "tags": [
+          "session"
+        ]
+      }
+    },
+    "/api/v1/system/capabilities": {
+      "get": {
+        "operationId": "capabilities_api_v1_system_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities",
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  }
+}

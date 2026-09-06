@@ -10,7 +10,8 @@ repository; "pending human" means a maintainer decision is required;
 | S00 baseline & governance | done except maintainer approvals | `6f026b1` | `docs/baseline/baseline-report.md` |
 | S01 contracts & UX | done except prototype (delivered with S05) | `0f66ad0` | schemas, ADR-0001, UX spec, tokens, mock examples |
 | S02 explicit config, registry, workspace | done | `9ea598c` | `opendpd run/validate/models/recipes/datasets`, registry, resolver, adapter, workspace |
-| S03 task runtime | done (Windows/macOS cleanup not verified) | — | SQLite store, supervisor, worker subprocess, cancel, recovery |
+| S03 task runtime | done (Windows/macOS cleanup not verified) | `fd63107` | SQLite store, supervisor, worker subprocess, cancel, recovery |
+| S04 local service & API | done | — | FastAPI app, sessions/CSRF/Host checks, SSE replay, OpenAPI contract, threat model |
 
 ## S00 acceptance items
 
@@ -54,3 +55,14 @@ repository; "pending human" means a maintainer decision is required;
 | Service restart marks unfinished runs `interrupted`; no ghost running runs | done (`test_restart_recovery_marks_interrupted`, orphan terminated) |
 | Cancel/exit leave no child processes; identity is pid + creation time | done on Linux; **Windows/macOS not verified** |
 | No pause/resume button; checkpoint resume not offered | done (not implemented, not shown) |
+
+## S04 acceptance items
+
+| Item | Status |
+|---|---|
+| Browser refresh / reopen shows running run and continues logs & metrics without loss | API level done: snapshot + `events/list?after=` + SSE `Last-Event-ID` (`test_studio_api.py::test_run_lifecycle_events_logs_artifacts_result`); browser level in S05 |
+| Foreign web pages cannot call the local API; DNS rebinding refused | done (`test_cross_origin_and_csrf`, `test_host_header_enforced`; threat model) |
+| Paths from clients cannot escape the workspace | done (artifact download by registered id only; `test_artifact_download_by_id_only`) |
+| Error responses are structured, field-level, with hints | done (`error.code/message/details[]/hint`; `test_validate_reports_structured_errors_without_starting`) |
+| OpenAPI is the single contract; TypeScript types generated and checked in CI | contract committed and checked (`scripts/export_openapi.py --check` in CI); TypeScript generation lands with the frontend in S05 |
+| No request causes training inside the server process | done (all runs go through the S03 supervisor; `test_cancel_through_api` measures cancel latency < 1 s while a worker trains) |
