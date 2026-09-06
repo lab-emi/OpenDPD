@@ -113,8 +113,29 @@ class Supervisor:
                 self._finalize(a, shutdown=True)
             self._active.clear()
 
+    def index_workspace(self, run_id: Optional[str] = None) -> int:
+        """Register finished runs another entry point (CLI, Python API) wrote into this workspace.
+        One workspace, three entry points: a run made by ``opendpd run`` must be visible here.
+        Runs still active elsewhere are left to the process that owns them."""
+        known = set(self.store.run_ids())
+        candidates = [run_id] if run_id is not None else self.ws.list_run_ids()
+        added = 0
+        for rid in candidates:
+            if rid in known:
+                continue
+            try:
+                record = experiments.load_run(self.ws, rid)
+            except Exception:  # noqa: BLE001 - a foreign or half-written run.json is skipped, never guessed
+                continue
+            if record.status not in TERMINAL_STATUSES:
+                continue
+            self.store.upsert_run(record)
+            added += 1
+        return added
+
     def recover(self) -> None:
-        """Mark runs left active by a previous service instance."""
+        """Mark runs left active by a previous service instance and index runs made outside the service."""
+        self.index_workspace()
         for status in (RunStatus.running, RunStatus.cancel_requested, RunStatus.queued):
             for record in self.store.list_runs(status=status, limit=10 ** 6):
                 if status == RunStatus.queued:

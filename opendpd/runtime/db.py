@@ -77,6 +77,10 @@ class RunStore:
                 (record.run_id, record.status.value, record.task.value, record.dataset_id,
                  record.created_at.isoformat(), now, record.idempotency_key, record.model_dump_json()))
 
+    def run_ids(self) -> List[str]:
+        with self._lock:
+            return [r[0] for r in self._conn.execute("SELECT run_id FROM runs").fetchall()]
+
     def get_run(self, run_id: str) -> Optional[RunRecord]:
         with self._lock:
             row = self._conn.execute("SELECT record FROM runs WHERE run_id=?", (run_id,)).fetchone()

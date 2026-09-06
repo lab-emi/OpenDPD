@@ -68,7 +68,8 @@ export function RunDetailPage() {
   if (run.isPending) return <LoadingState />
   if (run.isError) return <ErrorState error={run.error} onRetry={() => void run.refetch()} />
   const r = run.data
-  const progress = stream.progress ?? (typeof r.progress_epoch === 'number' && typeof r.progress_total_epochs === 'number' ? { epoch: r.progress_epoch, total: r.progress_total_epochs } : null)
+  // the record stores completed epochs (1-based); stream progress events carry the 0-based epoch index
+  const progress = stream.progress ?? (typeof r.progress_epoch === 'number' && r.progress_epoch > 0 && typeof r.progress_total_epochs === 'number' ? { epoch: r.progress_epoch - 1, total: r.progress_total_epochs } : null)
   const disconnected = active && stream.connection === 'disconnected'
   const nextStep = NEXT_STEP[r.status]
 
@@ -191,7 +192,7 @@ function OverviewTab({ run, metrics, statusEvents, heartbeats }: { run: RunView;
           {t('run.metrics.title')}
         </Typography>
         {names.length === 0 ? (
-          <EmptyState body={t('run.metrics.empty')} />
+          <EmptyState body={t(run.task === 'run_dpd' ? 'run.metrics.apply' : 'run.metrics.empty')} />
         ) : (
           <Grid container spacing={2}>
             {names.map((name) => (
@@ -260,7 +261,8 @@ function ApplyDpdDialog({ run, onClose }: { run: RunView; onClose: () => void })
   const succeeded = useRuns('succeeded')
   const submit = useSubmitRun()
   const idempotencyKey = useRef(crypto.randomUUID())
-  const [paRunId, setPaRunId] = useState('')
+  const TRAINING = 'training-surrogate'
+  const [paRunId, setPaRunId] = useState(TRAINING)
   const training = (lineage.data?.parents ?? []).find((p) => p.relation === 'pa_surrogate')?.run_id
   const surrogates = (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === run.dataset_id)
   const config = {
@@ -269,7 +271,7 @@ function ApplyDpdDialog({ run, onClose }: { run: RunView; onClose: () => void })
     model: { key: run.model_key ?? 'gru' },
     evaluation: { evidence_type: 'dpd_surrogate' as const },
     dpd_reference: { run_id: run.run_id },
-    ...(paRunId ? { pa_reference: { run_id: paRunId } } : {}),
+    ...(paRunId !== TRAINING ? { pa_reference: { run_id: paRunId } } : {}),
   }
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm" aria-labelledby="apply-dpd-title">
@@ -278,7 +280,7 @@ function ApplyDpdDialog({ run, onClose }: { run: RunView; onClose: () => void })
         <Stack spacing={2} sx={{ mt: 1 }}>
           <Typography variant="body2">{t('run.apply.help')}</Typography>
           <TextField select fullWidth label={t('run.apply.surrogate')} value={paRunId} onChange={(e) => setPaRunId(e.target.value)} helperText={t('run.apply.surrogate.help')}>
-            <MenuItem value="">{t('run.apply.surrogate.training', { run: training ?? '…' })}</MenuItem>
+            <MenuItem value={TRAINING}>{t('run.apply.surrogate.training', { run: training ?? '…' })}</MenuItem>
             {surrogates
               .filter((r) => r.run_id !== training)
               .map((r) => (
@@ -292,7 +294,21 @@ function ApplyDpdDialog({ run, onClose }: { run: RunView; onClose: () => void })
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t('common.back')}</Button>
-        <Button variant="contained" disabled={submit.isPending} onClick={() => submit.mutate({ config, idempotency_key: idempotencyKey.current }, { onSuccess: (created) => navigate(`/runs/${encodeURIComponent(created.run_id)}`) })}>
+        <Button
+          variant="contained"
+          disabled={submit.isPending}
+          onClick={() =>
+            submit.mutate(
+              { config, idempotency_key: idempotencyKey.current },
+              {
+                onSuccess: (created) => {
+                  onClose()
+                  navigate(`/runs/${encodeURIComponent(created.run_id)}`)
+                },
+              },
+            )
+          }
+        >
           {t('run.apply.submit')}
         </Button>
       </DialogActions>

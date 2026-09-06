@@ -88,6 +88,7 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   )
   renderWithProviders(<RunDetailPage />, { route: `/runs/${dpd.run_id}`, path: '/runs/:runId' })
   const lineage = await screen.findByRole('region', { name: 'Lineage' })
+  if (typeof dpd.progress_epoch === 'number' && dpd.progress_epoch > 0) expect(screen.getByText(`Epoch ${dpd.progress_epoch} of ${dpd.progress_total_epochs}`)).toBeInTheDocument()
   expect(within(lineage).getByRole('link', { name: 'run-pa-0001' })).toBeInTheDocument()
   expect(within(lineage).getAllByText(/DPD model:/)).toHaveLength(2)
   expect(within(lineage).getByText(new RegExp(`weights ${lineageMock.data.parents[0]!.checkpoint_sha256!.slice(0, 12)}`))).toBeInTheDocument()
@@ -102,4 +103,6 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   const body = calls.find((c) => c.method === 'POST')!.body as { config: Record<string, unknown> }
   expect(body.config).toMatchObject({ task: 'run_dpd', dpd_reference: { run_id: 'run-dpd-0001' }, pa_reference: { run_id: 'run-pa-0002' }, dataset: { id: dpd.dataset_id } })
   await screen.findByText('run-apply-0003')
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(screen.getByText(/applied a trained DPD to the test split/)).toBeInTheDocument()
 })

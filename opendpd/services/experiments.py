@@ -559,7 +559,11 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         pa = resolved.pa_reference
         models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
                                     n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model.key)))
+        pa_manifest = load_artifacts(ws, pa.run_id)
+        pa_artifact = next((a for a in (pa_manifest.artifacts if pa_manifest else [])
+                            if a.artifact_id == pa.checkpoint_artifact_id), None)
         models.append(ModelEvidence(role="pa", model=pa.model, run_id=pa.run_id, weights_sha256=pa.checkpoint_sha256,
+                                    n_parameters=_n_params(pa_artifact.file.path) if pa_artifact else None,
                                     lookahead_samples=_lookahead(pa.model.key)))
         limitations.append(f"simulated through the learned PA surrogate {pa.run_id}; not a measured PA output")
         if surrogate_coverage is not None and surrogate_coverage.fraction_above_fitted_peak > 0:

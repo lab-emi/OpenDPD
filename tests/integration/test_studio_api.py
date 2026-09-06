@@ -271,6 +271,23 @@ def test_minimal_frontend_payload_validates_and_submits(client, session):
     assert final["status"] == "succeeded", final
 
 
+def test_runs_made_by_the_cli_are_visible_to_the_service(client, session):
+    """One workspace, three entry points: a run written by `opendpd run` shows up in the API and in lineage."""
+    from opendpd.services.experiments import create_run, execute_run
+    from opendpd.services.workspace import Workspace
+
+    ws = Workspace.open(client.app.state.ws.root)
+    record = execute_run(ws, create_run(ws, instantiate("pa-gru-smoke-v1", "dpa-200mhz", name="from the CLI")).run_id)
+    assert record.status.value == "succeeded"
+    r = client.get(f"/api/v1/runs/{record.run_id}")
+    assert r.status_code == 200 and r.json()["name"] == "from the CLI"
+    assert record.run_id in {x["run_id"] for x in client.get("/api/v1/runs").json()}
+    assert client.get(f"/api/v1/results/{record.run_id}").status_code == 200
+    # a run another process still owns is not adopted
+    queued = create_run(ws, instantiate("pa-gru-smoke-v1", "dpa-200mhz", name="cli queued"))
+    assert client.get(f"/api/v1/runs/{queued.run_id}").status_code == 404
+
+
 def test_lineage_route_reads_the_graph_from_resolved_configs(client, session):
     runs = client.get("/api/v1/runs", params={"status": "succeeded"}).json()
     pa = next(r for r in runs if r["task"] == "train_pa")

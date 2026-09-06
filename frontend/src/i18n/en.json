@@ -306,5 +306,6 @@
   "results.detail.coverage.body": "Largest fitted |x| {fitted} · peak |u| {peak} · {fraction} of the pre-distorted samples above the fitted peak.",
   "results.detail.scaling": "Scaling",
   "results.detail.scaling.body": "Amplitude units: {units} · input scaling: {scaling} · reference gain: {gain}.",
-  "results.detail.scaling.uncalibrated": "No physical calibration: absolute output power (dBm) and efficiency are not derived from these numbers."
+  "results.detail.scaling.uncalibrated": "No physical calibration: absolute output power (dBm) and efficiency are not derived from these numbers.",
+  "run.metrics.apply": "This run applied a trained DPD to the test split; there is no training history. Open the result for the signal chain and the scores."
 }

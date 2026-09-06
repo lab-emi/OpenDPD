@@ -31,7 +31,6 @@ export type MetricDefinition = Schemas['MetricDefinition']
 export type RunLineage = Schemas['RunLineage']
 export type LineageLink = Schemas['LineageLink']
 export type LineageRelation = Schemas['LineageRelation']
-export type SignalStage = Schemas['SignalStage']
 export type BaselineScore = Schemas['BaselineScore']
 
 /** Shape of POST /experiments/validate (a plain dict on the server side). */

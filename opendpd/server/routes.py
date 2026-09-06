@@ -417,6 +417,7 @@ def _view(record: RunRecord) -> RunView:
 @router.get("/runs", response_model=List[RunView], tags=["runs"], dependencies=[Depends(require_session)])
 def runs_list(request: Request, status: Optional[RunStatus] = None, limit: int = Query(50, ge=1, le=500),
               offset: int = Query(0, ge=0)):
+    request.app.state.supervisor.index_workspace()       # runs made by the CLI / Python API meanwhile
     return [_view(r) for r in request.app.state.store.list_runs(status=status, limit=limit, offset=offset)]
 
 
@@ -437,6 +438,8 @@ def runs_submit(body: SubmitRunRequest, request: Request, response: Response):
 
 def _get_run(request: Request, run_id: str) -> RunRecord:
     record = request.app.state.store.get_run(run_id)
+    if record is None and request.app.state.supervisor.index_workspace(run_id):
+        record = request.app.state.store.get_run(run_id)
     if record is None:
         raise _error(404, "run_not_found", f"run '{run_id}' does not exist")
     return record
