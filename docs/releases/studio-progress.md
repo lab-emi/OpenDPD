@@ -9,7 +9,8 @@ repository; "pending human" means a maintainer decision is required;
 |---|---|---|---|
 | S00 baseline & governance | done except maintainer approvals | `6f026b1` | `docs/baseline/baseline-report.md` |
 | S01 contracts & UX | done except prototype (delivered with S05) | `0f66ad0` | schemas, ADR-0001, UX spec, tokens, mock examples |
-| S02 explicit config, registry, workspace | done | — | `opendpd run/validate/models/recipes/datasets`, registry, resolver, adapter, workspace |
+| S02 explicit config, registry, workspace | done | `9ea598c` | `opendpd run/validate/models/recipes/datasets`, registry, resolver, adapter, workspace |
+| S03 task runtime | done (Windows/macOS cleanup not verified) | — | SQLite store, supervisor, worker subprocess, cancel, recovery |
 
 ## S00 acceptance items
 
@@ -41,3 +42,15 @@ repository; "pending human" means a maintainer decision is required;
 | MP/GMP-style non-neural methods can express their own fitting logic | registry has `training_method`; least-squares MP/GMP integration is S12 work — **open** |
 | Legacy commands and public API compatibility tests pass; deprecations announced | done (existing suite passes; nothing deprecated yet) |
 | Plain `pip install opendpd` needs no GUI dependency; runs work from a read-only install into an external workspace | done (`tests/packaging/test_wheel_install.py`, `tests/unit/test_lazy_imports.py`) |
+
+## S03 acceptance items
+
+| Item | Status |
+|---|---|
+| Same idempotency key never creates a duplicate; each run has its own directory | done (`test_run_completes_through_worker_with_events`, DB unique index) |
+| API stays responsive while a run trains; queued runs and cancel handled | done (`test_api_stays_responsive_and_queue_is_serial`) |
+| Run visible after closing/reopening the browser; events resume from the last seq | store-level done (`events_after`); browser-level verified in S04/S05 |
+| Killed worker, OOM, disk write failure, config error give explicit terminal states | done: SIGKILL → `failed/worker_died` with OOM hint; unwritable run dir → `failed`; invalid config → rejected before a run exists |
+| Service restart marks unfinished runs `interrupted`; no ghost running runs | done (`test_restart_recovery_marks_interrupted`, orphan terminated) |
+| Cancel/exit leave no child processes; identity is pid + creation time | done on Linux; **Windows/macOS not verified** |
+| No pause/resume button; checkpoint resume not offered | done (not implemented, not shown) |

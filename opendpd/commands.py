@@ -39,7 +39,7 @@ def cmd_recipes(args) -> int:
         _print_json([r.to_dict() for r in recipes])
         return 0
     for r in recipes:
-        print(f"{r.recipe_id:<32} [{r.purpose}] {r.title}\n    {r.description}\n    limits: {r.limits}")
+        print(f"{r.recipe_id:<32} [{r.purpose}] {r.title}\n    {r.description}\n    limits: {r.limits}\n    expected: {r.expected_duration}")
     return 0
 
 
