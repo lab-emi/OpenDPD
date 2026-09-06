@@ -21,14 +21,14 @@ export interface SpectrumData {
   bands: { main: [number, number]; adjacent: Array<[number, number]> } | null
   estimator: string
 }
-export interface TimeData {
+interface TimeData {
   version: string
   start: number
   n: number
   n_samples: number
   traces: Array<{ name: string; role: string; i: number[]; q: number[] }>
 }
-export interface AmData {
+interface AmData {
   version: string
   stride: number
   n_points: number
@@ -40,7 +40,7 @@ export interface AmData {
 
 const MARKER = { size: 3, opacity: 0.45 }
 
-export function AmPlots({ data }: { data: AmData }) {
+function AmPlots({ data }: { data: AmData }) {
   const am = useMemo<PlotTrace[]>(() => data.traces.map((tr) => ({ x: data.amp_in, y: tr.amp_out, name: tr.name, mode: 'markers', type: 'scatter', marker: MARKER })), [data])
   const pm = useMemo<PlotTrace[]>(() => data.traces.map((tr) => ({ x: data.amp_in, y: tr.phase_deg, name: tr.name, mode: 'markers', type: 'scatter', marker: MARKER })), [data])
   const amLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.am.x') } }, yaxis: { title: { text: t('chart.am.y') } }, showlegend: true }), [])

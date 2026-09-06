@@ -1609,16 +1609,11 @@ export interface components {
         };
         /**
          * PackageReference
-         * @description Another run this one depends on (PA surrogate, DPD model); its checkpoint travels under refs/.
+         * @description Another run this one depends on (PA surrogate, DPD model); it always travels under refs/ with its checkpoint.
          */
         PackageReference: {
             /** Checkpoint Sha256 */
             checkpoint_sha256: string;
-            /**
-             * Included
-             * @default true
-             */
-            included: boolean;
             /**
              * Role
              * @enum {string}

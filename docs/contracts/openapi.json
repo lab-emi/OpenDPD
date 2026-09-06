@@ -2521,17 +2521,12 @@
       },
       "PackageReference": {
         "additionalProperties": false,
-        "description": "Another run this one depends on (PA surrogate, DPD model); its checkpoint travels under refs/.",
+        "description": "Another run this one depends on (PA surrogate, DPD model); it always travels under refs/ with its checkpoint.",
         "properties": {
           "checkpoint_sha256": {
             "pattern": "^[0-9a-f]{64}$",
             "title": "Checkpoint Sha256",
             "type": "string"
-          },
-          "included": {
-            "default": true,
-            "title": "Included",
-            "type": "boolean"
           },
           "role": {
             "enum": [

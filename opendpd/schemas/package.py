@@ -35,12 +35,11 @@ class PackageDataset(StrictModel):
 
 
 class PackageReference(StrictModel):
-    """Another run this one depends on (PA surrogate, DPD model); its checkpoint travels under refs/."""
+    """Another run this one depends on (PA surrogate, DPD model); it always travels under refs/ with its checkpoint."""
 
     run_id: Slug
     role: Literal["pa_surrogate", "dpd_model"]
     checkpoint_sha256: Sha256
-    included: bool = True
 
 
 class PackageManifest(StrictModel):
