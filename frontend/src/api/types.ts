@@ -73,5 +73,5 @@ type DeepPartial<T> = { [K in keyof T]?: DP<T[K]> }
  */
 export type ExperimentConfigInput = DeepPartial<ExperimentConfig> & { task: TaskType; dataset: { id: string }; model: { key: string } }
 
-export const TERMINAL: ReadonlySet<RunStatus> = new Set(['succeeded', 'failed', 'cancelled', 'interrupted'])
+const TERMINAL: ReadonlySet<RunStatus> = new Set(['succeeded', 'failed', 'cancelled', 'interrupted'])
 export const isTerminal = (s: RunStatus): boolean => TERMINAL.has(s)

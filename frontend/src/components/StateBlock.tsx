@@ -36,7 +36,7 @@ export function EmptyState({ title = t('state.empty.title'), body, action }: { t
   )
 }
 
-export function describeError(error: unknown): { message: string; hint: string | null } {
+function describeError(error: unknown): { message: string; hint: string | null } {
   if (error instanceof ApiError) return { message: `${error.message} (${error.code})`, hint: error.hint }
   if (error instanceof Error) return { message: error.message, hint: null }
   return { message: String(error), hint: null }

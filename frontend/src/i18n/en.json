@@ -10,13 +10,11 @@
   "topbar.workspace": "Workspace",
   "topbar.nowRunning": "{count} running",
   "topbar.idle": "Nothing running",
-
   "session.required.title": "Session required",
   "session.required.body": "This page needs the local session created by the URL that `opendpd gui` printed. Open that URL again, or paste the bootstrap token below.",
   "session.token.label": "Bootstrap token",
   "session.token.submit": "Start session",
   "session.token.invalid": "The token is not valid for the running server. Restart `opendpd gui` and use the URL it prints.",
-
   "state.loading": "Loading…",
   "state.error.title": "Something went wrong",
   "state.error.retry": "Retry",
@@ -24,7 +22,6 @@
   "state.disconnected.title": "Live updates disconnected",
   "state.disconnected.body": "Reconnecting… last update {time}. The run keeps going on the server; refresh to fetch the latest snapshot.",
   "state.disconnected.refresh": "Refresh now",
-
   "status.queued": "Queued",
   "status.running": "Running",
   "status.cancel_requested": "Stopping…",
@@ -33,7 +30,6 @@
   "status.failed": "Failed",
   "status.interrupted": "Interrupted",
   "status.stale": "Log disconnected: no heartbeat for over a minute",
-
   "evidence.pa_modeling": "PA model",
   "evidence.dpd_surrogate": "DPD · surrogate",
   "evidence.dpd_measured": "DPD · measured",
@@ -42,14 +38,12 @@
   "evidence.pa_modeling.hint": "How well the model reproduces the measured PA output. Not a DPD result.",
   "evidence.dpd_surrogate.hint": "DPD evaluated against the trained PA model, not against a real PA.",
   "evidence.dpd_measured.hint": "DPD evaluated with real PA measurements.",
-
   "metric.notApplicable": "not applicable",
   "metric.missingReference": "no reference",
   "metric.invalid": "invalid",
   "metric.failed": "failed",
   "metric.lowerBetter": "lower is better",
   "metric.higherBetter": "higher is better",
-
   "home.title": "Home",
   "home.workspace": "Workspace",
   "home.recentRuns": "Recent runs",
@@ -60,7 +54,6 @@
   "home.example.registered": "Example dataset registered",
   "home.newExperiment": "New experiment",
   "home.noRuns": "No runs yet. Start with the example dataset and a smoke recipe.",
-
   "datasets.title": "Datasets",
   "datasets.empty": "No datasets registered. Register the built-in example or import your own data (import arrives with Dataset Doctor).",
   "datasets.import": "Register built-in dataset",
@@ -77,7 +70,6 @@
   "datasets.detail.missing": "Missing metadata blocks formal evaluation: {fields}",
   "datasets.detail.doctor": "Dataset Doctor",
   "datasets.detail.doctor.soon": "Dataset Doctor reports arrive with S07. Below is the mock report used to design this panel.",
-
   "experiments.title": "Experiments",
   "experiments.new": "New experiment",
   "experiments.empty": "No experiments yet.",
@@ -89,7 +81,6 @@
   "experiments.columns.progress": "Progress",
   "experiments.columns.created": "Created",
   "experiments.filter.all": "All",
-
   "form.title": "New experiment",
   "form.recipe": "Recipe",
   "form.recipe.help": "A recipe fixes the model and training settings for a purpose. Smoke recipes prove the pipeline; they are not benchmarks.",
@@ -117,10 +108,7 @@
   "form.submit": "Start run",
   "form.submitting": "Starting…",
   "form.cancel": "Cancel",
-  "form.required": "required",
-
   "run.title": "Run",
-  "run.notFound": "This run does not exist in the current workspace.",
   "run.cancel": "Cancel run",
   "run.cancel.confirm": "Cancel this run? Artifacts produced so far are kept.",
   "run.retry": "Retry as new run",
@@ -151,18 +139,15 @@
   "run.artifacts.download": "Download",
   "run.config.resolved": "Resolved configuration (what actually ran)",
   "run.config.sha": "Config hash",
-
   "logs.search": "Filter lines",
   "logs.loadMore": "Load more",
   "logs.empty": "No log output yet.",
   "logs.follow": "Follow",
   "logs.lines": "{shown} of {total} loaded lines",
-
   "results.title": "Results",
   "results.empty": "No results yet. A result is written when a PA or DPD run succeeds.",
   "results.columns.run": "Run",
   "results.columns.evidence": "Evidence",
-  "results.columns.profile": "Metric profile",
   "results.detail.reference": "Reference",
   "results.detail.models": "Models",
   "results.detail.limitations": "Limitations",
@@ -170,7 +155,6 @@
   "results.detail.protocol.body": "{profile} v{version} · {segments} segments × {nperseg} samples · selected epoch {epoch} · {device} · {numeric}",
   "results.detail.charts.soon": "Spectrum and time-domain views from the evaluation arrive in S11; the component gallery shows them on mock data.",
   "results.export.soon": "Export packages arrive in S11.",
-
   "settings.title": "Settings",
   "settings.workspace": "Workspace",
   "settings.devices": "Devices",
@@ -181,27 +165,20 @@
   "settings.about": "About",
   "settings.version": "Version",
   "settings.contract": "API contract: docs/contracts/openapi.json",
-
   "gallery.title": "Component gallery",
   "gallery.body": "Every domain component rendered on fixed mock fixtures generated from the contract examples. Nothing here is a computed result.",
   "gallery.perf": "Performance probe: PSD with {psd} points × {traces} traces and an I/Q window of {iq} samples rendered in {ms} ms.",
-
   "diag.blocking": "blocks evaluation",
   "diag.confidence": "confidence {value}",
   "diag.suggestion": "Suggestion",
   "diag.evidence": "Evidence",
-
   "timeline.heartbeat": "heartbeat",
-  "timeline.empty": "No status changes yet.",
-
   "diff.title": "Configuration differences",
   "diff.same": "The two configurations are identical.",
   "diff.field": "Field",
   "diff.left": "A",
   "diff.right": "B",
-
   "chart.enlarge": "Enlarge chart",
-  "chart.close": "Close",
   "chart.spectrum.title": "Power spectral density",
   "chart.spectrum.x": "Frequency (MHz)",
   "chart.spectrum.y": "PSD (dB)",
@@ -209,10 +186,6 @@
   "chart.iq.x": "Sample",
   "chart.iq.y": "Amplitude",
   "chart.history.x": "Epoch",
-
   "common.na": "n/a",
-  "common.yes": "yes",
-  "common.no": "no",
-  "common.back": "Back",
-  "common.copy": "Copy"
+  "common.back": "Back"
 }

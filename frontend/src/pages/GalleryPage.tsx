@@ -31,7 +31,7 @@ import failedMock from '@mocks/run_failed.json'
  * send data of this shape (PSD bins per segment, a short I/Q window), never
  * whole captures. Deterministic, no science claimed.
  */
-export function syntheticSpectrum(nperseg = 2560, fs = 800e6) {
+function syntheticSpectrum(nperseg = 2560, fs = 800e6) {
   const f = new Float64Array(nperseg)
   const input = new Float64Array(nperseg)
   const output = new Float64Array(nperseg)
@@ -49,7 +49,7 @@ export function syntheticSpectrum(nperseg = 2560, fs = 800e6) {
   return { f, traces: [{ name: 'input', psdDb: input }, { name: 'PA output', psdDb: output }, { name: 'with DPD', psdDb: dpd }] }
 }
 
-export function syntheticIQ(n = 20_000) {
+function syntheticIQ(n = 20_000) {
   const i = new Float64Array(n)
   const q = new Float64Array(n)
   const oi = new Float64Array(n)

@@ -19,7 +19,7 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
 const FILTERS: Array<RunStatus | 'all'> = ['all', 'running', 'queued', 'succeeded', 'failed']
 
-export function progressText(run: RunView): string {
+function progressText(run: RunView): string {
   if (typeof run.progress_epoch === 'number' && typeof run.progress_total_epochs === 'number') {
     return t('run.progress', { epoch: run.progress_epoch + 1, total: run.progress_total_epochs })
   }

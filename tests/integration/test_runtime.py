@@ -187,7 +187,6 @@ def test_store_state_machine_and_schema_version(tmp_path):
         store.transition("r1", RunStatus.queued)
     store.transition("r1", RunStatus.succeeded, finished_at=now)
     assert store.get_run("r1").last_event_seq == 2
-    assert store.first_seq("r1") == 1
     store.close()
     import sqlite3
     conn = sqlite3.connect(tmp_path / "m.sqlite")

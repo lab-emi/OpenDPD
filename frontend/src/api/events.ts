@@ -98,7 +98,7 @@ function reducer(state: StreamState, action: Action): StreamState {
   }
 }
 
-export const EVENT_TYPES = ['status', 'progress', 'metric', 'log', 'artifact', 'checkpoint', 'heartbeat', 'error'] as const
+const EVENT_TYPES = ['status', 'progress', 'metric', 'log', 'artifact', 'checkpoint', 'heartbeat', 'error'] as const
 
 /** Subscribes to /runs/{id}/events while `enabled`; replays from seq 0 on mount. */
 export function useRunStream(runId: string, enabled: boolean): StreamState {

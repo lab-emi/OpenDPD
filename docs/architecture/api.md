@@ -31,7 +31,7 @@ Every non-2xx body has one shape:
 | 401 | `unauthorized`, `bad_bootstrap_token` | no session / wrong token |
 | 403 | `csrf_required`, `cross_origin_write`, `cors_not_supported` | write without CSRF header, foreign Origin, preflight |
 | 404 | `run_not_found`, `result_not_available`, `artifact_not_found`, `artifact_missing`, `not_found` | |
-| 409 | `run_not_finished`, `cursor_out_of_range`, `cursor_pruned`, `workspace_error` | state conflicts; the cursor codes mean "resynchronise from a snapshot" |
+| 409 | `run_not_finished`, `cursor_out_of_range`, `workspace_error` | state conflicts; the cursor code means "resynchronise from a snapshot" |
 | 413 | `payload_too_large` | body above 2 MB |
 | 422 | `invalid_request`, `invalid_config` | request shape / experiment configuration (field-level details) |
 | 503 | `shutting_down` | server is stopping; nothing was started |
@@ -50,8 +50,8 @@ inline.
   `GET /runs/{id}/events/list?after=N` pages; `GET /runs/{id}/events?after=N`
   streams SSE with `id: <seq>`, `event: <type>` and a final `event: end`
   when the run is terminal; `Last-Event-ID` is honoured on reconnect.
-  A cursor beyond the last seq or before the first replayable one is a 409;
-  the client re-reads the run snapshot and starts from `after=0`.
+  A cursor beyond the last seq is a 409; the client re-reads the run
+  snapshot and starts from `after=0`. Events are never pruned.
 - Logs are paged by byte offset (`GET /runs/{id}/logs?offset=&limit=`) so a
   multi-GB log never has to be loaded.
 - Artifacts are downloaded only by registered id

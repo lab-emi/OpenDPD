@@ -31,12 +31,11 @@ export interface PlotLayout {
 interface PlotlyModule {
   react: (el: HTMLElement, data: PlotTrace[], layout: object, config: object) => Promise<unknown>
   purge: (el: HTMLElement) => void
-  Plots: { resize: (el: HTMLElement) => void }
 }
 
 let plotlyPromise: Promise<PlotlyModule> | null = null
 /** Plotly (~1 MB) is loaded on first use so pages without charts stay light. */
-export function loadPlotly(): Promise<PlotlyModule> {
+function loadPlotly(): Promise<PlotlyModule> {
   plotlyPromise ??= import('plotly.js-basic-dist-min').then((m) => (m.default ?? m) as unknown as PlotlyModule)
   return plotlyPromise
 }

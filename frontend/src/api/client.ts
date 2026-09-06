@@ -5,7 +5,7 @@
 import type { SessionInfo } from './types'
 
 export const API = '/api/v1'
-export const CSRF_HEADER = 'X-OpenDPD-CSRF'
+const CSRF_HEADER = 'X-OpenDPD-CSRF'
 
 export interface ApiErrorDetail {
   field?: string

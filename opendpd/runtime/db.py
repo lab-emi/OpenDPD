@@ -172,12 +172,6 @@ class RunStore:
         return [RunEvent(seq=r[0], run_id=run_id, ts=datetime.fromisoformat(r[1]), type=RunEventType(r[2]),
                          payload=json.loads(r[3])) for r in rows]
 
-    def first_seq(self, run_id: str) -> int:
-        """Lowest replayable sequence number (0 when nothing has been pruned)."""
-        with self._lock:
-            row = self._conn.execute("SELECT MIN(seq) FROM events WHERE run_id=?", (run_id,)).fetchone()
-        return int(row[0]) if row and row[0] is not None else 0
-
     def export_events_jsonl(self, run_id: str, path: Path) -> int:
         events = self.events_after(run_id, 0, limit=10 ** 9)
         with open(path, "w", encoding="utf-8") as f:

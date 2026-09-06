@@ -39,7 +39,7 @@ function num(s: string, fallback: number): number {
 }
 
 /** Builds the ExperimentConfig sent to validate/submit: recipe defaults + user edits. */
-export function buildConfig(recipe: RecipeInfo, f: FormState): ExperimentConfigInput {
+function buildConfig(recipe: RecipeInfo, f: FormState): ExperimentConfigInput {
   const training = {
     ...recipe.training,
     epochs: num(f.epochs, recipe.training.epochs),

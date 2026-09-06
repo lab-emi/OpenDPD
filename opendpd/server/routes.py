@@ -346,14 +346,10 @@ class EventPage(BaseModel):
 
 def _check_cursor(request: Request, run_id: str, after: int) -> RunRecord:
     record = _get_run(request, run_id)
-    store = request.app.state.store
     if after > record.last_event_seq:
         raise _error(409, "cursor_out_of_range",
                      f"cursor {after} is beyond the last event ({record.last_event_seq}); resynchronise from a snapshot",
                      hint="GET /runs/{id} then GET /runs/{id}/events/list?after=0")
-    first = store.first_seq(run_id)
-    if after and after < first - 1:
-        raise _error(409, "cursor_pruned", f"events before {first} are no longer replayable; resynchronise")
     return record
 
 

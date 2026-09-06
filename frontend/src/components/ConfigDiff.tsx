@@ -9,7 +9,7 @@ import { t } from '@/i18n'
 
 type Json = string | number | boolean | null | Json[] | { [k: string]: Json }
 
-export function flatten(value: unknown, prefix = '', out: Map<string, string> = new Map()): Map<string, string> {
+function flatten(value: unknown, prefix = '', out: Map<string, string> = new Map()): Map<string, string> {
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) flatten(v, prefix ? `${prefix}.${k}` : k, out)
   } else {
@@ -18,7 +18,7 @@ export function flatten(value: unknown, prefix = '', out: Map<string, string> = 
   return out
 }
 
-export interface DiffRow {
+interface DiffRow {
   field: string
   left: string | undefined
   right: string | undefined

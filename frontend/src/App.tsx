@@ -16,11 +16,11 @@ import { SessionGate } from '@/pages/SessionGate'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { theme } from '@/theme'
 
-export function createQueryClient(): QueryClient {
+function createQueryClient(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } } })
 }
 
-export function AppRoutes() {
+function AppRoutes() {
   return (
     <Routes>
       <Route element={<AppShell />}>
