@@ -1,0 +1,397 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "comparable": false,
+    "generated_at": "2026-09-06T08:00:00Z",
+    "note": "results differ in protocol; they are shown side by side with the differences and must not be ranked",
+    "pairs": [
+      {
+        "a": "run-pa-0001",
+        "b": "run-dpd-0001",
+        "incompatibilities": [
+          "evidence type: pa_modeling vs dpd_surrogate",
+          "reference kind: measured_pa_output vs linear_gain_target"
+        ]
+      }
+    ],
+    "results": [
+      {
+        "baselines": [],
+        "dataset": {
+          "dataset_id": "dpa-200mhz",
+          "n_samples": 7680,
+          "preprocessing_version": "raw-v1",
+          "processed_sha256": null,
+          "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "split": "test",
+          "split_version": "contiguous-v1"
+        },
+        "device": "cpu",
+        "evidence_type": "pa_modeling",
+        "extra": {},
+        "generated_at": "2026-09-06T08:01:00Z",
+        "history": {
+          "path": "log/DPA_200MHz/train_pa/history/PA_S_0_M_GRU_H_23_F_50_P_1911.csv",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "is_mock": true,
+        "limitations": [
+          "MOCK DATA for UI development; not a computed result",
+          "3-epoch smoke recipe"
+        ],
+        "metric_profile_id": "legacy-opendpd-v1",
+        "metric_profile_version": 1,
+        "metrics": [
+          {
+            "better": "lower",
+            "name": "NMSE",
+            "reason": null,
+            "status": "ok",
+            "unit": "dB",
+            "value": -16.092247
+          },
+          {
+            "better": "lower",
+            "name": "EVM",
+            "reason": null,
+            "status": "ok",
+            "unit": "dB",
+            "value": -16.731844
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_L",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -29.788186
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_R",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -26.347937
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_AVG",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -28.068062
+          }
+        ],
+        "models": [
+          {
+            "execution_semantics": "offline_segmented",
+            "lookahead_samples": null,
+            "model": {
+              "key": "gru",
+              "parameters": {
+                "hidden_size": 23,
+                "num_layers": 1
+              }
+            },
+            "n_parameters": 1911,
+            "role": "pa",
+            "run_id": "run-pa-0001",
+            "weights_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "n_segments": 3,
+        "nperseg": 2560,
+        "numeric_mode": "float32",
+        "reference": {
+          "description": "measured PA output of the test split",
+          "gain_rule": null,
+          "gain_value": null,
+          "kind": "measured_pa_output"
+        },
+        "result_id": "res-pa-0001",
+        "run_id": "run-pa-0001",
+        "scaling": null,
+        "schema_version": 1,
+        "seed": 0,
+        "selected_epoch": 1,
+        "signal_chain": [],
+        "software": {
+          "git_commit": "6f026b1",
+          "git_dirty": false,
+          "opendpd_version": "2.2.0.dev0",
+          "platform": "Linux-x86_64",
+          "python_version": "3.13.14",
+          "torch_version": "2.13.0+cu132"
+        },
+        "source": "mock",
+        "surrogate_coverage": null,
+        "valid_sample_range": [
+          0,
+          7680
+        ]
+      },
+      {
+        "baselines": [
+          {
+            "description": "PA surrogate run-pa-0001 driven by x directly (no DPD), scored against the same linear target reference_gain * x",
+            "kind": "surrogate_without_dpd",
+            "metrics": [
+              {
+                "better": "lower",
+                "name": "NMSE",
+                "reason": null,
+                "status": "ok",
+                "unit": "dB",
+                "value": -9.81
+              },
+              {
+                "better": "lower",
+                "name": "EVM",
+                "reason": null,
+                "status": "ok",
+                "unit": "dB",
+                "value": -11.02
+              },
+              {
+                "better": "lower",
+                "name": "ACLR_L",
+                "reason": null,
+                "status": "ok",
+                "unit": "dBc",
+                "value": -19.4
+              },
+              {
+                "better": "lower",
+                "name": "ACLR_R",
+                "reason": null,
+                "status": "ok",
+                "unit": "dBc",
+                "value": -20.11
+              },
+              {
+                "better": "lower",
+                "name": "ACLR_AVG",
+                "reason": null,
+                "status": "ok",
+                "unit": "dBc",
+                "value": -19.75
+              }
+            ]
+          },
+          {
+            "description": "measured PA output of the test split (no DPD), scored against the same linear target",
+            "kind": "measured_without_dpd",
+            "metrics": [
+              {
+                "better": "lower",
+                "name": "NMSE",
+                "reason": null,
+                "status": "ok",
+                "unit": "dB",
+                "value": -9.63
+              },
+              {
+                "better": "lower",
+                "name": "EVM",
+                "reason": null,
+                "status": "ok",
+                "unit": "dB",
+                "value": -10.88
+              },
+              {
+                "better": "lower",
+                "name": "ACLR_L",
+                "reason": null,
+                "status": "ok",
+                "unit": "dBc",
+                "value": -19.02
+              },
+              {
+                "better": "lower",
+                "name": "ACLR_R",
+                "reason": null,
+                "status": "ok",
+                "unit": "dBc",
+                "value": -19.77
+              },
+              {
+                "better": "lower",
+                "name": "ACLR_AVG",
+                "reason": null,
+                "status": "ok",
+                "unit": "dBc",
+                "value": -19.39
+              }
+            ]
+          }
+        ],
+        "dataset": {
+          "dataset_id": "dpa-200mhz",
+          "n_samples": 7680,
+          "preprocessing_version": "raw-v1",
+          "processed_sha256": null,
+          "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "split": "test",
+          "split_version": "contiguous-v1"
+        },
+        "device": "cpu",
+        "evidence_type": "dpd_surrogate",
+        "extra": {},
+        "generated_at": "2026-09-06T08:00:00Z",
+        "history": null,
+        "is_mock": true,
+        "limitations": [
+          "MOCK DATA for UI development",
+          "simulated through the learned PA surrogate run-pa-0001, not a measured PA output",
+          "no physical calibration: absolute output power (dBm) and efficiency are not derived"
+        ],
+        "metric_profile_id": "legacy-opendpd-v1",
+        "metric_profile_version": 1,
+        "metrics": [
+          {
+            "better": "lower",
+            "name": "NMSE",
+            "reason": null,
+            "status": "ok",
+            "unit": "dB",
+            "value": -14.99
+          },
+          {
+            "better": "lower",
+            "name": "EVM",
+            "reason": null,
+            "status": "ok",
+            "unit": "dB",
+            "value": -16.25
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_L",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -25.99
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_R",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -27.65
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_AVG",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -26.82
+          }
+        ],
+        "models": [
+          {
+            "execution_semantics": "offline_segmented",
+            "lookahead_samples": null,
+            "model": {
+              "key": "gru",
+              "parameters": {
+                "hidden_size": 15
+              }
+            },
+            "n_parameters": 887,
+            "role": "dpd",
+            "run_id": "run-dpd-0001",
+            "weights_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "execution_semantics": "offline_segmented",
+            "lookahead_samples": null,
+            "model": {
+              "key": "gru",
+              "parameters": {
+                "hidden_size": 23
+              }
+            },
+            "n_parameters": 1911,
+            "role": "pa",
+            "run_id": "run-pa-0001",
+            "weights_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "n_segments": 3,
+        "nperseg": 2560,
+        "numeric_mode": "float32",
+        "reference": {
+          "description": "target = gain * input",
+          "gain_rule": "max|y_train| / max|x_train| (legacy set_target_gain)",
+          "gain_value": 1.0273,
+          "kind": "linear_gain_target"
+        },
+        "result_id": "res-dpd-0001",
+        "run_id": "run-dpd-0001",
+        "scaling": {
+          "amplitude_units": "normalized",
+          "input_scaling": "none: amplitudes as imported",
+          "physical_calibration": false,
+          "reference_gain": 1.0273
+        },
+        "schema_version": 1,
+        "seed": 0,
+        "selected_epoch": null,
+        "signal_chain": [
+          {
+            "artifact_id": null,
+            "n_samples": 7680,
+            "peak_abs": 0.842,
+            "rms": 0.301,
+            "role": "target input: the PA output should equal reference_gain * x",
+            "simulated": false,
+            "source": "dataset dpa-200mhz version raw-v1, test split",
+            "symbol": "x"
+          },
+          {
+            "artifact_id": null,
+            "n_samples": 7680,
+            "peak_abs": 0.913,
+            "rms": 0.318,
+            "role": "pre-distorted PA input, u = DPD(x)",
+            "simulated": false,
+            "source": "DPD gru weights bbbbbbbbbbbb from run run-dpd-0001",
+            "symbol": "u"
+          },
+          {
+            "artifact_id": null,
+            "n_samples": 7680,
+            "peak_abs": 0.861,
+            "rms": 0.309,
+            "role": "PA output, y = PA(u)",
+            "simulated": true,
+            "source": "PA surrogate gru weights aaaaaaaaaaaa from run run-pa-0001; simulated, not measured",
+            "symbol": "y"
+          }
+        ],
+        "software": {
+          "git_commit": "6f026b1",
+          "git_dirty": false,
+          "opendpd_version": "2.2.0.dev0",
+          "platform": "Linux-x86_64",
+          "python_version": "3.13.14",
+          "torch_version": "2.13.0+cu132"
+        },
+        "source": "mock",
+        "surrogate_coverage": {
+          "fitted_peak_abs": 0.858,
+          "fraction_above_fitted_peak": 0.0031,
+          "note": "0.31% of the pre-distorted samples exceed the largest input amplitude the surrogate was fitted on (0.858); the surrogate extrapolates there and y is unverified for those samples. Staying inside the range would not prove the surrogate accurate either.",
+          "u_peak_abs": 0.913
+        },
+        "valid_sample_range": null
+      }
+    ],
+    "schema_version": 1
+  }
+}

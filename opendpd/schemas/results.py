@@ -172,3 +172,30 @@ class EvaluationResult(StrictModel):
         if self.scaling is not None and self.scaling.physical_calibration:
             raise ValueError("physical calibration is not implemented; absolute power cannot be claimed")
         return self
+
+
+class ComparisonPair(StrictModel):
+    a: Slug
+    b: Slug
+    incompatibilities: List[str] = Field(default_factory=list)
+
+
+class ComparisonReport(StrictModel):
+    """Results shown side by side. ``comparable`` is True only when every pair was produced under the same
+    protocol (``opendpd.core.metrics.incompatibilities``); otherwise the reasons are listed and nothing is ranked."""
+
+    schema_version: int = SCHEMA_VERSION
+    generated_at: datetime = Field(default_factory=utcnow)
+    results: List[EvaluationResult] = Field(min_length=1)
+    pairs: List[ComparisonPair] = Field(default_factory=list)
+    comparable: bool
+    note: str = Field(min_length=1)
+
+
+class HistoryPoint(StrictModel):
+    """One split's metrics after one epoch, read from the run's history log (same shape as ``metric`` events)."""
+
+    epoch: int = Field(ge=0)
+    split: Literal["val", "test"]
+    values: Dict[str, float] = Field(default_factory=dict)
+    train_loss: Optional[float] = None

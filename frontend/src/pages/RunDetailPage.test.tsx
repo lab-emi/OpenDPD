@@ -4,9 +4,13 @@ import runningMock from '@mocks/run_running.json'
 import failedMock from '@mocks/run_failed.json'
 import eventsMock from '@mocks/events_running.json'
 import lineageMock from '@mocks/run_lineage_dpd.json'
+import historyMock from '@mocks/history_points_mock.json'
+import { vi } from 'vitest'
 import type { RunEvent, RunView } from '@/api/types'
 import { installFakeEventSource, mockApi, renderWithProviders } from '@/test/utils'
 import { RunDetailPage } from './RunDetailPage'
+
+vi.mock('plotly.js-basic-dist-min', () => ({ default: { react: vi.fn(() => Promise.resolve()), purge: vi.fn() } }))
 
 const running = runningMock.data as unknown as RunView
 const failed = failedMock.data as unknown as RunView
@@ -18,6 +22,7 @@ function routes(run: RunView, extra: Record<string, () => unknown> = {}) {
     [`GET /api/v1/runs/${run.run_id}/logs`]: () => ({ lines: [], next_offset: 0, eof: true, size: 0 }),
     [`GET /api/v1/runs/${run.run_id}/artifacts`]: () => ({ run_id: run.run_id, artifacts: [], complete: false }),
     [`GET /api/v1/runs/${run.run_id}/lineage`]: () => ({ run_id: run.run_id, parents: [], children: [] }),
+    [`GET /api/v1/runs/${run.run_id}/history`]: () => ({ status: 404, body: { error: { code: 'history_not_available', message: 'no history', details: [], hint: null } } }),
     ...extra,
   }
 }
@@ -80,6 +85,7 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   const { calls } = mockApi(
     routes(dpd, {
       [`GET /api/v1/runs/${dpd.run_id}/lineage`]: () => lineageMock.data,
+      [`GET /api/v1/runs/${dpd.run_id}/history`]: () => historyMock.data,
       'GET /api/v1/runs': () => [dpd, pa('run-pa-0001'), pa('run-pa-0002')],
       'POST /api/v1/runs': () => ({ status: 201, body: applied }),
       [`GET /api/v1/runs/${applied.run_id}`]: () => applied,
@@ -92,6 +98,8 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   expect(within(lineage).getByRole('link', { name: 'run-pa-0001' })).toBeInTheDocument()
   expect(within(lineage).getAllByText(/DPD model:/)).toHaveLength(2)
   expect(within(lineage).getByText(new RegExp(`weights ${lineageMock.data.parents[0]!.checkpoint_sha256!.slice(0, 12)}`))).toBeInTheDocument()
+  await screen.findByText("Curves come from the run's history log.")
+  expect(screen.getByTestId('history-NMSE')).toBeInTheDocument()
 
   await userEvent.click(screen.getByRole('button', { name: 'Apply DPD to the test split…' }))
   const dialog = await screen.findByRole('dialog', { name: 'Apply this DPD to the test split' })

@@ -50,8 +50,11 @@ from .experiment import (
 from .metrics import MetricDefinition, MetricProfile
 from .results import (
     BaselineScore,
+    ComparisonPair,
+    ComparisonReport,
     DatasetEvidence,
     EvaluationResult,
+    HistoryPoint,
     ModelEvidence,
     ScalingInfo,
     SignalReference,
@@ -86,8 +89,8 @@ __all__ = [
     "ModelSpec", "PAReference", "QuantizationConfig", "ResolvedExperimentConfig", "ResolutionInfo",
     "TaskType", "TrainingConfig",
     "MetricDefinition", "MetricProfile",
-    "BaselineScore", "DatasetEvidence", "EvaluationResult", "ModelEvidence", "ScalingInfo", "SignalReference",
-    "SignalStage", "SurrogateCoverage",
+    "BaselineScore", "ComparisonPair", "ComparisonReport", "DatasetEvidence", "EvaluationResult", "HistoryPoint",
+    "ModelEvidence", "ScalingInfo", "SignalReference", "SignalStage", "SurrogateCoverage",
     "TERMINAL_STATUSES", "LineageLink", "LineageRelation", "RunError", "RunEvent", "RunEventType", "RunLineage",
     "RunRecord", "RunStatus", "WorkerInfo", "can_transition", "heartbeat_is_stale",
 ]

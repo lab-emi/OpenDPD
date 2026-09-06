@@ -33,6 +33,7 @@ from opendpd.schemas import (
     EvidenceType,
     ExperimentConfig,
     FileRef,
+    HistoryPoint,
     LineageLink,
     LineageRelation,
     MetricProfile,
@@ -79,7 +80,8 @@ RESOLVED_CONFIG_FILE = "config.resolved.json"
 PROVENANCE_FILE = "provenance.json"
 ARTIFACTS_FILE = "artifacts.json"
 RESULT_FILE = "result.json"
-RESULTS_DIR = "results"          # one result per metric profile
+RESULTS_DIR = "results"
+PLOTS_DIR = "plots"          # one result per metric profile
 
 METRIC_COLUMNS = ("NMSE", "EVM", "ACLR_L", "ACLR_R", "ACLR_AVG")
 SMOKE_EPOCH_LIMIT = 10
@@ -412,6 +414,8 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
                 with run_in_directory(run_dir):
                     results = evaluate_all(ws, run_id, resolved, manifest)
                 result_id = results[resolved.evaluation.profile_id].result_id
+                manifest = collect_artifacts(run_dir, run_id, resolved, project)     # results and plots registered
+                write_json_atomic(run_dir / ARTIFACTS_FILE, manifest)
                 emit(RunEventType.artifact, {"artifact_id": "result", "kind": "result", "path": RESULT_FILE,
                                              "profiles": sorted(results)})
             except (ValidationError, ValueError, KeyError) as err:
@@ -488,6 +492,13 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
         add(name.replace(".", "-"), ArtifactKind.worker_log, run_dir / "logs" / name, False)
     add("config-resolved", ArtifactKind.config, run_dir / RESOLVED_CONFIG_FILE, True)
     add("provenance", ArtifactKind.provenance, run_dir / PROVENANCE_FILE, True)
+    # written by the evaluation stage; registered on the second pass after it ran
+    add("result", ArtifactKind.result, run_dir / RESULT_FILE, False, "primary result (configured metric profile)")
+    for stored in sorted((run_dir / RESULTS_DIR).glob("*.json")) if (run_dir / RESULTS_DIR).exists() else []:
+        add(f"result-{stored.stem}", ArtifactKind.result, stored, False, f"result under profile {stored.stem}")
+    for plot in sorted((run_dir / PLOTS_DIR).glob("*.json")) if (run_dir / PLOTS_DIR).exists() else []:
+        add(f"plot-{plot.stem}", ArtifactKind.plot, plot, False,
+            "plots-v1 derived data computed by the worker from the evaluated arrays; display only")
     required_kinds = {ArtifactKind.dpd_output, ArtifactKind.other} if resolved.task == TaskType.run_dpd \
         else {ArtifactKind.checkpoint, ArtifactKind.log_history, ArtifactKind.log_best}
     present = {a.kind for a in artifacts}
@@ -587,6 +598,27 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         limitations=limitations, signal_chain=signal_chain or [], baselines=baselines or [],
         surrogate_coverage=surrogate_coverage, scaling=scaling,
     )
+
+
+def training_history(ws: Workspace, run_id: str) -> List[HistoryPoint]:
+    """Per-epoch validation / test metrics from the run's history log, in the shape of ``metric`` events."""
+    import csv
+
+    manifest = load_artifacts(ws, run_id)
+    history = manifest.by_kind(ArtifactKind.log_history) if manifest else []
+    if not history:
+        raise WorkspaceError(f"run '{run_id}' has no training history (not a training run, or it did not finish)")
+    points: List[HistoryPoint] = []
+    with open(ws.run_dir(run_id) / history[0].file.path, newline="") as f:
+        for row in csv.DictReader(f):
+            epoch = int(row.get("EPOCH", 0))
+            for split in ("val", "test"):
+                values = {m: v for m in METRIC_COLUMNS
+                          if (v := _as_float(row.get(f"{split.upper()}_{m}"))) is not None}
+                if values:
+                    points.append(HistoryPoint(epoch=epoch, split=split, values=values,
+                                               train_loss=_as_float(row.get("TRAIN_LOSS"))))
+    return points
 
 
 # --- lineage --------------------------------------------------------------------------

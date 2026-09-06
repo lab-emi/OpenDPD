@@ -312,6 +312,48 @@ def test_swapping_the_surrogate_yields_a_separate_result(workspace, pa_run, dpd_
     assert info.value.issues[0].field == "pa_reference.run_id"
 
 
+def test_plots_history_and_comparison_are_bound_to_the_results(workspace, pa_run, dpd_run, apply_run):
+    """S11: derived plot data is written by the worker, history is read from the log, comparison names protocol gaps."""
+    import json
+    from opendpd.services.evaluation import compare_results, comparison_csv
+    from opendpd.services.experiments import training_history
+
+    manifest = load_artifacts(workspace, dpd_run.run_id)
+    plots = {a.artifact_id: a for a in manifest.by_kind(ArtifactKind.plot)}
+    assert set(plots) == {"plot-spectrum", "plot-time", "plot-amam"} and all(a.file.sha256 for a in plots.values())
+    spectrum = json.loads((workspace.run_dir(dpd_run.run_id) / plots["plot-spectrum"].file.path).read_text())
+    assert spectrum["version"] == "plots-v1" and spectrum["axis"] == "hz" and spectrum["nperseg"] == 2560
+    roles = {t["name"]: t["role"] for t in spectrum["traces"]}
+    assert roles["with DPD: PA_surrogate(u)"] == "primary" and roles["linear target gain*x"] == "reference"
+    assert roles["u = DPD(x)"] == "predistorted" and roles["measured PA without DPD"] == "baseline"
+    assert all(len(t["psd_db"]) == len(spectrum["frequency"]) for t in spectrum["traces"])
+    am = json.loads((workspace.run_dir(dpd_run.run_id) / plots["plot-amam"].file.path).read_text())
+    assert am["n_points"] <= 4000 and {t["name"] for t in am["traces"]} >= {"with DPD: PA_surrogate(u)", "measured PA without DPD"}
+    assert {a.artifact_id for a in manifest.by_kind(ArtifactKind.result)} >= {"result", "result-legacy-opendpd-v1"}
+    pa_plots = {a.artifact_id for a in load_artifacts(workspace, pa_run.run_id).by_kind(ArtifactKind.plot)}
+    assert pa_plots == {"plot-spectrum", "plot-time", "plot-amam"}
+
+    history = training_history(workspace, pa_run.run_id)
+    assert [(h.epoch, h.split) for h in history] == [(0, "val"), (0, "test"), (1, "val"), (1, "test"), (2, "val"), (2, "test")]
+    assert set(history[0].values) == {"NMSE", "EVM", "ACLR_L", "ACLR_R", "ACLR_AVG"} and history[0].train_loss is not None
+    with pytest.raises(Exception, match="no training history"):
+        training_history(workspace, apply_run.run_id)
+
+    report = compare_results(workspace, [dpd_run.run_id, apply_run.run_id])
+    assert report.comparable and report.pairs[0].incompatibilities == []
+    mixed = compare_results(workspace, [pa_run.run_id, dpd_run.run_id])
+    assert not mixed.comparable
+    reasons = mixed.pairs[0].incompatibilities
+    assert any(r.startswith("evidence type: pa_modeling vs dpd_surrogate") for r in reasons)
+    assert any(r.startswith("reference kind:") for r in reasons)
+    csv_text = comparison_csv(mixed)
+    lines = csv_text.splitlines()
+    assert lines[0] == f"field,{pa_run.run_id},{dpd_run.run_id}" and lines[2].startswith("evidence_type,pa_modeling,dpd_surrogate")
+    assert any(line.startswith("NMSE,") for line in lines) and any(line.startswith("incompatible ") for line in lines)
+    with pytest.raises(Exception, match="no stored result"):
+        compare_results(workspace, [pa_run.run_id, "run-does-not-exist"])
+
+
 def test_apply_cli(workspace, dpd_run, capsys):
     capsys.readouterr()
     rc = studio_main(["apply", dpd_run.run_id, "--workspace", str(workspace.root), "--json"])

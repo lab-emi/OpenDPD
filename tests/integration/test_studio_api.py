@@ -288,6 +288,24 @@ def test_runs_made_by_the_cli_are_visible_to_the_service(client, session):
     assert client.get(f"/api/v1/runs/{queued.run_id}").status_code == 404
 
 
+def test_history_plots_and_comparison_routes(client, session):
+    runs = [r for r in client.get("/api/v1/runs", params={"status": "succeeded"}).json() if r["task"] == "train_pa"]
+    assert len(runs) >= 2
+    a, b = runs[0]["run_id"], runs[1]["run_id"]
+    history = client.get(f"/api/v1/runs/{a}/history").json()
+    assert history and history[0]["split"] == "val" and "NMSE" in history[0]["values"]
+    r = client.get(f"/api/v1/artifacts/{a}/plot-spectrum")
+    assert r.status_code == 200 and r.json()["version"] == "plots-v1"
+    report = client.get("/api/v1/results/compare", params={"runs": [a, b]}).json()
+    assert report["comparable"] is True and [x["run_id"] for x in report["results"]] == [a, b]
+    csv_text = client.get("/api/v1/results/compare", params={"runs": [a, b], "format": "csv"}).text
+    assert csv_text.startswith(f"field,{a},{b}")
+    r = client.get("/api/v1/results/compare", params={"runs": [a]})
+    assert r.status_code == 422
+    r = client.get("/api/v1/results/compare", params={"runs": [a, "run-does-not-exist"]})
+    assert r.status_code == 404 and r.json()["error"]["code"] == "run_not_found"
+
+
 def test_lineage_route_reads_the_graph_from_resolved_configs(client, session):
     runs = client.get("/api/v1/runs", params={"status": "succeeded"}).json()
     pa = next(r for r in runs if r["task"] == "train_pa")

@@ -41,8 +41,11 @@ from .experiment import (
 from .metrics import MetricProfile
 from .results import (
     BaselineScore,
+    ComparisonPair,
+    ComparisonReport,
     DatasetEvidence,
     EvaluationResult,
+    HistoryPoint,
     ModelEvidence,
     ScalingInfo,
     SignalReference,
@@ -361,6 +364,24 @@ def result_dpd_surrogate_mock() -> EvaluationResult:
     )
 
 
+def comparison_report_mock() -> ComparisonReport:
+    """Two results under different protocols: shown side by side, never ranked."""
+    a = result_pa_modeling_mock()
+    b = result_dpd_surrogate_mock()
+    from opendpd.core.metrics import incompatibilities
+    return ComparisonReport(results=[a, b], comparable=False, generated_at=T0,
+                            pairs=[ComparisonPair(a=a.run_id, b=b.run_id, incompatibilities=incompatibilities(a, b))],
+                            note="results differ in protocol; they are shown side by side with the differences and "
+                                 "must not be ranked")
+
+
+def history_points_mock() -> list:
+    return [HistoryPoint(epoch=e, split=split, train_loss=0.5 / (e + 1),
+                         values={"NMSE": -20.0 - 3 * e - (0.4 if split == "test" else 0.0),
+                                 "ACLR_AVG": -30.0 - 2 * e})
+            for e in range(3) for split in ("val", "test")]
+
+
 def run_lineage_dpd() -> RunLineage:
     """The graph around a DPD run: trained through a PA surrogate, applied twice (once through another surrogate)."""
     return RunLineage(
@@ -430,6 +451,8 @@ def all_examples() -> Dict[str, object]:
         "result_metric_not_applicable_mock": result_metric_not_applicable_mock(),
         "result_dpd_surrogate_mock": result_dpd_surrogate_mock(),
         "run_lineage_dpd": run_lineage_dpd(),
+        "comparison_report_mock": comparison_report_mock(),
+        "history_points_mock": history_points_mock(),
         "result_legacy_import": result_legacy_import(),
         "artifact_manifest_complete": artifact_manifest_complete(),
     }

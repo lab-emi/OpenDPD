@@ -16,6 +16,8 @@ import type {
   ModelInfo,
   RecipeInfo,
   ResolvedExperimentConfig,
+  ComparisonReport,
+  HistoryPoint,
   RunLineage,
   RunStatus,
   RunView,
@@ -34,6 +36,9 @@ export const keys = {
   runConfig: (id: string) => ['run', id, 'config'] as const,
   runArtifacts: (id: string) => ['run', id, 'artifacts'] as const,
   runLineage: (id: string) => ['run', id, 'lineage'] as const,
+  runHistory: (id: string) => ['run', id, 'history'] as const,
+  artifactJson: (id: string, artifactId: string) => ['run', id, 'artifact', artifactId] as const,
+  compare: (ids: string[], profile: string | null = null) => ['compare', ids.join(','), profile ?? 'primary'] as const,
   result: (id: string, profile: string | null = null) => ['result', id, profile ?? 'primary'] as const,
   resultProfiles: (id: string) => ['result', id, 'profiles'] as const,
   metricProfiles: ['metric-profiles'] as const,
@@ -68,6 +73,23 @@ export const useRunArtifacts = (id: string, enabled = true) =>
   useQuery({ queryKey: keys.runArtifacts(id), queryFn: () => api.get<ArtifactManifest>(`/runs/${encodeURIComponent(id)}/artifacts`), enabled })
 export const useRunLineage = (id: string, enabled = true) =>
   useQuery({ queryKey: keys.runLineage(id), queryFn: () => api.get<RunLineage>(`/runs/${encodeURIComponent(id)}/lineage`), enabled })
+export const useRunHistory = (id: string, enabled = true) =>
+  useQuery({ queryKey: keys.runHistory(id), queryFn: () => api.get<HistoryPoint[]>(`/runs/${encodeURIComponent(id)}/history`), enabled, retry: false })
+/** A registered JSON artifact (plots-v1 data, stored results); cached for the life of the page. */
+export const artifactJsonQuery = <T,>(id: string, artifactId: string) => ({
+  queryKey: keys.artifactJson(id, artifactId),
+  queryFn: () => api.get<T>(`/artifacts/${encodeURIComponent(id)}/${encodeURIComponent(artifactId)}`),
+  retry: false,
+  staleTime: Infinity,
+})
+export const useArtifactJson = <T,>(id: string, artifactId: string, enabled = true) => useQuery({ ...artifactJsonQuery<T>(id, artifactId), enabled })
+export const useCompare = (ids: string[], profile: string | null = null) =>
+  useQuery({
+    queryKey: keys.compare(ids, profile),
+    queryFn: () => api.get<ComparisonReport>(`/results/compare?${ids.map((i) => `runs=${encodeURIComponent(i)}`).join('&')}${profile ? `&profile=${encodeURIComponent(profile)}` : ''}`),
+    enabled: ids.length >= 2,
+    retry: false,
+  })
 export const useResult = (id: string, enabled = true, profile: string | null = null) =>
   useQuery({
     queryKey: keys.result(id, profile),

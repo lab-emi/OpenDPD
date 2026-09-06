@@ -195,6 +195,81 @@
         "title": "Capabilities",
         "type": "object"
       },
+      "ComparisonPair": {
+        "additionalProperties": false,
+        "properties": {
+          "a": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "A",
+            "type": "string"
+          },
+          "b": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "B",
+            "type": "string"
+          },
+          "incompatibilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Incompatibilities",
+            "type": "array"
+          }
+        },
+        "required": [
+          "a",
+          "b"
+        ],
+        "title": "ComparisonPair",
+        "type": "object"
+      },
+      "ComparisonReport": {
+        "additionalProperties": false,
+        "description": "Results shown side by side. ``comparable`` is True only when every pair was produced under the same\nprotocol (``opendpd.core.metrics.incompatibilities``); otherwise the reasons are listed and nothing is ranked.",
+        "properties": {
+          "comparable": {
+            "title": "Comparable",
+            "type": "boolean"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "note": {
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "pairs": {
+            "items": {
+              "$ref": "#/components/schemas/ComparisonPair"
+            },
+            "title": "Pairs",
+            "type": "array"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/EvaluationResult"
+            },
+            "minItems": 1,
+            "title": "Results",
+            "type": "array"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "results",
+          "comparable",
+          "note"
+        ],
+        "title": "ComparisonReport",
+        "type": "object"
+      },
       "DPDReference": {
         "additionalProperties": false,
         "properties": {
@@ -1315,6 +1390,49 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HistoryPoint": {
+        "additionalProperties": false,
+        "description": "One split's metrics after one epoch, read from the run's history log (same shape as ``metric`` events).",
+        "properties": {
+          "epoch": {
+            "minimum": 0.0,
+            "title": "Epoch",
+            "type": "integer"
+          },
+          "split": {
+            "enum": [
+              "val",
+              "test"
+            ],
+            "title": "Split",
+            "type": "string"
+          },
+          "train_loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Train Loss"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "epoch",
+          "split"
+        ],
+        "title": "HistoryPoint",
         "type": "object"
       },
       "ImportBuiltinRequest": {
@@ -4477,6 +4595,85 @@
         ]
       }
     },
+    "/api/v1/results/compare": {
+      "get": {
+        "description": "Stored results side by side with the protocol differences that forbid ranking. `format=csv` returns the\nsame numbers with their provenance rows; nothing is recomputed.",
+        "operationId": "results_compare_api_v1_results_compare_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "runs",
+            "required": true,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 8,
+              "minItems": 2,
+              "title": "Runs",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "csv"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComparisonReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Results Compare",
+        "tags": [
+          "results"
+        ]
+      }
+    },
     "/api/v1/results/{run_id}": {
       "get": {
         "operationId": "results_get_api_v1_results__run_id__get",
@@ -4980,6 +5177,53 @@
         "summary": "Events List",
         "tags": [
           "events"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/history": {
+      "get": {
+        "description": "Per-epoch validation / test metrics from the run's history log (the same shape as `metric` events).",
+        "operationId": "runs_history_api_v1_runs__run_id__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryPoint"
+                  },
+                  "title": "Response Runs History Api V1 Runs  Run Id  History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs History",
+        "tags": [
+          "runs"
         ]
       }
     },

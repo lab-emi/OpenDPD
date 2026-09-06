@@ -323,6 +323,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/results/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Results Compare
+         * @description Stored results side by side with the protocol differences that forbid ranking. `format=csv` returns the
+         *     same numbers with their provenance rows; nothing is recomputed.
+         */
+        get: operations["results_compare_api_v1_results_compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/results/{run_id}": {
         parameters: {
             query?: never;
@@ -475,6 +496,26 @@ export interface paths {
         };
         /** Events List */
         get: operations["events_list_api_v1_runs__run_id__events_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Runs History
+         * @description Per-epoch validation / test metrics from the run's history log (the same shape as `metric` events).
+         */
+        get: operations["runs_history_api_v1_runs__run_id__history_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -680,6 +721,40 @@ export interface components {
             version: string;
             /** Workspace */
             workspace: string;
+        };
+        /** ComparisonPair */
+        ComparisonPair: {
+            /** A */
+            a: string;
+            /** B */
+            b: string;
+            /** Incompatibilities */
+            incompatibilities?: string[];
+        };
+        /**
+         * ComparisonReport
+         * @description Results shown side by side. ``comparable`` is True only when every pair was produced under the same
+         *     protocol (``opendpd.core.metrics.incompatibilities``); otherwise the reasons are listed and nothing is ranked.
+         */
+        ComparisonReport: {
+            /** Comparable */
+            comparable: boolean;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at?: string;
+            /** Note */
+            note: string;
+            /** Pairs */
+            pairs?: components["schemas"]["ComparisonPair"][];
+            /** Results */
+            results: components["schemas"]["EvaluationResult"][];
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
         };
         /** DPDReference */
         DPDReference: {
@@ -1066,6 +1141,25 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * HistoryPoint
+         * @description One split's metrics after one epoch, read from the run's history log (same shape as ``metric`` events).
+         */
+        HistoryPoint: {
+            /** Epoch */
+            epoch: number;
+            /**
+             * Split
+             * @enum {string}
+             */
+            split: "val" | "test";
+            /** Train Loss */
+            train_loss?: number | null;
+            /** Values */
+            values?: {
+                [key: string]: number;
+            };
         };
         /** ImportBuiltinRequest */
         ImportBuiltinRequest: {
@@ -2525,6 +2619,39 @@ export interface operations {
             };
         };
     };
+    results_compare_api_v1_results_compare_get: {
+        parameters: {
+            query: {
+                runs: string[];
+                profile?: string | null;
+                format?: "json" | "csv";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComparisonReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     results_get_api_v1_results__run_id__get: {
         parameters: {
             query?: {
@@ -2833,6 +2960,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    runs_history_api_v1_runs__run_id__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryPoint"][];
                 };
             };
             /** @description Validation Error */

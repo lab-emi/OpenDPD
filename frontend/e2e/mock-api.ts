@@ -146,10 +146,13 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
       if (sub === 'logs') return json(route, { lines: ['::: Number of PA Model Parameters: 1911', 'Training Completed...'], next_offset: 64, eof: true, size: 64 })
       if (sub === 'artifacts') return json(route, mock<Json>('artifact_manifest_complete'))
       if (sub === 'lineage') return json(route, { run_id: run['run_id'], parents: [], children: [] })
+      if (sub === 'history') return json(route, mock<Json[]>('history_points_mock'))
       if (sub === 'config') return json(route, resolved)
       if (sub === '') return json(route, run)
     }
     if (path === '/metrics/profiles') return json(route, profiles)
+    if (path === '/results/compare') return json(route, mock<Json>('comparison_report_mock'))
+    if (path.startsWith('/artifacts/')) return json(route, { error: { code: 'artifact_not_found', message: 'no such artifact in the mock', details: [], hint: null } }, 404)
     if (path.endsWith('/profiles') && path.startsWith('/results/')) return json(route, ['legacy-opendpd-v1', 'general-spectral-v1'])
     if (path.startsWith('/results/')) {
       const profile = url.searchParams.get('profile') ?? 'legacy-opendpd-v1'

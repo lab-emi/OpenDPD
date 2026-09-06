@@ -17,7 +17,8 @@ export interface PlotTrace {
   name?: string
   mode?: 'lines' | 'markers' | 'lines+markers'
   type?: 'scatter'
-  line?: { width?: number; dash?: 'solid' | 'dot' | 'dash' }
+  line?: { width?: number; dash?: 'solid' | 'dot' | 'dash'; color?: string }
+  marker?: { size?: number; opacity?: number; color?: string }
   hoverinfo?: 'x+y+name' | 'skip'
 }
 export interface PlotLayout {

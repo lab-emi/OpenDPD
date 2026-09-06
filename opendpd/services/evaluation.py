@@ -26,6 +26,8 @@ from opendpd.schemas import (
     ArtifactKind,
     ArtifactManifest,
     BaselineScore,
+    ComparisonPair,
+    ComparisonReport,
     DatasetManifest,
     EvaluationResult,
     ResolvedExperimentConfig,
@@ -36,12 +38,14 @@ from opendpd.schemas import (
     TaskType,
 )
 from opendpd.services.experiments import (
+    PLOTS_DIR,
     RESULT_FILE,
     RESULTS_DIR,
     _prepare_inputs,
     build_result,
     load_artifacts,
     load_resolved,
+    load_result,
     load_run,
 )
 from opendpd.services.legacy_adapter import build_namespace, run_in_directory
@@ -59,10 +63,10 @@ class Predictions:
         self.ground_truth = ground_truth      # measured y (train_pa) or the linear target gain * x (DPD tasks)
         self.n_valid = n_valid
         self.target_gain = target_gain
-        self.x = x                            # DPD tasks: the target input
+        self.x = x                            # the model input over the test split
         self.u = u                            # DPD tasks: the pre-distorted PA input
         self.surrogate_without_dpd = surrogate_without_dpd   # DPD tasks: PA_surrogate(x)
-        self.measured = measured              # DPD tasks: measured PA output of the test split
+        self.measured = measured              # measured PA output of the test split
         self.fitted_peak_abs = fitted_peak_abs   # DPD tasks: max |x| the surrogate was trained on
 
 
@@ -170,21 +174,23 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
         net = net.to(proj.device)
         _, prediction, ground_truth = net_eval(log={}, net=net, dataloader=test_loader,
                                                criterion=proj.build_criterion(), device=proj.device)
-        if dpd_task:
-            xs, us, y0s = [], [], []
-            net.eval()
-            with torch.inference_mode():
-                for features, _ in test_loader:
-                    features = features.to(proj.device)
-                    xs.append(features.cpu())
+        xs, us, y0s = [], [], []
+        net.eval()
+        with torch.inference_mode():
+            for features, _ in test_loader:
+                features = features.to(proj.device)
+                xs.append(features.cpu())
+                if dpd_task:
                     us.append(net.dpd_model(features).cpu())
                     y0s.append(net.pa_model(features).cpu())
+        extra = dict(x=torch.cat(xs).numpy(), measured=ground_truth)
+        if dpd_task:
             x_test, y_test = load_dataset(dataset_path=ns.dataset_path)[4:6]
             nperseg = proj.args.nperseg
             # The reference is the linear target gain * x for every DPD task (the legacy loader only builds it
             # for train_dpd; a run_dpd would otherwise be scored against the measured PA output).
             ground_truth = IQSegmentDataset(x_test, proj.target_gain * x_test, nperseg=nperseg).targets.numpy()
-            extra = dict(x=torch.cat(xs).numpy(), u=torch.cat(us).numpy(), surrogate_without_dpd=torch.cat(y0s).numpy(),
+            extra.update(u=torch.cat(us).numpy(), surrogate_without_dpd=torch.cat(y0s).numpy(),
                          measured=IQSegmentDataset(x_test, y_test, nperseg=nperseg).targets.numpy(),
                          fitted_peak_abs=_fitted_peak(ws, resolved.pa_reference.run_id))
     n_valid = _n_test_samples(ws, resolved) or int(prediction.shape[0] * prediction.shape[1])
@@ -255,6 +261,42 @@ def result_for(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, m
                         n_valid=predictions.n_valid, target_gain=predictions.target_gain, **evidence)
 
 
+def write_plots(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, predictions: Predictions) -> List[Path]:
+    """plots-v1 derived data next to the result: spectrum, time excerpt, AM-AM / AM-PM (display only)."""
+    from opendpd.core import plots
+
+    dataset = ws.get_dataset(resolved.dataset.id)
+    n = predictions.n_valid
+    if resolved.task == TaskType.train_pa:
+        signals = {"PA input x": predictions.x, "measured PA output": predictions.ground_truth,
+                   "PA model output": predictions.prediction}
+        roles = {"PA input x": "input", "measured PA output": "reference", "PA model output": "primary"}
+        outputs = {"measured PA output": predictions.ground_truth, "PA model output": predictions.prediction}
+    else:
+        signals = {"target input x": predictions.x, "u = DPD(x)": predictions.u,
+                   "linear target gain*x": predictions.ground_truth,
+                   "with DPD: PA_surrogate(u)": predictions.prediction,
+                   "surrogate without DPD": predictions.surrogate_without_dpd,
+                   "measured PA without DPD": predictions.measured}
+        roles = {"target input x": "input", "u = DPD(x)": "predistorted", "linear target gain*x": "reference",
+                 "with DPD: PA_surrogate(u)": "primary", "surrogate without DPD": "baseline",
+                 "measured PA without DPD": "baseline"}
+        outputs = {k: signals[k] for k in ("with DPD: PA_surrogate(u)", "surrogate without DPD", "measured PA without DPD")}
+    sig = dataset.signal
+    out_dir = ws.run_dir(run_id) / PLOTS_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for name, data in (
+        ("spectrum", plots.spectrum(signals, roles, sample_rate_hz=sig.sample_rate_hz, nperseg=sig.nperseg,
+                                    bandwidth_hz=sig.bandwidth_hz, valid_samples=n)),
+        ("time", plots.time_excerpt(signals, roles, valid_samples=n)),
+        ("amam", plots.am_am_pm(predictions.x, outputs, roles, valid_samples=n)),
+    ):
+        write_json_atomic(out_dir / f"{name}.json", data)
+        written.append(out_dir / f"{name}.json")
+    return written
+
+
 def evaluate_all(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                  manifest: ArtifactManifest) -> Dict[str, EvaluationResult]:
     """Score every registered profile from one prediction pass; the configured profile is the primary result."""
@@ -266,7 +308,61 @@ def evaluate_all(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     for profile_id, result in results.items():
         write_json_atomic(run_dir / RESULTS_DIR / f"{profile_id}.json", result)
     write_json_atomic(run_dir / RESULT_FILE, results[resolved.evaluation.profile_id])
+    write_plots(ws, run_id, resolved, predictions)
     return results
+
+
+def compare_results(ws: Workspace, run_ids: List[str], profile_id: Optional[str] = None) -> ComparisonReport:
+    """Stored results side by side. Every pair is checked with ``incompatibilities``; results under different
+    protocols are shown with the reasons and never ranked."""
+    from opendpd.core.metrics import incompatibilities
+
+    results = []
+    for run_id in run_ids:
+        result = load_result(ws, run_id, profile_id)
+        if result is None:
+            raise WorkspaceError(f"run '{run_id}' has no stored result" + (f" under profile '{profile_id}'" if profile_id else ""))
+        results.append(result)
+    pairs = [ComparisonPair(a=a.run_id or a.result_id, b=b.run_id or b.result_id, incompatibilities=incompatibilities(a, b))
+             for i, a in enumerate(results) for b in results[i + 1:]]
+    comparable = all(not p.incompatibilities for p in pairs)
+    note = ("all results were produced under the same protocol (profile, evidence, data, split, reference); "
+            "they may be ranked" if comparable else
+            "results differ in protocol; they are shown side by side with the differences and must not be ranked")
+    return ComparisonReport(results=results, pairs=pairs, comparable=comparable, note=note)
+
+
+def comparison_csv(report: ComparisonReport) -> str:
+    """Metric rows by result columns, preceded by the provenance every number is bound to. No recomputation."""
+    import csv
+    import io
+
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    cols = report.results
+    w.writerow(["field"] + [r.run_id or r.result_id for r in cols])
+    w.writerow(["result_id"] + [r.result_id for r in cols])
+    w.writerow(["evidence_type"] + [r.evidence_type.value for r in cols])
+    w.writerow(["metric_profile"] + [f"{r.metric_profile_id} v{r.metric_profile_version}" for r in cols])
+    w.writerow(["dataset"] + [f"{r.dataset.dataset_id} {r.dataset.preprocessing_version} {r.dataset.split_version}" for r in cols])
+    w.writerow(["reference"] + [r.reference.kind for r in cols])
+    w.writerow(["models"] + ["; ".join(f"{m.role}:{m.model.key}:{(m.weights_sha256 or '')[:12]}" for m in r.models) for r in cols])
+    w.writerow(["comparable"] + [str(report.comparable).lower()] * len(cols))
+    names = []
+    for r in cols:
+        for m in r.metrics:
+            if m.name not in names:
+                names.append(m.name)
+    for name in names:
+        row = [name]
+        for r in cols:
+            m = next((x for x in r.metrics if x.name == name), None)
+            row.append("" if m is None else (f"{m.value}" if m.value is not None else f"{m.status.value}: {m.reason}"))
+        w.writerow(row)
+    for pair in report.pairs:
+        if pair.incompatibilities:
+            w.writerow([f"incompatible {pair.a} vs {pair.b}", "; ".join(pair.incompatibilities)])
+    return buf.getvalue()
 
 
 def evaluate_run(ws: Workspace, run_id: str, profile_id: str) -> EvaluationResult:

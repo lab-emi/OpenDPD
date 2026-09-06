@@ -24,6 +24,7 @@ import type { BaselineScore, EvaluationResult, MetricProfile, MetricValue } from
 import { t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
+import { ResultCharts } from '@/components/ResultCharts'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 
 const BASELINE: Record<BaselineScore['kind'], MessageKey> = {
@@ -285,8 +286,9 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
           </ul>
         </Alert>
       )}
+      {result.run_id && <ResultCharts runId={result.run_id} />}
       <Typography variant="caption" color="text.secondary">
-        {t('results.detail.charts.soon')} {t('results.export.soon')}
+        {t('results.export.soon')}
       </Typography>
     </Stack>
   )

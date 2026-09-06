@@ -10,6 +10,7 @@ import { GalleryPage } from '@/pages/GalleryPage'
 import { HomePage } from '@/pages/HomePage'
 import { NewExperimentPage } from '@/pages/NewExperimentPage'
 import { ResultDetailPage } from '@/pages/ResultDetailPage'
+import { ComparePage } from '@/pages/ComparePage'
 import { ResultsPage } from '@/pages/ResultsPage'
 import { RunDetailPage } from '@/pages/RunDetailPage'
 import { SessionGate } from '@/pages/SessionGate'
@@ -31,6 +32,7 @@ function AppRoutes() {
         <Route path="experiments/new" element={<NewExperimentPage />} />
         <Route path="runs/:runId" element={<RunDetailPage />} />
         <Route path="results" element={<ResultsPage />} />
+        <Route path="results/compare" element={<ComparePage />} />
         <Route path="results/:runId" element={<ResultDetailPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="gallery" element={<GalleryPage />} />

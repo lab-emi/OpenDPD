@@ -22,11 +22,11 @@ import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useQueryClient } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router'
 import { artifactUrl } from '@/api/client'
 import { useRunStream } from '@/api/events'
-import { keys, useCancelRun, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
+import { keys, useCancelRun, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
 import { isTerminal, type LineageLink, type LineageRelation, type RunView } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { LogViewer } from '@/components/LogViewer'
@@ -60,6 +60,8 @@ export function RunDetailPage() {
   const run = useRun(runId)
   const active = !!run.data && !isTerminal(run.data.status)
   const stream = useRunStream(runId, !!run.data)
+  const history = useRunHistory(runId, !!run.data && isTerminal(run.data.status) && run.data.task !== 'run_dpd')
+  const historyPoints = useMemo(() => (history.data ?? []).map((h) => ({ epoch: h.epoch, split: h.split, values: h.values ?? {} })), [history.data])
   const cancel = useCancelRun()
   const retry = useRetryRun()
   const [confirmCancel, setConfirmCancel] = useState(false)
@@ -174,7 +176,7 @@ export function RunDetailPage() {
         <Tab value="config" label={t('run.tabs.config')} id="tab-config" aria-controls="panel-config" />
       </Tabs>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === 'overview' && <OverviewTab run={r} metrics={stream.metrics} statusEvents={stream.statusEvents} heartbeats={stream.heartbeats} />}
+        {tab === 'overview' && <OverviewTab run={r} metrics={stream.metrics.length > 0 ? stream.metrics : historyPoints} fromHistory={stream.metrics.length === 0 && historyPoints.length > 0} statusEvents={stream.statusEvents} heartbeats={stream.heartbeats} />}
         {tab === 'logs' && <LogViewer runId={runId} live={active} />}
         {tab === 'artifacts' && <ArtifactsTab runId={runId} />}
         {tab === 'config' && <ConfigTab runId={runId} run={r} />}
@@ -183,7 +185,7 @@ export function RunDetailPage() {
   )
 }
 
-function OverviewTab({ run, metrics, statusEvents, heartbeats }: { run: RunView; metrics: ReturnType<typeof useRunStream>['metrics']; statusEvents: ReturnType<typeof useRunStream>['statusEvents']; heartbeats: number }) {
+function OverviewTab({ run, metrics, fromHistory, statusEvents, heartbeats }: { run: RunView; metrics: ReturnType<typeof useRunStream>['metrics']; fromHistory: boolean; statusEvents: ReturnType<typeof useRunStream>['statusEvents']; heartbeats: number }) {
   const names = [...new Set(metrics.flatMap((m) => Object.keys(m.values)))]
   return (
     <Grid container spacing={2}>
@@ -191,6 +193,11 @@ function OverviewTab({ run, metrics, statusEvents, heartbeats }: { run: RunView;
         <Typography variant="h2" gutterBottom>
           {t('run.metrics.title')}
         </Typography>
+        {fromHistory && (
+          <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
+            {t('run.metrics.fromHistory')}
+          </Typography>
+        )}
         {names.length === 0 ? (
           <EmptyState body={t(run.task === 'run_dpd' ? 'run.metrics.apply' : 'run.metrics.empty')} />
         ) : (

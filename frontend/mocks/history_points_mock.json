@@ -1,0 +1,60 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": [
+    {
+      "epoch": 0,
+      "split": "val",
+      "train_loss": 0.5,
+      "values": {
+        "ACLR_AVG": -30.0,
+        "NMSE": -20.0
+      }
+    },
+    {
+      "epoch": 0,
+      "split": "test",
+      "train_loss": 0.5,
+      "values": {
+        "ACLR_AVG": -30.0,
+        "NMSE": -20.4
+      }
+    },
+    {
+      "epoch": 1,
+      "split": "val",
+      "train_loss": 0.25,
+      "values": {
+        "ACLR_AVG": -32.0,
+        "NMSE": -23.0
+      }
+    },
+    {
+      "epoch": 1,
+      "split": "test",
+      "train_loss": 0.25,
+      "values": {
+        "ACLR_AVG": -32.0,
+        "NMSE": -23.4
+      }
+    },
+    {
+      "epoch": 2,
+      "split": "val",
+      "train_loss": 0.16666666666666666,
+      "values": {
+        "ACLR_AVG": -34.0,
+        "NMSE": -26.0
+      }
+    },
+    {
+      "epoch": 2,
+      "split": "test",
+      "train_loss": 0.16666666666666666,
+      "values": {
+        "ACLR_AVG": -34.0,
+        "NMSE": -26.4
+      }
+    }
+  ]
+}

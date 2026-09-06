@@ -6,7 +6,7 @@ import asyncio
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
@@ -18,12 +18,14 @@ from opendpd.core.registry import list_models
 from opendpd.core.splits import DEFAULT_GUARD_SAMPLES
 from opendpd.schemas import (
     ArtifactManifest,
+    ComparisonReport,
     DatasetManifest,
     DatasetOrigin,
     DatasetVersion,
     DiagnosticReport,
     EvaluationResult,
     ExperimentConfig,
+    HistoryPoint,
     ModelSpec,
     PreprocessingParams,
     ResolvedExperimentConfig,
@@ -44,7 +46,7 @@ from opendpd.services import capabilities as capabilities_service
 from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
 from opendpd.services.config import ConfigError, ConfigIssue, validate as validate_config
-from opendpd.services.evaluation import available_profiles
+from opendpd.services.evaluation import available_profiles, compare_results, comparison_csv
 from opendpd.services.workspace import WorkspaceError
 from opendpd.services.recipes import list_recipes
 
@@ -480,6 +482,17 @@ def runs_artifacts(run_id: str, request: Request):
     return manifest or ArtifactManifest(run_id=run_id)
 
 
+@router.get("/runs/{run_id}/history", response_model=List[HistoryPoint], tags=["runs"],
+            dependencies=[Depends(require_session)])
+def runs_history(run_id: str, request: Request):
+    """Per-epoch validation / test metrics from the run's history log (the same shape as `metric` events)."""
+    _get_run(request, run_id)
+    try:
+        return experiments.training_history(request.app.state.ws, run_id)
+    except WorkspaceError as err:
+        raise _error(404, "history_not_available", str(err))
+
+
 @router.get("/runs/{run_id}/lineage", response_model=RunLineage, tags=["runs"],
             dependencies=[Depends(require_session)])
 def runs_lineage(run_id: str, request: Request):
@@ -501,6 +514,26 @@ def metric_profile(profile_id: str):
         return get_profile(profile_id)
     except KeyError as err:
         raise _error(404, "profile_not_found", str(err))
+
+
+@router.get("/results/compare", tags=["results"], dependencies=[Depends(require_session)],
+            responses={200: {"model": ComparisonReport}})
+def results_compare(request: Request, runs: List[str] = Query(..., min_length=2, max_length=8),
+                    profile: Optional[str] = Query(None, max_length=64),
+                    format: Literal["json", "csv"] = Query("json")):
+    """Stored results side by side with the protocol differences that forbid ranking. `format=csv` returns the
+    same numbers with their provenance rows; nothing is recomputed."""
+    for run_id in runs:
+        _get_run(request, run_id)
+    try:
+        report = compare_results(request.app.state.ws, runs, profile)
+    except WorkspaceError as err:
+        raise _error(404, "result_not_available", str(err),
+                     hint="results exist only for succeeded train_pa / train_dpd / run_dpd runs")
+    if format == "csv":
+        return Response(content=comparison_csv(report), media_type="text/csv",
+                        headers={"Content-Disposition": "attachment; filename=\"comparison.csv\""})
+    return report
 
 
 @router.get("/results/{run_id}/profiles", response_model=List[str], tags=["results"],
