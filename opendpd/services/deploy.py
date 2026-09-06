@@ -170,15 +170,14 @@ def export_deployment(ws: Workspace, run_id: str, out: Path, *, spec: Optional[F
     checkpoint = checkpoints[0] if checkpoints else None
 
     work = Path(tempfile.mkdtemp(prefix="opendpd-deploy-"))
+    build = Path(tempfile.mkdtemp(prefix="opendpd-deploy-build-"))
     try:
         cases = golden_inputs(tm.x_test, spec)
         golden = write_golden(q, cases, work / "golden")
-        verification, seconds = c_backend.verify(q, [(c[0], c[2], c[3]) for c in cases], work / "c")
-        for name in ("harness", "x.i16", "y.out", "h.out"):
-            for path in (work / "c").rglob(name):
-                path.unlink() if path.is_file() else shutil.rmtree(path)
-        for case_dir in [p for p in (work / "c").iterdir() if p.is_dir()]:
-            shutil.rmtree(case_dir)
+        verification, seconds = c_backend.verify(q, [(c[0], c[2], c[3]) for c in cases], build)
+        (work / "c").mkdir()
+        for name in c_backend.SOURCES:                          # the sources only; binaries and replays stay out
+            shutil.copyfile(build / name, work / "c" / name)
         deltas, profile_id = quality_loss(tm, q)
         storage = q.storage_bytes()
         measured = None
@@ -208,12 +207,17 @@ def export_deployment(ws: Workspace, run_id: str, out: Path, *, spec: Optional[F
                     zf.write(p, str(p.relative_to(work)).replace("\\", "/"))
     finally:
         shutil.rmtree(work, ignore_errors=True)
+        shutil.rmtree(build, ignore_errors=True)
     return deployment
 
 
 def read_manifest(path: Path) -> DeploymentManifest:
     with zipfile.ZipFile(path) as zf:
         return DeploymentManifest.model_validate_json(zf.read("manifest.json"))
+
+
+def _num(x: Optional[float]) -> str:
+    return "n/a" if x is None else f"{x:.3f}"
 
 
 def report_markdown(m: DeploymentManifest) -> str:
@@ -227,8 +231,7 @@ def report_markdown(m: DeploymentManifest) -> str:
     out += [f"| {g.case_id} | {g.n_samples} | {g.resets_at or '-'} | {g.description} | {g.output_sha256[:12]} |" for g in m.golden]
     out += ["", f"## Float to fixed: quality loss (profile {r.metric_profile_id}, test split)", "",
             "| metric | float | fixed | fixed - float |", "|---|---:|---:|---:|"]
-    fmt = lambda x: "n/a" if x is None else f"{x:.3f}"  # noqa: E731
-    out += [f"| {d.name} ({d.unit}) | {fmt(d.float_value)} | {fmt(d.fixed_value)} | {fmt(d.delta)} |" for d in r.quality_loss]
+    out += [f"| {d.name} ({d.unit}) | {_num(d.float_value)} | {_num(d.fixed_value)} | {_num(d.delta)} |" for d in r.quality_loss]
     res = r.resources
     out += ["", "## Resources", "", f"Label **{res.label}** (from the specification and the shapes; nothing measured):", "",
             f"- MAC per sample: {res.mac_per_sample}; table lookups per sample: {res.table_lookups_per_sample}",

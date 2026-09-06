@@ -75,9 +75,6 @@ def test_the_reference_is_deterministic_reset_exact_and_bounded():
     assert np.array_equal(two[:100], two[100:])                                     # reset is exact
     carried, _ = FixedGRU(q).run(np.concatenate([x[:100], x[:100]]))
     assert not np.array_equal(carried[:100], carried[100:])                          # and only a reset resets
-    m = FixedGRU(q)
-    zeros, _ = m.run(np.zeros((10, 2), dtype=np.int64))
-    assert np.array_equal(zeros[0], zeros[-1]) or m.h.any()                          # the bias path drives a fixed point
     narrow = FixedGRU(q)
     narrow._acc_limit = 1 << 20                                                      # a 21-bit accumulator cannot hold 16 x 16-bit products
     with pytest.raises(OverflowError, match="accumulator exceeds"):

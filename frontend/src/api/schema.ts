@@ -1853,7 +1853,7 @@ export interface components {
             /** State Sha256 */
             state_sha256: string;
             /** Trace Sha256 */
-            trace_sha256?: string | null;
+            trace_sha256: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {

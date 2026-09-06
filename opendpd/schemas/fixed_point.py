@@ -93,7 +93,7 @@ class GoldenCase(StrictModel):
     input_sha256: Sha256
     output_sha256: Sha256
     state_sha256: Sha256
-    trace_sha256: Optional[Sha256] = None                # per-step h (localisation of a mismatch)
+    trace_sha256: Sha256                                 # the state after every sample (localisation of a mismatch)
 
 
 class MetricDelta(StrictModel):

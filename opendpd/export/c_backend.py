@@ -17,6 +17,7 @@ from opendpd.core.fixed_point import FixedGRU, QuantisedGRU
 from opendpd.schemas.fixed_point import Verification
 
 BACKEND = "c99"
+SOURCES = ("gru_fixed.h", "gru_fixed.c", "harness.c")
 
 
 def _c_array(name: str, values: np.ndarray, ctype: str) -> str:

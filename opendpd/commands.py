@@ -672,12 +672,13 @@ def cmd_deploy(args) -> int:
     """Write a fixed-point-v1 deployment package for a finished GRU run and verify its C99 reference bit for bit."""
     import contextlib
 
+    from opendpd.schemas.common import utcnow
     from opendpd.services.deploy import export_deployment
     from opendpd.services.workspace import Workspace, WorkspaceError
 
     try:
         ws = Workspace.open(Path(args.workspace))
-        out = Path(args.out) if args.out else ws.exports_dir / f"{args.run_id}-deploy-{SPEC_STAMP()}.zip"
+        out = Path(args.out) if args.out else ws.exports_dir / f"{args.run_id}-deploy-{utcnow().strftime('%Y%m%d-%H%M%S')}.zip"
         with contextlib.redirect_stdout(sys.stderr):
             manifest = export_deployment(ws, args.run_id, out)
     except (WorkspaceError, ValueError, RuntimeError) as err:
@@ -698,11 +699,6 @@ def cmd_deploy(args) -> int:
         if r.measured_execution:
             print(f"  {r.measured_execution.label}: {r.measured_execution.samples_per_second:,.0f} samples/s ({r.measured_execution.what})")
     return 0 if manifest.verification.status != "mismatch" else 1
-
-
-def SPEC_STAMP() -> str:
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
 
 
 def cmd_adaptation(args) -> int:
