@@ -135,6 +135,7 @@ MODELS: Tuple[ModelDescriptor, ...] = (
         key="gru", display_name="GRU", family="recurrent", legacy_backbone="gru", training_method="gradient",
         roles=("pa", "dpd"), params=(_hidden(23), _layers()), status="supported",
         devices_tested=("cpu", "cuda"), lookahead_samples=0, lookahead_note=CAUSAL,
+        export_formats=("fixed-point-v1",),      # one GRU layer, executed as gru_stream (docs/protocols/fixed-point-v1.md)
         reference="OpenDPD (ISCAS 2024)", evidence="S00 baseline CPU+CUDA smoke; benchmark_report.md (CUDA)",
     ),
     ModelDescriptor(
@@ -290,6 +291,7 @@ MODELS += (
         devices_tested=("cpu",), lookahead_samples=0,
         lookahead_note=CAUSAL + "; the hidden state is carried across chunks instead of being reset at every segment",
         execution_semantics=STREAMING, weights_from="gru", constraints=_STREAM_CONSTRAINT.format(base="gru"),
+        export_formats=("fixed-point-v1",),
         reference="OpenDPD (ISCAS 2024); streaming contract docs/architecture/streaming.md",
         evidence="tests/unit/test_streaming.py, tests/integration/test_streaming_eval.py (CPU)",
     ),

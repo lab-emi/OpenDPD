@@ -668,6 +668,43 @@ def cmd_benchmark(args) -> int:
     return 2
 
 
+def cmd_deploy(args) -> int:
+    """Write a fixed-point-v1 deployment package for a finished GRU run and verify its C99 reference bit for bit."""
+    import contextlib
+
+    from opendpd.services.deploy import export_deployment
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        out = Path(args.out) if args.out else ws.exports_dir / f"{args.run_id}-deploy-{SPEC_STAMP()}.zip"
+        with contextlib.redirect_stdout(sys.stderr):
+            manifest = export_deployment(ws, args.run_id, out)
+    except (WorkspaceError, ValueError, RuntimeError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    if args.json:
+        _print_json({"path": str(out), "manifest": manifest.model_dump(mode="json")})
+    else:
+        v, r = manifest.verification, manifest.report
+        print(f"package written to {out}")
+        print(f"  verification ({v.backend}): {v.status}" + (f" — {v.detail}" if v.detail else ""))
+        for d in r.quality_loss:
+            if d.delta is not None:
+                print(f"  {d.name:<10} float {d.float_value:.3f}  fixed {d.fixed_value:.3f}  delta {d.delta:+.3f} {d.unit}")
+        res = r.resources
+        print(f"  {res.label}: {res.mac_per_sample} MAC/sample, weights {res.weight_bytes} B, state {res.state_bytes} B, "
+              f"tables {res.table_bytes} B")
+        if r.measured_execution:
+            print(f"  {r.measured_execution.label}: {r.measured_execution.samples_per_second:,.0f} samples/s ({r.measured_execution.what})")
+    return 0 if manifest.verification.status != "mismatch" else 1
+
+
+def SPEC_STAMP() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+
+
 def cmd_adaptation(args) -> int:
     """conditions-v1 (S17): sealed condition cards, pre-registered adaptation plans and every-cell reports."""
     import contextlib
@@ -799,6 +836,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", default="cpu")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_stream)
+
+    p = sub.add_parser("deploy", help="fixed-point-v1: quantise a finished GRU run, write golden vectors and the bit-exact C99 reference")
+    p.add_argument("run_id", help="a succeeded train_pa or train_dpd run of a model with export format fixed-point-v1 (gru)")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--out", default=None, help="package zip (default: <workspace>/exports/<run>-deploy-<stamp>.zip)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_deploy)
 
     p = sub.add_parser("export", help="write a reproducible experiment package (full: private and complete; share: redacted)")
     p.add_argument("run_id")

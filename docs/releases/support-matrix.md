@@ -73,3 +73,10 @@ browser launch on macOS/Windows is a human checklist item (plan S06).
 | `gru_stream` | `gru` weights, hidden state carried across chunks | verified (automated, CPU), **experimental** | `tests/unit/test_streaming.py`, `tests/integration/test_streaming_eval.py`, `docs/releases/streaming-semantics-report.md` |
 | `gmp_stream` | `gmp` weights, 20-sample history carried across chunks | verified (automated, CPU), **experimental** | same |
 | look-ahead models (`tres_gru`, `tres_deltagru`, `tcn`) | — | no streaming variant | look-ahead stated in the registry and in every result; buffering cost in the semantics report |
+
+## Deployment export backends (S19)
+
+| Backend | Model | Status | Evidence |
+|---|---|---|---|
+| C99 reference (`fixed-point-v1`) | one-layer `gru` as `gru_stream` | verified bit for bit on every package (Linux, gcc), **rules pending human approval** | `tests/unit/test_fixed_point.py`, `tests/integration/test_deploy.py`, `test_docs_commands.py` |
+| ONNX, HLS, RTL | — | not provided | an implementer verifies against the package's golden vectors and state trace (`docs/protocols/fixed-point-v1.md` §7) |

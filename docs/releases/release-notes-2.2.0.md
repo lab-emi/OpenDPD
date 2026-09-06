@@ -76,6 +76,19 @@ platform automatically. Version string in the candidate: `2.2.0.dev0`.
   variant and is never ranked against, or inherited from, the offline
   segment scores (`docs/architecture/streaming.md`,
   `docs/releases/streaming-semantics-report.md`).
+- **Bit-exact fixed-point deployment (`fixed-point-v1`)**: one model, one
+  precision scheme (the one-layer GRU as `gru_stream`): every operator and
+  every stored quantity specified (16-bit words, 32-bit pre-activations at a
+  fixed fraction, exact accumulation, one rounding rule, saturation
+  everywhere, sigmoid and tanh as tables); `opendpd deploy <run>` and the
+  result page's Deployment panel write a package with the quantised weights,
+  six golden vectors (normal, extreme, saturation, all-zero, state reset,
+  long sequence) carrying the state after every sample, and a C99 reference
+  that is compiled and verified bit for bit against the software reference
+  (a mismatch is located at a sample and a signal). The report labels the
+  float-to-fixed loss, the theoretical resources, the measured execution
+  time of the C reference, and says that nothing was synthesised or
+  measured for power (`docs/protocols/fixed-point-v1.md`).
 - **Thread budget**: `execution.num_threads` is applied by the shared executor
   (torch intra-op threads) on every path; unset keeps torch's default. Run
   records stamp `started_at`/`finished_at` with the executor's own clock on
@@ -118,6 +131,9 @@ Tutorials: `docs/tutorials/gui-quickstart.md`, `docs/tutorials/headless-cli.md`,
 - No physical PA has been measured with the S16 path yet: the protocol is
   verified on synthetic and mock captures only, and no real instrument adapter
   exists (`docs/protocols/measured-dpd.md` §7).
+- The fixed-point rules of `fixed-point-v1` are pending a maintainer's
+  approval; only the C99 reference is verified, no ONNX / HLS / RTL target
+  exists, and no synthesis or power number was measured.
 - Streaming variants exist for `gru` and `gmp` only and are experimental
   until a maintainer approves them; models with a look-ahead (`tres_gru`,
   `tres_deltagru`, `tcn`) state their buffering cost but have no streaming

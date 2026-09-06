@@ -15,6 +15,17 @@ from typing import Dict
 
 from .artifacts import Artifact, ArtifactKind, ArtifactManifest
 from .benchmark import MetricStats
+from .fixed_point import (
+    DeploymentManifest,
+    FixedPointReport,
+    FixedPointSpec,
+    GoldenCase,
+    MeasuredExecution,
+    MetricDelta,
+    ResourceEstimate,
+    TensorFormat,
+    Verification,
+)
 from .conditions import (
     AdaptationCell,
     AdaptationReport,
@@ -601,6 +612,47 @@ def result_pa_streaming_mock() -> EvaluationResult:
                                            "and not inherited from them"]})
 
 
+def deployment_manifest_mock() -> DeploymentManifest:
+    """A fixed-point-v1 package of the PA mock: verified C99 reference, labelled numbers."""
+    cases = [("normal", 4096, [], "the first 4096 samples of the test split"),
+             ("extreme", 512, [], "full-scale inputs: constant +max, constant -max, alternating"),
+             ("saturation", 1024, [], "random full-scale signs: pre-activations beyond the table ranges, state at its bounds"),
+             ("all_zero", 256, [], "zero input: the state stays at zero and the output is the bias path"),
+             ("state_reset", 1024, [0, 256, 512, 768], "one 256-sample block four times with a reset before each; the four outputs are identical"),
+             ("long_sequence", 65536, [], "65536 samples of the test split (tiled when shorter): no drift, no overflow")]
+    golden = [GoldenCase(case_id=c, description=d, n_samples=n, resets_at=r, input_sha256=SHA_A, output_sha256=SHA_B, state_sha256=SHA_C,
+                         trace_sha256=SHA_A) for c, n, r, d in cases]
+    tensors = [TensorFormat(name="w_ih", shape=[69, 2], bits=16, frac=15, max_abs_float=0.81, saturated=0),
+               TensorFormat(name="w_hh", shape=[69, 23], bits=16, frac=15, max_abs_float=0.66, saturated=0),
+               TensorFormat(name="w_out", shape=[2, 23], bits=16, frac=14, max_abs_float=1.12, saturated=0),
+               TensorFormat(name="b_ih", shape=[69], bits=32, frac=20, max_abs_float=0.31, saturated=0),
+               TensorFormat(name="b_hh", shape=[69], bits=32, frac=20, max_abs_float=0.27, saturated=0),
+               TensorFormat(name="b_out", shape=[2], bits=32, frac=20, max_abs_float=0.02, saturated=0)]
+    report = FixedPointReport(
+        quality_loss=[MetricDelta(name="NMSE", unit="dB", float_value=-36.71, fixed_value=-36.42, delta=0.29),
+                      MetricDelta(name="EVM", unit="dB", float_value=-38.95, fixed_value=-38.7, delta=0.25),
+                      MetricDelta(name="ACLR_L", unit="dBc", float_value=-47.12, fixed_value=-46.9, delta=0.22),
+                      MetricDelta(name="ACLR_R", unit="dBc", float_value=-46.88, fixed_value=-46.61, delta=0.27),
+                      MetricDelta(name="ACLR_AVG", unit="dBc", float_value=-47.0, fixed_value=-46.76, delta=0.24)],
+        metric_profile_id="legacy-opendpd-v1",
+        resources=ResourceEstimate(mac_per_sample=1771, table_lookups_per_sample=69, weight_bytes=3542, bias_bytes=560, state_bytes=46,
+                                   table_bytes=12288),
+        measured_execution=MeasuredExecution(what="the compiled C99 reference replaying the long_sequence golden vector, single thread",
+                                             samples_per_second=2.1e6, machine={"cpu": "x86_64", "cores": "8", "os": "Linux 6.0 (x86_64)"}),
+        execution_assumptions=["one sample per step, sequential; the state (spec.h) is carried across samples and chunks (gru_stream semantics)",
+                               "two's-complement integers; right shifts are floors implemented with division (no arithmetic-shift assumption)",
+                               "dot products are exact in the accumulator (int64 in the references); the bound is checked, never wrapped",
+                               "no parallelism, pipelining or sparsity is assumed; the C reference is single-threaded",
+                               "the input is already in spec.x: analogue front-end, AGC and I/Q calibration are outside this package"])
+    return DeploymentManifest(
+        spec=FixedPointSpec(), run_id="run-pa-0001", model_key="gru", weights_sha256=SHA_B, hidden_size=23, tensors=tensors, golden=golden,
+        verification=Verification(backend="c99", status="bit_exact", compiler="/usr/bin/cc", cases_checked=6,
+                                  detail="6 golden vectors replayed through the compiled C99 reference; every output sample and every state "
+                                         "step equal to the software reference"),
+        report=report, files={"spec.json": SHA_A, "weights.json": SHA_B, "README.md": SHA_C, "c/gru_fixed.c": SHA_A, "c/gru_fixed.h": SHA_B,
+                              "c/harness.c": SHA_C}, software=SOFTWARE, created_at=T0)
+
+
 def all_examples() -> Dict[str, object]:
     """Name -> model instance; names double as mock fixture file names."""
     return {
@@ -632,4 +684,5 @@ def all_examples() -> Dict[str, object]:
         "result_legacy_import": result_legacy_import(),
         "artifact_manifest_complete": artifact_manifest_complete(),
         "adaptation_report_mock": adaptation_report_mock(),
+        "deployment_manifest_mock": deployment_manifest_mock(),
     }

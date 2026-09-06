@@ -20,9 +20,9 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 import { API, artifactUrl } from '@/api/client'
-import { useExportRun, useMetricProfiles, useResult, useResultProfiles } from '@/api/hooks'
+import { useDeployExport, useExportRun, useMetricProfiles, useModels, useResult, useResultProfiles } from '@/api/hooks'
 import { offeredProfiles } from '@/api/profiles'
-import type { BaselineScore, EvaluationResult, ExecutionEvidence, MetricProfile, MetricValue } from '@/api/types'
+import type { BaselineScore, DeploymentManifest, EvaluationResult, ExecutionEvidence, MetricProfile, MetricValue } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
@@ -155,6 +155,90 @@ function SignalChain({ result }: { result: EvaluationResult }) {
 }
 
 /** dpd_measured: what the operator declared, how each capture was aligned, and the level difference (S16). */
+/** fixed-point-v1 export (S19): offered when the registry lists the format for the evaluated model; otherwise the reason. */
+function DeploymentPanel({ result }: { result: EvaluationResult }) {
+  const models = useModels()
+  const deploy = useDeployExport()
+  const evaluated = (result.models ?? [])[0]
+  const runId = evaluated?.run_id ?? result.run_id
+  const descriptor = (models.data ?? []).find((m) => m.key === evaluated?.model.key)
+  const supported = (descriptor?.export_formats ?? []).includes('fixed-point-v1')
+  const info = deploy.data
+  return (
+    <Paper sx={{ p: 2 }} component="section" aria-label={t('results.deploy')} data-testid="deployment">
+      <Typography variant="h3" component="h2" gutterBottom>
+        {t('results.deploy')}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
+        {t('results.deploy.help')}
+      </Typography>
+      {!supported ? (
+        <Alert severity="info" data-testid="deploy-unsupported">
+          {t('results.deploy.unsupported', { model: evaluated?.model.key ?? '?', supported: (models.data ?? []).filter((m) => m.export_formats.includes('fixed-point-v1') && !m.weights_from).map((m) => m.key).join(', ') || 'gru' })}
+        </Alert>
+      ) : (
+        <Button variant="contained" size="small" disabled={deploy.isPending || !runId} onClick={() => runId && deploy.mutate({ run_id: runId })}>
+          {deploy.isPending ? t('results.deploy.building') : t('results.deploy.export')}
+        </Button>
+      )}
+      {deploy.isError && <ErrorState error={deploy.error} />}
+      {info && <DeploymentSummary manifest={info.manifest} filename={info.filename} downloadUrl={info.download_url} />}
+    </Paper>
+  )
+}
+
+function DeploymentSummary({ manifest, filename, downloadUrl }: { manifest: DeploymentManifest; filename: string; downloadUrl: string }) {
+  const v = manifest.verification
+  const r = manifest.report
+  const res = r.resources
+  const severity = v.status === 'bit_exact' ? 'success' : v.status === 'mismatch' ? 'error' : 'warning'
+  return (
+    <Stack spacing={1} sx={{ mt: 2 }} data-testid="deploy-ready">
+      <Alert severity={severity} data-testid="deploy-verification">
+        <strong>{t(`results.deploy.verification.${v.status}` as MessageKey, { backend: v.backend, cases: v.cases_checked })}</strong>{' '}
+        {v.status === 'mismatch' ? t('results.deploy.mismatch', { case: v.mismatch_case ?? '?', step: v.mismatch_step ?? '?', signal: v.mismatch_signal ?? '?' }) : (v.detail ?? '')}
+      </Alert>
+      <Typography variant="body2">
+        <Link href={downloadUrl} download={filename}>
+          {t('results.deploy.download', { filename })}
+        </Link>
+      </Typography>
+      <Table size="small" aria-label={t('results.deploy.loss')}>
+        <TableHead>
+          <TableRow>
+            <TableCell>{t('results.deploy.loss.metric')}</TableCell>
+            <TableCell align="right">{t('results.deploy.loss.float')}</TableCell>
+            <TableCell align="right">{t('results.deploy.loss.fixed')}</TableCell>
+            <TableCell align="right">{t('results.deploy.loss.delta')}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {r.quality_loss.map((d) => (
+            <TableRow key={d.name}>
+              <TableCell>
+                {d.name} ({d.unit})
+              </TableCell>
+              <TableCell align="right">{d.float_value?.toFixed(2) ?? t('common.na')}</TableCell>
+              <TableCell align="right">{d.fixed_value?.toFixed(2) ?? t('common.na')}</TableCell>
+              <TableCell align="right">{d.delta === null || d.delta === undefined ? t('common.na') : `${d.delta >= 0 ? '+' : ''}${d.delta.toFixed(2)}`}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }} data-testid="deploy-resources">
+        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.theoretical')}</dt>
+        <dd style={{ margin: 0 }}>{t('results.deploy.resources', { mac: res.mac_per_sample, lookups: res.table_lookups_per_sample, weights: res.weight_bytes, state: res.state_bytes, tables: res.table_bytes })}</dd>
+        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.measured')}</dt>
+        <dd style={{ margin: 0 }}>{r.measured_execution ? t('results.deploy.measured', { rate: Math.round(r.measured_execution.samples_per_second).toLocaleString(), what: r.measured_execution.what }) : t('results.deploy.notAvailable')}</dd>
+        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.synthesis')}</dt>
+        <dd style={{ margin: 0 }}>{r.synthesis_estimate ?? t('results.deploy.notSynthesised')}</dd>
+        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.power')}</dt>
+        <dd style={{ margin: 0 }}>{r.measured_power ?? t('results.deploy.notMeasuredPower')}</dd>
+      </dl>
+    </Stack>
+  )
+}
+
 /** How a streaming variant consumed the signal (S18): chunking, look-ahead as samples and time, warm-up, consistency. */
 function ExecutionPanel({ result }: { result: EvaluationResult }) {
   const e: ExecutionEvidence | null | undefined = result.execution
@@ -375,6 +459,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
       </Grid>
       <SignalChain result={result} />
       <ExecutionPanel result={result} />
+      <DeploymentPanel result={result} />
       <MeasurementPanel result={result} />
       <Baselines result={result} />
       {result.surrogate_coverage && (

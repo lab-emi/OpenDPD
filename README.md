@@ -35,7 +35,9 @@ adaptation across conditions (zero update, few-shot, full retrain, with
 failures and costs kept) in
 [docs/tutorials/adaptation-benchmark.md](docs/tutorials/adaptation-benchmark.md);
 streaming semantics (state carried across chunks, look-ahead as samples and
-time, chunk consistency) in [docs/tutorials/streaming.md](docs/tutorials/streaming.md).
+time, chunk consistency) in [docs/tutorials/streaming.md](docs/tutorials/streaming.md);
+bit-exact fixed-point deployment packages (golden vectors, a verified C99
+reference) in [docs/tutorials/deployment-export.md](docs/tutorials/deployment-export.md).
 What is verified where: [support matrix](docs/releases/support-matrix.md),
 [performance report](docs/releases/performance-report.md),
 [hardening report](docs/releases/hardening-report.md); status per plan stage:

@@ -272,6 +272,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/deploy/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deploy Export
+         * @description Quantise a finished GRU run under fixed-point-v1, write golden vectors and the C99 reference, verify it bit for
+         *     bit, and serve the package from <workspace>/exports. Unsupported models are refused with the reason.
+         */
+        post: operations["deploy_export_api_v1_deploy_exports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/experiments/validate": {
         parameters: {
             query?: never;
@@ -1338,6 +1359,56 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** DeployExportInfo */
+        DeployExportInfo: {
+            /** Download Url */
+            download_url: string;
+            /** Export Id */
+            export_id: string;
+            /** Filename */
+            filename: string;
+            manifest: components["schemas"]["DeploymentManifest"];
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** DeployRequest */
+        DeployRequest: {
+            /** Run Id */
+            run_id: string;
+        };
+        /** DeploymentManifest */
+        DeploymentManifest: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Files */
+            files: {
+                [key: string]: string;
+            };
+            /** Golden */
+            golden: components["schemas"]["GoldenCase"][];
+            /** Hidden Size */
+            hidden_size: number;
+            /** Model Key */
+            model_key: string;
+            report: components["schemas"]["FixedPointReport"];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            software: components["schemas"]["SoftwareProvenance"];
+            spec: components["schemas"]["FixedPointSpec"];
+            /** Tensors */
+            tensors: components["schemas"]["TensorFormat"][];
+            verification: components["schemas"]["Verification"];
+            /** Weights Sha256 */
+            weights_sha256?: string | null;
+        };
         /** DeviceInfo */
         DeviceInfo: {
             /**
@@ -1649,6 +1720,141 @@ export interface components {
             /** Size Bytes */
             size_bytes?: number | null;
         };
+        /**
+         * FixedPointReport
+         * @description Every number labelled by how it was obtained; the labels never mix.
+         */
+        FixedPointReport: {
+            /** Execution Assumptions */
+            execution_assumptions: string[];
+            measured_execution?: components["schemas"]["MeasuredExecution"] | null;
+            /** Measured Power */
+            measured_power?: string | null;
+            /** Metric Profile Id */
+            metric_profile_id: string;
+            /** Quality Loss */
+            quality_loss: components["schemas"]["MetricDelta"][];
+            resources: components["schemas"]["ResourceEstimate"];
+            /** Synthesis Estimate */
+            synthesis_estimate?: string | null;
+        };
+        /**
+         * FixedPointSpec
+         * @description Every format and rule of the GRU fixed-point reference. Changing any of them is a new spec id.
+         */
+        FixedPointSpec: {
+            /**
+             * Accumulator Bits
+             * @default 48
+             */
+            accumulator_bits: number;
+            /**
+             * @default {
+             *       "bits": 16,
+             *       "frac": 15
+             *     }
+             */
+            h: components["schemas"]["WordFormat"];
+            /**
+             * Model Key
+             * @default gru_stream
+             * @constant
+             */
+            model_key: "gru_stream";
+            /**
+             * Nonlinearity
+             * @default table lookup without interpolation: index = saturate(round(pre-activation to LUT_FRAC)) + offset
+             */
+            nonlinearity: string;
+            /**
+             * @default {
+             *       "bits": 32,
+             *       "frac": 20
+             *     }
+             */
+            pre: components["schemas"]["WordFormat"];
+            /**
+             * Rounding
+             * @default round half up: add 2^(s-1) then arithmetic shift right by s; left shifts are exact
+             */
+            rounding: string;
+            /**
+             * Saturation
+             * @default every stored quantity saturates to its word width (x, h, y, gate values, table index); the accumulator never wraps
+             */
+            saturation: string;
+            /**
+             * @default {
+             *       "function": "sigmoid",
+             *       "index_frac": 8,
+             *       "range": 8,
+             *       "value": {
+             *         "bits": 16,
+             *         "frac": 15
+             *       }
+             *     }
+             */
+            sigmoid: components["schemas"]["TableSpec"];
+            /**
+             * Spec Id
+             * @default fixed-point-v1
+             * @constant
+             */
+            spec_id: "fixed-point-v1";
+            /**
+             * @default {
+             *       "function": "tanh",
+             *       "index_frac": 8,
+             *       "range": 4,
+             *       "value": {
+             *         "bits": 16,
+             *         "frac": 15
+             *       }
+             *     }
+             */
+            tanh: components["schemas"]["TableSpec"];
+            /**
+             * Weight Bits
+             * @default 16
+             */
+            weight_bits: number;
+            /**
+             * @default {
+             *       "bits": 16,
+             *       "frac": 14
+             *     }
+             */
+            x: components["schemas"]["WordFormat"];
+            /**
+             * @default {
+             *       "bits": 16,
+             *       "frac": 14
+             *     }
+             */
+            y: components["schemas"]["WordFormat"];
+        };
+        /**
+         * GoldenCase
+         * @description One golden vector: inputs, expected outputs and final state, all in the spec's integer formats.
+         */
+        GoldenCase: {
+            /** Case Id */
+            case_id: string;
+            /** Description */
+            description: string;
+            /** Input Sha256 */
+            input_sha256: string;
+            /** N Samples */
+            n_samples: number;
+            /** Output Sha256 */
+            output_sha256: string;
+            /** Resets At */
+            resets_at?: number[];
+            /** State Sha256 */
+            state_sha256: string;
+            /** Trace Sha256 */
+            trace_sha256?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1792,6 +1998,26 @@ export interface components {
             signal?: components["schemas"]["SignalSpec"] | null;
         };
         /**
+         * MeasuredExecution
+         * @description The C reference's speed on the machine that built the package: a property of that build, not of a deployment.
+         */
+        MeasuredExecution: {
+            /**
+             * Label
+             * @default measured_execution_time
+             * @constant
+             */
+            label: "measured_execution_time";
+            /** Machine */
+            machine?: {
+                [key: string]: string;
+            };
+            /** Samples Per Second */
+            samples_per_second: number;
+            /** What */
+            what: string;
+        };
+        /**
          * MeasurementConditions
          * @description What the operator declares about the set-up. Recorded verbatim, never inferred.
          */
@@ -1885,6 +2111,19 @@ export interface components {
              * @default true
              */
             requires_reference: boolean;
+            /** Unit */
+            unit: string;
+        };
+        /** MetricDelta */
+        MetricDelta: {
+            /** Delta */
+            delta?: number | null;
+            /** Fixed Value */
+            fixed_value?: number | null;
+            /** Float Value */
+            float_value?: number | null;
+            /** Name */
+            name: string;
             /** Unit */
             unit: string;
         };
@@ -2314,6 +2553,35 @@ export interface components {
             task: components["schemas"]["TaskType"];
             training?: components["schemas"]["TrainingConfig"];
         };
+        /**
+         * ResourceEstimate
+         * @description Numbers derived from the specification and the shapes; nothing here was measured.
+         */
+        ResourceEstimate: {
+            /** Bias Bytes */
+            bias_bytes: number;
+            /**
+             * Label
+             * @default theoretical
+             * @constant
+             */
+            label: "theoretical";
+            /** Mac Per Sample */
+            mac_per_sample: number;
+            /**
+             * Sparsity
+             * @default none exploited: every MAC is executed
+             */
+            sparsity: string;
+            /** State Bytes */
+            state_bytes: number;
+            /** Table Bytes */
+            table_bytes: number;
+            /** Table Lookups Per Sample */
+            table_lookups_per_sample: number;
+            /** Weight Bytes */
+            weight_bytes: number;
+        };
         /** RunCount */
         RunCount: {
             /** Count */
@@ -2678,6 +2946,22 @@ export interface components {
             u_peak_abs: number;
         };
         /**
+         * TableSpec
+         * @description A non-linearity as a table: entries at every 2^-frac over [-range, range), values in ``value`` format.
+         */
+        TableSpec: {
+            /**
+             * Function
+             * @enum {string}
+             */
+            function: "sigmoid" | "tanh";
+            /** Index Frac */
+            index_frac: number;
+            /** Range */
+            range: number;
+            value: components["schemas"]["WordFormat"];
+        };
+        /**
          * TargetRule
          * @description What 'reaching the target' means: one metric of the plan's profile against a threshold.
          */
@@ -2698,6 +2982,24 @@ export interface components {
          * @enum {string}
          */
         TaskType: "train_pa" | "train_dpd" | "run_dpd" | "evaluate_measured" | "evaluate_pa";
+        /**
+         * TensorFormat
+         * @description How one weight tensor was quantised: its fraction and the range it had to hold.
+         */
+        TensorFormat: {
+            /** Bits */
+            bits: number;
+            /** Frac */
+            frac: number;
+            /** Max Abs Float */
+            max_abs_float: number;
+            /** Name */
+            name: string;
+            /** Saturated */
+            saturated: number;
+            /** Shape */
+            shape: number[];
+        };
         /**
          * TrainingConfig
          * @description Defaults mirror the OpenDPDv2 recipe (arguments.py); they are the
@@ -2825,6 +3127,31 @@ export interface components {
             type: string;
         };
         /**
+         * Verification
+         * @description Bit-exact comparison of the target implementation with the software reference on every golden vector.
+         */
+        Verification: {
+            /** Backend */
+            backend: string;
+            /** Cases Checked */
+            cases_checked: number;
+            /** Compiler */
+            compiler?: string | null;
+            /** Detail */
+            detail?: string | null;
+            /** Mismatch Case */
+            mismatch_case?: string | null;
+            /** Mismatch Signal */
+            mismatch_signal?: string | null;
+            /** Mismatch Step */
+            mismatch_step?: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "bit_exact" | "mismatch" | "not_run";
+        };
+        /**
          * WaveformBinding
          * @description A dataset's link to the waveform its input column was captured from.
          *
@@ -2903,6 +3230,16 @@ export interface components {
              * @constant
              */
             waveform_id: "ofdm-lte20-v1";
+        };
+        /**
+         * WordFormat
+         * @description A signed two's-complement fixed-point word.
+         */
+        WordFormat: {
+            /** Bits */
+            bits: number;
+            /** Frac */
+            frac: number;
         };
         /**
          * WorkerInfo
@@ -3403,6 +3740,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PreprocessPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deploy_export_api_v1_deploy_exports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeployRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeployExportInfo"];
                 };
             };
             /** @description Validation Error */

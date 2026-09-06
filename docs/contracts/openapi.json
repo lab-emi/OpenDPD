@@ -1547,6 +1547,141 @@
         "title": "DatasetVersion",
         "type": "object"
       },
+      "DeployExportInfo": {
+        "properties": {
+          "download_url": {
+            "title": "Download Url",
+            "type": "string"
+          },
+          "export_id": {
+            "title": "Export Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/DeploymentManifest"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "export_id",
+          "filename",
+          "size_bytes",
+          "download_url",
+          "manifest"
+        ],
+        "title": "DeployExportInfo",
+        "type": "object"
+      },
+      "DeployRequest": {
+        "properties": {
+          "run_id": {
+            "maxLength": 128,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "DeployRequest",
+        "type": "object"
+      },
+      "DeploymentManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "files": {
+            "additionalProperties": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "object"
+          },
+          "golden": {
+            "items": {
+              "$ref": "#/components/schemas/GoldenCase"
+            },
+            "title": "Golden",
+            "type": "array"
+          },
+          "hidden_size": {
+            "minimum": 1.0,
+            "title": "Hidden Size",
+            "type": "integer"
+          },
+          "model_key": {
+            "title": "Model Key",
+            "type": "string"
+          },
+          "report": {
+            "$ref": "#/components/schemas/FixedPointReport"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "software": {
+            "$ref": "#/components/schemas/SoftwareProvenance"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/FixedPointSpec"
+          },
+          "tensors": {
+            "items": {
+              "$ref": "#/components/schemas/TensorFormat"
+            },
+            "title": "Tensors",
+            "type": "array"
+          },
+          "verification": {
+            "$ref": "#/components/schemas/Verification"
+          },
+          "weights_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weights Sha256"
+          }
+        },
+        "required": [
+          "spec",
+          "run_id",
+          "model_key",
+          "hidden_size",
+          "tensors",
+          "golden",
+          "verification",
+          "report",
+          "files",
+          "software"
+        ],
+        "title": "DeploymentManifest",
+        "type": "object"
+      },
       "DeviceInfo": {
         "properties": {
           "count": {
@@ -2450,6 +2585,239 @@
         "title": "FileRef",
         "type": "object"
       },
+      "FixedPointReport": {
+        "additionalProperties": false,
+        "description": "Every number labelled by how it was obtained; the labels never mix.",
+        "properties": {
+          "execution_assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Execution Assumptions",
+            "type": "array"
+          },
+          "measured_execution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeasuredExecution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "measured_power": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measured Power"
+          },
+          "metric_profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Metric Profile Id",
+            "type": "string"
+          },
+          "quality_loss": {
+            "items": {
+              "$ref": "#/components/schemas/MetricDelta"
+            },
+            "title": "Quality Loss",
+            "type": "array"
+          },
+          "resources": {
+            "$ref": "#/components/schemas/ResourceEstimate"
+          },
+          "synthesis_estimate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synthesis Estimate"
+          }
+        },
+        "required": [
+          "quality_loss",
+          "metric_profile_id",
+          "resources",
+          "execution_assumptions"
+        ],
+        "title": "FixedPointReport",
+        "type": "object"
+      },
+      "FixedPointSpec": {
+        "additionalProperties": false,
+        "description": "Every format and rule of the GRU fixed-point reference. Changing any of them is a new spec id.",
+        "properties": {
+          "accumulator_bits": {
+            "default": 48,
+            "maximum": 64.0,
+            "minimum": 32.0,
+            "title": "Accumulator Bits",
+            "type": "integer"
+          },
+          "h": {
+            "$ref": "#/components/schemas/WordFormat",
+            "default": {
+              "bits": 16,
+              "frac": 15
+            }
+          },
+          "model_key": {
+            "const": "gru_stream",
+            "default": "gru_stream",
+            "title": "Model Key",
+            "type": "string"
+          },
+          "nonlinearity": {
+            "default": "table lookup without interpolation: index = saturate(round(pre-activation to LUT_FRAC)) + offset",
+            "title": "Nonlinearity",
+            "type": "string"
+          },
+          "pre": {
+            "$ref": "#/components/schemas/WordFormat",
+            "default": {
+              "bits": 32,
+              "frac": 20
+            }
+          },
+          "rounding": {
+            "default": "round half up: add 2^(s-1) then arithmetic shift right by s; left shifts are exact",
+            "title": "Rounding",
+            "type": "string"
+          },
+          "saturation": {
+            "default": "every stored quantity saturates to its word width (x, h, y, gate values, table index); the accumulator never wraps",
+            "title": "Saturation",
+            "type": "string"
+          },
+          "sigmoid": {
+            "$ref": "#/components/schemas/TableSpec",
+            "default": {
+              "function": "sigmoid",
+              "index_frac": 8,
+              "range": 8.0,
+              "value": {
+                "bits": 16,
+                "frac": 15
+              }
+            }
+          },
+          "spec_id": {
+            "const": "fixed-point-v1",
+            "default": "fixed-point-v1",
+            "title": "Spec Id",
+            "type": "string"
+          },
+          "tanh": {
+            "$ref": "#/components/schemas/TableSpec",
+            "default": {
+              "function": "tanh",
+              "index_frac": 8,
+              "range": 4.0,
+              "value": {
+                "bits": 16,
+                "frac": 15
+              }
+            }
+          },
+          "weight_bits": {
+            "default": 16,
+            "maximum": 32.0,
+            "minimum": 4.0,
+            "title": "Weight Bits",
+            "type": "integer"
+          },
+          "x": {
+            "$ref": "#/components/schemas/WordFormat",
+            "default": {
+              "bits": 16,
+              "frac": 14
+            }
+          },
+          "y": {
+            "$ref": "#/components/schemas/WordFormat",
+            "default": {
+              "bits": 16,
+              "frac": 14
+            }
+          }
+        },
+        "title": "FixedPointSpec",
+        "type": "object"
+      },
+      "GoldenCase": {
+        "additionalProperties": false,
+        "description": "One golden vector: inputs, expected outputs and final state, all in the spec's integer formats.",
+        "properties": {
+          "case_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "input_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Input Sha256",
+            "type": "string"
+          },
+          "n_samples": {
+            "minimum": 1.0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "output_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Output Sha256",
+            "type": "string"
+          },
+          "resets_at": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Resets At",
+            "type": "array"
+          },
+          "state_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "State Sha256",
+            "type": "string"
+          },
+          "trace_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Sha256"
+          }
+        },
+        "required": [
+          "case_id",
+          "description",
+          "n_samples",
+          "input_sha256",
+          "output_sha256",
+          "state_sha256"
+        ],
+        "title": "GoldenCase",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2883,6 +3251,40 @@
         "title": "ManifestUpdate",
         "type": "object"
       },
+      "MeasuredExecution": {
+        "additionalProperties": false,
+        "description": "The C reference's speed on the machine that built the package: a property of that build, not of a deployment.",
+        "properties": {
+          "label": {
+            "const": "measured_execution_time",
+            "default": "measured_execution_time",
+            "title": "Label",
+            "type": "string"
+          },
+          "machine": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Machine",
+            "type": "object"
+          },
+          "samples_per_second": {
+            "minimum": 0.0,
+            "title": "Samples Per Second",
+            "type": "number"
+          },
+          "what": {
+            "title": "What",
+            "type": "string"
+          }
+        },
+        "required": [
+          "what",
+          "samples_per_second"
+        ],
+        "title": "MeasuredExecution",
+        "type": "object"
+      },
       "MeasurementConditions": {
         "additionalProperties": false,
         "description": "What the operator declares about the set-up. Recorded verbatim, never inferred.",
@@ -3164,6 +3566,58 @@
           "aggregation"
         ],
         "title": "MetricDefinition",
+        "type": "object"
+      },
+      "MetricDelta": {
+        "additionalProperties": false,
+        "properties": {
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "fixed_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixed Value"
+          },
+          "float_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Float Value"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "unit"
+        ],
+        "title": "MetricDelta",
         "type": "object"
       },
       "MetricProfile": {
@@ -4326,6 +4780,63 @@
         "title": "ResolvedExperimentConfig",
         "type": "object"
       },
+      "ResourceEstimate": {
+        "additionalProperties": false,
+        "description": "Numbers derived from the specification and the shapes; nothing here was measured.",
+        "properties": {
+          "bias_bytes": {
+            "minimum": 0.0,
+            "title": "Bias Bytes",
+            "type": "integer"
+          },
+          "label": {
+            "const": "theoretical",
+            "default": "theoretical",
+            "title": "Label",
+            "type": "string"
+          },
+          "mac_per_sample": {
+            "minimum": 0.0,
+            "title": "Mac Per Sample",
+            "type": "integer"
+          },
+          "sparsity": {
+            "default": "none exploited: every MAC is executed",
+            "title": "Sparsity",
+            "type": "string"
+          },
+          "state_bytes": {
+            "minimum": 0.0,
+            "title": "State Bytes",
+            "type": "integer"
+          },
+          "table_bytes": {
+            "minimum": 0.0,
+            "title": "Table Bytes",
+            "type": "integer"
+          },
+          "table_lookups_per_sample": {
+            "minimum": 0.0,
+            "title": "Table Lookups Per Sample",
+            "type": "integer"
+          },
+          "weight_bytes": {
+            "minimum": 0.0,
+            "title": "Weight Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mac_per_sample",
+          "table_lookups_per_sample",
+          "weight_bytes",
+          "bias_bytes",
+          "state_bytes",
+          "table_bytes"
+        ],
+        "title": "ResourceEstimate",
+        "type": "object"
+      },
       "RunCount": {
         "properties": {
           "count": {
@@ -5397,6 +5908,42 @@
         "title": "SurrogateCoverage",
         "type": "object"
       },
+      "TableSpec": {
+        "additionalProperties": false,
+        "description": "A non-linearity as a table: entries at every 2^-frac over [-range, range), values in ``value`` format.",
+        "properties": {
+          "function": {
+            "enum": [
+              "sigmoid",
+              "tanh"
+            ],
+            "title": "Function",
+            "type": "string"
+          },
+          "index_frac": {
+            "maximum": 16.0,
+            "minimum": 0.0,
+            "title": "Index Frac",
+            "type": "integer"
+          },
+          "range": {
+            "exclusiveMinimum": 0.0,
+            "title": "Range",
+            "type": "number"
+          },
+          "value": {
+            "$ref": "#/components/schemas/WordFormat"
+          }
+        },
+        "required": [
+          "function",
+          "range",
+          "index_frac",
+          "value"
+        ],
+        "title": "TableSpec",
+        "type": "object"
+      },
       "TargetRule": {
         "additionalProperties": false,
         "description": "What 'reaching the target' means: one metric of the plan's profile against a threshold.",
@@ -5437,6 +5984,51 @@
         ],
         "title": "TaskType",
         "type": "string"
+      },
+      "TensorFormat": {
+        "additionalProperties": false,
+        "description": "How one weight tensor was quantised: its fraction and the range it had to hold.",
+        "properties": {
+          "bits": {
+            "title": "Bits",
+            "type": "integer"
+          },
+          "frac": {
+            "title": "Frac",
+            "type": "integer"
+          },
+          "max_abs_float": {
+            "minimum": 0.0,
+            "title": "Max Abs Float",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "saturated": {
+            "minimum": 0.0,
+            "title": "Saturated",
+            "type": "integer"
+          },
+          "shape": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Shape",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "shape",
+          "bits",
+          "frac",
+          "max_abs_float",
+          "saturated"
+        ],
+        "title": "TensorFormat",
+        "type": "object"
       },
       "TrainingConfig": {
         "additionalProperties": false,
@@ -5646,6 +6238,92 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "Verification": {
+        "additionalProperties": false,
+        "description": "Bit-exact comparison of the target implementation with the software reference on every golden vector.",
+        "properties": {
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "cases_checked": {
+            "minimum": 0.0,
+            "title": "Cases Checked",
+            "type": "integer"
+          },
+          "compiler": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compiler"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "mismatch_case": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mismatch Case"
+          },
+          "mismatch_signal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mismatch Signal"
+          },
+          "mismatch_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mismatch Step"
+          },
+          "status": {
+            "enum": [
+              "bit_exact",
+              "mismatch",
+              "not_run"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "backend",
+          "status",
+          "cases_checked"
+        ],
+        "title": "Verification",
+        "type": "object"
+      },
       "WaveformBinding": {
         "additionalProperties": false,
         "description": "A dataset's link to the waveform its input column was captured from.\n\n``input_offset_samples`` is the position of the dataset's first raw input sample inside one period of the\nwaveform (instruments play a waveform in a loop); ``correlation`` is the normalised cross-correlation peak\nthat established it. The binding never replaces the captured data: it only says which symbols were sent.",
@@ -5766,6 +6444,30 @@
           }
         },
         "title": "WaveformSpec",
+        "type": "object"
+      },
+      "WordFormat": {
+        "additionalProperties": false,
+        "description": "A signed two's-complement fixed-point word.",
+        "properties": {
+          "bits": {
+            "maximum": 64.0,
+            "minimum": 2.0,
+            "title": "Bits",
+            "type": "integer"
+          },
+          "frac": {
+            "maximum": 62.0,
+            "minimum": 0.0,
+            "title": "Frac",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bits",
+          "frac"
+        ],
+        "title": "WordFormat",
         "type": "object"
       },
       "WorkerInfo": {
@@ -6504,6 +7206,48 @@
         "summary": "Dataset Preprocess Preview",
         "tags": [
           "datasets"
+        ]
+      }
+    },
+    "/api/v1/deploy/exports": {
+      "post": {
+        "description": "Quantise a finished GRU run under fixed-point-v1, write golden vectors and the C99 reference, verify it bit for\nbit, and serve the package from <workspace>/exports. Unsupported models are refused with the reason.",
+        "operationId": "deploy_export_api_v1_deploy_exports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeployExportInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deploy Export",
+        "tags": [
+          "exports"
         ]
       }
     },

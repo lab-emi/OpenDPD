@@ -219,6 +219,56 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
     return Predictions(prediction, ground_truth, n_valid, float(gain) if gain is not None else None, **extra)
 
 
+class TrainedModel:
+    """A succeeded run's network with its weights loaded, and the continuous test split it was scored on."""
+
+    def __init__(self, net, resolved: ResolvedExperimentConfig, dataset: DatasetManifest, x_test: np.ndarray,
+                 y_test: np.ndarray, target_gain: Optional[float], nperseg: int):
+        self.net = net                      # CoreModel (PA tasks) or CascadedModel(dpd_model, pa_model)
+        self.resolved = resolved
+        self.dataset = dataset
+        self.x_test = x_test                # (n, 2) float32
+        self.y_test = y_test                # (n, 2) float32 measured PA output
+        self.target_gain = target_gain      # DPD tasks: the linear target gain
+        self.nperseg = nperseg
+
+    @property
+    def evaluated(self):
+        """The module under evaluation: the DPD of a cascade, or the PA model."""
+        return self.net.dpd_model if hasattr(self.net, "dpd_model") else self.net
+
+
+def trained_model(ws: Workspace, run_id: str) -> TrainedModel:
+    """Rebuild the network of a succeeded run from its resolved configuration and checkpoint (hash verified)."""
+    import torch  # noqa: F401  (the legacy modules need it imported first)
+    from modules.data_collector import load_dataset
+    from project import Project
+
+    resolved = load_resolved(ws, run_id)
+    manifest = load_artifacts(ws, run_id)
+    if manifest is None:
+        raise WorkspaceError(f"run '{run_id}' has no artifacts")
+    dataset = ws.get_dataset(resolved.dataset.id)
+    run_dir = ws.run_dir(run_id)
+    ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(dataset.dataset_id, resolved.dataset.preprocessing_version),
+                         dataset_name=dataset.dataset_id)
+    ns.plot = False
+    checkpoint = _checkpoint_path(ws, run_id, resolved, manifest)
+    dpd_task = resolved.task in (TaskType.train_dpd, TaskType.run_dpd)
+    with run_in_directory(run_dir):
+        if dpd_task:
+            _prepare_inputs(ws, run_dir, resolved, ns)
+        proj = Project(args=ns)
+        proj.set_device()
+        _, input_size = proj.build_dataloaders()
+        net = _build_net(proj, resolved, input_size)
+        (net.dpd_model if dpd_task else net).load_state_dict(load_checkpoint(checkpoint))
+        x_test, y_test = load_dataset(dataset_path=ns.dataset_path)[4:6]
+    gain = getattr(proj, "target_gain", None)
+    return TrainedModel(net.eval(), resolved, dataset, np.asarray(x_test, dtype=np.float32), np.asarray(y_test, dtype=np.float32),
+                        float(gain) if gain is not None else None, int(proj.args.nperseg))
+
+
 def _surrogate_evidence(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest,
                         dataset: DatasetManifest, predictions: Predictions, profile_id: str) -> Dict[str, object]:
     """Signal chain, baselines, amplitude coverage and scaling for a DPD result."""

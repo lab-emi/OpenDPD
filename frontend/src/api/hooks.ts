@@ -7,6 +7,7 @@ import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tansta
 import { api } from './client'
 import type {
   AdaptationReport,
+  DeployExportInfo,
   AdaptationReportSummary,
   ArtifactManifest,
   Capabilities,
@@ -214,3 +215,7 @@ export const useAdaptationReport = (planSha: string, enabled = true) =>
     retry: false,
     staleTime: Infinity,
   })
+
+/** fixed-point-v1 deployment package for a finished GRU run (S19); the server verifies the C99 reference bit for bit. */
+export const useDeployExport = () =>
+  useMutation({ mutationFn: (body: { run_id: string }) => api.post<DeployExportInfo>('/deploy/exports', body) })

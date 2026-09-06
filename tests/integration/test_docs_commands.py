@@ -26,7 +26,8 @@ pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
 TUTORIALS = [ROOT / "docs" / "tutorials" / "gui-quickstart.md", ROOT / "docs" / "tutorials" / "headless-cli.md",
              ROOT / "docs" / "tutorials" / "waveform-evaluation.md", ROOT / "docs" / "tutorials" / "measured-dpd.md",
-             ROOT / "docs" / "tutorials" / "adaptation-benchmark.md", ROOT / "docs" / "tutorials" / "streaming.md"]
+             ROOT / "docs" / "tutorials" / "adaptation-benchmark.md", ROOT / "docs" / "tutorials" / "streaming.md",
+             ROOT / "docs" / "tutorials" / "deployment-export.md"]
 OTHER_CI_SOURCES = [ROOT / ".github" / "workflows" / "weekly.yml", ROOT / "tests" / "integration" / "test_benchmark_protocol.py"]
 NESTED = {"datasets", "benchmark", "waveforms", "measurements", "instruments", "adaptation"}
 
@@ -229,6 +230,12 @@ def test_documented_commands_run_end_to_end(tmp_path):
     assert execution["semantics"] == "streaming_stateful" and execution["chunk_samples"] == 512
     assert execution["consistency"]["within_tolerance"] and execution["lookahead_samples"] == 0
     assert streamed["result"]["models"][0]["model"]["key"] == "gru_stream"
+
+    # docs/tutorials/deployment-export.md: a fixed-point-v1 package of the PA run with its verified C99 reference
+    deployed = json.loads(run("deploy", pa_id, "--workspace", str(ws), "--out", str(tmp_path / "deploy.zip"), "--json").stdout)
+    assert deployed["manifest"]["spec"]["spec_id"] == "fixed-point-v1" and (tmp_path / "deploy.zip").exists()
+    assert deployed["manifest"]["verification"]["status"] in ("bit_exact", "not_run")
+    assert [g["case_id"] for g in deployed["manifest"]["golden"]][:2] == ["normal", "extreme"]
 
     package = json.loads(run("export", pa_id, "--workspace", str(ws), "--kind", "share", "--json").stdout)
     zip_path = Path(package["path"])

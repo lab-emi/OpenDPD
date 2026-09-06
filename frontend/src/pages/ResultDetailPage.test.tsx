@@ -8,6 +8,7 @@ import resultMock from '@mocks/result_pa_modeling_mock.json'
 import dpdMock from '@mocks/result_dpd_surrogate_mock.json'
 import measuredMock from '@mocks/result_dpd_measured_mock.json'
 import streamingMock from '@mocks/result_pa_streaming_mock.json'
+import deploymentMock from '@mocks/deployment_manifest_mock.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { ResultDetailPage } from './ResultDetailPage'
 
@@ -194,4 +195,41 @@ test('a streaming result shows how the signal was consumed: chunk consistency, l
   expect(within(panel).getByText(/not the measured latency of an implementation/)).toBeInTheDocument()
   expect(screen.getByText(/not comparable with offline_segmented results of gru/)).toBeInTheDocument()
   expect(screen.getByText(/gru_stream .* streaming_stateful/)).toBeInTheDocument()
+})
+
+const gruModel = { key: 'gru', display_name: 'GRU', family: 'recurrent', legacy_backbone: 'gru', training_method: 'gradient', roles: ['pa', 'dpd'], params: [], status: 'supported', devices_tested: ['cpu'], lookahead_samples: 0, lookahead_note: 'causal', execution_semantics: 'offline_segmented', weights_from: null, export_formats: ['fixed-point-v1'], constraints: null, reference: null, evidence: null }
+
+test('a supported model exports a deployment package and the panel shows the verdict and the labelled numbers', async () => {
+  const { calls } = mockApi({
+    'GET /api/v1/results/run-pa-0001': () => legacy,
+    'GET /api/v1/results/run-pa-0001/profiles': () => ['legacy-opendpd-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
+    'GET /api/v1/models': () => [gruModel],
+    'POST /api/v1/deploy/exports': () => ({ status: 201, body: { export_id: 'run-pa-0001-deploy-1', filename: 'run-pa-0001-deploy-1.zip', size_bytes: 40960, download_url: '/api/v1/exports/run-pa-0001-deploy-1', manifest: deploymentMock.data } }),
+  })
+  renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
+  await userEvent.click(await screen.findByRole('button', { name: 'Export deployment package (fixed-point-v1)' }))
+  const ready = await screen.findByTestId('deploy-ready')
+  expect(calls.find((c) => c.method === 'POST' && c.path === '/api/v1/deploy/exports')!.body).toEqual({ run_id: 'run-pa-0001' })
+  expect(within(ready).getByTestId('deploy-verification')).toHaveTextContent('Bit-exact: c99 reference verified on 6 golden vectors.')
+  expect(within(ready).getByRole('link', { name: 'Download run-pa-0001-deploy-1.zip' })).toHaveAttribute('href', '/api/v1/exports/run-pa-0001-deploy-1')
+  const loss = within(ready).getByRole('table', { name: 'Float to fixed: quality loss' })
+  expect(within(loss).getByRole('row', { name: /NMSE/ })).toHaveTextContent('-36.71-36.42+0.29')
+  const resources = within(ready).getByTestId('deploy-resources')
+  expect(resources).toHaveTextContent('1771 MAC per sample')
+  expect(resources).toHaveTextContent('not available: nothing was synthesised')
+  expect(resources).toHaveTextContent('energy is never inferred from MAC or parameter counts')
+  expect(resources).toHaveTextContent('samples/s')
+})
+
+test('a model without the format gets the reason instead of a button', async () => {
+  mockApi({
+    'GET /api/v1/results/run-pa-0001': () => ({ ...legacy, models: legacy.models.map((m) => ({ ...m, model: { ...m.model, key: 'lstm' } })) }),
+    'GET /api/v1/results/run-pa-0001/profiles': () => ['legacy-opendpd-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
+    'GET /api/v1/models': () => [gruModel, { ...gruModel, key: 'lstm', display_name: 'LSTM', export_formats: [] }],
+  })
+  renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
+  expect(await screen.findByTestId('deploy-unsupported')).toHaveTextContent('No fixed-point specification for lstm. fixed-point-v1 covers gru')
+  expect(screen.queryByRole('button', { name: 'Export deployment package (fixed-point-v1)' })).not.toBeInTheDocument()
 })

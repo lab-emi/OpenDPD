@@ -1,0 +1,282 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "created_at": "2026-09-06T08:00:00Z",
+    "files": {
+      "README.md": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "c/gru_fixed.c": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "c/gru_fixed.h": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "c/harness.c": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "spec.json": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "weights.json": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "golden": [
+      {
+        "case_id": "normal",
+        "description": "the first 4096 samples of the test split",
+        "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "n_samples": 4096,
+        "output_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resets_at": [],
+        "state_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "trace_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "case_id": "extreme",
+        "description": "full-scale inputs: constant +max, constant -max, alternating",
+        "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "n_samples": 512,
+        "output_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resets_at": [],
+        "state_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "trace_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "case_id": "saturation",
+        "description": "random full-scale signs: pre-activations beyond the table ranges, state at its bounds",
+        "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "n_samples": 1024,
+        "output_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resets_at": [],
+        "state_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "trace_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "case_id": "all_zero",
+        "description": "zero input: the state stays at zero and the output is the bias path",
+        "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "n_samples": 256,
+        "output_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resets_at": [],
+        "state_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "trace_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "case_id": "state_reset",
+        "description": "one 256-sample block four times with a reset before each; the four outputs are identical",
+        "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "n_samples": 1024,
+        "output_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resets_at": [
+          0,
+          256,
+          512,
+          768
+        ],
+        "state_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "trace_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "case_id": "long_sequence",
+        "description": "65536 samples of the test split (tiled when shorter): no drift, no overflow",
+        "input_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "n_samples": 65536,
+        "output_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resets_at": [],
+        "state_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "trace_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "hidden_size": 23,
+    "model_key": "gru",
+    "report": {
+      "execution_assumptions": [
+        "one sample per step, sequential; the state (spec.h) is carried across samples and chunks (gru_stream semantics)",
+        "two's-complement integers; right shifts are floors implemented with division (no arithmetic-shift assumption)",
+        "dot products are exact in the accumulator (int64 in the references); the bound is checked, never wrapped",
+        "no parallelism, pipelining or sparsity is assumed; the C reference is single-threaded",
+        "the input is already in spec.x: analogue front-end, AGC and I/Q calibration are outside this package"
+      ],
+      "measured_execution": {
+        "label": "measured_execution_time",
+        "machine": {
+          "cores": "8",
+          "cpu": "x86_64",
+          "os": "Linux 6.0 (x86_64)"
+        },
+        "samples_per_second": 2100000.0,
+        "what": "the compiled C99 reference replaying the long_sequence golden vector, single thread"
+      },
+      "measured_power": null,
+      "metric_profile_id": "legacy-opendpd-v1",
+      "quality_loss": [
+        {
+          "delta": 0.29,
+          "fixed_value": -36.42,
+          "float_value": -36.71,
+          "name": "NMSE",
+          "unit": "dB"
+        },
+        {
+          "delta": 0.25,
+          "fixed_value": -38.7,
+          "float_value": -38.95,
+          "name": "EVM",
+          "unit": "dB"
+        },
+        {
+          "delta": 0.22,
+          "fixed_value": -46.9,
+          "float_value": -47.12,
+          "name": "ACLR_L",
+          "unit": "dBc"
+        },
+        {
+          "delta": 0.27,
+          "fixed_value": -46.61,
+          "float_value": -46.88,
+          "name": "ACLR_R",
+          "unit": "dBc"
+        },
+        {
+          "delta": 0.24,
+          "fixed_value": -46.76,
+          "float_value": -47.0,
+          "name": "ACLR_AVG",
+          "unit": "dBc"
+        }
+      ],
+      "resources": {
+        "bias_bytes": 560,
+        "label": "theoretical",
+        "mac_per_sample": 1771,
+        "sparsity": "none exploited: every MAC is executed",
+        "state_bytes": 46,
+        "table_bytes": 12288,
+        "table_lookups_per_sample": 69,
+        "weight_bytes": 3542
+      },
+      "synthesis_estimate": null
+    },
+    "run_id": "run-pa-0001",
+    "schema_version": 1,
+    "software": {
+      "git_commit": "6f026b1",
+      "git_dirty": false,
+      "opendpd_version": "2.2.0.dev0",
+      "platform": "Linux-x86_64",
+      "python_version": "3.13.14",
+      "torch_version": "2.13.0+cu132"
+    },
+    "spec": {
+      "accumulator_bits": 48,
+      "h": {
+        "bits": 16,
+        "frac": 15
+      },
+      "model_key": "gru_stream",
+      "nonlinearity": "table lookup without interpolation: index = saturate(round(pre-activation to LUT_FRAC)) + offset",
+      "pre": {
+        "bits": 32,
+        "frac": 20
+      },
+      "rounding": "round half up: add 2^(s-1) then arithmetic shift right by s; left shifts are exact",
+      "saturation": "every stored quantity saturates to its word width (x, h, y, gate values, table index); the accumulator never wraps",
+      "sigmoid": {
+        "function": "sigmoid",
+        "index_frac": 8,
+        "range": 8.0,
+        "value": {
+          "bits": 16,
+          "frac": 15
+        }
+      },
+      "spec_id": "fixed-point-v1",
+      "tanh": {
+        "function": "tanh",
+        "index_frac": 8,
+        "range": 4.0,
+        "value": {
+          "bits": 16,
+          "frac": 15
+        }
+      },
+      "weight_bits": 16,
+      "x": {
+        "bits": 16,
+        "frac": 14
+      },
+      "y": {
+        "bits": 16,
+        "frac": 14
+      }
+    },
+    "tensors": [
+      {
+        "bits": 16,
+        "frac": 15,
+        "max_abs_float": 0.81,
+        "name": "w_ih",
+        "saturated": 0,
+        "shape": [
+          69,
+          2
+        ]
+      },
+      {
+        "bits": 16,
+        "frac": 15,
+        "max_abs_float": 0.66,
+        "name": "w_hh",
+        "saturated": 0,
+        "shape": [
+          69,
+          23
+        ]
+      },
+      {
+        "bits": 16,
+        "frac": 14,
+        "max_abs_float": 1.12,
+        "name": "w_out",
+        "saturated": 0,
+        "shape": [
+          2,
+          23
+        ]
+      },
+      {
+        "bits": 32,
+        "frac": 20,
+        "max_abs_float": 0.31,
+        "name": "b_ih",
+        "saturated": 0,
+        "shape": [
+          69
+        ]
+      },
+      {
+        "bits": 32,
+        "frac": 20,
+        "max_abs_float": 0.27,
+        "name": "b_hh",
+        "saturated": 0,
+        "shape": [
+          69
+        ]
+      },
+      {
+        "bits": 32,
+        "frac": 20,
+        "max_abs_float": 0.02,
+        "name": "b_out",
+        "saturated": 0,
+        "shape": [
+          2
+        ]
+      }
+    ],
+    "verification": {
+      "backend": "c99",
+      "cases_checked": 6,
+      "compiler": "/usr/bin/cc",
+      "detail": "6 golden vectors replayed through the compiled C99 reference; every output sample and every state step equal to the software reference",
+      "mismatch_case": null,
+      "mismatch_signal": null,
+      "mismatch_step": null,
+      "status": "bit_exact"
+    },
+    "weights_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}

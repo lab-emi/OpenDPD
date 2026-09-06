@@ -48,6 +48,14 @@ from .experiment import (
     TaskType,
     TrainingConfig,
 )
+from .fixed_point import (
+    DeploymentManifest,
+    FixedPointReport,
+    FixedPointSpec,
+    GoldenCase,
+    MetricDelta,
+    Verification,
+)
 from .conditions import (
     AdaptationCell,
     AdaptationEntry,
@@ -145,7 +153,8 @@ __all__ = [
     "CellAggregate",
     "Condition", "ConditionAudit", "ConditionSet", "EvidenceBar", "TargetRule",
     "PACKAGE_VERSION", "ImportReport", "PackageDataset", "PackageFile", "PackageManifest", "PackageReference",
-    "BaselineScore", "ComparisonPair", "ComparisonReport", "DatasetEvidence", "EvaluationResult", "ExecutionEvidence", "StreamConsistency", "HistoryPoint",
+    "BaselineScore", "ComparisonPair", "ComparisonReport", "DatasetEvidence", "EvaluationResult", "ExecutionEvidence", "StreamConsistency",
+    "DeploymentManifest", "FixedPointReport", "FixedPointSpec", "GoldenCase", "MetricDelta", "Verification", "HistoryPoint",
     "ModelEvidence", "ScalingInfo", "SignalReference", "SignalStage", "SurrogateCoverage",
     "TERMINAL_STATUSES", "LineageLink", "LineageRelation", "RunError", "RunEvent", "RunEventType", "RunLineage",
     "RunRecord", "RunStatus", "WorkerInfo", "can_transition", "heartbeat_is_stale",

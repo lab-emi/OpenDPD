@@ -19,6 +19,7 @@ from opendpd.core.registry import list_models
 from opendpd.core.splits import DEFAULT_GUARD_SAMPLES
 from opendpd.schemas import (
     AdaptationReport,
+    DeploymentManifest,
     AdaptationReportSummary,
     ArtifactManifest,
     ComparisonReport,
@@ -48,6 +49,7 @@ from opendpd.schemas import (
 )
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, UPLOAD_MAX_BODY, Session
 from opendpd.services import adaptation as adaptation_service
+from opendpd.services import deploy as deploy_service
 from opendpd.services import capabilities as capabilities_service
 from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
@@ -666,6 +668,42 @@ def exports_create(body: ExportRequest, request: Request):
     export_id = filename[:-4]
     return ExportInfo(export_id=export_id, filename=filename, size_bytes=(ws.exports_dir / filename).stat().st_size,
                       download_url=f"/api/v1/exports/{export_id}", manifest=manifest)
+
+
+# --- deployment packages (fixed-point-v1, plan S19) ------------------------------------------
+
+class DeployRequest(BaseModel):
+    run_id: str = Field(max_length=128)
+
+
+class DeployExportInfo(BaseModel):
+    export_id: str
+    filename: str
+    size_bytes: int
+    download_url: str
+    manifest: DeploymentManifest
+
+
+@router.post("/deploy/exports", response_model=DeployExportInfo, status_code=201, tags=["exports"],
+             dependencies=[Depends(require_csrf)])
+def deploy_export(body: DeployRequest, request: Request):
+    """Quantise a finished GRU run under fixed-point-v1, write golden vectors and the C99 reference, verify it bit for
+    bit, and serve the package from <workspace>/exports. Unsupported models are refused with the reason."""
+    record = _get_run(request, body.run_id)
+    if record.status != RunStatus.succeeded:
+        raise _error(409, "run_not_finished", "only succeeded runs can be exported")
+    reason = deploy_service.support(record.model_key or "")
+    if reason:
+        raise _error(422, "deploy_unsupported", reason, hint="models with export_formats containing fixed-point-v1 (see GET /models)")
+    ws = request.app.state.ws
+    filename = f"{body.run_id}-deploy-{utcnow().strftime('%Y%m%d-%H%M%S')}.zip"
+    try:
+        manifest = deploy_service.export_deployment(ws, body.run_id, ws.exports_dir / filename)
+    except (WorkspaceError, ValueError, RuntimeError) as err:
+        raise _error(422, "deploy_failed", str(err))
+    path = ws.exports_dir / filename
+    return DeployExportInfo(export_id=path.stem, filename=filename, size_bytes=path.stat().st_size,
+                            download_url=f"/api/v1/exports/{path.stem}", manifest=manifest)
 
 
 @router.get("/exports/{export_id}", tags=["exports"], dependencies=[Depends(require_session)])
