@@ -222,7 +222,6 @@ class FileEntryInfo(BaseModel):
     path: str
     kind: str
     size_bytes: int = 0
-    suffix: str = ""
 
 
 class SourceRef(BaseModel):
@@ -251,7 +250,6 @@ class ImportRequest(BaseModel):
     signal: SignalSpec = SignalSpec()
     origin: DatasetOrigin = DatasetOrigin.unknown
     guard_samples: int = Field(default=DEFAULT_GUARD_SAMPLES, ge=0, le=100_000)
-    ratios: Optional[Dict[str, float]] = None
     notes: Optional[str] = Field(default=None, max_length=2000)
 
 
@@ -321,7 +319,7 @@ def dataset_import(body: ImportRequest, request: Request):
     target = datasets_service.resolve_in_root(ws, body.source.root_id, body.source.path)
     return datasets_service.import_dataset(ws, target, dataset_id=body.dataset_id, display_name=body.display_name,
                                            mapping=body.mapping, signal=body.signal, origin=body.origin,
-                                           ratios=body.ratios, guard_samples=body.guard_samples, notes=body.notes)
+                                           guard_samples=body.guard_samples, notes=body.notes)
 
 
 @router.post("/datasets/upload", response_model=UploadResult, status_code=201, tags=["datasets"],

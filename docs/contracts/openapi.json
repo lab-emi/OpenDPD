@@ -1187,11 +1187,6 @@
             "default": 0,
             "title": "Size Bytes",
             "type": "integer"
-          },
-          "suffix": {
-            "default": "",
-            "title": "Suffix",
-            "type": "string"
           }
         },
         "required": [
@@ -1333,20 +1328,6 @@
           "origin": {
             "$ref": "#/components/schemas/DatasetOrigin",
             "default": "unknown"
-          },
-          "ratios": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "number"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ratios"
           },
           "signal": {
             "$ref": "#/components/schemas/SignalSpec",

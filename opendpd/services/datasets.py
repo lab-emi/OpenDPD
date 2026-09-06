@@ -61,7 +61,6 @@ class FileEntry:
     path: str          # relative to the root, POSIX
     kind: str          # "file" | "dir"
     size_bytes: int = 0
-    suffix: str = ""
 
 
 def resolve_in_root(ws: Workspace, root_id: str, relative: str) -> Path:
@@ -81,7 +80,7 @@ def list_files(ws: Workspace, root_id: str, relative: str = "") -> List[FileEntr
     if not base.exists():
         return []
     if base.is_file():
-        return [FileEntry(path=relative, kind="file", size_bytes=base.stat().st_size, suffix=base.suffix.lower())]
+        return [FileEntry(path=relative, kind="file", size_bytes=base.stat().st_size)]
     entries = []
     root = ws.import_roots()[root_id].resolve()
     for p in sorted(base.iterdir(), key=lambda q: (q.is_file(), q.name.lower())):
@@ -91,7 +90,7 @@ def list_files(ws: Workspace, root_id: str, relative: str = "") -> List[FileEntr
         if p.is_dir():
             entries.append(FileEntry(path=rel, kind="dir"))
         elif p.suffix.lower() in SUPPORTED_SUFFIXES:
-            entries.append(FileEntry(path=rel, kind="file", size_bytes=p.stat().st_size, suffix=p.suffix.lower()))
+            entries.append(FileEntry(path=rel, kind="file", size_bytes=p.stat().st_size))
     return entries
 
 
@@ -328,8 +327,8 @@ def _materialise(ws: Workspace, manifest: DatasetManifest, version: str, x: np.n
 
 def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = None, display_name: Optional[str] = None,
                    mapping: Optional[Dict[str, str]] = None, signal: Optional[SignalSpec] = None,
-                   origin: DatasetOrigin = DatasetOrigin.unknown, ratios: Optional[Dict[str, float]] = None,
-                   guard_samples: int = DEFAULT_GUARD_SAMPLES, notes: Optional[str] = None) -> DatasetManifest:
+                   origin: DatasetOrigin = DatasetOrigin.unknown, guard_samples: int = DEFAULT_GUARD_SAMPLES,
+                   notes: Optional[str] = None) -> DatasetManifest:
     """Copy the source into the workspace (hashed, untouched) and materialise raw-v1."""
     source = Path(source)
     if not source.exists():
@@ -337,7 +336,7 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
     info = inspect_source(source)
     mapping = dict(info.suggested_mapping, **(mapping or {}))
     signal = signal or SignalSpec()
-    ratios = ratios or dict(DEFAULT_RATIOS)
+    ratios = dict(DEFAULT_RATIOS)
     dataset_id = dataset_id or slugify(source.stem if source.is_file() else source.name)
     display_name = display_name or (source.stem if source.is_file() else source.name)
     if origin == DatasetOrigin.synthetic and "synthetic" not in display_name.lower():

@@ -19,7 +19,7 @@ const source = {
 function routes(info = source) {
   return mockApi({
     'GET /api/v1/datasets/import-roots': () => [{ root_id: 'imports', path: '/ws/imports', exists: true }],
-    'GET /api/v1/datasets/import-roots/imports/files': () => [{ path: 'capture.csv', kind: 'file', size_bytes: 1234, suffix: '.csv' }],
+    'GET /api/v1/datasets/import-roots/imports/files': () => [{ path: 'capture.csv', kind: 'file', size_bytes: 1234 }],
     'POST /api/v1/datasets/inspect': () => info,
     'POST /api/v1/datasets/import': () => ({ status: 201, body: { ...datasetMock.data, dataset_id: 'capture' } }),
   })

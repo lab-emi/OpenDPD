@@ -88,7 +88,7 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
       return json(route, dataset, 201)
     }
     if (path === '/datasets/import-roots') return json(route, [{ root_id: 'imports', path: '/home/user/opendpd workspace/imports', exists: true }])
-    if (path.startsWith('/datasets/import-roots/')) return json(route, [{ path: 'capture.csv', kind: 'file', size_bytes: 1_280_000, suffix: '.csv' }])
+    if (path.startsWith('/datasets/import-roots/')) return json(route, [{ path: 'capture.csv', kind: 'file', size_bytes: 1_280_000 }])
     if (path === '/datasets/inspect') return json(route, source)
     if (path === '/datasets/import') {
       const body = req.postDataJSON() as { dataset_id?: string | null; display_name?: string | null; signal: Json; mapping: Json; origin: string }

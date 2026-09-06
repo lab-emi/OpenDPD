@@ -101,7 +101,6 @@ export function ImportDatasetDialog({ onClose, onImported }: { onClose: () => vo
       signal: signalSpecFrom(signal),
       origin,
       guard_samples: guard.trim() === '' || !Number.isFinite(g) ? 256 : g,
-      ratios: null,
       notes: null,
     }
     importDs.mutate(body, { onSuccess: (m) => onImported(m.dataset_id) })

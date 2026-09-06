@@ -38,7 +38,7 @@ const asNumber = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? 
 const fmt = (v: number) => String(Math.round(v * 1000) / 1000)
 
 /** Mirrors opendpd.core.doctor.estimates_from_report: the numbers a user can accept as corrections. */
-export function estimatesFrom(report: DiagnosticReport) {
+function estimatesFrom(report: DiagnosticReport) {
   const by = new Map((report.items ?? []).map((i) => [i.code, i]))
   const align = by.get('time_misalignment') ?? by.get('alignment_ok')
   const gain = by.get('linear_gain_phase')

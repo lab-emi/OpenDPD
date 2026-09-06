@@ -14,7 +14,7 @@ repository; "pending human" means a maintainer decision is required;
 | S04 local service & API | done | `076de58` | FastAPI app, sessions/CSRF/Host checks, SSE replay, OpenAPI contract, threat model |
 | S05 React workbench | done (visual baselines local only) | `c002ca2` + `c5f5b83` | `frontend/`: pages, domain components, states, Vitest + Playwright journeys, generated API types |
 | S06 packaging & one-command launch | done on Linux; **macOS/Windows not verified** | `86ddd7a` | `opendpd gui`, `opendpd doctor`, wheel/sdist carry the built frontend, packaged L2 test |
-| S07 data import, Dataset Doctor, traceable preprocessing | done | — | import roots + upload, `dataset-doctor-v1`, `preprocess-v1` versions, `contiguous-v1` split, datasets pages, J2 journey (mock) and headless CLI J2 on real data |
+| S07 data import, Dataset Doctor, traceable preprocessing | done | `4fea772` + ablation | import roots + upload, `dataset-doctor-v1`, `preprocess-v1` versions, `contiguous-v1` split, datasets pages, J2 journey (mock) and headless CLI J2 on real data |
 
 ## S00 acceptance items
 

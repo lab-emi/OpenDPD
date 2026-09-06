@@ -948,11 +948,6 @@ export interface components {
              * @default 0
              */
             size_bytes: number;
-            /**
-             * Suffix
-             * @default
-             */
-            suffix: string;
         };
         /**
          * FileRef
@@ -999,10 +994,6 @@ export interface components {
             notes?: string | null;
             /** @default unknown */
             origin: components["schemas"]["DatasetOrigin"];
-            /** Ratios */
-            ratios?: {
-                [key: string]: number;
-            } | null;
             /**
              * @default {
              *       "amplitude_units": "unknown"
