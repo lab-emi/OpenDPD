@@ -91,5 +91,7 @@ datasets = ["*/spec.json", "*/*.csv"]
 testpaths = ["tests"]
 markers = [
     "extended: long-running tests executed only by the scheduled Weekly workflow",
+    "integration: L1 tests that run a real worker process or a real HTTP server",
+    "packaging: L2 tests that build and install the wheel in a clean environment",
 ]
 

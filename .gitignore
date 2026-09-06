@@ -22,7 +22,7 @@ wheels/
 build/
 plots/
 datasets/MATLAB
-docs/
+
 
 # Virtual environments
 venv/
@@ -96,3 +96,6 @@ steps/__pycache__/
 PACKAGE_INSTALLATION.md
 PyPI.md
 adc/*
+
+# Frozen legacy checkpoint fixtures are tracked on purpose (tests/golden/README.md)
+!tests/golden/legacy_checkpoints/*.pt

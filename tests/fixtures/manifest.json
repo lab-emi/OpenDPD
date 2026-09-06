@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "note": "Test-data tiers from the development plan §8.1. Only 'tiny' data is committed; larger tiers are generated on demand with tests/fixtures/synthetic.py and never used as scientific results.",
+  "tiers": {
+    "tiny": {
+      "real": {
+        "dataset": "datasets/DPA_200MHz",
+        "samples_per_split": {"train": 23040, "val": 7680, "test": 7680},
+        "origin": "measured 40nm CMOS digital PA, shipped with the package",
+        "used_by": ["tests/test_e2e_pipeline.py", "tests/golden/legacy_checkpoints"]
+      },
+      "synthetic": {
+        "generator": "tests/fixtures/synthetic.py:synthesize",
+        "samples": 20000,
+        "impairments": "configurable delay / complex gain / clipping / outliers / NaN",
+        "purpose": "Dataset Doctor detector tolerances and fast state/numeric tests"
+      }
+    },
+    "standard": {
+      "generator": "python -m tests.fixtures.synthetic --tier standard-1e6|standard-1e7 --out <dir>",
+      "samples": [1000000, 10000000],
+      "purpose": "real-size import, diagnostics, chart and training flows"
+    },
+    "stress": {
+      "generator": "python -m tests.fixtures.synthetic --tier stress-1e8 --out <dir>",
+      "samples": 100000000,
+      "storage": "float32 I/Q binary (.npy), about 1.6 GB for input+output",
+      "purpose": "incremental reading and memory upper bound; not run per PR"
+    },
+    "history": {
+      "generator": "planned for S13: >= 1000 run summaries and 50000 log lines",
+      "purpose": "pagination, search, virtual lists"
+    }
+  }
+}
