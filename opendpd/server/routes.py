@@ -39,6 +39,7 @@ from opendpd.schemas import (
     MetricProfile,
 )
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, UPLOAD_MAX_BODY, Session
+from opendpd.services import capabilities as capabilities_service
 from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
 from opendpd.services.config import ConfigError, ConfigIssue, validate as validate_config
@@ -118,30 +119,10 @@ class Capabilities(BaseModel):
     note: str
 
 
-_device_cache: Dict[str, Any] = {}
-
-
-def _detect_devices() -> Dict[str, Any]:
-    if _device_cache:
-        return _device_cache
-    info = {"cuda": {"detected": False, "count": 0, "name": None}, "mps": {"detected": False}}
-    try:
-        import torch
-        if torch.cuda.is_available():
-            info["cuda"] = {"detected": True, "count": torch.cuda.device_count(),
-                            "name": torch.cuda.get_device_name(0)}
-        mps = getattr(torch.backends, "mps", None)
-        info["mps"] = {"detected": bool(mps and mps.is_available())}
-    except Exception as err:  # noqa: BLE001 - torch missing or broken driver
-        info["error"] = str(err)
-    _device_cache.update(info)
-    return _device_cache
-
-
 @router.get("/system/capabilities", response_model=Capabilities, tags=["system"],
             dependencies=[Depends(require_session)])
 def capabilities(request: Request):
-    detected = _detect_devices()
+    detected = capabilities_service.detect_devices()
     models = list_models()
     devices = [DeviceInfo(device="cpu", detected=True, count=1,
                           tested_models=[m.key for m in models if "cpu" in m.devices_tested])]
@@ -404,7 +385,7 @@ def experiments_validate(body: ValidateRequest, request: Request) -> Dict[str, A
         try:
             ws.get_dataset(report.resolved.dataset.id)
             bound = experiments.bind_references(ws, ExperimentConfig.model_validate(body.config))
-            errors, warnings = experiments.dataset_issues(ws, bound)
+            errors, warnings = experiments.submission_issues(ws, bound)
             report = validate_config(bound.model_dump(mode="json"), warnings=warnings)
             report.errors.extend(errors)
             if errors:

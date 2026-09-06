@@ -135,12 +135,19 @@ def _checkpoint_of(ws: Workspace, run_id: str, expected_task: TaskType, field: s
     return record, load_resolved(ws, run_id), checkpoints[0]
 
 
-def dataset_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[ConfigIssue], List[ConfigIssue]]:
-    """Checks the pure resolver cannot make: the data version exists, and the split
-    guard covers the frame context (plan S07: boundary isolation >= context so
-    adjacent overlapping frames never share samples across train/val/test)."""
+def submission_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[ConfigIssue], List[ConfigIssue]]:
+    """Checks the pure resolver cannot make: the device exists on this machine, the
+    data version exists, and the split guard covers the frame context (plan S07:
+    boundary isolation >= context so adjacent overlapping frames never share
+    samples across train/val/test). Devices are never switched silently (S09)."""
+    from opendpd.services import capabilities
+
     errors: List[ConfigIssue] = []
     warnings: List[ConfigIssue] = []
+    device = config.execution.device
+    if not capabilities.device_available(device):
+        errors.append(ConfigIssue("execution.device", f"device '{device}' is not available on this machine",
+                                  hint="choose cpu or a detected device; OpenDPD never switches devices silently"))
     manifest = ws.get_dataset(config.dataset.id)
     version = config.dataset.preprocessing_version
     dv = manifest.version(version)
@@ -220,7 +227,7 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
         raise WorkspaceError("; ".join(problems))
     ws.get_dataset(config.dataset.id)
     bound = bind_references(ws, config)
-    errors, warnings = dataset_issues(ws, bound)
+    errors, warnings = submission_issues(ws, bound)
     if errors:
         raise ConfigError(errors)
     resolved = resolve(bound, warnings=warnings)

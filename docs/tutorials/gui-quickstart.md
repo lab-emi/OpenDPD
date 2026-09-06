@@ -71,6 +71,23 @@ opendpd datasets preprocess mine --version aligned-v1 --delay 6
 opendpd run --config exp.json   # with "dataset": {"id": "mine", "preprocessing_version": "aligned-v1"}
 ```
 
+## Reproduce, export and import a configuration
+
+- Every run's **Configuration** tab shows the resolved configuration (what
+  actually ran, with its hash), a **Download configuration (JSON)** button and
+  **Re-run with this configuration**, which opens the experiment form with
+  that configuration imported.
+- The experiment form's **Import configuration…** button accepts such a JSON
+  file (the `resolution` block is dropped). An imported configuration is
+  validated by the server and submitted exactly as is; the form fields are
+  not applied to it.
+- Model parameters in **Advanced settings** are generated from the model
+  registry (`opendpd models`): the same names, types and limits the CLI and
+  the Python API accept, so nothing is hand-written twice.
+- The same configuration through the GUI and `opendpd run --config` resolves
+  to the same hash and, on CPU with `reproducibility: hard`, to the same
+  numbers (`tests/integration/test_entry_consistency.py`).
+
 ## When something is wrong
 
 - `opendpd doctor` prints versions, whether the frontend assets are present,

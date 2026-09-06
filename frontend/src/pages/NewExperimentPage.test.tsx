@@ -16,7 +16,24 @@ const recipe = {
   limits: 'Not a benchmark.',
   expected_duration: '~1 min on CPU',
 }
-const model = { key: 'gru', display_name: 'GRU', family: 'recurrent', legacy_backbone: 'gru', training_method: 'gradient', roles: ['pa', 'dpd'], params: [], status: 'supported', devices_tested: ['cpu', 'cuda'], lookahead_samples: 0, lookahead_note: '', execution_semantics: 'offline_segmented', export_formats: [] }
+const model = {
+  key: 'gru',
+  display_name: 'GRU',
+  family: 'recurrent',
+  legacy_backbone: 'gru',
+  training_method: 'gradient',
+  roles: ['pa', 'dpd'],
+  params: [
+    { name: 'hidden_size', type: 'int', default: 23, description: 'Hidden state size of the backbone', minimum: 1, maximum: null, choices: null, legacy_arg: {} },
+    { name: 'num_layers', type: 'int', default: 1, description: 'Number of stacked recurrent layers', minimum: 1, maximum: 8, choices: null, legacy_arg: {} },
+  ],
+  status: 'supported',
+  devices_tested: ['cpu', 'cuda'],
+  lookahead_samples: 0,
+  lookahead_note: '',
+  execution_semantics: 'offline_segmented',
+  export_formats: [],
+}
 const caps = { version: 'x', workspace: '/ws', note: '', devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru'] }] }
 
 function base(validate: (config: Record<string, unknown>) => unknown) {
@@ -66,4 +83,52 @@ test('keyboard-only: tab to the submit button, Enter submits once with an idempo
   expect(body.idempotency_key.length).toBeGreaterThan(8)
   expect(body.config.task).toBe('train_pa')
   expect(body.config.dataset.id).toBe(datasetMock.data.dataset_id)
+})
+
+
+test('model parameters come from the registry: fields are generated per spec and edits reach the configuration', async () => {
+  const { calls } = base(() => ({ ok: true, errors: [], warnings: [], resolved: null }))
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  await userEvent.click(screen.getByRole('button', { name: 'Advanced settings' }))
+  expect(screen.queryByLabelText('Hidden size')).not.toBeInTheDocument()
+  const layers = screen.getByLabelText('num_layers')
+  expect(layers).toHaveAttribute('placeholder', '1')
+  expect(screen.getByText('Number of stacked recurrent layers')).toBeInTheDocument()
+  await userEvent.type(layers, '2')
+  await waitFor(() => {
+    const last = calls.filter((c) => c.path === '/api/v1/experiments/validate').at(-1)
+    const body = last?.body as { config: { model: { parameters: Record<string, unknown> } } } | undefined
+    expect(body?.config.model.parameters).toEqual({ hidden_size: 23, num_layers: 2 })
+  })
+})
+
+test('an exported configuration can be imported and is submitted as is (resolution block dropped)', async () => {
+  const { calls } = base(() => ({ ok: true, errors: [], warnings: [], resolved: null }))
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  const exported = { task: 'train_pa', recipe_id: 'pa-gru-smoke-v1', name: null, dataset: { id: 'dpa-200mhz', preprocessing_version: 'aligned-v1' }, model: { key: 'gru', parameters: { hidden_size: 8, num_layers: 1 } }, training: { epochs: 7 }, execution: { device: 'cpu' }, resolution: { config_sha256: 'abc', warnings: [] } }
+  const input = screen.getByTestId('import-config')
+  await userEvent.upload(input, new File([JSON.stringify(exported)], 'exp.json', { type: 'application/json' }))
+  await screen.findByTestId('imported-banner')
+  await waitFor(() => {
+    const last = calls.filter((c) => c.path === '/api/v1/experiments/validate').at(-1)
+    const body = last?.body as { config: Record<string, unknown> } | undefined
+    expect(body?.config['resolution']).toBeUndefined()
+    expect(body?.config['dataset']).toEqual({ id: 'dpa-200mhz', preprocessing_version: 'aligned-v1' })
+    expect(body?.config['training']).toEqual({ epochs: 7 })
+  })
+  // discarding returns to the recipe form; importing again restores the imported configuration
+  await userEvent.click(screen.getByRole('button', { name: 'Discard import' }))
+  await waitFor(() => expect(screen.queryByTestId('imported-banner')).not.toBeInTheDocument())
+  await userEvent.upload(input, new File([JSON.stringify(exported)], 'exp.json', { type: 'application/json' }))
+  await screen.findByTestId('imported-banner')
+  await screen.findByText('Configuration is valid')
+  const submit = screen.getByRole('button', { name: 'Start run' })
+  await waitFor(() => expect(submit).toBeEnabled())
+  await userEvent.click(submit)
+  await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.path === '/api/v1/runs')).toBe(true))
+  const posted = calls.find((c) => c.method === 'POST' && c.path === '/api/v1/runs')?.body as { config: Record<string, unknown> }
+  expect(posted.config['training']).toEqual({ epochs: 7 })
+  expect(posted.config['resolution']).toBeUndefined()
 })

@@ -243,6 +243,14 @@ function ConfigTab({ runId, run }: { runId: string; run: RunView }) {
       <Typography variant="body2" color="text.secondary">
         {t('run.config.sha')}: <code>{run.config_sha256}</code>
       </Typography>
+      <Stack direction="row" spacing={1}>
+        <Button variant="outlined" size="small" component="a" href={artifactUrl(runId, 'config-resolved')} download={`${runId}.config.json`}>
+          {t('run.config.download')}
+        </Button>
+        <Button variant="contained" size="small" component={RouterLink} to={`/experiments/new?from=${encodeURIComponent(runId)}`}>
+          {t('run.config.rerun')}
+        </Button>
+      </Stack>
       <Typography variant="h3" component="h2">
         {t('run.config.resolved')}
       </Typography>

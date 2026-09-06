@@ -89,6 +89,10 @@ def test_result_metrics_come_from_the_registry_and_agree_with_the_training_log(w
     for name in ("NMSE", "EVM", "ACLR_L", "ACLR_R", "ACLR_AVG"):
         assert result.metric(name).value == pytest.approx(float(best[f"TEST_{name}"]), abs=1e-4), name
     assert result.valid_sample_range == (0, 7680) and result.n_segments == 3 and result.dataset.n_samples == 7680
+    # the checkpoint is the best *validation* epoch of the protocol metric, never chosen on the test split
+    with open(run_dir / manifest.by_kind(ArtifactKind.log_history)[0].file.path, newline="") as f:
+        history = list(csv.DictReader(f))
+    assert result.selected_epoch == int(min(history, key=lambda row: float(row["VAL_NMSE"]))["EPOCH"])
 
     assert available_profiles(workspace, pa_run.run_id) == ["legacy-opendpd-v1", "general-spectral-v1"]
     general = load_result(workspace, pa_run.run_id, "general-spectral-v1")

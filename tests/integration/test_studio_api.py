@@ -269,3 +269,19 @@ def test_minimal_frontend_payload_validates_and_submits(client, session):
     assert r.status_code == 201, r.text
     final = wait_terminal(client, r.json()["run_id"])
     assert final["status"] == "succeeded", final
+
+
+def test_undetected_device_is_refused_never_switched(client, session, monkeypatch):
+    from opendpd.services import capabilities
+
+    monkeypatch.setattr(capabilities, "detect_devices",
+                        lambda: {"cuda": {"detected": False, "count": 0, "name": None}, "mps": {"detected": False}})
+    cfg = smoke_config()
+    cfg["execution"] = {"device": "cuda"}
+    report = client.post("/api/v1/experiments/validate", json={"config": cfg}).json()
+    assert not report["ok"]
+    issue = next(e for e in report["errors"] if e["field"] == "execution.device")
+    assert "not available" in issue["message"] and "never switches" in issue["hint"]
+    r = client.post("/api/v1/runs", json={"config": cfg, "idempotency_key": "cuda-refused"})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_config"
+    assert r.json()["error"]["details"][0]["field"] == "execution.device"

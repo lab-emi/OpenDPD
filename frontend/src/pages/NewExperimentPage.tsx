@@ -12,10 +12,10 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router'
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { versionNames } from '@/api/datasets'
-import { useCapabilities, useDatasets, useMetricProfiles, useModels, useRecipes, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
-import type { ConfigIssue, Device, ExperimentConfigInput, RecipeInfo, ValidationReport } from '@/api/types'
+import { useCapabilities, useDatasets, useMetricProfiles, useModels, useRecipes, useRunConfig, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
+import type { ConfigIssue, Device, ExperimentConfigInput, ModelInfo, RecipeInfo, ValidationReport } from '@/api/types'
 import { t } from '@/i18n'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 
@@ -32,7 +32,7 @@ interface FormState {
   learningRate: string
   frameLength: string
   frameStride: string
-  hiddenSize: string
+  params: Record<string, string>
   profileId: string
 }
 
@@ -41,8 +41,29 @@ function num(s: string, fallback: number): number {
   return s.trim() === '' || !Number.isFinite(v) ? fallback : v
 }
 
+type ParamSpec = ModelInfo['params'][number]
+
+/** Coerces a text edit by the registry's declared type; empty or unparsable edits keep the recipe value. */
+function coerceParam(spec: ParamSpec, raw: string): number | boolean | string | undefined {
+  const s = raw.trim()
+  if (s === '') return undefined
+  if (spec.type === 'bool') return s === 'true'
+  if (spec.type === 'str') return s
+  const v = Number(s)
+  return Number.isFinite(v) ? (spec.type === 'int' ? Math.trunc(v) : v) : undefined
+}
+
+/** Removes the server-side resolution block so an exported (resolved) configuration can be resubmitted. */
+export function importableConfig(data: unknown): ExperimentConfigInput {
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) throw new Error('expected a JSON object')
+  const { resolution: _resolution, ...rest } = data as Record<string, unknown>
+  const cfg = rest as ExperimentConfigInput
+  if (typeof cfg.task !== 'string' || typeof cfg.dataset?.id !== 'string' || typeof cfg.model?.key !== 'string') throw new Error('task, dataset.id and model.key are required')
+  return cfg
+}
+
 /** Builds the ExperimentConfig sent to validate/submit: recipe defaults + user edits. */
-function buildConfig(recipe: RecipeInfo, f: FormState): ExperimentConfigInput {
+function buildConfig(recipe: RecipeInfo, f: FormState, specs: ParamSpec[]): ExperimentConfigInput {
   const training = {
     ...recipe.training,
     epochs: num(f.epochs, recipe.training.epochs),
@@ -53,7 +74,10 @@ function buildConfig(recipe: RecipeInfo, f: FormState): ExperimentConfigInput {
     seed: num(f.seed, recipe.training.seed),
   }
   const parameters = { ...recipe.model.parameters }
-  if (f.hiddenSize.trim() !== '' && 'hidden_size' in parameters) parameters['hidden_size'] = num(f.hiddenSize, Number(parameters['hidden_size']))
+  for (const spec of specs) {
+    const v = coerceParam(spec, f.params[spec.name] ?? '')
+    if (v !== undefined) parameters[spec.name] = v
+  }
   const config: ExperimentConfigInput = {
     task: recipe.task,
     recipe_id: recipe.recipe_id,
@@ -75,7 +99,6 @@ const FIELD_MAP: Record<string, keyof FormState> = {
   'training.frame_length': 'frameLength',
   'training.frame_stride': 'frameStride',
   'training.seed': 'seed',
-  'model.parameters.hidden_size': 'hiddenSize',
   'dataset.id': 'datasetId',
   'dataset.preprocessing_version': 'dataVersion',
   'pa_reference': 'paRunId',
@@ -94,8 +117,13 @@ export function NewExperimentPage() {
   const metricProfiles = useMetricProfiles()
   const succeeded = useRuns('succeeded')
   const submit = useSubmitRun()
+  const [params, setParams] = useSearchParams()
+  const fromRunId = params.get('from') ?? ''
+  const fromRun = useRunConfig(fromRunId, fromRunId !== '')
+  const [importedFile, setImportedFile] = useState<{ config: ExperimentConfigInput; source: string } | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
   const idempotencyKey = useRef(crypto.randomUUID())
-  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', hiddenSize: '', profileId: '' })
+  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', params: {}, profileId: '' })
   // The report is stored with the config it validated, so "checking" is derived, not duplicated state.
   const [validated, setValidated] = useState<{ configJson: string; report: ValidationReport | null } | null>(null)
 
@@ -108,7 +136,11 @@ export function NewExperimentPage() {
   const recipe = recipes.data?.find((r) => r.recipe_id === form.recipeId) ?? null
 
   const paRuns = useMemo(() => (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === form.datasetId), [succeeded.data, form.datasetId])
-  const config = recipe && form.datasetId ? buildConfig(recipe, form) : null
+  const model = models.data?.find((m) => m.key === recipe?.model.key)
+  const specs = model?.params ?? []
+  // An imported configuration (file or `?from=<run>`) is derived during render, never copied into form state.
+  const imported = importedFile ?? (fromRunId && fromRun.data ? { config: importableConfig(fromRun.data), source: fromRunId } : null)
+  const config = imported ? { ...imported.config, name: form.name.trim() || imported.config.name || null } : recipe && form.datasetId ? buildConfig(recipe, form, specs) : null
   const configJson = config ? JSON.stringify(config) : ''
   const report = validated && validated.configJson === configJson ? validated.report : null
   const checking = !!configJson && (validated === null || validated.configJson !== configJson)
@@ -134,9 +166,24 @@ export function NewExperimentPage() {
 
   const issuesFor = (key: keyof FormState): ConfigIssue[] => (report?.errors ?? []).filter((e) => FIELD_MAP[e.field] === key)
   const errorText = (key: keyof FormState) => issuesFor(key).map((e) => (e.hint ? `${e.message} (${e.hint})` : e.message)).join(' ')
+  const paramIssues = (name: string) => (report?.errors ?? []).filter((e) => e.field === `model.parameters.${name}`)
   const set = (key: keyof FormState) => (e: { target: { value: string } }) => setEdits((f) => ({ ...f, [key]: e.target.value }))
-  const model = models.data?.find((m) => m.key === recipe?.model.key)
+  const setParam = (name: string) => (e: { target: { value: string } }) => setEdits((f) => ({ ...f, params: { ...f.params, [name]: e.target.value } }))
   const untested = model && !model.devices_tested.includes(form.device)
+  const onImportFile = (file: File) => {
+    file
+      .text()
+      .then((text) => {
+        setImportedFile({ config: importableConfig(JSON.parse(text) as unknown), source: file.name })
+        setImportError(null)
+      })
+      .catch((err: unknown) => setImportError(err instanceof Error ? err.message : String(err)))
+  }
+  const discardImport = () => {
+    setImportedFile(null)
+    setImportError(null)
+    if (fromRunId) setParams({})
+  }
   const canSubmit = !!config && !!report?.ok && !checking && !submit.isPending
 
   const onSubmit = (e: FormEvent) => {
@@ -150,7 +197,33 @@ export function NewExperimentPage() {
       <Typography variant="h1" id="form-title">
         {t('form.title')}
       </Typography>
-      {recipe?.purpose === 'smoke' && <Alert severity="info">{t('form.smokeBanner')}</Alert>}
+      {recipe?.purpose === 'smoke' && !imported && <Alert severity="info">{t('form.smokeBanner')}</Alert>}
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Button component="label" variant="outlined" size="small">
+          {t('form.import')}
+          <input
+            hidden
+            type="file"
+            accept="application/json,.json"
+            data-testid="import-config"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) onImportFile(f)
+              e.target.value = ''
+            }}
+          />
+        </Button>
+        <Typography variant="caption" color="text.secondary">
+          {t('form.import.help')}
+        </Typography>
+      </Stack>
+      {importError && <Alert severity="error">{t('form.import.invalid', { error: importError })}</Alert>}
+      {imported && (
+        <Alert severity="info" action={<Button color="inherit" size="small" onClick={discardImport}>{t('form.import.discard')}</Button>} data-testid="imported-banner">
+          {t('form.imported', { source: imported.source })}
+          <pre style={{ margin: '8px 0 0', maxHeight: 240, overflow: 'auto', fontSize: 12 }}>{JSON.stringify(imported.config, null, 2)}</pre>
+        </Alert>
+      )}
       <Paper sx={{ p: 2 }}>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
@@ -225,13 +298,39 @@ export function NewExperimentPage() {
                 ['learningRate', 'form.learningRate', recipe?.training.learning_rate],
                 ['frameLength', 'form.frameLength', recipe?.training.frame_length],
                 ['frameStride', 'form.frameStride', recipe?.training.frame_stride],
-                ['hiddenSize', 'form.hiddenSize', recipe?.model.parameters?.['hidden_size']],
               ] as const
             ).map(([key, label, placeholder]) => (
               <Grid key={key} size={{ xs: 6, md: 4 }}>
                 <TextField fullWidth type="number" label={t(label)} value={form[key]} onChange={set(key)} placeholder={placeholder === undefined ? '' : String(placeholder)} error={issuesFor(key).length > 0} helperText={errorText(key) || ' '} slotProps={{ htmlInput: { step: key === 'learningRate' ? 'any' : 1 } }} />
               </Grid>
             ))}
+            {specs.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="h3" component="h3">
+                  {t('form.params')}
+                </Typography>
+              </Grid>
+            )}
+            {specs.map((spec) => {
+              const current = recipe?.model.parameters?.[spec.name] ?? spec.default
+              const issues = paramIssues(spec.name)
+              const help = issues.map((e) => (e.hint ? `${e.message} (${e.hint})` : e.message)).join(' ') || spec.description
+              return (
+                <Grid key={spec.name} size={{ xs: 6, md: 4 }}>
+                  {spec.type === 'bool' || spec.choices ? (
+                    <TextField select fullWidth label={spec.name} value={form.params[spec.name] ?? String(current)} onChange={setParam(spec.name)} error={issues.length > 0} helperText={help}>
+                      {(spec.choices ?? [true, false]).map((c) => (
+                        <MenuItem key={String(c)} value={String(c)}>
+                          {String(c)}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  ) : (
+                    <TextField fullWidth type={spec.type === 'str' ? 'text' : 'number'} label={spec.name} value={form.params[spec.name] ?? ''} onChange={setParam(spec.name)} placeholder={String(current)} error={issues.length > 0} helperText={help} slotProps={{ htmlInput: { step: spec.type === 'int' ? 1 : 'any', min: spec.minimum ?? undefined, max: spec.maximum ?? undefined } }} />
+                  )}
+                </Grid>
+              )
+            })}
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField select fullWidth label={t('form.profile')} value={form.profileId || metricProfiles.data?.[0]?.profile_id || ''} onChange={set('profileId')} error={issuesFor('profileId').length > 0} helperText={errorText('profileId') || t('form.profile.help')}>
                 {(metricProfiles.data ?? []).map((p) => (

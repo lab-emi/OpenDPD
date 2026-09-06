@@ -70,7 +70,7 @@ export function PreprocessDialog({ datasetId, versions, report, onClose, onCreat
     preview.reset()
     setFields((f) => ({ ...f, ...patch }))
   }
-  const text = (k: 'delay' | 'gainDb' | 'phaseDeg' | 'version') => (e: { target: { value: string } }) => edit({ [k]: e.target.value })
+  const text = (k: 'delay' | 'gainDb' | 'phaseDeg') => (e: { target: { value: string } }) => edit({ [k]: e.target.value })
   const check = (k: 'interpolate' | 'outliers' | 'normalize') => (_: unknown, checked: boolean) => edit({ [k]: checked })
   const useEstimates = () => estimates && edit({ delay: fmt(estimates.delay), gainDb: fmt(estimates.gainDb), phaseDeg: fmt(estimates.phaseDeg), interpolate: estimates.nonFinite, outliers: estimates.outliers })
   const version = fields.version.trim()
@@ -126,7 +126,8 @@ export function PreprocessDialog({ datasetId, versions, report, onClose, onCreat
               </Stack>
             </section>
           )}
-          <TextField size="small" label={t('datasets.preprocess.version')} value={fields.version} onChange={text('version')} helperText={t('datasets.preprocess.version.help')} />
+          {/* the name does not change the numbers, so typing it keeps the preview */}
+          <TextField size="small" label={t('datasets.preprocess.version')} value={fields.version} onChange={(e) => setFields((f) => ({ ...f, version: e.target.value }))} helperText={t('datasets.preprocess.version.help')} />
           {create.isError && <ErrorState error={create.error} />}
         </Stack>
       </DialogContent>

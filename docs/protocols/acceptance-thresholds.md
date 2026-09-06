@@ -42,6 +42,7 @@ test machine, never from cloud CI variance.
 | Legacy metric goldens (`tests/golden/legacy_metrics_v1.json`) | rel 1e-7 / abs 1e-7 | float64 NumPy/SciPy on CPU |
 | Frozen checkpoint re-evaluation, CPU float32 | rel 1e-4 / abs 1e-5 | cross-CPU / torch-version float32 drift |
 | Frozen checkpoint re-evaluation, CUDA/MPS | recorded per device | never assumed bit-identical across devices |
+| GUI (API + worker subprocess) vs CLI (in-process), same config, CPU, `reproducibility: hard` | abs 1e-3 dB on every metric; identical resolved config hash and selected epoch | `tests/integration/test_entry_consistency.py` (S09); proposed, pending maintainer approval |
 
 Re-training regressions are *statistical* (fixed seed set, budget, protocol)
 and use thresholds approved from baseline spread; see S12.

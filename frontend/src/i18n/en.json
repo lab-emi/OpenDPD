@@ -97,7 +97,6 @@
   "form.learningRate": "Learning rate",
   "form.frameLength": "Frame length",
   "form.frameStride": "Frame stride",
-  "form.hiddenSize": "Hidden size",
   "form.smokeBanner": "Smoke recipe: a few epochs to prove the pipeline. Results are not a benchmark.",
   "form.validating": "Checking configuration…",
   "form.valid": "Configuration is valid",
@@ -263,5 +262,13 @@
   "form.profile": "Metric profile",
   "form.profile.help": "The definition behind every score of the result. Every registered profile is also stored; this one is shown first.",
   "results.detail.metric": "Metric",
-  "results.detail.unit": "Unit · direction"
+  "results.detail.unit": "Unit · direction",
+  "form.import": "Import configuration…",
+  "form.import.help": "A JSON experiment configuration (exported from a run or written by hand). It is validated by the server and submitted as is.",
+  "form.imported": "Imported configuration from {source}. The fields above are not applied; the server validates and runs exactly this configuration.",
+  "form.import.discard": "Discard import",
+  "form.import.invalid": "Not a JSON configuration file: {error}",
+  "form.params": "Model parameters (from the registry)",
+  "run.config.download": "Download configuration (JSON)",
+  "run.config.rerun": "Re-run with this configuration"
 }
