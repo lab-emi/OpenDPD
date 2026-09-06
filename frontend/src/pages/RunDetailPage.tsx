@@ -2,9 +2,14 @@ import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
 import Grid from '@mui/material/Grid'
 import Link from '@mui/material/Link'
 import LinearProgress from '@mui/material/LinearProgress'
+import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
@@ -14,14 +19,15 @@ import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
+import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { Link as RouterLink, useParams, useSearchParams } from 'react-router'
+import { useRef, useState } from 'react'
+import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router'
 import { artifactUrl } from '@/api/client'
 import { useRunStream } from '@/api/events'
-import { keys, useCancelRun, useRetryRun, useRun, useRunArtifacts, useRunConfig } from '@/api/hooks'
-import { isTerminal, type RunView } from '@/api/types'
+import { keys, useCancelRun, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
+import { isTerminal, type LineageLink, type LineageRelation, type RunView } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { LogViewer } from '@/components/LogViewer'
 import { MetricHistoryChart } from '@/components/MetricHistoryChart'
@@ -31,6 +37,12 @@ import { DisconnectedState, EmptyState, ErrorState, LoadingState } from '@/compo
 
 const TABS = ['overview', 'logs', 'artifacts', 'config'] as const
 type TabKey = (typeof TABS)[number]
+
+const RELATION: Record<LineageRelation, MessageKey> = {
+  pa_surrogate: 'run.lineage.relation.pa_surrogate',
+  dpd_model: 'run.lineage.relation.dpd_model',
+  retry_of: 'run.lineage.relation.retry_of',
+}
 
 const NEXT_STEP: Partial<Record<RunView['status'], MessageKey>> = {
   failed: 'run.next.failed',
@@ -51,6 +63,7 @@ export function RunDetailPage() {
   const cancel = useCancelRun()
   const retry = useRetryRun()
   const [confirmCancel, setConfirmCancel] = useState(false)
+  const [applyOpen, setApplyOpen] = useState(false)
 
   if (run.isPending) return <LoadingState />
   if (run.isError) return <ErrorState error={run.error} onRetry={() => void run.refetch()} />
@@ -91,6 +104,11 @@ export function RunDetailPage() {
               {t('run.retry')}
             </Button>
           )}
+          {r.status === 'succeeded' && r.task === 'train_dpd' && (
+            <Button variant="outlined" size="small" onClick={() => setApplyOpen(true)}>
+              {t('run.apply')}
+            </Button>
+          )}
           {r.status === 'succeeded' && r.result_id && (
             <Button component={RouterLink} to={`/results/${encodeURIComponent(r.run_id)}`} variant="contained" size="small">
               {t('run.result')}
@@ -98,6 +116,7 @@ export function RunDetailPage() {
           )}
         </Stack>
       </Stack>
+      {applyOpen && <ApplyDpdDialog run={r} onClose={() => setApplyOpen(false)} />}
       <Typography variant="body2" color="text.secondary">
         <code>{r.run_id}</code> · {r.task} · {r.model_key} · {r.dataset_id} · {r.device}
         {r.parent_run_id && (
@@ -184,9 +203,100 @@ function OverviewTab({ run, metrics, statusEvents, heartbeats }: { run: RunView;
         )}
       </Grid>
       <Grid size={{ xs: 12, lg: 4 }}>
-        <RunTimeline run={run} statusEvents={statusEvents} heartbeats={heartbeats} />
+        <Stack spacing={2}>
+          <RunTimeline run={run} statusEvents={statusEvents} heartbeats={heartbeats} />
+          <LineageCard runId={run.run_id} />
+        </Stack>
       </Grid>
     </Grid>
+  )
+}
+
+function LineageCard({ runId }: { runId: string }) {
+  const lineage = useRunLineage(runId)
+  if (lineage.isPending) return <LoadingState />
+  if (lineage.isError) return <ErrorState error={lineage.error} onRetry={() => void lineage.refetch()} />
+  const parents = lineage.data.parents ?? []
+  const children = lineage.data.children ?? []
+  const row = (link: LineageLink) => (
+    <Typography key={`${link.relation}-${link.run_id}`} variant="body2" component="li">
+      {t(RELATION[link.relation])}:{' '}
+      <Link component={RouterLink} to={`/runs/${encodeURIComponent(link.run_id)}`}>
+        {link.run_id}
+      </Link>
+      {link.status ? ` · ${link.status}` : ''}
+      {link.checkpoint_sha256 ? ` · ${t('run.lineage.weights', { sha: link.checkpoint_sha256.slice(0, 12) })}` : ''}
+    </Typography>
+  )
+  return (
+    <Paper sx={{ p: 2 }} component="section" aria-label={t('run.lineage')}>
+      <Typography variant="h3" component="h2" gutterBottom>
+        {t('run.lineage')}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
+        {t('run.lineage.help')}
+      </Typography>
+      {parents.length === 0 && children.length === 0 && <Typography variant="body2">{t('run.lineage.empty')}</Typography>}
+      {parents.length > 0 && (
+        <>
+          <Typography variant="subtitle2">{t('run.lineage.parents')}</Typography>
+          <ul style={{ margin: '0 0 8px', paddingLeft: 18 }}>{parents.map(row)}</ul>
+        </>
+      )}
+      {children.length > 0 && (
+        <>
+          <Typography variant="subtitle2">{t('run.lineage.children')}</Typography>
+          <ul style={{ margin: 0, paddingLeft: 18 }}>{children.map(row)}</ul>
+        </>
+      )}
+    </Paper>
+  )
+}
+
+/** run_dpd for a succeeded DPD run: export u = DPD(x) and score it through a surrogate (default: the training one). */
+function ApplyDpdDialog({ run, onClose }: { run: RunView; onClose: () => void }) {
+  const navigate = useNavigate()
+  const lineage = useRunLineage(run.run_id)
+  const succeeded = useRuns('succeeded')
+  const submit = useSubmitRun()
+  const idempotencyKey = useRef(crypto.randomUUID())
+  const [paRunId, setPaRunId] = useState('')
+  const training = (lineage.data?.parents ?? []).find((p) => p.relation === 'pa_surrogate')?.run_id
+  const surrogates = (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === run.dataset_id)
+  const config = {
+    task: 'run_dpd' as const,
+    dataset: { id: run.dataset_id ?? '' },
+    model: { key: run.model_key ?? 'gru' },
+    evaluation: { evidence_type: 'dpd_surrogate' as const },
+    dpd_reference: { run_id: run.run_id },
+    ...(paRunId ? { pa_reference: { run_id: paRunId } } : {}),
+  }
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm" aria-labelledby="apply-dpd-title">
+      <DialogTitle id="apply-dpd-title">{t('run.apply.title')}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          <Typography variant="body2">{t('run.apply.help')}</Typography>
+          <TextField select fullWidth label={t('run.apply.surrogate')} value={paRunId} onChange={(e) => setPaRunId(e.target.value)} helperText={t('run.apply.surrogate.help')}>
+            <MenuItem value="">{t('run.apply.surrogate.training', { run: training ?? '…' })}</MenuItem>
+            {surrogates
+              .filter((r) => r.run_id !== training)
+              .map((r) => (
+                <MenuItem key={r.run_id} value={r.run_id}>
+                  {r.name || r.run_id} · {r.model_key}
+                </MenuItem>
+              ))}
+          </TextField>
+          {submit.isError && <ErrorState error={submit.error} />}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>{t('common.back')}</Button>
+        <Button variant="contained" disabled={submit.isPending} onClick={() => submit.mutate({ config, idempotency_key: idempotencyKey.current }, { onSuccess: (created) => navigate(`/runs/${encodeURIComponent(created.run_id)}`) })}>
+          {t('run.apply.submit')}
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 

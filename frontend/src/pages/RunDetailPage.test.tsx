@@ -1,8 +1,9 @@
-import { screen, waitFor, act } from '@testing-library/react'
+import { screen, waitFor, act, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import runningMock from '@mocks/run_running.json'
 import failedMock from '@mocks/run_failed.json'
 import eventsMock from '@mocks/events_running.json'
+import lineageMock from '@mocks/run_lineage_dpd.json'
 import type { RunEvent, RunView } from '@/api/types'
 import { installFakeEventSource, mockApi, renderWithProviders } from '@/test/utils'
 import { RunDetailPage } from './RunDetailPage'
@@ -16,6 +17,7 @@ function routes(run: RunView, extra: Record<string, () => unknown> = {}) {
     [`GET /api/v1/runs/${run.run_id}`]: () => run,
     [`GET /api/v1/runs/${run.run_id}/logs`]: () => ({ lines: [], next_offset: 0, eof: true, size: 0 }),
     [`GET /api/v1/runs/${run.run_id}/artifacts`]: () => ({ run_id: run.run_id, artifacts: [], complete: false }),
+    [`GET /api/v1/runs/${run.run_id}/lineage`]: () => ({ run_id: run.run_id, parents: [], children: [] }),
     ...extra,
   }
 }
@@ -68,4 +70,36 @@ test('cancel asks for confirmation and then posts once', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Cancel run' }))
   await screen.findAllByText('Stopping…')
   expect(calls.filter((c) => c.method === 'POST').length).toBe(1)
+})
+
+test('a succeeded DPD run shows its lineage and can be applied through another surrogate', async () => {
+  installFakeEventSource()
+  const dpd: RunView = { ...running, run_id: 'run-dpd-0001', task: 'train_dpd', model_key: 'gru', status: 'succeeded', result_id: 'res-dpd-0001', finished_at: '2026-09-06T08:10:00Z' }
+  const pa = (id: string): RunView => ({ ...running, run_id: id, name: `PA ${id}`, task: 'train_pa', status: 'succeeded', result_id: `res-${id}`, finished_at: '2026-09-06T08:00:00Z' })
+  const applied: RunView = { ...running, run_id: 'run-apply-0003', task: 'run_dpd', status: 'queued', started_at: null, worker: null, result_id: null }
+  const { calls } = mockApi(
+    routes(dpd, {
+      [`GET /api/v1/runs/${dpd.run_id}/lineage`]: () => lineageMock.data,
+      'GET /api/v1/runs': () => [dpd, pa('run-pa-0001'), pa('run-pa-0002')],
+      'POST /api/v1/runs': () => ({ status: 201, body: applied }),
+      [`GET /api/v1/runs/${applied.run_id}`]: () => applied,
+      [`GET /api/v1/runs/${applied.run_id}/lineage`]: () => ({ run_id: applied.run_id, parents: [], children: [] }),
+    }),
+  )
+  renderWithProviders(<RunDetailPage />, { route: `/runs/${dpd.run_id}`, path: '/runs/:runId' })
+  const lineage = await screen.findByRole('region', { name: 'Lineage' })
+  expect(within(lineage).getByRole('link', { name: 'run-pa-0001' })).toBeInTheDocument()
+  expect(within(lineage).getAllByText(/DPD model:/)).toHaveLength(2)
+  expect(within(lineage).getByText(new RegExp(`weights ${lineageMock.data.parents[0]!.checkpoint_sha256!.slice(0, 12)}`))).toBeInTheDocument()
+
+  await userEvent.click(screen.getByRole('button', { name: 'Apply DPD to the test split…' }))
+  const dialog = await screen.findByRole('dialog', { name: 'Apply this DPD to the test split' })
+  expect(within(dialog).getByText(/not a PA output/)).toBeInTheDocument()
+  await userEvent.click(within(dialog).getByLabelText('PA surrogate'))
+  await userEvent.click(await screen.findByRole('option', { name: /PA run-pa-0002/ }))
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Apply' }))
+  await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true))
+  const body = calls.find((c) => c.method === 'POST')!.body as { config: Record<string, unknown> }
+  expect(body.config).toMatchObject({ task: 'run_dpd', dpd_reference: { run_id: 'run-dpd-0001' }, pa_reference: { run_id: 'run-pa-0002' }, dataset: { id: dpd.dataset_id } })
+  await screen.findByText('run-apply-0003')
 })

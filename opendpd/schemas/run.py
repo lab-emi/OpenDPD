@@ -111,6 +111,30 @@ def heartbeat_is_stale(record: RunRecord, now: datetime, timeout: timedelta) -> 
     return last is None or (now - last) > timeout
 
 
+class LineageRelation(str, Enum):
+    """How one run depends on another. Recorded from resolved configurations, never inferred from names."""
+
+    pa_surrogate = "pa_surrogate"              # DPD training / evaluation went through this PA run's checkpoint
+    dpd_model = "dpd_model"                    # run_dpd applied this DPD run's checkpoint
+    retry_of = "retry_of"                      # retried from this run (parent_run_id)
+
+
+class LineageLink(StrictModel):
+    run_id: Slug
+    relation: LineageRelation
+    task: Optional[TaskType] = None
+    status: Optional[RunStatus] = None
+    checkpoint_sha256: Optional[Sha256] = None   # the exact weights that were used, when a checkpoint is involved
+
+
+class RunLineage(StrictModel):
+    """The experiment graph around one run: what it used (parents) and what used it (children)."""
+
+    run_id: Slug
+    parents: list[LineageLink] = Field(default_factory=list)
+    children: list[LineageLink] = Field(default_factory=list)
+
+
 class RunEventType(str, Enum):
     status = "status"          # {"from": ..., "to": ..., "reason": ...}
     progress = "progress"      # {"epoch": i, "total_epochs": n, "phase": "train"|"val"|"test"}

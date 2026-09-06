@@ -2,6 +2,7 @@
   "_mock": true,
   "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
   "data": {
+    "baselines": [],
     "dataset": {
       "dataset_id": "dpa-200mhz",
       "n_samples": 7680,
@@ -97,9 +98,11 @@
     },
     "result_id": "res-pa-0001",
     "run_id": "run-pa-0001",
+    "scaling": null,
     "schema_version": 1,
     "seed": 0,
     "selected_epoch": 1,
+    "signal_chain": [],
     "software": {
       "git_commit": "6f026b1",
       "git_dirty": false,
@@ -109,6 +112,7 @@
       "torch_version": "2.13.0+cu132"
     },
     "source": "mock",
+    "surrogate_coverage": null,
     "valid_sample_range": [
       0,
       7680

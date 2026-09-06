@@ -257,6 +257,49 @@ def cmd_evaluate(args) -> int:
     return 0
 
 
+def cmd_apply(args) -> int:
+    """Apply a trained DPD to the test split (export u = DPD(x)) and score it through a PA surrogate."""
+    import contextlib
+
+    from opendpd.schemas import ArtifactKind, RunStatus
+    from opendpd.services.config import ConfigError
+    from opendpd.services.experiments import create_run, execute_run, load_artifacts, load_result, load_run
+    from opendpd.services.recipes import run_dpd_config
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        dpd = load_run(ws, args.dpd_run_id)
+        config = run_dpd_config(dpd.dataset_id, args.dpd_run_id, pa_run_id=args.pa, device=args.device)
+        record = create_run(ws, config)
+    except ConfigError as err:
+        for issue in err.issues:
+            print(f"error: {issue.field}: {issue.message}" + (f" ({issue.hint})" if issue.hint else ""),
+                  file=sys.stderr)
+        return 2
+    except (WorkspaceError, ValueError, KeyError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    with contextlib.redirect_stdout(sys.stderr):      # legacy step chatter never pollutes the JSON
+        record = execute_run(ws, record.run_id)
+    manifest = load_artifacts(ws, record.run_id)
+    result = load_result(ws, record.run_id)
+    if args.json:
+        _print_json({"run": record.model_dump(mode="json"),
+                     "artifacts": manifest.model_dump(mode="json") if manifest else None,
+                     "result": result.model_dump(mode="json") if result else None})
+    else:
+        print(f"run {record.run_id} {record.status.value}")
+        if record.error:
+            print(f"  {record.error.code} [{record.error.stage}]: {record.error.message}", file=sys.stderr)
+        for artifact in (manifest.by_kind(ArtifactKind.dpd_output) if manifest else []):
+            print(f"  u = DPD(x) exported to {ws.run_dir(record.run_id) / artifact.file.path}")
+            print("  (a pre-distorted PA *input*; not a PA output and not proof of linearisation)")
+        if result is not None:
+            _print_result(result)
+    return {RunStatus.succeeded: 0, RunStatus.cancelled: 130}.get(record.status, 1)
+
+
 def cmd_gui(args) -> int:
     from opendpd.studio.launcher import default_workspace, launch
 
@@ -292,6 +335,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--profile", default="general-spectral-v1")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_evaluate)
+
+    p = sub.add_parser("apply", help="apply a trained DPD to the test split: export u = DPD(x) and score it through a PA surrogate")
+    p.add_argument("dpd_run_id", help="a succeeded train_dpd run")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--pa", default=None, help="PA run to simulate through (default: the DPD's training surrogate)")
+    p.add_argument("--device", default="cpu")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_apply)
 
     p = sub.add_parser("datasets", help="manage workspace datasets")
     ds = p.add_subparsers(dest="datasets_command", required=True)

@@ -176,24 +176,152 @@ def test_dpd_run_binds_pa_surrogate(workspace, pa_run, dpd_run):
 
 
 def test_dpd_rejects_incompatible_pa(workspace, pa_run):
+    """Without a compatible surrogate a DPD recipe cannot start, and the issue names the remedy."""
     cfg = instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa_run.run_id, seed=1)
     with pytest.raises(ConfigError) as info:
         bind_references(workspace, cfg)
-    assert "seed" in info.value.issues[0].message
+    issue = info.value.issues[0]
+    assert "seed" in issue.message and "training.seed=0" in issue.hint and "frame_length=50" in issue.hint
     with pytest.raises(ConfigError) as info:
         bind_references(workspace, instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id="run-does-not-exist"))
+    issue = info.value.issues[0]
+    assert issue.field == "pa_reference.run_id" and "train a PA model" in issue.hint
+
+
+@pytest.fixture(scope="module")
+def apply_run(workspace, dpd_run):
+    """run_dpd through the DPD's own training surrogate."""
+    record = execute_run(workspace, create_run(workspace, run_dpd_config("dpa-200mhz", dpd_run.run_id)).run_id)
+    assert record.status == RunStatus.succeeded, record.error
+    return record
+
+
+def _single_pass_u(workspace, dpd_run):
+    """u = DPD(x) over the whole test split in one pass, rebuilt independently of the services."""
+    import torch
+    import models as model
+    from modules.data_collector import load_dataset
+
+    resolved = load_resolved(workspace, dpd_run.run_id)
+    params = resolved.model.parameters
+    ckpt = load_artifacts(workspace, dpd_run.run_id).by_kind(ArtifactKind.checkpoint)[0]
+    net = model.CoreModel(input_size=2, hidden_size=int(params["hidden_size"]), num_layers=int(params["num_layers"]),
+                          backbone_type="gru")
+    net.load_state_dict(torch.load(workspace.run_dir(dpd_run.run_id) / ckpt.file.path, map_location="cpu", weights_only=True))
+    x_test = load_dataset(dataset_path=str(workspace.dataset_version_dir("dpa-200mhz", "raw-v1")))[4]
+    with torch.no_grad():
+        u = net.eval()(torch.Tensor(x_test).unsqueeze(0)).squeeze(0).numpy()
+    return x_test, u
+
+
+def test_run_dpd_exports_predistorted_input(workspace, dpd_run, apply_run):
+    """The exported array reloads with the same order, dtype, amplitude and metadata, and is labelled as a PA input."""
+    import json
+    import numpy as np
+    import pandas as pd
+
+    manifest = load_artifacts(workspace, apply_run.run_id)
+    out = manifest.by_kind(ArtifactKind.dpd_output)
+    assert out and "PA *input*" in out[0].description
+    csv_path = workspace.run_dir(apply_run.run_id) / out[0].file.path
+    assert csv_path.read_text().splitlines()[0] == "I,Q,I_dpd,Q_dpd"
+    meta_artifact = next(a for a in manifest.artifacts if a.artifact_id == "dpd-output-meta")
+    meta = json.loads((workspace.run_dir(apply_run.run_id) / meta_artifact.file.path).read_text())
+    assert meta["signal_role"] == "pa_input_predistorted" and "not a PA output" in meta["statement"]
+    assert meta["dtype"] == "float32" and meta["dpd"]["run_id"] == dpd_run.run_id
+    resolved = load_resolved(workspace, apply_run.run_id)
+    assert meta["dpd"]["checkpoint_sha256"] == resolved.dpd_reference.checkpoint_sha256
+    assert meta["pa_surrogate"]["checkpoint_sha256"] == resolved.pa_reference.checkpoint_sha256
+    assert meta["physical_calibration"] is False and meta["amplitude_units"] == "normalized"
+
+    frame = pd.read_csv(csv_path)
+    x_test, u = _single_pass_u(workspace, dpd_run)
+    assert len(frame) == meta["n_samples"] == len(x_test)
+    np.testing.assert_array_equal(frame[["I", "Q"]].to_numpy(dtype=np.float32), x_test.astype(np.float32))
+    np.testing.assert_allclose(frame[["I_dpd", "Q_dpd"]].to_numpy(dtype=np.float32), u.astype(np.float32),
+                               rtol=0, atol=1e-6)
+    assert meta["peak_abs_u"] == pytest.approx(float(np.max(np.hypot(u[:, 0], u[:, 1]))), rel=1e-5)
+
+    result = load_result(workspace, apply_run.run_id)
+    assert result.evidence_type.value == "dpd_surrogate"
+    stages = {s.symbol: s for s in result.signal_chain}
+    assert list(stages) == ["x", "u", "y"]
+    assert stages["u"].artifact_id == "dpd-output" and "PA input" in stages["u"].role
+    assert stages["y"].simulated and "simulated" in stages["y"].source
+    assert stages["u"].peak_abs == pytest.approx(meta["peak_abs_u"], rel=1e-5)
+    assert result.reference.gain_value == pytest.approx(meta["reference_gain"])
+    assert result.scaling.reference_gain == result.reference.gain_value and not result.scaling.physical_calibration
+    assert any("no physical calibration" in lim for lim in result.limitations)
+
+
+def test_apply_through_the_training_surrogate_reproduces_the_dpd_result(workspace, dpd_run, apply_run):
+    """Same DPD weights, same surrogate, same reference: the metrics agree; baselines share the reference."""
+    trained = load_result(workspace, dpd_run.run_id)
+    applied = load_result(workspace, apply_run.run_id)
+    assert {m.role: m.weights_sha256 for m in applied.models} == {m.role: m.weights_sha256 for m in trained.models}
+    assert applied.reference.gain_value == pytest.approx(trained.reference.gain_value)
+    for m in trained.metrics:
+        assert applied.metric(m.name).value == pytest.approx(m.value, abs=1e-3), m.name
+    for result in (trained, applied):
+        kinds = [b.kind for b in result.baselines]
+        assert kinds == ["surrogate_without_dpd", "measured_without_dpd"]
+        for baseline in result.baselines:
+            assert [m.name for m in baseline.metrics] == [m.name for m in result.metrics]
+            assert baseline.metrics[0].status.value == "ok"
+            assert "same linear target" in baseline.description
+        assert 0 <= result.surrogate_coverage.fraction_above_fitted_peak <= 1
+        assert "does not prove the surrogate accurate" in result.surrogate_coverage.note
+    # the DPD's own result and the applied one agree on the baselines too (same x, same surrogate)
+    for kind in ("surrogate_without_dpd", "measured_without_dpd"):
+        a = next(b for b in trained.baselines if b.kind == kind).metrics
+        b = next(b for b in applied.baselines if b.kind == kind).metrics
+        assert [m.value for m in a] == pytest.approx([m.value for m in b], abs=1e-3)
+
+
+def test_swapping_the_surrogate_yields_a_separate_result(workspace, pa_run, dpd_run, apply_run):
+    from opendpd.schemas import ModelSpec
+    from opendpd.services.experiments import lineage
+
+    cfg = instantiate("pa-gru-smoke-v1", "dpa-200mhz", name="second surrogate")
+    cfg = cfg.model_copy(update={"model": ModelSpec(key="gru", parameters={"hidden_size": 16, "num_layers": 1})})
+    pa2 = execute_run(workspace, create_run(workspace, cfg, idempotency_key="pa-smoke-16").run_id)
+    assert pa2.status == RunStatus.succeeded, pa2.error
+    before = (workspace.run_dir(dpd_run.run_id) / "result.json").read_bytes()
+
+    swapped = execute_run(workspace, create_run(workspace, run_dpd_config("dpa-200mhz", dpd_run.run_id, pa_run_id=pa2.run_id)).run_id)
+    assert swapped.status == RunStatus.succeeded, swapped.error
+    result = load_result(workspace, swapped.run_id)
+    original = load_result(workspace, apply_run.run_id)
+    pa_of = lambda r: next(m for m in r.models if m.role == "pa")  # noqa: E731
+    assert pa_of(result).run_id == pa2.run_id and pa_of(original).run_id == pa_run.run_id
+    assert pa_of(result).weights_sha256 != pa_of(original).weights_sha256
+    assert result.metric_profile_id == original.metric_profile_id
+    assert result.result_id != original.result_id
+    assert (workspace.run_dir(dpd_run.run_id) / "result.json").read_bytes() == before, "old results are never overwritten"
+    assert load_result(workspace, apply_run.run_id) == original
+
+    graph = lineage(workspace, dpd_run.run_id)
+    assert [(l.run_id, l.relation.value) for l in graph.parents] == [(pa_run.run_id, "pa_surrogate")]
+    children = {(l.run_id, l.relation.value) for l in graph.children}
+    assert (apply_run.run_id, "dpd_model") in children and (swapped.run_id, "dpd_model") in children
+    graph = lineage(workspace, swapped.run_id)
+    assert {(l.run_id, l.relation.value) for l in graph.parents} == {(dpd_run.run_id, "dpd_model"), (pa2.run_id, "pa_surrogate")}
+    assert next(l for l in graph.parents if l.relation.value == "pa_surrogate").checkpoint_sha256 == pa_of(result).weights_sha256
+    with pytest.raises(ConfigError) as info:
+        bind_references(workspace, run_dpd_config("dpa-200mhz", dpd_run.run_id, pa_run_id="run-does-not-exist"))
     assert info.value.issues[0].field == "pa_reference.run_id"
 
 
-def test_run_dpd_exports_predistorted_input(workspace, dpd_run):
-    record = execute_run(workspace, create_run(workspace, run_dpd_config("dpa-200mhz", dpd_run.run_id)).run_id)
-    assert record.status == RunStatus.succeeded, record.error
-    manifest = load_artifacts(workspace, record.run_id)
-    out = manifest.by_kind(ArtifactKind.dpd_output)
-    assert out and "PA *input*" in out[0].description
-    header = (workspace.run_dir(record.run_id) / out[0].file.path).read_text().splitlines()[0]
-    assert header == "I,Q,I_dpd,Q_dpd"
-    assert load_result(workspace, record.run_id) is None   # generating a signal is not an evaluation
+def test_apply_cli(workspace, dpd_run, capsys):
+    capsys.readouterr()
+    rc = studio_main(["apply", dpd_run.run_id, "--workspace", str(workspace.root), "--json"])
+    out = capsys.readouterr().out
+    payload = json.loads(out)
+    assert rc == 0 and payload["run"]["status"] == "succeeded"
+    assert payload["result"]["evidence_type"] == "dpd_surrogate"
+    assert any(a["kind"] == "dpd_output" for a in payload["artifacts"]["artifacts"])
+    rc = studio_main(["apply", dpd_run.run_id, "--workspace", str(workspace.root), "--pa", "run-does-not-exist"])
+    assert rc == 2 and "pa_reference.run_id" in capsys.readouterr().err
 
 
 def test_failed_run_records_error_not_ghost_state(workspace, pa_run):

@@ -1,0 +1,32 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "children": [
+      {
+        "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "relation": "dpd_model",
+        "run_id": "run-apply-0001",
+        "status": "succeeded",
+        "task": "run_dpd"
+      },
+      {
+        "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "relation": "dpd_model",
+        "run_id": "run-apply-0002",
+        "status": "running",
+        "task": "run_dpd"
+      }
+    ],
+    "parents": [
+      {
+        "checkpoint_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "relation": "pa_surrogate",
+        "run_id": "run-pa-0001",
+        "status": "succeeded",
+        "task": "train_pa"
+      }
+    ],
+    "run_id": "run-dpd-0001"
+  }
+}

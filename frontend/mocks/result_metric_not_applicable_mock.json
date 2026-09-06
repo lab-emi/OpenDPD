@@ -2,6 +2,7 @@
   "_mock": true,
   "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
   "data": {
+    "baselines": [],
     "dataset": {
       "dataset_id": "my-pa-capture",
       "n_samples": 820,
@@ -92,9 +93,11 @@
     },
     "result_id": "res-pa-0002",
     "run_id": "run-pa-0003",
+    "scaling": null,
     "schema_version": 1,
     "seed": 0,
     "selected_epoch": null,
+    "signal_chain": [],
     "software": {
       "git_commit": "6f026b1",
       "git_dirty": false,
@@ -104,6 +107,7 @@
       "torch_version": "2.13.0+cu132"
     },
     "source": "mock",
+    "surrogate_coverage": null,
     "valid_sample_range": null
   }
 }

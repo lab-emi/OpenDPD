@@ -39,8 +39,17 @@ from .experiment import (
     TrainingConfig,
 )
 from .metrics import MetricProfile
-from .results import DatasetEvidence, EvaluationResult, ModelEvidence, SignalReference
-from .run import RunError, RunEvent, RunEventType, RunRecord, RunStatus, WorkerInfo
+from .results import (
+    BaselineScore,
+    DatasetEvidence,
+    EvaluationResult,
+    ModelEvidence,
+    ScalingInfo,
+    SignalReference,
+    SignalStage,
+    SurrogateCoverage,
+)
+from .run import LineageLink, LineageRelation, RunError, RunEvent, RunEventType, RunLineage, RunRecord, RunStatus, WorkerInfo
 
 T0 = datetime(2026, 9, 6, 8, 0, 0, tzinfo=timezone.utc)
 SHA_A = "a" * 64
@@ -314,7 +323,54 @@ def result_dpd_surrogate_mock() -> EvaluationResult:
         ],
         software=SOFTWARE, device="cpu", seed=0,
         limitations=["MOCK DATA for UI development",
-                     "simulated through the learned PA surrogate run-pa-0001, not a measured PA output"],
+                     "simulated through the learned PA surrogate run-pa-0001, not a measured PA output",
+                     "no physical calibration: absolute output power (dBm) and efficiency are not derived"],
+        signal_chain=[
+            SignalStage(symbol="x", role="target input: the PA output should equal reference_gain * x",
+                        source="dataset dpa-200mhz version raw-v1, test split", n_samples=7680, peak_abs=0.842, rms=0.301),
+            SignalStage(symbol="u", role="pre-distorted PA input, u = DPD(x)",
+                        source=f"DPD gru weights {SHA_B[:12]} from run run-dpd-0001", n_samples=7680, peak_abs=0.913, rms=0.318),
+            SignalStage(symbol="y", role="PA output, y = PA(u)",
+                        source=f"PA surrogate gru weights {SHA_A[:12]} from run run-pa-0001; simulated, not measured",
+                        simulated=True, n_samples=7680, peak_abs=0.861, rms=0.309),
+        ],
+        baselines=[
+            BaselineScore(kind="surrogate_without_dpd",
+                          description="PA surrogate run-pa-0001 driven by x directly (no DPD), scored against the same "
+                                      "linear target reference_gain * x",
+                          metrics=[MetricValue(name="NMSE", value=-9.81, unit="dB", better=lower),
+                                   MetricValue(name="EVM", value=-11.02, unit="dB", better=lower),
+                                   MetricValue(name="ACLR_L", value=-19.40, unit="dBc", better=lower),
+                                   MetricValue(name="ACLR_R", value=-20.11, unit="dBc", better=lower),
+                                   MetricValue(name="ACLR_AVG", value=-19.75, unit="dBc", better=lower)]),
+            BaselineScore(kind="measured_without_dpd",
+                          description="measured PA output of the test split (no DPD), scored against the same linear target",
+                          metrics=[MetricValue(name="NMSE", value=-9.63, unit="dB", better=lower),
+                                   MetricValue(name="EVM", value=-10.88, unit="dB", better=lower),
+                                   MetricValue(name="ACLR_L", value=-19.02, unit="dBc", better=lower),
+                                   MetricValue(name="ACLR_R", value=-19.77, unit="dBc", better=lower),
+                                   MetricValue(name="ACLR_AVG", value=-19.39, unit="dBc", better=lower)]),
+        ],
+        surrogate_coverage=SurrogateCoverage(
+            fitted_peak_abs=0.858, u_peak_abs=0.913, fraction_above_fitted_peak=0.0031,
+            note="0.31% of the pre-distorted samples exceed the largest input amplitude the surrogate was fitted on "
+                 "(0.858); the surrogate extrapolates there and y is unverified for those samples. Staying inside the "
+                 "range would not prove the surrogate accurate either."),
+        scaling=ScalingInfo(amplitude_units="normalized", input_scaling="none: amplitudes as imported",
+                            reference_gain=1.0273, physical_calibration=False),
+    )
+
+
+def run_lineage_dpd() -> RunLineage:
+    """The graph around a DPD run: trained through a PA surrogate, applied twice (once through another surrogate)."""
+    return RunLineage(
+        run_id="run-dpd-0001",
+        parents=[LineageLink(run_id="run-pa-0001", relation=LineageRelation.pa_surrogate, task=TaskType.train_pa,
+                             status=RunStatus.succeeded, checkpoint_sha256=SHA_A)],
+        children=[LineageLink(run_id="run-apply-0001", relation=LineageRelation.dpd_model, task=TaskType.run_dpd,
+                              status=RunStatus.succeeded, checkpoint_sha256=SHA_B),
+                  LineageLink(run_id="run-apply-0002", relation=LineageRelation.dpd_model, task=TaskType.run_dpd,
+                              status=RunStatus.running, checkpoint_sha256=SHA_B)],
     )
 
 
@@ -373,6 +429,7 @@ def all_examples() -> Dict[str, object]:
         "result_pa_modeling_mock": result_pa_modeling_mock(),
         "result_metric_not_applicable_mock": result_metric_not_applicable_mock(),
         "result_dpd_surrogate_mock": result_dpd_surrogate_mock(),
+        "run_lineage_dpd": run_lineage_dpd(),
         "result_legacy_import": result_legacy_import(),
         "artifact_manifest_complete": artifact_manifest_complete(),
     }

@@ -25,12 +25,16 @@ from opendpd.schemas import (
     Artifact,
     ArtifactKind,
     ArtifactManifest,
+    BaselineScore,
     DatasetEvidence,
+    DatasetSourceKind,
     DPDReference,
     EvaluationResult,
     EvidenceType,
     ExperimentConfig,
     FileRef,
+    LineageLink,
+    LineageRelation,
     MetricProfile,
     MetricValue,
     ModelEvidence,
@@ -38,13 +42,17 @@ from opendpd.schemas import (
     ResolvedExperimentConfig,
     RunError,
     RunEventType,
+    RunLineage,
     RunRecord,
     RunStatus,
+    ScalingInfo,
     SignalReference,
+    SignalStage,
+    SurrogateCoverage,
     TaskType,
+    TrainingConfig,
     WorkerInfo,
     can_transition,
-    DatasetSourceKind,
 )
 from opendpd.services.config import ConfigError, ConfigIssue, resolve
 from opendpd.services.legacy_adapter import (
@@ -119,7 +127,10 @@ def _checkpoint_of(ws: Workspace, run_id: str, expected_task: TaskType, field: s
     try:
         record = load_run(ws, run_id)
     except WorkspaceError as err:
-        raise ConfigError([ConfigIssue(field, str(err))]) from None
+        remedy = ("train a PA model on this dataset first (for example recipe pa-gru-smoke-v1) with the seed and "
+                  "frame_length this DPD run uses" if expected_task == TaskType.train_pa
+                  else "train a DPD on this dataset first (a train_dpd run through a PA surrogate)")
+        raise ConfigError([ConfigIssue(field, str(err), remedy)]) from None
     if record.task != expected_task:
         raise ConfigError([ConfigIssue(field, f"run '{run_id}' is a {record.task.value} run, "
                                               f"expected {expected_task.value}")])
@@ -167,6 +178,29 @@ def submission_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[Con
     return errors, warnings
 
 
+def _bind_pa(ws: Workspace, run_id: str, dataset_id: str, training: Optional[TrainingConfig]) -> PAReference:
+    """Bind a PA run to its checkpoint. ``training`` (the DPD training block) enforces the legacy checkpoint
+    convention for train_dpd; evaluation through a surrogate (run_dpd) only needs the same dataset."""
+    pa_record, pa_resolved, pa_ckpt = _checkpoint_of(ws, run_id, TaskType.train_pa, "pa_reference.run_id")
+    if pa_resolved.dataset.id != dataset_id:
+        raise ConfigError([ConfigIssue("pa_reference.run_id",
+                                       f"PA surrogate '{pa_record.run_id}' was trained on dataset "
+                                       f"'{pa_resolved.dataset.id}', not '{dataset_id}'",
+                                       "pick a PA run from the same dataset or train one")])
+    if training is not None and (pa_resolved.training.frame_length != training.frame_length
+                                 or pa_resolved.training.seed != training.seed):
+        raise ConfigError([ConfigIssue("training",
+                                       "the legacy checkpoint convention requires the DPD run to use the "
+                                       "same seed and frame_length as its PA surrogate "
+                                       f"(PA: seed={pa_resolved.training.seed}, "
+                                       f"frame_length={pa_resolved.training.frame_length})",
+                                       f"set training.seed={pa_resolved.training.seed} and "
+                                       f"training.frame_length={pa_resolved.training.frame_length}, or train a PA "
+                                       "surrogate with this run's seed and frame_length")])
+    return PAReference(run_id=pa_record.run_id, checkpoint_artifact_id=pa_ckpt.artifact_id,
+                       checkpoint_sha256=pa_ckpt.file.sha256, model=pa_resolved.model)
+
+
 def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig:
     """Turn ``run_id``-only references into fully bound references."""
     updates = {}
@@ -176,33 +210,23 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
                                                             "dpd_reference.run_id")
         updates["dpd_reference"] = DPDReference(run_id=dpd_record.run_id, checkpoint_artifact_id=dpd_ckpt.artifact_id,
                                                 checkpoint_sha256=dpd_ckpt.file.sha256, model=dpd_resolved.model)
-        # A run_dpd inherits the DPD run's PA surrogate binding.
-        if config.pa_reference is None or config.pa_reference.model is None:
-            updates["pa_reference"] = dpd_resolved.pa_reference
+        if config.dataset.id != dpd_resolved.dataset.id:
+            raise ConfigError([ConfigIssue("dataset.id", f"DPD '{dpd_record.run_id}' was trained on dataset "
+                                           f"'{dpd_resolved.dataset.id}', not '{config.dataset.id}'",
+                                           "apply a DPD to the dataset it was trained on")])
+        # Without an explicit surrogate a run_dpd is evaluated through the one the DPD was trained with;
+        # naming another PA run of the same dataset produces a new, separately stored result.
+        updates["pa_reference"] = dpd_resolved.pa_reference if config.pa_reference is None \
+            else _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=None)
         if config.model != dpd_resolved.model:
             updates["model"] = dpd_resolved.model
         # The legacy run_dpd step derives checkpoint ids from seed / frame_length
         # (and quantisation) of the *current* arguments: inherit them from the DPD run.
         updates["training"] = dpd_resolved.training
         updates["quantization"] = dpd_resolved.quantization
-    if config.task == TaskType.train_dpd or (config.task == TaskType.run_dpd and "pa_reference" not in updates):
+    if config.task == TaskType.train_dpd:
         assert config.pa_reference is not None
-        pa_record, pa_resolved, pa_ckpt = _checkpoint_of(ws, config.pa_reference.run_id, TaskType.train_pa,
-                                                         "pa_reference.run_id")
-        if pa_resolved.dataset.id != config.dataset.id:
-            raise ConfigError([ConfigIssue("pa_reference.run_id",
-                                           f"PA surrogate '{pa_record.run_id}' was trained on dataset "
-                                           f"'{pa_resolved.dataset.id}', not '{config.dataset.id}'",
-                                           "pick a PA run from the same dataset or train one")])
-        if pa_resolved.training.frame_length != config.training.frame_length \
-                or pa_resolved.training.seed != config.training.seed:
-            raise ConfigError([ConfigIssue("training",
-                                           "the legacy checkpoint convention requires the DPD run to use the "
-                                           "same seed and frame_length as its PA surrogate "
-                                           f"(PA: seed={pa_resolved.training.seed}, "
-                                           f"frame_length={pa_resolved.training.frame_length})")])
-        updates["pa_reference"] = PAReference(run_id=pa_record.run_id, checkpoint_artifact_id=pa_ckpt.artifact_id,
-                                              checkpoint_sha256=pa_ckpt.file.sha256, model=pa_resolved.model)
+        updates["pa_reference"] = _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=config.training)
     return config.model_copy(update=updates) if updates else config
 
 
@@ -302,10 +326,9 @@ def _prepare_inputs(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentCo
 
     if resolved.task in (TaskType.train_dpd, TaskType.run_dpd):
         pa_id = _pa_model_id()
-        if resolved.task == TaskType.train_dpd:
-            _copy_checkpoint(resolved.pa_reference, run_dir / "save" / ns.dataset_name / "train_pa" / f"{pa_id}.pt",
-                             "PA surrogate")
-        else:
+        _copy_checkpoint(resolved.pa_reference, run_dir / "save" / ns.dataset_name / "train_pa" / f"{pa_id}.pt",
+                         "PA surrogate")
+        if resolved.task == TaskType.run_dpd:
             src_manifest = load_artifacts(ws, resolved.dpd_reference.run_id)
             artifact = next(a for a in src_manifest.artifacts
                             if a.artifact_id == resolved.dpd_reference.checkpoint_artifact_id)
@@ -355,6 +378,9 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
         try:
             _prepare_inputs(ws, run_dir, resolved, ns)
             project = run_step(ns, on_epoch=on_epoch, should_cancel=should_cancel)
+            if resolved.task == TaskType.run_dpd:
+                from opendpd.services.evaluation import write_dpd_output_metadata
+                write_dpd_output_metadata(ws, run_id, resolved, ns)
         except RunCancelled as err:
             outcome, reason = RunStatus.cancelled, str(err)
         except KeyboardInterrupt:
@@ -365,7 +391,8 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
                              hint="the referenced run's artifacts were deleted or modified")
         except Exception as err:  # noqa: BLE001 - the worker must record any failure
             outcome = RunStatus.failed
-            error = RunError(code="worker_exception", stage="train", message=f"{type(err).__name__}: {err}",
+            error = RunError(code="worker_exception", stage="apply" if resolved.task == TaskType.run_dpd else "train",
+                             message=f"{type(err).__name__}: {err}",
                              traceback_tail="".join(traceback.format_exc().splitlines(keepends=True)[-25:]))
 
     record = state["record"]
@@ -378,7 +405,7 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
             error = RunError(code="artifacts_incomplete", stage="finalize",
                              message="the step finished but a required artifact is missing",
                              hint="see logs/ in the run directory")
-        elif resolved.task != TaskType.run_dpd:
+        else:
             from opendpd.services.evaluation import evaluate_all
 
             try:
@@ -455,11 +482,13 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
         for csv in sorted((run_dir / "dpd_out").rglob("*.csv")):
             add("dpd-output", ArtifactKind.dpd_output, csv, True,
                 "pre-distorted PA *input* u = DPD(x) for the test split; not a PA output")
+            add("dpd-output-meta", ArtifactKind.other, csv.with_suffix(".meta.json"), True,
+                "what the exported columns are, their order, dtype, scaling and the checkpoints that produced them")
     for name in ("worker.log", "stdout.log"):
         add(name.replace(".", "-"), ArtifactKind.worker_log, run_dir / "logs" / name, False)
     add("config-resolved", ArtifactKind.config, run_dir / RESOLVED_CONFIG_FILE, True)
     add("provenance", ArtifactKind.provenance, run_dir / PROVENANCE_FILE, True)
-    required_kinds = {ArtifactKind.dpd_output} if resolved.task == TaskType.run_dpd \
+    required_kinds = {ArtifactKind.dpd_output, ArtifactKind.other} if resolved.task == TaskType.run_dpd \
         else {ArtifactKind.checkpoint, ArtifactKind.log_history, ArtifactKind.log_best}
     present = {a.kind for a in artifacts}
     complete = required_kinds <= present and all(a.file.sha256 for a in artifacts if a.required)
@@ -477,16 +506,32 @@ def _best_row(run_dir: Path, manifest: ArtifactManifest) -> Dict[str, str]:
     return rows[-1]
 
 
+def _n_params(path: str) -> Optional[int]:
+    match = re.search(r"_P_(\d+)", path)
+    return int(match.group(1)) if match else None
+
+
 def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest, *,
                  profile: MetricProfile, metrics: List[MetricValue], n_valid: int,
-                 target_gain: Optional[float]) -> EvaluationResult:
+                 target_gain: Optional[float], signal_chain: Optional[List[SignalStage]] = None,
+                 baselines: Optional[List[BaselineScore]] = None, surrogate_coverage: Optional[SurrogateCoverage] = None,
+                 scaling: Optional[ScalingInfo] = None) -> EvaluationResult:
     """Assemble the evidence around metrics scored by ``opendpd.core.metrics``."""
     run_dir = ws.run_dir(run_id)
     dataset = ws.get_dataset(resolved.dataset.id)
-    row = _best_row(run_dir, manifest)
-    checkpoint = manifest.by_kind(ArtifactKind.checkpoint)[0]
-    n_params_match = re.search(r"_P_(\d+)", checkpoint.file.path)
-    n_params = int(n_params_match.group(1)) if n_params_match else None
+    if resolved.task == TaskType.run_dpd:
+        # the weights come from the DPD run; this run only applied them
+        dpd_ref = resolved.dpd_reference
+        dpd_manifest = load_artifacts(ws, dpd_ref.run_id)
+        dpd_artifact = next(a for a in dpd_manifest.artifacts if a.artifact_id == dpd_ref.checkpoint_artifact_id)
+        dpd_run_id, dpd_sha, dpd_params = dpd_ref.run_id, dpd_ref.checkpoint_sha256, _n_params(dpd_artifact.file.path)
+        selected_epoch, history = None, None
+    else:
+        row = _best_row(run_dir, manifest)
+        checkpoint = manifest.by_kind(ArtifactKind.checkpoint)[0]
+        dpd_run_id, dpd_sha, dpd_params = run_id, checkpoint.file.sha256, _n_params(checkpoint.file.path)
+        selected_epoch = int(row["EPOCH"]) if "EPOCH" in row else None
+        history = FileRef(path=manifest.by_kind(ArtifactKind.log_history)[0].file.path)
 
     nperseg = dataset.signal.nperseg
     n_segments = math.ceil(n_valid / nperseg) if (n_valid and nperseg) else None
@@ -504,19 +549,24 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         evidence = EvidenceType.pa_modeling
         reference = SignalReference(kind="measured_pa_output",
                                     description="measured PA output of the test split (dataset *_output)")
-        models.append(ModelEvidence(role="pa", model=resolved.model, run_id=run_id, weights_sha256=checkpoint.file.sha256,
-                                    n_parameters=n_params, lookahead_samples=_lookahead(resolved.model.key)))
+        models.append(ModelEvidence(role="pa", model=resolved.model, run_id=run_id, weights_sha256=dpd_sha,
+                                    n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model.key)))
     else:
         evidence = EvidenceType.dpd_surrogate
         reference = SignalReference(kind="linear_gain_target", description="target = gain * PA input (test split)",
                                     gain_rule="max|y_train| / max|x_train| (legacy utils.util.set_target_gain)",
                                     gain_value=target_gain)
         pa = resolved.pa_reference
-        models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=run_id, weights_sha256=checkpoint.file.sha256,
-                                    n_parameters=n_params, lookahead_samples=_lookahead(resolved.model.key)))
+        models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
+                                    n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model.key)))
         models.append(ModelEvidence(role="pa", model=pa.model, run_id=pa.run_id, weights_sha256=pa.checkpoint_sha256,
                                     lookahead_samples=_lookahead(pa.model.key)))
         limitations.append(f"simulated through the learned PA surrogate {pa.run_id}; not a measured PA output")
+        if surrogate_coverage is not None and surrogate_coverage.fraction_above_fitted_peak > 0:
+            limitations.append(f"{surrogate_coverage.fraction_above_fitted_peak:.2%} of the pre-distorted samples exceed "
+                               "the amplitude range the surrogate was fitted on (extrapolation)")
+        if scaling is not None and not scaling.physical_calibration:
+            limitations.append("no physical calibration: absolute output power (dBm) and efficiency are not derived")
 
     return EvaluationResult(
         result_id=f"res-{run_id[4:]}" + ("" if profile.profile_id == resolved.evaluation.profile_id else f"-{profile.profile_id}"),
@@ -527,12 +577,57 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                 split_version=resolved.dataset.split_version, n_samples=n_valid),
         models=models, reference=reference,
         valid_sample_range=(0, n_valid), n_segments=n_segments, nperseg=nperseg,
-        metrics=metrics, selected_epoch=int(row["EPOCH"]) if "EPOCH" in row else None,
-        history=FileRef(path=manifest.by_kind(ArtifactKind.log_history)[0].file.path),
+        metrics=metrics, selected_epoch=selected_epoch, history=history,
         software=software_provenance(), device=resolved.execution.device, seed=resolved.training.seed,
         numeric_mode=f"float32 / reproducibility={resolved.training.reproducibility}",
-        limitations=limitations,
+        limitations=limitations, signal_chain=signal_chain or [], baselines=baselines or [],
+        surrogate_coverage=surrogate_coverage, scaling=scaling,
     )
+
+
+# --- lineage --------------------------------------------------------------------------
+
+def lineage(ws: Workspace, run_id: str) -> RunLineage:
+    """Parents (what this run used) and children (what used it), read from resolved configurations."""
+    records = {r.run_id: r for r in list_runs(ws)}
+    if run_id not in records:
+        raise WorkspaceError(f"run '{run_id}' does not exist")
+
+    def links_of(rid: str) -> List[LineageLink]:
+        record = records[rid]
+        out: List[LineageLink] = []
+        if record.parent_run_id:
+            out.append(_link(records, record.parent_run_id, LineageRelation.retry_of))
+        if record.task == TaskType.train_pa:
+            return out
+        try:
+            resolved = load_resolved(ws, rid)
+        except (OSError, ValidationError):
+            return out
+        if resolved.dpd_reference is not None:
+            out.append(_link(records, resolved.dpd_reference.run_id, LineageRelation.dpd_model,
+                             resolved.dpd_reference.checkpoint_sha256))
+        if resolved.pa_reference is not None:
+            out.append(_link(records, resolved.pa_reference.run_id, LineageRelation.pa_surrogate,
+                             resolved.pa_reference.checkpoint_sha256))
+        return out
+
+    parents = links_of(run_id)
+    children: List[LineageLink] = []
+    for other in sorted(records):
+        if other == run_id:
+            continue
+        for link in links_of(other):
+            if link.run_id == run_id:
+                children.append(_link(records, other, link.relation, link.checkpoint_sha256))
+    return RunLineage(run_id=run_id, parents=parents, children=children)
+
+
+def _link(records: Dict[str, RunRecord], run_id: str, relation: LineageRelation,
+          sha: Optional[str] = None) -> LineageLink:
+    record = records.get(run_id)
+    return LineageLink(run_id=run_id, relation=relation, task=record.task if record else None,
+                       status=record.status if record else None, checkpoint_sha256=sha)
 
 
 def _lookahead(key: str) -> Optional[int]:

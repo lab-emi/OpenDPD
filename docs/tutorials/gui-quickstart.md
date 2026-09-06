@@ -71,6 +71,37 @@ opendpd datasets preprocess mine --version aligned-v1 --delay 6
 opendpd run --config exp.json   # with "dataset": {"id": "mine", "preprocessing_version": "aligned-v1"}
 ```
 
+## DPD through a PA surrogate
+
+1. **Train a PA model first** (a `pa-…` recipe on your dataset). A DPD recipe
+   lists only succeeded PA runs of the same dataset as surrogate; without one
+   it cannot start, and the validation error says what to train (same seed
+   and frame length).
+2. **Train the DPD** (a `dpd-…` recipe). The result page shows the chain
+   **x → u = DPD(x) → y = PA(u)** with the source of every stage; `y` is
+   marked *simulated* because it comes from the learned surrogate. Under the
+   metrics, **Baselines under the same reference** scores the surrogate
+   without DPD and the measured PA without DPD against the same linear
+   target, and **Surrogate amplitude coverage** says how much of `u` leaves
+   the amplitude range the surrogate was fitted on.
+3. **Apply DPD to the test split…** on the DPD run page exports `u` (a PA
+   *input*, downloadable from the result's chain table and the artifacts
+   tab, with a `.meta.json` sidecar describing columns, order, dtype, scaling
+   and the checkpoints used) and scores it through the chosen surrogate.
+   Picking another PA run gives a new result; the DPD's own result is never
+   overwritten. The run page's **Lineage** card shows which checkpoints a run
+   used and which runs used it.
+4. No absolute power is shown anywhere: the dataset carries no physical
+   calibration, so dBm and efficiency are not derived.
+
+The same headless:
+
+```bash
+opendpd run --config dpd.json --workspace WS        # "task": "train_dpd", "pa_reference": {"run_id": "run-…"}
+opendpd apply run-DPD --workspace WS                 # export u = DPD(x), score through the training surrogate
+opendpd apply run-DPD --workspace WS --pa run-PA2    # score the same DPD through another surrogate
+```
+
 ## Reproduce, export and import a configuration
 
 - Every run's **Configuration** tab shows the resolved configuration (what

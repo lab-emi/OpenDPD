@@ -95,6 +95,40 @@
         "title": "ArtifactManifest",
         "type": "object"
       },
+      "BaselineScore": {
+        "additionalProperties": false,
+        "description": "Scores of a comparison signal under the *same* reference, profile and\nvalid range as ``EvaluationResult.metrics``; never normalised separately.",
+        "properties": {
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "surrogate_without_dpd",
+              "measured_without_dpd"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricValue"
+            },
+            "minItems": 1,
+            "title": "Metrics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "description",
+          "metrics"
+        ],
+        "title": "BaselineScore",
+        "type": "object"
+      },
       "BetterDirection": {
         "enum": [
           "lower",
@@ -789,6 +823,13 @@
       "EvaluationResult": {
         "additionalProperties": false,
         "properties": {
+          "baselines": {
+            "items": {
+              "$ref": "#/components/schemas/BaselineScore"
+            },
+            "title": "Baselines",
+            "type": "array"
+          },
           "dataset": {
             "$ref": "#/components/schemas/DatasetEvidence"
           },
@@ -921,6 +962,16 @@
             ],
             "title": "Run Id"
           },
+          "scaling": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScalingInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "schema_version": {
             "default": 1,
             "title": "Schema Version",
@@ -949,6 +1000,13 @@
             ],
             "title": "Selected Epoch"
           },
+          "signal_chain": {
+            "items": {
+              "$ref": "#/components/schemas/SignalStage"
+            },
+            "title": "Signal Chain",
+            "type": "array"
+          },
           "software": {
             "$ref": "#/components/schemas/SoftwareProvenance"
           },
@@ -960,6 +1018,16 @@
             ],
             "title": "Source",
             "type": "string"
+          },
+          "surrogate_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurrogateCoverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "valid_sample_range": {
             "anyOf": [
@@ -1367,6 +1435,67 @@
         ],
         "title": "ImportRootInfo",
         "type": "object"
+      },
+      "LineageLink": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Sha256"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/LineageRelation"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "run_id",
+          "relation"
+        ],
+        "title": "LineageLink",
+        "type": "object"
+      },
+      "LineageRelation": {
+        "description": "How one run depends on another. Recorded from resolved configurations, never inferred from names.",
+        "enum": [
+          "pa_surrogate",
+          "dpd_model",
+          "retry_of"
+        ],
+        "title": "LineageRelation",
+        "type": "string"
       },
       "LogPage": {
         "properties": {
@@ -2415,6 +2544,36 @@
         "title": "RunEventType",
         "type": "string"
       },
+      "RunLineage": {
+        "additionalProperties": false,
+        "description": "The experiment graph around one run: what it used (parents) and what used it (children).",
+        "properties": {
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/LineageLink"
+            },
+            "title": "Children",
+            "type": "array"
+          },
+          "parents": {
+            "items": {
+              "$ref": "#/components/schemas/LineageLink"
+            },
+            "title": "Parents",
+            "type": "array"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "RunLineage",
+        "type": "object"
+      },
       "RunStatus": {
         "enum": [
           "queued",
@@ -2681,6 +2840,48 @@
         "title": "RunView",
         "type": "object"
       },
+      "ScalingInfo": {
+        "additionalProperties": false,
+        "description": "What the amplitudes are relative to. Without a physical calibration no\nabsolute power (dBm) or efficiency is derived from them.",
+        "properties": {
+          "amplitude_units": {
+            "enum": [
+              "normalized",
+              "volts",
+              "unknown"
+            ],
+            "title": "Amplitude Units",
+            "type": "string"
+          },
+          "input_scaling": {
+            "minLength": 1,
+            "title": "Input Scaling",
+            "type": "string"
+          },
+          "physical_calibration": {
+            "default": false,
+            "title": "Physical Calibration",
+            "type": "boolean"
+          },
+          "reference_gain": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Gain"
+          }
+        },
+        "required": [
+          "amplitude_units",
+          "input_scaling"
+        ],
+        "title": "ScalingInfo",
+        "type": "object"
+      },
       "SessionInfo": {
         "properties": {
           "authenticated": {
@@ -2865,6 +3066,91 @@
           }
         },
         "title": "SignalSpec",
+        "type": "object"
+      },
+      "SignalStage": {
+        "additionalProperties": false,
+        "description": "One link of the evaluated signal chain: ``x`` (target input), ``u = DPD(x)``\n(pre-distorted PA input) and ``y`` (PA output). ``simulated`` is True when a\nlearned surrogate produced the signal; it is never inferred from the task.",
+        "properties": {
+          "artifact_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact Id"
+          },
+          "n_samples": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Samples"
+          },
+          "peak_abs": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak Abs"
+          },
+          "rms": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rms"
+          },
+          "role": {
+            "minLength": 1,
+            "title": "Role",
+            "type": "string"
+          },
+          "simulated": {
+            "default": false,
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "source": {
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "symbol": {
+            "enum": [
+              "x",
+              "u",
+              "y"
+            ],
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "symbol",
+          "role",
+          "source"
+        ],
+        "title": "SignalStage",
         "type": "object"
       },
       "SoftwareProvenance": {
@@ -3131,6 +3417,41 @@
           "config"
         ],
         "title": "SubmitRunRequest",
+        "type": "object"
+      },
+      "SurrogateCoverage": {
+        "additionalProperties": false,
+        "description": "How far the pre-distorted signal leaves the amplitude range the PA\nsurrogate was fitted on. Evidence for an extrapolation warning only: staying\ninside the range does not prove the surrogate valid.",
+        "properties": {
+          "fitted_peak_abs": {
+            "minimum": 0.0,
+            "title": "Fitted Peak Abs",
+            "type": "number"
+          },
+          "fraction_above_fitted_peak": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Fraction Above Fitted Peak",
+            "type": "number"
+          },
+          "note": {
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "u_peak_abs": {
+            "minimum": 0.0,
+            "title": "U Peak Abs",
+            "type": "number"
+          }
+        },
+        "required": [
+          "fitted_peak_abs",
+          "u_peak_abs",
+          "fraction_above_fitted_peak",
+          "note"
+        ],
+        "title": "SurrogateCoverage",
         "type": "object"
       },
       "TaskType": {
@@ -4659,6 +4980,49 @@
         "summary": "Events List",
         "tags": [
           "events"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/lineage": {
+      "get": {
+        "description": "The experiment graph around a run: PA surrogate, DPD model and retry links with the checkpoint hashes used.",
+        "operationId": "runs_lineage_api_v1_runs__run_id__lineage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunLineage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Lineage",
+        "tags": [
+          "runs"
         ]
       }
     },

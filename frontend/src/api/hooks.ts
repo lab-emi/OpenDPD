@@ -16,6 +16,7 @@ import type {
   ModelInfo,
   RecipeInfo,
   ResolvedExperimentConfig,
+  RunLineage,
   RunStatus,
   RunView,
   ValidationReport,
@@ -32,6 +33,7 @@ export const keys = {
   run: (id: string) => ['run', id] as const,
   runConfig: (id: string) => ['run', id, 'config'] as const,
   runArtifacts: (id: string) => ['run', id, 'artifacts'] as const,
+  runLineage: (id: string) => ['run', id, 'lineage'] as const,
   result: (id: string, profile: string | null = null) => ['result', id, profile ?? 'primary'] as const,
   resultProfiles: (id: string) => ['result', id, 'profiles'] as const,
   metricProfiles: ['metric-profiles'] as const,
@@ -64,6 +66,8 @@ export const useRunConfig = (id: string, enabled = true) =>
   useQuery({ queryKey: keys.runConfig(id), queryFn: () => api.get<ResolvedExperimentConfig>(`/runs/${encodeURIComponent(id)}/config`), enabled })
 export const useRunArtifacts = (id: string, enabled = true) =>
   useQuery({ queryKey: keys.runArtifacts(id), queryFn: () => api.get<ArtifactManifest>(`/runs/${encodeURIComponent(id)}/artifacts`), enabled })
+export const useRunLineage = (id: string, enabled = true) =>
+  useQuery({ queryKey: keys.runLineage(id), queryFn: () => api.get<RunLineage>(`/runs/${encodeURIComponent(id)}/lineage`), enabled })
 export const useResult = (id: string, enabled = true, profile: string | null = null) =>
   useQuery({
     queryKey: keys.result(id, profile),

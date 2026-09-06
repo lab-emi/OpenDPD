@@ -30,6 +30,51 @@ class SignalReference(StrictModel):
     gain_value: Optional[float] = None
 
 
+class SignalStage(StrictModel):
+    """One link of the evaluated signal chain: ``x`` (target input), ``u = DPD(x)``
+    (pre-distorted PA input) and ``y`` (PA output). ``simulated`` is True when a
+    learned surrogate produced the signal; it is never inferred from the task."""
+
+    symbol: Literal["x", "u", "y"]
+    role: str = Field(min_length=1)
+    source: str = Field(min_length=1)
+    simulated: bool = False
+    n_samples: Optional[int] = Field(default=None, ge=0)
+    peak_abs: Optional[float] = Field(default=None, ge=0)
+    rms: Optional[float] = Field(default=None, ge=0)
+    artifact_id: Optional[Slug] = None      # exported file in the run's artifact manifest, when any
+
+
+class BaselineScore(StrictModel):
+    """Scores of a comparison signal under the *same* reference, profile and
+    valid range as ``EvaluationResult.metrics``; never normalised separately."""
+
+    kind: Literal["surrogate_without_dpd", "measured_without_dpd"]
+    description: str = Field(min_length=1)
+    metrics: List[MetricValue] = Field(min_length=1)
+
+
+class SurrogateCoverage(StrictModel):
+    """How far the pre-distorted signal leaves the amplitude range the PA
+    surrogate was fitted on. Evidence for an extrapolation warning only: staying
+    inside the range does not prove the surrogate valid."""
+
+    fitted_peak_abs: float = Field(ge=0)              # max |x| over the surrogate's training split
+    u_peak_abs: float = Field(ge=0)
+    fraction_above_fitted_peak: float = Field(ge=0, le=1)
+    note: str = Field(min_length=1)
+
+
+class ScalingInfo(StrictModel):
+    """What the amplitudes are relative to. Without a physical calibration no
+    absolute power (dBm) or efficiency is derived from them."""
+
+    amplitude_units: Literal["normalized", "volts", "unknown"]
+    input_scaling: str = Field(min_length=1)
+    reference_gain: Optional[float] = None
+    physical_calibration: bool = False
+
+
 class DatasetEvidence(StrictModel):
     dataset_id: Slug
     split: Literal["train", "val", "test"]
@@ -74,6 +119,10 @@ class EvaluationResult(StrictModel):
     seed: Optional[int] = None
     numeric_mode: str = "float32"
     limitations: List[str] = Field(default_factory=list)
+    signal_chain: List[SignalStage] = Field(default_factory=list)
+    baselines: List[BaselineScore] = Field(default_factory=list)
+    surrogate_coverage: Optional[SurrogateCoverage] = None
+    scaling: Optional[ScalingInfo] = None
     extra: Dict[str, ParamValue] = Field(default_factory=dict)
 
     def metric(self, name: str) -> MetricValue:
@@ -109,4 +158,17 @@ class EvaluationResult(StrictModel):
                 raise ValueError("dpd_measured evidence cannot come from a PA surrogate")
         if self.source == "legacy-log-import" and not self.limitations:
             raise ValueError("legacy imports must list what is unknown")
+        symbols = [s.symbol for s in self.signal_chain]
+        if len(symbols) != len(set(symbols)):
+            raise ValueError("each signal chain stage appears once")
+        for stage in self.signal_chain:
+            if stage.symbol == "y" and stage.simulated != (self.evidence_type == EvidenceType.dpd_surrogate):
+                raise ValueError("the PA output stage is simulated exactly for dpd_surrogate evidence")
+        if self.baselines:
+            names = {m.name for m in self.metrics}
+            for baseline in self.baselines:
+                if {m.name for m in baseline.metrics} != names:
+                    raise ValueError(f"baseline {baseline.kind} must score the same metrics as the result")
+        if self.scaling is not None and self.scaling.physical_calibration:
+            raise ValueError("physical calibration is not implemented; absolute power cannot be claimed")
         return self

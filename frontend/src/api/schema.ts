@@ -483,6 +483,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/lineage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Runs Lineage
+         * @description The experiment graph around a run: PA surrogate, DPD model and retry links with the checkpoint hashes used.
+         */
+        get: operations["runs_lineage_api_v1_runs__run_id__lineage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/logs": {
         parameters: {
             query?: never;
@@ -618,6 +638,22 @@ export interface components {
              * @default 1
              */
             schema_version: number;
+        };
+        /**
+         * BaselineScore
+         * @description Scores of a comparison signal under the *same* reference, profile and
+         *     valid range as ``EvaluationResult.metrics``; never normalised separately.
+         */
+        BaselineScore: {
+            /** Description */
+            description: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "surrogate_without_dpd" | "measured_without_dpd";
+            /** Metrics */
+            metrics: components["schemas"]["MetricValue"][];
         };
         /**
          * BetterDirection
@@ -871,6 +907,8 @@ export interface components {
         };
         /** EvaluationResult */
         EvaluationResult: {
+            /** Baselines */
+            baselines?: components["schemas"]["BaselineScore"][];
             dataset: components["schemas"]["DatasetEvidence"];
             /** Device */
             device: string;
@@ -914,6 +952,7 @@ export interface components {
             result_id: string;
             /** Run Id */
             run_id?: string | null;
+            scaling?: components["schemas"]["ScalingInfo"] | null;
             /**
              * Schema Version
              * @default 1
@@ -923,12 +962,15 @@ export interface components {
             seed?: number | null;
             /** Selected Epoch */
             selected_epoch?: number | null;
+            /** Signal Chain */
+            signal_chain?: components["schemas"]["SignalStage"][];
             software: components["schemas"]["SoftwareProvenance"];
             /**
              * Source
              * @enum {string}
              */
             source: "opendpd-studio" | "legacy-log-import" | "mock";
+            surrogate_coverage?: components["schemas"]["SurrogateCoverage"] | null;
             /** Valid Sample Range */
             valid_sample_range?: [
                 number,
@@ -1068,6 +1110,22 @@ export interface components {
             /** Root Id */
             root_id: string;
         };
+        /** LineageLink */
+        LineageLink: {
+            /** Checkpoint Sha256 */
+            checkpoint_sha256?: string | null;
+            relation: components["schemas"]["LineageRelation"];
+            /** Run Id */
+            run_id: string;
+            status?: components["schemas"]["RunStatus"] | null;
+            task?: components["schemas"]["TaskType"] | null;
+        };
+        /**
+         * LineageRelation
+         * @description How one run depends on another. Recorded from resolved configurations, never inferred from names.
+         * @enum {string}
+         */
+        LineageRelation: "pa_surrogate" | "dpd_model" | "retry_of";
         /** LogPage */
         LogPage: {
             /** Eof */
@@ -1451,6 +1509,18 @@ export interface components {
          */
         RunEventType: "status" | "progress" | "metric" | "log" | "artifact" | "checkpoint" | "heartbeat" | "error";
         /**
+         * RunLineage
+         * @description The experiment graph around one run: what it used (parents) and what used it (children).
+         */
+        RunLineage: {
+            /** Children */
+            children?: components["schemas"]["LineageLink"][];
+            /** Parents */
+            parents?: components["schemas"]["LineageLink"][];
+            /** Run Id */
+            run_id: string;
+        };
+        /**
          * RunStatus
          * @enum {string}
          */
@@ -1516,6 +1586,27 @@ export interface components {
             task: components["schemas"]["TaskType"];
             worker?: components["schemas"]["WorkerInfo"] | null;
         };
+        /**
+         * ScalingInfo
+         * @description What the amplitudes are relative to. Without a physical calibration no
+         *     absolute power (dBm) or efficiency is derived from them.
+         */
+        ScalingInfo: {
+            /**
+             * Amplitude Units
+             * @enum {string}
+             */
+            amplitude_units: "normalized" | "volts" | "unknown";
+            /** Input Scaling */
+            input_scaling: string;
+            /**
+             * Physical Calibration
+             * @default false
+             */
+            physical_calibration: boolean;
+            /** Reference Gain */
+            reference_gain?: number | null;
+        };
         /** SessionInfo */
         SessionInfo: {
             /** Authenticated */
@@ -1577,6 +1668,36 @@ export interface components {
             standard?: string | null;
             /** Sub Channel Bandwidth Hz */
             sub_channel_bandwidth_hz?: number | null;
+        };
+        /**
+         * SignalStage
+         * @description One link of the evaluated signal chain: ``x`` (target input), ``u = DPD(x)``
+         *     (pre-distorted PA input) and ``y`` (PA output). ``simulated`` is True when a
+         *     learned surrogate produced the signal; it is never inferred from the task.
+         */
+        SignalStage: {
+            /** Artifact Id */
+            artifact_id?: string | null;
+            /** N Samples */
+            n_samples?: number | null;
+            /** Peak Abs */
+            peak_abs?: number | null;
+            /** Rms */
+            rms?: number | null;
+            /** Role */
+            role: string;
+            /**
+             * Simulated
+             * @default false
+             */
+            simulated: boolean;
+            /** Source */
+            source: string;
+            /**
+             * Symbol
+             * @enum {string}
+             */
+            symbol: "x" | "u" | "y";
         };
         /** SoftwareProvenance */
         SoftwareProvenance: {
@@ -1673,6 +1794,22 @@ export interface components {
             idempotency_key?: string | null;
             /** Name */
             name?: string | null;
+        };
+        /**
+         * SurrogateCoverage
+         * @description How far the pre-distorted signal leaves the amplitude range the PA
+         *     surrogate was fitted on. Evidence for an extrapolation warning only: staying
+         *     inside the range does not prove the surrogate valid.
+         */
+        SurrogateCoverage: {
+            /** Fitted Peak Abs */
+            fitted_peak_abs: number;
+            /** Fraction Above Fitted Peak */
+            fraction_above_fitted_peak: number;
+            /** Note */
+            note: string;
+            /** U Peak Abs */
+            u_peak_abs: number;
         };
         /**
          * TaskType
@@ -2696,6 +2833,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    runs_lineage_api_v1_runs__run_id__lineage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunLineage"];
                 };
             };
             /** @description Validation Error */

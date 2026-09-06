@@ -271,6 +271,15 @@ def test_minimal_frontend_payload_validates_and_submits(client, session):
     assert final["status"] == "succeeded", final
 
 
+def test_lineage_route_reads_the_graph_from_resolved_configs(client, session):
+    runs = client.get("/api/v1/runs", params={"status": "succeeded"}).json()
+    pa = next(r for r in runs if r["task"] == "train_pa")
+    graph = client.get(f"/api/v1/runs/{pa['run_id']}/lineage").json()
+    assert graph == {"run_id": pa["run_id"], "parents": [], "children": []}
+    r = client.get("/api/v1/runs/run-does-not-exist/lineage")
+    assert r.status_code == 404 and r.json()["error"]["code"] == "run_not_found"
+
+
 def test_undetected_device_is_refused_never_switched(client, session, monkeypatch):
     from opendpd.services import capabilities
 

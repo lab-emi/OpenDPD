@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import generalProfile from '@mocks/metric_profile_general.json'
 import legacyProfile from '@mocks/metric_profile_legacy.json'
 import resultMock from '@mocks/result_pa_modeling_mock.json'
+import dpdMock from '@mocks/result_dpd_surrogate_mock.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { ResultDetailPage } from './ResultDetailPage'
 
@@ -41,4 +42,25 @@ test('shows the profile behind every score, its definitions, and switches to ano
   expect(within(acprL).getByText(/exceeds the captured range/)).toBeInTheDocument()
   expect(calls.some((c) => c.path === '/api/v1/results/run-pa-0001' && c.method === 'GET')).toBe(true)
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('res-pa-0001-general-spectral-v1')
+})
+
+test('a DPD result shows the x/u/y chain, baselines under one reference, coverage and the uncalibrated note', async () => {
+  mockApi({
+    'GET /api/v1/results/run-dpd-0001': () => dpdMock.data,
+    'GET /api/v1/results/run-dpd-0001/profiles': () => ['legacy-opendpd-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
+  })
+  renderWithProviders(<ResultDetailPage />, { route: '/results/run-dpd-0001', path: '/results/:runId' })
+  const chain = await screen.findByRole('region', { name: 'Signal chain' })
+  const rows = within(chain).getAllByRole('row').slice(1)
+  expect(rows.map((r) => r.getAttribute('data-stage'))).toEqual(['x', 'u', 'y'])
+  expect(within(rows[2]!).getByText('simulated')).toBeInTheDocument()
+  expect(within(rows[1]!).getByText(/u = DPD\(x\)/)).toBeInTheDocument()
+  const baselines = screen.getByRole('region', { name: 'Baselines under the same reference' })
+  expect(within(baselines).getByText('Surrogate without DPD')).toBeInTheDocument()
+  expect(within(baselines).getByText('Measured PA without DPD')).toBeInTheDocument()
+  expect(within(baselines).getByText('-26.82 dBc')).toBeInTheDocument()
+  expect(within(baselines).getByText('-19.39 dBc')).toBeInTheDocument()
+  expect(screen.getByTestId('surrogate-coverage')).toHaveTextContent('0.31% of the pre-distorted samples above the fitted peak')
+  expect(screen.getByTestId('scaling')).toHaveTextContent('No physical calibration')
 })

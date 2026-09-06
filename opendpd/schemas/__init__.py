@@ -48,13 +48,25 @@ from .experiment import (
     TrainingConfig,
 )
 from .metrics import MetricDefinition, MetricProfile
-from .results import DatasetEvidence, EvaluationResult, ModelEvidence, SignalReference
+from .results import (
+    BaselineScore,
+    DatasetEvidence,
+    EvaluationResult,
+    ModelEvidence,
+    ScalingInfo,
+    SignalReference,
+    SignalStage,
+    SurrogateCoverage,
+)
 from .run import (
     TERMINAL_STATUSES,
+    LineageLink,
+    LineageRelation,
     RunError,
     RunEvent,
     RunEventType,
     RunRecord,
+    RunLineage,
     RunStatus,
     WorkerInfo,
     can_transition,
@@ -74,7 +86,8 @@ __all__ = [
     "ModelSpec", "PAReference", "QuantizationConfig", "ResolvedExperimentConfig", "ResolutionInfo",
     "TaskType", "TrainingConfig",
     "MetricDefinition", "MetricProfile",
-    "DatasetEvidence", "EvaluationResult", "ModelEvidence", "SignalReference",
-    "TERMINAL_STATUSES", "RunError", "RunEvent", "RunEventType", "RunRecord", "RunStatus",
-    "WorkerInfo", "can_transition", "heartbeat_is_stale",
+    "BaselineScore", "DatasetEvidence", "EvaluationResult", "ModelEvidence", "ScalingInfo", "SignalReference",
+    "SignalStage", "SurrogateCoverage",
+    "TERMINAL_STATUSES", "LineageLink", "LineageRelation", "RunError", "RunEvent", "RunEventType", "RunLineage",
+    "RunRecord", "RunStatus", "WorkerInfo", "can_transition", "heartbeat_is_stale",
 ]

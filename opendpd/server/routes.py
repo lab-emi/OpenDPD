@@ -28,6 +28,7 @@ from opendpd.schemas import (
     PreprocessingParams,
     ResolvedExperimentConfig,
     RunEvent,
+    RunLineage,
     RunRecord,
     RunStatus,
     TERMINAL_STATUSES,
@@ -474,6 +475,14 @@ def runs_artifacts(run_id: str, request: Request):
     _get_run(request, run_id)
     manifest = experiments.load_artifacts(request.app.state.ws, run_id)
     return manifest or ArtifactManifest(run_id=run_id)
+
+
+@router.get("/runs/{run_id}/lineage", response_model=RunLineage, tags=["runs"],
+            dependencies=[Depends(require_session)])
+def runs_lineage(run_id: str, request: Request):
+    """The experiment graph around a run: PA surrogate, DPD model and retry links with the checkpoint hashes used."""
+    _get_run(request, run_id)
+    return experiments.lineage(request.app.state.ws, run_id)
 
 
 @router.get("/metrics/profiles", response_model=List[MetricProfile], tags=["metrics"], dependencies=[Depends(require_session)])

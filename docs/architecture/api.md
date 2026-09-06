@@ -64,8 +64,8 @@ inline.
 | `GET /healthz`, `GET /readyz` | done (`readyz` also reports whether the built frontend is present and matches the package version) |
 | `GET /system/capabilities`, `GET /models` | done (plus `GET /recipes`) |
 | `POST /datasets/import`, `POST /datasets/{id}/diagnostics` | done (S07): import roots (`GET /datasets/import-roots`, `…/{root}/files`), `POST /datasets/inspect`, `POST /datasets/import` (by root + relative path only), `POST /datasets/upload` (multipart, streamed, 2 GB cap), `GET/POST /datasets/{id}/diagnostics`, `POST /datasets/{id}/manifest`, `POST /datasets/{id}/preprocess[/preview]`; plus `import-builtin` |
-| `POST /experiments/validate`, `POST /runs`, `GET /runs/{id}`, `GET /runs/{id}/events`, `POST /runs/{id}/cancel` | done (plus `retry`, `config`, `artifacts`, `logs`, `events/list`) |
-| `GET /results/{id}` | done (result id = run id; `?profile=` serves the result under another registered profile, `GET /results/{id}/profiles` lists what is stored) |
+| `POST /experiments/validate`, `POST /runs`, `GET /runs/{id}`, `GET /runs/{id}/events`, `POST /runs/{id}/cancel` | done (plus `retry`, `config`, `artifacts`, `logs`, `events/list`, and `GET /runs/{id}/lineage` (S10): PA surrogate / DPD model / retry links with the checkpoint hashes used, read from resolved configurations) |
+| `GET /results/{id}` | done (result id = run id; `?profile=` serves the result under another registered profile, `GET /results/{id}/profiles` lists what is stored). `run_dpd` runs have results too (S10): the exported `u` scored through the bound surrogate, with the x/u/y chain, baselines under the same reference, surrogate coverage and scaling (`docs/protocols/simulation-chain.md`) |
 | `GET /metrics/profiles`, `GET /metrics/profiles/{id}` | done (S08): the registry behind every score (`opendpd/core/metrics`); every registered profile is scored at run end from the best checkpoint |
 | `GET /artifacts/{id}` | done as `/artifacts/{run_id}/{artifact_id}` (artifact ids are scoped to a run) |
 | `POST /exports` | S11 |

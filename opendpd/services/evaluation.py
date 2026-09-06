@@ -4,17 +4,37 @@ The worker calls ``evaluate_all`` once at the end of a run (predictions are
 computed once, every registered profile is scored); ``evaluate_run`` lets the
 CLI and the Python API re-score a run later. Nothing here runs inside the
 HTTP server process.
+
+For DPD tasks the evaluated chain is made explicit: ``x`` (target input),
+``u = DPD(x)`` (pre-distorted PA input) and ``y = PA(u)`` where the PA is a
+learned surrogate. Two baselines are scored under the *same* linear target:
+the surrogate driven by ``x`` directly and the measured PA output of the test
+split. Nothing is normalised separately.
 """
 
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy as np
 
+from opendpd import __version__
 from opendpd.core.metrics import evaluate as score, get_profile, list_profiles
-from opendpd.schemas import ArtifactKind, ArtifactManifest, EvaluationResult, ResolvedExperimentConfig, RunStatus, TaskType
+from opendpd.schemas import (
+    ArtifactKind,
+    ArtifactManifest,
+    BaselineScore,
+    DatasetManifest,
+    EvaluationResult,
+    ResolvedExperimentConfig,
+    RunStatus,
+    ScalingInfo,
+    SignalStage,
+    SurrogateCoverage,
+    TaskType,
+)
 from opendpd.services.experiments import (
     RESULT_FILE,
     RESULTS_DIR,
@@ -25,17 +45,43 @@ from opendpd.services.experiments import (
     load_run,
 )
 from opendpd.services.legacy_adapter import build_namespace, run_in_directory
-from opendpd.services.workspace import Workspace, WorkspaceError, write_json_atomic
+from opendpd.services.workspace import Workspace, WorkspaceError, sha256_file, write_json_atomic
+
+DPD_OUTPUT_ROLE = "pa_input_predistorted"
+DPD_OUTPUT_STATEMENT = ("u = DPD(x) is the pre-distorted PA *input* for the test split. It is not a PA output "
+                        "and its existence does not show that the PA was linearised.")
 
 
 class Predictions:
-    """Best-checkpoint output over the test split, as the trainer's test evaluation produces it."""
+    """Best-checkpoint output over the test split, as the trainer's test evaluation produces it.
+    Arrays are ``(n_segments, nperseg, 2)`` float32; only the first ``n_valid`` samples are real."""
 
-    def __init__(self, prediction: np.ndarray, ground_truth: np.ndarray, n_valid: int, target_gain: Optional[float]):
-        self.prediction = prediction          # (n_segments, nperseg, 2) float32
-        self.ground_truth = ground_truth      # same shape; linear target for DPD tasks
-        self.n_valid = n_valid                # real samples; the rest is zero padding
+    def __init__(self, prediction: np.ndarray, ground_truth: np.ndarray, n_valid: int, target_gain: Optional[float],
+                 *, x: Optional[np.ndarray] = None, u: Optional[np.ndarray] = None,
+                 surrogate_without_dpd: Optional[np.ndarray] = None, measured: Optional[np.ndarray] = None,
+                 fitted_peak_abs: Optional[float] = None):
+        self.prediction = prediction          # PA model output (train_pa) or y = PA_surrogate(u) (DPD tasks)
+        self.ground_truth = ground_truth      # measured y (train_pa) or the linear target gain * x (DPD tasks)
+        self.n_valid = n_valid
         self.target_gain = target_gain
+        self.x = x                            # DPD tasks: the target input
+        self.u = u                            # DPD tasks: the pre-distorted PA input
+        self.surrogate_without_dpd = surrogate_without_dpd   # DPD tasks: PA_surrogate(x)
+        self.measured = measured              # DPD tasks: measured PA output of the test split
+        self.fitted_peak_abs = fitted_peak_abs   # DPD tasks: max |x| the surrogate was trained on
+
+
+def _amplitude(iq: np.ndarray) -> np.ndarray:
+    return np.hypot(iq[..., 0], iq[..., 1])
+
+
+def _valid(segments: np.ndarray, n_valid: int) -> np.ndarray:
+    return segments.reshape(-1, segments.shape[-1])[:n_valid]
+
+
+def _stats(segments: np.ndarray, n_valid: int):
+    amp = _amplitude(_valid(segments, n_valid))
+    return float(np.max(amp)) if amp.size else 0.0, float(np.sqrt(np.mean(amp ** 2))) if amp.size else 0.0
 
 
 def _n_test_samples(ws: Workspace, resolved: ResolvedExperimentConfig) -> Optional[int]:
@@ -46,6 +92,25 @@ def _n_test_samples(ws: Workspace, resolved: ResolvedExperimentConfig) -> Option
         start, end = split.boundaries["test"]
         return int(end - start)
     return None
+
+
+def input_scaling(manifest: DatasetManifest, version_name: str) -> str:
+    """Human-readable statement of how the input amplitudes were scaled before training."""
+    version = manifest.version(version_name)
+    params = version.params if version is not None else None
+    if params is None or params.normalize == "none":
+        return "none: amplitudes as imported"
+    fit = f" fitted on train samples [{version.fit_range[0]}, {version.fit_range[1]})" if version.fit_range else ""
+    return f"{params.normalize} normalisation{fit} (preprocess-v1, version {version_name})"
+
+
+def _fitted_peak(ws: Workspace, pa_run_id: str) -> float:
+    """Largest input amplitude in the training split the PA surrogate was fitted on."""
+    from modules.data_collector import load_dataset
+
+    pa = load_resolved(ws, pa_run_id)
+    x_train, *_ = load_dataset(dataset_path=str(ws.dataset_version_dir(pa.dataset.id, pa.dataset.preprocessing_version)))
+    return float(np.max(_amplitude(np.asarray(x_train, dtype=np.float32))))
 
 
 def _build_net(proj, task: TaskType, input_size: int):
@@ -69,9 +134,24 @@ def _build_net(proj, task: TaskType, input_size: int):
     return model.CascadedModel(dpd_model=get_quant_model(proj, dpd), pa_model=pa)
 
 
+def _checkpoint_path(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest) -> Path:
+    """The weights under evaluation: this run's best checkpoint, or for run_dpd the DPD run's (hash verified)."""
+    if resolved.task != TaskType.run_dpd:
+        return ws.run_dir(run_id) / manifest.by_kind(ArtifactKind.checkpoint)[0].file.path
+    ref = resolved.dpd_reference
+    dpd_manifest = load_artifacts(ws, ref.run_id)
+    artifact = next((a for a in (dpd_manifest.artifacts if dpd_manifest else [])
+                     if a.artifact_id == ref.checkpoint_artifact_id), None)
+    path = ws.run_dir(ref.run_id) / artifact.file.path if artifact else None
+    if path is None or not path.exists() or sha256_file(path) != ref.checkpoint_sha256:
+        raise FileNotFoundError(f"DPD checkpoint of run {ref.run_id} is missing or its hash changed")
+    return path
+
+
 def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                        manifest: ArtifactManifest) -> Predictions:
     import torch
+    from modules.data_collector import IQSegmentDataset, load_dataset
     from modules.train_funcs import net_eval
     from project import Project
 
@@ -80,22 +160,92 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
     ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(dataset.dataset_id, resolved.dataset.preprocessing_version),
                          dataset_name=dataset.dataset_id)
     ns.plot = False
-    checkpoint = run_dir / manifest.by_kind(ArtifactKind.checkpoint)[0].file.path
+    checkpoint = _checkpoint_path(ws, run_id, resolved, manifest)
+    dpd_task = resolved.task != TaskType.train_pa
+    extra: Dict[str, object] = {}
     with run_in_directory(run_dir):
-        if resolved.task == TaskType.train_dpd:
-            _prepare_inputs(ws, run_dir, resolved, ns)      # PA surrogate where the legacy code expects it
+        if dpd_task:
+            _prepare_inputs(ws, run_dir, resolved, ns)      # PA surrogate (and DPD) where the legacy code expects them
         proj = Project(args=ns)
         proj.set_device()
         (_, _, test_loader), input_size = proj.build_dataloaders()
         net = _build_net(proj, resolved.task, input_size)
         state = torch.load(checkpoint, map_location="cpu", weights_only=True)
-        (net.dpd_model if resolved.task == TaskType.train_dpd else net).load_state_dict(state)
+        (net.dpd_model if dpd_task else net).load_state_dict(state)
         net = net.to(proj.device)
         _, prediction, ground_truth = net_eval(log={}, net=net, dataloader=test_loader,
                                                criterion=proj.build_criterion(), device=proj.device)
+        if dpd_task:
+            xs, us, y0s = [], [], []
+            net.eval()
+            with torch.inference_mode():
+                for features, _ in test_loader:
+                    features = features.to(proj.device)
+                    xs.append(features.cpu())
+                    us.append(net.dpd_model(features).cpu())
+                    y0s.append(net.pa_model(features).cpu())
+            x_test, y_test = load_dataset(dataset_path=ns.dataset_path)[4:6]
+            nperseg = proj.args.nperseg
+            # The reference is the linear target gain * x for every DPD task (the legacy loader only builds it
+            # for train_dpd; a run_dpd would otherwise be scored against the measured PA output).
+            ground_truth = IQSegmentDataset(x_test, proj.target_gain * x_test, nperseg=nperseg).targets.numpy()
+            extra = dict(x=torch.cat(xs).numpy(), u=torch.cat(us).numpy(), surrogate_without_dpd=torch.cat(y0s).numpy(),
+                         measured=IQSegmentDataset(x_test, y_test, nperseg=nperseg).targets.numpy(),
+                         fitted_peak_abs=_fitted_peak(ws, resolved.pa_reference.run_id))
     n_valid = _n_test_samples(ws, resolved) or int(prediction.shape[0] * prediction.shape[1])
     gain = getattr(proj, "target_gain", None)
-    return Predictions(prediction, ground_truth, n_valid, float(gain) if gain is not None else None)
+    return Predictions(prediction, ground_truth, n_valid, float(gain) if gain is not None else None, **extra)
+
+
+def _surrogate_evidence(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest,
+                        dataset: DatasetManifest, predictions: Predictions, profile_id: str) -> Dict[str, object]:
+    """Signal chain, baselines, amplitude coverage and scaling for a DPD result."""
+    n = predictions.n_valid
+    pa = resolved.pa_reference
+    if resolved.task == TaskType.run_dpd:
+        dpd_run, dpd_sha = resolved.dpd_reference.run_id, resolved.dpd_reference.checkpoint_sha256
+    else:
+        dpd_run, dpd_sha = run_id, manifest.by_kind(ArtifactKind.checkpoint)[0].file.sha256
+    x_peak, x_rms = _stats(predictions.x, n)
+    u_peak, u_rms = _stats(predictions.u, n)
+    y_peak, y_rms = _stats(predictions.prediction, n)
+    version = resolved.dataset.preprocessing_version
+    chain = [
+        SignalStage(symbol="x", role="target input: the PA output should equal reference_gain * x",
+                    source=f"dataset {dataset.dataset_id} version {version}, test split",
+                    n_samples=n, peak_abs=x_peak, rms=x_rms),
+        SignalStage(symbol="u", role="pre-distorted PA input, u = DPD(x)",
+                    source=f"DPD {resolved.model.key} weights {dpd_sha[:12]} from run {dpd_run}",
+                    n_samples=n, peak_abs=u_peak, rms=u_rms,
+                    artifact_id="dpd-output" if resolved.task == TaskType.run_dpd else None),
+        SignalStage(symbol="y", role="PA output, y = PA(u)",
+                    source=f"PA surrogate {pa.model.key} weights {pa.checkpoint_sha256[:12]} from run {pa.run_id}; "
+                           "simulated, not measured",
+                    simulated=True, n_samples=n, peak_abs=y_peak, rms=y_rms),
+    ]
+    reference = predictions.ground_truth
+    baselines = [
+        BaselineScore(kind="surrogate_without_dpd",
+                      description=f"PA surrogate {pa.run_id} driven by x directly (no DPD), scored against the same "
+                                  "linear target reference_gain * x",
+                      metrics=score(profile_id, predictions.surrogate_without_dpd, reference, dataset.signal, valid_samples=n)),
+        BaselineScore(kind="measured_without_dpd",
+                      description="measured PA output of the test split (no DPD), scored against the same linear target",
+                      metrics=score(profile_id, predictions.measured, reference, dataset.signal, valid_samples=n)),
+    ]
+    fitted = float(predictions.fitted_peak_abs or 0.0)
+    above = float(np.mean(_amplitude(_valid(predictions.u, n)) > fitted)) if fitted > 0 and n else 0.0
+    if above > 0:
+        note = (f"{above:.2%} of the pre-distorted samples exceed the largest input amplitude the surrogate was fitted "
+                f"on ({fitted:.4g}); the surrogate extrapolates there and y is unverified for those samples. "
+                "Staying inside the range would not prove the surrogate accurate either.")
+    else:
+        note = (f"every pre-distorted sample stays within the largest input amplitude the surrogate was fitted on "
+                f"({fitted:.4g}); this rules out amplitude extrapolation only and does not prove the surrogate accurate.")
+    coverage = SurrogateCoverage(fitted_peak_abs=fitted, u_peak_abs=u_peak, fraction_above_fitted_peak=above, note=note)
+    scaling = ScalingInfo(amplitude_units=dataset.signal.amplitude_units, input_scaling=input_scaling(dataset, version),
+                          reference_gain=predictions.target_gain, physical_calibration=False)
+    return dict(signal_chain=chain, baselines=baselines, surrogate_coverage=coverage, scaling=scaling)
 
 
 def result_for(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest,
@@ -104,8 +254,10 @@ def result_for(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, m
     profile = get_profile(profile_id)
     metrics = score(profile_id, predictions.prediction, predictions.ground_truth, dataset.signal,
                     valid_samples=predictions.n_valid)
+    evidence = {} if resolved.task == TaskType.train_pa \
+        else _surrogate_evidence(ws, run_id, resolved, manifest, dataset, predictions, profile_id)
     return build_result(ws, run_id, resolved, manifest, profile=profile, metrics=metrics,
-                        n_valid=predictions.n_valid, target_gain=predictions.target_gain)
+                        n_valid=predictions.n_valid, target_gain=predictions.target_gain, **evidence)
 
 
 def evaluate_all(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
@@ -123,10 +275,10 @@ def evaluate_all(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
 
 
 def evaluate_run(ws: Workspace, run_id: str, profile_id: str) -> EvaluationResult:
-    """Re-score a succeeded run under ``profile_id`` from its stored best checkpoint (nothing is written)."""
+    """Re-score a succeeded run under ``profile_id`` from its stored checkpoint (nothing is written)."""
     record = load_run(ws, run_id)
-    if record.status != RunStatus.succeeded or record.task == TaskType.run_dpd:
-        raise WorkspaceError(f"run '{run_id}' has no evaluable result (task {record.task.value}, status {record.status.value})")
+    if record.status != RunStatus.succeeded:
+        raise WorkspaceError(f"run '{run_id}' has no evaluable result (status {record.status.value})")
     resolved = load_resolved(ws, run_id)
     manifest = load_artifacts(ws, run_id)
     if manifest is None or not manifest.complete:
@@ -144,3 +296,51 @@ def available_profiles(ws: Workspace, run_id: str) -> List[str]:
         primary.append(EvaluationResult.model_validate_json((run_dir / RESULT_FILE).read_text()).metric_profile_id)
     others = sorted(p.stem for p in (run_dir / RESULTS_DIR).glob("*.json")) if (run_dir / RESULTS_DIR).exists() else []
     return primary + [o for o in others if o not in primary]
+
+
+def write_dpd_output_metadata(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, ns) -> List[Path]:
+    """Sidecar for every exported pre-distorted signal: what the columns are, their order, dtype, scaling
+    and the exact checkpoints that produced them. Written by the worker next to the CSV."""
+    import pandas as pd
+    from modules.data_collector import load_dataset
+    from utils.util import set_target_gain
+
+    run_dir = ws.run_dir(run_id)
+    dataset = ws.get_dataset(resolved.dataset.id)
+    x_train, y_train, *_ = load_dataset(dataset_path=ns.dataset_path)
+    gain = float(set_target_gain(x_train, y_train))
+    written: List[Path] = []
+    for csv in sorted((run_dir / "dpd_out").rglob("*.csv")):
+        frame = pd.read_csv(csv)
+        x = frame[["I", "Q"]].to_numpy(dtype=np.float32)
+        u = frame[["I_dpd", "Q_dpd"]].to_numpy(dtype=np.float32)
+        meta = {
+            "schema_version": 1,
+            "signal_role": DPD_OUTPUT_ROLE,
+            "statement": DPD_OUTPUT_STATEMENT,
+            "columns": {"I": "x: target input, I", "Q": "x: target input, Q",
+                        "I_dpd": "u = DPD(x): pre-distorted PA input, I", "Q_dpd": "u = DPD(x): pre-distorted PA input, Q"},
+            "dtype": "float32",
+            "n_samples": int(len(frame)),
+            "sample_order": f"test split of dataset {dataset.dataset_id} version {resolved.dataset.preprocessing_version} "
+                            f"({resolved.dataset.split_version}), contiguous, original order",
+            "semantics": "offline: the DPD ran once over the whole test split with its state carried across samples",
+            "amplitude_units": dataset.signal.amplitude_units,
+            "input_scaling": input_scaling(dataset, resolved.dataset.preprocessing_version),
+            "reference_gain": gain,
+            "reference_gain_rule": "max|y_train| / max|x_train| (legacy utils.util.set_target_gain)",
+            "peak_abs_x": float(np.max(_amplitude(x))) if len(x) else 0.0,
+            "peak_abs_u": float(np.max(_amplitude(u))) if len(u) else 0.0,
+            "physical_calibration": False,
+            "dataset": {"id": dataset.dataset_id, "preprocessing_version": resolved.dataset.preprocessing_version,
+                        "split_version": resolved.dataset.split_version, "raw_sha256": dataset.raw_sha256},
+            "dpd": {"run_id": resolved.dpd_reference.run_id, "model": resolved.model.model_dump(mode="json"),
+                    "checkpoint_sha256": resolved.dpd_reference.checkpoint_sha256},
+            "pa_surrogate": {"run_id": resolved.pa_reference.run_id, "model": resolved.pa_reference.model.model_dump(mode="json"),
+                             "checkpoint_sha256": resolved.pa_reference.checkpoint_sha256},
+            "generated_by": {"run_id": run_id, "opendpd_version": __version__},
+        }
+        target = csv.with_suffix(".meta.json")
+        write_json_atomic(target, meta)
+        written.append(target)
+    return written

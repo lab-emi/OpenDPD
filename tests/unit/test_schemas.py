@@ -181,6 +181,36 @@ def test_surrogate_result_must_state_limitation():
         EvaluationResult.model_validate(data)
 
 
+def test_signal_chain_marks_the_pa_output_as_simulated_exactly_for_surrogate_evidence():
+    data = all_examples()["result_dpd_surrogate_mock"].model_dump()
+    assert [s["symbol"] for s in data["signal_chain"]] == ["x", "u", "y"]
+    y = next(s for s in data["signal_chain"] if s["symbol"] == "y")
+    y["simulated"] = False
+    with pytest.raises(ValidationError, match="simulated exactly for dpd_surrogate"):
+        EvaluationResult.model_validate(data)
+    data = all_examples()["result_dpd_surrogate_mock"].model_dump()
+    data["signal_chain"].append(dict(data["signal_chain"][1]))
+    with pytest.raises(ValidationError, match="appears once"):
+        EvaluationResult.model_validate(data)
+
+
+def test_baselines_share_the_metric_set_and_calibration_cannot_be_claimed():
+    data = all_examples()["result_dpd_surrogate_mock"].model_dump()
+    data["baselines"][0]["metrics"] = data["baselines"][0]["metrics"][:2]
+    with pytest.raises(ValidationError, match="same metrics"):
+        EvaluationResult.model_validate(data)
+    data = all_examples()["result_dpd_surrogate_mock"].model_dump()
+    data["scaling"]["physical_calibration"] = True
+    with pytest.raises(ValidationError, match="physical calibration"):
+        EvaluationResult.model_validate(data)
+
+
+def test_lineage_example_names_relations_and_weights():
+    graph = all_examples()["run_lineage_dpd"]
+    assert graph.parents[0].relation.value == "pa_surrogate" and graph.parents[0].checkpoint_sha256
+    assert {c.relation.value for c in graph.children} == {"dpd_model"}
+
+
 def test_legacy_import_must_list_unknowns():
     data = all_examples()["result_legacy_import"].model_dump()
     data["limitations"] = []

@@ -145,6 +145,7 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
       }
       if (sub === 'logs') return json(route, { lines: ['::: Number of PA Model Parameters: 1911', 'Training Completed...'], next_offset: 64, eof: true, size: 64 })
       if (sub === 'artifacts') return json(route, mock<Json>('artifact_manifest_complete'))
+      if (sub === 'lineage') return json(route, { run_id: run['run_id'], parents: [], children: [] })
       if (sub === 'config') return json(route, resolved)
       if (sub === '') return json(route, run)
     }

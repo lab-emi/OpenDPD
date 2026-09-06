@@ -18,12 +18,118 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
+import { artifactUrl } from '@/api/client'
 import { useMetricProfiles, useResult, useResultProfiles } from '@/api/hooks'
-import type { EvaluationResult, MetricProfile } from '@/api/types'
-import { t } from '@/i18n'
+import type { BaselineScore, EvaluationResult, MetricProfile, MetricValue } from '@/api/types'
+import { t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
+
+const BASELINE: Record<BaselineScore['kind'], MessageKey> = {
+  surrogate_without_dpd: 'results.detail.baselines.surrogate_without_dpd',
+  measured_without_dpd: 'results.detail.baselines.measured_without_dpd',
+}
+
+const fmt = (v: number | null | undefined, digits = 3) => (typeof v === 'number' ? v.toFixed(digits) : t('common.na'))
+const score = (m: MetricValue | undefined) => (!m ? t('common.na') : m.status === 'ok' && typeof m.value === 'number' ? `${m.value.toFixed(2)} ${m.unit}` : (m.status ?? 'ok').replace('_', ' '))
+
+/** x → u = DPD(x) → y = PA(u): every stage names its source; simulated stages are marked as such. */
+function SignalChain({ result }: { result: EvaluationResult }) {
+  const chain = result.signal_chain ?? []
+  if (chain.length === 0) return null
+  return (
+    <Paper sx={{ p: 2 }} component="section" aria-label={t('results.detail.chain')}>
+      <Typography variant="h3" component="h2" gutterBottom>
+        {t('results.detail.chain')}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
+        {t('results.detail.chain.help')}
+      </Typography>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>{t('results.detail.chain.stage')}</TableCell>
+            <TableCell>{t('results.detail.chain.role')}</TableCell>
+            <TableCell>{t('results.detail.chain.source')}</TableCell>
+            <TableCell align="right">{t('results.detail.chain.samples')}</TableCell>
+            <TableCell align="right">{t('results.detail.chain.peak')}</TableCell>
+            <TableCell align="right">{t('results.detail.chain.rms')}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {chain.map((s) => (
+            <TableRow key={s.symbol} data-stage={s.symbol}>
+              <TableCell>
+                <code>{s.symbol}</code>
+              </TableCell>
+              <TableCell>{s.role}</TableCell>
+              <TableCell>
+                {s.source}
+                {s.simulated && <Chip size="small" color="warning" variant="outlined" label={t('results.detail.chain.simulated')} sx={{ ml: 1 }} />}
+                {s.artifact_id && result.run_id && (
+                  <>
+                    {' '}
+                    <Link href={artifactUrl(result.run_id, s.artifact_id)} download>
+                      {t('results.detail.chain.export')}
+                    </Link>
+                  </>
+                )}
+              </TableCell>
+              <TableCell align="right">{s.n_samples ?? t('common.na')}</TableCell>
+              <TableCell align="right">{fmt(s.peak_abs)}</TableCell>
+              <TableCell align="right">{fmt(s.rms)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Paper>
+  )
+}
+
+/** The DPD result next to the no-DPD baselines, all scored against the same reference. */
+function Baselines({ result }: { result: EvaluationResult }) {
+  const baselines = result.baselines ?? []
+  if (baselines.length === 0) return null
+  return (
+    <Paper sx={{ p: 2 }} component="section" aria-label={t('results.detail.baselines')}>
+      <Typography variant="h3" component="h2" gutterBottom>
+        {t('results.detail.baselines')}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
+        {t('results.detail.baselines.help')}
+      </Typography>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>{t('results.detail.metric')}</TableCell>
+            <TableCell align="right">{t('results.detail.baselines.dpd')}</TableCell>
+            {baselines.map((b) => (
+              <TableCell key={b.kind} align="right">
+                {t(BASELINE[b.kind])}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {result.metrics.map((m) => (
+            <TableRow key={m.name}>
+              <TableCell>
+                <code>{m.name}</code>
+              </TableCell>
+              <TableCell align="right">{score(m)}</TableCell>
+              {baselines.map((b) => (
+                <TableCell key={b.kind} align="right">
+                  {score(b.metrics.find((x) => x.name === m.name))}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Paper>
+  )
+}
 
 /** Result view: evidence first, then metrics with their registry definitions, then how they were produced. */
 export function ResultView({ result, profile, stored = [], onProfile }: { result: EvaluationResult; profile?: MetricProfile; stored?: string[]; onProfile?: (id: string) => void }) {
@@ -69,6 +175,26 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
           </Grid>
         ))}
       </Grid>
+      <SignalChain result={result} />
+      <Baselines result={result} />
+      {result.surrogate_coverage && (
+        <Alert severity={result.surrogate_coverage.fraction_above_fitted_peak > 0 ? 'warning' : 'info'} data-testid="surrogate-coverage">
+          <strong>{t('results.detail.coverage')}</strong>{' '}
+          {t('results.detail.coverage.body', {
+            fitted: fmt(result.surrogate_coverage.fitted_peak_abs),
+            peak: fmt(result.surrogate_coverage.u_peak_abs),
+            fraction: `${(100 * result.surrogate_coverage.fraction_above_fitted_peak).toFixed(2)}%`,
+          })}{' '}
+          {result.surrogate_coverage.note}
+        </Alert>
+      )}
+      {result.scaling && (
+        <Typography variant="body2" color="text.secondary" data-testid="scaling">
+          <strong>{t('results.detail.scaling')}</strong>{' '}
+          {t('results.detail.scaling.body', { units: result.scaling.amplitude_units, scaling: result.scaling.input_scaling, gain: fmt(result.scaling.reference_gain, 4) })}{' '}
+          {!result.scaling.physical_calibration && t('results.detail.scaling.uncalibrated')}
+        </Typography>
+      )}
       {profile && (
         <Accordion disableGutters>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="definitions-panel" id="definitions-header">
