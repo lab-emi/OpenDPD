@@ -49,7 +49,6 @@ from .experiment import (
 )
 from .metrics import MetricDefinition, MetricProfile
 from .benchmark import (
-    PROTOCOL_ID as BENCHMARK_PROTOCOL_ID,
     BaselineBand,
     BenchmarkEntry,
     BenchmarkPlan,
@@ -99,7 +98,7 @@ from .run import (
 )
 
 __all__ = [
-    "BENCHMARK_PROTOCOL_ID", "BaselineBand", "BenchmarkEntry", "BenchmarkPlan", "BenchmarkReport", "DataAudit",
+    "BaselineBand", "BenchmarkEntry", "BenchmarkPlan", "BenchmarkReport", "DataAudit",
     "EntryResult", "MetricStats", "RegressionBaseline", "RegressionCheck", "RegressionItem", "SeedScore",
     "SCHEMA_VERSION", "utcnow",
     "Artifact", "ArtifactKind", "ArtifactManifest",

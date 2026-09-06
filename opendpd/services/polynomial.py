@@ -18,7 +18,6 @@ import numpy as np
 
 from opendpd.core.polynomial import (
     MEMORY_BUDGET_BYTES,
-    FitDiagnostics,
     PolynomialModel,
     basis,
     basis_bytes,
@@ -62,8 +61,6 @@ class FitProject:
     path_save_file_best: str
     path_log_file_hist: str
     path_log_file_best: str
-    target_gain: float
-    diagnostics: FitDiagnostics
 
 
 def _apply(model, iq: np.ndarray, nperseg: int) -> np.ndarray:
@@ -145,7 +142,7 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
     })
     if on_epoch is not None:
         on_epoch(row)
-    return FitProject(str(save), str(hist), str(best), gain, diag)
+    return FitProject(str(save), str(hist), str(best))
 
 
 def apply_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns) -> None:
