@@ -54,6 +54,10 @@ class ImportError_(WorkspaceError):
     """Import problems are workspace errors with a field-level explanation."""
 
 
+class UploadTooLarge(ImportError_):
+    """The streamed upload passed the configured cap; the partial file was removed."""
+
+
 # --- authorised roots ------------------------------------------------------------------
 
 @dataclass
@@ -86,7 +90,10 @@ def list_files(ws: Workspace, root_id: str, relative: str = "") -> List[FileEntr
     for p in sorted(base.iterdir(), key=lambda q: (q.is_file(), q.name.lower())):
         if p.name.startswith("."):
             continue
-        rel = p.resolve().relative_to(root).as_posix()
+        resolved = p.resolve()
+        if resolved != root and root not in resolved.parents:
+            continue        # a symlink pointing outside the root is never listed (and never readable)
+        rel = resolved.relative_to(root).as_posix()
         if p.is_dir():
             entries.append(FileEntry(path=rel, kind="dir"))
         elif p.suffix.lower() in SUPPORTED_SUFFIXES:
@@ -217,15 +224,17 @@ def _read_csv_arrays(path: Path, mapping: Dict[str, str]) -> Tuple[np.ndarray, n
 
 
 def _as_iq(arr: np.ndarray, name: str) -> np.ndarray:
+    """(n, 2) float view of a source array. Float/int layouts stay memory-mapped views (converted
+    chunk by chunk when written); a complex array is the one layout that needs a full copy."""
     arr = np.asarray(arr)
     if arr.dtype.kind == "c":
         return np.stack([arr.real, arr.imag], -1).astype(np.float32)
     if arr.dtype.kind not in "fiu":
         raise ImportError_(f"{name}: dtype {arr.dtype} is not numeric")
     if arr.ndim == 2 and arr.shape[1] == 2:
-        return arr.astype(np.float32)
+        return arr
     if arr.ndim == 2 and arr.shape[0] == 2:
-        return arr.T.astype(np.float32)
+        return arr.T
     raise ImportError_(f"{name}: expected shape (n, 2) or complex (n,), got {arr.shape} {arr.dtype}")
 
 
@@ -234,7 +243,7 @@ def _read_numpy_arrays(path: Path, mapping: Dict[str, str]) -> Tuple[np.ndarray,
     if path.suffix.lower() == ".npy":
         arr = np.asarray(loaded)
         if arr.ndim == 2 and arr.shape[1] == 4:
-            return arr[:, :2].astype(np.float32), arr[:, 2:].astype(np.float32)
+            return arr[:, :2], arr[:, 2:]
         if arr.ndim == 3 and arr.shape[0] == 2:
             return _as_iq(arr[0], "input"), _as_iq(arr[1], "output")
         raise ImportError_("a single .npy needs shape (n, 4) [I_in,Q_in,I_out,Q_out] or (2, n, 2); "
@@ -259,8 +268,8 @@ def load_version_arrays(ws: Workspace, dataset_id: str, version: str = "raw-v1")
     directory = ws.dataset_version_dir(dataset_id, version)
     v = manifest.version(version)
     if (directory / "input_iq.npy").is_file():
-        x = np.load(directory / "input_iq.npy", allow_pickle=False)
-        y = np.load(directory / "output_iq.npy", allow_pickle=False)
+        x = np.load(directory / "input_iq.npy", mmap_mode="r", allow_pickle=False)
+        y = np.load(directory / "output_iq.npy", mmap_mode="r", allow_pickle=False)
         return x, y, (v.split if v else manifest.split)
     import pandas as pd
 
@@ -293,6 +302,18 @@ def _write_split_dir(directory: Path, x: np.ndarray, y: np.ndarray, boundaries: 
     return files
 
 
+def _save_float32_chunked(path: Path, arr: np.ndarray) -> None:
+    """Write ``arr`` as a float32 .npy without materialising it: the source may be a memory-mapped
+    view of a file far larger than RAM (the Stress tier of the performance protocol)."""
+    out = np.lib.format.open_memmap(path, mode="w+", dtype=np.float32, shape=arr.shape)
+    try:
+        for start in range(0, len(arr), CSV_CHUNK_ROWS):
+            out[start:start + CSV_CHUNK_ROWS] = arr[start:start + CSV_CHUNK_ROWS]
+        out.flush()
+    finally:
+        del out
+
+
 def _legacy_spec(signal: SignalSpec, split: SplitSpec, description: str) -> Dict[str, object]:
     return {
         "description": description, "dataset_format": "split_csv", "split_ratios": dict(split.ratios),
@@ -313,7 +334,7 @@ def _materialise(ws: Workspace, manifest: DatasetManifest, version: str, x: np.n
         raise ImportError_(f"version '{version}' already exists for dataset '{manifest.dataset_id}'")
     files = _write_split_dir(directory, x, y, boundaries, _legacy_spec(manifest.signal, split, manifest.display_name))
     for name, arr in (("input_iq.npy", x), ("output_iq.npy", y)):
-        np.save(directory / name, np.ascontiguousarray(arr, dtype=np.float32))
+        _save_float32_chunked(directory / name, arr)
         files.append(FileRef(path=name, sha256=sha256_file(directory / name), size_bytes=(directory / name).stat().st_size))
     fit_range = record.get("fit_range")
     dv = DatasetVersion(version=version, base_version=base_version, params=params,
@@ -435,10 +456,44 @@ def diagnostics_dir(ws: Workspace, dataset_id: str) -> Path:
     return ws.dataset_dir(dataset_id) / "diagnostics"
 
 
+MAX_DOCTOR_SAMPLES = 2_000_000
+
+
+def analysis_window(n: int, limit: int = MAX_DOCTOR_SAMPLES) -> Tuple[int, int]:
+    """Central contiguous window the doctor analyses: all of a capture up to ``limit`` samples, else
+    ``limit`` samples from the middle (start-up transients and trailing silence are the usual edges)."""
+    if n <= limit:
+        return 0, n
+    start = (n - limit) // 2
+    return start, start + limit
+
+
+def _windowed(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray, Optional[Tuple[int, int]]]:
+    start, end = analysis_window(len(x), MAX_DOCTOR_SAMPLES)
+    if (start, end) == (0, len(x)):
+        return np.asarray(x), np.asarray(y), None
+    return np.array(x[start:end]), np.array(y[start:end]), (start, end)
+
+
+def _with_window_note(report: DiagnosticReport, window: Optional[Tuple[int, int]], total: int) -> DiagnosticReport:
+    if window is None:
+        return report
+    from opendpd.core.doctor import _item
+
+    note = _item("analysis_window", "info", "Analysis window",
+                 f"Diagnostics were computed on samples {window[0]:,}–{window[1]:,} of {total:,} (a central window of "
+                 f"{window[1] - window[0]:,} samples); statistics outside it are not checked",
+                 {"start": window[0], "end": window[1], "n_samples": total},
+                 suggestion="Preprocessing versions still apply to the whole capture")
+    return report.model_copy(update={"items": [*report.items, note]})
+
+
 def run_doctor(ws: Workspace, dataset_id: str, version: str = "raw-v1") -> DiagnosticReport:
     manifest = ws.get_dataset(dataset_id)
     x, y, _ = load_version_arrays(ws, dataset_id, version)
-    report = diagnose(x, y, manifest.signal, dataset_id=dataset_id, raw_sha256=manifest.raw_sha256)
+    xw, yw, window = _windowed(x, y)
+    report = _with_window_note(diagnose(xw, yw, manifest.signal, dataset_id=dataset_id, raw_sha256=manifest.raw_sha256),
+                               window, len(x))
     d = diagnostics_dir(ws, dataset_id)
     d.mkdir(parents=True, exist_ok=True)
     payload = report.model_dump(mode="json")
@@ -462,8 +517,10 @@ def preview_preprocess(ws: Workspace, dataset_id: str, params: PreprocessingPara
     manifest = ws.get_dataset(dataset_id)
     x, y, split = load_version_arrays(ws, dataset_id, base_version)
     fit_range = split.boundaries["train"] if split.boundaries else contiguous_boundaries(len(x), split.ratios, split.guard_samples)["train"]
-    x2, y2, record = pp.apply(x, y, params, fit_range=fit_range)
-    after = diagnose(x2, y2, manifest.signal, dataset_id=dataset_id, raw_sha256=manifest.raw_sha256)
+    x2, y2, record = pp.apply(np.array(x), np.array(y), params, fit_range=fit_range)
+    xw, yw, window = _windowed(x2, y2)
+    after = _with_window_note(diagnose(xw, yw, manifest.signal, dataset_id=dataset_id, raw_sha256=manifest.raw_sha256),
+                              window, len(x2))
     return {"n_samples_before": int(len(x)), "n_samples_after": int(len(x2)), "record": record,
             "report_after": after.model_dump(mode="json")}
 
@@ -476,7 +533,7 @@ def create_version(ws: Workspace, dataset_id: str, version: str, params: Preproc
         raise ImportError_(f"version '{version}' already exists")
     x, y, split = load_version_arrays(ws, dataset_id, base_version)
     fit_range = split.boundaries["train"] if split.boundaries else contiguous_boundaries(len(x), split.ratios, split.guard_samples)["train"]
-    x2, y2, record = pp.apply(x, y, params, fit_range=fit_range)
+    x2, y2, record = pp.apply(np.array(x), np.array(y), params, fit_range=fit_range)      # whole capture in RAM, as before
     guard = split.guard_samples if manifest.source.kind != DatasetSourceKind.builtin else DEFAULT_GUARD_SAMPLES
     dv = _materialise(ws, manifest, version, x2, y2, base_version=base_version, params=params, record=record,
                       guard=guard, ratios=dict(split.ratios))
@@ -500,7 +557,7 @@ def receive_upload(ws: Workspace, filename: str, chunks: Iterable[bytes], max_by
             if total > max_bytes:
                 f.close()
                 target.unlink(missing_ok=True)
-                raise ImportError_(f"upload exceeds {max_bytes} bytes")
+                raise UploadTooLarge(f"upload exceeds {max_bytes} bytes")
             digest.update(chunk)
             f.write(chunk)
     return target

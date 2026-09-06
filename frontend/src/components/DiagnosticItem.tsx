@@ -35,11 +35,11 @@ export function DiagnosticItem({ item }: { item: Item }) {
       </Stack>
       <Typography sx={{ mt: 1 }}>{item.message}</Typography>
       {evidence.length > 0 && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }} component="dl">
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }} component="p">
           <strong>{t('diag.evidence')}: </strong>
           {evidence.map(([k, v]) => (
-            <span key={k} style={{ marginRight: 12 }}>
-              <dt style={{ display: 'inline' }}>{k}</dt>=<dd style={{ display: 'inline', margin: 0 }}>{String(v)}</dd>
+            <span key={k} style={{ marginRight: 12 }} data-evidence-key={k}>
+              <span style={{ fontWeight: 600 }}>{k}</span>={String(v)}
             </span>
           ))}
         </Typography>

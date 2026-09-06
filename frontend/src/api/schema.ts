@@ -465,11 +465,34 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Runs List */
+        /**
+         * Runs List
+         * @description One page of runs, newest first; ``q`` is a case-insensitive substring search over id, name, dataset and model.
+         */
         get: operations["runs_list_api_v1_runs_get"];
         put?: never;
         /** Runs Submit */
         post: operations["runs_submit_api_v1_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Runs Count
+         * @description How many runs match the same filters as the listing (for paging).
+         */
+        get: operations["runs_count_api_v1_runs_count_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1793,6 +1816,11 @@ export interface components {
             task: components["schemas"]["TaskType"];
             training?: components["schemas"]["TrainingConfig"];
         };
+        /** RunCount */
+        RunCount: {
+            /** Count */
+            count: number;
+        };
         /** RunError */
         RunError: {
             /** Code */
@@ -3083,6 +3111,7 @@ export interface operations {
                 status?: components["schemas"]["RunStatus"] | null;
                 limit?: number;
                 offset?: number;
+                q?: string | null;
             };
             header?: never;
             path?: never;
@@ -3130,6 +3159,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    runs_count_api_v1_runs_count_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["RunStatus"] | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunCount"];
                 };
             };
             /** @description Validation Error */

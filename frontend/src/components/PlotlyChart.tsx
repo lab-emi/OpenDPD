@@ -10,6 +10,14 @@ import { useEffect, useRef, useState } from 'react'
 import { t } from '@/i18n'
 import { plotLayoutBase } from '@/theme'
 
+export type SeriesDash = 'solid' | 'dash' | 'dot' | 'dashdot' | 'longdash'
+export type SeriesSymbol = 'circle' | 'triangle-up' | 'square' | 'diamond' | 'cross'
+/** Line dash and marker symbol by series index: every trace differs in shape, not only in colour (UX spec §3). */
+export const SERIES_DASHES: readonly SeriesDash[] = ['solid', 'dash', 'dot', 'dashdot', 'longdash']
+export const SERIES_SYMBOLS: readonly SeriesSymbol[] = ['circle', 'triangle-up', 'square', 'diamond', 'cross']
+export const seriesDash = (i: number): SeriesDash => SERIES_DASHES[i % SERIES_DASHES.length] ?? 'solid'
+export const seriesSymbol = (i: number): SeriesSymbol => SERIES_SYMBOLS[i % SERIES_SYMBOLS.length] ?? 'circle'
+
 /** The subset of the Plotly basic bundle this app uses (typed locally on purpose). */
 export interface PlotTrace {
   x: ArrayLike<number>
@@ -17,8 +25,8 @@ export interface PlotTrace {
   name?: string
   mode?: 'lines' | 'markers' | 'lines+markers'
   type?: 'scatter'
-  line?: { width?: number; dash?: 'solid' | 'dot' | 'dash'; color?: string }
-  marker?: { size?: number; opacity?: number; color?: string }
+  line?: { width?: number; dash?: SeriesDash; color?: string }
+  marker?: { size?: number; opacity?: number; color?: string; symbol?: SeriesSymbol }
   hoverinfo?: 'x+y+name' | 'skip'
 }
 export interface PlotLayout {
@@ -85,7 +93,8 @@ function Plot({ traces, layout, height, title, onRendered }: PlotlyChartProps) {
     }
   }, [])
   if (failed) return <Typography color="error">{failed}</Typography>
-  return <div ref={ref} role="img" aria-label={title} style={{ width: '100%', minHeight: height }} />
+  // "figure", not "img": Plotly's mode bar inside the plot is focusable, and an image role may not contain controls.
+  return <div ref={ref} role="figure" aria-label={title} style={{ width: '100%', minHeight: height }} />
 }
 
 /** Plotly wrapper: tokens-derived layout, lazy bundle, and an enlarge dialog (UX spec §6).

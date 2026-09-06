@@ -190,6 +190,23 @@ opendpd evaluate run-… --workspace WS2 --profile legacy-opendpd-v1
 opendpd report run-… --workspace WS --format html
 ```
 
+## Long histories and long logs
+
+The Experiments page asks the server for one page at a time (25, 50 or 100
+rows) and searches on the server: type part of a run id, name, dataset or
+model in **Search runs** and the list narrows without loading the whole
+history. The URL keeps the filter, search and page, so a view can be
+bookmarked. A worker log is fetched in pages of bytes; **Load all remaining
+lines** pulls the rest so the filter box covers the whole file, while the
+viewer keeps only the last 50 000 lines and draws only the visible rows.
+
+Binary captures (`.npy`/`.npz`) are imported without being copied into
+memory: the converter reads the memory-mapped file chunk by chunk, and the
+Dataset Doctor analyses a central window of at most two million samples
+(the report says which window). CSV files are parsed in chunks but the
+parsed arrays stay in memory, so keep CSV sources to the Standard tier
+(about ten million rows) and use `.npy` for larger captures.
+
 ## When something is wrong
 
 - `opendpd doctor` prints versions, whether the frontend assets are present,

@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { useArtifactJson } from '@/api/hooks'
 import { t } from '@/i18n'
 import { IQPreview } from './IQPreview'
-import { PlotlyChart, type PlotLayout, type PlotTrace } from './PlotlyChart'
+import { PlotlyChart, type PlotLayout, type PlotTrace , seriesSymbol } from './PlotlyChart'
 import { SpectrumPlot } from './SpectrumPlot'
 import { LoadingState } from './StateBlock'
 
@@ -41,8 +41,8 @@ interface AmData {
 const MARKER = { size: 3, opacity: 0.45 }
 
 function AmPlots({ data }: { data: AmData }) {
-  const am = useMemo<PlotTrace[]>(() => data.traces.map((tr) => ({ x: data.amp_in, y: tr.amp_out, name: tr.name, mode: 'markers', type: 'scatter', marker: MARKER })), [data])
-  const pm = useMemo<PlotTrace[]>(() => data.traces.map((tr) => ({ x: data.amp_in, y: tr.phase_deg, name: tr.name, mode: 'markers', type: 'scatter', marker: MARKER })), [data])
+  const am = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.amp_out, name: tr.name, mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data])
+  const pm = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.phase_deg, name: tr.name, mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data])
   const amLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.am.x') } }, yaxis: { title: { text: t('chart.am.y') } }, showlegend: true }), [])
   const pmLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.am.x') } }, yaxis: { title: { text: t('chart.pm.y') } }, showlegend: true }), [])
   return (

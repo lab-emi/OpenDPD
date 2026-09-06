@@ -86,22 +86,32 @@ class RunStore:
             row = self._conn.execute("SELECT record FROM runs WHERE run_id=?", (run_id,)).fetchone()
         return RunRecord.model_validate_json(row[0]) if row else None
 
-    def list_runs(self, status: Optional[RunStatus] = None, limit: int = 100, offset: int = 0) -> List[RunRecord]:
-        query = "SELECT record FROM runs"
-        params: tuple = ()
+    @staticmethod
+    def _filters(status: Optional[RunStatus], q: Optional[str]) -> tuple:
+        """WHERE clause for the listing: status equality and a case-insensitive substring search
+        over the run id and the stored record (name, dataset, model key...)."""
+        clauses, params = [], []
         if status is not None:
-            query += " WHERE status=?"
-            params = (status.value,)
-        query += " ORDER BY created_at DESC, run_id DESC LIMIT ? OFFSET ?"
+            clauses.append("status=?")
+            params.append(status.value)
+        if q:
+            needle = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            clauses.append("(run_id LIKE ? ESCAPE '\\' OR record LIKE ? ESCAPE '\\')")
+            params += [needle, needle]
+        return (" WHERE " + " AND ".join(clauses)) if clauses else "", tuple(params)
+
+    def list_runs(self, status: Optional[RunStatus] = None, limit: int = 100, offset: int = 0,
+                  q: Optional[str] = None) -> List[RunRecord]:
+        where, params = self._filters(status, q)
+        query = "SELECT record FROM runs" + where + " ORDER BY created_at DESC, run_id DESC LIMIT ? OFFSET ?"
         with self._lock:
             rows = self._conn.execute(query, params + (limit, offset)).fetchall()
         return [RunRecord.model_validate_json(r[0]) for r in rows]
 
-    def count_runs(self, status: Optional[RunStatus] = None) -> int:
+    def count_runs(self, status: Optional[RunStatus] = None, q: Optional[str] = None) -> int:
+        where, params = self._filters(status, q)
         with self._lock:
-            if status is None:
-                return self._conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
-            return self._conn.execute("SELECT COUNT(*) FROM runs WHERE status=?", (status.value,)).fetchone()[0]
+            return self._conn.execute("SELECT COUNT(*) FROM runs" + where, params).fetchone()[0]
 
     def find_idempotent(self, key: str) -> Optional[RunRecord]:
         with self._lock:

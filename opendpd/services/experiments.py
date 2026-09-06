@@ -355,6 +355,25 @@ def _prepare_inputs(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentCo
             _copy_checkpoint(resolved.dpd_reference, dpd_dir / Path(artifact.file.path).name, "DPD")
 
 
+# Messages torch/CUDA/MPS produce when the accelerator cannot give the run what it asks for,
+# including the case where another process holds it. Matched case-insensitively.
+_DEVICE_REFUSAL_MARKERS = ("out of memory", "busy or unavailable", "cudnn_status_alloc_failed",
+                           "cudnn_status_not_initialized", "cublas_status_alloc_failed", "no kernel image is available")
+
+
+def classify_failure(err: BaseException, *, stage: str) -> RunError:
+    """A structured error for an exception raised by the compute core (called inside the except block)."""
+    message = f"{type(err).__name__}: {err}"
+    tail = "".join(traceback.format_exc().splitlines(keepends=True)[-25:]) or None
+    lowered = str(err).lower()
+    if any(marker in lowered for marker in _DEVICE_REFUSAL_MARKERS):
+        return RunError(code="device_busy_or_out_of_memory", stage=stage, message=message, traceback_tail=tail,
+                        hint="the accelerator refused the allocation: another process may hold it (check nvidia-smi or "
+                             "the OS activity monitor) or the batch and model do not fit its memory; free the device or "
+                             "reduce batch_size, then retry — nothing was retried or moved to another device automatically")
+    return RunError(code="worker_exception", stage=stage, message=message, traceback_tail=tail)
+
+
 def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
                 should_cancel: Optional[Callable[[], bool]] = None) -> RunRecord:
     """Run a queued run to a terminal state in the current process."""
@@ -417,9 +436,7 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
                              hint="the referenced run's artifacts were deleted or modified")
         except Exception as err:  # noqa: BLE001 - the worker must record any failure
             outcome = RunStatus.failed
-            error = RunError(code="worker_exception", stage="apply" if resolved.task == TaskType.run_dpd else "train",
-                             message=f"{type(err).__name__}: {err}",
-                             traceback_tail="".join(traceback.format_exc().splitlines(keepends=True)[-25:]))
+            error = classify_failure(err, stage="apply" if resolved.task == TaskType.run_dpd else "train")
 
     record = state["record"]
     manifest = collect_artifacts(run_dir, run_id, resolved, project)

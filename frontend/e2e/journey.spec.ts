@@ -141,7 +141,7 @@ test.describe('J2 — my own data (mock API)', () => {
 })
 
 test.describe('component gallery', () => {
-  test('renders real-size charts quickly and matches the visual baseline', async ({ page }) => {
+  test('renders real-size charts quickly and matches the visual baseline', async ({ page }, testInfo) => {
     await installFakeApi(page)
     await page.goto('/gallery')
     const probe = page.getByTestId('perf-probe')
@@ -156,7 +156,9 @@ test.describe('component gallery', () => {
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toBeHidden()
     await page.getByRole('region', { name: 'StatusChip' }).scrollIntoViewIfNeeded()
-    await expect(page.getByRole('region', { name: 'StatusChip' })).toHaveScreenshot('status-chips.png')
-    await expect(page.getByRole('region', { name: 'MetricCard' })).toHaveScreenshot('metric-cards.png')
+    if (testInfo.project.name.startsWith('chromium')) {
+      await expect(page.getByRole('region', { name: 'StatusChip' })).toHaveScreenshot('status-chips.png')
+      await expect(page.getByRole('region', { name: 'MetricCard' })).toHaveScreenshot('metric-cards.png')
+    }
   })
 })

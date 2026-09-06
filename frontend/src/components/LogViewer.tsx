@@ -42,6 +42,32 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
     }
   }, [runId, offset])
 
+  /** Fetch every remaining page (2000 lines each) so a long log can be searched; the view keeps MAX_LINES. */
+  const loadAll = useCallback(async () => {
+    if (loadingRef.current) return
+    loadingRef.current = true
+    try {
+      let next = offset
+      let done = eof
+      const batch: string[] = []
+      while (!done) {
+        const page = await fetchLogPage(runId, next, 2000)
+        if (page.lines.length === 0 && page.next_offset === next) break
+        next = page.next_offset
+        done = page.eof
+        batch.push(...page.lines)
+      }
+      setOffset(next)
+      setEof(done)
+      if (batch.length > 0) setLines((prev) => [...prev, ...batch].slice(-MAX_LINES))
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      loadingRef.current = false
+    }
+  }, [runId, offset, eof])
+
   useEffect(() => {
     void loadMore()
     // initial page only; later pages are explicit or timer driven
@@ -76,6 +102,16 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
           <Button size="small" onClick={() => void loadMore()}>
             {t('logs.loadMore')}
           </Button>
+        )}
+        {!eof && (
+          <Button size="small" onClick={() => void loadAll()}>
+            {t('logs.loadAll')}
+          </Button>
+        )}
+        {lines.length >= MAX_LINES && (
+          <Typography variant="caption" color="text.secondary">
+            {t('logs.capped', { max: MAX_LINES })}
+          </Typography>
         )}
       </Stack>
       {error && <Typography color="error">{error}</Typography>}

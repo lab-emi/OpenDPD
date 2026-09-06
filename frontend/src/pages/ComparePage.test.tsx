@@ -41,7 +41,7 @@ test('incompatible results are shown side by side with the reasons and nothing i
   expect(within(table).getByRole('link', { name: 'run-dpd-0001' })).toBeInTheDocument()
   expect(within(table).queryByText('best')).not.toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Download CSV' })).toHaveAttribute('href', expect.stringContaining('format=csv'))
-  await screen.findByRole('img', { name: 'Power spectral density' })
+  await screen.findByRole('figure', { name: 'Power spectral density' })
   await screen.findByRole('table', { name: 'Configuration differences' })
 })
 

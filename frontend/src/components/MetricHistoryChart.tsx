@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { MetricPoint } from '@/api/events'
 import { t } from '@/i18n'
-import { PlotlyChart, type PlotLayout, type PlotTrace } from './PlotlyChart'
+import { PlotlyChart, seriesDash, seriesSymbol, type PlotLayout, type PlotTrace } from './PlotlyChart'
 
 /** Training curves from `metric` events: one trace per (split, metric). */
 export function MetricHistoryChart({ points, metric, height = 280 }: { points: MetricPoint[]; metric: string; height?: number }) {
@@ -15,7 +15,7 @@ export function MetricHistoryChart({ points, metric, height = 280 }: { points: M
       acc.y.push(v)
       bySplit.set(p.split, acc)
     }
-    return [...bySplit.entries()].map(([split, s]) => ({ x: s.x, y: s.y, name: `${split} ${metric}`, mode: 'lines+markers', type: 'scatter' }))
+    return [...bySplit.entries()].map(([split, s], i) => ({ x: s.x, y: s.y, name: `${split} ${metric}`, mode: 'lines+markers', type: 'scatter', line: { dash: seriesDash(i) }, marker: { symbol: seriesSymbol(i) } }))
   }, [points, metric])
   const layout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.history.x') } }, yaxis: { title: { text: metric } }, showlegend: true }), [metric])
   return <PlotlyChart title={`${metric} per epoch`} traces={traces} layout={layout} height={height} data-testid={`history-${metric}`} />

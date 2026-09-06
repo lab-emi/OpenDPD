@@ -328,7 +328,10 @@ async def dataset_upload(request: Request, file: UploadFile):
                 return
             yield chunk
 
-    path = datasets_service.receive_upload(ws, file.filename or "upload.csv", chunks(), UPLOAD_MAX_BODY)
+    try:
+        path = datasets_service.receive_upload(ws, file.filename or "upload.csv", chunks(), UPLOAD_MAX_BODY)
+    except datasets_service.UploadTooLarge as err:
+        raise _error(413, "payload_too_large", str(err))
     return UploadResult(root_id="imports", path=path.relative_to(ws.imports_dir).as_posix(), size_bytes=path.stat().st_size)
 
 
@@ -422,11 +425,23 @@ def _view(record: RunRecord) -> RunView:
     return RunView(**record.model_dump(), heartbeat_stale=heartbeat_is_stale(record, utcnow(), HEARTBEAT_TIMEOUT))
 
 
+class RunCount(BaseModel):
+    count: int
+
+
 @router.get("/runs", response_model=List[RunView], tags=["runs"], dependencies=[Depends(require_session)])
 def runs_list(request: Request, status: Optional[RunStatus] = None, limit: int = Query(50, ge=1, le=500),
-              offset: int = Query(0, ge=0)):
+              offset: int = Query(0, ge=0), q: Optional[str] = Query(None, max_length=200)):
+    """One page of runs, newest first; ``q`` is a case-insensitive substring search over id, name, dataset and model."""
     request.app.state.supervisor.index_workspace()       # runs made by the CLI / Python API meanwhile
-    return [_view(r) for r in request.app.state.store.list_runs(status=status, limit=limit, offset=offset)]
+    return [_view(r) for r in request.app.state.store.list_runs(status=status, limit=limit, offset=offset, q=q)]
+
+
+@router.get("/runs/count", response_model=RunCount, tags=["runs"], dependencies=[Depends(require_session)])
+def runs_count(request: Request, status: Optional[RunStatus] = None, q: Optional[str] = Query(None, max_length=200)):
+    """How many runs match the same filters as the listing (for paging)."""
+    request.app.state.supervisor.index_workspace()
+    return RunCount(count=request.app.state.store.count_runs(status=status, q=q))
 
 
 @router.post("/runs", response_model=RunView, status_code=201, tags=["runs"], dependencies=[Depends(require_csrf)])
@@ -600,7 +615,7 @@ _EXPORT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$")
 
 
 def _package_error(err: PackageError) -> HTTPException:
-    return _error(422, err.code, str(err), hint=err.hint)
+    return _error(413 if err.code == "too_large" else 422, err.code, str(err), hint=err.hint)
 
 
 @router.post("/exports", response_model=ExportInfo, status_code=201, tags=["exports"],

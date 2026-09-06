@@ -3,7 +3,7 @@
  * transient interaction state is kept in components. Nothing here caches a
  * run status beyond what the server returned.
  */
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
 import type {
   ArtifactManifest,
@@ -33,7 +33,8 @@ export const keys = {
   recipes: ['recipes'] as const,
   datasets: ['datasets'] as const,
   dataset: (id: string) => ['datasets', id] as const,
-  runs: (status?: RunStatus) => ['runs', status ?? 'all'] as const,
+  runs: (status?: RunStatus, page: RunPage = {}) => ['runs', status ?? 'all', page.q ?? '', page.limit ?? 200, page.offset ?? 0] as const,
+  runCount: (status?: RunStatus, q?: string) => ['runs', 'count', status ?? 'all', q ?? ''] as const,
   run: (id: string) => ['run', id] as const,
   runConfig: (id: string) => ['run', id, 'config'] as const,
   runArtifacts: (id: string) => ['run', id, 'artifacts'] as const,
@@ -54,10 +55,33 @@ export const useDatasets = () => useQuery({ queryKey: keys.datasets, queryFn: ()
 export const useDataset = (id: string) =>
   useQuery({ queryKey: keys.dataset(id), queryFn: () => api.get<DatasetManifest>(`/datasets/${encodeURIComponent(id)}`) })
 
-export const useRuns = (status?: RunStatus) =>
+export interface RunPage {
+  /** Case-insensitive substring over id, name, dataset and model (server side). */
+  q?: string
+  limit?: number
+  offset?: number
+}
+
+function runParams(status?: RunStatus, page: RunPage = {}): string {
+  const params = new URLSearchParams({ limit: String(page.limit ?? 200), offset: String(page.offset ?? 0) })
+  if (status) params.set('status', status)
+  if (page.q) params.set('q', page.q)
+  return params.toString()
+}
+
+/** One page of runs (newest first); callers that only need "the recent ones" keep the default page of 200. */
+export const useRuns = (status?: RunStatus, page: RunPage = {}) =>
   useQuery({
-    queryKey: keys.runs(status),
-    queryFn: () => api.get<RunView[]>(`/runs?limit=200${status ? `&status=${status}` : ''}`),
+    queryKey: keys.runs(status, page),
+    queryFn: () => api.get<RunView[]>(`/runs?${runParams(status, page)}`),
+    refetchInterval: 5_000,
+    placeholderData: keepPreviousData,
+  })
+
+export const useRunCount = (status?: RunStatus, q?: string) =>
+  useQuery({
+    queryKey: keys.runCount(status, q),
+    queryFn: () => api.get<{ count: number }>(`/runs/count?${runParams(status, { q, limit: 1 }).replace(/&?limit=1&offset=0/, '')}`),
     refetchInterval: 5_000,
   })
 

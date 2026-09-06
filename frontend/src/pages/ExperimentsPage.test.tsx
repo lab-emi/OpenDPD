@@ -54,3 +54,21 @@ test('a refused package shows the server reason', async () => {
   await screen.findByText(/does not match its manifest hash/)
   expect(screen.queryByTestId('import-report')).not.toBeInTheDocument()
 })
+
+test('pages through a long history on the server and searches it', async () => {
+  const many = Array.from({ length: 50 }, (_, i) => ({ ...runMock.data, run_id: `run-${String(i).padStart(4, '0')}`, name: i === 3 ? 'gru sweep' : null }))
+  const { calls } = mockApi({
+    'GET /api/v1/runs': (url) => (url.searchParams.get('q') === 'gru' ? [many[3]] : many),
+    'GET /api/v1/runs/count': (url) => ({ count: url.searchParams.get('q') === 'gru' ? 1 : 1000 }),
+  })
+  renderWithProviders(<ExperimentsPage />, { route: '/experiments?page=2&size=50', path: '/experiments' })
+  const table = await screen.findByRole('table', { name: 'Experiments' })
+  expect(within(table).getAllByRole('row')).toHaveLength(51)
+  await screen.findByText('101–150 of 1,000')
+  const first = calls.find((c) => c.path === '/api/v1/runs')
+  expect(first).toBeDefined()
+  expect(calls.some((c) => c.path === '/api/v1/runs/count')).toBe(true)
+  await userEvent.type(screen.getByLabelText('Search runs'), 'gru')
+  await screen.findByText('1–1 of 1', undefined, { timeout: 3000 })
+  expect(within(screen.getByRole('table', { name: 'Experiments' })).getByText('gru sweep')).toBeInTheDocument()
+})

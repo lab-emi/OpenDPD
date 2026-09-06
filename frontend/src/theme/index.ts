@@ -17,6 +17,8 @@ export const theme = createTheme({
     warning: { main: tokens.color.status.warning },
     error: { main: tokens.color.status.error },
     info: { main: tokens.color.status.info },
+    // icons and unselected toggle buttons: MUI's default 54 % black is 4.49:1 on the page background
+    action: { active: tokens.color.iconActive },
   },
   spacing: tokens.spacing.unit,
   shape: { borderRadius: tokens.radius.md },

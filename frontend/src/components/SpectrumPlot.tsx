@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { t } from '@/i18n'
 import { tokens } from '@/theme'
-import { PlotlyChart, type PlotLayout, type PlotTrace } from './PlotlyChart'
+import { PlotlyChart, seriesDash, type PlotLayout, type PlotTrace } from './PlotlyChart'
 
 export interface SpectrumTrace {
   name: string
@@ -32,7 +32,7 @@ export interface SpectrumPlotProps {
 export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = t('chart.spectrum.title'), height, onRendered }: SpectrumPlotProps) {
   const mhz = useMemo(() => Float64Array.from(frequencyHz, (f) => (axis === 'hz' ? f / 1e6 : f)), [frequencyHz, axis])
   const data = useMemo<PlotTrace[]>(
-    () => traces.map((tr) => ({ x: mhz, y: tr.psdDb, name: tr.name, mode: 'lines', type: 'scatter', line: { width: 1.2, ...(tr.color ? { color: tr.color } : {}) } })),
+    () => traces.map((tr, i) => ({ x: mhz, y: tr.psdDb, name: tr.name, mode: 'lines', type: 'scatter', line: { width: 1.2, dash: seriesDash(i), ...(tr.color ? { color: tr.color } : {}) } })),
     [traces, mhz],
   )
   // Keyed by value so an inline `bands` literal does not redraw on every render.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 from contextlib import asynccontextmanager
@@ -159,6 +160,7 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
 
 
 def _diagnostic_page(title: str, detail: str) -> str:
+    title, detail = html.escape(title), html.escape(detail)
     return (f"<!doctype html><html><head><meta charset='utf-8'><title>OpenDPD Studio</title></head>"
             f"<body style='font-family:system-ui;margin:3rem;max-width:40rem'><h1>{title}</h1>"
             f"<p>{detail}</p><p>The API is running (opendpd {__version__}); see <code>/readyz</code>.</p>"

@@ -273,6 +273,22 @@ def test_minimal_frontend_payload_validates_and_submits(client, session):
     assert final["status"] == "succeeded", final
 
 
+def test_runs_are_paged_and_searchable_on_the_server(client, session):
+    runs = client.get("/api/v1/runs?limit=500").json()
+    assert runs, "earlier tests created runs"
+    total = client.get("/api/v1/runs/count").json()["count"]
+    assert total == len(runs)
+    first = client.get("/api/v1/runs?limit=1&offset=0").json()
+    second = client.get("/api/v1/runs?limit=1&offset=1").json()
+    assert first[0]["run_id"] == runs[0]["run_id"] and second[0]["run_id"] == runs[1]["run_id"]
+    needle = runs[0]["run_id"][-6:]
+    hits = client.get(f"/api/v1/runs?q={needle}").json()
+    assert [r["run_id"] for r in hits] == [r["run_id"] for r in runs if needle in r["run_id"]]
+    assert client.get(f"/api/v1/runs/count?q={needle}").json()["count"] == len(hits)
+    assert client.get("/api/v1/runs?q=%25").json() == []          # LIKE wildcards are literal characters
+    assert client.get("/api/v1/runs?q=" + "x" * 201).status_code == 422
+
+
 def test_runs_made_by_the_cli_are_visible_to_the_service(client, session):
     """One workspace, three entry points: a run written by `opendpd run` shows up in the API and in lineage."""
     from opendpd.services.experiments import create_run, execute_run

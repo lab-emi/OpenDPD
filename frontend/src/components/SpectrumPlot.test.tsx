@@ -17,3 +17,13 @@ test('re-rendering with an inline bands literal does not redraw the plot', async
   await new Promise((r) => setTimeout(r, 20))
   expect(reactMock).toHaveBeenCalledTimes(1)
 })
+
+test('every trace differs in dash pattern, not only in colour', async () => {
+  reactMock.mockClear()
+  const f = Float64Array.from({ length: 16 }, (_, i) => i * 1e6)
+  const traces = ['input', 'PA output', 'DPD+PA'].map((name) => ({ name, psdDb: Float64Array.from({ length: 16 }, () => -40) }))
+  render(<SpectrumPlot frequencyHz={f} traces={traces} />)
+  await vi.waitFor(() => expect(reactMock).toHaveBeenCalledTimes(1))
+  const data = (reactMock.mock.calls[0] as unknown[])[1] as Array<{ line: { dash: string } }>
+  expect(new Set(data.map((tr) => tr.line.dash)).size).toBe(3)
+})

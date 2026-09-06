@@ -121,9 +121,9 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Browser journeys (mock API; visual baselines are compared locally)
+      - name: Browser journeys and accessibility audit on Chromium, Firefox and WebKit (mock API; visual baselines are compared locally)
         run: |
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium firefox webkit
           npx playwright test --ignore-snapshots
 
   build:

@@ -143,3 +143,38 @@ def test_upload_is_capped_and_confined(ws):
     assert not list((ws.imports_dir / "uploads").glob("*big.csv"))
     with pytest.raises(ds.ImportError_, match="only"):
         ds.receive_upload(ws, "script.py", [b"print(1)"], max_bytes=1000)
+
+
+def test_numpy_imports_stream_from_the_source_without_copies(ws, tmp_path):
+    """Stress-tier promise (performance protocol §8.2): parse/convert never materialises the capture."""
+    n = 300_000
+    x, y = synthesize(n, 3)
+    src = tmp_path / "pair-stack.npy"
+    stacked = np.lib.format.open_memmap(src, mode="w+", dtype=np.float32, shape=(2, n, 2))
+    stacked[0], stacked[1] = x, y
+    stacked.flush()
+    del stacked
+    xi, yi = ds._read_numpy_arrays(src, {})
+    assert not xi.flags.owndata and not yi.flags.owndata           # views of the memory map, not copies
+    m = ds.import_dataset(ws, src, dataset_id="stack", signal=SIGNAL, origin=DatasetOrigin.synthetic)
+    assert m.n_samples == n
+    xr, yr, _ = ds.load_version_arrays(ws, "stack")
+    assert isinstance(xr, np.memmap) and xr.dtype == np.float32          # versions are read memory-mapped too
+    np.testing.assert_allclose(np.asarray(xr[:1000]), x[:1000], atol=1e-6)
+    np.testing.assert_allclose(np.asarray(yr[-1000:]), y[-1000:], atol=1e-6)
+
+
+def test_doctor_analyses_a_bounded_central_window_and_says_so(ws, tmp_path, monkeypatch):
+    x, y = synthesize(300_000, 3)
+    npz = tmp_path / "long.npz"
+    np.savez(npz, input=x, output=y)
+    ds.import_dataset(ws, npz, dataset_id="stack", signal=SIGNAL, origin=DatasetOrigin.synthetic)
+    monkeypatch.setattr(ds, "MAX_DOCTOR_SAMPLES", 50_000)
+    assert ds.analysis_window(10_000, 50_000) == (0, 10_000)
+    assert ds.analysis_window(300_000, 50_000) == (125_000, 175_000)
+    report = ds.run_doctor(ws, "stack")
+    note = next(i for i in report.items if i.code == "analysis_window")
+    assert note.evidence == {"start": 125_000, "end": 175_000, "n_samples": 300_000}
+    assert "125,000" in note.message and note.severity == "info"
+    monkeypatch.setattr(ds, "MAX_DOCTOR_SAMPLES", 2_000_000)
+    assert all(i.code != "analysis_window" for i in ds.run_doctor(ws, "stack").items)

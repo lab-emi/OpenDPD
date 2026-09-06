@@ -4,6 +4,8 @@ import Link from '@mui/material/Link'
 import LinearProgress from '@mui/material/LinearProgress'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
+import TablePagination from '@mui/material/TablePagination'
+import TextField from '@mui/material/TextField'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
@@ -11,8 +13,9 @@ import TableRow from '@mui/material/TableRow'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
+import { useEffect, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router'
-import { useImportPackage, useRuns } from '@/api/hooks'
+import { useImportPackage, useRunCount, useRuns } from '@/api/hooks'
 import type { RunStatus, RunView } from '@/api/types'
 import { t } from '@/i18n'
 import { StatusChip, statusLabel } from '@/components/StatusChip'
@@ -125,11 +128,36 @@ function ImportPackage() {
   )
 }
 
+const PAGE_SIZES = [25, 50, 100]
+
 export function ExperimentsPage() {
   const [params, setParams] = useSearchParams()
   const raw = params.get('status')
   const filter: RunStatus | 'all' = FILTERS.includes(raw as RunStatus) ? (raw as RunStatus) : 'all'
-  const runs = useRuns(filter === 'all' ? undefined : filter)
+  const q = params.get('q') ?? ''
+  const page = Math.max(0, Number(params.get('page') ?? 0) || 0)
+  const sizeParam = Number(params.get('size') ?? 50)
+  const size = PAGE_SIZES.includes(sizeParam) ? sizeParam : 50
+  const [draft, setDraft] = useState(q)
+  useEffect(() => setDraft(q), [q])
+  const update = (patch: Record<string, string | null>) => {
+    const next = new URLSearchParams(params)
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === '' || (k === 'page' && v === '0') || (k === 'size' && v === '50') || (k === 'status' && v === 'all')) next.delete(k)
+      else next.set(k, v)
+    }
+    setParams(next)
+  }
+  // the search is server side; typing is debounced so a 1000-run history is not queried per keystroke
+  useEffect(() => {
+    if (draft === q) return
+    const timer = window.setTimeout(() => update({ q: draft, page: null }), 300)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft])
+  const status = filter === 'all' ? undefined : filter
+  const runs = useRuns(status, { q: q || undefined, limit: size, offset: page * size })
+  const count = useRunCount(status, q || undefined)
   return (
     <Stack spacing={2}>
       <Stack sx={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }} direction="row" useFlexGap>
@@ -139,36 +167,55 @@ export function ExperimentsPage() {
         </Button>
       </Stack>
       <ImportPackage />
-      <ToggleButtonGroup
-        size="small"
-        exclusive
-        value={filter}
-        aria-label={t('experiments.columns.status')}
-        onChange={(_, v: RunStatus | 'all' | null) => {
-          if (v) setParams(v === 'all' ? {} : { status: v })
-        }}
-      >
-        {FILTERS.map((f) => (
-          <ToggleButton key={f} value={f}>
-            {f === 'all' ? t('experiments.filter.all') : statusLabel(f)}
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
+      <Stack direction="row" spacing={2} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+        <ToggleButtonGroup
+          size="small"
+          exclusive
+          value={filter}
+          aria-label={t('experiments.columns.status')}
+          onChange={(_, v: RunStatus | 'all' | null) => {
+            if (v) update({ status: v, page: null })
+          }}
+        >
+          {FILTERS.map((f) => (
+            <ToggleButton key={f} value={f}>
+              {f === 'all' ? t('experiments.filter.all') : statusLabel(f)}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <TextField size="small" label={t('experiments.search')} value={draft} onChange={(e) => setDraft(e.target.value)} slotProps={{ htmlInput: { 'aria-label': t('experiments.search') } }} sx={{ minWidth: 260 }} />
+      </Stack>
       {runs.isPending ? (
         <LoadingState />
       ) : runs.isError ? (
         <ErrorState error={runs.error} onRetry={() => void runs.refetch()} />
-      ) : runs.data.length === 0 ? (
-        <EmptyState
-          body={t('experiments.empty')}
-          action={
-            <Button component={RouterLink} to="/experiments/new" variant="outlined">
-              {t('experiments.new')}
-            </Button>
-          }
-        />
+      ) : runs.data.length === 0 && page === 0 ? (
+        q ? (
+          <EmptyState body={t('experiments.noMatch', { q })} />
+        ) : (
+          <EmptyState
+            body={t('experiments.empty')}
+            action={
+              <Button component={RouterLink} to="/experiments/new" variant="outlined">
+                {t('experiments.new')}
+              </Button>
+            }
+          />
+        )
       ) : (
-        <RunTable runs={runs.data} />
+        <>
+          <RunTable runs={runs.data} />
+          <TablePagination
+            component="div"
+            count={count.data?.count ?? -1}
+            page={page}
+            rowsPerPage={size}
+            rowsPerPageOptions={PAGE_SIZES}
+            onPageChange={(_, p) => update({ page: String(p) })}
+            onRowsPerPageChange={(e) => update({ size: e.target.value, page: null })}
+            getItemAriaLabel={(type) => t(`experiments.page.${type}` as 'experiments.page.next')}
+          />
+        </>
       )}
     </Stack>
   )

@@ -48,7 +48,7 @@ from opendpd.services.experiments import (
     load_result,
     load_run,
 )
-from opendpd.services.legacy_adapter import build_namespace, run_in_directory
+from opendpd.services.legacy_adapter import build_namespace, load_checkpoint, run_in_directory
 from opendpd.services.workspace import Workspace, WorkspaceError, sha256_file, write_json_atomic
 
 class Predictions:
@@ -115,7 +115,6 @@ def _fitted_peak(ws: Workspace, pa_run_id: str) -> float:
 def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
     """Mirror of steps/train_pa.py and steps/train_dpd.py model construction. Least-squares baselines are torch
     modules of the compute core (no legacy backbone); a DPD is always cascaded with a gradient-trained PA."""
-    import torch
     import models as model
     from quant import get_quant_model
     from utils.util import count_net_params
@@ -131,8 +130,7 @@ def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
             else core(proj.PA_hidden_size, proj.PA_num_layers, proj.PA_backbone)
     pa = core(proj.PA_hidden_size, proj.PA_num_layers, proj.PA_backbone)
     pa_id = proj.gen_pa_model_id(count_net_params(pa))
-    pa.load_state_dict(torch.load(os.path.join("save", proj.dataset_name, "train_pa", pa_id + ".pt"),
-                                  map_location="cpu", weights_only=True))
+    pa.load_state_dict(load_checkpoint(os.path.join("save", proj.dataset_name, "train_pa", pa_id + ".pt")))
     dpd = polynomial_module(resolved.model) if least_squares \
         else get_quant_model(proj, core(proj.DPD_hidden_size, proj.DPD_num_layers, proj.DPD_backbone))
     return model.CascadedModel(dpd_model=dpd, pa_model=pa)
@@ -174,7 +172,7 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
         proj.set_device()
         (_, _, test_loader), input_size = proj.build_dataloaders()
         net = _build_net(proj, resolved, input_size)
-        state = torch.load(checkpoint, map_location="cpu", weights_only=True)
+        state = load_checkpoint(checkpoint)
         (net.dpd_model if dpd_task else net).load_state_dict(state)
         net = net.to(proj.device)
         _, prediction, ground_truth = net_eval(log={}, net=net, dataloader=test_loader,

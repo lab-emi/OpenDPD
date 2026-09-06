@@ -148,7 +148,6 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
 def apply_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns) -> None:
     """run_dpd with a least-squares DPD: export u = DPD(x) for the whole test split in one pass."""
     import pandas as pd
-    import torch
     from modules.data_collector import load_dataset
     from opendpd.services.experiments import load_artifacts
     from opendpd.services.workspace import sha256_file
@@ -160,7 +159,8 @@ def apply_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, 
     if sha256_file(path) != ref.checkpoint_sha256:
         raise FileNotFoundError(f"DPD checkpoint of run {ref.run_id} does not match its recorded hash")
     model = polynomial_module(resolved.model)
-    model.load_state_dict(torch.load(path, map_location="cpu", weights_only=True))
+    from opendpd.services.legacy_adapter import load_checkpoint
+    model.load_state_dict(load_checkpoint(path))
     x_test = load_dataset(dataset_path=ns.dataset_path)[4]
     u = basis(resolved.model.key, resolved.model.parameters, to_complex(x_test)) @ model.coefficients.numpy()
     out = Path("dpd_out")

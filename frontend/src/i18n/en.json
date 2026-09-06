@@ -345,5 +345,13 @@
   "experiments.import.help": "An experiment package exported by OpenDPD Studio (.zip). Every file hash is verified before anything is written; a damaged or unsupported package is refused with the reason.",
   "experiments.import.done": "Imported {runs} into this workspace. Dataset {dataset}: {status}.",
   "experiments.import.missing": "Missing",
-  "experiments.import.open": "Open the imported run"
+  "experiments.import.open": "Open the imported run",
+  "experiments.search": "Search runs",
+  "experiments.noMatch": "No runs match “{q}”.",
+  "experiments.page.first": "First page",
+  "experiments.page.last": "Last page",
+  "experiments.page.next": "Next page",
+  "experiments.page.previous": "Previous page",
+  "logs.loadAll": "Load all remaining lines",
+  "logs.capped": "Only the last {max} lines are kept in the viewer; older lines are in the downloadable log."
 }

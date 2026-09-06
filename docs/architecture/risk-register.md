@@ -10,9 +10,9 @@ current status. Update when a stage closes.
 | R3 | Web server blocked by training | clicks freeze during training | separate worker process, event throttling, resource budget, stress tests | design fixed (S03) |
 | R4 | Pretty UI, untrustworthy results | hidden profile, mixed measured/surrogate | evidence type + profile mandatory in result schema | open — S01/S08 |
 | R5 | Packaging fails | only works from source with Node.js | wheel/sdist tests from G0; no-Node install test | baseline: wheel builds, no frontend yet |
-| R6 | Big data freezes browser | full I/Q or logs sent to frontend | backend aggregation, viewport data, virtual lists | open — S05/S13 |
+| R6 | Big data freezes browser | full I/Q or logs sent to frontend | backend aggregation, viewport data, virtual lists | mitigated in S05/S13: plots are decimated server side, logs paged by byte offset with a windowed viewer, run lists paged and searched on the server, binary captures memory-mapped and converted in chunks, doctor on a bounded window; measured in `docs/releases/performance-report.md` |
 | R7 | Reproducibility over-promised | expected values edited per device | deterministic vs statistical regressions, recorded tolerances | protocol drafted |
-| R8 | Local service insecure | any web page can write, any path readable | session, Origin/Host, CSRF, path sandbox, negative tests | open — S04 |
+| R8 | Local service insecure | any web page can write, any path readable | session, Origin/Host, CSRF, path sandbox, negative tests | mitigated in S04/S13: every row of `docs/architecture/threat-model.md` has a negative test through the real app (CSP and security headers, chunked-body cap, symlink escapes, bounded zip extraction, pickle refusal); dependency audits recorded per release candidate |
 | R9 | Hardware scope creep | several instrument drivers in parallel | manual capture import first, then one adapter | out of first version |
 | R10 | Standards work delays release | waiting for "full 3GPP" | S15 delivers one profile, does not block G2 | deferred |
 | R11 | Leaderboard without community | only maintainer models | external trial first; otherwise "reference benchmark" | deferred |

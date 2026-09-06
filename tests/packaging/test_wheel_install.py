@@ -120,6 +120,7 @@ def test_wheel_ships_gui_and_one_command_serves_it(installed_python):
         assert "<div id=\"root\">" in html and "/assets/" in html
         # lock file exists while running, printed URL carries the bootstrap token
         assert (ws / ".studio.lock").exists()
+        _train_export_through_the_packaged_service(port, ws)
     finally:
         proc.terminate()
         try:
@@ -133,3 +134,56 @@ def test_wheel_ships_gui_and_one_command_serves_it(installed_python):
     site = Path(subprocess.run([str(python), "-c", "import opendpd.studio, os; print(os.path.dirname(opendpd.studio.__file__))"],
                                capture_output=True, text=True, env=env).stdout.strip())
     assert (Path(site) / "static" / "build-info.json").exists(), "wheel must carry the built frontend"
+
+
+def _train_export_through_the_packaged_service(port: int, ws: Path) -> None:
+    """S13: the packaged GUI must train a smoke run, export it and stay healthy — not only serve a page.
+    Driven over HTTP exactly as the browser does (bootstrap token → session cookie → CSRF header)."""
+    import http.cookiejar
+    import json
+    import time
+    import urllib.parse
+    import urllib.request
+
+    lock = json.loads((ws / ".studio.lock").read_text())
+    token = urllib.parse.parse_qs(urllib.parse.urlsplit(lock["url"]).query)["token"][0]
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    base = f"http://127.0.0.1:{port}"
+    headers = {"Content-Type": "application/json"}
+
+    def call(method, path, body=None):
+        data = json.dumps(body).encode() if body is not None else None
+        req = urllib.request.Request(base + path, data=data, method=method, headers=headers)
+        with opener.open(req, timeout=30) as r:
+            return r.status, json.loads(r.read() or b"null")
+
+    status, session = call("POST", "/api/v1/session/bootstrap", {"token": token})
+    assert status == 200, session
+    headers["X-OpenDPD-CSRF"] = session["csrf_token"]
+    status, _ = call("POST", "/api/v1/datasets/import-builtin", {"name": "DPA_200MHz"})
+    assert status == 201
+    status, recipes = call("GET", "/api/v1/recipes")
+    assert status == 200 and any(r["recipe_id"] == "pa-gru-smoke-v1" for r in recipes), recipes
+    from opendpd.services.recipes import instantiate          # same contract version as the packaged service
+    cfg = json.loads(instantiate("pa-gru-smoke-v1", "dpa-200mhz").model_dump_json())
+    cfg["training"]["epochs"] = 2
+    status, run = call("POST", "/api/v1/runs", {"config": cfg, "name": "packaged smoke"})
+    assert status == 201, run
+    deadline = time.monotonic() + 300
+    while time.monotonic() < deadline:
+        status, run = call("GET", f"/api/v1/runs/{run['run_id']}")
+        if run["status"] in ("succeeded", "failed", "cancelled", "interrupted"):
+            break
+        time.sleep(0.5)
+    assert run["status"] == "succeeded", run.get("error")
+    status, result = call("GET", f"/api/v1/results/{run['run_id']}")
+    assert status == 200 and result["metrics"], result
+    status, export = call("POST", "/api/v1/exports", {"run_id": run["run_id"], "kind": "share"})
+    assert status == 201, export
+    req = urllib.request.Request(base + export["download_url"], headers=headers)
+    with opener.open(req, timeout=30) as r:
+        assert r.status == 200 and r.headers["Content-Type"] == "application/zip"
+        assert len(r.read()) == export["size_bytes"]
+    with urllib.request.urlopen(f"{base}/healthz", timeout=5) as r:
+        assert json.loads(r.read()) == {"status": "ok"}

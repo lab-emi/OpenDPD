@@ -18,6 +18,7 @@ from typing import Callable, Dict, Iterator, List, Optional
 
 from opendpd.core.registry import get_model
 from opendpd.schemas import ResolvedExperimentConfig, TaskType
+from opendpd.services.workspace import WorkspaceError
 
 
 def build_namespace(resolved: ResolvedExperimentConfig, *, dataset_dir: Path,
@@ -169,3 +170,24 @@ def run_step(ns: argparse.Namespace, on_epoch: Optional[Callable[[dict], None]] 
         raise ValueError(f"unsupported step {ns.step}")
     step.main(project)
     return project
+
+
+def load_checkpoint(path):
+    """Tensors and plain containers only (``weights_only=True``): a checkpoint never runs code.
+
+    Legacy checkpoints written by ``main.py`` are plain ``state_dict`` files and load under the same
+    restriction, so there is no trusted or unrestricted loading path anywhere in OpenDPD.
+    """
+    import torch
+
+    try:
+        return torch.load(path, map_location="cpu", weights_only=True)
+    except Exception as err:  # noqa: BLE001 - UnpicklingError, RuntimeError or zip errors from the restricted loader
+        first = (str(err).splitlines() or [""])[0][:240]
+        raise CheckpointRefused(f"checkpoint {Path(path).name} could not be loaded as a plain state_dict and was not "
+                                f"executed ({type(err).__name__}: {first}); OpenDPD never unpickles arbitrary objects "
+                                "from checkpoints") from None
+
+
+class CheckpointRefused(WorkspaceError):
+    """The restricted loader rejected a checkpoint (not a plain tensor container)."""

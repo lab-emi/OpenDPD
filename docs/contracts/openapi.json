@@ -2970,6 +2970,19 @@
         "title": "ResolvedExperimentConfig",
         "type": "object"
       },
+      "RunCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "RunCount",
+        "type": "object"
+      },
       "RunError": {
         "additionalProperties": false,
         "properties": {
@@ -5374,6 +5387,7 @@
     },
     "/api/v1/runs": {
       "get": {
+        "description": "One page of runs, newest first; ``q`` is a case-insensitive substring search over id, name, dataset and model.",
         "operationId": "runs_list_api_v1_runs_get",
         "parameters": [
           {
@@ -5413,6 +5427,23 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           }
         ],
@@ -5482,6 +5513,73 @@
           }
         },
         "summary": "Runs Submit",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/count": {
+      "get": {
+        "description": "How many runs match the same filters as the listing (for paging).",
+        "operationId": "runs_count_api_v1_runs_count_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RunStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunCount"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Count",
         "tags": [
           "runs"
         ]

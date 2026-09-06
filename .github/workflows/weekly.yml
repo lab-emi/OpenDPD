@@ -73,3 +73,17 @@ jobs:
           path: |
             /tmp/bench-report.json
             /tmp/bench-report.md
+
+      # S13 platform evidence: the real service driven by real browsers (Chromium, Firefox, WebKit) through
+      # the whole smoke journey (bootstrap → train → result → export). WebKit here is the Linux port, not Safari.
+      - name: Live browser journey against the real service (three engines)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          opendpd gui --no-browser --workspace /tmp/live-ws --port 8765 > /tmp/live-gui.log 2>&1 &
+          for i in $(seq 1 60); do curl -fs http://127.0.0.1:8765/readyz >/dev/null && break; sleep 1; done
+          export OPENDPD_LIVE_URL="$(python -c "import json; print(json.load(open('/tmp/live-ws/.studio.lock'))['url'])")"
+          cd frontend && npx playwright install --with-deps chromium firefox webkit
+          npx playwright test e2e/live.spec.ts --project=chromium-1366 --project=firefox-1366 --project=webkit-1366
+      - name: Live journey server log
+        if: always() && matrix.os == 'ubuntu-latest'
+        run: tail -n 60 /tmp/live-gui.log || true

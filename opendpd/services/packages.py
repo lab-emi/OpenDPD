@@ -15,6 +15,7 @@ import hashlib
 import json
 import re
 import shutil
+import stat
 import socket
 import zipfile
 from datetime import datetime, timezone
@@ -39,6 +40,8 @@ from opendpd.services import experiments
 from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha256_file, software_provenance
 
 MANIFEST_NAME = "package.json"
+MAX_PACKAGE_MEMBERS = 10_000            # a package is one run, its references and one dataset
+MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 REPORT_HTML = "report.html"
 REPORT_MD = "report.md"
 ARTIFACTS_FILE = "artifacts.json"
@@ -254,21 +257,33 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share") ->
 
 # --- inspect ----------------------------------------------------------------------------
 
-def _safe_member(name: str) -> None:
+def _safe_member(name: str, info: Optional[zipfile.ZipInfo] = None) -> None:
     parts = PurePosixPath(name).parts
     if not parts or name.startswith("/") or ".." in parts or ":" in parts[0] or "\\" in name:
         raise PackageError("unsafe_path", f"package member '{name}' would escape the workspace")
+    if info is not None:
+        # Unix type bits live in the high 16 bits of external_attr; entries written without them
+        # (plain writestr, Windows archivers) are ordinary files. Anything typed as a symlink,
+        # device or pipe is refused before a single byte is read.
+        kind = stat.S_IFMT(info.external_attr >> 16)
+        if kind and kind not in (stat.S_IFREG, stat.S_IFDIR):
+            raise PackageError("unsafe_member", f"package member '{name}' is not a regular file (symlinks and "
+                                                "special files are never extracted)")
 
 
-def _member_sha256(zf: zipfile.ZipFile, name: str) -> Tuple[str, int]:
+def _member_sha256(zf: zipfile.ZipFile, name: str, expected_size: int) -> Tuple[str, int]:
+    """Hash a member, reading never more than one byte past its recorded size."""
     digest, total = hashlib.sha256(), 0
     with zf.open(name) as f:
         while True:
-            chunk = f.read(1 << 20)
+            chunk = f.read(min(1 << 20, expected_size - total + 1))
             if not chunk:
                 break
             digest.update(chunk)
             total += len(chunk)
+            if total > expected_size:
+                raise PackageError("hash_mismatch", f"package member '{name}' is larger than its recorded size; "
+                                                    "the package was modified or damaged")
     return digest.hexdigest(), total
 
 
@@ -278,9 +293,17 @@ def inspect_package(path: Path) -> PackageManifest:
     if not path.is_file() or not zipfile.is_zipfile(path):
         raise PackageError("not_a_package", f"{path} is not an OpenDPD experiment package (zip)")
     with zipfile.ZipFile(path) as zf:
+        infos = zf.infolist()
+        if len(infos) > MAX_PACKAGE_MEMBERS:
+            raise PackageError("too_many_members", f"package lists {len(infos)} members; at most {MAX_PACKAGE_MEMBERS} "
+                                                   "are accepted")
+        for info in infos:
+            _safe_member(info.filename, info)
         names = set(zf.namelist())
         if MANIFEST_NAME not in names:
             raise PackageError("manifest_missing", f"{path.name} has no {MANIFEST_NAME}")
+        if zf.getinfo(MANIFEST_NAME).file_size > MAX_MANIFEST_BYTES:
+            raise PackageError("manifest_invalid", f"{MANIFEST_NAME} is larger than {MAX_MANIFEST_BYTES} bytes")
         try:
             raw = json.loads(zf.read(MANIFEST_NAME))
         except ValueError as err:
@@ -302,7 +325,7 @@ def inspect_package(path: Path) -> PackageManifest:
             _safe_member(entry.path)
             if entry.path not in names:
                 raise PackageError("missing_file", f"package member '{entry.path}' listed in the manifest is missing")
-            digest, size = _member_sha256(zf, entry.path)
+            digest, size = _member_sha256(zf, entry.path, entry.size_bytes)
             if digest != entry.sha256 or size != entry.size_bytes:
                 raise PackageError("hash_mismatch", f"package member '{entry.path}' does not match its recorded sha256; "
                                                     "the package was modified or damaged")
@@ -314,16 +337,30 @@ def inspect_package(path: Path) -> PackageManifest:
 
 # --- import -----------------------------------------------------------------------------
 
-def _extract(zf: zipfile.ZipFile, prefix: str, target: Path) -> List[str]:
+def _extract(zf: zipfile.ZipFile, prefix: str, target: Path, sizes: Dict[str, int]) -> List[str]:
+    """Write the members under ``prefix`` into ``target``; a member may never exceed its recorded size."""
     written = []
+    root = target.resolve()
     for name in zf.namelist():
         if not name.startswith(prefix) or name.endswith("/"):
             continue
         rel = name[len(prefix):]
         dest = target / rel
+        if root not in dest.resolve().parents:
+            raise PackageError("unsafe_path", f"package member '{name}' would escape the workspace")
         dest.parent.mkdir(parents=True, exist_ok=True)
+        remaining = sizes.get(name, 0)
         with zf.open(name) as src, open(dest, "wb") as dst:
-            shutil.copyfileobj(src, dst)
+            while True:
+                chunk = src.read(min(1 << 20, remaining + 1))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+                if remaining < 0:
+                    dst.close()
+                    dest.unlink(missing_ok=True)
+                    raise PackageError("hash_mismatch", f"package member '{name}' is larger than its recorded size")
+                dst.write(chunk)
         written.append(rel)
     return written
 
@@ -332,6 +369,11 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
     """Import a validated package into ``ws``. Nothing is written before every check passed."""
     manifest = inspect_package(path)
     run_id = manifest.run_id
+    sizes = {f.path: f.size_bytes for f in manifest.files}
+    free = shutil.disk_usage(ws.root).free
+    if sum(sizes.values()) > free:
+        raise PackageError("insufficient_space", f"the package unpacks to {sum(sizes.values())} bytes but the workspace "
+                                                 f"volume has {free} bytes free")
     if ws.run_dir(run_id).exists():
         raise PackageError("run_exists", f"run '{run_id}' already exists in {ws.root}",
                            hint="import into another workspace, or remove the existing run directory first")
@@ -372,7 +414,7 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
             dataset_status = "registered_builtin"
         elif ds.included:
             target = ws.dataset_dir(ds.dataset_id)
-            _extract(zf, "dataset/", target)
+            _extract(zf, "dataset/", target, sizes)
             (target / "manifest.json").write_text(json.dumps(packaged_dataset, indent=2, sort_keys=True), encoding="utf-8")
             dataset_status = "imported"
         else:
@@ -381,9 +423,9 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
                 missing.append(f"dataset '{ds.dataset_id}' (raw sha256 {ds.raw_sha256}): {ds.how_to_obtain}")
         for ref in manifest.references:
             if not ws.run_dir(ref.run_id).exists():
-                _extract(zf, f"refs/{ref.run_id}/", ws.run_dir(ref.run_id))
+                _extract(zf, f"refs/{ref.run_id}/", ws.run_dir(ref.run_id), sizes)
                 imported.append(ref.run_id)
-        _extract(zf, f"run/{run_id}/", ws.run_dir(run_id))
+        _extract(zf, f"run/{run_id}/", ws.run_dir(run_id), sizes)
     RunRecord.model_validate(read_json(ws.run_dir(run_id) / "run.json"))    # what was imported is a valid record
     evaluate = f"opendpd evaluate {run_id} --workspace {ws.root} --profile {manifest.metric_profile_id or 'legacy-opendpd-v1'}"
     if dataset_status == "missing":

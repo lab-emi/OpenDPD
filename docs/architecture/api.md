@@ -71,3 +71,23 @@ inline.
 | `POST /exports` | done (S11): `{run_id, kind: full|share}` writes `<workspace>/exports/<id>.zip` and returns the manifest + `download_url`; `GET /exports/{export_id}` serves it; `POST /imports` (multipart, 2 GB cap) verifies every hash before writing and returns the import report; conflicts and damaged packages are 422 with a specific code (`docs/protocols/experiment-packages.md`) |
 | `GET /results/{id}/report?format=html|md` | done (S11): reports bound to the stored result and plot data; nothing recomputed |
 | `GET /results/compare?runs=&profile=&format=json|csv` | done (S11): results side by side under one profile with the pairwise incompatibilities (dataset, data version, split, reference, profile version, evidence, execution semantics) stated explicitly; `GET /runs/{id}/history` serves the per-epoch curves; plot data (`plot-spectrum`, `plot-time`, `plot-amam`, plots-v1) are artifacts with fixed budgets |
+
+## Listing, search and paging (S13)
+
+`GET /api/v1/runs?limit=&offset=&status=&q=` returns one page of runs, newest
+first; `q` is a case-insensitive substring search over the run id and the
+stored record (name, dataset, model key), with SQL wildcards treated as
+literal characters. `GET /api/v1/runs/count?status=&q=` returns `{"count": n}`
+for the same filters so a client can page a history of thousands of runs
+without ever loading it whole. Both index the workspace first, so runs made by
+the CLI or the Python API appear as soon as they finish.
+
+## Response headers (S13)
+
+Every response carries a Content-Security-Policy (`default-src 'self'`,
+`script-src 'self'`, no inline scripts, no external hosts, `frame-ancestors
+'none'`), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and
+`Referrer-Policy: same-origin`; API, bootstrap and health responses add
+`Cache-Control: no-store`. Request bodies are capped whether or not they
+announce a `Content-Length` (413 `payload_too_large`; uploads 413
+`too_large`).
