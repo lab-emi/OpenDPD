@@ -45,10 +45,6 @@
             ],
             "title": "Config Sha256"
           },
-          "device": {
-            "title": "Device",
-            "type": "string"
-          },
           "entry_id": {
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Entry Id",
@@ -147,8 +143,7 @@
           "condition_id",
           "seed",
           "status",
-          "new_samples",
-          "device"
+          "new_samples"
         ],
         "title": "AdaptationCell",
         "type": "object"
@@ -997,11 +992,8 @@
       },
       "ConditionAudit": {
         "additionalProperties": false,
+        "description": "What the workspace says about a condition's dataset at report time (the card holds the rest).",
         "properties": {
-          "capture_batch": {
-            "title": "Capture Batch",
-            "type": "string"
-          },
           "condition_id": {
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Condition Id",
@@ -1039,14 +1031,6 @@
             ],
             "title": "Raw Sha256"
           },
-          "role": {
-            "enum": [
-              "source",
-              "target"
-            ],
-            "title": "Role",
-            "type": "string"
-          },
           "train_samples": {
             "anyOf": [
               {
@@ -1057,33 +1041,11 @@
               }
             ],
             "title": "Train Samples"
-          },
-          "values": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
-            },
-            "title": "Values",
-            "type": "object"
           }
         },
         "required": [
           "condition_id",
           "dataset_id",
-          "role",
-          "capture_batch",
           "origin"
         ],
         "title": "ConditionAudit",

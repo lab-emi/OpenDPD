@@ -194,7 +194,6 @@
         "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "condition_id": "drive-0",
         "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "device": "cpu",
         "entry_id": "pa",
         "failure": null,
         "metrics": {
@@ -214,7 +213,6 @@
         "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "condition_id": "drive-1",
         "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "device": "cpu",
         "entry_id": "pa",
         "failure": null,
         "metrics": {
@@ -234,7 +232,6 @@
         "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "condition_id": "drive-2",
         "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "device": "cpu",
         "entry_id": "pa",
         "failure": null,
         "metrics": {
@@ -254,7 +251,6 @@
         "checkpoint_sha256": null,
         "condition_id": "drive-1",
         "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "device": "cpu",
         "entry_id": "pa",
         "failure": null,
         "metrics": {
@@ -274,7 +270,6 @@
         "checkpoint_sha256": null,
         "condition_id": "drive-2",
         "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "device": "cpu",
         "entry_id": "pa",
         "failure": null,
         "metrics": {
@@ -294,7 +289,6 @@
         "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "condition_id": "drive-1",
         "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "device": "cpu",
         "entry_id": "pa",
         "failure": null,
         "metrics": {
@@ -314,7 +308,6 @@
         "checkpoint_sha256": null,
         "condition_id": "drive-2",
         "config_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        "device": "cpu",
         "entry_id": "pa",
         "failure": "dataset_too_short [train]: budget 2000 leaves no complete frame after the guard band",
         "metrics": {},
@@ -370,43 +363,28 @@
     },
     "conditions": [
       {
-        "capture_batch": "seed-11",
         "condition_id": "drive-0",
         "dataset_id": "synthetic-drive-0",
         "n_samples": 12000,
         "origin": "synthetic",
         "raw_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "role": "source",
-        "train_samples": 7200,
-        "values": {
-          "gain": 1.0
-        }
+        "train_samples": 7200
       },
       {
-        "capture_batch": "seed-12",
         "condition_id": "drive-1",
         "dataset_id": "synthetic-drive-1",
         "n_samples": 12000,
         "origin": "synthetic",
         "raw_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "role": "target",
-        "train_samples": 7200,
-        "values": {
-          "gain": 0.9
-        }
+        "train_samples": 7200
       },
       {
-        "capture_batch": "seed-13",
         "condition_id": "drive-2",
         "dataset_id": "synthetic-drive-2",
         "n_samples": 12000,
         "origin": "synthetic",
         "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-        "role": "target",
-        "train_samples": 7200,
-        "values": {
-          "gain": 0.8
-        }
+        "train_samples": 7200
       }
     ],
     "device": "cpu",
@@ -434,7 +412,7 @@
     "plan_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "protocol_id": "conditions-v1",
     "repeats": "training seeds: 1; capture batches: 3 (one per condition); measurement repeats are conditions of the card and are never counted as seeds",
-    "report_sha256": "b1af9ecad1540607078176d1f826fe33588523e6f76346e2e4f32846b5311954",
+    "report_sha256": "8f43c6b05125a02694940cb516ee0926e66097046c8136665625f658d5261ec9",
     "schema_version": 1,
     "seeds": [
       0

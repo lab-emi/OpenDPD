@@ -132,7 +132,6 @@ class AdaptationPlan(StrictModel):
     metric_profile_id: Slug = "legacy-opendpd-v1"
     device: str = "cpu"
     target: Optional[TargetRule] = None
-    held_out_policy: str = HELD_OUT_POLICY
     created_at: datetime = Field(default_factory=utcnow)
     plan_sha256: Optional[Sha256] = None
 
@@ -163,11 +162,10 @@ class AdaptationPlan(StrictModel):
 
 
 class ConditionAudit(StrictModel):
+    """What the workspace says about a condition's dataset at report time (the card holds the rest)."""
+
     condition_id: Slug
     dataset_id: Slug
-    role: Literal["source", "target"]
-    capture_batch: str
-    values: Dict[str, ParamValue] = Field(default_factory=dict)
     origin: str                                                  # measured / synthetic / unknown, from the manifest
     raw_sha256: Optional[Sha256] = None
     n_samples: Optional[int] = None
@@ -188,7 +186,6 @@ class AdaptationCell(StrictModel):
     metrics: Dict[str, Optional[float]] = Field(default_factory=dict)
     new_samples: int = Field(ge=0)                               # samples of the condition used to obtain the weights
     wall_clock_s: Optional[float] = None
-    device: str
     config_sha256: Optional[Sha256] = None
     checkpoint_sha256: Optional[Sha256] = None
     reached_target: Optional[bool] = None

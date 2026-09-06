@@ -792,8 +792,6 @@ export interface components {
             condition_id: string;
             /** Config Sha256 */
             config_sha256?: string | null;
-            /** Device */
-            device: string;
             /** Entry Id */
             entry_id: string;
             /** Failure */
@@ -1143,10 +1141,11 @@ export interface components {
                 [key: string]: number | string | boolean;
             };
         };
-        /** ConditionAudit */
+        /**
+         * ConditionAudit
+         * @description What the workspace says about a condition's dataset at report time (the card holds the rest).
+         */
         ConditionAudit: {
-            /** Capture Batch */
-            capture_batch: string;
             /** Condition Id */
             condition_id: string;
             /** Dataset Id */
@@ -1157,17 +1156,8 @@ export interface components {
             origin: string;
             /** Raw Sha256 */
             raw_sha256?: string | null;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "source" | "target";
             /** Train Samples */
             train_samples?: number | null;
-            /** Values */
-            values?: {
-                [key: string]: number | string | boolean;
-            };
         };
         /**
          * ConditionSet

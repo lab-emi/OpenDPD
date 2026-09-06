@@ -102,8 +102,7 @@ def audit_card(ws: Workspace, card: ConditionSet) -> List[ConditionAudit]:
             raise WorkspaceError(f"conditions '{seen[manifest.raw_sha256]}' and '{c.condition_id}' share the same raw "
                                  "capture (identical hash); one capture split two ways is not two conditions")
         seen[manifest.raw_sha256] = c.condition_id
-        audits.append(ConditionAudit(condition_id=c.condition_id, dataset_id=c.dataset_id, role=c.role,
-                                     capture_batch=c.capture_batch, values=c.values, origin=manifest.origin.value,
+        audits.append(ConditionAudit(condition_id=c.condition_id, dataset_id=c.dataset_id, origin=manifest.origin.value,
                                      raw_sha256=manifest.raw_sha256, n_samples=manifest.n_samples,
                                      train_samples=_train_split_size(ws, c.dataset_id)))
     return audits
@@ -274,7 +273,7 @@ def build_report(ws: Workspace, plan: AdaptationPlan) -> AdaptationReport:
             record = runs.get(key)
             new_samples = 0 if task == "zero_update" else (budget or train_sizes[condition.condition_id])
             base = dict(entry_id=entry.entry_id, task=task, condition_id=condition.condition_id, budget_samples=budget,
-                        seed=seed, new_samples=new_samples, device=plan.device)
+                        seed=seed, new_samples=new_samples)
             if record is None:
                 cells.append(AdaptationCell(status="missing", failure=refusals.get(key, "no run for this cell"), **base))
                 continue
@@ -394,8 +393,11 @@ def report_markdown(report: AdaptationReport) -> str:
            f"independent batches: {bar.independent_batches}; measured origin: {bar.measured_origin}).", "", report.repeats, "",
            "## Conditions", "", "| id | role | dataset | batch | values | origin | raw sha256 | train samples |",
            "|---|---|---|---|---|---|---|---|"]
-    out += [f"| {a.condition_id} | {a.role} | {a.dataset_id} | {a.capture_batch} | {a.values} | {a.origin} | "
-            f"{(a.raw_sha256 or '')[:12]} | {a.train_samples} |" for a in report.conditions]
+    audits = {a.condition_id: a for a in report.conditions}
+    for c in card.conditions:
+        a = audits[c.condition_id]
+        out.append(f"| {c.condition_id} | {c.role} | {c.dataset_id} | {c.capture_batch} | {c.values} | {a.origin} | "
+                   f"{(a.raw_sha256 or '')[:12]} | {a.train_samples} |")
     primary = report.target.metric if report.target else None
     for entry_id in dict.fromkeys(a.entry_id for a in report.aggregates):
         aggs = [a for a in report.aggregates if a.entry_id == entry_id]

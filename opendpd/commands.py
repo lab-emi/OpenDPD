@@ -725,9 +725,6 @@ def cmd_adaptation(args) -> int:
     return 2
 
 
-BUILTIN_CARD_IDS = ("apa-200mhz-batches-v1",)
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="opendpd", description="OpenDPD Studio command line")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -917,7 +914,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("adaptation", help="conditions-v1: multi-condition cards, pre-registered adaptation plans, every-cell reports")
     ap = p.add_subparsers(dest="adaptation_command", required=True)
     q = ap.add_parser("card", help="seal a condition card (a JSON file or a built-in id) and audit it against a workspace")
-    q.add_argument("card", help="card JSON path, or a built-in id: " + ", ".join(sorted(BUILTIN_CARD_IDS)))
+    q.add_argument("card", help="card JSON path, or a built-in id (`opendpd adaptation card apa-200mhz-batches-v1`)")
     q.add_argument("--workspace", default=None, help="audit: every condition must be a registered dataset from its own capture")
     q.add_argument("--out", default=None, help="write the sealed card")
     q.add_argument("--json", action="store_true")

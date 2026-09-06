@@ -430,7 +430,6 @@
   "robustness.bar.detail": "{n} conditions (bar {min}); independent capture batches: {independent}; measured origin: {measured}",
   "robustness.bar.rehearsal": "Below the evidence bar: this report is a rehearsal of the protocol, not evidence.",
   "robustness.report.header": "Plan {plan} · profile {profile} v{version} · seeds {seeds} · budgets {budgets} · {device}",
-  "robustness.report.notFound": "No adaptation report for plan {plan}.",
   "robustness.filters.entry": "Entry",
   "robustness.filters.metric": "Metric",
   "robustness.filters.tasks": "Tasks",

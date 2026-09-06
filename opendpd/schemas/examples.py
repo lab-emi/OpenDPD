@@ -540,8 +540,8 @@ def adaptation_report_mock() -> AdaptationReport:
     card = ConditionSet(set_id="synthetic-drive-v0", device="synthetic memory-polynomial PA", dimension="drive",
                         conditions=conditions, created_at=T0)
     card = card.model_copy(update={"card_sha256": card.compute_sha256()})
-    audits = [ConditionAudit(condition_id=c.condition_id, dataset_id=c.dataset_id, role=c.role, capture_batch=c.capture_batch,
-                             values=c.values, origin="synthetic", raw_sha256=sha, n_samples=12000, train_samples=7200)
+    audits = [ConditionAudit(condition_id=c.condition_id, dataset_id=c.dataset_id, origin="synthetic", raw_sha256=sha,
+                             n_samples=12000, train_samples=7200)
               for c, sha in zip(conditions, (SHA_A, SHA_B, SHA_C))]
     nmse = {("full_retrain", "drive-0"): -31.2, ("full_retrain", "drive-1"): -30.8, ("full_retrain", "drive-2"): -30.1,
             ("zero_update", "drive-1"): -24.6, ("zero_update", "drive-2"): -19.3, ("few_shot", "drive-1"): -28.9}
@@ -550,8 +550,7 @@ def adaptation_report_mock() -> AdaptationReport:
                        ("zero_update", "drive-1"), ("zero_update", "drive-2"), ("few_shot", "drive-1"), ("few_shot", "drive-2")]:
         budget = 2000 if task == "few_shot" else None
         new = 0 if task == "zero_update" else (budget or 7200)
-        agg = dict(entry_id="pa", task=task, condition_id=cond, budget_samples=budget, new_samples=new)
-        base = dict(device="cpu", **agg)
+        base = dict(entry_id="pa", task=task, condition_id=cond, budget_samples=budget, new_samples=new)
         if (task, cond) in nmse:
             value = nmse[(task, cond)]
             cells.append(AdaptationCell(seed=0, run_id=f"run-{task[:4]}-{cond}", status="ok",
@@ -561,12 +560,12 @@ def adaptation_report_mock() -> AdaptationReport:
             aggregates.append(CellAggregate(n_seeds=1, n_ok=1, n_failed=0, mean_wall_clock_s=cells[-1].wall_clock_s,
                                             metrics={"NMSE": MetricStats(n=1, mean=value, min=value, max=value),
                                                      "ACLR_AVG": MetricStats(n=1, mean=value - 6, min=value - 6, max=value - 6)},
-                                            target_reached_fraction=1.0 if value <= -28.0 else 0.0, **agg))
+                                            target_reached_fraction=1.0 if value <= -28.0 else 0.0, **base))
         else:
             cells.append(AdaptationCell(seed=0, status="failed", run_id=f"run-{task[:4]}-{cond}", wall_clock_s=1.1, config_sha256=SHA_C,
                                         failure="dataset_too_short [train]: budget 2000 leaves no complete frame after the guard band",
                                         **base))
-            aggregates.append(CellAggregate(n_seeds=1, n_ok=0, n_failed=1, **agg))
+            aggregates.append(CellAggregate(n_seeds=1, n_ok=0, n_failed=1, **base))
     report = AdaptationReport(
         plan_sha256=SHA_B, condition_set=card, conditions=audits, metric_profile_id="legacy-opendpd-v1", metric_profile_version=1,
         device="cpu", seeds=[0], budgets=[2000], target=TargetRule(metric="NMSE", threshold=-28.0, better="lower"),
