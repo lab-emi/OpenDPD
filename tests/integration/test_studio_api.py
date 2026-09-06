@@ -201,6 +201,15 @@ def test_run_lifecycle_events_logs_artifacts_result(client, session):
     result = client.get(f"/api/v1/results/{run_id}").json()
     assert result["evidence_type"] == "pa_modeling" and result["source"] == "opendpd-studio"
     assert all(m["value"] is not None for m in result["metrics"])
+    # S08: the definition behind every score is served, and every registered profile has a stored result
+    profiles = {p["profile_id"]: p for p in client.get("/api/v1/metrics/profiles").json()}
+    assert profiles["legacy-opendpd-v1"]["frozen"] is True and "ACPR_L" in [m["name"] for m in profiles["general-spectral-v1"]["metrics"]]
+    assert client.get("/api/v1/metrics/profiles/nope").status_code == 404
+    assert client.get(f"/api/v1/results/{run_id}/profiles").json() == ["legacy-opendpd-v1", "general-spectral-v1"]
+    general = client.get(f"/api/v1/results/{run_id}", params={"profile": "general-spectral-v1"}).json()
+    assert general["metric_profile_id"] == "general-spectral-v1" and general["metrics"][0]["name"] == "NMSE"
+    missing = client.get(f"/api/v1/results/{run_id}", params={"profile": "nope-v1"})
+    assert missing.status_code == 404 and "stored profiles" in missing.json()["error"]["hint"]
     cfg = client.get(f"/api/v1/runs/{run_id}/config").json()
     assert cfg["resolution"]["config_sha256"] == final["config_sha256"]
 

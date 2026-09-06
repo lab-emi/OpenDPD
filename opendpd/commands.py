@@ -205,16 +205,56 @@ def cmd_run(args) -> int:
         print(f"  {record.error.code} [{record.error.stage}]: {record.error.message}", file=sys.stderr)
     result = load_result(ws, record.run_id)
     if result is not None:
-        print(f"  evidence: {result.evidence_type.value}  profile: {result.metric_profile_id}")
-        for m in result.metrics:
-            shown = f"{m.value:.4f} {m.unit}" if m.value is not None else f"{m.status.value}: {m.reason}"
-            print(f"  {m.name:<9} {shown}")
-        for lim in result.limitations:
-            print(f"  note: {lim}")
+        _print_result(result)
     if args.json:
         _print_json({"run": record.model_dump(mode="json"),
                      "result": result.model_dump(mode="json") if result else None})
     return {RunStatus.succeeded: 0, RunStatus.cancelled: 130}.get(record.status, 1)
+
+
+def _print_result(result) -> None:
+    print(f"  evidence: {result.evidence_type.value}  profile: {result.metric_profile_id} v{result.metric_profile_version}")
+    for m in result.metrics:
+        shown = f"{m.value:.4f} {m.unit}" if m.value is not None else f"{m.status.value}: {m.reason}"
+        print(f"  {m.name:<9} {shown}")
+    for lim in result.limitations:
+        print(f"  note: {lim}")
+
+
+def cmd_profiles(args) -> int:
+    from opendpd.core.metrics import list_profiles
+
+    profiles = list_profiles()
+    if args.json:
+        _print_json([p.model_dump(mode="json") for p in profiles])
+        return 0
+    for p in profiles:
+        flags = " (frozen)" if p.frozen else ""
+        print(f"{p.profile_id} v{p.version}{flags}: {p.description}")
+        for m in p.metrics:
+            print(f"  {m.name:<9} {m.unit:<4} {m.better.value:<6} {m.formula}")
+    return 0
+
+
+def cmd_evaluate(args) -> int:
+    from opendpd.services.evaluation import evaluate_run
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    import contextlib
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        with contextlib.redirect_stdout(sys.stderr):      # legacy model/loader chatter never pollutes the result
+            result = evaluate_run(ws, args.run_id, args.profile, store=args.store)
+    except (WorkspaceError, KeyError, FileNotFoundError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    if args.json:
+        _print_json(result.model_dump(mode="json"))
+    else:
+        print(f"run {args.run_id} re-evaluated" + (" and stored" if args.store else ""))
+        _print_result(result)
+    return 0
 
 
 def cmd_gui(args) -> int:
@@ -241,6 +281,18 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("recipes", help="list reference recipes")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_recipes)
+
+    p = sub.add_parser("profiles", help="list metric profiles (the definition behind every score)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_profiles)
+
+    p = sub.add_parser("evaluate", help="re-score a succeeded run under a metric profile from its best checkpoint")
+    p.add_argument("run_id")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--profile", default="general-spectral-v1")
+    p.add_argument("--store", action="store_true", help="keep the result next to the run (results/<profile>.json)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_evaluate)
 
     p = sub.add_parser("datasets", help="manage workspace datasets")
     ds = p.add_subparsers(dest="datasets_command", required=True)

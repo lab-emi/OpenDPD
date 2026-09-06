@@ -73,6 +73,46 @@ def test_pa_run_produces_verified_artifacts_and_result(workspace, pa_run):
     assert provenance["legacy_equivalent_command"].startswith("python main.py")
 
 
+def test_result_metrics_come_from_the_registry_and_agree_with_the_training_log(workspace, pa_run, capsys):
+    """The stored result re-scores the best checkpoint; under the legacy profile that reproduces the
+    trainer's own TEST_* numbers, and every registered profile is stored next to it (S08)."""
+    import csv
+    from opendpd.core.metrics import PROFILES
+    from opendpd.services.evaluation import available_profiles, evaluate_run
+
+    run_dir = workspace.run_dir(pa_run.run_id)
+    manifest = load_artifacts(workspace, pa_run.run_id)
+    with open(run_dir / manifest.by_kind(ArtifactKind.log_best)[0].file.path, newline="") as f:
+        best = list(csv.DictReader(f))[-1]
+    result = load_result(workspace, pa_run.run_id)
+    assert result.metric_profile_id == "legacy-opendpd-v1"
+    for name in ("NMSE", "EVM", "ACLR_L", "ACLR_R", "ACLR_AVG"):
+        assert result.metric(name).value == pytest.approx(float(best[f"TEST_{name}"]), abs=1e-4), name
+    assert result.valid_sample_range == (0, 7680) and result.n_segments == 3 and result.dataset.n_samples == 7680
+
+    assert available_profiles(workspace, pa_run.run_id) == ["legacy-opendpd-v1", "general-spectral-v1"]
+    general = load_result(workspace, pa_run.run_id, "general-spectral-v1")
+    assert general.metric_profile_id == "general-spectral-v1" and general.result_id != result.result_id
+    assert {m.name for m in general.metrics} == {"NMSE", "IBE", "ACPR_L", "ACPR_R"}
+    assert all(m.status.value == "ok" for m in general.metrics), [m.reason for m in general.metrics]
+    # pooled NMSE and the legacy mean-of-segment-dB NMSE are different numbers by design
+    assert general.metric("NMSE").value != result.metric("NMSE").value
+    assert set(PROFILES) == {"legacy-opendpd-v1", "general-spectral-v1"}
+
+    # re-evaluation from the checkpoint is deterministic on CPU and available from the CLI
+    again = evaluate_run(workspace, pa_run.run_id, "general-spectral-v1")
+    assert again.metric("NMSE").value == pytest.approx(general.metric("NMSE").value, abs=1e-9)
+    capsys.readouterr()
+    assert studio_main(["evaluate", pa_run.run_id, "--workspace", str(workspace.root), "--profile", "legacy-opendpd-v1",
+                        "--json"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["metric_profile_id"] == "legacy-opendpd-v1"
+    assert printed["metrics"][0]["value"] == pytest.approx(result.metric("NMSE").value, abs=1e-9)
+    assert studio_main(["profiles"]) == 0
+    out = capsys.readouterr().out
+    assert "legacy-opendpd-v1 v1 (frozen)" in out and "general-spectral-v1 v1" in out and "ACPR_L" in out
+
+
 def test_idempotency_key_returns_existing_run(workspace, pa_run):
     again = create_run(workspace, instantiate("pa-gru-smoke-v1", "dpa-200mhz"), idempotency_key="pa-smoke")
     assert again.run_id == pa_run.run_id

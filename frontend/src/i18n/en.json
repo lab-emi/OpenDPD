@@ -151,7 +151,7 @@
   "results.detail.limitations": "Limitations",
   "results.detail.protocol": "Protocol",
   "results.detail.protocol.body": "{profile} v{version} · {segments} segments × {nperseg} samples · selected epoch {epoch} · {device} · {numeric}",
-  "results.detail.charts.soon": "Spectrum and time-domain views from the evaluation arrive in S11; the component gallery shows them on mock data.",
+  "results.detail.charts.soon": "Spectrum and time-domain views from the evaluation arrive in S11; the component gallery shows them on mock data. Charts never feed back into these numbers.",
   "results.export.soon": "Export packages arrive in S11.",
   "settings.title": "Settings",
   "settings.workspace": "Workspace",
@@ -250,5 +250,18 @@
   "signal.bandwidth_hz": "Signal bandwidth (Hz)",
   "signal.sub_channel_bandwidth_hz": "Sub-channel bandwidth (Hz)",
   "signal.n_sub_ch": "Sub-channels",
-  "signal.nperseg": "PSD segment length (nperseg)"
+  "signal.nperseg": "PSD segment length (nperseg)",
+  "results.detail.profile": "Metric profile",
+  "results.detail.profile.help": "Every registered profile is scored from the same best checkpoint; the configured one is the primary result.",
+  "results.detail.definitions": "Metric definitions",
+  "results.detail.definitions.help": "What each score means under {profile} v{version}. Names, formulas and better-directions come from the registry, not from the page.",
+  "results.detail.parameters": "Profile parameters",
+  "results.detail.frozen": "frozen",
+  "metric.definition": "Definition of {name}",
+  "metric.formula": "Formula",
+  "metric.aggregation": "Aggregation",
+  "form.profile": "Metric profile",
+  "form.profile.help": "The definition behind every score of the result. Every registered profile is also stored; this one is shown first.",
+  "results.detail.metric": "Metric",
+  "results.detail.unit": "Unit · direction"
 }

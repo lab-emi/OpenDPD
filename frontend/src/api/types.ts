@@ -26,6 +26,8 @@ export type SessionInfo = Schemas['SessionInfo']
 export type Device = Schemas['ExecutionConfig']['device']
 export type EventPage = Schemas['EventPage']
 export type LogPage = Schemas['LogPage']
+export type MetricProfile = Schemas['MetricProfile']
+export type MetricDefinition = Schemas['MetricDefinition']
 
 /** Shape of POST /experiments/validate (a plain dict on the server side). */
 export interface ConfigIssue {

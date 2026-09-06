@@ -14,7 +14,7 @@ import Typography from '@mui/material/Typography'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 import { versionNames } from '@/api/datasets'
-import { useCapabilities, useDatasets, useModels, useRecipes, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
+import { useCapabilities, useDatasets, useMetricProfiles, useModels, useRecipes, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
 import type { ConfigIssue, Device, ExperimentConfigInput, RecipeInfo, ValidationReport } from '@/api/types'
 import { t } from '@/i18n'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
@@ -33,6 +33,7 @@ interface FormState {
   frameLength: string
   frameStride: string
   hiddenSize: string
+  profileId: string
 }
 
 function num(s: string, fallback: number): number {
@@ -63,6 +64,7 @@ function buildConfig(recipe: RecipeInfo, f: FormState): ExperimentConfigInput {
     execution: { device: f.device as Device },
   }
   if (recipe.task === 'train_dpd' && f.paRunId) config.pa_reference = { run_id: f.paRunId }
+  if (f.profileId) config.evaluation = { profile_id: f.profileId }
   return config
 }
 
@@ -80,6 +82,7 @@ const FIELD_MAP: Record<string, keyof FormState> = {
   'pa_reference.run_id': 'paRunId',
   'execution.device': 'device',
   'model.key': 'recipeId',
+  'evaluation.profile_id': 'profileId',
 }
 
 export function NewExperimentPage() {
@@ -88,10 +91,11 @@ export function NewExperimentPage() {
   const datasets = useDatasets()
   const models = useModels()
   const caps = useCapabilities()
+  const metricProfiles = useMetricProfiles()
   const succeeded = useRuns('succeeded')
   const submit = useSubmitRun()
   const idempotencyKey = useRef(crypto.randomUUID())
-  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', hiddenSize: '' })
+  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', hiddenSize: '', profileId: '' })
   // The report is stored with the config it validated, so "checking" is derived, not duplicated state.
   const [validated, setValidated] = useState<{ configJson: string; report: ValidationReport | null } | null>(null)
 
@@ -228,6 +232,16 @@ export function NewExperimentPage() {
                 <TextField fullWidth type="number" label={t(label)} value={form[key]} onChange={set(key)} placeholder={placeholder === undefined ? '' : String(placeholder)} error={issuesFor(key).length > 0} helperText={errorText(key) || ' '} slotProps={{ htmlInput: { step: key === 'learningRate' ? 'any' : 1 } }} />
               </Grid>
             ))}
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField select fullWidth label={t('form.profile')} value={form.profileId || metricProfiles.data?.[0]?.profile_id || ''} onChange={set('profileId')} error={issuesFor('profileId').length > 0} helperText={errorText('profileId') || t('form.profile.help')}>
+                {(metricProfiles.data ?? []).map((p) => (
+                  <MenuItem key={p.profile_id} value={p.profile_id}>
+                    {p.profile_id} v{p.version}
+                    {p.frozen ? ` · ${t('results.detail.frozen')}` : ''}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
           </Grid>
         </AccordionDetails>
       </Accordion>

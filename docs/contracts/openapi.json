@@ -1449,6 +1449,116 @@
         "title": "ManifestUpdate",
         "type": "object"
       },
+      "MetricDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregation": {
+            "minLength": 1,
+            "title": "Aggregation",
+            "type": "string"
+          },
+          "better": {
+            "$ref": "#/components/schemas/BetterDirection"
+          },
+          "display_name": {
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "formula": {
+            "minLength": 1,
+            "title": "Formula",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "requires_reference": {
+            "default": true,
+            "title": "Requires Reference",
+            "type": "boolean"
+          },
+          "unit": {
+            "minLength": 1,
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "display_name",
+          "unit",
+          "better",
+          "formula",
+          "aggregation"
+        ],
+        "title": "MetricDefinition",
+        "type": "object"
+      },
+      "MetricProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "deprecated": {
+            "default": false,
+            "title": "Deprecated",
+            "type": "boolean"
+          },
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "frozen": {
+            "default": false,
+            "title": "Frozen",
+            "type": "boolean"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricDefinition"
+            },
+            "minItems": 1,
+            "title": "Metrics",
+            "type": "array"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "title": "Parameters",
+            "type": "object"
+          },
+          "profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "profile_id",
+          "version",
+          "description",
+          "metrics"
+        ],
+        "title": "MetricProfile",
+        "type": "object"
+      },
       "MetricStatus": {
         "enum": [
           "ok",
@@ -3928,6 +4038,74 @@
         ]
       }
     },
+    "/api/v1/metrics/profiles": {
+      "get": {
+        "description": "Every registered metric profile: the definition behind each score.",
+        "operationId": "metric_profiles_api_v1_metrics_profiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MetricProfile"
+                  },
+                  "title": "Response Metric Profiles Api V1 Metrics Profiles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Metric Profiles",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
+    "/api/v1/metrics/profiles/{profile_id}": {
+      "get": {
+        "operationId": "metric_profile_api_v1_metrics_profiles__profile_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Metric Profile",
+        "tags": [
+          "metrics"
+        ]
+      }
+    },
     "/api/v1/models": {
       "get": {
         "operationId": "models_api_v1_models_get",
@@ -3990,6 +4168,23 @@
               "title": "Run Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile"
+            }
           }
         ],
         "responses": {
@@ -4015,6 +4210,53 @@
           }
         },
         "summary": "Results Get",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/results/{run_id}/profiles": {
+      "get": {
+        "description": "Metric profiles under which this run has a stored result (primary first).",
+        "operationId": "results_profiles_api_v1_results__run_id__profiles_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Results Profiles Api V1 Results  Run Id  Profiles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Results Profiles",
         "tags": [
           "results"
         ]

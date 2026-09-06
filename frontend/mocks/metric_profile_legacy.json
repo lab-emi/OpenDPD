@@ -9,7 +9,7 @@
       {
         "aggregation": "mean of per-segment dB (not pooled)",
         "better": "lower",
-        "display_name": "NMSE",
+        "display_name": "NMSE (mean of segment dB)",
         "formula": "mean over segments of 10*log10(sum|e|^2 / sum|y|^2)",
         "name": "NMSE",
         "notes": null,
@@ -32,7 +32,7 @@
         "display_name": "ACLR left",
         "formula": "10*log10(P_adjacent_left / max sub-channel power)",
         "name": "ACLR_L",
-        "notes": null,
+        "notes": "Leakage convention (adjacent / strongest main sub-channel): negative dBc, lower is better.",
         "requires_reference": false,
         "unit": "dBc"
       },
@@ -42,7 +42,7 @@
         "display_name": "ACLR right",
         "formula": "10*log10(P_adjacent_right / max sub-channel power)",
         "name": "ACLR_R",
-        "notes": null,
+        "notes": "Leakage convention (adjacent / strongest main sub-channel): negative dBc, lower is better.",
         "requires_reference": false,
         "unit": "dBc"
       },
@@ -58,11 +58,12 @@
       }
     ],
     "parameters": {
+      "aggregation": "NMSE and EVM are means of per-segment values (dB and ratio respectively), not pooled",
       "main_channel": "[-bw_main_ch/2, +bw_main_ch/2] split into n_sub_ch sub-channels",
       "normalization": "none; signals compared as stored (target = gain * input for DPD)",
       "psd": "scipy.signal.welch, nperseg=nperseg, scaling=spectrum, two-sided, mean over segments",
       "sample_range": "whole split, zero-padded last segment",
-      "segmenting": "independent nperseg segments from the dataset spec"
+      "segmenting": "independent nperseg segments from the dataset spec; the last segment is zero-padded"
     },
     "profile_id": "legacy-opendpd-v1",
     "version": 1

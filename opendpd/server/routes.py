@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from opendpd import __version__
+from opendpd.core.metrics import get_profile, list_profiles
 from opendpd.core.registry import list_models
 from opendpd.core.splits import DEFAULT_GUARD_SAMPLES
 from opendpd.schemas import (
@@ -35,11 +36,13 @@ from opendpd.schemas import (
     TrainingConfig,
     heartbeat_is_stale,
     utcnow,
+    MetricProfile,
 )
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, UPLOAD_MAX_BODY, Session
 from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
 from opendpd.services.config import ConfigError, ConfigIssue, validate as validate_config
+from opendpd.services.evaluation import available_profiles
 from opendpd.services.workspace import WorkspaceError
 from opendpd.services.recipes import list_recipes
 
@@ -492,14 +495,41 @@ def runs_artifacts(run_id: str, request: Request):
     return manifest or ArtifactManifest(run_id=run_id)
 
 
+@router.get("/metrics/profiles", response_model=List[MetricProfile], tags=["metrics"], dependencies=[Depends(require_session)])
+def metric_profiles():
+    """Every registered metric profile: the definition behind each score."""
+    return list_profiles()
+
+
+@router.get("/metrics/profiles/{profile_id}", response_model=MetricProfile, tags=["metrics"],
+            dependencies=[Depends(require_session)])
+def metric_profile(profile_id: str):
+    try:
+        return get_profile(profile_id)
+    except KeyError as err:
+        raise _error(404, "profile_not_found", str(err))
+
+
+@router.get("/results/{run_id}/profiles", response_model=List[str], tags=["results"],
+            dependencies=[Depends(require_session)])
+def results_profiles(run_id: str, request: Request):
+    """Metric profiles under which this run has a stored result (primary first)."""
+    _get_run(request, run_id)
+    return available_profiles(request.app.state.ws, run_id)
+
+
 @router.get("/results/{run_id}", response_model=EvaluationResult, tags=["results"],
             dependencies=[Depends(require_session)])
-def results_get(run_id: str, request: Request):
+def results_get(run_id: str, request: Request, profile: Optional[str] = Query(None, max_length=64)):
     record = _get_run(request, run_id)
-    result = experiments.load_result(request.app.state.ws, run_id)
+    result = experiments.load_result(request.app.state.ws, run_id, profile)
     if result is None:
-        raise _error(404, "result_not_available", f"run '{run_id}' has no formal result (status {record.status.value})",
-                     hint="results exist only for succeeded train_pa / train_dpd runs")
+        stored = available_profiles(request.app.state.ws, run_id)
+        raise _error(404, "result_not_available",
+                     f"run '{run_id}' has no formal result" + (f" under profile '{profile}'" if profile else "")
+                     + f" (status {record.status.value})",
+                     hint=("stored profiles: " + ", ".join(stored)) if stored
+                     else "results exist only for succeeded train_pa / train_dpd runs")
     return result
 
 

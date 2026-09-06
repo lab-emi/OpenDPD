@@ -252,6 +252,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/metrics/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Metric Profiles
+         * @description Every registered metric profile: the definition behind each score.
+         */
+        get: operations["metric_profiles_api_v1_metrics_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/metrics/profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Metric Profile */
+        get: operations["metric_profile_api_v1_metrics_profiles__profile_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/models": {
         parameters: {
             query?: never;
@@ -295,6 +332,26 @@ export interface paths {
         };
         /** Results Get */
         get: operations["results_get_api_v1_results__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/results/{run_id}/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Results Profiles
+         * @description Metric profiles under which this run has a stored result (primary first).
+         */
+        get: operations["results_profiles_api_v1_results__run_id__profiles_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1030,6 +1087,52 @@ export interface components {
             notes?: string | null;
             origin?: components["schemas"]["DatasetOrigin"] | null;
             signal?: components["schemas"]["SignalSpec"] | null;
+        };
+        /** MetricDefinition */
+        MetricDefinition: {
+            /** Aggregation */
+            aggregation: string;
+            better: components["schemas"]["BetterDirection"];
+            /** Display Name */
+            display_name: string;
+            /** Formula */
+            formula: string;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Requires Reference
+             * @default true
+             */
+            requires_reference: boolean;
+            /** Unit */
+            unit: string;
+        };
+        /** MetricProfile */
+        MetricProfile: {
+            /**
+             * Deprecated
+             * @default false
+             */
+            deprecated: boolean;
+            /** Description */
+            description: string;
+            /**
+             * Frozen
+             * @default false
+             */
+            frozen: boolean;
+            /** Metrics */
+            metrics: components["schemas"]["MetricDefinition"][];
+            /** Parameters */
+            parameters?: {
+                [key: string]: unknown;
+            };
+            /** Profile Id */
+            profile_id: string;
+            /** Version */
+            version: number;
         };
         /**
          * MetricStatus
@@ -2194,6 +2297,57 @@ export interface operations {
             };
         };
     };
+    metric_profiles_api_v1_metrics_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricProfile"][];
+                };
+            };
+        };
+    };
+    metric_profile_api_v1_metrics_profiles__profile_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricProfile"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     models_api_v1_models_get: {
         parameters: {
             query?: never;
@@ -2236,7 +2390,9 @@ export interface operations {
     };
     results_get_api_v1_results__run_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                profile?: string | null;
+            };
             header?: never;
             path: {
                 run_id: string;
@@ -2252,6 +2408,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvaluationResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    results_profiles_api_v1_results__run_id__profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
             /** @description Validation Error */

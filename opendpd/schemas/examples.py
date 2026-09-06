@@ -38,7 +38,7 @@ from .experiment import (
     TaskType,
     TrainingConfig,
 )
-from .metrics import MetricDefinition, MetricProfile
+from .metrics import MetricProfile
 from .results import DatasetEvidence, EvaluationResult, ModelEvidence, SignalReference
 from .run import RunError, RunEvent, RunEventType, RunRecord, RunStatus, WorkerInfo
 
@@ -55,40 +55,14 @@ SOFTWARE = SoftwareProvenance(
 
 def legacy_metric_profile() -> MetricProfile:
     """Descriptor of the historical OpenDPD metrics (values frozen in tests/golden)."""
-    return MetricProfile(
-        profile_id="legacy-opendpd-v1",
-        version=1,
-        frozen=True,
-        description="Historical OpenDPD metrics as implemented in utils/metrics.py "
-                    "(OpenDPDv1/v2 papers and benchmark_report.md).",
-        parameters={
-            "segmenting": "independent nperseg segments from the dataset spec",
-            "psd": "scipy.signal.welch, nperseg=nperseg, scaling=spectrum, two-sided, mean over segments",
-            "main_channel": "[-bw_main_ch/2, +bw_main_ch/2] split into n_sub_ch sub-channels",
-            "normalization": "none; signals compared as stored (target = gain * input for DPD)",
-            "sample_range": "whole split, zero-padded last segment",
-        },
-        metrics=[
-            MetricDefinition(name="NMSE", display_name="NMSE", unit="dB", better=BetterDirection.lower,
-                             formula="mean over segments of 10*log10(sum|e|^2 / sum|y|^2)",
-                             aggregation="mean of per-segment dB (not pooled)"),
-            MetricDefinition(name="EVM", display_name="Spectral EVM (repo-specific)", unit="dB",
-                             better=BetterDirection.lower,
-                             formula="20*log10(mean over segments of mean over sub-channels of "
-                                     "mean|X_pred - X_ref| / mean|X_ref|), FFT of nperseg samples",
-                             aggregation="mean of sub-channel ratios, then dB",
-                             notes="Not a demodulated constellation EVM. Do not compare with standard EVM."),
-            MetricDefinition(name="ACLR_L", display_name="ACLR left", unit="dBc", better=BetterDirection.lower,
-                             formula="10*log10(P_adjacent_left / max sub-channel power)",
-                             aggregation="Welch PSD averaged over segments", requires_reference=False),
-            MetricDefinition(name="ACLR_R", display_name="ACLR right", unit="dBc", better=BetterDirection.lower,
-                             formula="10*log10(P_adjacent_right / max sub-channel power)",
-                             aggregation="Welch PSD averaged over segments", requires_reference=False),
-            MetricDefinition(name="ACLR_AVG", display_name="ACLR average", unit="dBc",
-                             better=BetterDirection.lower, formula="(ACLR_L + ACLR_R) / 2",
-                             aggregation="arithmetic mean of dB values", requires_reference=False),
-        ],
-    )
+    from opendpd.core.metrics.legacy_v1 import PROFILE
+    return PROFILE
+
+
+def general_metric_profile() -> MetricProfile:
+    """Pooled NMSE, in-band error and ACPR with explicit conventions (S08)."""
+    from opendpd.core.metrics.general_v1 import PROFILE
+    return PROFILE
 
 
 def dataset_builtin() -> DatasetManifest:
@@ -382,6 +356,7 @@ def all_examples() -> Dict[str, object]:
     """Name -> model instance; names double as mock fixture file names."""
     return {
         "metric_profile_legacy": legacy_metric_profile(),
+        "metric_profile_general": general_metric_profile(),
         "dataset_builtin": dataset_builtin(),
         "dataset_missing_metadata": dataset_missing_metadata(),
         "diagnostics_missing_metadata": diagnostics_missing_metadata(),

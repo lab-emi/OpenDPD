@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import ValidationError
 
 from opendpd import __version__
+from opendpd.core.metrics import PROFILES
 from opendpd.core.registry import RegistryError, get_model, validate_parameters
 from opendpd.schemas import SCHEMA_VERSION, ExperimentConfig, ResolvedExperimentConfig, ResolutionInfo, TaskType
 
@@ -146,10 +147,10 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
                                   f"checkpoint selection for {config.task.value} is fixed to validation "
                                   f"{selection} by protocol", "remove the field or use the protocol value"))
 
-    if config.evaluation.profile_id != "legacy-opendpd-v1":
+    if config.evaluation.profile_id not in PROFILES:
         issues.append(ConfigIssue("evaluation.profile_id",
-                                  f"metric profile '{config.evaluation.profile_id}' is not available",
-                                  "only 'legacy-opendpd-v1' exists until S08 adds new profiles"))
+                                  f"metric profile '{config.evaluation.profile_id}' is not registered",
+                                  "one of: " + ", ".join(sorted(PROFILES))))
 
     if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task != TaskType.run_dpd:
         warn.append(ConfigIssue("training.epochs",

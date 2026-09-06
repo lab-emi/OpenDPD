@@ -15,10 +15,17 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
     await expect(page.getByText(/Smoke recipe: a few epochs/)).toBeVisible()
     await expect(page.getByText('Configuration is valid')).toBeVisible()
     await page.getByLabel('Name (optional)').fill('e2e smoke')
+    // the metric profile is an explicit, registry-backed choice (S08); the default stays the frozen legacy one
+    await page.getByRole('button', { name: 'Advanced settings' }).click()
+    await page.getByLabel('Metric profile').click()
+    await page.getByRole('option', { name: /general-spectral-v1/ }).click()
+    await expect(page.getByText('Configuration is valid')).toBeVisible()
     await page.getByRole('button', { name: 'Start run' }).click()
 
     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
     expect(state.submitted).toHaveLength(1)
+    const submittedConfig = state.submitted[0]?.['config'] as { evaluation?: { profile_id?: string } } | undefined
+    expect(submittedConfig?.evaluation?.profile_id).toBe('general-spectral-v1')
     await expect(page.getByRole('heading', { level: 1, name: 'e2e smoke' })).toBeVisible()
     await expect(page.getByText('Succeeded').first()).toBeVisible()
     // refresh: same run, no second submission
@@ -36,6 +43,13 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
     await expect(page.locator('[data-mock="true"]')).toBeVisible()
     await expect(page.locator('[data-metric="NMSE"]')).toContainText('dB')
     await expect(page.locator('[data-metric="NMSE"]')).toContainText('lower is better')
+    await expect(page.locator('[data-profile="legacy-opendpd-v1"]')).toBeVisible()
+    await page.getByLabel('Metric profile').click()
+    await page.getByRole('option', { name: 'general-spectral-v1' }).click()
+    await expect(page.locator('[data-profile="general-spectral-v1"]')).toBeVisible()
+    await expect(page.locator('[data-metric="IBE"]')).toContainText('-23.10 dB')
+    await page.getByRole('button', { name: 'Metric definitions' }).click()
+    await expect(page.getByText(/pooled over all valid samples/)).toBeVisible()
   })
 
   test('main pages fit 1366×768 and 1920×1080 without horizontal scroll', async ({ page }, testInfo) => {

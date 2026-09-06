@@ -12,6 +12,7 @@ import type {
   EvaluationResult,
   ExperimentConfigInput,
   LogPage,
+  MetricProfile,
   ModelInfo,
   RecipeInfo,
   ResolvedExperimentConfig,
@@ -31,7 +32,9 @@ export const keys = {
   run: (id: string) => ['run', id] as const,
   runConfig: (id: string) => ['run', id, 'config'] as const,
   runArtifacts: (id: string) => ['run', id, 'artifacts'] as const,
-  result: (id: string) => ['result', id] as const,
+  result: (id: string, profile: string | null = null) => ['result', id, profile ?? 'primary'] as const,
+  resultProfiles: (id: string) => ['result', id, 'profiles'] as const,
+  metricProfiles: ['metric-profiles'] as const,
 }
 
 export const useCapabilities = () =>
@@ -61,8 +64,15 @@ export const useRunConfig = (id: string, enabled = true) =>
   useQuery({ queryKey: keys.runConfig(id), queryFn: () => api.get<ResolvedExperimentConfig>(`/runs/${encodeURIComponent(id)}/config`), enabled })
 export const useRunArtifacts = (id: string, enabled = true) =>
   useQuery({ queryKey: keys.runArtifacts(id), queryFn: () => api.get<ArtifactManifest>(`/runs/${encodeURIComponent(id)}/artifacts`), enabled })
-export const useResult = (id: string, enabled = true) =>
-  useQuery({ queryKey: keys.result(id), queryFn: () => api.get<EvaluationResult>(`/results/${encodeURIComponent(id)}`), enabled, retry: false })
+export const useResult = (id: string, enabled = true, profile: string | null = null) =>
+  useQuery({
+    queryKey: keys.result(id, profile),
+    queryFn: () => api.get<EvaluationResult>(`/results/${encodeURIComponent(id)}${profile ? `?profile=${encodeURIComponent(profile)}` : ''}`),
+    enabled,
+    retry: false,
+  })
+export const useResultProfiles = (id: string) => useQuery({ queryKey: keys.resultProfiles(id), queryFn: () => api.get<string[]>(`/results/${encodeURIComponent(id)}/profiles`) })
+export const useMetricProfiles = () => useQuery({ queryKey: keys.metricProfiles, queryFn: () => api.get<MetricProfile[]>('/metrics/profiles'), staleTime: Infinity })
 
 export const fetchLogPage = (id: string, offset: number, limit = 500) =>
   api.get<LogPage>(`/runs/${encodeURIComponent(id)}/logs?offset=${offset}&limit=${limit}`)

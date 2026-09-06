@@ -25,14 +25,13 @@ from opendpd.schemas import (
     Artifact,
     ArtifactKind,
     ArtifactManifest,
-    BetterDirection,
     DatasetEvidence,
     DPDReference,
     EvaluationResult,
     EvidenceType,
     ExperimentConfig,
     FileRef,
-    MetricStatus,
+    MetricProfile,
     MetricValue,
     ModelEvidence,
     PAReference,
@@ -72,9 +71,9 @@ RESOLVED_CONFIG_FILE = "config.resolved.json"
 PROVENANCE_FILE = "provenance.json"
 ARTIFACTS_FILE = "artifacts.json"
 RESULT_FILE = "result.json"
+RESULTS_DIR = "results"          # one result per metric profile
 
 METRIC_COLUMNS = ("NMSE", "EVM", "ACLR_L", "ACLR_R", "ACLR_AVG")
-METRIC_UNITS = {"NMSE": "dB", "EVM": "dB", "ACLR_L": "dBc", "ACLR_R": "dBc", "ACLR_AVG": "dBc"}
 SMOKE_EPOCH_LIMIT = 10
 
 
@@ -104,8 +103,9 @@ def load_artifacts(ws: Workspace, run_id: str) -> Optional[ArtifactManifest]:
     return ArtifactManifest.model_validate(read_json(path)) if path.exists() else None
 
 
-def load_result(ws: Workspace, run_id: str) -> Optional[EvaluationResult]:
-    path = ws.run_dir(run_id) / RESULT_FILE
+def load_result(ws: Workspace, run_id: str, profile_id: Optional[str] = None) -> Optional[EvaluationResult]:
+    """The primary result (configured profile) or the stored result under another profile."""
+    path = ws.run_dir(run_id) / (RESULT_FILE if profile_id is None else f"{RESULTS_DIR}/{profile_id}.json")
     return EvaluationResult.model_validate(read_json(path)) if path.exists() else None
 
 
@@ -372,14 +372,22 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
                              message="the step finished but a required artifact is missing",
                              hint="see logs/ in the run directory")
         elif resolved.task != TaskType.run_dpd:
+            from opendpd.services.evaluation import evaluate_all
+
             try:
-                result = build_result(ws, run_id, resolved, manifest, project)
-                write_json_atomic(run_dir / RESULT_FILE, result)
-                result_id = result.result_id
-                emit(RunEventType.artifact, {"artifact_id": "result", "kind": "result", "path": RESULT_FILE})
+                emit(RunEventType.progress, {"epoch": None, "total_epochs": None, "phase": "evaluate"})
+                with run_in_directory(run_dir):
+                    results = evaluate_all(ws, run_id, resolved, manifest)
+                result_id = results[resolved.evaluation.profile_id].result_id
+                emit(RunEventType.artifact, {"artifact_id": "result", "kind": "result", "path": RESULT_FILE,
+                                             "profiles": sorted(results)})
             except (ValidationError, ValueError, KeyError) as err:
                 outcome = RunStatus.failed
-                error = RunError(code="result_invalid", stage="finalize", message=f"{type(err).__name__}: {err}")
+                error = RunError(code="result_invalid", stage="evaluate", message=f"{type(err).__name__}: {err}")
+            except Exception as err:  # noqa: BLE001 - evaluation failures are recorded, never hidden
+                outcome = RunStatus.failed
+                error = RunError(code="evaluation_failed", stage="evaluate", message=f"{type(err).__name__}: {err}",
+                                 traceback_tail="".join(traceback.format_exc().splitlines(keepends=True)[-25:]))
 
     if outcome == RunStatus.running:  # pragma: no cover - defensive
         outcome = RunStatus.failed
@@ -463,8 +471,10 @@ def _best_row(run_dir: Path, manifest: ArtifactManifest) -> Dict[str, str]:
     return rows[-1]
 
 
-def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest,
-                 project) -> EvaluationResult:
+def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest, *,
+                 profile: MetricProfile, metrics: List[MetricValue], n_valid: int,
+                 target_gain: Optional[float]) -> EvaluationResult:
+    """Assemble the evidence around metrics scored by ``opendpd.core.metrics``."""
     run_dir = ws.run_dir(run_id)
     dataset = ws.get_dataset(resolved.dataset.id)
     row = _best_row(run_dir, manifest)
@@ -472,23 +482,8 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     n_params_match = re.search(r"_P_(\d+)", checkpoint.file.path)
     n_params = int(n_params_match.group(1)) if n_params_match else None
 
-    metrics: List[MetricValue] = []
-    for name in METRIC_COLUMNS:
-        raw = row.get(f"TEST_{name}")
-        value = _as_float(raw)
-        if value is None:
-            metrics.append(MetricValue(name=name, unit=METRIC_UNITS[name], better=BetterDirection.lower,
-                                       status=MetricStatus.invalid if raw not in (None, "") else MetricStatus.failed,
-                                       reason=f"non-finite or missing TEST_{name} in the legacy log ({raw!r})"))
-        else:
-            metrics.append(MetricValue(name=name, unit=METRIC_UNITS[name], better=BetterDirection.lower, value=value))
-
     nperseg = dataset.signal.nperseg
-    n_test = None
-    if dataset.split.boundaries and "test" in dataset.split.boundaries:
-        start, end = dataset.split.boundaries["test"]
-        n_test = end - start
-    n_segments = math.ceil(n_test / nperseg) if (n_test and nperseg) else None
+    n_segments = math.ceil(n_valid / nperseg) if (n_valid and nperseg) else None
 
     limitations: List[str] = []
     if resolved.training.epochs < SMOKE_EPOCH_LIMIT:
@@ -507,10 +502,9 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                     n_parameters=n_params, lookahead_samples=_lookahead(resolved.model.key)))
     else:
         evidence = EvidenceType.dpd_surrogate
-        gain = getattr(project, "target_gain", None)
         reference = SignalReference(kind="linear_gain_target", description="target = gain * PA input (test split)",
                                     gain_rule="max|y_train| / max|x_train| (legacy utils.util.set_target_gain)",
-                                    gain_value=float(gain) if gain is not None else None)
+                                    gain_value=target_gain)
         pa = resolved.pa_reference
         models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=run_id, weights_sha256=checkpoint.file.sha256,
                                     n_parameters=n_params, lookahead_samples=_lookahead(resolved.model.key)))
@@ -518,19 +512,18 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                     lookahead_samples=_lookahead(pa.model.key)))
         limitations.append(f"simulated through the learned PA surrogate {pa.run_id}; not a measured PA output")
 
-    software = software_provenance()
     return EvaluationResult(
-        result_id=f"res-{run_id[4:]}", run_id=run_id, source="opendpd-studio",
-        evidence_type=evidence, metric_profile_id=resolved.evaluation.profile_id, metric_profile_version=1,
+        result_id=f"res-{run_id[4:]}" + ("" if profile.profile_id == resolved.evaluation.profile_id else f"-{profile.profile_id}"),
+        run_id=run_id, source="opendpd-studio",
+        evidence_type=evidence, metric_profile_id=profile.profile_id, metric_profile_version=profile.version,
         dataset=DatasetEvidence(dataset_id=dataset.dataset_id, split="test", raw_sha256=dataset.raw_sha256,
                                 preprocessing_version=resolved.dataset.preprocessing_version,
-                                split_version=resolved.dataset.split_version, n_samples=n_test),
+                                split_version=resolved.dataset.split_version, n_samples=n_valid),
         models=models, reference=reference,
-        valid_sample_range=(0, n_segments * nperseg) if n_segments else None,
-        n_segments=n_segments, nperseg=nperseg,
+        valid_sample_range=(0, n_valid), n_segments=n_segments, nperseg=nperseg,
         metrics=metrics, selected_epoch=int(row["EPOCH"]) if "EPOCH" in row else None,
         history=FileRef(path=manifest.by_kind(ArtifactKind.log_history)[0].file.path),
-        software=software, device=resolved.execution.device, seed=resolved.training.seed,
+        software=software_provenance(), device=resolved.execution.device, seed=resolved.training.seed,
         numeric_mode=f"float32 / reproducibility={resolved.training.reproducibility}",
         limitations=limitations,
     )

@@ -52,6 +52,7 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
   const running = mock<Json>('run_running')
   const events = mock<Json[]>('events_running')
   const result = mock<Json>('result_pa_modeling_mock')
+  const profiles = [mock<Json>('metric_profile_legacy'), mock<Json>('metric_profile_general')]
   const resolved = mock<Json>('resolved_train_pa_smoke')
   const state: FakeState = { datasets: [], runs: [], submitted: [], diagnostics: {} }
   const rawVersion: Json = { version: 'raw-v1', base_version: null, created_at: '2026-09-06T08:00:00Z', params: null, code_version: null, fit_range: null, record: {}, n_samples: 20000, split: dataset['split'], files: [], sha256: null }
@@ -147,7 +148,13 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
       if (sub === 'config') return json(route, resolved)
       if (sub === '') return json(route, run)
     }
-    if (path.startsWith('/results/')) return json(route, { ...result, run_id: path.split('/')[2], is_mock: true })
+    if (path === '/metrics/profiles') return json(route, profiles)
+    if (path.endsWith('/profiles') && path.startsWith('/results/')) return json(route, ['legacy-opendpd-v1', 'general-spectral-v1'])
+    if (path.startsWith('/results/')) {
+      const profile = url.searchParams.get('profile') ?? 'legacy-opendpd-v1'
+      const general = { metric_profile_id: 'general-spectral-v1', result_id: 'res-e2e-general', metrics: [{ name: 'NMSE', value: -22.5, unit: 'dB', better: 'lower', status: 'ok', reason: null }, { name: 'IBE', value: -23.1, unit: 'dB', better: 'lower', status: 'ok', reason: null }, { name: 'ACPR_L', value: -30.2, unit: 'dBc', better: 'lower', status: 'ok', reason: null }, { name: 'ACPR_R', value: -31.0, unit: 'dBc', better: 'lower', status: 'ok', reason: null }] }
+      return json(route, { ...result, ...(profile === 'general-spectral-v1' ? general : {}), run_id: path.split('/')[2], is_mock: true })
+    }
     return json(route, { error: { code: 'not_found', message: `unmocked ${method} ${path}`, details: [], hint: null } }, 404)
   })
   return state
