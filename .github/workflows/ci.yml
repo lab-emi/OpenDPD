@@ -68,7 +68,7 @@ jobs:
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install OpenDPD
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,gui]"
 
       - name: Run unit and smoke tests
         run: pytest tests/ -v -m "not extended" --durations=10

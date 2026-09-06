@@ -1,0 +1,76 @@
+"""Versioned data contracts shared by the GUI, CLI and Python API.
+
+Everything the three entry points exchange (dataset manifests, diagnostic
+reports, experiment configurations, run records and events, metric profiles,
+evaluation results and artifact manifests) is defined here once, with
+Pydantic v2. The FastAPI OpenAPI document and the frontend types are
+generated from these models; nothing is hand-written twice.
+
+Scientific semantics are versioned: ``SCHEMA_VERSION`` covers the field
+layout, ``MetricProfile.version`` covers metric definitions.
+"""
+
+from .artifacts import Artifact, ArtifactKind, ArtifactManifest
+from .common import (
+    SCHEMA_VERSION,
+    BetterDirection,
+    EvidenceType,
+    FileRef,
+    MetricStatus,
+    MetricValue,
+    Severity,
+    SoftwareProvenance,
+    utcnow,
+)
+from .dataset import (
+    DatasetManifest,
+    DatasetOrigin,
+    DatasetSource,
+    DatasetSourceKind,
+    SignalSpec,
+    SplitSpec,
+)
+from .diagnostics import DiagnosticItem, DiagnosticReport
+from .experiment import (
+    DatasetRef,
+    DPDReference,
+    EvaluationConfig,
+    ExecutionConfig,
+    ExperimentConfig,
+    ModelSpec,
+    PAReference,
+    QuantizationConfig,
+    ResolvedExperimentConfig,
+    ResolutionInfo,
+    TaskType,
+    TrainingConfig,
+)
+from .metrics import MetricDefinition, MetricProfile
+from .results import DatasetEvidence, EvaluationResult, ModelEvidence, SignalReference
+from .run import (
+    TERMINAL_STATUSES,
+    RunError,
+    RunEvent,
+    RunEventType,
+    RunRecord,
+    RunStatus,
+    WorkerInfo,
+    can_transition,
+    heartbeat_is_stale,
+)
+
+__all__ = [
+    "SCHEMA_VERSION", "utcnow",
+    "Artifact", "ArtifactKind", "ArtifactManifest",
+    "BetterDirection", "EvidenceType", "FileRef", "MetricStatus", "MetricValue", "Severity",
+    "SoftwareProvenance",
+    "DatasetManifest", "DatasetOrigin", "DatasetSource", "DatasetSourceKind", "SignalSpec", "SplitSpec",
+    "DiagnosticItem", "DiagnosticReport",
+    "DatasetRef", "DPDReference", "EvaluationConfig", "ExecutionConfig", "ExperimentConfig",
+    "ModelSpec", "PAReference", "QuantizationConfig", "ResolvedExperimentConfig", "ResolutionInfo",
+    "TaskType", "TrainingConfig",
+    "MetricDefinition", "MetricProfile",
+    "DatasetEvidence", "EvaluationResult", "ModelEvidence", "SignalReference",
+    "TERMINAL_STATUSES", "RunError", "RunEvent", "RunEventType", "RunRecord", "RunStatus",
+    "WorkerInfo", "can_transition", "heartbeat_is_stale",
+]

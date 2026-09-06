@@ -40,7 +40,7 @@ jobs:
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install OpenDPD
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,gui]"
 
       # Runs the complete suite, including tests marked "extended"
       # (all-backbone training smoke tests and all-dataset E2E chains).

@@ -10,7 +10,6 @@ import hashlib
 from pathlib import Path
 
 import numpy as np
-import pytest
 import torch
 
 from models import CoreModel
@@ -28,8 +27,7 @@ def test_fixture_is_unchanged():
 def test_legacy_checkpoint_loads_and_runs():
     state = torch.load(CHECKPOINT, map_location="cpu", weights_only=True)
     model = CoreModel(input_size=2, hidden_size=23, num_layers=1, backbone_type="gru")
-    missing, unexpected = model.load_state_dict(state, strict=True), None
-    assert unexpected is None
+    model.load_state_dict(state, strict=True)
 
     n_params = sum(p.numel() for p in model.parameters())
     assert n_params == 1911, "parameter count encoded in the model id must match"
