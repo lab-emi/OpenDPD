@@ -589,10 +589,8 @@ def result_pa_streaming_mock() -> EvaluationResult:
     base = result_pa_modeling_mock()
     execution = ExecutionEvidence(
         semantics="streaming_stateful", state="recurrent", chunk_samples=1024, lookahead_samples=0, lookahead_s=0.0,
-        history_samples=None, warmup_samples=612, tail_policy="zero_pad",
-        consistency=StreamConsistency(chunk_samples=1024, max_abs_error=2.4e-6, tolerance=1e-4, within_tolerance=True),
-        note=("algorithmic look-ahead: the future samples an output needs (an information bound); not the measured "
-              "latency of an implementation"))
+        history_samples=None, warmup_samples=612,
+        consistency=StreamConsistency(chunk_samples=1024, max_abs_error=2.4e-6, tolerance=1e-4, within_tolerance=True))
     models = [m.model_copy(update={"model": ModelSpec(key="gru_stream", parameters=m.model.parameters),
                                    "execution_semantics": "streaming_stateful"}) for m in base.models]
     return base.model_copy(update={

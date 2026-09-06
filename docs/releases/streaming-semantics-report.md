@@ -71,7 +71,7 @@ at the dataset's rate. It is not a latency.
 
 A streaming variant of a look-ahead model would hold back that many samples
 (`WindowedStream` with `lookahead_samples` declared) and end the stream with
-`zero_pad`, which is not the offline symmetric padding at segment ends: one
+zeros, which is not the offline symmetric padding at segment ends: one
 more reason it is a new entry with its own evidence.
 
 ## 5. What this report does not claim

@@ -166,7 +166,6 @@ function ExecutionPanel({ result }: { result: EvaluationResult }) {
     [t('results.detail.execution.lookahead'), `${t('results.detail.execution.samples', { n: e.lookahead_samples })} · ${micro}`],
     [t('results.detail.execution.history'), typeof e.history_samples === 'number' ? t('results.detail.execution.samples', { n: e.history_samples }) : t('common.na')],
     [t('results.detail.execution.warmup'), typeof e.warmup_samples === 'number' ? t('results.detail.execution.samples', { n: e.warmup_samples }) : t('results.detail.execution.notMeasured')],
-    [t('results.detail.execution.tail'), e.tail_policy],
   ]
   const c = e.consistency
   return (
@@ -186,7 +185,7 @@ function ExecutionPanel({ result }: { result: EvaluationResult }) {
         ))}
       </dl>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-        {e.note}
+        {t('results.detail.execution.note')}
       </Typography>
     </Paper>
   )

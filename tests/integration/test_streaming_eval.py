@@ -70,7 +70,6 @@ def test_a_pa_run_is_rescored_under_streaming_semantics_with_its_evidence(ws, pa
     assert e.lookahead_samples == 0 and e.lookahead_s == 0.0 and e.history_samples is None
     assert e.consistency.within_tolerance and e.consistency.max_abs_error <= e.consistency.tolerance
     assert e.warmup_samples is not None and e.warmup_samples >= 0
-    assert "not the measured latency" in e.note
     assert result.models[0].model.key == "gru_stream" and result.models[0].execution_semantics == "streaming_stateful"
     assert any("not comparable with offline_segmented results of gru" in lim for lim in result.limitations)
     offline = load_result(ws, pa.run_id)

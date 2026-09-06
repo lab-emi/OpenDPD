@@ -51,11 +51,11 @@ block of samples to outputs:
 | Term | Definition | Where it shows |
 |---|---|---|
 | `lookahead_samples` | future samples an output needs. The runner holds back that many inputs: `y[t]` is final once `x[t + lookahead]` arrived. | registry `lookahead_samples`; result `execution.lookahead_samples` and `lookahead_s = lookahead / sample rate` |
-| latency | **not** defined by this contract. The look-ahead is an information bound; the latency of an implementation is a measurement of that implementation. Every result says so (`execution.note`). | |
+| latency | **not** defined by this contract. The look-ahead is an information bound; the latency of an implementation is a measurement of that implementation. Every result says so (the result page and the tutorial). | |
 | `history_samples` | past inputs a window model keeps between chunks (zero after `reset`) | `execution.history_samples` |
 | `warmup_samples` | leading outputs after `reset` that differ from an uninterrupted stream by more than the tolerance; **measured** on the evaluated signal by `measure_warmup`, never assumed | `execution.warmup_samples` |
 | valid range | every output from `warmup_samples` on; the chunk-consistency check uses it | `chunk_consistency(...)["valid_from"]` |
-| `tail_policy` | what `flush` feeds for the missing future samples: `zero_pad` (the only policy in v1) | `execution.tail_policy` |
+| tail | `flush` feeds zeros for the missing future samples (the one tail policy of v1; a variant that needs another is a v2 of the contract) | `flush()` |
 | padding | a window model's own zero padding applies only outside the stream; inside it the history buffer replaces the padding | `WindowedStream` |
 | state reset | only `reset()` resets; a chunk boundary never does (the offline segment reset is exactly what a stream does not do) | `test_the_state_carried_is_the_previous_chunks_tail_never_this_chunks` |
 

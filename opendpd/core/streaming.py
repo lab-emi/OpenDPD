@@ -9,14 +9,14 @@ compared with, or inherited from, the offline ones.
 Semantics every variant declares in its ``StreamSpec``:
 
 * ``lookahead_samples``: future samples an output needs. The runner holds back that many inputs, so the output for
-  sample ``t`` is finalised once ``x[t + lookahead]`` has arrived; ``flush`` finalises the tail with the declared
-  ``tail_policy``. This is the algorithmic look-ahead, an information bound; it is not the latency of any
-  implementation, which is a measurement.
+  sample ``t`` is finalised once ``x[t + lookahead]`` has arrived; ``flush`` finalises the tail. This is the
+  algorithmic look-ahead, an information bound; it is not the latency of any implementation, which is a measurement.
 * ``history_samples``: past samples a window model keeps between chunks (zero-filled after ``reset``).
 * ``warmup_samples``: leading outputs after ``reset`` that depend on the initial state; measured with
   :func:`measure_warmup`, never assumed.
 * valid range: every output after warm-up. The chunk-consistency check compares the streamed outputs with the
   full-sequence run of the same variant from the same reset; the two must agree within ``tolerance`` everywhere.
+* tail: ``flush`` feeds zeros for the missing future samples (the one tail policy of streaming-v1).
 """
 
 from __future__ import annotations
@@ -31,8 +31,6 @@ OFFLINE_SEMANTICS = "offline_segmented"
 STREAMING_SEMANTICS = "streaming_stateful"
 DEFAULT_CHUNK_SAMPLES = 1024
 CONSISTENCY_TOLERANCE = 1e-4          # max |streamed - full sequence| in normalised units (float32 arithmetic)
-LOOKAHEAD_NOTE = ("algorithmic look-ahead: the future samples an output needs (an information bound); "
-                  "not the measured latency of an implementation")
 
 
 @dataclass(frozen=True)
@@ -41,17 +39,12 @@ class StreamSpec:
     lookahead_samples: int = 0
     history_samples: Optional[int] = None       # window models only
     warmup_samples: Optional[int] = None        # measured (measure_warmup); None = not measured
-    tail_policy: str = "zero_pad"               # what flush() feeds for the missing future samples
 
     def latency_s(self, sample_rate_hz: float) -> float:
         return self.lookahead_samples / float(sample_rate_hz)
 
     def valid_start(self) -> int:
         return int(self.warmup_samples or 0)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {"state": self.state, "lookahead_samples": self.lookahead_samples, "history_samples": self.history_samples,
-                "warmup_samples": self.warmup_samples, "tail_policy": self.tail_policy}
 
 
 def _iq(x: np.ndarray) -> np.ndarray:
@@ -87,7 +80,8 @@ class StreamingModel(ABC):
 
     @abstractmethod
     def flush(self) -> np.ndarray:
-        """Finalise the outputs still held back by the look-ahead buffer (empty for a causal model)."""
+        """Finalise the outputs still held back by the look-ahead buffer with zeros for the missing future
+        (empty for a causal model)."""
 
     def step(self, sample: Sequence[float]) -> np.ndarray:
         """One sample in; (0 or 1, 2) out."""
@@ -133,12 +127,9 @@ class WindowedStream(StreamingModel):
     """A model whose output at ``t`` reads ``x[t - history .. t + lookahead]``: the runner keeps the history and
     holds back the look-ahead; the model itself only maps a contiguous block to the outputs of its samples."""
 
-    def __init__(self, history_samples: int, lookahead_samples: int = 0, warmup_samples: Optional[int] = 0,
-                 tail_policy: str = "zero_pad"):
-        if tail_policy != "zero_pad":
-            raise ValueError("the only tail policy defined by streaming-v1 is zero_pad")
+    def __init__(self, history_samples: int, lookahead_samples: int = 0, warmup_samples: Optional[int] = 0):
         self.spec = StreamSpec(state="window", lookahead_samples=int(lookahead_samples), history_samples=int(history_samples),
-                               warmup_samples=warmup_samples, tail_policy=tail_policy)
+                               warmup_samples=warmup_samples)
         self.reset()
 
     @abstractmethod

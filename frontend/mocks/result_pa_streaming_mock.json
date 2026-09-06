@@ -19,17 +19,14 @@
       "consistency": {
         "chunk_samples": 1024,
         "max_abs_error": 2.4e-06,
-        "reference": "full_sequence_same_reset",
         "tolerance": 0.0001,
         "within_tolerance": true
       },
       "history_samples": null,
       "lookahead_s": 0.0,
       "lookahead_samples": 0,
-      "note": "algorithmic look-ahead: the future samples an output needs (an information bound); not the measured latency of an implementation",
       "semantics": "streaming_stateful",
       "state": "recurrent",
-      "tail_policy": "zero_pad",
       "warmup_samples": 612
     },
     "extra": {},

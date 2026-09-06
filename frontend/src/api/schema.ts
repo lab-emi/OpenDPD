@@ -1565,17 +1565,13 @@ export interface components {
             lookahead_s?: number | null;
             /** Lookahead Samples */
             lookahead_samples: number;
-            /** Note */
-            note: string;
             /** Semantics */
             semantics: string;
             /**
              * State
              * @enum {string}
              */
-            state: "recurrent" | "window" | "none";
-            /** Tail Policy */
-            tail_policy: string;
+            state: "recurrent" | "window";
             /** Warmup Samples */
             warmup_samples?: number | null;
         };
@@ -2645,18 +2641,13 @@ export interface components {
         };
         /**
          * StreamConsistency
-         * @description Max |streamed - full-sequence| of the same variant from the same reset, over the valid range.
+         * @description Max |streamed - full sequence| of the same variant run from the same reset, over the valid range (streaming-v1).
          */
         StreamConsistency: {
             /** Chunk Samples */
             chunk_samples: number;
             /** Max Abs Error */
             max_abs_error: number;
-            /**
-             * Reference
-             * @default full_sequence_same_reset
-             */
-            reference: string;
             /** Tolerance */
             tolerance: number;
             /** Within Tolerance */

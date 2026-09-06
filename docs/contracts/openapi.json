@@ -2177,11 +2177,6 @@
             "title": "Lookahead Samples",
             "type": "integer"
           },
-          "note": {
-            "minLength": 1,
-            "title": "Note",
-            "type": "string"
-          },
           "semantics": {
             "minLength": 1,
             "title": "Semantics",
@@ -2190,15 +2185,9 @@
           "state": {
             "enum": [
               "recurrent",
-              "window",
-              "none"
+              "window"
             ],
             "title": "State",
-            "type": "string"
-          },
-          "tail_policy": {
-            "minLength": 1,
-            "title": "Tail Policy",
             "type": "string"
           },
           "warmup_samples": {
@@ -2219,9 +2208,7 @@
           "state",
           "chunk_samples",
           "lookahead_samples",
-          "tail_policy",
-          "consistency",
-          "note"
+          "consistency"
         ],
         "title": "ExecutionEvidence",
         "type": "object"
@@ -5309,7 +5296,7 @@
       },
       "StreamConsistency": {
         "additionalProperties": false,
-        "description": "Max |streamed - full-sequence| of the same variant from the same reset, over the valid range.",
+        "description": "Max |streamed - full sequence| of the same variant run from the same reset, over the valid range (streaming-v1).",
         "properties": {
           "chunk_samples": {
             "minimum": 1.0,
@@ -5320,11 +5307,6 @@
             "minimum": 0.0,
             "title": "Max Abs Error",
             "type": "number"
-          },
-          "reference": {
-            "default": "full_sequence_same_reset",
-            "title": "Reference",
-            "type": "string"
           },
           "tolerance": {
             "exclusiveMinimum": 0.0,

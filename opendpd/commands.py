@@ -484,7 +484,7 @@ def cmd_stream(args) -> int:
 
     try:
         ws = Workspace.open(Path(args.workspace))
-        config = stream_config(ws, args.run_id, chunk_samples=args.chunk, device=args.device, profile_id=args.profile)
+        config = stream_config(ws, args.run_id, chunk_samples=args.chunk, device=args.device)
         record = create_run(ws, config)
     except ConfigError as err:
         for issue in err.issues:
@@ -796,7 +796,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("run_id", help="a succeeded train_pa or train_dpd run whose model has a streaming variant (gru, gmp)")
     p.add_argument("--workspace", required=True)
     p.add_argument("--chunk", type=int, default=None, help="samples per chunk (default: the contract's 1024)")
-    p.add_argument("--profile", default=None, help="metric profile for the primary result (default: the run's)")
     p.add_argument("--device", default="cpu")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_stream)

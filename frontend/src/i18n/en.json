@@ -462,14 +462,13 @@
   "results.detail.execution.semantics": "Semantics",
   "results.detail.execution.state.recurrent": "recurrent state carried across chunks",
   "results.detail.execution.state.window": "sample history carried across chunks",
-  "results.detail.execution.state.none": "no state",
   "results.detail.execution.chunk": "Chunk",
   "results.detail.execution.lookahead": "Look-ahead",
   "results.detail.execution.history": "History",
   "results.detail.execution.warmup": "Warm-up (measured)",
   "results.detail.execution.notMeasured": "not measured",
-  "results.detail.execution.tail": "Tail policy",
   "results.detail.execution.samples": "{n} samples",
   "results.detail.execution.consistent": "Chunk consistency: streamed in chunks of {chunk} samples, the outputs match the full-sequence run of the same variant within {tolerance} (max error {error}).",
-  "results.detail.execution.inconsistent": "Chunk consistency FAILED: streamed in chunks of {chunk} samples, the outputs differ from the full-sequence run by up to {error} (tolerance {tolerance}); the numbers depend on the chunking."
+  "results.detail.execution.inconsistent": "Chunk consistency FAILED: streamed in chunks of {chunk} samples, the outputs differ from the full-sequence run by up to {error} (tolerance {tolerance}); the numbers depend on the chunking.",
+  "results.detail.execution.note": "Look-ahead is the future an output needs (an information bound), not the measured latency of an implementation. The tail is zero-padded at flush."
 }

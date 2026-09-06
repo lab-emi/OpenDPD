@@ -80,9 +80,8 @@ class ScalingInfo(StrictModel):
 
 
 class StreamConsistency(StrictModel):
-    """Max |streamed - full-sequence| of the same variant from the same reset, over the valid range."""
+    """Max |streamed - full sequence| of the same variant run from the same reset, over the valid range (streaming-v1)."""
 
-    reference: str = "full_sequence_same_reset"
     chunk_samples: int = Field(ge=1)
     max_abs_error: float = Field(ge=0)
     tolerance: float = Field(gt=0)
@@ -94,15 +93,14 @@ class ExecutionEvidence(StrictModel):
     results are segment-wise from a zero state and say so through ``ModelEvidence.execution_semantics``."""
 
     semantics: str = Field(min_length=1)
-    state: Literal["recurrent", "window", "none"]
+    state: Literal["recurrent", "window"]
     chunk_samples: int = Field(ge=1)
     lookahead_samples: int = Field(ge=0)
-    lookahead_s: Optional[float] = Field(default=None, ge=0)   # lookahead_samples / sample rate: a bound, not a latency
+    # lookahead_samples / sample rate: the future an output needs (an information bound), not a measured latency
+    lookahead_s: Optional[float] = Field(default=None, ge=0)
     history_samples: Optional[int] = Field(default=None, ge=0)
     warmup_samples: Optional[int] = Field(default=None, ge=0)  # measured on this signal (None = not measured)
-    tail_policy: str = Field(min_length=1)
-    consistency: StreamConsistency
-    note: str = Field(min_length=1)
+    consistency: StreamConsistency                             # the tail is zero-padded at flush (streaming-v1)
 
 
 class DatasetEvidence(StrictModel):

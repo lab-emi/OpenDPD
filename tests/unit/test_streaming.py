@@ -113,8 +113,7 @@ def test_warmup_is_measured_not_assumed():
     assert measure_warmup(Fir([1.0, 0.5], history=0, lookahead=1), x) == 0        # no past: nothing to warm up
     warm = measure_warmup(LeakyIntegrator(a=0.5), x)
     assert 8 <= warm <= 40                                                         # 0.5^k decays below 1e-4 near k = 14..17
-    spec = StreamSpec(state="recurrent", warmup_samples=warm)
-    assert spec.valid_start() == warm and spec.to_dict()["lookahead_samples"] == 0
+    assert StreamSpec(state="recurrent", warmup_samples=warm).valid_start() == warm
 
 
 def test_a_stream_that_loses_or_invents_samples_is_refused():
@@ -127,5 +126,3 @@ def test_a_stream_that_loses_or_invents_samples_is_refused():
         run_stream(Broken(), _signal(10), 5)
     with pytest.raises(ValueError):
         run_stream(LeakyIntegrator(), _signal(10), 0)
-    with pytest.raises(ValueError):
-        WindowedStream.__init__(Fir.__new__(Fir), history_samples=1, lookahead_samples=0, tail_policy="repeat")

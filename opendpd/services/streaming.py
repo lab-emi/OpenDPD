@@ -11,7 +11,6 @@ from opendpd.core.registry import STREAMING, get_model, streaming_variant_of
 from opendpd.core.streaming import (
     CONSISTENCY_TOLERANCE,
     DEFAULT_CHUNK_SAMPLES,
-    LOOKAHEAD_NOTE,
     RecurrentStream,
     StreamingModel,
     WindowedStream,
@@ -83,8 +82,7 @@ def streaming_model(key: str, core) -> StreamingModel:
         raise WorkspaceError(f"model '{key}' has no streaming adapter") from None
 
 
-def stream_config(ws: Workspace, run_id: str, *, chunk_samples: Optional[int] = None, device: str = "cpu",
-                  profile_id: Optional[str] = None) -> ExperimentConfig:
+def stream_config(ws: Workspace, run_id: str, *, chunk_samples: Optional[int] = None, device: str = "cpu") -> ExperimentConfig:
     """The run that scores a finished train_pa / train_dpd run's weights under its streaming variant: evaluate_pa
     for a PA, run_dpd (through the training surrogate) for a DPD. A new, separately stored result."""
     from opendpd.services.experiments import load_resolved, load_run
@@ -99,7 +97,7 @@ def stream_config(ws: Workspace, run_id: str, *, chunk_samples: Optional[int] = 
         raise WorkspaceError(f"model '{resolved.model.key}' has no registered streaming variant "
                              "(see `opendpd models` for keys with execution_semantics streaming_stateful)")
     model = ModelSpec(key=variant.key, parameters=dict(resolved.model.parameters))
-    evaluation = EvaluationConfig(profile_id=profile_id or resolved.evaluation.profile_id, chunk_samples=chunk_samples,
+    evaluation = EvaluationConfig(profile_id=resolved.evaluation.profile_id, chunk_samples=chunk_samples,
                                   evidence_type=EvidenceType.pa_modeling if resolved.task == TaskType.train_pa
                                   else EvidenceType.dpd_surrogate)
     common = dict(dataset=DatasetRef(id=resolved.dataset.id, preprocessing_version=resolved.dataset.preprocessing_version),
@@ -123,10 +121,9 @@ def stream_outputs(core, key: str, x: np.ndarray, *, chunk_samples: Optional[int
     evidence = ExecutionEvidence(
         semantics=STREAMING, state=spec.state, chunk_samples=chunk, lookahead_samples=spec.lookahead_samples,
         lookahead_s=spec.latency_s(sample_rate_hz), history_samples=spec.history_samples,
-        warmup_samples=measure_warmup(model, x, tolerance=tolerance), tail_policy=spec.tail_policy,
+        warmup_samples=measure_warmup(model, x, tolerance=tolerance),
         consistency=StreamConsistency(chunk_samples=chunk, max_abs_error=check["max_abs_error"][str(chunk)],
-                                      tolerance=tolerance, within_tolerance=check["within_tolerance"]),
-        note=LOOKAHEAD_NOTE)
+                                      tolerance=tolerance, within_tolerance=check["within_tolerance"]))
     return y, evidence
 
 
