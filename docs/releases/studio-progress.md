@@ -16,7 +16,7 @@ repository; "pending human" means a maintainer decision is required;
 | S06 packaging & one-command launch | done on Linux; **macOS/Windows not verified** | `86ddd7a` | `opendpd gui`, `opendpd doctor`, wheel/sdist carry the built frontend, packaged L2 test |
 | S07 data import, Dataset Doctor, traceable preprocessing | done | `4fea772` + `dd85377` | import roots + upload, `dataset-doctor-v1`, `preprocess-v1` versions, `contiguous-v1` split, datasets pages, J2 journey (mock) and headless CLI J2 on real data |
 | S08 versioned metrics & evaluation evidence | done | `999f031` + `51891cc` | `opendpd/core/metrics` registry (`legacy-opendpd-v1` frozen, `general-spectral-v1`), analytic reference tests, results re-scored from the best checkpoint under every profile, profile switcher and definitions in the GUI |
-| S09 PA training closure & experiment management | done except the human-gated items below | — | registry-generated model parameters, config import/export/re-run, device refusal at validation, GUI-vs-CLI consistency test, real-browser PA training on imported data |
+| S09 PA training closure & experiment management | done except the human-gated items below | `370616e` | registry-generated model parameters, config import/export/re-run, device refusal at validation, GUI-vs-CLI consistency test, real-browser PA training on imported data |
 
 ## S00 acceptance items
 

@@ -54,7 +54,7 @@ function coerceParam(spec: ParamSpec, raw: string): number | boolean | string | 
 }
 
 /** Removes the server-side resolution block so an exported (resolved) configuration can be resubmitted. */
-export function importableConfig(data: unknown): ExperimentConfigInput {
+function importableConfig(data: unknown): ExperimentConfigInput {
   if (data === null || typeof data !== 'object' || Array.isArray(data)) throw new Error('expected a JSON object')
   const { resolution: _resolution, ...rest } = data as Record<string, unknown>
   const cfg = rest as ExperimentConfigInput
