@@ -48,6 +48,20 @@ from .experiment import (
     TrainingConfig,
 )
 from .metrics import MetricDefinition, MetricProfile
+from .benchmark import (
+    PROTOCOL_ID as BENCHMARK_PROTOCOL_ID,
+    BaselineBand,
+    BenchmarkEntry,
+    BenchmarkPlan,
+    BenchmarkReport,
+    DataAudit,
+    EntryResult,
+    MetricStats,
+    RegressionBaseline,
+    RegressionCheck,
+    RegressionItem,
+    SeedScore,
+)
 from .package import (
     PACKAGE_VERSION,
     ImportReport,
@@ -85,6 +99,8 @@ from .run import (
 )
 
 __all__ = [
+    "BENCHMARK_PROTOCOL_ID", "BaselineBand", "BenchmarkEntry", "BenchmarkPlan", "BenchmarkReport", "DataAudit",
+    "EntryResult", "MetricStats", "RegressionBaseline", "RegressionCheck", "RegressionItem", "SeedScore",
     "SCHEMA_VERSION", "utcnow",
     "Artifact", "ArtifactKind", "ArtifactManifest",
     "BetterDirection", "EvidenceType", "FileRef", "MetricStatus", "MetricValue", "Severity",

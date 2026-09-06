@@ -54,3 +54,22 @@ jobs:
       # (all-backbone training smoke tests and all-dataset E2E chains).
       - name: Run full test suite
         run: pytest tests/ -v --durations=20
+
+      # benchmark-v1, cpu_regression tier on the measured built-in data: 4 entries x 3 seeds under the smoke
+      # budgets. The check is advisory until a maintainer approves the baseline (then it fails the job).
+      - name: benchmark-v1 cpu_regression (statistical regression, advisory until the baseline is approved)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          plan=benchmark/regression/cpu-regression-dpa-200mhz/plan.json
+          opendpd datasets import-builtin DPA_200MHz --workspace /tmp/bench-ws
+          opendpd benchmark run "$plan" --workspace /tmp/bench-ws
+          opendpd benchmark report "$plan" --workspace /tmp/bench-ws --out /tmp/bench-report.json --markdown /tmp/bench-report.md
+          opendpd benchmark check /tmp/bench-report.json --baseline benchmark/regression/cpu-regression-dpa-200mhz/baseline.json
+      - name: Upload the benchmark report
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-v1-cpu-regression-report
+          path: |
+            /tmp/bench-report.json
+            /tmp/bench-report.md

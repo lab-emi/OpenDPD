@@ -119,6 +119,21 @@ opendpd apply run-DPD --workspace WS --pa run-PA2    # score the same DPD throug
 - A least-squares PA is a PA-modeling reference only; it is refused as a
   surrogate for DPD simulation.
 
+## Benchmark protocol from the terminal
+
+```bash
+opendpd benchmark plan --dataset dpa-200mhz --tier cpu_regression --out plan.json
+opendpd benchmark run plan.json --workspace WS
+opendpd benchmark report plan.json --workspace WS --out report.json --markdown report.md
+opendpd benchmark baseline report.json --out baseline.json
+opendpd benchmark check report.json --baseline baseline.json
+```
+
+A plan fixes the model matrix, the budget and at least three seeds before
+anything runs; the report lists every seed next to the aggregate with the
+run ids and hashes behind each number; a baseline blocks a release only after
+a maintainer approved it (`docs/protocols/benchmark-protocol.md`).
+
 ## Reproduce, export and import a configuration
 
 - Every run's **Configuration** tab shows the resolved configuration (what

@@ -46,5 +46,15 @@ test machine, never from cloud CI variance.
 | `run_dpd` through the DPD's training surrogate vs the DPD run's own result (same weights, same reference gain), CPU | abs 1e-3 dB on every metric and on both no-DPD baselines | `test_apply_through_the_training_surrogate_reproduces_the_dpd_result` (S10); proposed, pending maintainer approval |
 | Packaged checkpoint imported into a new workspace and re-evaluated under the stored profile, CPU | rel 1e-4 / abs 1e-5 on every metric (the frozen-checkpoint row above) | `test_full_package_round_trips_into_a_new_workspace_and_re_evaluates` (S11); proposed, pending maintainer approval. Says nothing about re-training (`docs/protocols/experiment-packages.md`) |
 
-Re-training regressions are *statistical* (fixed seed set, budget, protocol)
-and use thresholds approved from baseline spread; see S12.
+| Least-squares MP/GMP fit of a known polynomial (analytic) | coefficients rel 1e-9 / abs 1e-11; ILA of a linear PA gives the identity within abs 1e-9 | `tests/unit/test_polynomial.py` (S12) |
+| Least-squares baseline re-evaluated from its stored coefficients | identical metrics (abs 1e-6): no seed, no epochs | `test_mp_fit_identifies_the_synthetic_pa_and_records_the_fit` (S12) |
+
+## Statistical tolerances (re-training layer, benchmark-v1)
+
+Re-training regressions are *statistical*: a pre-registered plan (fixed
+recipe, budget, metric profile, device) with at least three seeds. The
+regression band per entry and metric is the seed mean ± max(0.5 dB, 2 ×
+sample std) measured on a named machine and recorded in a
+`RegressionBaseline`; it blocks only once a maintainer approved it, in either
+direction (`docs/protocols/benchmark-protocol.md`). No baseline is approved
+yet: `benchmark/regression/` holds drafts for review.

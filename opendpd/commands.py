@@ -395,6 +395,75 @@ def cmd_doctor(args) -> int:
     return doctor(Path(args.workspace) if args.workspace else None)
 
 
+def cmd_benchmark(args) -> int:
+    from pydantic import ValidationError
+
+    from opendpd.schemas import RunStatus
+    from opendpd.services import benchmark as bm
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    text = sys.stderr if getattr(args, "json", False) else sys.stdout
+    try:
+        if args.benchmark_command == "plan":
+            seeds = [int(s) for s in args.seeds.split(",")] if args.seeds else bm.DEFAULT_SEEDS
+            plan = bm.make_plan(args.dataset, tier=args.tier, seeds=seeds, profile_id=args.profile, device=args.device,
+                                preprocessing_version=args.version)
+            bm.write_plan(plan, Path(args.out))
+            print(f"plan {plan.plan_sha256[:12]} written to {args.out}: {len(plan.entries)} entries x "
+                  f"{len(plan.seeds)} seeds, tier {plan.tier}, dataset {plan.dataset.id}")
+            return 0
+        if args.benchmark_command == "run":
+            plan = bm.load_plan(Path(args.plan))
+            ws = Workspace.open_or_create(Path(args.workspace))
+
+            def on_run(entry_id: str, seed: int, record) -> None:
+                print(f"{entry_id} seed {seed}: {record.run_id} {record.status.value}", file=text)
+
+            with contextlib.redirect_stdout(text):
+                runs = bm.run_plan(ws, plan, on_run=on_run)
+            failed = sorted(f"{e}/s{s}" for (e, s), r in runs.items() if r.status != RunStatus.succeeded)
+            expected = len(plan.entries) * len(plan.seeds)
+            if args.json:
+                _print_json({"plan_sha256": plan.plan_sha256, "runs": {f"{e}/s{s}": r.run_id for (e, s), r in runs.items()},
+                             "failed": failed, "missing": expected - len(runs)})
+            else:
+                print(f"{len(runs) - len(failed)} of {expected} runs succeeded" + (f"; failed: {', '.join(failed)}" if failed else ""))
+            return 0 if not failed and len(runs) == expected else 1
+        if args.benchmark_command == "report":
+            plan = bm.load_plan(Path(args.plan))
+            report = bm.build_report(Workspace.open_or_create(Path(args.workspace)), plan)
+            from opendpd.services.workspace import write_json_atomic
+            write_json_atomic(Path(args.out), report)
+            if args.markdown:
+                Path(args.markdown).write_text(bm.report_markdown(report), encoding="utf-8")
+            missing = sum(len(e.missing_seeds) for e in report.entries)
+            print(f"report {report.report_sha256[:12]} written to {args.out} ({len(report.entries)} entries, "
+                  f"{len(report.seeds)} seeds" + (f", {missing} missing runs" if missing else "") + ")")
+            return 0
+        if args.benchmark_command == "check":
+            check = bm.check_regression(bm.load_report(Path(args.report)), bm.load_baseline(Path(args.baseline)))
+            if args.json:
+                _print_json(check.model_dump(mode="json"))
+            else:
+                for item in check.items:
+                    shown = f"{item.observed:.3f} vs {item.reference:.3f} ± {item.tolerance:.3f}" \
+                        if item.observed is not None else "no value"
+                    print(f"  {item.status:<9} {item.entry_id}/{item.metric}: {shown}")
+                print(check.verdict)
+            return 1 if check.blocking else 0
+        if args.benchmark_command == "baseline":
+            baseline = bm.draft_baseline(bm.load_report(Path(args.report)), tolerance_db=args.tolerance_db)
+            from opendpd.services.workspace import write_json_atomic
+            write_json_atomic(Path(args.out), baseline)
+            print(f"draft baseline written to {args.out}; it blocks nothing until approved_by / approved_on are filled "
+                  "by a maintainer")
+            return 0
+    except (WorkspaceError, ValidationError, ValueError, KeyError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    return 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="opendpd", description="OpenDPD Studio command line")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -502,6 +571,35 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--port", type=int, default=None, help=f"loopback port (default: first free from 8765)")
     p.add_argument("--no-browser", dest="no_browser", action="store_true", help="print the URL instead of opening a browser")
     p.set_defaults(func=cmd_gui)
+
+    p = sub.add_parser("benchmark", help="benchmark-v1: pre-registered plans, per-seed reports, regression checks")
+    bm = p.add_subparsers(dest="benchmark_command", required=True)
+    q = bm.add_parser("plan", help="write a pre-registered plan: the tier's model matrix x seeds under a fixed budget")
+    q.add_argument("--dataset", required=True, help="workspace dataset id")
+    q.add_argument("--tier", choices=["cpu_regression", "gpu_full"], default="cpu_regression")
+    q.add_argument("--seeds", default=None, help="comma-separated seeds, at least 3 (default 0,1,2)")
+    q.add_argument("--profile", default="legacy-opendpd-v1")
+    q.add_argument("--device", default="cpu")
+    q.add_argument("--version", default="raw-v1", help="dataset preprocessing version")
+    q.add_argument("--out", required=True)
+    q = bm.add_parser("run", help="execute every (entry, seed) of a plan in this process; finished runs are reused")
+    q.add_argument("plan")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--json", action="store_true")
+    q = bm.add_parser("report", help="assemble the hash-bound per-seed report from the stored results")
+    q.add_argument("plan")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--out", required=True, help="report JSON")
+    q.add_argument("--markdown", default=None, help="also write a Markdown rendering")
+    q = bm.add_parser("check", help="compare a report with a regression baseline (exit 1 when an approved band is left)")
+    q.add_argument("report")
+    q.add_argument("--baseline", required=True)
+    q.add_argument("--json", action="store_true")
+    q = bm.add_parser("baseline", help="draft a regression baseline from a report; unapproved until a maintainer signs it")
+    q.add_argument("report")
+    q.add_argument("--out", required=True)
+    q.add_argument("--tolerance-db", dest="tolerance_db", type=float, default=0.5)
+    p.set_defaults(func=cmd_benchmark)
 
     p = sub.add_parser("doctor", help="check that the GUI can start: dependencies, frontend assets, workspace, port")
     p.add_argument("--workspace", default=None)
