@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 import { API, artifactUrl } from '@/api/client'
 import { useExportRun, useMetricProfiles, useResult, useResultProfiles } from '@/api/hooks'
+import { offeredProfiles } from '@/api/profiles'
 import type { BaselineScore, EvaluationResult, MetricProfile, MetricValue } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
@@ -366,5 +367,8 @@ export function ResultDetailPage() {
   if (result.isPending) return <LoadingState />
   if (result.isError) return <ErrorState error={result.error} onRetry={() => void result.refetch()} />
   const profile = profiles.data?.find((p) => p.profile_id === result.data.metric_profile_id)
-  return <ResultView result={result.data} profile={profile} stored={stored.data ?? []} onProfile={setProfileId} />
+  // stored results under a profile the GUI does not offer yet stay reachable through the CLI and the API only
+  const offered = new Set(offeredProfiles(profiles.data).map((p) => p.profile_id))
+  const visible = (stored.data ?? []).filter((id) => offered.has(id) || id === result.data.metric_profile_id)
+  return <ResultView result={result.data} profile={profile} stored={visible} onProfile={setProfileId} />
 }

@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { versionNames } from '@/api/datasets'
 import { useCapabilities, useDatasets, useMetricProfiles, useModels, useRecipes, useRunConfig, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
+import { offeredProfiles } from '@/api/profiles'
 import type { ConfigIssue, Device, ExperimentConfigInput, ModelInfo, RecipeInfo, ValidationReport } from '@/api/types'
 import { t } from '@/i18n'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
@@ -332,8 +333,8 @@ export function NewExperimentPage() {
               )
             })}
             <Grid size={{ xs: 12, md: 4 }}>
-              <TextField select fullWidth label={t('form.profile')} value={form.profileId || metricProfiles.data?.[0]?.profile_id || ''} onChange={set('profileId')} error={issuesFor('profileId').length > 0} helperText={errorText('profileId') || t('form.profile.help')}>
-                {(metricProfiles.data ?? []).map((p) => (
+              <TextField select fullWidth label={t('form.profile')} value={form.profileId || offeredProfiles(metricProfiles.data)[0]?.profile_id || ''} onChange={set('profileId')} error={issuesFor('profileId').length > 0} helperText={errorText('profileId') || t('form.profile.help')}>
+                {offeredProfiles(metricProfiles.data).map((p) => (
                   <MenuItem key={p.profile_id} value={p.profile_id}>
                     {p.profile_id} v{p.version}
                     {p.frozen ? ` · ${t('results.detail.frozen')}` : ''}

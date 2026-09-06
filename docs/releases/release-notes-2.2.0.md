@@ -29,6 +29,15 @@ platform automatically. Version string in the candidate: `2.2.0.dev0`.
 - **Benchmark protocol `benchmark-v1`**: pre-registered plans, ≥ 3 seeds,
   hash-bound per-seed reports with a data audit, regression baselines that
   block only once a maintainer approves them.
+- **Reference waveform and data-aided evaluation (pending cross-validation)**:
+  `opendpd waveforms generate` writes the `ofdm-lte20-v1` package (CP-OFDM,
+  LTE 20 MHz numerology, known 64QAM symbols) to play in a loop;
+  `opendpd datasets import --waveform` binds a capture to it by correlation;
+  profile `ofdm-lte20-evm-v1` reports data-aided RMS EVM and E-UTRA-style
+  ACLR with explicit statuses for everything else. Every profile now carries a
+  `validation` status; this one is `pending_cross_validation`, so the GUI does
+  not offer it and every result under it says so
+  (`docs/protocols/waveform-profiles.md`).
 - **Thread budget**: `execution.num_threads` is applied by the shared executor
   (torch intra-op threads) on every path; unset keeps torch's default. Run
   records stamp `started_at`/`finished_at` with the executor's own clock on

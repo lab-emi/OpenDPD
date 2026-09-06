@@ -31,7 +31,8 @@
       "nperseg": 2560,
       "sample_rate_hz": 800000000.0,
       "standard": "LTE",
-      "sub_channel_bandwidth_hz": 20000000.0
+      "sub_channel_bandwidth_hz": 20000000.0,
+      "waveform": null
     },
     "source": {
       "imported_at": "2026-09-06T08:00:00Z",

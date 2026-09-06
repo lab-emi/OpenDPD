@@ -77,6 +77,12 @@ def general_metric_profile() -> MetricProfile:
     return PROFILE
 
 
+def ofdm_metric_profile() -> MetricProfile:
+    """Data-aided EVM and ACLR on captures bound to the ofdm-lte20-v1 waveform (S15); pending cross-validation."""
+    from opendpd.core.metrics.ofdm_evm_v1 import PROFILE
+    return PROFILE
+
+
 def dataset_builtin() -> DatasetManifest:
     return DatasetManifest(
         dataset_id="dpa-200mhz",
@@ -434,6 +440,7 @@ def all_examples() -> Dict[str, object]:
     return {
         "metric_profile_legacy": legacy_metric_profile(),
         "metric_profile_general": general_metric_profile(),
+        "metric_profile_ofdm_evm": ofdm_metric_profile(),
         "dataset_builtin": dataset_builtin(),
         "dataset_missing_metadata": dataset_missing_metadata(),
         "diagnostics_missing_metadata": diagnostics_missing_metadata(),

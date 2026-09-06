@@ -1933,6 +1933,10 @@
             "title": "Profile Id",
             "type": "string"
           },
+          "validation": {
+            "$ref": "#/components/schemas/ProfileValidation",
+            "default": "pending_cross_validation"
+          },
           "version": {
             "minimum": 1.0,
             "title": "Version",
@@ -2735,6 +2739,17 @@
         },
         "title": "PreprocessingParams",
         "type": "object"
+      },
+      "ProfileValidation": {
+        "description": "How a profile's numbers have been checked. The GUI offers only profiles past ``pending_cross_validation``;\nthe CLI and the API compute every profile and say which status it has.",
+        "enum": [
+          "golden",
+          "analytic",
+          "pending_cross_validation",
+          "cross_validated"
+        ],
+        "title": "ProfileValidation",
+        "type": "string"
       },
       "QuantizationConfig": {
         "additionalProperties": false,
@@ -3607,6 +3622,16 @@
               }
             ],
             "title": "Sub Channel Bandwidth Hz"
+          },
+          "waveform": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WaveformBinding"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "title": "SignalSpec",
@@ -4201,6 +4226,128 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WaveformBinding": {
+        "additionalProperties": false,
+        "description": "A dataset's link to the waveform its input column was captured from.\n\n``input_offset_samples`` is the position of the dataset's first raw input sample inside one period of the\nwaveform (instruments play a waveform in a loop); ``correlation`` is the normalised cross-correlation peak\nthat established it. The binding never replaces the captured data: it only says which symbols were sent.",
+        "properties": {
+          "bound_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bound At"
+          },
+          "correlation": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Correlation",
+            "type": "number"
+          },
+          "input_offset_samples": {
+            "minimum": 0.0,
+            "title": "Input Offset Samples",
+            "type": "integer"
+          },
+          "input_sample_rate_hz": {
+            "exclusiveMinimum": 0.0,
+            "title": "Input Sample Rate Hz",
+            "type": "number"
+          },
+          "package_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Sha256"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/WaveformSpec"
+          }
+        },
+        "required": [
+          "spec",
+          "input_offset_samples",
+          "correlation",
+          "input_sample_rate_hz"
+        ],
+        "title": "WaveformBinding",
+        "type": "object"
+      },
+      "WaveformSpec": {
+        "additionalProperties": false,
+        "description": "Everything needed to regenerate a reference waveform bit for bit.",
+        "properties": {
+          "cyclic_prefix": {
+            "const": "normal",
+            "default": "normal",
+            "title": "Cyclic Prefix",
+            "type": "string"
+          },
+          "fft_size": {
+            "default": 2048,
+            "title": "Fft Size",
+            "type": "integer"
+          },
+          "modulation": {
+            "const": "64QAM",
+            "default": "64QAM",
+            "title": "Modulation",
+            "type": "string"
+          },
+          "n_subframes": {
+            "default": 10,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "N Subframes",
+            "type": "integer"
+          },
+          "occupied_subcarriers": {
+            "default": 1200,
+            "title": "Occupied Subcarriers",
+            "type": "integer"
+          },
+          "sample_rate_hz": {
+            "default": 30720000.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "seed": {
+            "default": 0,
+            "maximum": 4294967295.0,
+            "minimum": 0.0,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "subcarrier_spacing_hz": {
+            "default": 15000.0,
+            "title": "Subcarrier Spacing Hz",
+            "type": "number"
+          },
+          "version": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "waveform_id": {
+            "const": "ofdm-lte20-v1",
+            "default": "ofdm-lte20-v1",
+            "title": "Waveform Id",
+            "type": "string"
+          }
+        },
+        "title": "WaveformSpec",
         "type": "object"
       },
       "WorkerInfo": {

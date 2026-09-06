@@ -1,6 +1,9 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import datasetMock from '@mocks/dataset_builtin.json'
+import generalProfile from '@mocks/metric_profile_general.json'
+import legacyProfile from '@mocks/metric_profile_legacy.json'
+import ofdmProfile from '@mocks/metric_profile_ofdm_evm.json'
 import runQueued from '@mocks/run_queued.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { NewExperimentPage } from './NewExperimentPage'
@@ -131,4 +134,24 @@ test('an exported configuration can be imported and is submitted as is (resoluti
   const posted = calls.find((c) => c.method === 'POST' && c.path === '/api/v1/runs')?.body as { config: Record<string, unknown> }
   expect(posted.config['training']).toEqual({ epochs: 7 })
   expect(posted.config['resolution']).toBeUndefined()
+})
+
+test('a profile pending cross-validation is computed by the service but never offered by the form', async () => {
+  mockApi({
+    'GET /api/v1/recipes': () => [recipe],
+    'GET /api/v1/datasets': () => [datasetMock.data],
+    'GET /api/v1/models': () => [model],
+    'GET /api/v1/system/capabilities': () => caps,
+    'GET /api/v1/runs': () => [],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data, generalProfile.data, ofdmProfile.data],
+    'POST /api/v1/experiments/validate': () => ({ ok: true, errors: [], warnings: [], resolved: null }),
+  })
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  expect(ofdmProfile.data.validation).toBe('pending_cross_validation')
+  await userEvent.click(screen.getByLabelText('Metric profile'))
+  const options = screen.getAllByRole('option').map((o) => o.textContent)
+  expect(options.some((t) => t?.startsWith('legacy-opendpd-v1'))).toBe(true)
+  expect(options.some((t) => t?.startsWith('general-spectral-v1'))).toBe(true)
+  expect(options.some((t) => t?.startsWith('ofdm-lte20-evm-v1'))).toBe(false)
 })

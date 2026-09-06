@@ -9,6 +9,7 @@ from typing import ClassVar, Dict, List, Literal, Optional, Tuple
 from pydantic import Field, model_validator
 
 from .common import SCHEMA_VERSION, FileRef, Sha256, Slug, StrictModel, utcnow
+from opendpd.schemas.waveform import WaveformBinding
 
 
 class DatasetOrigin(str, Enum):
@@ -44,6 +45,9 @@ class SignalSpec(StrictModel):
     modulation: Optional[str] = None
     standard: Optional[str] = None
     amplitude_units: Literal["normalized", "volts", "unknown"] = "unknown"
+    # Which reference waveform the input column was captured from (plan S15); set by an explicit import
+    # option after the input has been correlated with the regenerated waveform. None = no known symbols.
+    waveform: Optional[WaveformBinding] = None
 
     LEGACY_REQUIRED: ClassVar[Tuple[str, ...]] = ("sample_rate_hz", "bandwidth_hz", "n_sub_ch", "nperseg")
 

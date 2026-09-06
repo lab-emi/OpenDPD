@@ -14,7 +14,7 @@ import numpy as np
 
 from opendpd.schemas.common import BetterDirection, MetricStatus, MetricValue
 from opendpd.schemas.dataset import SignalSpec
-from opendpd.schemas.metrics import MetricDefinition, MetricProfile
+from opendpd.schemas.metrics import MetricDefinition, MetricProfile, ProfileValidation
 
 PROFILE_ID = "legacy-opendpd-v1"
 
@@ -22,6 +22,7 @@ PROFILE = MetricProfile(
     profile_id=PROFILE_ID,
     version=1,
     frozen=True,
+    validation=ProfileValidation.golden,
     description="Historical OpenDPD metrics as implemented in utils/metrics.py "
                 "(OpenDPDv1/v2 papers and benchmark_report.md).",
     parameters={

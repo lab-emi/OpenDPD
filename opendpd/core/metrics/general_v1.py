@@ -17,7 +17,7 @@ import numpy as np
 
 from opendpd.schemas.common import BetterDirection, MetricStatus, MetricValue
 from opendpd.schemas.dataset import SignalSpec
-from opendpd.schemas.metrics import MetricDefinition, MetricProfile
+from opendpd.schemas.metrics import MetricDefinition, MetricProfile, ProfileValidation
 
 PROFILE_ID = "general-spectral-v1"
 FLOOR_DB = -300.0          # 10*log10 of a zero power ratio is reported as this floor, never as -inf
@@ -27,6 +27,7 @@ PROFILE = MetricProfile(
     profile_id=PROFILE_ID,
     version=1,
     frozen=False,
+    validation=ProfileValidation.analytic,
     description="General complex-baseband error and spectral-leakage metrics with explicit conventions: "
                 "pooled NMSE, in-band error ratio and adjacent-channel power ratio (leakage, dBc).",
     parameters={

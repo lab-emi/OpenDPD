@@ -80,11 +80,16 @@ def cmd_datasets(args) -> int:
             mapping = dict(pair.split("=", 1) for pair in (args.map or []))
             manifest = ds.import_dataset(ws, Path(args.path), dataset_id=args.id, display_name=args.name, mapping=mapping,
                                          signal=_signal_from_args(args), origin=DatasetOrigin(args.origin),
-                                         guard_samples=args.guard)
+                                         guard_samples=args.guard,
+                                         waveform=Path(args.waveform) if args.waveform else None)
             if args.json:
                 _print_json(manifest.model_dump(mode="json"))
             else:
                 print(f"imported '{manifest.dataset_id}' ({manifest.n_samples} samples) from {args.path}")
+                if manifest.signal.waveform is not None:
+                    b = manifest.signal.waveform
+                    print(f"bound to waveform {b.spec.waveform_id} seed {b.spec.seed}: offset {b.input_offset_samples} "
+                          f"samples at the waveform clock, correlation {b.correlation:.3f}")
                 missing = manifest.missing_metadata()
                 if missing:
                     print("metadata still missing for evaluation: " + ", ".join(missing))
@@ -234,11 +239,43 @@ def cmd_profiles(args) -> int:
         _print_json([p.model_dump(mode="json") for p in profiles])
         return 0
     for p in profiles:
-        flags = " (frozen)" if p.frozen else ""
+        flags = (" (frozen)" if p.frozen else "") + f" [validation: {p.validation.value}]"
         print(f"{p.profile_id} v{p.version}{flags}: {p.description}")
         for m in p.metrics:
             print(f"  {m.name:<9} {m.unit:<4} {m.better.value:<6} {m.formula}")
     return 0
+
+
+def cmd_waveforms(args) -> int:
+    from opendpd.core.waveforms import generate, read_package, write_package
+    from opendpd.schemas import WaveformSpec
+
+    if args.waveforms_command == "generate":
+        spec = WaveformSpec(seed=args.seed, n_subframes=args.subframes)
+        wf = generate(spec)
+        path = write_package(wf, Path(args.out))
+        if args.json:
+            _print_json({"path": str(path), "spec": spec.model_dump(mode="json"), "sha256": wf.sha256(),
+                         "n_samples": wf.period})
+        else:
+            print(f"{spec.waveform_id} seed {spec.seed}, {spec.n_subframes} subframes ({wf.period} samples at "
+                  f"{spec.sample_rate_hz / 1e6:.2f} MS/s) written to {path.parent}; package sha256 {wf.sha256()[:12]}")
+        return 0
+    try:
+        spec, digest = read_package(Path(args.path))
+    except (OSError, ValueError, KeyError) as err:
+        print(f"error: {args.path} is not a readable waveform package: {err}", file=sys.stderr)
+        return 2
+    regenerated = generate(spec).sha256()
+    if args.json:
+        _print_json({"spec": spec.model_dump(mode="json"), "sha256": digest, "regenerated_sha256": regenerated,
+                     "matches": digest == regenerated, "n_samples": spec.n_samples, "n_symbols": spec.n_symbols})
+    else:
+        print(f"{spec.waveform_id} v{spec.version}: seed {spec.seed}, {spec.n_subframes} subframes, {spec.n_samples} samples at "
+              f"{spec.sample_rate_hz / 1e6:.2f} MS/s, {spec.occupied_subcarriers} subcarriers x {spec.n_symbols} symbols, "
+              f"{spec.modulation}, {spec.cyclic_prefix} cyclic prefix")
+        print(f"package sha256 {digest[:12]}; regenerated {regenerated[:12]} ({'match' if digest == regenerated else 'MISMATCH'})")
+    return 0 if digest == regenerated else 1
 
 
 def cmd_evaluate(args) -> int:
@@ -247,7 +284,13 @@ def cmd_evaluate(args) -> int:
 
     import contextlib
 
+    from opendpd.core.metrics import get_profile
+    from opendpd.schemas import ProfileValidation
+
     try:
+        if get_profile(args.profile).validation == ProfileValidation.pending_cross_validation:
+            print(f"note: profile {args.profile} is pending cross-validation; its numbers are not standard-conformance "
+                  "results (docs/protocols/waveform-profiles.md)", file=sys.stderr)
         ws = Workspace.open(Path(args.workspace))
         with contextlib.redirect_stdout(sys.stderr):      # legacy model/loader chatter never pollutes the result
             result = evaluate_run(ws, args.run_id, args.profile)
@@ -539,6 +582,9 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--n-sub-ch", dest="n_sub_ch", type=int, default=None)
     q.add_argument("--nperseg", type=int, default=None)
     q.add_argument("--units", choices=["normalized", "volts", "unknown"], default=None)
+    q.add_argument("--waveform", default=None, metavar="PACKAGE",
+                   help="bind the input column to a reference-waveform package (waveform.json or its directory); "
+                        "refused when the input does not correlate with the waveform")
     q.add_argument("--origin", choices=["measured", "synthetic", "unknown"], default="unknown")
     q.add_argument("--guard", type=int, default=256, help="guard samples dropped between splits (>= frame length)")
     q.add_argument("--json", action="store_true")
@@ -565,6 +611,19 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("path")
     q.add_argument("--workspace", required=True)
     p.set_defaults(func=cmd_datasets)
+
+    p = sub.add_parser("waveforms", help="reference waveforms with known symbols (plan S15): generate a package, inspect one")
+    wv = p.add_subparsers(dest="waveforms_command", required=True)
+    q = wv.add_parser("generate", help="write a reference-waveform package (waveform.json, x.npy to play in a loop, symbols.npy)")
+    q.add_argument("--seed", type=int, default=0)
+    q.add_argument("--subframes", type=int, default=10, help="length in 1 ms subframes (10 = one frame)")
+    q.add_argument("--out", required=True, help="package directory")
+    q.add_argument("--json", action="store_true")
+    q.set_defaults(func=cmd_waveforms)
+    q = wv.add_parser("show", help="print a package's specification and check that it regenerates to the recorded hash")
+    q.add_argument("path", help="waveform.json or its directory")
+    q.add_argument("--json", action="store_true")
+    q.set_defaults(func=cmd_waveforms)
 
     p = sub.add_parser("gui", help="start the local Studio service and open the workbench in your browser")
     p.add_argument("--workspace", default=None, help="workspace directory (default: $OPENDPD_WORKSPACE or ~/opendpd-workspace)")

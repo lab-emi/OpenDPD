@@ -47,7 +47,8 @@ from .experiment import (
     TaskType,
     TrainingConfig,
 )
-from .metrics import MetricDefinition, MetricProfile
+from .metrics import MetricDefinition, MetricProfile, ProfileValidation
+from .waveform import WaveformBinding, WaveformSpec
 from .benchmark import (
     BaselineBand,
     BenchmarkEntry,
@@ -111,7 +112,7 @@ __all__ = [
     "DatasetRef", "DPDReference", "EvaluationConfig", "ExecutionConfig", "ExperimentConfig",
     "ModelSpec", "PAReference", "QuantizationConfig", "ResolvedExperimentConfig", "ResolutionInfo",
     "TaskType", "TrainingConfig",
-    "MetricDefinition", "MetricProfile",
+    "MetricDefinition", "MetricProfile", "ProfileValidation", "WaveformBinding", "WaveformSpec",
     "PACKAGE_VERSION", "ImportReport", "PackageDataset", "PackageFile", "PackageManifest", "PackageReference",
     "BaselineScore", "ComparisonPair", "ComparisonReport", "DatasetEvidence", "EvaluationResult", "HistoryPoint",
     "ModelEvidence", "ScalingInfo", "SignalReference", "SignalStage", "SurrogateCoverage",

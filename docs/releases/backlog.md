@@ -15,6 +15,6 @@ agent tasks bound by `AGENTS.md`.
 | 7 | Windows CI runner for the core library and the packaged service | no evidence at all on Windows today | later |
 | 8 | Reserved-port and instance-reuse behaviour documented for SSH tunnels (`--no-browser`, port forwarding) | remote use is an SSH-tunnel story only | later |
 | 8a | Expose `execution.num_threads` in the New experiment form (advanced section) | the field is applied on every path since S14 but only a downloaded configuration or the CLI can set it today | later |
-| 9 | S15 standard waveform profile (one waveform, one standard version, cross-validated against a reference chain) | first non-legacy evaluation profile | G3 |
+| 9 | **human** S15 cross-validation of `ofdm-lte20-evm-v1` against MATLAB LTE Toolbox on the same signals, standard versions fixed, error budget approved (`docs/protocols/waveform-profiles.md` §5–7) | the waveform, profile, packages and tests exist; the profile stays hidden in the GUI until this record is filled | G3 |
 | 10 | S16–S19 tracks (hardware capture import, instrument adapter, quantisation/deployment exports, community models) as scoped in the plan | after G2 | G3 |
 | 11 | S20 versioned leaderboard policy once external submissions exist | needs a community first (risk R11) | G4 |

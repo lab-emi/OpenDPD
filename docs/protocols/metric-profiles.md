@@ -61,6 +61,38 @@ with a finite value; otherwise the reason is stored:
 | fewer valid samples than one PSD segment / no bin in a band | `not_applicable` |
 | computation raised | `failed` with the exception |
 
+## `ofdm-lte20-evm-v1` (pending cross-validation, hidden in the GUI)
+
+Data-aided RMS EVM and E-UTRA-style ACLR of a capture bound to the
+`ofdm-lte20-v1` reference waveform (CP-OFDM with the LTE 20 MHz numerology
+and known 64QAM symbols). Procedure, deviations from a standard's EVM
+definition, error budget and the cross-validation protocol are in
+`docs/protocols/waveform-profiles.md`.
+
+| Metric | Unit | Definition |
+|---|---|---|
+| `EVM_RMS` | % | 100·sqrt(Σ\|Ŝ − S\|² / Σ\|S\|²) over every occupied subcarrier of every complete OFDM symbol, after timing, frequency-offset and per-subcarrier least-squares equalisation from the known symbols |
+| `EVM_DB` | dB | 20·log10(EVM_RMS / 100) |
+| `ACLR_L` / `ACLR_R` | dBc | 10·log10(P[±20 MHz ± 9 MHz] / P[−9, +9 MHz]) from the Welch PSD at the capture rate (leakage, negative) |
+
+Statuses: `missing_reference` without a waveform binding or when the signal
+does not correlate with the waveform; `not_applicable` when the capture rate
+cannot be converted exactly to 30.72 MS/s, is below it, or (ACLR) does not
+contain the first adjacent channel (< 58 MS/s). The built-in ten-carrier
+captures are `missing_reference` under this profile by design.
+
+## Validation status of a profile
+
+`MetricProfile.validation` says how a profile's numbers have been checked:
+`golden` (frozen references of the historical code: `legacy-opendpd-v1`),
+`analytic` (closed-form reference tests: `general-spectral-v1`),
+`pending_cross_validation` (implemented and tested, the independent-backend
+comparison has not run: `ofdm-lte20-evm-v1`) or `cross_validated`. The
+service computes and stores every profile; the GUI offers only profiles past
+`pending_cross_validation`; `opendpd profiles` prints the status and
+`opendpd evaluate` says so before scoring under a pending profile. Every
+result of a pending profile carries the limitation "pending cross-validation".
+
 ## Where the numbers come from
 
 The worker scores the **best checkpoint over the test split** once at the end

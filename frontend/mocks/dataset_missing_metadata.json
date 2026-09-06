@@ -31,7 +31,8 @@
       "nperseg": null,
       "sample_rate_hz": null,
       "standard": null,
-      "sub_channel_bandwidth_hz": null
+      "sub_channel_bandwidth_hz": null,
+      "waveform": null
     },
     "source": {
       "imported_at": "2026-09-06T08:00:00Z",

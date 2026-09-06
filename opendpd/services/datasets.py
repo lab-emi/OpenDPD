@@ -349,8 +349,12 @@ def _materialise(ws: Workspace, manifest: DatasetManifest, version: str, x: np.n
 def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = None, display_name: Optional[str] = None,
                    mapping: Optional[Dict[str, str]] = None, signal: Optional[SignalSpec] = None,
                    origin: DatasetOrigin = DatasetOrigin.unknown, guard_samples: int = DEFAULT_GUARD_SAMPLES,
-                   notes: Optional[str] = None) -> DatasetManifest:
-    """Copy the source into the workspace (hashed, untouched) and materialise raw-v1."""
+                   notes: Optional[str] = None, waveform: Optional[Path] = None) -> DatasetManifest:
+    """Copy the source into the workspace (hashed, untouched) and materialise raw-v1.
+
+    ``waveform`` (a reference-waveform package, plan S15) binds the dataset to the waveform its input column
+    was captured from: the waveform is regenerated and correlated with the input; an input that is not the
+    waveform is refused, so a binding never rests on a guess."""
     source = Path(source)
     if not source.exists():
         raise ImportError_(f"{source} does not exist")
@@ -373,6 +377,8 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
         if info.kind == DatasetSourceKind.legacy_dir_import:
             if info.problems:
                 raise ImportError_(info.problems[0])
+            if waveform is not None:
+                raise ImportError_("a waveform binding needs the capture file (CSV or NumPy), not a split directory")
             for name in LEGACY_SPLIT_FILES + ("spec.json",):
                 if (source / name).is_file():
                     shutil.copy2(source / name, raw / name)
@@ -411,6 +417,8 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
             x, y = _read_numpy_arrays(copied, mapping)
         if len(x) != len(y):
             raise ImportError_(f"input has {len(x)} samples but output has {len(y)}; they must be paired")
+        if waveform is not None:
+            signal = signal.model_copy(update={"waveform": bind_to_waveform(x, signal, waveform)})
         manifest = DatasetManifest(
             dataset_id=dataset_id, display_name=display_name, origin=origin,
             source=DatasetSource(kind=info.kind, original_path=str(source)), signal=signal, files=files,
@@ -426,6 +434,22 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
     except Exception:
         shutil.rmtree(target, ignore_errors=True)
         raise
+
+
+def bind_to_waveform(x: np.ndarray, signal: SignalSpec, package: Path):
+    """The binding of an input column to a reference-waveform package (``waveform.json`` or its directory)."""
+    from opendpd.core.waveforms import bind_input, read_package
+
+    if signal.sample_rate_hz is None:
+        raise ImportError_("binding to a waveform needs the capture's sample rate (--fs)")
+    try:
+        spec, digest = read_package(Path(package))
+    except (OSError, ValueError, KeyError) as err:
+        raise ImportError_(f"{package} is not a readable waveform package: {err}") from None
+    try:
+        return bind_input(x, float(signal.sample_rate_hz), spec, package_sha256=digest)
+    except ValueError as err:
+        raise ImportError_(str(err)) from None
 
 
 def update_manifest(ws: Workspace, dataset_id: str, *, signal: Optional[SignalSpec] = None,

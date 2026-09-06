@@ -67,6 +67,8 @@ test.describe('keyboard-only journey', () => {
   test('register the example, open New experiment and start a run without a pointer', async ({ page }) => {
     const state = await installFakeApi(page)
     await page.goto('/')
+    // the button exists once the (empty) dataset list has loaded; tabbing before that walks past 80 elements
+    await expect(page.getByRole('button', { name: 'Register example dataset' })).toBeVisible()
     await tabTo(page, /^Register example dataset$/)
     await page.keyboard.press('Enter')
     await expect(page.getByText('Example dataset registered')).toBeVisible()

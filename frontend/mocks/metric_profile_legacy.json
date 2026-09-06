@@ -66,6 +66,7 @@
       "segmenting": "independent nperseg segments from the dataset spec; the last segment is zero-padded"
     },
     "profile_id": "legacy-opendpd-v1",
+    "validation": "golden",
     "version": 1
   }
 }

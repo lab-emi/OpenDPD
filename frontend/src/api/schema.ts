@@ -1438,6 +1438,8 @@ export interface components {
             };
             /** Profile Id */
             profile_id: string;
+            /** @default pending_cross_validation */
+            validation: components["schemas"]["ProfileValidation"];
             /** Version */
             version: number;
         };
@@ -1728,6 +1730,13 @@ export interface components {
              */
             remove_outliers: boolean;
         };
+        /**
+         * ProfileValidation
+         * @description How a profile's numbers have been checked. The GUI offers only profiles past ``pending_cross_validation``;
+         *     the CLI and the API compute every profile and say which status it has.
+         * @enum {string}
+         */
+        ProfileValidation: "golden" | "analytic" | "pending_cross_validation" | "cross_validated";
         /** QuantizationConfig */
         QuantizationConfig: {
             /**
@@ -2021,6 +2030,7 @@ export interface components {
             standard?: string | null;
             /** Sub Channel Bandwidth Hz */
             sub_channel_bandwidth_hz?: number | null;
+            waveform?: components["schemas"]["WaveformBinding"] | null;
         };
         /**
          * SignalStage
@@ -2292,6 +2302,86 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * WaveformBinding
+         * @description A dataset's link to the waveform its input column was captured from.
+         *
+         *     ``input_offset_samples`` is the position of the dataset's first raw input sample inside one period of the
+         *     waveform (instruments play a waveform in a loop); ``correlation`` is the normalised cross-correlation peak
+         *     that established it. The binding never replaces the captured data: it only says which symbols were sent.
+         */
+        WaveformBinding: {
+            /** Bound At */
+            bound_at?: string | null;
+            /** Correlation */
+            correlation: number;
+            /** Input Offset Samples */
+            input_offset_samples: number;
+            /** Input Sample Rate Hz */
+            input_sample_rate_hz: number;
+            /** Package Sha256 */
+            package_sha256?: string | null;
+            spec: components["schemas"]["WaveformSpec"];
+        };
+        /**
+         * WaveformSpec
+         * @description Everything needed to regenerate a reference waveform bit for bit.
+         */
+        WaveformSpec: {
+            /**
+             * Cyclic Prefix
+             * @default normal
+             * @constant
+             */
+            cyclic_prefix: "normal";
+            /**
+             * Fft Size
+             * @default 2048
+             */
+            fft_size: number;
+            /**
+             * Modulation
+             * @default 64QAM
+             * @constant
+             */
+            modulation: "64QAM";
+            /**
+             * N Subframes
+             * @default 10
+             */
+            n_subframes: number;
+            /**
+             * Occupied Subcarriers
+             * @default 1200
+             */
+            occupied_subcarriers: number;
+            /**
+             * Sample Rate Hz
+             * @default 30720000
+             */
+            sample_rate_hz: number;
+            /**
+             * Seed
+             * @default 0
+             */
+            seed: number;
+            /**
+             * Subcarrier Spacing Hz
+             * @default 15000
+             */
+            subcarrier_spacing_hz: number;
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /**
+             * Waveform Id
+             * @default ofdm-lte20-v1
+             * @constant
+             */
+            waveform_id: "ofdm-lte20-v1";
         };
         /**
          * WorkerInfo

@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -23,9 +24,10 @@ from tests.fixtures.synthetic import Impairments, synthesize
 
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
-TUTORIALS = [ROOT / "docs" / "tutorials" / "gui-quickstart.md", ROOT / "docs" / "tutorials" / "headless-cli.md"]
+TUTORIALS = [ROOT / "docs" / "tutorials" / "gui-quickstart.md", ROOT / "docs" / "tutorials" / "headless-cli.md",
+             ROOT / "docs" / "tutorials" / "waveform-evaluation.md"]
 OTHER_CI_SOURCES = [ROOT / ".github" / "workflows" / "weekly.yml", ROOT / "tests" / "integration" / "test_benchmark_protocol.py"]
-NESTED = {"datasets", "benchmark"}
+NESTED = {"datasets", "benchmark", "waveforms"}
 
 Family = Tuple[str, ...]
 
@@ -54,7 +56,7 @@ def option_strings() -> Dict[Family, Set[str]]:
     out: Dict[Family, Set[str]] = {}
 
     def walk(p, prefix: Family):
-        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command")]
+        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command", "waveforms_command")]
         if not subs:
             out[prefix] = {s for a in p._actions for s in a.option_strings}
             return
@@ -137,6 +139,35 @@ def test_documented_commands_run_end_to_end(tmp_path):
 
     applied = json.loads(run("apply", dpd_id, "--workspace", str(ws), "--json").stdout)
     assert applied["run"]["status"] == "succeeded"
+
+    # docs/tutorials/waveform-evaluation.md: generate a reference waveform, capture it through a (synthetic) PA,
+    # import with the binding, train, and read the pending profile's numbers
+    pkg = tmp_path / "waveforms" / "lte20-seed1"
+    generated = json.loads(run("waveforms", "generate", "--seed", "1", "--subframes", "2", "--out", str(pkg), "--json").stdout)
+    shown = json.loads(run("waveforms", "show", str(pkg / "waveform.json"), "--json").stdout)
+    assert shown["matches"] and shown["sha256"] == generated["sha256"]
+    from scipy.signal import resample_poly
+    from opendpd.core.waveforms import generate, read_package
+    wf = generate(read_package(pkg)[0])
+    played = resample_poly(np.roll(wf.x, -500), 4, 1)                 # captured at 122.88 MS/s, mid-waveform start
+    distorted = played - 0.04 * np.abs(played) ** 2 * played
+    capture_w = tmp_path / "lte20-capture.csv"
+    pd.DataFrame({"I_in": played.real, "Q_in": played.imag, "I_out": distorted.real, "Q_out": distorted.imag}).to_csv(capture_w, index=False)
+    bound = json.loads(run("datasets", "import", str(capture_w), "--id", "pa-lte20", "--fs", "122.88e6", "--bandwidth", "18e6",
+                           "--n-sub-ch", "1", "--nperseg", "4096", "--units", "normalized", "--waveform", str(pkg / "waveform.json"),
+                           "--workspace", str(ws), "--json").stdout)
+    assert bound["signal"]["waveform"]["input_offset_samples"] == 500 and bound["signal"]["waveform"]["correlation"] > 0.99
+    proc = _cli("datasets", "import", str(capture), "--id", "not-the-waveform", "--fs", "800e6", "--waveform", str(pkg),
+                "--workspace", str(ws), cwd=tmp_path, expect=2)
+    assert "does not correlate" in proc.stderr
+    lte = json.loads(run("run", "--recipe", "pa-gru-smoke-v1", "--dataset", "pa-lte20", "--workspace", str(ws), "--json").stdout)
+    assert lte["run"]["status"] == "succeeded"
+    stored = json.loads((ws / "runs" / lte["run"]["run_id"] / "results" / "ofdm-lte20-evm-v1.json").read_text())
+    evm = next(m for m in stored["metrics"] if m["name"] == "EVM_RMS")
+    assert evm["status"] == "ok" and 0.1 < evm["value"] < 30.0, evm
+    assert any("pending cross-validation" in lim for lim in stored["limitations"])
+    again = json.loads(run("evaluate", lte["run"]["run_id"], "--workspace", str(ws), "--profile", "ofdm-lte20-evm-v1", "--json").stdout)
+    assert next(m for m in again["metrics"] if m["name"] == "EVM_RMS")["value"] == pytest.approx(evm["value"], rel=1e-9)
 
     package = json.loads(run("export", pa_id, "--workspace", str(ws), "--kind", "share", "--json").stdout)
     zip_path = Path(package["path"])

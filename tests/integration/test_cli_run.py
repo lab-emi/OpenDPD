@@ -94,14 +94,18 @@ def test_result_metrics_come_from_the_registry_and_agree_with_the_training_log(w
         history = list(csv.DictReader(f))
     assert result.selected_epoch == int(min(history, key=lambda row: float(row["VAL_NMSE"]))["EPOCH"])
 
-    assert available_profiles(workspace, pa_run.run_id) == ["legacy-opendpd-v1", "general-spectral-v1"]
+    # every registered profile is stored; the waveform profile (S15) has no binding on the built-in data and says so
+    assert available_profiles(workspace, pa_run.run_id) == ["legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-v1"]
+    pending = load_result(workspace, pa_run.run_id, "ofdm-lte20-evm-v1")
+    assert {m.status.value for m in pending.metrics} == {"missing_reference"}
+    assert any("pending cross-validation" in lim for lim in pending.limitations)
     general = load_result(workspace, pa_run.run_id, "general-spectral-v1")
     assert general.metric_profile_id == "general-spectral-v1" and general.result_id != result.result_id
     assert {m.name for m in general.metrics} == {"NMSE", "IBE", "ACPR_L", "ACPR_R"}
     assert all(m.status.value == "ok" for m in general.metrics), [m.reason for m in general.metrics]
     # pooled NMSE and the legacy mean-of-segment-dB NMSE are different numbers by design
     assert general.metric("NMSE").value != result.metric("NMSE").value
-    assert set(PROFILES) == {"legacy-opendpd-v1", "general-spectral-v1"}
+    assert set(PROFILES) == {"legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-v1"}
 
     # re-evaluation from the checkpoint is deterministic on CPU and available from the CLI
     again = evaluate_run(workspace, pa_run.run_id, "general-spectral-v1")

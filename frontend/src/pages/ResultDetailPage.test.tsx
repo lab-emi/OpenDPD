@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import generalProfile from '@mocks/metric_profile_general.json'
 import legacyProfile from '@mocks/metric_profile_legacy.json'
+import ofdmProfile from '@mocks/metric_profile_ofdm_evm.json'
 import resultMock from '@mocks/result_pa_modeling_mock.json'
 import dpdMock from '@mocks/result_dpd_surrogate_mock.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
@@ -27,8 +28,9 @@ const general = {
 test('shows the profile behind every score, its definitions, and switches to another stored profile', async () => {
   const { calls } = mockApi({
     'GET /api/v1/results/run-pa-0001': (url) => (url.searchParams.get('profile') === 'general-spectral-v1' ? general : legacy),
-    'GET /api/v1/results/run-pa-0001/profiles': () => ['legacy-opendpd-v1', 'general-spectral-v1'],
-    'GET /api/v1/metrics/profiles': () => [legacyProfile.data, generalProfile.data],
+    // the service stored a third result under a profile that is still pending cross-validation
+    'GET /api/v1/results/run-pa-0001/profiles': () => ['legacy-opendpd-v1', 'general-spectral-v1', 'ofdm-lte20-evm-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data, generalProfile.data, ofdmProfile.data],
   })
   renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
   await screen.findByText('legacy-opendpd-v1 v1 · frozen')
@@ -38,6 +40,7 @@ test('shows the profile behind every score, its definitions, and switches to ano
   expect(screen.getByRole('button', { name: 'Metric definitions' })).toBeInTheDocument()
 
   await userEvent.click(screen.getByLabelText('Metric profile'))
+  expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['legacy-opendpd-v1', 'general-spectral-v1'])   // pending one hidden
   await userEvent.click(await screen.findByRole('option', { name: 'general-spectral-v1' }))
   await screen.findByRole('heading', { level: 3, name: 'NMSE (pooled)' })
   expect(screen.getByText('-22.50 dB')).toBeInTheDocument()

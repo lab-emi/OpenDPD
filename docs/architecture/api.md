@@ -71,6 +71,7 @@ inline.
 | `POST /exports` | done (S11): `{run_id, kind: full|share}` writes `<workspace>/exports/<id>.zip` and returns the manifest + `download_url`; `GET /exports/{export_id}` serves it; `POST /imports` (multipart, 2 GB cap) verifies every hash before writing and returns the import report; conflicts and damaged packages are 422 with a specific code (`docs/protocols/experiment-packages.md`) |
 | `GET /results/{id}/report?format=html|md` | done (S11): reports bound to the stored result and plot data; nothing recomputed |
 | `GET /results/compare?runs=&profile=&format=json|csv` | done (S11): results side by side under one profile with the pairwise incompatibilities (dataset, data version, split, reference, profile version, evidence, execution semantics) stated explicitly; `GET /runs/{id}/history` serves the per-epoch curves; plot data (`plot-spectrum`, `plot-time`, `plot-amam`, plots-v1) are artifacts with fixed budgets |
+| `GET /metrics/profiles` (`MetricProfile.validation`) | S15: every profile carries `validation` (`golden`, `analytic`, `pending_cross_validation`, `cross_validated`); the GUI offers only profiles past `pending_cross_validation`, the service computes and stores all of them; `SignalSpec.waveform` (`WaveformBinding`) records a dataset's binding to a reference waveform set by `datasets import --waveform` |
 
 ## Listing, search and paging (S13)
 

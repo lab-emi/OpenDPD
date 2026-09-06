@@ -60,6 +60,7 @@
       "valid_range": "real samples of the evaluated split only; the zero padding of the last segment is excluded"
     },
     "profile_id": "general-spectral-v1",
+    "validation": "analytic",
     "version": 1
   }
 }

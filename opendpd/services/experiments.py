@@ -22,6 +22,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from pydantic import ValidationError
 
 from opendpd.schemas import (
+    ProfileValidation,
     Artifact,
     ArtifactKind,
     ArtifactManifest,
@@ -618,6 +619,9 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         limitations.append("soft reproducibility (non-deterministic algorithms allowed); repeated runs may differ")
     if dataset.missing_metadata():
         limitations.append(f"dataset metadata missing: {', '.join(dataset.missing_metadata())}")
+    if profile.validation == ProfileValidation.pending_cross_validation:
+        limitations.append(f"metric profile {profile.profile_id} is pending cross-validation against an independent "
+                           "backend; its numbers are not standard-conformance results")
 
     models = []
     if resolved.task == TaskType.train_pa:
