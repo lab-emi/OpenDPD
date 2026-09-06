@@ -124,7 +124,6 @@
       },
       "declared_power_difference_db": 0.0,
       "level_difference_db": -1.85,
-      "played_artifact_id": "played-signal",
       "played_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
     "metric_profile_id": "legacy-opendpd-v1",

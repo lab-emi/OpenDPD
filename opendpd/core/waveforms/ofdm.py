@@ -21,11 +21,12 @@ import json
 import math
 from datetime import datetime, timezone
 from dataclasses import dataclass
-from fractions import Fraction
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 import numpy as np
+
+from opendpd.core import measurement
 
 from opendpd.schemas.waveform import (
     WaveformBinding,
@@ -163,23 +164,12 @@ def rate_ratio(fs: float) -> Optional[Tuple[int, int]]:
     """(up, down) that converts ``fs`` to the waveform clock exactly, or None when no small rational does."""
     if fs <= 0 or fs < FS:
         return None
-    frac = Fraction(FS / fs).limit_denominator(10_000)
-    if abs(float(frac) - FS / fs) > 1e-12:
-        return None
-    return frac.numerator, frac.denominator
+    return measurement.rate_ratio(fs, FS)
 
 
 def to_baseband_rate(y: np.ndarray, fs: float) -> Optional[np.ndarray]:
     """Bring a capture at ``fs`` to the waveform clock (polyphase resampling); None when ``fs`` is unsupported."""
-    ratio = rate_ratio(fs)
-    if ratio is None:
-        return None
-    up, down = ratio
-    if (up, down) == (1, 1):
-        return np.asarray(y, dtype=np.complex128)
-    from scipy.signal import resample_poly
-
-    return resample_poly(np.asarray(y, dtype=np.complex128), up, down)
+    return None if rate_ratio(fs) is None else measurement.resample(y, fs, FS)
 
 
 # --- data-aided demodulation ------------------------------------------------------------------------------

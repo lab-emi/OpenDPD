@@ -23,13 +23,16 @@ def list_adapters():
     return [cls.info for cls in ADAPTERS.values()]
 
 
+CAPTURE_MARGIN = 4096            # samples captured beyond one period, so the delayed period is complete
+
+
 def run_capture_session(instrument: Instrument, played: np.ndarray, sample_rate_hz: float, *, operator: str,
-                        out: Path, n_samples: Optional[int] = None, limits: Optional[SafetyLimits] = None,
-                        requested_power_dbm: Optional[float] = None, allow_real_output: Optional[bool] = None) -> Path:
-    """Play ``played`` (I/Q ``(n, 2)`` or complex) and capture the output into ``out`` (``.npy``, ``(m, 2)``
-    float32) with a ``<out>.session.json`` record. RF goes off before this returns, on every path."""
+                        out: Path, limits: Optional[SafetyLimits] = None,
+                        requested_power_dbm: Optional[float] = None) -> Path:
+    """Play ``played`` (I/Q ``(n, 2)`` or complex) and capture one period plus a margin into ``out`` (``.npy``,
+    ``(m, 2)`` float32) with a ``<out>.session.json`` record. RF goes off before this returns, on every path."""
     z = to_complex(played)
-    n = int(n_samples or z.size + 4096)
+    n = int(z.size + CAPTURE_MARGIN)
     out = Path(out)
     record = {"adapter": instrument.info.model_dump(mode="json"), "operator": operator,
               "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -38,7 +41,7 @@ def run_capture_session(instrument: Instrument, played: np.ndarray, sample_rate_
               "mock": instrument.info.kind == "mock"}
     with Interlock(instrument, limits) as lock:
         try:
-            lock.arm(operator, allow_real_output=allow_real_output)
+            lock.arm(operator)
             lock.play(z, sample_rate_hz, requested_power_dbm=requested_power_dbm)
             captured = lock.capture(n, sample_rate_hz)
         finally:

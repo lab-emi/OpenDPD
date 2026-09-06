@@ -425,7 +425,7 @@ def run_lineage_dpd() -> RunLineage:
 def result_dpd_measured_mock() -> EvaluationResult:
     lower = BetterDirection.lower
     evidence = MeasurementEvidence(
-        attestation=MOCK_ATTESTATION, apply_run_id="run-apply-0001", played_artifact_id="played-signal", played_sha256=SHA_A,
+        attestation=MOCK_ATTESTATION, apply_run_id="run-apply-0001", played_sha256=SHA_A,
         conditions=measurement_conditions(),
         captures=[CaptureAlignment(role="with_dpd", artifact_id="capture-with-dpd", raw_sha256=SHA_B, n_samples_raw=15360,
                                    sample_rate_hz=800e6, delay_samples=123, correlation=0.9998, gain_abs=2.31, gain_db=7.28,

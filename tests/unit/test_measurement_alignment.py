@@ -80,3 +80,32 @@ def test_iq_round_trip():
     assert iq.dtype == np.float32 and iq.shape == (2, 2)
     np.testing.assert_allclose(to_complex(iq), z)
     np.testing.assert_allclose(to_complex(np.array([[1.0, 2.0]])), [1 + 2j])
+
+
+def test_capture_files_are_read_in_every_supported_layout(tmp_path):
+    import pandas as pd
+
+    from opendpd.services.measurements import MeasurementError, read_capture
+
+    z = np.array([1 + 2j, -0.5 + 0.25j, 0.1 - 0.7j])
+    pd.DataFrame({"I_out": z.real, "Q_out": z.imag}).to_csv(tmp_path / "a.csv", index=False)
+    pd.DataFrame({"re_ch1": z.real, "im_ch1": z.imag}).to_csv(tmp_path / "b.csv", index=False)
+    np.save(tmp_path / "c.npy", to_iq(z))
+    np.save(tmp_path / "d.npy", z)
+    np.savez(tmp_path / "e.npz", I=z.real, Q=z.imag)
+    np.savez(tmp_path / "f.npz", samples=z)
+    np.savez(tmp_path / "g.npz", ch1=z.real, ch2=z.imag)
+    np.testing.assert_allclose(read_capture(tmp_path / "a.csv"), z)
+    np.testing.assert_allclose(read_capture(tmp_path / "b.csv", ("re_ch1", "im_ch1")), z)
+    np.testing.assert_allclose(read_capture(tmp_path / "c.npy"), z, rtol=1e-6)
+    np.testing.assert_allclose(read_capture(tmp_path / "d.npy"), z)
+    np.testing.assert_allclose(read_capture(tmp_path / "e.npz"), z)
+    np.testing.assert_allclose(read_capture(tmp_path / "f.npz"), z)
+    np.testing.assert_allclose(read_capture(tmp_path / "g.npz", ("ch1", "ch2")), z)
+    with pytest.raises(MeasurementError, match="no I/Q columns"):
+        read_capture(tmp_path / "b.csv")
+    with pytest.raises(MeasurementError, match="name the I/Q keys"):
+        read_capture(tmp_path / "g.npz")
+    (tmp_path / "h.txt").write_text("1,2\n")
+    with pytest.raises(MeasurementError, match="unsupported"):
+        read_capture(tmp_path / "h.txt")

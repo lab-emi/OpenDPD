@@ -2249,11 +2249,6 @@
             ],
             "title": "Level Difference Db"
           },
-          "played_artifact_id": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
-            "title": "Played Artifact Id",
-            "type": "string"
-          },
           "played_sha256": {
             "pattern": "^[0-9a-f]{64}$",
             "title": "Played Sha256",
@@ -2263,7 +2258,6 @@
         "required": [
           "attestation",
           "apply_run_id",
-          "played_artifact_id",
           "played_sha256",
           "conditions",
           "captures"

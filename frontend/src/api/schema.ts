@@ -1535,8 +1535,6 @@ export interface components {
             declared_power_difference_db?: number | null;
             /** Level Difference Db */
             level_difference_db?: number | null;
-            /** Played Artifact Id */
-            played_artifact_id: string;
             /** Played Sha256 */
             played_sha256: string;
         };

@@ -63,7 +63,7 @@ class Interlock:
 
     # --- arming --------------------------------------------------------------------------
 
-    def arm(self, operator: str, *, allow_real_output: Optional[bool] = None) -> None:
+    def arm(self, operator: str) -> None:
         """A named person arms the session. Real adapters also need the environment gate."""
         if self.state == "tripped":
             raise SafetyViolation(f"interlock tripped ({self.trip_reason}); start a new session")
@@ -71,10 +71,8 @@ class Interlock:
             raise SafetyViolation(f"cannot arm from state {self.state}")
         if not operator or not operator.strip():
             raise SafetyViolation("arming needs the operator's name; RF output stays off")
-        if self.instrument.info.rf_output_capable:
-            allowed = allow_real_output if allow_real_output is not None else os.environ.get(ALLOW_RF_ENV) == "1"
-            if not allowed:
-                raise SafetyViolation(f"real RF output is not permitted in this environment ({ALLOW_RF_ENV} is not "
+        if self.instrument.info.rf_output_capable and os.environ.get(ALLOW_RF_ENV) != "1":
+            raise SafetyViolation(f"real RF output is not permitted in this environment ({ALLOW_RF_ENV} is not "
                                       "'1'); only an approved laboratory session may set it")
         self.instrument.heartbeat()
         self.operator = operator.strip()

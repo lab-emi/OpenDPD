@@ -81,8 +81,7 @@ class MeasurementEvidence(StrictModel):
 
     attestation: str = Field(min_length=1)
     apply_run_id: Slug
-    played_artifact_id: Slug
-    played_sha256: Sha256
+    played_sha256: Sha256                                     # the export's hash; its copy is artifact played-signal
     conditions: MeasurementConditions
     captures: List[CaptureAlignment] = Field(min_length=1, max_length=2)
     level_difference_db: Optional[float] = None               # 20 log10(rms with DPD / rms without DPD), capture units

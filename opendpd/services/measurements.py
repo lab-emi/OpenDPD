@@ -305,7 +305,7 @@ def align_stored(run_dir: Path, resolved: ResolvedExperimentConfig, dataset: Dat
         declared = with_ref.declared_output_power_dbm - without_ref.declared_output_power_dbm
     evidence = MeasurementEvidence(
         attestation=MOCK_ATTESTATION if m.source == "mock_adapter" else ATTESTATION,
-        apply_run_id=m.apply_run_id, played_artifact_id="played-signal", played_sha256=m.played_sha256,
+        apply_run_id=m.apply_run_id, played_sha256=m.played_sha256,
         conditions=m.conditions, captures=captures,
         level_difference_db=level_db(aligned["with_dpd"], without) if without is not None else None,
         declared_power_difference_db=declared)
