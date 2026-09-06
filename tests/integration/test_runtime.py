@@ -1,5 +1,7 @@
 """S03 runtime tests: real worker processes, cancel, crash, restart recovery."""
 
+import json
+
 import os
 import signal
 import subprocess
@@ -69,6 +71,18 @@ def test_run_completes_through_worker_with_events(runtime):
     assert (ws.run_dir(record.run_id) / "logs" / "worker.log").stat().st_size > 0
     assert (ws.run_dir(record.run_id) / "events.jsonl").exists()
     assert not is_same_process(final.worker.pid, final.worker.create_time)
+    # started_at / finished_at are the executor's own clock (the worker's status events), not the
+    # supervisor's spawn time and exit detection: durations compare with `opendpd run` in-process
+    worker_status = [json.loads(line) for line in (ws.run_dir(record.run_id) / "events.jsonl").read_text().splitlines()
+                     if '"status"' in line]
+    worker_status = [e for e in worker_status if e["type"] == "status"]
+    assert worker_status[0]["payload"]["to"] == "running" and worker_status[-1]["payload"]["to"] == "succeeded"
+    first_ts, last_ts = (datetime.fromisoformat(worker_status[i]["ts"]) for i in (0, -1))
+    # the executor stamps, saves run.json, then emits: its stamp sits a few ms *before* the event, whereas
+    # the supervisor's spawn time is ≥ an interpreter start-up earlier and its exit detection is *after*
+    assert 0 <= (first_ts - final.started_at).total_seconds() < 0.1
+    assert 0 <= (last_ts - final.finished_at).total_seconds() < 1.0
+    assert final.created_at <= final.started_at <= final.finished_at
 
 
 def test_api_stays_responsive_and_queue_is_serial(runtime):

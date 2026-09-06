@@ -13,6 +13,25 @@
 
 We invite you to contribute new backbone networks, pre-trained models, or measured PA datasets. This repository contains the complete training pipeline for OpenDPD using baseband signals from digital transmitters.
 
+# OpenDPD Studio (alpha): one command to a local workbench
+
+```bash
+pip install "opendpd[gui]"
+opendpd gui
+```
+
+`opendpd gui` starts a loopback-only service, prints a one-time URL and opens
+your browser: register the built-in measured data, train a smoke recipe, read
+results with their evidence type and metric profile, compare runs, export a
+reproducible package. The same configuration runs unchanged through
+`opendpd run` and the Python API. Start with
+[docs/tutorials/gui-quickstart.md](docs/tutorials/gui-quickstart.md); the
+headless path is [docs/tutorials/headless-cli.md](docs/tutorials/headless-cli.md).
+What is verified where: [support matrix](docs/releases/support-matrix.md),
+[performance report](docs/releases/performance-report.md),
+[hardening report](docs/releases/hardening-report.md); status per plan stage:
+[studio-progress](docs/releases/studio-progress.md).
+
 # What's New in OpenDPD V2.1
 
 **OpenDPD V2.1** introduces a comprehensive visualization and plotting system that lets you observe model training dynamics in real time and generate publication-quality figures.

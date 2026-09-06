@@ -29,6 +29,7 @@ End users never need Node.js: the built frontend is shipped inside the wheel.
 | L2 packaged E2E | build wheel, install in a clean venv without Node.js, start `opendpd gui`, browser journey | `python -m build && pytest tests/packaging` | release candidates and packaging PRs |
 | L3 platform / stress | multi-OS, stress datasets, long logs, crash recovery | scheduled `weekly.yml` | scheduled |
 | L4 GPU / statistical | CUDA/MPS capability, multi-seed benchmark | manual, bound to an exact commit | after human approval |
+| Performance report | plan §8.2 targets against a real `opendpd gui` server and a real browser | `python scripts/perf_report.py --workspace <scratch>/ws --minutes 30 --stress` (regenerates `docs/releases/performance-report.md`; run on an idle machine, never next to pytest) | release candidates |
 
 Tests must include failure paths. Coverage numbers do not replace correctness.
 
@@ -51,6 +52,17 @@ Pure refactors must show unchanged behaviour on frozen inputs.
 Metric definitions, data splits, golden references, acceptance thresholds and
 published benchmark results require a separate PR with the
 `science-review-approved` label. See AGENTS.md §3.
+
+## Adding models, metric profiles and documentation
+
+- New models: `docs/tutorials/adding-a-model.md` (one registry entry serves
+  CLI, API and GUI; evidence before "supported").
+- New metric profiles or thresholds: protected paths, separate science-reviewed
+  change (`docs/protocols/metric-profiles.md`, `docs/protocols/acceptance-thresholds.md`).
+- Tutorials: every `opendpd …` command in `docs/tutorials/*.md` is executed by
+  `tests/integration/test_docs_commands.py` (or by the weekly workflow for the
+  benchmark family) and every documented flag must exist in the parser, so
+  update the docs and the CLI together.
 
 ## Commit messages
 

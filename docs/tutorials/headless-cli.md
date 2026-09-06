@@ -69,6 +69,13 @@ Model keys and their parameters come from the registry (`opendpd models`).
 Checkpoint selection is fixed by protocol (validation NMSE for PA models,
 validation ACLR for DPD models) and cannot be changed in a config.
 
+`execution.num_threads` is the CPU thread budget torch trains with. Unset, torch
+uses its own default (the physical-core count). The budget is applied by the one
+executor every path shares, so a configuration trains with the same budget from
+the CLI, the Python API and the GUI; on a many-core machine a smaller explicit
+budget often trains a small model faster and leaves the Studio service its own
+core (see `docs/releases/performance-report.md`).
+
 ## Compatibility
 
 `python main.py ...` and `opendpd-cli` are unchanged. The `provenance.json`

@@ -5,6 +5,7 @@ away with a structured error and must leave no trace in the workspace.
 """
 
 import json
+import re
 import zipfile
 from pathlib import Path
 
@@ -314,4 +315,28 @@ def test_no_unrestricted_pickle_loading_in_the_tree():
                 offenders.append(str(path.relative_to(root)))
             if "allow_pickle=True" in text or "pickle.load" in text:
                 offenders.append(str(path.relative_to(root)))
+    assert offenders == [], offenders
+
+
+def test_the_service_and_the_page_never_call_out():
+    """No telemetry, no CDN, no update checks: the only network client in the tree probes 127.0.0.1."""
+    root = Path(__file__).resolve().parents[2]
+    offenders = []
+    for path in (root / "opendpd").rglob("*.py"):
+        text = path.read_text(encoding="utf-8")
+        for needle in ("urlopen(", "requests.get(", "requests.post(", "httpx.", "http.client.", "create_connection("):
+            if needle in text and path.name != "launcher.py":
+                offenders.append(f"{path.relative_to(root)}: {needle}")
+    launcher = (root / "opendpd" / "studio" / "launcher.py").read_text(encoding="utf-8")
+    assert "loopback only" in launcher and 'HOST = "127.0.0.1"' in launcher
+    for path in FRONTEND_SRC.rglob("*.ts*"):
+        text = path.read_text(encoding="utf-8")
+        if path.name.endswith(".test.tsx") or path.name.endswith(".test.ts"):
+            continue
+        for needle in (r"\bfetch\(", "XMLHttpRequest", "sendBeacon", "new WebSocket", "new EventSource"):
+            # \bfetch( is the browser call; react-query's refetch( is not a network client
+            if re.search(needle, text) and path.name not in ("client.ts", "events.ts"):
+                offenders.append(f"frontend/src/{path.relative_to(FRONTEND_SRC)}: {needle}")
+    client = (FRONTEND_SRC / "api" / "client.ts").read_text(encoding="utf-8")
+    assert "fetch(`${API}${path}`" in client and "const API = '/api/v1'" in client
     assert offenders == [], offenders

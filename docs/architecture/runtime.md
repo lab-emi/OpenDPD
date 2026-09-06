@@ -46,6 +46,20 @@ The store assigns `seq` (1, 2, 3 … per run) when it ingests a line. Clients
 resume with `after=<seq>`; because nothing is pruned in this version,
 `first_seq` is always the start and replay never needs a snapshot.
 
+## Timestamps
+
+| Field | Clock | Meaning |
+|---|---|---|
+| `created_at` | server | submission |
+| `started_at`, `finished_at` | **executor** | the two points `execute_run` stamps in-process on every path (after the configuration and dataset are loaded; after the result is written). When the worker recorded them in its `run.json`, the supervisor adopts them at finalisation instead of its own spawn time and exit detection, so a GUI run and an `opendpd run` of the same configuration report the same wall clock. A worker that died without recording an end gets the supervisor's detection time. |
+| `last_heartbeat_at` | server | last event ingested from the worker |
+
+Interpreter start-up, torch import and exit detection (up to one poll
+interval) are therefore *not* inside `finished_at − started_at`; they are
+visible as the gap between `created_at` and `started_at` plus the moment the
+terminal status becomes visible, and the performance report lists them
+separately from training overhead.
+
 ## Cancellation and cleanup
 
 1. `cancel(run_id)` on a queued run → `cancelled` immediately.

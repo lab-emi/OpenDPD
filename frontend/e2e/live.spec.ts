@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 
 /**
@@ -165,5 +165,13 @@ test('a very long worker log stays windowed and searchable', async ({ page }) =>
 })
 
 test.afterAll(() => {
-  if (PERF_OUT && Object.keys(perf).length > 0) writeFileSync(PERF_OUT, JSON.stringify({ run_id: runId, ...perf }, null, 2))
+  if (!PERF_OUT || Object.keys(perf).length === 0) return
+  // several projects (Chromium, Firefox) write here: merge, so a later project never drops the earlier timings
+  let previous: Record<string, unknown> = {}
+  try {
+    previous = JSON.parse(readFileSync(PERF_OUT, 'utf-8')) as Record<string, unknown>
+  } catch {
+    previous = {}
+  }
+  writeFileSync(PERF_OUT, JSON.stringify({ ...previous, run_id: runId, ...perf }, null, 2))
 })

@@ -117,6 +117,25 @@ def test_result_metrics_come_from_the_registry_and_agree_with_the_training_log(w
     assert "legacy-opendpd-v1 v1 (frozen)" in out and "general-spectral-v1 v1" in out and "ACPR_L" in out
 
 
+def test_thread_budget_is_applied_by_the_executor(workspace):
+    """``execution.num_threads`` is not decoration: the executor hands it to torch before training,
+    on every launch path (CLI, API and the GUI worker all call ``execute_run``)."""
+    import torch
+
+    before = torch.get_num_threads()
+    budget = 2 if before != 2 else 1
+    config = instantiate("pa-gru-smoke-v1", "dpa-200mhz")
+    config = config.model_copy(update={"training": config.training.model_copy(update={"epochs": 1}),
+                                       "execution": config.execution.model_copy(update={"num_threads": budget})})
+    try:
+        record = execute_run(workspace, create_run(workspace, config, idempotency_key="thread-budget").run_id)
+        assert record.status == RunStatus.succeeded, record.error
+        assert torch.get_num_threads() == budget
+        assert load_resolved(workspace, record.run_id).execution.num_threads == budget
+    finally:
+        torch.set_num_threads(before)
+
+
 def test_idempotency_key_returns_existing_run(workspace, pa_run):
     again = create_run(workspace, instantiate("pa-gru-smoke-v1", "dpa-200mhz"), idempotency_key="pa-smoke")
     assert again.run_id == pa_run.run_id

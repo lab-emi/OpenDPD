@@ -23,7 +23,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from opendpd.runtime.db import RunStore
 from opendpd.runtime.procs import is_same_process, kill_tree, process_identity
@@ -377,8 +377,17 @@ class Supervisor:
         if record.status == RunStatus.cancel_requested and target == RunStatus.failed and active.killed:
             target, reason, error = RunStatus.cancelled, "worker terminated after the cancel grace period", None
 
-        final = self.store.transition(run_id, target, reason=reason, finished_at=_now(), exit_code=code,
-                                      error=error, result_id=result_id)
+        # Timestamps come from the executor's own clock when the worker recorded them: the same two
+        # points `opendpd run` stamps in-process, so durations compare across paths. The supervisor's
+        # clock (spawn time, exit noticed at the next tick) is the fallback for workers that died.
+        stamps: Dict[str, Any] = {"finished_at": _now()}
+        if file_record is not None and file_record.finished_at is not None:
+            stamps["finished_at"] = file_record.finished_at
+            if file_record.started_at is not None and record.started_at is not None \
+                    and file_record.started_at >= record.started_at:
+                stamps["started_at"] = file_record.started_at
+        final = self.store.transition(run_id, target, reason=reason, exit_code=code, error=error, result_id=result_id,
+                                      **stamps)
         experiments.save_run(self.ws, final)
         cancel = self.ws.run_dir(run_id) / CANCEL_FILE
         if cancel.exists():

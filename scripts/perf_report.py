@@ -199,14 +199,14 @@ def submit_and_wait(server: Server, epochs: int, name: str, timeout: float = 900
     return wait_terminal(server, run["run_id"], timeout)
 
 
-def wait_terminal(server: Server, run_id: str, timeout: float = 900.0) -> Dict:
+def wait_terminal(server: Server, run_id: str, timeout: float = 900.0, poll: float = 0.25) -> Dict:
     deadline = now() + timeout
     while now() < deadline:
         status, run, _ = server.api("GET", f"/api/v1/runs/{run_id}")
         assert status == 200, run
         if run["status"] in ("succeeded", "failed", "cancelled", "interrupted"):
             return run
-        time.sleep(0.25)
+        time.sleep(poll)
     raise RuntimeError(f"run {run_id} did not finish")
 
 
@@ -275,22 +275,37 @@ def measure_api(server: Server, run_id: str, big_log: str, samples: int) -> Dict
 
 
 def measure_event_latency(server: Server, run_id: str, seconds: float) -> Dict:
+    """Latency of every event emitted while this loop polls. Events emitted *before* the first poll (the
+    store's own status events at spawn, the first epoch while the API phase was still running) are skipped:
+    their delay would measure this script, not the service."""
     lat, seq, deadline = [], 0, now() + seconds
+    slowest: List[Tuple[float, str, str, int, float]] = []
+    status, page, _ = server.api("GET", f"/api/v1/runs/{run_id}/events/list?after=0&limit=500")
+    if status == 200:
+        seq = max([ev["seq"] for ev in page.get("events", page if isinstance(page, list) else [])] + [0])
     while now() < deadline:
+        t_call = now()
         status, page, _ = server.api("GET", f"/api/v1/runs/{run_id}/events/list?after={seq}&limit=500")
         arrived = utcnow()
+        call_s = now() - t_call
         if status != 200:
             break
         for ev in page.get("events", page if isinstance(page, list) else []):
             seq = max(seq, ev["seq"])
             ts = datetime.fromisoformat(ev["ts"].replace("Z", "+00:00"))
             lat.append((arrived - ts).total_seconds())
+            slowest.append((lat[-1], ev["type"], ev["ts"], int(ev["seq"]), call_s))
+            slowest.sort(reverse=True)
+            del slowest[5:]
         run = server.api("GET", f"/api/v1/runs/{run_id}")[1]
         if run["status"] in ("succeeded", "failed", "cancelled", "interrupted"):
             break
         time.sleep(0.1)
     return {"latency_s": summary(lat), "events": len(lat),
-            "note": "server receipt (poll every 100 ms) minus the worker's own event timestamp, same machine clock"}
+            "slowest": [{"latency_s": round(x, 3), "type": t, "ts": ts, "seq": q, "api_call_s": round(c, 3)}
+                        for x, t, ts, q, c in slowest],
+            "note": "server receipt (poll every 100 ms) minus the worker's own event timestamp, same machine clock; "
+                    "only events emitted after the poll loop opened are counted"}
 
 
 def measure_cancel(server: Server) -> Dict:
@@ -318,32 +333,58 @@ def run_wall(workspace: Path, run_id: str) -> Tuple[float, float]:
     return (end - start).total_seconds(), queue
 
 
-def measure_overhead(server: Server, workspace: Path, pairs: int, epochs: int, log_dir: Path) -> Dict:
+def measure_overhead(server: Server, workspace: Path, pairs: int, epochs: int, log_dir: Path,
+                     threads: Optional[int] = None) -> Dict:
+    """Paired runs of one configuration: in-process CLI versus the GUI's worker path. Order alternates
+    per pair (thermal and cache effects), both legs carry the same thread budget (``None`` = torch's own
+    default on both, the out-of-the-box figure), and the API is polled once per second while the GUI
+    run trains (the page itself listens to the event stream and refreshes every 5 s)."""
     rows = []
     cfg_path = log_dir / "overhead-config.json"
     for i in range(pairs):
         cfg = smoke_config(epochs, seed=10 + i)
+        if threads is not None:
+            cfg["execution"]["num_threads"] = threads
         cfg_path.write_text(json.dumps(cfg))
-        t0 = now()
-        proc = subprocess.run([sys.executable, "-m", "opendpd.commands", "run", "--workspace", str(workspace), "--config",
-                               str(cfg_path), "--name", f"overhead cli {i}", "--json"], capture_output=True, text=True,
-                              env=dict(os.environ, MPLBACKEND="Agg", TQDM_DISABLE="1"))
-        cli_process = now() - t0
-        cli_run = json.loads(proc.stdout)["run"]["run_id"] if proc.returncode == 0 else None
-        assert cli_run, proc.stderr[-2000:]
-        cli_wall, _ = run_wall(workspace, cli_run)
-        t0 = now()
-        rec = submit_and_wait(server, epochs, f"overhead gui {i}", seed=10 + i)
-        gui_process = now() - t0
-        gui_wall, queue = run_wall(workspace, rec["run_id"])
-        rows.append({"pair": i, "cli_run": cli_run, "gui_run": rec["run_id"], "cli_train_s": cli_wall, "gui_train_s": gui_wall,
-                     "overhead_pct": (gui_wall / cli_wall - 1) * 100, "cli_process_s": cli_process, "gui_submit_to_done_s": gui_process,
-                     "gui_queue_s": queue})
+        gui_first = i % 2 == 1
+        result: Dict[str, object] = {"pair": i, "order": "gui first" if gui_first else "cli first"}
+
+        def cli_leg():
+            t0 = now()
+            proc = subprocess.run([sys.executable, "-m", "opendpd.commands", "run", "--workspace", str(workspace), "--config",
+                                   str(cfg_path), "--name", f"overhead cli {i}", "--json"], capture_output=True, text=True,
+                                  env=dict(os.environ, MPLBACKEND="Agg", TQDM_DISABLE="1"))
+            result["cli_process_s"] = now() - t0
+            assert proc.returncode == 0, proc.stderr[-2000:]
+            result["cli_run"] = json.loads(proc.stdout)["run"]["run_id"]
+            result["cli_train_s"], _ = run_wall(workspace, result["cli_run"])
+            result["cli_lifecycle_s"] = result["cli_process_s"] - result["cli_train_s"]
+
+        def gui_leg():
+            t0 = now()
+            status, run, _ = server.api("POST", "/api/v1/runs", {"config": cfg, "name": f"overhead gui {i}"})
+            assert status == 201, run
+            rec = wait_terminal(server, run["run_id"], poll=1.0)
+            assert rec["status"] == "succeeded", rec
+            result["gui_submit_to_done_s"] = now() - t0
+            result["gui_run"] = rec["run_id"]
+            result["gui_train_s"], result["gui_queue_s"] = run_wall(workspace, rec["run_id"])
+            result["gui_lifecycle_s"] = result["gui_submit_to_done_s"] - result["gui_train_s"]
+
+        for leg in ((gui_leg, cli_leg) if gui_first else (cli_leg, gui_leg)):
+            leg()
+        result["overhead_pct"] = (result["gui_train_s"] / result["cli_train_s"] - 1) * 100
+        rows.append(result)
     over = [r["overhead_pct"] for r in rows]
+    budget = "torch default (physical cores)" if threads is None else f"execution.num_threads = {threads}"
     return {"pairs": rows, "median_pct": statistics.median(over), "min_pct": min(over), "max_pct": max(over), "epochs": epochs,
-            "note": "same config, seed and CPU thread budget; CLI trains in its own process, GUI path trains in a worker "
-                    "subprocess while the server ingests its events and this script polls the API; wall clock between "
-                    "started_at and finished_at of each run"}
+            "threads": threads,
+            "note": f"same config and seed, both legs use {budget}; order alternates per pair; "
+                    "the CLI trains in its own process, the GUI path trains in a worker subprocess while the server "
+                    "ingests its events and this script polls the run once per second; train = wall clock between "
+                    "started_at and finished_at, stamped by the one executor both paths share (data loading, training, "
+                    "evaluation); lifecycle = everything around it (interpreter and torch start-up, queueing, exit "
+                    "detection, this script's polling), reported separately and not part of the target"}
 
 
 def measure_memory(server: Server, run_id: str, big_log: str, minutes: float) -> Dict:
@@ -407,34 +448,61 @@ def measure_stress(workspace: Path, samples: int, log_dir: Path) -> Dict:
             arr[1, s:s + n] = x * 1.5 - 0.1 * x ** 3
         arr.flush()
         del arr
-    wrapper = ("import resource, runpy, sys\n"
+    # Peak *anonymous* memory of the import process, sampled from /proc/self/status every 20 ms: the plan's
+    # boundary excludes the OS file cache, and the pages of a memory-mapped source or output are exactly that
+    # (file backed, clean, reclaimable); ru_maxrss would count them as if the capture had been copied into RAM.
+    sampler = ("import resource, runpy, sys, threading, time\n"
+               "peak = {{'anon': 0, 'file': 0, 'rss': 0}}\n"
+               "def read():\n"
+               "    out = {{}}\n"
+               "    for line in open('/proc/self/status'):\n"
+               "        if line.startswith(('RssAnon', 'RssFile', 'VmRSS')):\n"
+               "            out[line.split(':')[0]] = int(line.split()[1])\n"
+               "    return out\n"
+               "def sample(stop):\n"
+               "    while not stop.is_set():\n"
+               "        v = read()\n"
+               "        peak['anon'] = max(peak['anon'], v.get('RssAnon', 0)); peak['file'] = max(peak['file'], v.get('RssFile', 0))\n"
+               "        peak['rss'] = max(peak['rss'], v.get('VmRSS', 0)); stop.wait(0.02)\n"
+               "stop = threading.Event(); threading.Thread(target=sample, args=(stop,), daemon=True).start()\n")
+    wrapper = (sampler +
                "sys.argv = {argv!r}\n"
                "try:\n    runpy.run_module('opendpd.commands', run_name='__main__')\n"
                "except SystemExit as e:\n    code = e.code or 0\n"
                "else:\n    code = 0\n"
-               "print('RU_MAXRSS_KB', resource.getrusage(resource.RUSAGE_SELF).ru_maxrss, file=sys.stderr)\n"
+               "stop.set(); v = read()\n"
+               "peak['anon'] = max(peak['anon'], v.get('RssAnon', 0)); peak['file'] = max(peak['file'], v.get('RssFile', 0))\n"
+               "print('PEAK_KB', peak['anon'], peak['file'], max(peak['rss'], resource.getrusage(resource.RUSAGE_SELF).ru_maxrss), file=sys.stderr)\n"
                "sys.exit(code)")
-    baseline = subprocess.run([sys.executable, "-c", "import resource, sys, opendpd.services.datasets; "
-                               "print('RU_MAXRSS_KB', resource.getrusage(resource.RUSAGE_SELF).ru_maxrss, file=sys.stderr)"],
+    baseline = subprocess.run([sys.executable, "-c", sampler.format() + "import opendpd.commands, opendpd.services.datasets\n"
+                               "stop.set(); v = read(); print('PEAK_KB', v.get('RssAnon', 0), v.get('RssFile', 0), v.get('VmRSS', 0), file=sys.stderr)"],
                               capture_output=True, text=True)
-    base_kb = int(baseline.stderr.strip().split()[-1])
-    argv = ["opendpd", "datasets", "import", str(src), "--workspace", str(workspace), "--id", "stress", "--name", "stress synthetic",
+    base_anon_kb, base_file_kb, base_rss_kb = (int(v) for v in baseline.stderr.strip().splitlines()[-1].split()[1:4])
+    stress_ws = workspace.parent / (workspace.name + "-stress-ws")     # fresh every time: the import is the measurement
+    shutil.rmtree(stress_ws, ignore_errors=True)
+    argv = ["opendpd", "datasets", "import", str(src), "--workspace", str(stress_ws), "--id", "stress", "--name", "stress synthetic",
             "--fs", "800e6", "--bandwidth", "200e6", "--n-sub-ch", "10", "--nperseg", "2560"]
     t0 = now()
     proc = subprocess.run([sys.executable, "-c", wrapper.format(argv=argv)], capture_output=True, text=True,
                           env=dict(os.environ, MPLBACKEND="Agg"))
     elapsed = now() - t0
-    line = [ln for ln in proc.stderr.splitlines() if ln.startswith("RU_MAXRSS_KB")]
-    peak_kb = int(line[-1].split()[-1]) if line else None
+    line = [ln for ln in proc.stderr.splitlines() if ln.startswith("PEAK_KB")]
+    anon_kb, file_kb, rss_kb = (int(v) for v in line[-1].split()[1:4]) if line else (None, None, None)
     return {"samples": samples, "raw_bytes": samples * 16, "seconds": elapsed, "exit_code": proc.returncode,
-            "baseline_rss_mb": base_kb / 1024, "peak_rss_mb": peak_kb / 1024 if peak_kb else None,
-            "extra_mb": (peak_kb - base_kb) / 1024 if peak_kb else None, "stderr_tail": proc.stderr[-800:] if proc.returncode else "",
-            "note": "peak RSS of the import process (ru_maxrss) minus an interpreter that only imported the service; the OS "
-                    "file cache is not part of RSS; CSV split files are written chunk by chunk"}
+            "baseline_rss_mb": base_rss_kb / 1024, "baseline_anon_mb": base_anon_kb / 1024,
+            "peak_rss_mb": rss_kb / 1024 if rss_kb else None, "peak_anon_mb": anon_kb / 1024 if anon_kb else None,
+            "peak_file_mb": file_kb / 1024 if file_kb else None,
+            "extra_mb": (anon_kb - base_anon_kb) / 1024 if anon_kb is not None else None,
+            "extra_rss_incl_file_cache_mb": (rss_kb - base_rss_kb) / 1024 if rss_kb else None,
+            "stderr_tail": proc.stderr[-800:] if proc.returncode else "",
+            "note": "peak anonymous memory (RssAnon, sampled every 20 ms) of the import process minus an interpreter that "
+                    "only imported the service; the file-backed pages of the memory-mapped source and outputs are the OS "
+                    "file cache (excluded by plan §8.2) and are reported separately; CSV split files are written chunk by chunk"}
 
 
 def run_browser(server: Server, big_log: str, log_dir: Path, samples: int) -> Dict:
     perf_out = log_dir / "live-perf.json"
+    perf_out.unlink(missing_ok=True)
     env = dict(os.environ, OPENDPD_LIVE_URL=server.bootstrap_url, OPENDPD_PERF_OUT=str(perf_out), OPENDPD_LIVE_BIG_LOG=big_log,
                OPENDPD_LIVE_SAMPLES=str(samples))
     results = {}
@@ -466,17 +534,18 @@ def verdict(value: Optional[float], threshold: float, comparator: str) -> str:
 def write_report(out: Path, data: Dict) -> None:
     env, res = data["environment"], data["results"]
     b = res.get("browser", {}).get("timings", {})
+    ev = res.get("events") or {"latency_s": {}, "events": 0}
     values = {
-        "startup_ready_p95_s": res["startup"]["ready_s"]["p95"],
+        "startup_ready_p95_s": (res.get("startup") or {}).get("ready_s", {}).get("p95"),
         "page_load_p95_ms": (b.get("page_load_to_table_ms") or {}).get("p95"),
         "ui_p95_ms": (b.get("tab_switch_ms") or {}).get("p95"),
         "api_training_p95_ms": max(v["p95"] for v in res["api_training"].values()) if res.get("api_training") else None,
         "chart_p95_ms": (b.get("chart_enlarge_render_ms") or {}).get("p95"),
-        "event_latency_max_s": res["events"]["latency_s"]["max"] if res["events"]["events"] else None,
-        "overhead_median_pct": res["overhead"]["median_pct"],
-        "memory_growth_mb": res["memory"]["growth_after_warmup_mb"],
-        "stress_extra_mb": (res.get("stress") or {}).get("extra_mb"),
-        "cancel_feedback_s": res["cancel"]["feedback_s"],
+        "event_latency_max_s": ev["latency_s"]["max"] if ev["events"] else None,
+        "overhead_median_pct": (res.get("overhead") or {}).get("median_pct"),
+        "memory_growth_mb": (res.get("memory") or {}).get("growth_after_warmup_mb"),
+        "stress_extra_mb": (res.get("stress") or {}).get("extra_mb") if (res.get("stress") or {}).get("exit_code") == 0 else None,
+        "cancel_feedback_s": (res.get("cancel") or {}).get("feedback_s"),
         "history_ok": 1.0 if (b.get("log_rows_in_dom") is not None and b["log_rows_in_dom"] < 120 and b.get("dom_rows_experiments", 999) <= 100) else None,
         "offline_ok": 1.0,
     }
@@ -485,7 +554,8 @@ def write_report(out: Path, data: Dict) -> None:
         "",
         f"Measured on {env['date']} at commit `{env['git'][:12]}`{' (dirty tree)' if env['git_dirty'] else ''}. Every number below was "
         "produced by `scripts/perf_report.py` against a real `opendpd gui` server on this machine; browser numbers come from "
-        "`frontend/e2e/live.spec.ts` (Playwright) against the same server. Nothing is inferred.",
+        "`frontend/e2e/live.spec.ts` (Playwright) against the same server. Nothing is inferred. Phases re-run with "
+        "`--phases` are merged into the same JSON; the date above is that of the latest run.",
         "",
         "## Environment",
         "",
@@ -535,14 +605,26 @@ def write_report(out: Path, data: Dict) -> None:
         "", "### Training status visibility", "",
         f"- {ev['events']} events observed; latency p50 {fmt(ev['latency_s']['p50'], 3)} s, p95 {fmt(ev['latency_s']['p95'], 3)} s, "
         f"max {fmt(ev['latency_s']['max'], 3)} s ({ev['note']})",
+        *(["- slowest events: " + "; ".join(f"{x['latency_s']} s ({x['type']}, seq {x['seq']}, the poll itself took {x['api_call_s']} s)"
+                                          for x in ev["slowest"])] if ev.get("slowest") else []),
         "", "### Cancel", "",
         f"- POST cancel returned in {fmt(res['cancel']['post_s'] * 1000, 1)} ms; `cancel_requested` visible after {fmt(res['cancel']['feedback_s'] * 1000, 1)} ms; "
         f"final status `{res['cancel']['final_status']}` {fmt(res['cancel']['to_terminal_s'])} s after submission (cooperative stop at the epoch boundary)",
         "", f"### GUI overhead on training ({len(res['overhead']['pairs'])} pairs, {res['overhead']['epochs']} epochs each)", "",
-        "| pair | CLI train (s) | GUI train (s) | overhead | GUI queue wait (s) |", "|---|---:|---:|---:|---:|",
+        "| pair | order | CLI train (s) | GUI train (s) | overhead | CLI process (s) | GUI submit → done (s) | GUI queue wait (s) |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
     for r in res["overhead"]["pairs"]:
-        lines.append(f"| {r['pair']} | {fmt(r['cli_train_s'])} | {fmt(r['gui_train_s'])} | {fmt(r['overhead_pct'], 1)} % | {fmt(r['gui_queue_s'])} |")
+        lines.append(f"| {r['pair']} | {r.get('order', 'cli first')} | {fmt(r['cli_train_s'])} | {fmt(r['gui_train_s'])} | "
+                     f"{fmt(r['overhead_pct'], 1)} % | {fmt(r['cli_process_s'])} | {fmt(r['gui_submit_to_done_s'])} | {fmt(r['gui_queue_s'])} |")
+    for key in sorted(k for k in res if k.startswith("overhead_threads_")):
+        ob = res[key]
+        lines += ["", f"Diagnostic: the same pairs with an explicit budget of {ob['threads']} threads on both legs "
+                      f"(median {fmt(ob['median_pct'], 1)} %, min {fmt(ob['min_pct'], 1)} %, max {fmt(ob['max_pct'], 1)} %). "
+                      "This is not the target figure; it shows how much of the overhead is thread oversubscription.", "",
+                  "| pair | order | CLI train (s) | GUI train (s) | overhead |", "|---|---|---:|---:|---:|"]
+        for r in ob["pairs"]:
+            lines.append(f"| {r['pair']} | {r.get('order', 'cli first')} | {fmt(r['cli_train_s'])} | {fmt(r['gui_train_s'])} | {fmt(r['overhead_pct'], 1)} % |")
     m = res["memory"]
     lines += [
         f"\nmedian {fmt(res['overhead']['median_pct'], 1)} % (min {fmt(res['overhead']['min_pct'], 1)} %, max {fmt(res['overhead']['max_pct'], 1)} %); {res['overhead']['note']}.",
@@ -552,7 +634,7 @@ def write_report(out: Path, data: Dict) -> None:
         f"- load: {m['requests']:,} requests, {m['runs_submitted']} runs submitted, {m['errors']} request errors; {m['note']}",
         f"- samples (s, MB): {', '.join(f'{t}:{v}' for t, v in m['samples'])}",
     ]
-    if b:
+    if b.get("heap_mb_samples"):
         lines += ["", f"- browser heap (Chromium, CDP `JSHeapUsedSize`) over 120 page switches: samples {', '.join(f'{v:.1f}' for v in b.get('heap_mb_samples', []))} MB; "
                       f"floor of the second half minus floor of the first half {fmt(b.get('heap_floor_growth_mb'), 1)} MB, peak {fmt(b.get('heap_max_mb'), 1)} MB "
                       "(the heap oscillates with garbage collection; a leak shows as a rising floor)"]
@@ -560,8 +642,11 @@ def write_report(out: Path, data: Dict) -> None:
     lines += ["", "### Stress import", ""]
     if s and not s.get("skipped"):
         lines += [f"- {s['samples']:,} paired float32 samples ({s['raw_bytes'] / 1e9:.2f} GB raw, `(2, n, 2)` .npy) imported in {fmt(s['seconds'], 1)} s "
-                  f"(exit code {s['exit_code']}); peak RSS {fmt(s['peak_rss_mb'], 1)} MB vs {fmt(s['baseline_rss_mb'], 1)} MB baseline: "
-                  f"extra {fmt(s['extra_mb'], 1)} MB; {s['note']}"]
+                  f"(exit code {s['exit_code']}); peak anonymous memory {fmt(s.get('peak_anon_mb'), 1)} MB vs "
+                  f"{fmt(s.get('baseline_anon_mb'), 1)} MB baseline: extra {fmt(s['extra_mb'], 1)} MB; "
+                  f"file-backed (memory-mapped) pages peaked at {fmt(s.get('peak_file_mb'), 1)} MB and total RSS at "
+                  f"{fmt(s.get('peak_rss_mb'), 1)} MB ({fmt(s.get('extra_rss_incl_file_cache_mb'), 1)} MB above the baseline "
+                  f"when the file cache is counted); {s['note']}"]
         if s.get("stderr_tail"):
             lines += ["", "```", s["stderr_tail"], "```"]
     else:
@@ -572,11 +657,12 @@ def write_report(out: Path, data: Dict) -> None:
     for project in ("chromium-1366", "firefox-1366"):
         if project in br:
             lines += [f"- {project}: exit code {br[project]['exit_code']}", "", "```", br[project]["tail"], "```"]
-    if b:
+    if b.get("page_load_to_table_ms"):
         lines += ["", f"- page load to experiments table (20 navigations): p50 {fmt(b['page_load_to_table_ms']['p50'], 0)} ms, p95 {fmt(b['page_load_to_table_ms']['p95'], 0)} ms",
                   f"- tab switch ({b['tab_switch_ms']['n']} samples): p50 {fmt(b['tab_switch_ms']['p50'], 0)} ms, p95 {fmt(b['tab_switch_ms']['p95'], 0)} ms",
-                  f"- chart enlarge re-render ({b['chart_enlarge_render_ms']['n']} samples): p50 {fmt(b['chart_enlarge_render_ms']['p50'], 0)} ms, p95 {fmt(b['chart_enlarge_render_ms']['p95'], 0)} ms",
-                  f"- long log: {b.get('log_lines_loaded', 0):,} lines loaded in {b.get('log_load_all_ms', 0) / 1000:.1f} s (2 000-line pages), "
+                  f"- chart enlarge re-render ({b['chart_enlarge_render_ms']['n']} samples): p50 {fmt(b['chart_enlarge_render_ms']['p50'], 0)} ms, p95 {fmt(b['chart_enlarge_render_ms']['p95'], 0)} ms"]
+    if b.get("log_lines_loaded"):
+        lines += [f"- long log: {b.get('log_lines_loaded', 0):,} lines loaded in {b.get('log_load_all_ms', 0) / 1000:.1f} s (2 000-line pages), "
                   f"{b.get('log_rows_in_dom')} rows in the DOM, filter finds a line near the end"]
     lines += [
         "", "## Not measured here", "",
@@ -594,11 +680,16 @@ def write_report(out: Path, data: Dict) -> None:
 
 # --- main ---------------------------------------------------------------------------------------
 
+PHASES = ("startup", "api", "events", "cancel", "overhead", "browser", "memory", "stress")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--workspace", required=True, type=Path)
     ap.add_argument("--out", type=Path, default=ROOT / "docs" / "releases" / "performance-report.md")
-    ap.add_argument("--json", type=Path, default=None)
+    ap.add_argument("--json", type=Path, default=None, help="write (and, with --phases, merge into) this JSON")
+    ap.add_argument("--phases", default=",".join(PHASES),
+                    help="comma-separated subset; other phases are read from --json; 'none' only rewrites the report from --json")
     ap.add_argument("--minutes", type=float, default=30.0, help="memory measurement duration")
     ap.add_argument("--startup-runs", type=int, default=20)
     ap.add_argument("--samples", type=int, default=100)
@@ -607,18 +698,40 @@ def main(argv=None) -> int:
     ap.add_argument("--training-epochs", type=int, default=80)
     ap.add_argument("--overhead-pairs", type=int, default=3)
     ap.add_argument("--overhead-epochs", type=int, default=30)
+    ap.add_argument("--overhead-threads", default="default,8",
+                    help="comma list of thread budgets for the overhead pairs: 'default' keeps torch's own count on both legs "
+                         "(the out-of-the-box figure the target applies to), a number sets execution.num_threads on both")
     ap.add_argument("--stress", action="store_true")
     ap.add_argument("--stress-samples", type=int, default=100_000_000)
     ap.add_argument("--skip-browser", action="store_true")
     args = ap.parse_args(argv)
+    phases = set(args.phases.split(","))
+    if phases == {"none"}:                      # report only, from a saved --json; touches no workspace
+        if not (args.json and args.json.exists()):
+            ap.error("--phases none needs an existing --json")
+        write_report(args.out, json.loads(args.json.read_text()))
+        print(f"report written to {args.out}")
+        return 0
+    unknown = phases - set(PHASES)
+    if unknown:
+        ap.error(f"unknown phases {sorted(unknown)}; choose from {PHASES}")
+    if args.skip_browser:
+        phases.discard("browser")
+    if not args.stress:
+        phases.discard("stress")
 
     ws = args.workspace.resolve()
     log_dir = ws.parent / (ws.name + "-perf-logs")
     log_dir.mkdir(parents=True, exist_ok=True)
     data: Dict[str, object] = {"environment": env_info(), "workspace": str(ws), "results": {}, "fixtures": {}}
+    if args.json and args.json.exists() and phases != set(PHASES):
+        previous = json.loads(args.json.read_text())
+        data["results"] = previous.get("results", {})
+        data["fixtures"] = previous.get("fixtures", {})
+        data["environment"] = {**previous.get("environment", {}), **data["environment"]}
     res: Dict[str, object] = data["results"]  # type: ignore[assignment]
 
-    print("startup ...", flush=True)
+    print("seed ...", flush=True)
     first = Server(ws, log_dir / "seed.log")
     status, _, _ = first.api("GET", "/api/v1/datasets/dpa-200mhz")
     if status != 200:
@@ -626,45 +739,65 @@ def main(argv=None) -> int:
         assert status == 201, body
     n_samples = first.api("GET", "/api/v1/datasets/dpa-200mhz")[1]["n_samples"]
     first.stop()
-    res["startup"] = measure_startup(ws, args.startup_runs, log_dir)
+    if "startup" in phases:
+        print("startup ...", flush=True)
+        res["startup"] = measure_startup(ws, args.startup_runs, log_dir)
 
     server = Server(ws, log_dir / "server.log")
     try:
-        base = submit_and_wait(server, 2, "perf base run")
-        assert base["status"] == "succeeded", base
+        fixtures = data["fixtures"]  # type: ignore[assignment]
+        base_id = fixtures.get("base_run") if isinstance(fixtures, dict) else None
+        if not base_id or not (ws / "runs" / base_id / "result.json").exists():
+            base = submit_and_wait(server, 2, "perf base run")
+            assert base["status"] == "succeeded", base
+            base_id = base["run_id"]
         print("history fixture ...", flush=True)
-        ids, big_log = history_fixture(ws, base["run_id"], args.history, args.log_lines)
+        ids, big_log = history_fixture(ws, base_id, args.history, args.log_lines)
         assert server.api("GET", "/api/v1/runs/count")[1]["count"] >= args.history
-        data["fixtures"] = {"n_samples": n_samples, "history_runs": len(ids), "log_lines": args.log_lines, "base_run": base["run_id"],
+        data["fixtures"] = {"n_samples": n_samples, "history_runs": len(ids), "log_lines": args.log_lines, "base_run": base_id,
                             "big_log_run": big_log, "training_epochs": args.training_epochs}
-        print("api idle ...", flush=True)
-        res["api_idle"] = measure_api(server, base["run_id"], big_log, args.samples)
-        print("api during training + event latency ...", flush=True)
-        status, training, _ = server.api("POST", "/api/v1/runs", {"config": smoke_config(args.training_epochs, 2), "name": "perf training"})
-        assert status == 201, training
-        while server.api("GET", f"/api/v1/runs/{training['run_id']}")[1]["status"] == "queued":
-            time.sleep(0.05)
-        res["api_training"] = measure_api(server, base["run_id"], big_log, args.samples)
-        res["events"] = measure_event_latency(server, training["run_id"], 60)
-        if server.api("GET", f"/api/v1/runs/{training['run_id']}")[1]["status"] in ("queued", "running"):
-            server.api("POST", f"/api/v1/runs/{training['run_id']}/cancel")
-            wait_terminal(server, training["run_id"], 120)
-        print("cancel ...", flush=True)
-        res["cancel"] = measure_cancel(server)
-        print("overhead pairs ...", flush=True)
-        res["overhead"] = measure_overhead(server, ws, args.overhead_pairs, args.overhead_epochs, log_dir)
-        if not args.skip_browser:
+        if "api" in phases or "events" in phases:
+            if "api" in phases:
+                print("api idle ...", flush=True)
+                res["api_idle"] = measure_api(server, base_id, big_log, args.samples)
+            print("api during training + event latency ...", flush=True)
+            status, training, _ = server.api("POST", "/api/v1/runs", {"config": smoke_config(args.training_epochs, 2), "name": "perf training"})
+            assert status == 201, training
+            while server.api("GET", f"/api/v1/runs/{training['run_id']}")[1]["status"] == "queued":
+                time.sleep(0.05)
+            if "api" in phases:
+                res["api_training"] = measure_api(server, base_id, big_log, args.samples)
+            if "events" in phases:
+                res["events"] = measure_event_latency(server, training["run_id"], 90)
+            if server.api("GET", f"/api/v1/runs/{training['run_id']}")[1]["status"] in ("queued", "running"):
+                server.api("POST", f"/api/v1/runs/{training['run_id']}/cancel")
+                wait_terminal(server, training["run_id"], 120)
+        if "cancel" in phases:
+            print("cancel ...", flush=True)
+            res["cancel"] = measure_cancel(server)
+        if "overhead" in phases:
+            for item in args.overhead_threads.split(","):
+                budget = None if item.strip() == "default" else int(item)
+                print(f"overhead pairs ({'torch default' if budget is None else budget} threads) ...", flush=True)
+                key = "overhead" if budget is None else f"overhead_threads_{budget}"
+                res[key] = measure_overhead(server, ws, args.overhead_pairs, args.overhead_epochs, log_dir, budget)
+        if "browser" in phases:
             print("browser ...", flush=True)
             res["browser"] = run_browser(server, big_log, log_dir, args.samples)
-        print(f"memory ({args.minutes} min) ...", flush=True)
-        res["memory"] = measure_memory(server, base["run_id"], big_log, args.minutes)
-        if args.stress:
+        if "memory" in phases:
+            print(f"memory ({args.minutes} min) ...", flush=True)
+            res["memory"] = measure_memory(server, base_id, big_log, args.minutes)
+        if "stress" in phases:
             print("stress import ...", flush=True)
             res["stress"] = measure_stress(ws, args.stress_samples, log_dir)
     finally:
         server.stop()
     if args.json:
         args.json.write_text(json.dumps(data, indent=2, default=str))
+    missing = [k for k in ("startup", "api_idle", "api_training", "events", "cancel", "overhead", "memory") if k not in res]
+    if missing:
+        print(f"report not written: results for {missing} are missing (run every phase, or merge into a complete --json)")
+        return 0
     write_report(args.out, data)
     print(f"report written to {args.out}")
     return 0

@@ -374,6 +374,20 @@ def classify_failure(err: BaseException, *, stage: str) -> RunError:
     return RunError(code="worker_exception", stage=stage, message=message, traceback_tail=tail)
 
 
+def apply_thread_budget(resolved: ExperimentConfig) -> int:
+    """Apply ``execution.num_threads`` to torch's intra-op pool and return the effective count.
+
+    ``None`` keeps torch's own default (its physical-core count). The CLI, the Python API and the
+    GUI worker all execute through :func:`execute_run`, so the same configuration gets the same
+    budget on every path; the budget only governs torch (least-squares fits run in NumPy)."""
+    import torch
+
+    wanted = resolved.execution.num_threads
+    if wanted is not None and wanted != torch.get_num_threads():
+        torch.set_num_threads(wanted)
+    return torch.get_num_threads()
+
+
 def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
                 should_cancel: Optional[Callable[[], bool]] = None) -> RunRecord:
     """Run a queued run to a terminal state in the current process."""
@@ -412,6 +426,7 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
     error: Optional[RunError] = None
     outcome = RunStatus.succeeded
     reason = None
+    apply_thread_budget(resolved)
     with run_in_directory(run_dir):
         try:
             from opendpd.services import polynomial
