@@ -245,14 +245,14 @@ def cmd_evaluate(args) -> int:
     try:
         ws = Workspace.open(Path(args.workspace))
         with contextlib.redirect_stdout(sys.stderr):      # legacy model/loader chatter never pollutes the result
-            result = evaluate_run(ws, args.run_id, args.profile, store=args.store)
+            result = evaluate_run(ws, args.run_id, args.profile)
     except (WorkspaceError, KeyError, FileNotFoundError) as err:
         print(f"error: {err}", file=sys.stderr)
         return 2
     if args.json:
         _print_json(result.model_dump(mode="json"))
     else:
-        print(f"run {args.run_id} re-evaluated" + (" and stored" if args.store else ""))
+        print(f"run {args.run_id} re-evaluated under {args.profile}")
         _print_result(result)
     return 0
 
@@ -290,7 +290,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("run_id")
     p.add_argument("--workspace", required=True)
     p.add_argument("--profile", default="general-spectral-v1")
-    p.add_argument("--store", action="store_true", help="keep the result next to the run (results/<profile>.json)")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_evaluate)
 

@@ -122,8 +122,8 @@ def evaluate_all(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     return results
 
 
-def evaluate_run(ws: Workspace, run_id: str, profile_id: str, *, store: bool = False) -> EvaluationResult:
-    """Re-score a succeeded run under ``profile_id`` from its stored best checkpoint."""
+def evaluate_run(ws: Workspace, run_id: str, profile_id: str) -> EvaluationResult:
+    """Re-score a succeeded run under ``profile_id`` from its stored best checkpoint (nothing is written)."""
     record = load_run(ws, run_id)
     if record.status != RunStatus.succeeded or record.task == TaskType.run_dpd:
         raise WorkspaceError(f"run '{run_id}' has no evaluable result (task {record.task.value}, status {record.status.value})")
@@ -133,11 +133,7 @@ def evaluate_run(ws: Workspace, run_id: str, profile_id: str, *, store: bool = F
         raise WorkspaceError(f"run '{run_id}' has no complete artifact manifest")
     get_profile(profile_id)
     predictions = predict_test_split(ws, run_id, resolved, manifest)
-    result = result_for(ws, run_id, resolved, manifest, predictions, profile_id)
-    if store:
-        (ws.run_dir(run_id) / RESULTS_DIR).mkdir(parents=True, exist_ok=True)
-        write_json_atomic(ws.run_dir(run_id) / RESULTS_DIR / f"{profile_id}.json", result)
-    return result
+    return result_for(ws, run_id, resolved, manifest, predictions, profile_id)
 
 
 def available_profiles(ws: Workspace, run_id: str) -> List[str]:

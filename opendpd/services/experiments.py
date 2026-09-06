@@ -375,7 +375,6 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
             from opendpd.services.evaluation import evaluate_all
 
             try:
-                emit(RunEventType.progress, {"epoch": None, "total_epochs": None, "phase": "evaluate"})
                 with run_in_directory(run_dir):
                     results = evaluate_all(ws, run_id, resolved, manifest)
                 result_id = results[resolved.evaluation.profile_id].result_id
