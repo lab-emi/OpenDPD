@@ -18,7 +18,10 @@ and the workspace lock is released.
 | `--no-browser` | print the URL only (SSH sessions, servers without a desktop) |
 
 Starting `opendpd gui` again for the same workspace while one is running
-opens the existing instance instead of a second server.
+opens the existing instance instead of a second server. If the first instance
+is still starting or shutting down, the second command refuses with a message
+to wait or use another workspace. An OS lock prevents simultaneous launchers
+from writing to the same workspace, even before the service becomes healthy.
 
 ## What the browser shows
 
@@ -142,14 +145,21 @@ a maintainer approved it (`docs/protocols/benchmark-protocol.md`).
   that configuration imported.
 - The experiment form's **Import configuration…** button accepts such a JSON
   file (the `resolution` block is dropped). An imported configuration is
-  validated by the server and submitted exactly as is; the form fields are
-  not applied to it.
+  validated by the server and shown in a read-only preview. Only the optional
+  run name can be changed; **Discard import** returns to the recipe form.
+  If the source run cannot be loaded, retry the request before starting a run.
 - Model parameters in **Advanced settings** are generated from the model
   registry (`opendpd models`): the same names, types and limits the CLI and
-  the Python API accept, so nothing is hand-written twice.
+  the Python API accept, so nothing is hand-written twice. Invalid values
+  are sent unchanged for server validation. A failed validation request shows
+  its error and a **Retry** button; it never silently enables submission.
 - The same configuration through the GUI and `opendpd run --config` resolves
   to the same hash and, on CPU with `reproducibility: hard`, to the same
   numbers (`tests/integration/test_entry_consistency.py`).
+- `opendpd validate --workspace WS --config experiment.json --json` previews
+  the same workspace-bound configuration as GUI validation and run submission,
+  including PA/DPD checkpoint references, without creating a run. Omit
+  `--workspace` for configuration-only validation without reference binding.
 
 ## Compare, charts, packages and reports
 

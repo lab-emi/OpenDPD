@@ -163,13 +163,15 @@ def _load_config(args):
 
 def cmd_validate(args) -> int:
     from opendpd.services.config import validate
+    from opendpd.services.experiments import validate_experiment
+    from opendpd.services.workspace import Workspace
 
     try:
         config = _load_config(args)
+        report = validate_experiment(Workspace.open(Path(args.workspace)), config) if args.workspace else validate(config)
     except Exception as err:  # noqa: BLE001 - user input
         print(f"error: {err}", file=sys.stderr)
         return 2
-    report = validate(config)
     if args.json:
         _print_json(report.to_dict())
     else:
@@ -1173,6 +1175,8 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "run":
             p.add_argument("--workspace", required=True)
             p.add_argument("--idempotency-key", dest="idempotency_key", default=None)
+        else:
+            p.add_argument("--workspace", default=None, help="bind run references and check the existing workspace")
         p.set_defaults(func=func)
     return parser
 

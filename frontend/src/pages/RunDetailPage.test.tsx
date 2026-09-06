@@ -136,9 +136,15 @@ test('a succeeded run_dpd run offers the measured-capture import: files are uplo
   expect(submitButton).toBeDisabled()
   await userEvent.upload(within(dialog).getByLabelText('Capture with DPD'), new File(['iq-bytes'], 'with.npy'))
   await within(dialog).findByText(/with\.npy/)
-  await userEvent.type(within(dialog).getByLabelText(/Device under test/), 'GaN Doherty unit 2')
-  await userEvent.type(within(dialog).getByLabelText(/Capture chain/), 'SMW200A -> PA -> 30 dB pad -> FSW')
-  await userEvent.type(within(dialog).getByLabelText(/^Drive/), 'generator -12 dBm')
+  // This test checks the submitted capture metadata. Paste the operator's
+  // descriptions as complete edits; per-keystroke rendering is not its contract.
+  const user = userEvent.setup()
+  await user.click(within(dialog).getByLabelText(/Device under test/))
+  await user.paste('GaN Doherty unit 2')
+  await user.click(within(dialog).getByLabelText(/Capture chain/))
+  await user.paste('SMW200A -> PA -> 30 dB pad -> FSW')
+  await user.click(within(dialog).getByLabelText(/^Drive/))
+  await user.paste('generator -12 dBm')
   await userEvent.type(within(dialog).getByLabelText(/Output power with DPD/), '30')
   // the dataset rate is prefilled; the operator may overwrite it
   expect(within(dialog).getByLabelText(/Capture sample rate/)).toHaveValue(datasetMock.data.signal.sample_rate_hz)

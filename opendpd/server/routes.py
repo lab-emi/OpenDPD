@@ -53,7 +53,6 @@ from opendpd.services import deploy as deploy_service
 from opendpd.services import capabilities as capabilities_service
 from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
-from opendpd.services.config import ConfigError, ConfigIssue, validate as validate_config
 from opendpd.services import packages
 from opendpd.services.evaluation import available_profiles, compare_results, comparison_csv
 from opendpd.services.packages import PackageError
@@ -397,24 +396,7 @@ class ValidateRequest(BaseModel):
 @router.post("/experiments/validate", tags=["experiments"], dependencies=[Depends(require_session)])
 def experiments_validate(body: ValidateRequest, request: Request) -> Dict[str, Any]:
     """Resolve and bind without starting anything; config problems are data, not 4xx."""
-    report = validate_config(body.config)
-    if report.ok:
-        ws = request.app.state.ws
-        try:
-            ws.get_dataset(report.resolved.dataset.id)
-            bound = experiments.bind_references(ws, ExperimentConfig.model_validate(body.config))
-            errors, warnings = experiments.submission_issues(ws, bound)
-            report = validate_config(bound.model_dump(mode="json"), warnings=warnings)
-            report.errors.extend(errors)
-            if errors:
-                report.resolved = None
-        except ConfigError as err:
-            report.errors.extend(err.issues)
-            report.resolved = None
-        except WorkspaceError as err:
-            report.errors.append(ConfigIssue("dataset.id", str(err), hint="import the dataset first"))
-            report.resolved = None
-    return report.to_dict()
+    return experiments.validate_experiment(_ws(request), body.config).to_dict()
 
 
 class SubmitRunRequest(BaseModel):

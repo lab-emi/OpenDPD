@@ -17,7 +17,7 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pydantic import ValidationError
 
@@ -60,7 +60,8 @@ from opendpd.schemas import (
     WorkerInfo,
     can_transition,
 )
-from opendpd.services.config import ConfigError, ConfigIssue, resolve
+from opendpd.core.registry import RegistryError
+from opendpd.services.config import ConfigError, ConfigIssue, ValidationReport, resolve, validate
 
 TRAINING_TASKS = (TaskType.train_pa, TaskType.train_dpd, TaskType.run_dpd)   # tasks the legacy step machinery runs
 from opendpd.services.legacy_adapter import (
@@ -292,6 +293,41 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
 
 # --- run creation ----------------------------------------------------------------
 
+def resolve_experiment(ws: Workspace, config: ExperimentConfig, *,
+                       warnings: Optional[List[ConfigIssue]] = None) -> ResolvedExperimentConfig:
+    """Bind workspace references before resolution, for both preview and submission."""
+    ws.get_dataset(config.dataset.id)
+    try:
+        # Workspace checks read model context parameters, so validate and fill
+        # them first. Resolve again below to freeze the workspace warnings too.
+        bound = resolve(bind_references(ws, config))
+        errors, submission_warnings = submission_issues(ws, bound)
+        warnings = warnings if warnings is not None else []
+        warnings.extend(submission_warnings)
+        if errors:
+            raise ConfigError(errors)
+        return resolve(bound, warnings=warnings)
+    except RegistryError as err:
+        raise ConfigError([ConfigIssue(err.field, err.message, err.hint)]) from err
+
+
+def validate_experiment(ws: Workspace, config_data: Any) -> ValidationReport:
+    """Preview the exact submitted configuration without creating a run or artifacts."""
+    try:
+        config = config_data if isinstance(config_data, ExperimentConfig) \
+            else ExperimentConfig.model_validate(config_data)
+    except ValidationError:
+        return validate(config_data)
+    report = ValidationReport()
+    try:
+        report.resolved = resolve_experiment(ws, config, warnings=report.warnings)
+    except ConfigError as err:
+        report.errors.extend(err.issues)
+    except WorkspaceError as err:
+        report.errors.append(ConfigIssue("dataset.id", str(err), hint="import the dataset first"))
+    return report
+
+
 def find_by_idempotency_key(ws: Workspace, key: str) -> Optional[RunRecord]:
     for record in list_runs(ws):
         if record.idempotency_key == key:
@@ -309,12 +345,7 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
     problems = ws.preflight()
     if problems:
         raise WorkspaceError("; ".join(problems))
-    ws.get_dataset(config.dataset.id)
-    bound = bind_references(ws, config)
-    errors, warnings = submission_issues(ws, bound)
-    if errors:
-        raise ConfigError(errors)
-    resolved = resolve(bound, warnings=warnings)
+    resolved = resolve_experiment(ws, config)
 
     run_id = ws.new_run_id()
     run_dir = ws.run_dir(run_id)

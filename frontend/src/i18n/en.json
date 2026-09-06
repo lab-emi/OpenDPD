@@ -264,7 +264,7 @@
   "results.detail.unit": "Unit · direction",
   "form.import": "Import configuration…",
   "form.import.help": "A JSON experiment configuration (exported from a run or written by hand). It is validated by the server and submitted as is.",
-  "form.imported": "Imported configuration from {source}. The fields above are not applied; the server validates and runs exactly this configuration.",
+  "form.imported": "Imported configuration from {source}. The server validates and runs the configuration shown below. You can change the optional name; discard the import to use the recipe form.",
   "form.import.discard": "Discard import",
   "form.import.invalid": "Not a JSON configuration file: {error}",
   "form.params": "Model parameters (from the registry)",

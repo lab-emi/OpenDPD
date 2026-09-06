@@ -51,7 +51,8 @@ function coerceParam(spec: ParamSpec, raw: string): number | boolean | string | 
   if (spec.type === 'bool') return s === 'true'
   if (spec.type === 'str') return s
   const v = Number(s)
-  return Number.isFinite(v) ? (spec.type === 'int' ? Math.trunc(v) : v) : undefined
+  // Preserve fractional edits so the server can reject invalid integer parameters.
+  return Number.isFinite(v) ? v : undefined
 }
 
 /** Removes the server-side resolution block so an exported (resolved) configuration can be resubmitted. */
@@ -126,7 +127,8 @@ export function NewExperimentPage() {
   const idempotencyKey = useRef(crypto.randomUUID())
   const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', params: {}, profileId: '' })
   // The report is stored with the config it validated, so "checking" is derived, not duplicated state.
-  const [validated, setValidated] = useState<{ configJson: string; report: ValidationReport | null } | null>(null)
+  const [validated, setValidated] = useState<{ configJson: string; report: ValidationReport | null; error: unknown } | null>(null)
+  const [validationAttempt, setValidationAttempt] = useState(0)
 
   // Defaults (first recipe / first dataset) are derived during render, never copied into state.
   const datasetId = edits.datasetId || datasets.data?.[0]?.dataset_id || ''
@@ -141,9 +143,10 @@ export function NewExperimentPage() {
   const specs = model?.params ?? []
   // An imported configuration (file or `?from=<run>`) is derived during render, never copied into form state.
   const imported = importedFile ?? (fromRunId && fromRun.data ? { config: importableConfig(fromRun.data), source: fromRunId } : null)
-  const config = imported ? { ...imported.config, name: form.name.trim() || imported.config.name || null } : recipe && form.datasetId ? buildConfig(recipe, form, specs) : null
+  const config = imported ? { ...imported.config, name: form.name.trim() || imported.config.name || null } : !fromRunId && recipe && form.datasetId ? buildConfig(recipe, form, specs) : null
   const configJson = config ? JSON.stringify(config) : ''
   const report = validated && validated.configJson === configJson ? validated.report : null
+  const validationError = validated?.configJson === configJson ? validated.error : null
   const checking = !!configJson && (validated === null || validated.configJson !== configJson)
 
   // Server-side validation, debounced; the server is the only source of rules.
@@ -152,18 +155,21 @@ export function NewExperimentPage() {
     let active = true
     const timer = window.setTimeout(() => {
       validateConfig(JSON.parse(configJson))
-        .then((r) => active && setValidated({ configJson, report: r }))
-        .catch(() => active && setValidated({ configJson, report: null }))
+        .then((r) => active && setValidated({ configJson, report: r, error: null }))
+        .catch((error: unknown) => active && setValidated({ configJson, report: null, error }))
     }, 300)
     return () => {
       active = false
       window.clearTimeout(timer)
     }
-  }, [configJson])
+  }, [configJson, validationAttempt])
 
+  if (fromRunId && !importedFile && fromRun.isPending) return <LoadingState />
+  if (fromRunId && !importedFile && fromRun.isError) return <ErrorState error={fromRun.error} onRetry={() => void fromRun.refetch()} />
   if (recipes.isPending || datasets.isPending || models.isPending) return <LoadingState />
   if (recipes.isError) return <ErrorState error={recipes.error} onRetry={() => void recipes.refetch()} />
   if (datasets.isError) return <ErrorState error={datasets.error} onRetry={() => void datasets.refetch()} />
+  if (models.isError) return <ErrorState error={models.error} onRetry={() => void models.refetch()} />
 
   const issuesFor = (key: keyof FormState): ConfigIssue[] => (report?.errors ?? []).filter((e) => FIELD_MAP[e.field] === key)
   const errorText = (key: keyof FormState) => issuesFor(key).map((e) => (e.hint ? `${e.message} (${e.hint})` : e.message)).join(' ')
@@ -222,11 +228,12 @@ export function NewExperimentPage() {
       {imported && (
         <Alert severity="info" action={<Button color="inherit" size="small" onClick={discardImport}>{t('form.import.discard')}</Button>} data-testid="imported-banner">
           {t('form.imported', { source: imported.source })}
-          <pre style={{ margin: '8px 0 0', maxHeight: 240, overflow: 'auto', fontSize: 12 }}>{JSON.stringify(imported.config, null, 2)}</pre>
+          <pre style={{ margin: '8px 0 0', maxHeight: 240, overflow: 'auto', fontSize: 12 }}>{JSON.stringify(config, null, 2)}</pre>
         </Alert>
       )}
       <Paper sx={{ p: 2 }}>
         <Grid container spacing={2}>
+          {!imported && <>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField select fullWidth required label={t('form.recipe')} value={form.recipeId} onChange={set('recipeId')} helperText={recipe ? `${recipe.description} ${recipe.limits} (${recipe.expected_duration})` : t('form.recipe.help')} error={issuesFor('recipeId').length > 0}>
               {recipes.data.map((r) => (
@@ -281,12 +288,13 @@ export function NewExperimentPage() {
           <Grid size={{ xs: 6, md: 3 }}>
             <TextField fullWidth type="number" label={t('form.seed')} value={form.seed} onChange={set('seed')} placeholder={String(recipe?.training.seed ?? 0)} error={issuesFor('seed').length > 0} helperText={errorText('seed') || ' '} />
           </Grid>
+          </>}
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField fullWidth label={t('form.name')} value={form.name} onChange={set('name')} helperText=" " />
           </Grid>
         </Grid>
       </Paper>
-      <Accordion disableGutters>
+      {!imported && <Accordion disableGutters>
         <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="advanced-panel" id="advanced-header">
           <Typography>{t('form.advanced')}</Typography>
         </AccordionSummary>
@@ -344,7 +352,11 @@ export function NewExperimentPage() {
             </Grid>
           </Grid>
         </AccordionDetails>
-      </Accordion>
+      </Accordion>}
+      {validationError != null && <ErrorState error={validationError} onRetry={() => {
+        setValidated(null)
+        setValidationAttempt((attempt) => attempt + 1)
+      }} />}
       {report && !report.ok && (
         <Alert severity="error" role="alert">
           <AlertTitle>{t('form.errors')}</AlertTitle>

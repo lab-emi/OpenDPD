@@ -155,3 +155,60 @@ test('a profile pending cross-validation is computed by the service but never of
   expect(options.some((t) => t?.startsWith('general-spectral-v1'))).toBe(true)
   expect(options.some((t) => t?.startsWith('ofdm-lte20-evm-v1'))).toBe(false)
 })
+
+test('fractional integer parameters reach server validation without being rounded', async () => {
+  const { calls } = base((config) => {
+    const layers = (config['model'] as { parameters: { num_layers: number } }).parameters.num_layers
+    return Number.isInteger(layers)
+      ? { ok: true, errors: [], warnings: [], resolved: null }
+      : { ok: false, errors: [{ field: 'model.parameters.num_layers', message: 'num_layers must be an integer' }], warnings: [], resolved: null }
+  })
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  await userEvent.click(screen.getByRole('button', { name: 'Advanced settings' }))
+  await userEvent.type(screen.getByLabelText('num_layers'), '1.5')
+  await screen.findByText('Fix the following before submitting')
+  expect(screen.getByLabelText('num_layers')).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByRole('button', { name: 'Start run' })).toBeDisabled()
+  const last = calls.filter((c) => c.path === '/api/v1/experiments/validate').at(-1)
+  expect(last?.body).toMatchObject({ config: { model: { parameters: { num_layers: 1.5 } } } })
+})
+
+test('a validation request failure explains the problem and can be retried without changing the configuration', async () => {
+  let unavailable = true
+  base(() => unavailable
+    ? { status: 503, body: { error: { code: 'unavailable', message: 'Validation service unavailable' } } }
+    : { ok: true, errors: [], warnings: [], resolved: null })
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText(/Validation service unavailable/)
+  expect(screen.getByRole('button', { name: 'Start run' })).toBeDisabled()
+  unavailable = false
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+  await screen.findByText('Configuration is valid')
+  expect(screen.getByRole('button', { name: 'Start run' })).toBeEnabled()
+})
+
+test('an unavailable source run never falls back to submitting the default recipe', async () => {
+  const { calls } = base(() => ({ ok: true, errors: [], warnings: [], resolved: null }))
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new?from=missing-run', path: '/experiments/new' })
+  await screen.findByText(/no mock for GET \/api\/v1\/runs\/missing-run\/config/)
+  expect(screen.queryByRole('button', { name: 'Start run' })).not.toBeInTheDocument()
+  expect(calls.filter((c) => c.path === '/api/v1/experiments/validate')).toHaveLength(0)
+})
+
+test('import mode exposes only the configuration that will run and the optional name', async () => {
+  const { calls } = base(() => ({ ok: true, errors: [], warnings: [], resolved: null }))
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  const exported = { task: 'train_pa', dataset: { id: 'audit-data' }, model: { key: 'gru', parameters: { hidden_size: 8 } }, training: { epochs: 7 }, execution: { device: 'cpu' } }
+  await userEvent.upload(screen.getByTestId('import-config'), new File([JSON.stringify(exported)], 'exp.json', { type: 'application/json' }))
+  await screen.findByTestId('imported-banner')
+  expect(screen.queryByRole('combobox', { name: 'Recipe' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('combobox', { name: 'Dataset' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Advanced settings' })).not.toBeInTheDocument()
+  await userEvent.type(screen.getByLabelText('Name (optional)'), 'Imported audit')
+  await screen.findByText('Configuration is valid')
+  await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
+  await waitFor(() => expect(calls.find((c) => c.path === '/api/v1/runs' && c.method === 'POST')?.body)
+    .toMatchObject({ config: { ...exported, name: 'Imported audit' } }))
+})

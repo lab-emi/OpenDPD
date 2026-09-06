@@ -455,3 +455,80 @@ def test_measured_captures_are_uploaded_bound_and_scored_as_dpd_measured(client,
     assert any("evidence type: dpd_surrogate vs dpd_measured" in reason for pair in compare.json()["pairs"] for reason in pair["incompatibilities"])
     report = client.get(f"/api/v1/results/{run['run_id']}/report", params={"format": "md"})
     assert report.status_code == 200 and "not independently verified" in report.text
+
+
+def test_reference_validation_matches_submission_and_cli(client, session, capsys, monkeypatch):
+    from datetime import datetime, timezone
+    from functools import partial
+
+    from opendpd.commands import main
+    from opendpd.schemas import ResolutionInfo
+    from opendpd.services import experiments
+    from opendpd.services import config as config_service
+
+    # Both entry points resolve independently; control the audit timestamp for exact report comparison.
+    monkeypatch.setattr(config_service, "ResolutionInfo", partial(ResolutionInfo, resolved_at=datetime.now(timezone.utc)))
+
+    ws = client.app.state.ws
+    pa = client.post("/api/v1/runs", json={"config": smoke_config()}).json()
+    assert wait_terminal(client, pa["run_id"])["status"] == "succeeded"
+    cfg = json.loads(instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa["run_id"]).model_dump_json())
+    before = len(experiments.list_runs(ws))
+    response = client.post("/api/v1/experiments/validate", json={"config": cfg})
+    assert response.status_code == 200
+    validated = response.json()
+    assert validated["ok"], validated
+    assert validated["resolved"]["pa_reference"]["checkpoint_sha256"]
+    assert len(experiments.list_runs(ws)) == before
+
+    assert main(["validate", "--workspace", str(ws.root), "--recipe", "dpd-gru-smoke-v1",
+                 "--dataset", "dpa-200mhz", "--pa-run", pa["run_id"], "--json"]) == 0
+    assert json.loads(capsys.readouterr().out) == validated
+    assert len(experiments.list_runs(ws)) == before
+
+    for bad, field in (
+        (dict(cfg, pa_reference={"run_id": "missing-pa"}), "pa_reference.run_id"),
+        (dict(cfg, model={"key": "unknown-model"}), "model.key"),
+        (dict(cfg, training=dict(cfg["training"], seed=cfg["training"]["seed"] + 1)), "training"),
+        (dict(cfg, model={"key": "gru", "parameters": {"num_layers": 1.5}}), "model.parameters.num_layers"),
+    ):
+        report = client.post("/api/v1/experiments/validate", json={"config": bad})
+        assert report.status_code == 200, report.text
+        assert not report.json()["ok"] and report.json()["resolved"] is None
+        assert any(e["field"] == field for e in report.json()["errors"]), report.json()
+        refused = client.post("/api/v1/runs", json={"config": bad})
+        assert refused.status_code == 422, refused.text
+    assert len(experiments.list_runs(ws)) == before
+
+    created = client.post("/api/v1/runs", json={"config": cfg})
+    assert created.status_code == 201, created.text
+    dpd = created.json()
+    assert dpd["config_sha256"] == validated["resolved"]["resolution"]["config_sha256"]
+    assert wait_terminal(client, dpd["run_id"])["status"] == "succeeded"
+    applied_cfg = {"task": "run_dpd", "dataset": {"id": "dpa-200mhz"}, "model": {"key": "gru"},
+                   "evaluation": {"evidence_type": "dpd_surrogate"}, "dpd_reference": {"run_id": dpd["run_id"]}}
+    preview = client.post("/api/v1/experiments/validate", json={"config": applied_cfg}).json()
+    assert preview["ok"], preview
+    applied = client.post("/api/v1/runs", json={"config": applied_cfg})
+    assert applied.status_code == 201, applied.text
+    assert applied.json()["config_sha256"] == preview["resolved"]["resolution"]["config_sha256"]
+    assert wait_terminal(client, applied.json()["run_id"])["status"] == "succeeded"
+
+
+def test_polynomial_preview_normalizes_parameters_before_workspace_checks(client, session):
+    from opendpd.services.experiments import list_runs
+
+    ws = client.app.state.ws
+    before = len(list_runs(ws))
+    cfg = {"task": "train_pa", "dataset": {"id": "dpa-200mhz"}, "model": {"key": "mp_ls"}}
+    response = client.post("/api/v1/experiments/validate", json={"config": cfg})
+    assert response.status_code == 200, response.text
+    report = response.json()
+    assert report["ok"] and report["resolved"]["model"]["parameters"]["Q"] > 0, report
+    cfg["model"]["parameters"] = {"Q": "invalid"}
+    refused = client.post("/api/v1/experiments/validate", json={"config": cfg})
+    assert refused.status_code == 200, refused.text
+    assert not refused.json()["ok"] and refused.json()["resolved"] is None
+    assert any(e["field"] == "model.parameters.Q" for e in refused.json()["errors"])
+    assert client.post("/api/v1/runs", json={"config": cfg}).status_code == 422
+    assert len(list_runs(ws)) == before
