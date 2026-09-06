@@ -72,6 +72,7 @@ inline.
 | `GET /results/{id}/report?format=html|md` | done (S11): reports bound to the stored result and plot data; nothing recomputed |
 | `GET /results/compare?runs=&profile=&format=json|csv` | done (S11): results side by side under one profile with the pairwise incompatibilities (dataset, data version, split, reference, profile version, evidence, execution semantics) stated explicitly; `GET /runs/{id}/history` serves the per-epoch curves; plot data (`plot-spectrum`, `plot-time`, `plot-amam`, plots-v1) are artifacts with fixed budgets |
 | `GET /metrics/profiles` (`MetricProfile.validation`) | S15: every profile carries `validation` (`golden`, `analytic`, `pending_cross_validation`, `cross_validated`); the GUI offers only profiles past `pending_cross_validation`, the service computes and stores all of them; `SignalSpec.waveform` (`WaveformBinding`) records a dataset's binding to a reference waveform set by `datasets import --waveform` |
+| `GET /adaptation/reports`, `GET /adaptation/reports/{plan_sha}?format=json|md` | S17: hash-bound `conditions-v1` adaptation reports stored under `<workspace>/adaptation/` by `opendpd adaptation report` (every cell, failures with reasons, cost columns, evidence bar); read only, the GUI's Robustness page never runs a plan (`docs/protocols/conditions-v1.md`) |
 
 ## Listing, search and paging (S13)
 

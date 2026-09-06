@@ -118,6 +118,8 @@ class LineageRelation(str, Enum):
     dpd_model = "dpd_model"                    # run_dpd applied this DPD run's checkpoint
     retry_of = "retry_of"                      # retried from this run (parent_run_id)
     measured_playback = "measured_playback"    # evaluate_measured scored captures of this run_dpd run's exported signal
+    pa_model = "pa_model"                      # evaluate_pa scored this PA run's weights on another dataset (S17)
+    initialised_from = "initialised_from"      # training started from this run's weights (S17 warm start)
 
 
 class LineageLink(StrictModel):

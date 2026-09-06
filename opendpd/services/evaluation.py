@@ -125,7 +125,7 @@ def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
                                window_size=proj.window_size, num_dvr_units=proj.num_dvr_units, thx=proj.thx, thh=proj.thh)
 
     least_squares = is_least_squares(resolved.model.key)
-    if resolved.task == TaskType.train_pa:
+    if resolved.task in (TaskType.train_pa, TaskType.evaluate_pa):
         return polynomial_module(resolved.model) if least_squares \
             else core(proj.PA_hidden_size, proj.PA_num_layers, proj.PA_backbone)
     pa = core(proj.PA_hidden_size, proj.PA_num_layers, proj.PA_backbone)
@@ -137,16 +137,17 @@ def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
 
 
 def _checkpoint_path(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest) -> Path:
-    """The weights under evaluation: this run's best checkpoint, or for run_dpd the DPD run's (hash verified)."""
-    if resolved.task != TaskType.run_dpd:
+    """The weights under evaluation: this run's best checkpoint, or the referenced run's for run_dpd (the DPD)
+    and evaluate_pa (the PA), hash verified."""
+    if resolved.task not in (TaskType.run_dpd, TaskType.evaluate_pa):
         return ws.run_dir(run_id) / manifest.by_kind(ArtifactKind.checkpoint)[0].file.path
-    ref = resolved.dpd_reference
-    dpd_manifest = load_artifacts(ws, ref.run_id)
-    artifact = next((a for a in (dpd_manifest.artifacts if dpd_manifest else [])
+    ref = resolved.dpd_reference if resolved.task == TaskType.run_dpd else resolved.pa_reference
+    ref_manifest = load_artifacts(ws, ref.run_id)
+    artifact = next((a for a in (ref_manifest.artifacts if ref_manifest else [])
                      if a.artifact_id == ref.checkpoint_artifact_id), None)
     path = ws.run_dir(ref.run_id) / artifact.file.path if artifact else None
     if path is None or not path.exists() or sha256_file(path) != ref.checkpoint_sha256:
-        raise FileNotFoundError(f"DPD checkpoint of run {ref.run_id} is missing or its hash changed")
+        raise FileNotFoundError(f"checkpoint of run {ref.run_id} is missing or its hash changed")
     return path
 
 
@@ -163,7 +164,7 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
                          dataset_name=dataset.dataset_id)
     ns.plot = False
     checkpoint = _checkpoint_path(ws, run_id, resolved, manifest)
-    dpd_task = resolved.task != TaskType.train_pa
+    dpd_task = resolved.task in (TaskType.train_dpd, TaskType.run_dpd)
     extra: Dict[str, object] = {}
     with run_in_directory(run_dir):
         if dpd_task:
@@ -258,7 +259,7 @@ def result_for(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, m
     profile = get_profile(profile_id)
     metrics = score(profile_id, predictions.prediction, predictions.ground_truth, dataset.signal,
                     valid_samples=predictions.n_valid)
-    evidence = {} if resolved.task == TaskType.train_pa \
+    evidence = {} if resolved.task in (TaskType.train_pa, TaskType.evaluate_pa) \
         else _surrogate_evidence(ws, run_id, resolved, manifest, dataset, predictions, profile_id)
     return build_result(ws, run_id, resolved, manifest, profile=profile, metrics=metrics,
                         n_valid=predictions.n_valid, target_gain=predictions.target_gain, **evidence)
@@ -270,7 +271,7 @@ def write_plots(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, 
 
     dataset = ws.get_dataset(resolved.dataset.id)
     n = predictions.n_valid
-    if resolved.task == TaskType.train_pa:
+    if resolved.task in (TaskType.train_pa, TaskType.evaluate_pa):
         signals = {"PA input x": predictions.x, "measured PA output": predictions.ground_truth,
                    "PA model output": predictions.prediction}
         roles = {"PA input x": "input", "measured PA output": "reference", "PA model output": "primary"}

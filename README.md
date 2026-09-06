@@ -30,7 +30,10 @@ headless path is [docs/tutorials/headless-cli.md](docs/tutorials/headless-cli.md
 reference waveforms and the data-aided EVM/ACLR profile are in
 [docs/tutorials/waveform-evaluation.md](docs/tutorials/waveform-evaluation.md);
 measured DPD evidence from captures of a physical PA (and the mock instrument
-adapter to rehearse it) in [docs/tutorials/measured-dpd.md](docs/tutorials/measured-dpd.md).
+adapter to rehearse it) in [docs/tutorials/measured-dpd.md](docs/tutorials/measured-dpd.md);
+adaptation across conditions (zero update, few-shot, full retrain, with
+failures and costs kept) in
+[docs/tutorials/adaptation-benchmark.md](docs/tutorials/adaptation-benchmark.md).
 What is verified where: [support matrix](docs/releases/support-matrix.md),
 [performance report](docs/releases/performance-report.md),
 [hardening report](docs/releases/hardening-report.md); status per plan stage:

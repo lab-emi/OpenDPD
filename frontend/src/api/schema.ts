@@ -4,6 +4,46 @@
  */
 
 export interface paths {
+    "/api/v1/adaptation/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Adaptation Reports
+         * @description Hash-bound adaptation reports stored under <workspace>/adaptation/ (built by `opendpd adaptation report`).
+         */
+        get: operations["adaptation_reports_api_v1_adaptation_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/adaptation/reports/{plan_sha}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Adaptation Report
+         * @description One report by its plan hash (the first 12 characters suffice); `format=md` downloads the Markdown rendering.
+         */
+        get: operations["adaptation_report_api_v1_adaptation_reports__plan_sha__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/artifacts/{run_id}/{artifact_id}": {
         parameters: {
             query?: never;
@@ -739,6 +779,130 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdaptationCell
+         * @description One (entry, task, condition, budget, seed): a run and what it produced, or why there is no number.
+         */
+        AdaptationCell: {
+            /** Budget Samples */
+            budget_samples?: number | null;
+            /** Checkpoint Sha256 */
+            checkpoint_sha256?: string | null;
+            /** Condition Id */
+            condition_id: string;
+            /** Config Sha256 */
+            config_sha256?: string | null;
+            /** Device */
+            device: string;
+            /** Entry Id */
+            entry_id: string;
+            /** Failure */
+            failure?: string | null;
+            /** Metrics */
+            metrics?: {
+                [key: string]: number | null;
+            };
+            /** New Samples */
+            new_samples: number;
+            /** Reached Target */
+            reached_target?: boolean | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Seed */
+            seed: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "failed" | "missing";
+            /**
+             * Task
+             * @enum {string}
+             */
+            task: "zero_update" | "few_shot" | "full_retrain";
+            /** Wall Clock S */
+            wall_clock_s?: number | null;
+        };
+        /** AdaptationReport */
+        AdaptationReport: {
+            /** Aggregates */
+            aggregates: components["schemas"]["CellAggregate"][];
+            /** Budgets */
+            budgets: number[];
+            /** Cells */
+            cells: components["schemas"]["AdaptationCell"][];
+            condition_set: components["schemas"]["ConditionSet"];
+            /** Conditions */
+            conditions: components["schemas"]["ConditionAudit"][];
+            /** Device */
+            device: string;
+            evidence_bar: components["schemas"]["EvidenceBar"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at?: string;
+            /** Limitations */
+            limitations?: string[];
+            /** Machine */
+            machine?: {
+                [key: string]: string;
+            };
+            /** Metric Profile Id */
+            metric_profile_id: string;
+            /** Metric Profile Version */
+            metric_profile_version: number;
+            /** Plan Sha256 */
+            plan_sha256: string;
+            /**
+             * Protocol Id
+             * @default conditions-v1
+             * @constant
+             */
+            protocol_id: "conditions-v1";
+            /** Repeats */
+            repeats: string;
+            /** Report Sha256 */
+            report_sha256?: string | null;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** Seeds */
+            seeds: number[];
+            software: components["schemas"]["SoftwareProvenance"];
+            target?: components["schemas"]["TargetRule"] | null;
+        };
+        /**
+         * AdaptationReportSummary
+         * @description One row of the reports list: enough to pick a report, never a number to compare.
+         */
+        AdaptationReportSummary: {
+            /** Device */
+            device: string;
+            /** Dimension */
+            dimension: string;
+            /** Evidence Met */
+            evidence_met: boolean;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** N Cells */
+            n_cells: number;
+            /** N Conditions */
+            n_conditions: number;
+            /** N Without Number */
+            n_without_number: number;
+            /** Plan Sha256 */
+            plan_sha256: string;
+            /** Report Sha256 */
+            report_sha256?: string | null;
+            /** Set Id */
+            set_id: string;
+        };
         /** Artifact */
         Artifact: {
             /** Artifact Id */
@@ -892,6 +1056,36 @@ export interface components {
             /** Sha256 */
             sha256?: string | null;
         };
+        /** CellAggregate */
+        CellAggregate: {
+            /** Budget Samples */
+            budget_samples?: number | null;
+            /** Condition Id */
+            condition_id: string;
+            /** Entry Id */
+            entry_id: string;
+            /** Mean Wall Clock S */
+            mean_wall_clock_s?: number | null;
+            /** Metrics */
+            metrics?: {
+                [key: string]: components["schemas"]["MetricStats"];
+            };
+            /** N Failed */
+            n_failed: number;
+            /** N Ok */
+            n_ok: number;
+            /** N Seeds */
+            n_seeds: number;
+            /** New Samples */
+            new_samples: number;
+            /** Target Reached Fraction */
+            target_reached_fraction?: number | null;
+            /**
+             * Task
+             * @enum {string}
+             */
+            task: "zero_update" | "few_shot" | "full_retrain";
+        };
         /** ComparisonPair */
         ComparisonPair: {
             /** A */
@@ -926,6 +1120,86 @@ export interface components {
              */
             schema_version: number;
         };
+        /**
+         * Condition
+         * @description One operating condition = one registered dataset from its own capture.
+         */
+        Condition: {
+            /** Capture Batch */
+            capture_batch: string;
+            /** Condition Id */
+            condition_id: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "source" | "target";
+            /** Values */
+            values?: {
+                [key: string]: number | string | boolean;
+            };
+        };
+        /** ConditionAudit */
+        ConditionAudit: {
+            /** Capture Batch */
+            capture_batch: string;
+            /** Condition Id */
+            condition_id: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** N Samples */
+            n_samples?: number | null;
+            /** Origin */
+            origin: string;
+            /** Raw Sha256 */
+            raw_sha256?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "source" | "target";
+            /** Train Samples */
+            train_samples?: number | null;
+            /** Values */
+            values?: {
+                [key: string]: number | string | boolean;
+            };
+        };
+        /**
+         * ConditionSet
+         * @description The data card. ``card_sha256`` covers everything but ``created_at`` and itself.
+         */
+        ConditionSet: {
+            /** Card Sha256 */
+            card_sha256?: string | null;
+            /** Conditions */
+            conditions: components["schemas"]["Condition"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Device */
+            device: string;
+            /** Dimension */
+            dimension: string;
+            /**
+             * Held Out Policy
+             * @default roles are declared in the card before any run; target conditions are never used to select hyper-parameters, and every number is read from the target's test split after the run finished
+             */
+            held_out_policy: string;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** Set Id */
+            set_id: string;
+        };
         /** DPDReference */
         DPDReference: {
             /** Checkpoint Artifact Id */
@@ -935,6 +1209,11 @@ export interface components {
             model?: components["schemas"]["ModelSpec"] | null;
             /** Run Id */
             run_id: string;
+            /**
+             * Transfer
+             * @default false
+             */
+            transfer: boolean;
         };
         /** DatasetEvidence */
         DatasetEvidence: {
@@ -1233,6 +1512,25 @@ export interface components {
             terminal: boolean;
         };
         /**
+         * EvidenceBar
+         * @description Whether the card meets the S17 evidence bar; a report below the bar is a rehearsal, not evidence.
+         */
+        EvidenceBar: {
+            /** Independent Batches */
+            independent_batches: boolean;
+            /** Measured Origin */
+            measured_origin: boolean;
+            /** Met */
+            met: boolean;
+            /**
+             * Min Conditions
+             * @default 3
+             */
+            min_conditions: number;
+            /** N Conditions */
+            n_conditions: number;
+        };
+        /**
          * EvidenceType
          * @description What kind of evidence a result represents. Never inferred, always declared.
          * @enum {string}
@@ -1265,6 +1563,7 @@ export interface components {
             dpd_reference?: components["schemas"]["DPDReference"] | null;
             evaluation?: components["schemas"]["EvaluationConfig"];
             execution?: components["schemas"]["ExecutionConfig"];
+            initialization?: components["schemas"]["InitReference"] | null;
             measurement?: components["schemas"]["MeasurementConfig"] | null;
             model: components["schemas"]["ModelSpec"];
             /** Name */
@@ -1426,6 +1725,18 @@ export interface components {
             /** Root Id */
             root_id: string;
         };
+        /**
+         * InitReference
+         * @description Warm start (S17): the weights of a succeeded run of the same task and model start this training.
+         */
+        InitReference: {
+            /** Checkpoint Artifact Id */
+            checkpoint_artifact_id?: string | null;
+            /** Checkpoint Sha256 */
+            checkpoint_sha256?: string | null;
+            /** Run Id */
+            run_id: string;
+        };
         /** LineageLink */
         LineageLink: {
             /** Checkpoint Sha256 */
@@ -1441,7 +1752,7 @@ export interface components {
          * @description How one run depends on another. Recorded from resolved configurations, never inferred from names.
          * @enum {string}
          */
-        LineageRelation: "pa_surrogate" | "dpd_model" | "retry_of" | "measured_playback";
+        LineageRelation: "pa_surrogate" | "dpd_model" | "retry_of" | "measured_playback" | "pa_model" | "initialised_from";
         /** LogPage */
         LogPage: {
             /** Eof */
@@ -1585,6 +1896,19 @@ export interface components {
             validation: components["schemas"]["ProfileValidation"];
             /** Version */
             version: number;
+        };
+        /** MetricStats */
+        MetricStats: {
+            /** Max */
+            max: number;
+            /** Mean */
+            mean: number;
+            /** Min */
+            min: number;
+            /** N */
+            n: number;
+            /** Std */
+            std?: number | null;
         };
         /**
          * MetricStatus
@@ -1950,6 +2274,7 @@ export interface components {
             dpd_reference?: components["schemas"]["DPDReference"] | null;
             evaluation?: components["schemas"]["EvaluationConfig"];
             execution?: components["schemas"]["ExecutionConfig"];
+            initialization?: components["schemas"]["InitReference"] | null;
             measurement?: components["schemas"]["MeasurementConfig"] | null;
             model: components["schemas"]["ModelSpec"];
             /** Name */
@@ -2319,10 +2644,26 @@ export interface components {
             u_peak_abs: number;
         };
         /**
+         * TargetRule
+         * @description What 'reaching the target' means: one metric of the plan's profile against a threshold.
+         */
+        TargetRule: {
+            /**
+             * Better
+             * @default lower
+             * @enum {string}
+             */
+            better: "lower" | "higher";
+            /** Metric */
+            metric: string;
+            /** Threshold */
+            threshold: number;
+        };
+        /**
          * TaskType
          * @enum {string}
          */
-        TaskType: "train_pa" | "train_dpd" | "run_dpd" | "evaluate_measured";
+        TaskType: "train_pa" | "train_dpd" | "run_dpd" | "evaluate_measured" | "evaluate_pa";
         /**
          * TrainingConfig
          * @description Defaults mirror the OpenDPDv2 recipe (arguments.py); they are the
@@ -2417,6 +2758,8 @@ export interface components {
              * @default 0
              */
             seed: number;
+            /** Train Samples */
+            train_samples?: number | null;
         };
         /** UploadResult */
         UploadResult: {
@@ -2549,6 +2892,59 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    adaptation_reports_api_v1_adaptation_reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdaptationReportSummary"][];
+                };
+            };
+        };
+    };
+    adaptation_report_api_v1_adaptation_reports__plan_sha__get: {
+        parameters: {
+            query?: {
+                format?: "json" | "md";
+            };
+            header?: never;
+            path: {
+                plan_sha: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdaptationReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     artifact_download_api_v1_artifacts__run_id___artifact_id__get: {
         parameters: {
             query?: never;

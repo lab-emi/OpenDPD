@@ -57,3 +57,11 @@ browser launch on macOS/Windows is a human checklist item (plan S06).
 |---|---|---|
 | `mock` (dry run, no RF) | verified (automated) | `tests/unit/test_instruments.py` (interlock: arming, limits, timeout, lost link, failure, abort, block exit), `tests/integration/test_cli_run.py` and `test_docs_commands.py` (dry-run → import → `dpd_measured` mock result) |
 | any real generator/analyser chain | **pending human** | no laboratory chain in this environment; a real adapter needs `OPENDPD_ALLOW_RF_OUTPUT=1` in an approved session and a recorded trial (`docs/protocols/measured-dpd.md` §7) |
+
+## Adaptation protocol (S17)
+
+| Condition set | Status | Evidence |
+|---|---|---|
+| synthetic three-condition cards (`drive`) | verified (automated, rehearsal only) | `tests/integration/test_adaptation.py` (18 cells, refusals kept, hash binding, warm start, budget, transfer), `test_docs_commands.py` (tutorial) |
+| `apa-200mhz-batches-v1` (built in, two capture batches) | audited, below the bar | `opendpd adaptation card apa-200mhz-batches-v1`; two conditions |
+| a measured card that meets the bar (≥ 3 conditions, independent batches) | **pending human** | no such data in this repository (`docs/protocols/conditions-v1.md` §7) |

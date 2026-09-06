@@ -60,7 +60,7 @@ def build_namespace(resolved: ResolvedExperimentConfig, *, dataset_dir: Path,
     ns.devices = e.device_index
     ns.cuda_graph_training = e.cuda_graph_training
 
-    role = "pa" if resolved.task == TaskType.train_pa else "dpd"
+    role = "pa" if resolved.task in (TaskType.train_pa, TaskType.evaluate_pa) else "dpd"
     _apply_model(ns, resolved.model.key, resolved.model.parameters, role)
     if role == "dpd":
         assert resolved.pa_reference is not None and resolved.pa_reference.model is not None

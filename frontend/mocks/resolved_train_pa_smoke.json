@@ -19,6 +19,7 @@
       "device_index": 0,
       "num_threads": null
     },
+    "initialization": null,
     "measurement": null,
     "model": {
       "key": "gru",
@@ -58,7 +59,8 @@
       "optimizer": "adamw",
       "patience": 5,
       "reproducibility": "soft",
-      "seed": 0
+      "seed": 0,
+      "train_samples": null
     }
   }
 }

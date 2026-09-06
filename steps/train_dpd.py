@@ -52,6 +52,11 @@ def main(proj: Project):
                               thh=proj.thh)
     
     net_dpd = get_quant_model(proj, net_dpd)
+    # OpenDPD Studio warm start (plan S17): start from stored DPD weights of the same model
+    init_weights = getattr(proj, 'init_weights', None)
+    if init_weights:
+        net_dpd.load_state_dict(torch.load(init_weights, map_location='cpu', weights_only=True))
+        print('::: DPD model initialised from: ', init_weights)
     if proj.collect_delta_stats and hasattr(net_dpd.backbone, 'set_debug'):
         net_dpd.backbone.set_debug(1)
     

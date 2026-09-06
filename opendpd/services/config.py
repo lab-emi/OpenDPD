@@ -23,6 +23,7 @@ SELECTION_METRIC = {
     TaskType.train_dpd: "ACLR_AVG",
     TaskType.run_dpd: "not_applicable",
     TaskType.evaluate_measured: "not_applicable",
+    TaskType.evaluate_pa: "not_applicable",
 }
 
 SMOKE_EPOCH_LIMIT = 10
@@ -112,7 +113,7 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
     if isinstance(config, ResolvedExperimentConfig):
         config = ExperimentConfig.model_validate(config.model_dump(exclude={"resolution"}))
 
-    role = "pa" if config.task == TaskType.train_pa else "dpd"
+    role = "pa" if config.task in (TaskType.train_pa, TaskType.evaluate_pa) else "dpd"
     params: Dict[str, Any] = dict(config.model.parameters)
     try:
         params = validate_parameters(config.model.key, config.model.parameters, role)
@@ -120,7 +121,7 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
         issues.append(ConfigIssue(err.field, err.message, err.hint))
 
     pa_reference = config.pa_reference
-    if config.task in (TaskType.train_dpd, TaskType.run_dpd):
+    if config.task in (TaskType.train_dpd, TaskType.run_dpd, TaskType.evaluate_pa):
         if pa_reference is None or pa_reference.model is None or pa_reference.checkpoint_sha256 is None:
             issues.append(ConfigIssue("pa_reference", "the PA surrogate is not bound to a finished PA run",
                                       "submit through the experiments service, which binds run_id to a "
@@ -158,6 +159,13 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
     if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task in (TaskType.train_pa, TaskType.train_dpd) and not least_squares:
         warn.append(ConfigIssue("training.epochs",
                                 f"{config.training.epochs} epochs is a smoke/demo run, not a benchmark result"))
+    budget = config.training.train_samples
+    if budget is not None and budget < config.training.frame_length and not least_squares:
+        issues.append(ConfigIssue("training.train_samples", f"a budget of {budget} samples is shorter than one frame "
+                                  f"({config.training.frame_length})", "raise the budget or shorten the frame"))
+    if config.initialization is not None and least_squares:
+        issues.append(ConfigIssue("initialization", f"model '{config.model.key}' is fitted by least squares and has no "
+                                  "initial weights", "use training.train_samples alone for a budgeted refit"))
     if least_squares and config.quantization is not None and config.quantization.enabled:
         issues.append(ConfigIssue("quantization.enabled", f"model '{config.model.key}' is fitted by least squares; "
                                   "quantisation-aware training does not apply", "disable quantization"))

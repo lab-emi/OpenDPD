@@ -11,7 +11,8 @@
       "checkpoint_artifact_id": null,
       "checkpoint_sha256": null,
       "model": null,
-      "run_id": "run-dpd-0001"
+      "run_id": "run-dpd-0001",
+      "transfer": false
     },
     "evaluation": {
       "checkpoint_selection_metric": null,
@@ -24,6 +25,7 @@
       "device_index": 0,
       "num_threads": null
     },
+    "initialization": null,
     "measurement": {
       "apply_run_id": "run-apply-0001",
       "conditions": {
@@ -85,7 +87,8 @@
       "optimizer": "adamw",
       "patience": 5,
       "reproducibility": "soft",
-      "seed": 0
+      "seed": 0,
+      "train_samples": null
     }
   }
 }

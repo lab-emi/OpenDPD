@@ -44,6 +44,8 @@ const RELATION: Record<LineageRelation, MessageKey> = {
   dpd_model: 'run.lineage.relation.dpd_model',
   retry_of: 'run.lineage.relation.retry_of',
   measured_playback: 'run.lineage.relation.measured_playback',
+  pa_model: 'run.lineage.relation.pa_model',
+  initialised_from: 'run.lineage.relation.initialised_from',
 }
 
 const NEXT_STEP: Partial<Record<RunView['status'], MessageKey>> = {
@@ -62,7 +64,7 @@ export function RunDetailPage() {
   const run = useRun(runId)
   const active = !!run.data && !isTerminal(run.data.status)
   const stream = useRunStream(runId, !!run.data)
-  const history = useRunHistory(runId, !!run.data && isTerminal(run.data.status) && run.data.task !== 'run_dpd')
+  const history = useRunHistory(runId, !!run.data && isTerminal(run.data.status) && (run.data.task === 'train_pa' || run.data.task === 'train_dpd'))
   const historyPoints = useMemo(() => (history.data ?? []).map((h) => ({ epoch: h.epoch, split: h.split, values: h.values ?? {} })), [history.data])
   const cancel = useCancelRun()
   const retry = useRetryRun()
@@ -208,7 +210,7 @@ function OverviewTab({ run, metrics, fromHistory, statusEvents, heartbeats }: { 
           </Typography>
         )}
         {names.length === 0 ? (
-          <EmptyState body={t(run.task === 'run_dpd' ? 'run.metrics.apply' : run.status === 'succeeded' ? 'run.metrics.fitted' : 'run.metrics.empty')} />
+          <EmptyState body={t(run.task === 'run_dpd' || run.task === 'evaluate_pa' || run.task === 'evaluate_measured' ? 'run.metrics.apply' : run.status === 'succeeded' ? 'run.metrics.fitted' : 'run.metrics.empty')} />
         ) : (
           <Grid container spacing={2}>
             {names.map((name) => (

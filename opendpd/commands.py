@@ -632,6 +632,102 @@ def cmd_benchmark(args) -> int:
     return 2
 
 
+def cmd_adaptation(args) -> int:
+    """conditions-v1 (S17): sealed condition cards, pre-registered adaptation plans and every-cell reports."""
+    import contextlib
+
+    from pydantic import ValidationError
+
+    from opendpd.schemas import RunStatus, TargetRule
+    from opendpd.services import adaptation as ad
+    from opendpd.services.workspace import Workspace, WorkspaceError, write_json_atomic
+
+    text = sys.stderr if getattr(args, "json", False) else sys.stdout
+
+    def card_from(spec: str):
+        return ad.builtin_card(spec) if spec in ad.BUILTIN_CARDS and not Path(spec).exists() else ad.load_card(Path(spec))
+
+    try:
+        if args.adaptation_command == "card":
+            card = card_from(args.card)
+            audits = ad.audit_card(Workspace.open_or_create(Path(args.workspace)), card) if args.workspace else []
+            if args.out:
+                write_json_atomic(Path(args.out), card)
+            if args.json:
+                _print_json({"card": card.model_dump(mode="json"), "audit": [a.model_dump(mode="json") for a in audits]})
+            else:
+                print(f"card {card.set_id} ({card.card_sha256[:12]}): {card.device}; dimension {card.dimension}; "
+                      f"{len(card.conditions)} conditions" + (f"; written to {args.out}" if args.out else ""))
+                for c in card.conditions:
+                    print(f"  {c.condition_id:<16} {c.role:<7} dataset {c.dataset_id:<24} batch {c.capture_batch}  {c.values}")
+                for a in audits:
+                    print(f"  {a.condition_id:<16} registered: origin {a.origin}, {a.n_samples} samples, train split "
+                          f"{a.train_samples}, raw {(a.raw_sha256 or '')[:12]}")
+            return 0
+        if args.adaptation_command == "plan":
+            ws = Workspace.open_or_create(Path(args.workspace))
+            target = None
+            if args.target_metric:
+                if args.target_threshold is None:
+                    raise WorkspaceError("--target-threshold is required with --target-metric")
+                target = TargetRule(metric=args.target_metric, threshold=args.target_threshold, better=args.target_better)
+            plan = ad.make_plan(ws, card_from(args.card), pa_recipe=args.pa_recipe, dpd_recipe=args.dpd_recipe,
+                                seeds=[int(x) for x in args.seeds.split(",")] if args.seeds else None,
+                                budgets=[int(x) for x in args.budgets.split(",")] if args.budgets else None,
+                                tasks=args.tasks.split(",") if args.tasks else None, profile_id=args.profile,
+                                device=args.device, target=target)
+            ad.write_plan(plan, Path(args.out))
+            print(f"plan {plan.plan_sha256[:12]} written to {args.out}: {len(ad.cells_of(plan))} cells x "
+                  f"{len(plan.seeds)} seeds over {len(plan.condition_set.conditions)} conditions "
+                  f"({', '.join(plan.tasks)}; budgets {plan.budgets})")
+            return 0
+        if args.adaptation_command == "run":
+            plan = ad.load_plan(Path(args.plan))
+            ws = Workspace.open_or_create(Path(args.workspace))
+
+            def on_cell(key: str, record) -> None:
+                print(f"{key}: {record.run_id} {record.status.value}", file=text)
+
+            with contextlib.redirect_stdout(text):
+                runs = ad.run_plan(ws, plan, on_cell=on_cell)
+            expected = len(ad.cells_of(plan)) * len(plan.seeds)
+            failed = sorted(k for k, r in runs.items() if r.status != RunStatus.succeeded)
+            if args.json:
+                _print_json({"plan_sha256": plan.plan_sha256, "runs": {k: r.run_id for k, r in runs.items()},
+                             "failed": failed, "missing": expected - len(runs)})
+            else:
+                print(f"{len(runs) - len(failed)} of {expected} cells succeeded" + (f"; failed: {', '.join(failed)}" if failed else "")
+                      + (f"; {expected - len(runs)} refused (see the report)" if expected > len(runs) else ""))
+            return 0 if not failed and len(runs) == expected else 1
+        if args.adaptation_command == "report":
+            plan = ad.load_plan(Path(args.plan))
+            ws = Workspace.open_or_create(Path(args.workspace))
+            report = ad.build_report(ws, plan)
+            path = ad.store_report(ws, report)
+            if args.out:
+                write_json_atomic(Path(args.out), report)
+            if args.markdown:
+                Path(args.markdown).write_text(ad.report_markdown(report), encoding="utf-8")
+            if args.json:
+                _print_json(report.model_dump(mode="json"))
+            else:
+                bar = report.evidence_bar
+                without = sum(c.status != "ok" for c in report.cells)
+                print(f"report {report.report_sha256[:12]} stored at {path} ({len(report.cells)} cells, {without} without a number); "
+                      f"evidence bar {'met' if bar.met else 'NOT met'}: {bar.n_conditions} conditions (bar {bar.min_conditions}), "
+                      f"independent batches {bar.independent_batches}, measured origin {bar.measured_origin}")
+                for lim in report.limitations:
+                    print(f"  - {lim}")
+            return 0
+    except (WorkspaceError, ValidationError, ValueError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    return 2
+
+
+BUILTIN_CARD_IDS = ("apa-200mhz-batches-v1",)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="opendpd", description="OpenDPD Studio command line")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -817,6 +913,39 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--out", required=True)
     q.add_argument("--tolerance-db", dest="tolerance_db", type=float, default=0.5)
     p.set_defaults(func=cmd_benchmark)
+
+    p = sub.add_parser("adaptation", help="conditions-v1: multi-condition cards, pre-registered adaptation plans, every-cell reports")
+    ap = p.add_subparsers(dest="adaptation_command", required=True)
+    q = ap.add_parser("card", help="seal a condition card (a JSON file or a built-in id) and audit it against a workspace")
+    q.add_argument("card", help="card JSON path, or a built-in id: " + ", ".join(sorted(BUILTIN_CARD_IDS)))
+    q.add_argument("--workspace", default=None, help="audit: every condition must be a registered dataset from its own capture")
+    q.add_argument("--out", default=None, help="write the sealed card")
+    q.add_argument("--json", action="store_true")
+    q = ap.add_parser("plan", help="pre-register a plan: entries x tasks x conditions x budgets x seeds; the hash keys every run")
+    q.add_argument("card", help="card JSON path or built-in id")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--pa-recipe", dest="pa_recipe", required=True, help="PA recipe id (see `opendpd recipes`)")
+    q.add_argument("--dpd-recipe", dest="dpd_recipe", default=None, help="DPD recipe id; its surrogate is the PA of the same condition")
+    q.add_argument("--seeds", default=None, help="comma-separated training seeds (default 0)")
+    q.add_argument("--budgets", default=None, help="comma-separated few-shot budgets in samples of the target train split (default 2000)")
+    q.add_argument("--tasks", default=None, help="comma-separated subset of zero_update,few_shot,full_retrain (default all)")
+    q.add_argument("--profile", default="legacy-opendpd-v1")
+    q.add_argument("--device", default="cpu")
+    q.add_argument("--target-metric", dest="target_metric", default=None, help="what 'reaching the target' means, e.g. NMSE")
+    q.add_argument("--target-threshold", dest="target_threshold", type=float, default=None)
+    q.add_argument("--target-better", dest="target_better", choices=["lower", "higher"], default="lower")
+    q.add_argument("--out", required=True)
+    q = ap.add_parser("run", help="execute every cell of a plan in this process; finished runs are reused, refusals are recorded")
+    q.add_argument("plan")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--json", action="store_true")
+    q = ap.add_parser("report", help="assemble the hash-bound report (every cell, failures included) under <workspace>/adaptation/")
+    q.add_argument("plan")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--out", default=None, help="also write the report JSON here")
+    q.add_argument("--markdown", default=None, help="also write a Markdown rendering")
+    q.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_adaptation)
 
     p = sub.add_parser("doctor", help="check that the GUI can start: dependencies, frontend assets, workspace, port")
     p.add_argument("--workspace", default=None)

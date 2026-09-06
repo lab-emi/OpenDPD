@@ -1,4 +1,5 @@
 import DatasetIcon from '@mui/icons-material/Dataset'
+import GridOnIcon from '@mui/icons-material/GridOn'
 import HomeIcon from '@mui/icons-material/Home'
 import InsightsIcon from '@mui/icons-material/Insights'
 import ScienceIcon from '@mui/icons-material/Science'
@@ -24,6 +25,7 @@ const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
   { to: '/datasets', key: 'nav.datasets', Icon: DatasetIcon },
   { to: '/experiments', key: 'nav.experiments', Icon: ScienceIcon },
   { to: '/results', key: 'nav.results', Icon: InsightsIcon },
+  { to: '/robustness', key: 'nav.robustness', Icon: GridOnIcon },
   { to: '/settings', key: 'nav.settings', Icon: SettingsIcon },
   { to: '/gallery', key: 'nav.gallery', Icon: WidgetsIcon },
 ]

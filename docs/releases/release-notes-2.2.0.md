@@ -54,6 +54,18 @@ platform automatically. Version string in the candidate: `2.2.0.dev0`.
   off. Only the mock adapter ships (`opendpd instruments list`, `dry-run`);
   a real adapter needs `OPENDPD_ALLOW_RF_OUTPUT=1` in an approved laboratory
   session (`docs/architecture/instruments.md`).
+- **Adaptation across conditions (`conditions-v1`)**: a sealed condition
+  card (one device, one varied dimension, one registered dataset per
+  condition from its own capture batch, roles fixed before any run), a
+  pre-registered plan whose hash keys every run, and a report that keeps every
+  cell: zero update, few-shot under a sample budget and full retrain, each with
+  new samples, wall clock, device, seed spread and failures with their reasons
+  (`opendpd adaptation card/plan/run/report`, the Studio's Robustness page).
+  Executor additions behind it: `evaluate_pa`, `training.train_samples`,
+  `initialization` (warm start from a run's checkpoint), `run_dpd` transfer
+  through another condition's PA. Reports below the evidence bar (three
+  measured conditions from independent batches) call themselves a rehearsal
+  (`docs/protocols/conditions-v1.md`).
 - **Thread budget**: `execution.num_threads` is applied by the shared executor
   (torch intra-op threads) on every path; unset keeps torch's default. Run
   records stamp `started_at`/`finished_at` with the executor's own clock on
@@ -96,6 +108,10 @@ Tutorials: `docs/tutorials/gui-quickstart.md`, `docs/tutorials/headless-cli.md`,
 - No physical PA has been measured with the S16 path yet: the protocol is
   verified on synthetic and mock captures only, and no real instrument adapter
   exists (`docs/protocols/measured-dpd.md` §7).
+- No condition set meets the `conditions-v1` evidence bar: the built-in APA
+  card has two capture batches, the three-condition cards are synthetic, and
+  nobody outside the implementation has recomputed a report
+  (`docs/protocols/conditions-v1.md` §7–8).
 - Regression baselines are drafts until a maintainer approves them; the
   leaderboard policy (S20) does not exist yet.
 - CSV sources of stress size are parsed into RAM; use `.npy`/`.npz` for

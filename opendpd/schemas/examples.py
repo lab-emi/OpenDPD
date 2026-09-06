@@ -14,6 +14,17 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict
 
 from .artifacts import Artifact, ArtifactKind, ArtifactManifest
+from .benchmark import MetricStats
+from .conditions import (
+    AdaptationCell,
+    AdaptationReport,
+    CellAggregate,
+    Condition,
+    ConditionAudit,
+    ConditionSet,
+    EvidenceBar,
+    TargetRule,
+)
 from .common import (
     BetterDirection,
     EvidenceType,
@@ -518,6 +529,60 @@ def artifact_manifest_complete() -> ArtifactManifest:
     )
 
 
+def adaptation_report_mock() -> AdaptationReport:
+    """A rehearsal over a synthetic three-condition card: below the evidence bar, with one failed cell."""
+    conditions = [Condition(condition_id="drive-0", dataset_id="synthetic-drive-0", role="source", capture_batch="seed-11",
+                            values={"gain": 1.0}),
+                  Condition(condition_id="drive-1", dataset_id="synthetic-drive-1", role="target", capture_batch="seed-12",
+                            values={"gain": 0.9}),
+                  Condition(condition_id="drive-2", dataset_id="synthetic-drive-2", role="target", capture_batch="seed-13",
+                            values={"gain": 0.8})]
+    card = ConditionSet(set_id="synthetic-drive-v0", device="synthetic memory-polynomial PA", dimension="drive",
+                        conditions=conditions, created_at=T0)
+    card = card.model_copy(update={"card_sha256": card.compute_sha256()})
+    audits = [ConditionAudit(condition_id=c.condition_id, dataset_id=c.dataset_id, role=c.role, capture_batch=c.capture_batch,
+                             values=c.values, origin="synthetic", raw_sha256=sha, n_samples=12000, train_samples=7200)
+              for c, sha in zip(conditions, (SHA_A, SHA_B, SHA_C))]
+    nmse = {("full_retrain", "drive-0"): -31.2, ("full_retrain", "drive-1"): -30.8, ("full_retrain", "drive-2"): -30.1,
+            ("zero_update", "drive-1"): -24.6, ("zero_update", "drive-2"): -19.3, ("few_shot", "drive-1"): -28.9}
+    cells, aggregates = [], []
+    for task, cond in [("full_retrain", "drive-0"), ("full_retrain", "drive-1"), ("full_retrain", "drive-2"),
+                       ("zero_update", "drive-1"), ("zero_update", "drive-2"), ("few_shot", "drive-1"), ("few_shot", "drive-2")]:
+        budget = 2000 if task == "few_shot" else None
+        new = 0 if task == "zero_update" else (budget or 7200)
+        agg = dict(entry_id="pa", task=task, condition_id=cond, budget_samples=budget, new_samples=new)
+        base = dict(device="cpu", **agg)
+        if (task, cond) in nmse:
+            value = nmse[(task, cond)]
+            cells.append(AdaptationCell(seed=0, run_id=f"run-{task[:4]}-{cond}", status="ok",
+                                        metrics={"NMSE": value, "ACLR_AVG": value - 6},
+                                        wall_clock_s=0.0 if task == "zero_update" else 4.2, config_sha256=SHA_A,
+                                        checkpoint_sha256=None if task == "zero_update" else SHA_B, reached_target=value <= -28.0, **base))
+            aggregates.append(CellAggregate(n_seeds=1, n_ok=1, n_failed=0, mean_wall_clock_s=cells[-1].wall_clock_s,
+                                            metrics={"NMSE": MetricStats(n=1, mean=value, min=value, max=value),
+                                                     "ACLR_AVG": MetricStats(n=1, mean=value - 6, min=value - 6, max=value - 6)},
+                                            target_reached_fraction=1.0 if value <= -28.0 else 0.0, **agg))
+        else:
+            cells.append(AdaptationCell(seed=0, status="failed", run_id=f"run-{task[:4]}-{cond}", wall_clock_s=1.1, config_sha256=SHA_C,
+                                        failure="dataset_too_short [train]: budget 2000 leaves no complete frame after the guard band",
+                                        **base))
+            aggregates.append(CellAggregate(n_seeds=1, n_ok=0, n_failed=1, **agg))
+    report = AdaptationReport(
+        plan_sha256=SHA_B, condition_set=card, conditions=audits, metric_profile_id="legacy-opendpd-v1", metric_profile_version=1,
+        device="cpu", seeds=[0], budgets=[2000], target=TargetRule(metric="NMSE", threshold=-28.0, better="lower"),
+        cells=cells, aggregates=aggregates,
+        evidence_bar=EvidenceBar(n_conditions=3, independent_batches=True, measured_origin=False, met=False),
+        repeats="training seeds: 1; capture batches: 3 (one per condition); measurement repeats are conditions of the card and "
+                "are never counted as seeds",
+        limitations=["single device (synthetic memory-polynomial PA): nothing here generalises to other devices",
+                     "below the S17 evidence bar: not every condition is a measured dataset (synthetic or unknown origin); "
+                     "this report is a rehearsal of the protocol, not evidence",
+                     "1 training seed(s): seed spread is not established (3 or more needed)",
+                     "1 of 7 cells have no number; each states why in the matrix"],
+        software=SOFTWARE, machine={"cpu": "x86_64", "cores": "8", "os": "Linux 6.0 (x86_64)"}, generated_at=T0)
+    return report.sealed()
+
+
 def all_examples() -> Dict[str, object]:
     """Name -> model instance; names double as mock fixture file names."""
     return {
@@ -547,4 +612,5 @@ def all_examples() -> Dict[str, object]:
         "history_points_mock": history_points_mock(),
         "result_legacy_import": result_legacy_import(),
         "artifact_manifest_complete": artifact_manifest_complete(),
+        "adaptation_report_mock": adaptation_report_mock(),
     }

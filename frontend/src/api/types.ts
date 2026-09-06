@@ -37,6 +37,10 @@ export type HistoryPoint = Schemas['HistoryPoint']
 export type PackageManifest = Schemas['PackageManifest']
 export type ImportReport = Schemas['ImportReport']
 export type ExportInfo = Schemas['ExportInfo']
+export type AdaptationReport = Schemas['AdaptationReport']
+export type AdaptationReportSummary = Schemas['AdaptationReportSummary']
+export type AdaptationCell = Schemas['AdaptationCell']
+export type CellAggregate = Schemas['CellAggregate']
 
 /** Shape of POST /experiments/validate (a plain dict on the server side). */
 export interface ConfigIssue {

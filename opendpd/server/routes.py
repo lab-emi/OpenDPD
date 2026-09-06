@@ -18,6 +18,8 @@ from opendpd.core.metrics import get_profile, list_profiles
 from opendpd.core.registry import list_models
 from opendpd.core.splits import DEFAULT_GUARD_SAMPLES
 from opendpd.schemas import (
+    AdaptationReport,
+    AdaptationReportSummary,
     ArtifactManifest,
     ComparisonReport,
     DatasetManifest,
@@ -45,6 +47,7 @@ from opendpd.schemas import (
     MetricProfile,
 )
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, UPLOAD_MAX_BODY, Session
+from opendpd.services import adaptation as adaptation_service
 from opendpd.services import capabilities as capabilities_service
 from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
@@ -578,6 +581,31 @@ def results_get(run_id: str, request: Request, profile: Optional[str] = Query(No
                      hint=("stored profiles: " + ", ".join(stored)) if stored
                      else "results exist only for succeeded train_pa / train_dpd runs")
     return result
+
+
+# --- adaptation reports (conditions-v1, plan S17) -------------------------------------------
+
+@router.get("/adaptation/reports", response_model=List[AdaptationReportSummary], tags=["adaptation"],
+            dependencies=[Depends(require_session)])
+def adaptation_reports(request: Request):
+    """Hash-bound adaptation reports stored under <workspace>/adaptation/ (built by `opendpd adaptation report`)."""
+    return [r.summary() for r in adaptation_service.list_reports(request.app.state.ws)]
+
+
+@router.get("/adaptation/reports/{plan_sha}", tags=["adaptation"], dependencies=[Depends(require_session)],
+            responses={200: {"model": AdaptationReport}})
+def adaptation_report(plan_sha: str, request: Request, format: Literal["json", "md"] = Query("json")):
+    """One report by its plan hash (the first 12 characters suffice); `format=md` downloads the Markdown rendering."""
+    if not re.fullmatch(r"[0-9a-f]{12,64}", plan_sha):
+        raise _error(404, "report_not_found", "a plan hash is 12 to 64 hex characters")
+    report = next((r for r in adaptation_service.list_reports(request.app.state.ws) if r.plan_sha256.startswith(plan_sha)), None)
+    if report is None:
+        raise _error(404, "report_not_found", f"no adaptation report for plan '{plan_sha}'",
+                     hint="build one with `opendpd adaptation report <plan.json> --workspace <ws>`")
+    if format == "md":
+        return Response(content=adaptation_service.report_markdown(report), media_type="text/markdown",
+                        headers={"Content-Disposition": f"attachment; filename=\"adaptation-{report.plan_sha256[:12]}.md\""})
+    return report
 
 
 # --- reports, packages ----------------------------------------------------------------------

@@ -25,9 +25,10 @@ from tests.fixtures.synthetic import Impairments, synthesize
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
 TUTORIALS = [ROOT / "docs" / "tutorials" / "gui-quickstart.md", ROOT / "docs" / "tutorials" / "headless-cli.md",
-             ROOT / "docs" / "tutorials" / "waveform-evaluation.md", ROOT / "docs" / "tutorials" / "measured-dpd.md"]
+             ROOT / "docs" / "tutorials" / "waveform-evaluation.md", ROOT / "docs" / "tutorials" / "measured-dpd.md",
+             ROOT / "docs" / "tutorials" / "adaptation-benchmark.md"]
 OTHER_CI_SOURCES = [ROOT / ".github" / "workflows" / "weekly.yml", ROOT / "tests" / "integration" / "test_benchmark_protocol.py"]
-NESTED = {"datasets", "benchmark", "waveforms", "measurements", "instruments"}
+NESTED = {"datasets", "benchmark", "waveforms", "measurements", "instruments", "adaptation"}
 
 Family = Tuple[str, ...]
 
@@ -56,7 +57,7 @@ def option_strings() -> Dict[Family, Set[str]]:
     out: Dict[Family, Set[str]] = {}
 
     def walk(p, prefix: Family):
-        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command", "waveforms_command", "measurements_command", "instruments_command")]
+        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command", "waveforms_command", "measurements_command", "instruments_command", "adaptation_command")]
         if not subs:
             out[prefix] = {s for a in p._actions for s in a.option_strings}
             return
@@ -193,6 +194,33 @@ def test_documented_commands_run_end_to_end(tmp_path):
     assert any("pending cross-validation" in lim for lim in stored["limitations"])
     again = json.loads(run("evaluate", lte["run"]["run_id"], "--workspace", str(ws), "--profile", "ofdm-lte20-evm-v1", "--json").stdout)
     assert next(m for m in again["metrics"] if m["name"] == "EVM_RMS")["value"] == pytest.approx(evm["value"], rel=1e-9)
+
+    # docs/tutorials/adaptation-benchmark.md: a three-condition card (synthetic captures, each its own acquisition),
+    # a pre-registered plan, every cell run through the executor and a report that says it is a rehearsal
+    assert "2 conditions" in run("adaptation", "card", "apa-200mhz-batches-v1").stdout
+    conditions = []
+    for i, (cid, gain) in enumerate([("p30", 1.0), ("p32", 0.9), ("p34", 0.8)]):
+        xa, ya = synthesize(12000, 21 + i, impairments=Impairments(gain=gain))
+        cap = tmp_path / f"{cid}.csv"
+        pd.DataFrame({"I_in": xa[:, 0], "Q_in": xa[:, 1], "I_out": ya[:, 0], "Q_out": ya[:, 1]}).to_csv(cap, index=False)
+        run("datasets", "import", str(cap), "--id", f"unit2-{cid}", "--fs", "800e6", "--bandwidth", "200e6", "--n-sub-ch", "10",
+            "--nperseg", "2560", "--units", "normalized", "--workspace", str(ws))
+        conditions.append({"condition_id": cid, "dataset_id": f"unit2-{cid}", "role": "source" if i == 0 else "target",
+                           "capture_batch": f"2026-09-0{1 + i // 2}-{'ab'[i % 2]}", "values": {"output_power_dbm": 30 + 2 * i}})
+    card = tmp_path / "card.json"
+    card.write_text(json.dumps({"set_id": "my-pa-drive-v1", "device": "synthetic PA (tutorial)", "dimension": "output_power_dbm",
+                                "conditions": conditions}))
+    sealed = tmp_path / "card.sealed.json"
+    run("adaptation", "card", str(card), "--workspace", str(ws), "--out", str(sealed))
+    plan = tmp_path / "plan.json"
+    run("adaptation", "plan", str(sealed), "--workspace", str(ws), "--pa-recipe", "pa-gru-smoke-v1", "--dpd-recipe", "dpd-gru-smoke-v1",
+        "--budgets", "2000", "--seeds", "0", "--target-metric", "NMSE", "--target-threshold", "-25", "--out", str(plan))
+    ran = json.loads(run("adaptation", "run", str(plan), "--workspace", str(ws), "--json").stdout)
+    assert not ran["failed"] and ran["missing"] == 0 and len(ran["runs"]) == 14
+    adaptation_md = tmp_path / "adaptation-report.md"
+    proc = run("adaptation", "report", str(plan), "--workspace", str(ws), "--markdown", str(adaptation_md))
+    assert "evidence bar NOT met" in proc.stdout and "14 cells, 0 without a number" in proc.stdout
+    assert "rehearsal of the protocol" in adaptation_md.read_text() and (ws / "adaptation").glob("*.report.json")
 
     package = json.loads(run("export", pa_id, "--workspace", str(ws), "--kind", "share", "--json").stdout)
     zip_path = Path(package["path"])

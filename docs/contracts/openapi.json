@@ -1,6 +1,368 @@
 {
   "components": {
     "schemas": {
+      "AdaptationCell": {
+        "additionalProperties": false,
+        "description": "One (entry, task, condition, budget, seed): a run and what it produced, or why there is no number.",
+        "properties": {
+          "budget_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Samples"
+          },
+          "checkpoint_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Sha256"
+          },
+          "condition_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "config_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Sha256"
+          },
+          "device": {
+            "title": "Device",
+            "type": "string"
+          },
+          "entry_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "new_samples": {
+            "minimum": 0.0,
+            "title": "New Samples",
+            "type": "integer"
+          },
+          "reached_target": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reached Target"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "failed",
+              "missing"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "task": {
+            "enum": [
+              "zero_update",
+              "few_shot",
+              "full_retrain"
+            ],
+            "title": "Task",
+            "type": "string"
+          },
+          "wall_clock_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wall Clock S"
+          }
+        },
+        "required": [
+          "entry_id",
+          "task",
+          "condition_id",
+          "seed",
+          "status",
+          "new_samples",
+          "device"
+        ],
+        "title": "AdaptationCell",
+        "type": "object"
+      },
+      "AdaptationReport": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregates": {
+            "items": {
+              "$ref": "#/components/schemas/CellAggregate"
+            },
+            "title": "Aggregates",
+            "type": "array"
+          },
+          "budgets": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Budgets",
+            "type": "array"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/AdaptationCell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "condition_set": {
+            "$ref": "#/components/schemas/ConditionSet"
+          },
+          "conditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionAudit"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "device": {
+            "title": "Device",
+            "type": "string"
+          },
+          "evidence_bar": {
+            "$ref": "#/components/schemas/EvidenceBar"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "machine": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Machine",
+            "type": "object"
+          },
+          "metric_profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Metric Profile Id",
+            "type": "string"
+          },
+          "metric_profile_version": {
+            "title": "Metric Profile Version",
+            "type": "integer"
+          },
+          "plan_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Plan Sha256",
+            "type": "string"
+          },
+          "protocol_id": {
+            "const": "conditions-v1",
+            "default": "conditions-v1",
+            "title": "Protocol Id",
+            "type": "string"
+          },
+          "repeats": {
+            "title": "Repeats",
+            "type": "string"
+          },
+          "report_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Sha256"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "seeds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Seeds",
+            "type": "array"
+          },
+          "software": {
+            "$ref": "#/components/schemas/SoftwareProvenance"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetRule"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "plan_sha256",
+          "condition_set",
+          "conditions",
+          "metric_profile_id",
+          "metric_profile_version",
+          "device",
+          "seeds",
+          "budgets",
+          "cells",
+          "aggregates",
+          "evidence_bar",
+          "repeats",
+          "software"
+        ],
+        "title": "AdaptationReport",
+        "type": "object"
+      },
+      "AdaptationReportSummary": {
+        "additionalProperties": false,
+        "description": "One row of the reports list: enough to pick a report, never a number to compare.",
+        "properties": {
+          "device": {
+            "title": "Device",
+            "type": "string"
+          },
+          "dimension": {
+            "title": "Dimension",
+            "type": "string"
+          },
+          "evidence_met": {
+            "title": "Evidence Met",
+            "type": "boolean"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "n_cells": {
+            "title": "N Cells",
+            "type": "integer"
+          },
+          "n_conditions": {
+            "title": "N Conditions",
+            "type": "integer"
+          },
+          "n_without_number": {
+            "title": "N Without Number",
+            "type": "integer"
+          },
+          "plan_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Plan Sha256",
+            "type": "string"
+          },
+          "report_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Sha256"
+          },
+          "set_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Set Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_sha256",
+          "set_id",
+          "device",
+          "dimension",
+          "n_conditions",
+          "n_cells",
+          "n_without_number",
+          "evidence_met",
+          "generated_at"
+        ],
+        "title": "AdaptationReportSummary",
+        "type": "object"
+      },
       "Artifact": {
         "additionalProperties": false,
         "properties": {
@@ -391,6 +753,103 @@
         "title": "CaptureRef",
         "type": "object"
       },
+      "CellAggregate": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Samples"
+          },
+          "condition_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "entry_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "mean_wall_clock_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Wall Clock S"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MetricStats"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "n_failed": {
+            "minimum": 0.0,
+            "title": "N Failed",
+            "type": "integer"
+          },
+          "n_ok": {
+            "minimum": 0.0,
+            "title": "N Ok",
+            "type": "integer"
+          },
+          "n_seeds": {
+            "minimum": 1.0,
+            "title": "N Seeds",
+            "type": "integer"
+          },
+          "new_samples": {
+            "minimum": 0.0,
+            "title": "New Samples",
+            "type": "integer"
+          },
+          "target_reached_fraction": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Reached Fraction"
+          },
+          "task": {
+            "enum": [
+              "zero_update",
+              "few_shot",
+              "full_retrain"
+            ],
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "task",
+          "condition_id",
+          "n_seeds",
+          "n_ok",
+          "n_failed",
+          "new_samples"
+        ],
+        "title": "CellAggregate",
+        "type": "object"
+      },
       "ComparisonPair": {
         "additionalProperties": false,
         "properties": {
@@ -466,6 +925,236 @@
         "title": "ComparisonReport",
         "type": "object"
       },
+      "Condition": {
+        "additionalProperties": false,
+        "description": "One operating condition = one registered dataset from its own capture.",
+        "properties": {
+          "capture_batch": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Capture Batch",
+            "type": "string"
+          },
+          "condition_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "role": {
+            "enum": [
+              "source",
+              "target"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "condition_id",
+          "dataset_id",
+          "role",
+          "capture_batch"
+        ],
+        "title": "Condition",
+        "type": "object"
+      },
+      "ConditionAudit": {
+        "additionalProperties": false,
+        "properties": {
+          "capture_batch": {
+            "title": "Capture Batch",
+            "type": "string"
+          },
+          "condition_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "n_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Samples"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "raw_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Sha256"
+          },
+          "role": {
+            "enum": [
+              "source",
+              "target"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "train_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Train Samples"
+          },
+          "values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "condition_id",
+          "dataset_id",
+          "role",
+          "capture_batch",
+          "origin"
+        ],
+        "title": "ConditionAudit",
+        "type": "object"
+      },
+      "ConditionSet": {
+        "additionalProperties": false,
+        "description": "The data card. ``card_sha256`` covers everything but ``created_at`` and itself.",
+        "properties": {
+          "card_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Sha256"
+          },
+          "conditions": {
+            "items": {
+              "$ref": "#/components/schemas/Condition"
+            },
+            "minItems": 2,
+            "title": "Conditions",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "device": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Device",
+            "type": "string"
+          },
+          "dimension": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Dimension",
+            "type": "string"
+          },
+          "held_out_policy": {
+            "default": "roles are declared in the card before any run; target conditions are never used to select hyper-parameters, and every number is read from the target's test split after the run finished",
+            "title": "Held Out Policy",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "set_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Set Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "set_id",
+          "device",
+          "dimension",
+          "conditions"
+        ],
+        "title": "ConditionSet",
+        "type": "object"
+      },
       "DPDReference": {
         "additionalProperties": false,
         "properties": {
@@ -507,6 +1196,11 @@
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Run Id",
             "type": "string"
+          },
+          "transfer": {
+            "default": false,
+            "title": "Transfer",
+            "type": "boolean"
           }
         },
         "required": [
@@ -1373,6 +2067,41 @@
         "title": "EventPage",
         "type": "object"
       },
+      "EvidenceBar": {
+        "additionalProperties": false,
+        "description": "Whether the card meets the S17 evidence bar; a report below the bar is a rehearsal, not evidence.",
+        "properties": {
+          "independent_batches": {
+            "title": "Independent Batches",
+            "type": "boolean"
+          },
+          "measured_origin": {
+            "title": "Measured Origin",
+            "type": "boolean"
+          },
+          "met": {
+            "title": "Met",
+            "type": "boolean"
+          },
+          "min_conditions": {
+            "default": 3,
+            "title": "Min Conditions",
+            "type": "integer"
+          },
+          "n_conditions": {
+            "title": "N Conditions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n_conditions",
+          "independent_batches",
+          "measured_origin",
+          "met"
+        ],
+        "title": "EvidenceBar",
+        "type": "object"
+      },
       "EvidenceType": {
         "description": "What kind of evidence a result represents. Never inferred, always declared.",
         "enum": [
@@ -1444,6 +2173,16 @@
           },
           "execution": {
             "$ref": "#/components/schemas/ExecutionConfig"
+          },
+          "initialization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InitReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "measurement": {
             "anyOf": [
@@ -1898,6 +2637,46 @@
         "title": "ImportRootInfo",
         "type": "object"
       },
+      "InitReference": {
+        "additionalProperties": false,
+        "description": "Warm start (S17): the weights of a succeeded run of the same task and model start this training.",
+        "properties": {
+          "checkpoint_artifact_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Artifact Id"
+          },
+          "checkpoint_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Sha256"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "InitReference",
+        "type": "object"
+      },
       "LineageLink": {
         "additionalProperties": false,
         "properties": {
@@ -1955,7 +2734,9 @@
           "pa_surrogate",
           "dpd_model",
           "retry_of",
-          "measured_playback"
+          "measured_playback",
+          "pa_model",
+          "initialised_from"
         ],
         "title": "LineageRelation",
         "type": "string"
@@ -2377,6 +3158,47 @@
           "metrics"
         ],
         "title": "MetricProfile",
+        "type": "object"
+      },
+      "MetricStats": {
+        "additionalProperties": false,
+        "properties": {
+          "max": {
+            "title": "Max",
+            "type": "number"
+          },
+          "mean": {
+            "title": "Mean",
+            "type": "number"
+          },
+          "min": {
+            "title": "Min",
+            "type": "number"
+          },
+          "n": {
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "std": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Std"
+          }
+        },
+        "required": [
+          "n",
+          "mean",
+          "min",
+          "max"
+        ],
+        "title": "MetricStats",
         "type": "object"
       },
       "MetricStatus": {
@@ -3330,6 +4152,16 @@
           },
           "execution": {
             "$ref": "#/components/schemas/ExecutionConfig"
+          },
+          "initialization": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InitReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "measurement": {
             "anyOf": [
@@ -4460,12 +5292,43 @@
         "title": "SurrogateCoverage",
         "type": "object"
       },
+      "TargetRule": {
+        "additionalProperties": false,
+        "description": "What 'reaching the target' means: one metric of the plan's profile against a threshold.",
+        "properties": {
+          "better": {
+            "default": "lower",
+            "enum": [
+              "lower",
+              "higher"
+            ],
+            "title": "Better",
+            "type": "string"
+          },
+          "metric": {
+            "minLength": 1,
+            "title": "Metric",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "metric",
+          "threshold"
+        ],
+        "title": "TargetRule",
+        "type": "object"
+      },
       "TaskType": {
         "enum": [
           "train_pa",
           "train_dpd",
           "run_dpd",
-          "evaluate_measured"
+          "evaluate_measured",
+          "evaluate_pa"
         ],
         "title": "TaskType",
         "type": "string"
@@ -4584,6 +5447,18 @@
             "minimum": 0.0,
             "title": "Seed",
             "type": "integer"
+          },
+          "train_samples": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Train Samples"
           }
         },
         "title": "TrainingConfig",
@@ -4823,6 +5698,89 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/adaptation/reports": {
+      "get": {
+        "description": "Hash-bound adaptation reports stored under <workspace>/adaptation/ (built by `opendpd adaptation report`).",
+        "operationId": "adaptation_reports_api_v1_adaptation_reports_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AdaptationReportSummary"
+                  },
+                  "title": "Response Adaptation Reports Api V1 Adaptation Reports Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Adaptation Reports",
+        "tags": [
+          "adaptation"
+        ]
+      }
+    },
+    "/api/v1/adaptation/reports/{plan_sha}": {
+      "get": {
+        "description": "One report by its plan hash (the first 12 characters suffice); `format=md` downloads the Markdown rendering.",
+        "operationId": "adaptation_report_api_v1_adaptation_reports__plan_sha__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_sha",
+            "required": true,
+            "schema": {
+              "title": "Plan Sha",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "md"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdaptationReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Adaptation Report",
+        "tags": [
+          "adaptation"
+        ]
+      }
+    },
     "/api/v1/artifacts/{run_id}/{artifact_id}": {
       "get": {
         "description": "Download by *registered id* only; paths are never accepted from clients.",

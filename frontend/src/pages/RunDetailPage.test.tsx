@@ -113,7 +113,7 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   expect(body.config).toMatchObject({ task: 'run_dpd', dpd_reference: { run_id: 'run-dpd-0001' }, pa_reference: { run_id: 'run-pa-0002' }, dataset: { id: dpd.dataset_id } })
   await screen.findByText('run-apply-0003')
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(screen.getByText(/applied a trained DPD to the test split/)).toBeInTheDocument()
+  expect(screen.getByText(/there is no training history/)).toBeInTheDocument()
 })
 
 test('a succeeded run_dpd run offers the measured-capture import: files are uploaded, conditions declared, one evaluate_measured run submitted', async () => {

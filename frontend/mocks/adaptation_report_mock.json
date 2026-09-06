@@ -1,0 +1,456 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "aggregates": [
+      {
+        "budget_samples": null,
+        "condition_id": "drive-0",
+        "entry_id": "pa",
+        "mean_wall_clock_s": 4.2,
+        "metrics": {
+          "ACLR_AVG": {
+            "max": -37.2,
+            "mean": -37.2,
+            "min": -37.2,
+            "n": 1,
+            "std": null
+          },
+          "NMSE": {
+            "max": -31.2,
+            "mean": -31.2,
+            "min": -31.2,
+            "n": 1,
+            "std": null
+          }
+        },
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_seeds": 1,
+        "new_samples": 7200,
+        "target_reached_fraction": 1.0,
+        "task": "full_retrain"
+      },
+      {
+        "budget_samples": null,
+        "condition_id": "drive-1",
+        "entry_id": "pa",
+        "mean_wall_clock_s": 4.2,
+        "metrics": {
+          "ACLR_AVG": {
+            "max": -36.8,
+            "mean": -36.8,
+            "min": -36.8,
+            "n": 1,
+            "std": null
+          },
+          "NMSE": {
+            "max": -30.8,
+            "mean": -30.8,
+            "min": -30.8,
+            "n": 1,
+            "std": null
+          }
+        },
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_seeds": 1,
+        "new_samples": 7200,
+        "target_reached_fraction": 1.0,
+        "task": "full_retrain"
+      },
+      {
+        "budget_samples": null,
+        "condition_id": "drive-2",
+        "entry_id": "pa",
+        "mean_wall_clock_s": 4.2,
+        "metrics": {
+          "ACLR_AVG": {
+            "max": -36.1,
+            "mean": -36.1,
+            "min": -36.1,
+            "n": 1,
+            "std": null
+          },
+          "NMSE": {
+            "max": -30.1,
+            "mean": -30.1,
+            "min": -30.1,
+            "n": 1,
+            "std": null
+          }
+        },
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_seeds": 1,
+        "new_samples": 7200,
+        "target_reached_fraction": 1.0,
+        "task": "full_retrain"
+      },
+      {
+        "budget_samples": null,
+        "condition_id": "drive-1",
+        "entry_id": "pa",
+        "mean_wall_clock_s": 0.0,
+        "metrics": {
+          "ACLR_AVG": {
+            "max": -30.6,
+            "mean": -30.6,
+            "min": -30.6,
+            "n": 1,
+            "std": null
+          },
+          "NMSE": {
+            "max": -24.6,
+            "mean": -24.6,
+            "min": -24.6,
+            "n": 1,
+            "std": null
+          }
+        },
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_seeds": 1,
+        "new_samples": 0,
+        "target_reached_fraction": 0.0,
+        "task": "zero_update"
+      },
+      {
+        "budget_samples": null,
+        "condition_id": "drive-2",
+        "entry_id": "pa",
+        "mean_wall_clock_s": 0.0,
+        "metrics": {
+          "ACLR_AVG": {
+            "max": -25.3,
+            "mean": -25.3,
+            "min": -25.3,
+            "n": 1,
+            "std": null
+          },
+          "NMSE": {
+            "max": -19.3,
+            "mean": -19.3,
+            "min": -19.3,
+            "n": 1,
+            "std": null
+          }
+        },
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_seeds": 1,
+        "new_samples": 0,
+        "target_reached_fraction": 0.0,
+        "task": "zero_update"
+      },
+      {
+        "budget_samples": 2000,
+        "condition_id": "drive-1",
+        "entry_id": "pa",
+        "mean_wall_clock_s": 4.2,
+        "metrics": {
+          "ACLR_AVG": {
+            "max": -34.9,
+            "mean": -34.9,
+            "min": -34.9,
+            "n": 1,
+            "std": null
+          },
+          "NMSE": {
+            "max": -28.9,
+            "mean": -28.9,
+            "min": -28.9,
+            "n": 1,
+            "std": null
+          }
+        },
+        "n_failed": 0,
+        "n_ok": 1,
+        "n_seeds": 1,
+        "new_samples": 2000,
+        "target_reached_fraction": 1.0,
+        "task": "few_shot"
+      },
+      {
+        "budget_samples": 2000,
+        "condition_id": "drive-2",
+        "entry_id": "pa",
+        "mean_wall_clock_s": null,
+        "metrics": {},
+        "n_failed": 1,
+        "n_ok": 0,
+        "n_seeds": 1,
+        "new_samples": 2000,
+        "target_reached_fraction": null,
+        "task": "few_shot"
+      }
+    ],
+    "budgets": [
+      2000
+    ],
+    "cells": [
+      {
+        "budget_samples": null,
+        "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "condition_id": "drive-0",
+        "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "device": "cpu",
+        "entry_id": "pa",
+        "failure": null,
+        "metrics": {
+          "ACLR_AVG": -37.2,
+          "NMSE": -31.2
+        },
+        "new_samples": 7200,
+        "reached_target": true,
+        "run_id": "run-full-drive-0",
+        "seed": 0,
+        "status": "ok",
+        "task": "full_retrain",
+        "wall_clock_s": 4.2
+      },
+      {
+        "budget_samples": null,
+        "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "condition_id": "drive-1",
+        "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "device": "cpu",
+        "entry_id": "pa",
+        "failure": null,
+        "metrics": {
+          "ACLR_AVG": -36.8,
+          "NMSE": -30.8
+        },
+        "new_samples": 7200,
+        "reached_target": true,
+        "run_id": "run-full-drive-1",
+        "seed": 0,
+        "status": "ok",
+        "task": "full_retrain",
+        "wall_clock_s": 4.2
+      },
+      {
+        "budget_samples": null,
+        "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "condition_id": "drive-2",
+        "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "device": "cpu",
+        "entry_id": "pa",
+        "failure": null,
+        "metrics": {
+          "ACLR_AVG": -36.1,
+          "NMSE": -30.1
+        },
+        "new_samples": 7200,
+        "reached_target": true,
+        "run_id": "run-full-drive-2",
+        "seed": 0,
+        "status": "ok",
+        "task": "full_retrain",
+        "wall_clock_s": 4.2
+      },
+      {
+        "budget_samples": null,
+        "checkpoint_sha256": null,
+        "condition_id": "drive-1",
+        "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "device": "cpu",
+        "entry_id": "pa",
+        "failure": null,
+        "metrics": {
+          "ACLR_AVG": -30.6,
+          "NMSE": -24.6
+        },
+        "new_samples": 0,
+        "reached_target": false,
+        "run_id": "run-zero-drive-1",
+        "seed": 0,
+        "status": "ok",
+        "task": "zero_update",
+        "wall_clock_s": 0.0
+      },
+      {
+        "budget_samples": null,
+        "checkpoint_sha256": null,
+        "condition_id": "drive-2",
+        "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "device": "cpu",
+        "entry_id": "pa",
+        "failure": null,
+        "metrics": {
+          "ACLR_AVG": -25.3,
+          "NMSE": -19.3
+        },
+        "new_samples": 0,
+        "reached_target": false,
+        "run_id": "run-zero-drive-2",
+        "seed": 0,
+        "status": "ok",
+        "task": "zero_update",
+        "wall_clock_s": 0.0
+      },
+      {
+        "budget_samples": 2000,
+        "checkpoint_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "condition_id": "drive-1",
+        "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "device": "cpu",
+        "entry_id": "pa",
+        "failure": null,
+        "metrics": {
+          "ACLR_AVG": -34.9,
+          "NMSE": -28.9
+        },
+        "new_samples": 2000,
+        "reached_target": true,
+        "run_id": "run-few_-drive-1",
+        "seed": 0,
+        "status": "ok",
+        "task": "few_shot",
+        "wall_clock_s": 4.2
+      },
+      {
+        "budget_samples": 2000,
+        "checkpoint_sha256": null,
+        "condition_id": "drive-2",
+        "config_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "device": "cpu",
+        "entry_id": "pa",
+        "failure": "dataset_too_short [train]: budget 2000 leaves no complete frame after the guard band",
+        "metrics": {},
+        "new_samples": 2000,
+        "reached_target": null,
+        "run_id": "run-few_-drive-2",
+        "seed": 0,
+        "status": "failed",
+        "task": "few_shot",
+        "wall_clock_s": 1.1
+      }
+    ],
+    "condition_set": {
+      "card_sha256": "9b3118b114eca816cf8ca5fb8f5f02b59b7d21dcbd6c98d88f4d4ec5274438a8",
+      "conditions": [
+        {
+          "capture_batch": "seed-11",
+          "condition_id": "drive-0",
+          "dataset_id": "synthetic-drive-0",
+          "notes": null,
+          "role": "source",
+          "values": {
+            "gain": 1.0
+          }
+        },
+        {
+          "capture_batch": "seed-12",
+          "condition_id": "drive-1",
+          "dataset_id": "synthetic-drive-1",
+          "notes": null,
+          "role": "target",
+          "values": {
+            "gain": 0.9
+          }
+        },
+        {
+          "capture_batch": "seed-13",
+          "condition_id": "drive-2",
+          "dataset_id": "synthetic-drive-2",
+          "notes": null,
+          "role": "target",
+          "values": {
+            "gain": 0.8
+          }
+        }
+      ],
+      "created_at": "2026-09-06T08:00:00Z",
+      "device": "synthetic memory-polynomial PA",
+      "dimension": "drive",
+      "held_out_policy": "roles are declared in the card before any run; target conditions are never used to select hyper-parameters, and every number is read from the target's test split after the run finished",
+      "schema_version": 1,
+      "set_id": "synthetic-drive-v0"
+    },
+    "conditions": [
+      {
+        "capture_batch": "seed-11",
+        "condition_id": "drive-0",
+        "dataset_id": "synthetic-drive-0",
+        "n_samples": 12000,
+        "origin": "synthetic",
+        "raw_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "source",
+        "train_samples": 7200,
+        "values": {
+          "gain": 1.0
+        }
+      },
+      {
+        "capture_batch": "seed-12",
+        "condition_id": "drive-1",
+        "dataset_id": "synthetic-drive-1",
+        "n_samples": 12000,
+        "origin": "synthetic",
+        "raw_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "role": "target",
+        "train_samples": 7200,
+        "values": {
+          "gain": 0.9
+        }
+      },
+      {
+        "capture_batch": "seed-13",
+        "condition_id": "drive-2",
+        "dataset_id": "synthetic-drive-2",
+        "n_samples": 12000,
+        "origin": "synthetic",
+        "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "role": "target",
+        "train_samples": 7200,
+        "values": {
+          "gain": 0.8
+        }
+      }
+    ],
+    "device": "cpu",
+    "evidence_bar": {
+      "independent_batches": true,
+      "measured_origin": false,
+      "met": false,
+      "min_conditions": 3,
+      "n_conditions": 3
+    },
+    "generated_at": "2026-09-06T08:00:00Z",
+    "limitations": [
+      "single device (synthetic memory-polynomial PA): nothing here generalises to other devices",
+      "below the S17 evidence bar: not every condition is a measured dataset (synthetic or unknown origin); this report is a rehearsal of the protocol, not evidence",
+      "1 training seed(s): seed spread is not established (3 or more needed)",
+      "1 of 7 cells have no number; each states why in the matrix"
+    ],
+    "machine": {
+      "cores": "8",
+      "cpu": "x86_64",
+      "os": "Linux 6.0 (x86_64)"
+    },
+    "metric_profile_id": "legacy-opendpd-v1",
+    "metric_profile_version": 1,
+    "plan_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "protocol_id": "conditions-v1",
+    "repeats": "training seeds: 1; capture batches: 3 (one per condition); measurement repeats are conditions of the card and are never counted as seeds",
+    "report_sha256": "b1af9ecad1540607078176d1f826fe33588523e6f76346e2e4f32846b5311954",
+    "schema_version": 1,
+    "seeds": [
+      0
+    ],
+    "software": {
+      "git_commit": "6f026b1",
+      "git_dirty": false,
+      "opendpd_version": "2.2.0.dev0",
+      "platform": "Linux-x86_64",
+      "python_version": "3.13.14",
+      "torch_version": "2.13.0+cu132"
+    },
+    "target": {
+      "better": "lower",
+      "metric": "NMSE",
+      "threshold": -28.0
+    }
+  }
+}

@@ -35,6 +35,7 @@ from opendpd.schemas import (
     ExperimentConfig,
     FileRef,
     HistoryPoint,
+    InitReference,
     LineageLink,
     LineageRelation,
     MeasurementEvidence,
@@ -230,12 +231,19 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
         assert config.dpd_reference is not None
         dpd_record, dpd_resolved, dpd_ckpt = _checkpoint_of(ws, config.dpd_reference.run_id, TaskType.train_dpd,
                                                             "dpd_reference.run_id")
+        transfer = config.dpd_reference.transfer
         updates["dpd_reference"] = DPDReference(run_id=dpd_record.run_id, checkpoint_artifact_id=dpd_ckpt.artifact_id,
-                                                checkpoint_sha256=dpd_ckpt.file.sha256, model=dpd_resolved.model)
-        if config.dataset.id != dpd_resolved.dataset.id:
+                                                checkpoint_sha256=dpd_ckpt.file.sha256, model=dpd_resolved.model,
+                                                transfer=transfer)
+        if config.dataset.id != dpd_resolved.dataset.id and not transfer:
             raise ConfigError([ConfigIssue("dataset.id", f"DPD '{dpd_record.run_id}' was trained on dataset "
                                            f"'{dpd_resolved.dataset.id}', not '{config.dataset.id}'",
-                                           "apply a DPD to the dataset it was trained on")])
+                                           "apply a DPD to the dataset it was trained on, or declare "
+                                           "dpd_reference.transfer for a zero-update transfer to another condition")])
+        if transfer and config.pa_reference is None:
+            raise ConfigError([ConfigIssue("pa_reference", "a zero-update transfer needs a PA surrogate trained on the "
+                                           f"target dataset '{config.dataset.id}'",
+                                           "train a PA model on the target dataset and name its run")])
         # Without an explicit surrogate a run_dpd is evaluated through the one the DPD was trained with;
         # naming another PA run of the same dataset produces a new, separately stored result.
         updates["pa_reference"] = dpd_resolved.pa_reference if config.pa_reference is None \
@@ -254,6 +262,30 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
         # only; a least-squares predistorter is fitted on the data and merely evaluated through the surrogate
         training = None if is_least_squares(config.model.key) else config.training
         updates["pa_reference"] = _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=training)
+    if config.task == TaskType.evaluate_pa:
+        # the weights and the architecture come from the PA run; this run only scores them on another dataset
+        pa_record, pa_resolved, pa_ckpt = _checkpoint_of(ws, config.pa_reference.run_id, TaskType.train_pa,
+                                                         "pa_reference.run_id")
+        updates["pa_reference"] = PAReference(run_id=pa_record.run_id, checkpoint_artifact_id=pa_ckpt.artifact_id,
+                                              checkpoint_sha256=pa_ckpt.file.sha256, model=pa_resolved.model)
+        updates["model"] = pa_resolved.model
+        updates["training"] = pa_resolved.training.model_copy(update={"train_samples": None})
+        updates["quantization"] = pa_resolved.quantization
+    if config.initialization is not None and config.task in (TaskType.train_pa, TaskType.train_dpd):
+        init_record, init_resolved, init_ckpt = _checkpoint_of(ws, config.initialization.run_id, config.task,
+                                                               "initialization.run_id")
+        if init_resolved.model.key != config.model.key or any(
+                init_resolved.model.parameters.get(k) != v for k, v in config.model.parameters.items()):
+            raise ConfigError([ConfigIssue("initialization.run_id",
+                                           f"run '{init_record.run_id}' trained {init_resolved.model.key} "
+                                           f"{init_resolved.model.parameters}; its weights cannot initialise "
+                                           f"{config.model.key} {config.model.parameters}",
+                                           "start from a run of the same model, or leave the parameters to the run")])
+        updates["model"] = init_resolved.model                  # the weights define the architecture
+        if config.quantization is None:
+            updates["quantization"] = init_resolved.quantization
+        updates["initialization"] = InitReference(run_id=init_record.run_id, checkpoint_artifact_id=init_ckpt.artifact_id,
+                                                  checkpoint_sha256=init_ckpt.file.sha256)
     return config.model_copy(update=updates) if updates else config
 
 
@@ -289,7 +321,8 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
     write_json_atomic(run_dir / USER_CONFIG_FILE, config)
     write_json_atomic(run_dir / RESOLVED_CONFIG_FILE, resolved)
     legacy_command = None
-    if resolved.task in TRAINING_TASKS and not _is_least_squares(resolved.model.key):
+    plain = resolved.initialization is None and resolved.training.train_samples is None
+    if resolved.task in TRAINING_TASKS and plain and not _is_least_squares(resolved.model.key):
         ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(resolved.dataset.id, resolved.dataset.preprocessing_version),
                              dataset_name=resolved.dataset.id)
         legacy_command = legacy_command_line(ns)
@@ -354,6 +387,14 @@ def _prepare_inputs(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentCo
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, target)
 
+    # S17 budget and warm start are executor-only attributes (read by project.py / the steps with getattr);
+    # they are not legacy CLI flags, so the adapter's namespace stays exactly what `main.py` parses
+    ns.train_samples = resolved.training.train_samples
+    ns.init_weights = None
+    if resolved.initialization is not None:
+        target = run_dir / "init" / "weights.pt"
+        _copy_checkpoint(resolved.initialization, target, "initial weights")
+        ns.init_weights = str(target)
     if resolved.task in (TaskType.train_dpd, TaskType.run_dpd):
         pa_id = _pa_model_id()
         _copy_checkpoint(resolved.pa_reference, run_dir / "save" / ns.dataset_name / "train_pa" / f"{pa_id}.pt",
@@ -440,7 +481,8 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
     error: Optional[RunError] = None
     outcome = RunStatus.succeeded
     reason = None
-    stage = {TaskType.run_dpd: "apply", TaskType.evaluate_measured: "measure"}.get(resolved.task, "train")
+    stage = {TaskType.run_dpd: "apply", TaskType.evaluate_measured: "measure",
+             TaskType.evaluate_pa: "evaluate"}.get(resolved.task, "train")
     apply_thread_budget(resolved)
     with run_in_directory(run_dir):
         try:
@@ -448,6 +490,8 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
 
             if measured:
                 signals = measurements.execute_measurement(ws, run_dir, resolved)
+            elif resolved.task == TaskType.evaluate_pa:
+                pass                                    # nothing to train: the evaluation stage scores the weights
             else:
                 _prepare_inputs(ws, run_dir, resolved, ns)
                 if polynomial.is_least_squares(resolved.model.key):
@@ -583,6 +627,8 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
         add(name.replace(".", "-"), ArtifactKind.worker_log, run_dir / "logs" / name, False)
     add("fit-diagnostics", ArtifactKind.other, run_dir / "fit.json", False,
         "least-squares fit record: method, rank, condition number, cutoff, residual")
+    add("init-weights", ArtifactKind.other, run_dir / "init" / "weights.pt", False,
+        "initial weights (warm start) copied from the initialising run; the trained checkpoint is checkpoint-best")
     add("config-resolved", ArtifactKind.config, run_dir / RESOLVED_CONFIG_FILE, True)
     add("provenance", ArtifactKind.provenance, run_dir / PROVENANCE_FILE, True)
     # written by the evaluation stage; registered on the second pass after it ran
@@ -597,6 +643,8 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
         present = {"played-signal", "capture-with-dpd", "measurement"} <= ids
     elif resolved.task == TaskType.run_dpd:
         present = {"dpd-output", "dpd-output-meta"} <= ids
+    elif resolved.task == TaskType.evaluate_pa:
+        present = {"config-resolved", "provenance"} <= ids
     else:
         present = {"checkpoint-best", "log-history", "log-best"} <= ids
     complete = present and all(a.file.sha256 for a in artifacts if a.required)
@@ -636,6 +684,13 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         dpd_artifact = next(a for a in dpd_manifest.artifacts if a.artifact_id == dpd_ref.checkpoint_artifact_id)
         dpd_run_id, dpd_sha, dpd_params = dpd_ref.run_id, dpd_ref.checkpoint_sha256, _n_params(dpd_artifact.file.path)
         selected_epoch, history = None, None
+    elif resolved.task == TaskType.evaluate_pa:
+        # the weights come from the PA run; this run only scored them on another dataset
+        pa_ref = resolved.pa_reference
+        pa_manifest = load_artifacts(ws, pa_ref.run_id)
+        pa_artifact = next(a for a in pa_manifest.artifacts if a.artifact_id == pa_ref.checkpoint_artifact_id)
+        dpd_run_id, dpd_sha, dpd_params = pa_ref.run_id, pa_ref.checkpoint_sha256, _n_params(pa_artifact.file.path)
+        selected_epoch, history = None, None
     else:
         row = _best_row(run_dir, manifest)
         checkpoint = manifest.by_kind(ArtifactKind.checkpoint)[0]
@@ -663,6 +718,20 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     if profile.validation == ProfileValidation.pending_cross_validation:
         limitations.append(f"metric profile {profile.profile_id} is pending cross-validation against an independent "
                            "backend; its numbers are not standard-conformance results")
+    if resolved.initialization is not None:
+        limitations.append(f"warm start: initialised from run {resolved.initialization.run_id} weights "
+                           f"{(resolved.initialization.checkpoint_sha256 or '')[:12]}, not trained from scratch")
+    if resolved.training.train_samples is not None:
+        limitations.append(f"adaptation budget: fitted on the first {resolved.training.train_samples} samples of the "
+                           "train split only")
+    if resolved.task == TaskType.evaluate_pa:
+        source = load_resolved(ws, resolved.pa_reference.run_id).dataset.id
+        limitations.append(f"zero-update transfer: PA model trained on dataset {source} scored on dataset "
+                           f"{dataset.dataset_id} without any update")
+    if resolved.task == TaskType.run_dpd and resolved.dpd_reference.transfer:
+        source = load_resolved(ws, resolved.dpd_reference.run_id).dataset.id
+        limitations.append(f"zero-update transfer: DPD trained on dataset {source} applied to dataset "
+                           f"{dataset.dataset_id} without any update")
 
     models = []
     source, is_mock = "opendpd-studio", False
@@ -680,11 +749,11 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                     training_path="ila_least_squares" if least_squares else "gradient_dla"))
         if resolved.measurement is not None and resolved.measurement.source == "mock_adapter":
             source, is_mock = "mock", True
-    elif resolved.task == TaskType.train_pa:
+    elif resolved.task in (TaskType.train_pa, TaskType.evaluate_pa):
         evidence = EvidenceType.pa_modeling
         reference = SignalReference(kind="measured_pa_output",
                                     description="measured PA output of the test split (dataset *_output)")
-        models.append(ModelEvidence(role="pa", model=resolved.model, run_id=run_id, weights_sha256=dpd_sha,
+        models.append(ModelEvidence(role="pa", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
                                     n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
                                     training_path="least_squares" if least_squares else "gradient"))
     else:
@@ -761,18 +830,19 @@ def lineage(ws: Workspace, run_id: str) -> RunLineage:
         out: List[LineageLink] = []
         if record.parent_run_id:
             out.append(_link(records, record.parent_run_id, LineageRelation.retry_of))
-        if record.task == TaskType.train_pa:
-            return out
         try:
             resolved = load_resolved(ws, rid)
         except (OSError, ValidationError):
             return out
+        if resolved.initialization is not None:
+            out.append(_link(records, resolved.initialization.run_id, LineageRelation.initialised_from,
+                             resolved.initialization.checkpoint_sha256))
         if resolved.dpd_reference is not None:
             out.append(_link(records, resolved.dpd_reference.run_id, LineageRelation.dpd_model,
                              resolved.dpd_reference.checkpoint_sha256))
         if resolved.pa_reference is not None:
-            out.append(_link(records, resolved.pa_reference.run_id, LineageRelation.pa_surrogate,
-                             resolved.pa_reference.checkpoint_sha256))
+            relation = LineageRelation.pa_model if record.task == TaskType.evaluate_pa else LineageRelation.pa_surrogate
+            out.append(_link(records, resolved.pa_reference.run_id, relation, resolved.pa_reference.checkpoint_sha256))
         if resolved.measurement is not None:
             out.append(_link(records, resolved.measurement.apply_run_id, LineageRelation.measured_playback))
         return out

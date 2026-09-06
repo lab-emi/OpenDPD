@@ -14,6 +14,7 @@ import { ComparePage } from '@/pages/ComparePage'
 import { ResultsPage } from '@/pages/ResultsPage'
 import { RunDetailPage } from '@/pages/RunDetailPage'
 import { SessionGate } from '@/pages/SessionGate'
+import { RobustnessPage } from '@/pages/RobustnessPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { theme } from '@/theme'
 
@@ -34,6 +35,8 @@ function AppRoutes() {
         <Route path="results" element={<ResultsPage />} />
         <Route path="results/compare" element={<ComparePage />} />
         <Route path="results/:runId" element={<ResultDetailPage />} />
+        <Route path="robustness" element={<RobustnessPage />} />
+        <Route path="robustness/:planSha" element={<RobustnessPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="gallery" element={<GalleryPage />} />
         <Route path="*" element={<HomePage />} />

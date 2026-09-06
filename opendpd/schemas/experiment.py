@@ -24,6 +24,7 @@ class TaskType(str, Enum):
     train_dpd = "train_dpd"
     run_dpd = "run_dpd"
     evaluate_measured = "evaluate_measured"   # score captures of a physical PA driven by a run_dpd export (S16)
+    evaluate_pa = "evaluate_pa"               # score a stored PA model on another dataset without any update (S17)
 
 
 class DatasetRef(StrictModel):
@@ -56,6 +57,9 @@ class TrainingConfig(StrictModel):
     frame_stride: int = Field(default=1, ge=1)
     seed: int = Field(default=0, ge=0)
     reproducibility: Literal["soft", "hard"] = "soft"
+    # S17 adaptation budget: only the first N samples of the train split are used for fitting / training
+    # (validation and test splits and the reference gain stay those of the full dataset); None = the whole split
+    train_samples: Optional[int] = Field(default=None, ge=1)
     eval_val: bool = True
     eval_test: bool = True
 
@@ -102,8 +106,19 @@ class PAReference(StrictModel):
 class DPDReference(StrictModel):
     run_id: Slug
     checkpoint_artifact_id: Optional[Slug] = None
+    # S17: apply the DPD to a dataset other than the one it was trained on (zero-update transfer); explicit,
+    # never inferred, and the result says so
+    transfer: bool = False
     checkpoint_sha256: Optional[Sha256] = None
     model: Optional[ModelSpec] = None
+
+
+class InitReference(StrictModel):
+    """Warm start (S17): the weights of a succeeded run of the same task and model start this training."""
+
+    run_id: Slug
+    checkpoint_artifact_id: Optional[Slug] = None
+    checkpoint_sha256: Optional[Sha256] = None
 
 
 class ExperimentConfig(StrictModel):
@@ -120,18 +135,23 @@ class ExperimentConfig(StrictModel):
     dpd_reference: Optional[DPDReference] = None
     quantization: Optional[QuantizationConfig] = None
     measurement: Optional[MeasurementConfig] = None
+    initialization: Optional[InitReference] = None
     notes: Optional[str] = None
 
     @model_validator(mode="after")
     def _task_rules(self) -> "ExperimentConfig":
         t = self.task
         if self.evaluation.evidence_type is None:
-            derived = {TaskType.train_pa: EvidenceType.pa_modeling,
+            derived = {TaskType.train_pa: EvidenceType.pa_modeling, TaskType.evaluate_pa: EvidenceType.pa_modeling,
                        TaskType.evaluate_measured: EvidenceType.dpd_measured}.get(t, EvidenceType.dpd_surrogate)
             self.evaluation = self.evaluation.model_copy(update={"evidence_type": derived})
         ev = self.evaluation.evidence_type
         if self.measurement is not None and t != TaskType.evaluate_measured:
             raise ValueError("only evaluate_measured takes a measurement block")
+        if self.initialization is not None and t not in (TaskType.train_pa, TaskType.train_dpd):
+            raise ValueError("only train_pa / train_dpd can start from stored weights (initialization)")
+        if self.training.train_samples is not None and t not in (TaskType.train_pa, TaskType.train_dpd):
+            raise ValueError("training.train_samples (the adaptation budget) applies to train_pa / train_dpd only")
         if t == TaskType.train_pa:
             if ev != EvidenceType.pa_modeling:
                 raise ValueError("train_pa produces pa_modeling evidence")
@@ -145,6 +165,13 @@ class ExperimentConfig(StrictModel):
         elif t == TaskType.run_dpd:
             if self.dpd_reference is None:
                 raise ValueError("run_dpd requires dpd_reference (the trained DPD run)")
+        elif t == TaskType.evaluate_pa:
+            if ev != EvidenceType.pa_modeling:
+                raise ValueError("evaluate_pa scores a PA model against measured PA output (pa_modeling evidence)")
+            if self.pa_reference is None:
+                raise ValueError("evaluate_pa requires pa_reference (the PA run whose weights are evaluated)")
+            if self.dpd_reference is not None:
+                raise ValueError("evaluate_pa takes no DPD reference")
         elif t == TaskType.evaluate_measured:
             if ev != EvidenceType.dpd_measured:
                 raise ValueError("evaluate_measured scores a physical PA and produces dpd_measured evidence")

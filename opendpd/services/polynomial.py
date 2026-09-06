@@ -97,6 +97,8 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
     key, params = resolved.model.key, resolved.model.parameters
     rcond = float(params.get("rcond", 0.0))
     gain = float(set_target_gain(x_tr, y_tr))
+    if resolved.training.train_samples is not None:             # S17 budget: the first N samples of the train split
+        x_tr, y_tr = x_tr[:resolved.training.train_samples], y_tr[:resolved.training.train_samples]
     need = basis_bytes(key, params, len(x_tr))
     if need > MEMORY_BUDGET_BYTES:
         raise MemoryError(f"the {key} basis for {len(x_tr)} training samples needs {need / 2 ** 30:.1f} GiB "

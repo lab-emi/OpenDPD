@@ -24,6 +24,7 @@ repository; "pending human" means a maintainer decision is required;
 | S14 external trial, documentation, contribution flow & first public version | internal items done; trial, onboarding, desktop checks and publication **pending human** | (this stage's commit) | documented commands executed in CI with a GUI-exported configuration through the CLI, network-isolation test, tutorials (`adding-a-model`), release notes, external-trial protocol, prioritised backlog; performance findings closed: `execution.num_threads` applied by the executor, run timestamps stamped by the executor on every path |
 | S15 limited-scope Python waveform & standard evaluation profile | implemented and tested; **pending science review, cross-validation and error-budget approval** | (this stage's commit) | `ofdm-lte20-v1` reference waveform (CP-OFDM, LTE 20 MHz numerology, known 64QAM symbols) regenerated from its spec; reference-vector packages (`opendpd waveforms generate/show`); dataset binding by correlation (`datasets import --waveform`); `ofdm-lte20-evm-v1` data-aided EVM + E-UTRA-style ACLR with explicit statuses; `MetricProfile.validation` gates GUI visibility; protocol with deviations, error budget and cross-validation procedure |
 | S16 real PA data closed loop & controlled instrument adapter | manual capture import, alignment, `dpd_measured` results, mock adapter and fail-closed interlock done; **hardware trial and a real adapter pending human** | (this stage's commit) | `evaluate_measured` task through the shared executor: captures copied and hashed into the run, aligned to the played export (integer delay, least-squares gain onto x), scored as captured under every profile, operator conditions recorded verbatim, level difference reported never normalised; `opendpd measurements import`, run-page dialog, result-page Measurement panel; comparison key with the declared operating point (protected path, science review); `opendpd/instruments` (contract, interlock, mock, session record), `opendpd instruments list/dry-run`; protocol `docs/protocols/measured-dpd.md`, tutorial executed in CI |
+| S17 multi-condition, generalisation & fast-adaptation benchmark | protocol, executor tasks, CLI/API/GUI and tests done on synthetic cards; **a measured ≥ 3-condition card and an external recomputation pending human** | (this stage's commit) | `conditions-v1`: sealed condition card (one device, one dimension, one registered dataset per condition from its own capture batch, roles fixed before any run, identical raw hashes refused), pre-registered plan whose hash keys every run, cells for zero update (`evaluate_pa`, `run_dpd` transfer), few-shot (`initialization` warm start + `training.train_samples` budget) and full retrain, report with every cell (failures with reasons), seed vs batch repeats, cost columns and the evidence bar; `opendpd adaptation card/plan/run/report`, `GET /adaptation/reports`, Robustness page with filters; protocol `docs/protocols/conditions-v1.md` (protected path, science review), tutorial executed in CI |
 
 ## S00 acceptance items
 
@@ -268,6 +269,27 @@ with the interlock every adapter runs under), the hardware-trial record
 (`opendpd/core/metrics/compare.py`, `docs/protocols/**`): this stage's commit
 is the separate science-review change AGENTS.md §3 requires and is labelled as
 such in its message; the change adds a key field and relaxes nothing.
+
+## S17 acceptance items
+
+| Item | Status |
+|---|---|
+| At least one real varied dimension with three or more conditions, including independent capture batches; never one capture split into "conditions" | **pending human data**: the built-in card `apa-200mhz-batches-v1` is a real `capture_batch` dimension with two conditions (below the bar); the three-condition cards in `tests/integration/test_adaptation.py` and the tutorial are synthetic and every report over them says "rehearsal". The machinery enforces the rule: the card audit refuses two conditions whose raw captures share a sha256 (`test_a_card_whose_conditions_share_a_capture_is_refused`), the evidence bar needs `MIN_CONDITIONS_FOR_EVIDENCE = 3`, one batch per condition and measured origin (`test_the_evidence_bar_is_about_the_card_not_the_numbers`) |
+| Training, adaptation and test conditions pre-split; held-out data takes no part in hyper-parameter selection | done: roles are declared in the card and sealed by `card_sha256` before any run; the plan (entries from named recipes, no search) is sealed by `plan_sha256`; an edited card or plan is refused (`test_an_edited_plan_or_card_is_refused`); every number is the target's test split read from the stored result |
+| Zero update, limited adaptation and full retrain reported separately with new data amount, training time, compute device and whether the target was reached | done: one cell per (entry, task, condition, budget, seed) with `new_samples` (0 / budget / train split), `wall_clock_s`, `device`, `reached_target` under the plan's `TargetRule`; aggregates per cell group; the Markdown report and the GUI carry a cost table (`test_the_report_keeps_every_cell_and_calls_itself_a_rehearsal`, `RobustnessPage.test.tsx`) |
+| Data/measurement repeats and training seeds counted separately; a single PA's results claim no cross-device generality | done: the report's `repeats` line states seeds and capture batches separately and that measurement repeats are conditions, never seeds; the first limitation of every report is "single device … nothing here generalises to other devices"; fewer than three seeds adds its own limitation |
+| The GUI filters conditions and shows failed conditions, not only the best average column | done: the Robustness page (`/robustness`) lists reports and shows the condition matrix with entry, metric and task filters and a failures-only switch; failed cells show `FAILED k/n` with the reason from the run (`RobustnessPage.test.tsx`) |
+| At least one external or non-original implementer recomputes a public subset | **pending human**: no external recomputation exists; the procedure and the record are in `docs/protocols/conditions-v1.md` §8 |
+
+Deliverables: multi-condition data card and plan schema
+(`opendpd/schemas/conditions.py`), evaluation protocol
+(`docs/protocols/conditions-v1.md`), reference methods (the recipes named in
+a plan; `pa-gru-smoke-v1` / `dpd-gru-smoke-v1` in the tutorial, research
+recipes for real cards), the Robustness page and the hash-bound report (JSON
+under `<workspace>/adaptation/`, Markdown on request). Protected path touched
+(`docs/protocols/**`): this stage's commit is the separate science-review
+change AGENTS.md §3 requires and is labelled as such in its message; it adds a
+protocol document and relaxes nothing.
 
 ### G2 gate
 

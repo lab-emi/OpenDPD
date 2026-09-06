@@ -29,6 +29,12 @@ def main(proj: Project):
                           num_dvr_units=proj.num_dvr_units,
                           thx=proj.thx,
                           thh=proj.thh)
+    # OpenDPD Studio warm start (plan S17): start from stored weights of the same model instead of random init
+    init_weights = getattr(proj, 'init_weights', None)
+    if init_weights:
+        import torch
+        net.load_state_dict(torch.load(init_weights, map_location='cpu', weights_only=True))
+        print('::: PA model initialised from: ', init_weights)
     n_net_pa_params = count_net_params(net)
     print("::: Number of PA Model Parameters: ", n_net_pa_params)
     pa_model_id = proj.gen_pa_model_id(n_net_pa_params)

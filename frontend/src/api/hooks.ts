@@ -6,6 +6,8 @@
 import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
 import type {
+  AdaptationReport,
+  AdaptationReportSummary,
   ArtifactManifest,
   Capabilities,
   DatasetManifest,
@@ -45,6 +47,8 @@ export const keys = {
   result: (id: string, profile: string | null = null) => ['result', id, profile ?? 'primary'] as const,
   resultProfiles: (id: string) => ['result', id, 'profiles'] as const,
   metricProfiles: ['metric-profiles'] as const,
+  adaptationReports: ['adaptation', 'reports'] as const,
+  adaptationReport: (planSha: string) => ['adaptation', 'reports', planSha] as const,
 }
 
 export const useCapabilities = () =>
@@ -198,3 +202,15 @@ export function useRetryRun() {
     },
   })
 }
+
+/** conditions-v1 adaptation reports stored by `opendpd adaptation report` (read only; the GUI never runs a plan). */
+export const useAdaptationReports = () =>
+  useQuery({ queryKey: keys.adaptationReports, queryFn: () => api.get<AdaptationReportSummary[]>('/adaptation/reports') })
+export const useAdaptationReport = (planSha: string, enabled = true) =>
+  useQuery({
+    queryKey: keys.adaptationReport(planSha),
+    queryFn: () => api.get<AdaptationReport>(`/adaptation/reports/${encodeURIComponent(planSha)}`),
+    enabled,
+    retry: false,
+    staleTime: Infinity,
+  })

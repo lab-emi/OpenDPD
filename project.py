@@ -215,6 +215,11 @@ class Project:
 
         # Apply the PA Gain if training DPD
         self.target_gain = set_target_gain(X_train, y_train)
+        # OpenDPD Studio adaptation budget (plan S17): fit on the first N training samples only. The reference
+        # gain above and the validation / test splits always come from the full dataset.
+        budget = getattr(self, 'train_samples', None)
+        if budget:
+            X_train, y_train = X_train[:int(budget)], y_train[:int(budget)]
         if self.step == 'train_dpd':
             y_train = self.target_gain * X_train
             y_val = self.target_gain * X_val
