@@ -111,12 +111,12 @@ def instantiate(recipe_id: str, dataset_id: str, *, pa_run_id: Optional[str] = N
 
 
 def run_dpd_config(dataset_id: str, dpd_run_id: str, *, pa_run_id: Optional[str] = None,
-                   device: str = "cpu", name: Optional[str] = None) -> ExperimentConfig:
+                   device: str = "cpu") -> ExperimentConfig:
     """A run_dpd task for an existing DPD run: export u = DPD(x) for the test split and score it through a PA
     surrogate. Without ``pa_run_id`` the DPD's training surrogate is used; another PA run of the same dataset
     gives a new, separately stored result (model and training are bound from the DPD run)."""
     return ExperimentConfig(
-        task=TaskType.run_dpd, name=name or f"apply {dpd_run_id}" + (f" through {pa_run_id}" if pa_run_id else ""),
+        task=TaskType.run_dpd, name=f"apply {dpd_run_id}" + (f" through {pa_run_id}" if pa_run_id else ""),
         dataset=DatasetRef(id=dataset_id), model=ModelSpec(key="gru"),
         evaluation=EvaluationConfig(evidence_type=EvidenceType.dpd_surrogate),
         execution=ExecutionConfig(device=device), dpd_reference=DPDReference(run_id=dpd_run_id),

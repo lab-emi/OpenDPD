@@ -47,11 +47,6 @@ from opendpd.services.experiments import (
 from opendpd.services.legacy_adapter import build_namespace, run_in_directory
 from opendpd.services.workspace import Workspace, WorkspaceError, sha256_file, write_json_atomic
 
-DPD_OUTPUT_ROLE = "pa_input_predistorted"
-DPD_OUTPUT_STATEMENT = ("u = DPD(x) is the pre-distorted PA *input* for the test split. It is not a PA output "
-                        "and its existence does not show that the PA was linearised.")
-
-
 class Predictions:
     """Best-checkpoint output over the test split, as the trainer's test evaluation produces it.
     Arrays are ``(n_segments, nperseg, 2)`` float32; only the first ``n_valid`` samples are real."""
@@ -94,7 +89,7 @@ def _n_test_samples(ws: Workspace, resolved: ResolvedExperimentConfig) -> Option
     return None
 
 
-def input_scaling(manifest: DatasetManifest, version_name: str) -> str:
+def _input_scaling(manifest: DatasetManifest, version_name: str) -> str:
     """Human-readable statement of how the input amplitudes were scaled before training."""
     version = manifest.version(version_name)
     params = version.params if version is not None else None
@@ -243,7 +238,7 @@ def _surrogate_evidence(ws: Workspace, run_id: str, resolved: ResolvedExperiment
         note = (f"every pre-distorted sample stays within the largest input amplitude the surrogate was fitted on "
                 f"({fitted:.4g}); this rules out amplitude extrapolation only and does not prove the surrogate accurate.")
     coverage = SurrogateCoverage(fitted_peak_abs=fitted, u_peak_abs=u_peak, fraction_above_fitted_peak=above, note=note)
-    scaling = ScalingInfo(amplitude_units=dataset.signal.amplitude_units, input_scaling=input_scaling(dataset, version),
+    scaling = ScalingInfo(amplitude_units=dataset.signal.amplitude_units, input_scaling=_input_scaling(dataset, version),
                           reference_gain=predictions.target_gain, physical_calibration=False)
     return dict(signal_chain=chain, baselines=baselines, surrogate_coverage=coverage, scaling=scaling)
 
@@ -316,8 +311,9 @@ def write_dpd_output_metadata(ws: Workspace, run_id: str, resolved: ResolvedExpe
         u = frame[["I_dpd", "Q_dpd"]].to_numpy(dtype=np.float32)
         meta = {
             "schema_version": 1,
-            "signal_role": DPD_OUTPUT_ROLE,
-            "statement": DPD_OUTPUT_STATEMENT,
+            "signal_role": "pa_input_predistorted",
+            "statement": "u = DPD(x) is the pre-distorted PA *input* for the test split. It is not a PA output and "
+                         "its existence does not show that the PA was linearised.",
             "columns": {"I": "x: target input, I", "Q": "x: target input, Q",
                         "I_dpd": "u = DPD(x): pre-distorted PA input, I", "Q_dpd": "u = DPD(x): pre-distorted PA input, Q"},
             "dtype": "float32",
@@ -326,7 +322,7 @@ def write_dpd_output_metadata(ws: Workspace, run_id: str, resolved: ResolvedExpe
                             f"({resolved.dataset.split_version}), contiguous, original order",
             "semantics": "offline: the DPD ran once over the whole test split with its state carried across samples",
             "amplitude_units": dataset.signal.amplitude_units,
-            "input_scaling": input_scaling(dataset, resolved.dataset.preprocessing_version),
+            "input_scaling": _input_scaling(dataset, resolved.dataset.preprocessing_version),
             "reference_gain": gain,
             "reference_gain_rule": "max|y_train| / max|x_train| (legacy utils.util.set_target_gain)",
             "peak_abs_x": float(np.max(_amplitude(x))) if len(x) else 0.0,

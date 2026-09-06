@@ -17,7 +17,7 @@ repository; "pending human" means a maintainer decision is required;
 | S07 data import, Dataset Doctor, traceable preprocessing | done | `4fea772` + `dd85377` | import roots + upload, `dataset-doctor-v1`, `preprocess-v1` versions, `contiguous-v1` split, datasets pages, J2 journey (mock) and headless CLI J2 on real data |
 | S08 versioned metrics & evaluation evidence | done | `999f031` + `51891cc` | `opendpd/core/metrics` registry (`legacy-opendpd-v1` frozen, `general-spectral-v1`), analytic reference tests, results re-scored from the best checkpoint under every profile, profile switcher and definitions in the GUI |
 | S09 PA training closure & experiment management | done except the human-gated items below | `370616e` + `a6f68c5` | registry-generated model parameters, config import/export/re-run, device refusal at validation, GUI-vs-CLI consistency test, real-browser PA training on imported data |
-| S10 DPD training, signal generation & surrogate evaluation | done | — | explicit x/u/y chain in every DPD result, baselines under one reference, surrogate amplitude coverage, `run_dpd` results through any surrogate (never overwriting), export sidecar + reload test, lineage route/card, `opendpd apply`, Apply-DPD dialog |
+| S10 DPD training, signal generation & surrogate evaluation | done | `e3f3d6a` + `1d061e7` | explicit x/u/y chain in every DPD result, baselines under one reference, surrogate amplitude coverage, `run_dpd` results through any surrogate (never overwriting), export sidecar + reload test, lineage route/card, `opendpd apply`, Apply-DPD dialog |
 
 ## S00 acceptance items
 
