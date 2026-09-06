@@ -794,6 +794,89 @@ def cmd_adaptation(args) -> int:
     return 2
 
 
+def cmd_leaderboard(args) -> int:
+    """leaderboard-v1 (S20): draft, check, seed, add, review and amend; boards are files, nothing leaves the machine."""
+    from pydantic import ValidationError
+
+    from opendpd.schemas import BenchmarkReport, Review
+    from opendpd.services import leaderboard as lb
+    from opendpd.services.packages import PackageError
+    from opendpd.services.workspace import Workspace, WorkspaceError, read_json
+
+    def show(result) -> None:
+        for item in result.items:
+            print(f"  [{item.status:<4}] {item.name}: {item.detail}")
+
+    def recomputed(card, base, by: str):
+        with contextlib.redirect_stdout(sys.stderr):      # model initialisation chatter never pollutes --json output
+            return lb.recompute(card, base, by=by, kind=args.kind, workspace=Path(args.workspace) if args.workspace else None)
+
+    def checked(card, base, board=None):
+        rec = recomputed(card, base, args.by or "unnamed") if args.recompute else None
+        return lb.check(card, base, board=board, recomputation=rec)
+
+    try:
+        if args.leaderboard_command == "prepare":
+            ws = Workspace.open(Path(args.workspace))
+            card, path = lb.prepare(ws, args.runs, Path(args.out), submission_id=args.id, submitter=args.submitter, kind=args.kind)
+            if args.json:
+                _print_json({"card": card.model_dump(mode="json"), "path": str(path)})
+            else:
+                print(f"draft {card.submission_id} written to {path}: track {card.track}, {len(card.packages)} share package(s), "
+                      f"{len(card.result.seeds)} seed(s); fill in every TODO before `opendpd leaderboard check`")
+            return 0
+        if args.leaderboard_command == "check":
+            card = lb.load_card(Path(args.card))
+            board = lb.load_board(Path(args.board)) if args.board else None
+            result = checked(card, Path(args.card).parent, board)
+            if args.json:
+                _print_json(result.model_dump(mode="json"))
+            else:
+                print(f"submission {card.submission_id} ({card.track}): {'passes' if result.passed else 'does NOT pass'} the checklist")
+                show(result)
+            return 0 if result.passed else 1
+        if args.leaderboard_command == "seed":
+            report = BenchmarkReport.model_validate(read_json(Path(args.report)))
+            board = lb.write_board(lb.seed_board(report, board_id=args.board_id, version=args.version, track=args.track,
+                                                 supersedes=args.supersedes), Path(args.out))
+            print(f"{board.label}: {board.board_id} {board.version} ({board.track}) with {len(board.entries)} reference entries "
+                  f"written to {args.out} (hash {board.board_sha256[:12]})")
+            return 0
+        if args.leaderboard_command == "add":
+            board = lb.load_board(Path(args.board))
+            card = lb.load_card(Path(args.card))
+            result = checked(card, Path(args.card).parent, board)
+            show(result)
+            board = lb.write_board(lb.add_entry(board, card, result, by=args.by or card.submitter.name), Path(args.board))
+            print(f"entry {card.submission_id} submitted to {board.board_id} {board.version} ({board.label}); a reviewer decides next")
+            return 0
+        if args.leaderboard_command == "review":
+            board = lb.load_board(Path(args.board))
+            entry = board.entry(args.entry)
+            rec = None
+            if args.recompute:
+                rec = recomputed(entry.submission, Path(args.board).parent / (args.packages or "."), args.reviewer)
+                print(f"  recomputation: {'within' if rec.within_tolerance else 'OUTSIDE'} tolerance: {rec.note}")
+            review = Review(reviewer=args.reviewer, kind=args.kind, decision=args.decision, notes=args.notes, recomputation=rec)
+            board = lb.write_board(lb.review_entry(board, args.entry, review), Path(args.board))
+            entry = board.entry(args.entry)
+            print(f"entry {args.entry}: {entry.status}, evidence grade {entry.evidence_grade}; board is a {board.label} "
+                  f"({board.external_accepted}/{lb.MIN_EXTERNAL_ACCEPTED} external accepted, "
+                  f"{board.independent_recomputations}/{lb.MIN_INDEPENDENT_RECOMPUTATIONS} independently recomputed)")
+            return 0
+        if args.leaderboard_command == "amend":
+            board = lb.load_board(Path(args.board))
+            corrected = lb.load_card(Path(args.card)) if args.card else None
+            board = lb.write_board(lb.amend_entry(board, args.entry, action=args.action, by=args.by, reason=args.reason,
+                                                  corrected=corrected), Path(args.board))
+            print(f"entry {args.entry}: {board.entry(args.entry).status}; the previous numbers stay in the history")
+            return 0
+    except (WorkspaceError, PackageError, ValidationError, ValueError, KeyError, FileNotFoundError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    return 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="opendpd", description="OpenDPD Studio command line")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1027,6 +1110,57 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--markdown", default=None, help="also write a Markdown rendering")
     q.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_adaptation)
+
+    p = sub.add_parser("leaderboard", help="leaderboard-v1: submission cards, the review checklist with recomputation, versioned boards")
+    lp = p.add_subparsers(dest="leaderboard_command", required=True)
+    q = lp.add_parser("prepare", help="export one share package per run and draft the submission card (statements left TODO)")
+    q.add_argument("runs", nargs="+", help="finished run ids of one method on one dataset, one per seed")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--out", required=True, help="directory for submission.json and the packages")
+    q.add_argument("--id", required=True, help="submission id, e.g. mygroup-gru-2026-09")
+    q.add_argument("--submitter", required=True, help="the person or group who answers for the submission")
+    q.add_argument("--kind", choices=["external", "maintainer"], default="external")
+    q.add_argument("--json", action="store_true")
+    q = lp.add_parser("check", help="the review checklist (the same for everyone); --recompute re-scores every package in a fresh workspace")
+    q.add_argument("card", help="submission.json (packages are resolved next to it)")
+    q.add_argument("--board", default=None, help="also refuse duplicates of this board's entries")
+    q.add_argument("--recompute", action="store_true")
+    q.add_argument("--by", default=None, help="who recomputes")
+    q.add_argument("--kind", choices=["external", "maintainer"], default="external")
+    q.add_argument("--workspace", default=None, help="recompute here instead of a temporary workspace")
+    q.add_argument("--json", action="store_true")
+    q = lp.add_parser("seed", help="a new board version from a hash-bound benchmark-v1 report (the maintainers' reference entries)")
+    q.add_argument("report", help="benchmark report JSON")
+    q.add_argument("--track", required=True, choices=["pa_modeling", "dpd_surrogate", "dpd_measured"])
+    q.add_argument("--board-id", dest="board_id", required=True)
+    q.add_argument("--version", required=True, help="e.g. v2026.09; a new version is a new file, never an overwrite")
+    q.add_argument("--supersedes", default=None, help="board_sha256 of the previous version")
+    q.add_argument("--out", required=True, help="board JSON; the Markdown rendering is written next to it")
+    q = lp.add_parser("add", help="check a submission against the board and add it as `submitted`")
+    q.add_argument("board")
+    q.add_argument("card")
+    q.add_argument("--recompute", action="store_true")
+    q.add_argument("--by", default=None)
+    q.add_argument("--kind", choices=["external", "maintainer"], default="external")
+    q.add_argument("--workspace", default=None)
+    q = lp.add_parser("review", help="record a review decision; --recompute makes an accepted entry independently recomputed")
+    q.add_argument("board")
+    q.add_argument("entry")
+    q.add_argument("--reviewer", required=True)
+    q.add_argument("--kind", choices=["external", "maintainer"], required=True)
+    q.add_argument("--decision", choices=["accepted", "rejected", "needs_changes"], required=True)
+    q.add_argument("--notes", required=True)
+    q.add_argument("--recompute", action="store_true")
+    q.add_argument("--packages", default=None, help="directory of the entry's packages, relative to the board (default: next to it)")
+    q.add_argument("--workspace", default=None)
+    q = lp.add_parser("amend", help="retract or correct an accepted entry; the previous numbers stay in the history")
+    q.add_argument("board")
+    q.add_argument("entry")
+    q.add_argument("--action", choices=["retract", "correct"], required=True)
+    q.add_argument("--by", required=True)
+    q.add_argument("--reason", required=True)
+    q.add_argument("--card", default=None, help="the corrected submission card (correct only)")
+    p.set_defaults(func=cmd_leaderboard)
 
     p = sub.add_parser("doctor", help="check that the GUI can start: dependencies, frontend assets, workspace, port")
     p.add_argument("--workspace", default=None)

@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "protocol_id": "leaderboard-v1",
+  "submission_id": "example-group-gru-2026-09",
+  "track": "pa_modeling",
+  "submitter": {"name": "Example Group", "kind": "external", "affiliation": "Example University"},
+  "method": {
+    "name": "GRU, one layer, hidden 23",
+    "description": "The OpenDPD gru model trained by gradient descent with the pa-gru-smoke-v1 recipe (3 epochs); an example, not a research result.",
+    "reference": "https://example.org/preprint",
+    "code_url": "https://example.org/code",
+    "licence": "Apache-2.0"
+  },
+  "model": {
+    "model_key": "gru",
+    "parameters": {"hidden_size": 23, "num_layers": 1},
+    "n_parameters": 1911,
+    "lookahead_samples": 0,
+    "execution_semantics": "offline_segmented",
+    "training_path": "gradient"
+  },
+  "data": {
+    "dataset_id": "dpa-200mhz",
+    "raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+    "availability": "public",
+    "statement": "built-in OpenDPD dataset (opendpd datasets import-builtin DPA_200MHz)",
+    "operating_point": "as captured"
+  },
+  "result": {
+    "metric_profile_id": "legacy-opendpd-v1",
+    "metric_profile_version": 1,
+    "split_version": "contiguous-v1",
+    "evidence_type": "pa_modeling",
+    "seeds": [
+      {"seed": 0, "run_id": "run-20260906-120000-aaaaaa", "config_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+       "checkpoint_sha256": "2222222222222222222222222222222222222222222222222222222222222222", "selected_epoch": 2,
+       "metrics": {"NMSE": -21.38, "EVM": -22.37, "ACLR_L": -33.13, "ACLR_R": -32.05, "ACLR_AVG": -32.59}, "wall_clock_s": 2.25},
+      {"seed": 1, "run_id": "run-20260906-120010-bbbbbb", "config_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+       "checkpoint_sha256": "4444444444444444444444444444444444444444444444444444444444444444", "selected_epoch": 2,
+       "metrics": {"NMSE": -22.43, "EVM": -23.81, "ACLR_L": -34.36, "ACLR_R": -31.42, "ACLR_AVG": -32.89}, "wall_clock_s": 2.31},
+      {"seed": 2, "run_id": "run-20260906-120020-cccccc", "config_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+       "checkpoint_sha256": "6666666666666666666666666666666666666666666666666666666666666666", "selected_epoch": 1,
+       "metrics": {"NMSE": -20.99, "EVM": -21.96, "ACLR_L": -33.05, "ACLR_R": -30.18, "ACLR_AVG": -31.62}, "wall_clock_s": 2.19}
+    ],
+    "metrics": {
+      "NMSE": {"n": 3, "mean": -21.6, "std": 0.74, "min": -22.43, "max": -20.99},
+      "EVM": {"n": 3, "mean": -22.71, "std": 0.97, "min": -23.81, "max": -21.96},
+      "ACLR_L": {"n": 3, "mean": -33.51, "std": 0.73, "min": -34.36, "max": -33.05},
+      "ACLR_R": {"n": 3, "mean": -31.22, "std": 0.95, "min": -32.05, "max": -30.18},
+      "ACLR_AVG": {"n": 3, "mean": -32.37, "std": 0.66, "min": -32.89, "max": -31.62}
+    },
+    "resources": {"budget_class": "unbounded", "device": "cpu", "mean_wall_clock_s": 2.25,
+                  "statement": "wall clock is a measurement on the stated device; parameter counts are theoretical; neither is power"}
+  },
+  "packages": [
+    {"path": "run-20260906-120000-aaaaaa-share.zip", "sha256": "7777777777777777777777777777777777777777777777777777777777777777", "run_id": "run-20260906-120000-aaaaaa"},
+    {"path": "run-20260906-120010-bbbbbb-share.zip", "sha256": "8888888888888888888888888888888888888888888888888888888888888888", "run_id": "run-20260906-120010-bbbbbb"},
+    {"path": "run-20260906-120020-cccccc-share.zip", "sha256": "9999999999999999999999999999999999999999999999999999999999999999", "run_id": "run-20260906-120020-cccccc"}
+  ],
+  "failure_conditions": ["not evaluated on any other dataset or operating point", "smoke budget (3 epochs): the numbers are not a research result"],
+  "licence": {"code": "Apache-2.0", "weights": "Apache-2.0", "data": "OpenDPD built-in dataset, as shipped", "redistribution_allowed": true,
+              "statement": "code, weights and the packages may be redistributed under Apache-2.0"},
+  "conflict_of_interest": "none; no author is an OpenDPD maintainer",
+  "citation": "Example Group, 'An example submission', 2026",
+  "isolated_validation": "packages produced on a workstation without laboratory network access; nothing but the packages left it",
+  "submitted_at": "2026-09-06T12:00:00Z"
+}

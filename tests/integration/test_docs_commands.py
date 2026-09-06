@@ -27,9 +27,9 @@ ROOT = Path(__file__).resolve().parents[2]
 TUTORIALS = [ROOT / "docs" / "tutorials" / "gui-quickstart.md", ROOT / "docs" / "tutorials" / "headless-cli.md",
              ROOT / "docs" / "tutorials" / "waveform-evaluation.md", ROOT / "docs" / "tutorials" / "measured-dpd.md",
              ROOT / "docs" / "tutorials" / "adaptation-benchmark.md", ROOT / "docs" / "tutorials" / "streaming.md",
-             ROOT / "docs" / "tutorials" / "deployment-export.md"]
+             ROOT / "docs" / "tutorials" / "deployment-export.md", ROOT / "docs" / "tutorials" / "leaderboard-submission.md"]
 OTHER_CI_SOURCES = [ROOT / ".github" / "workflows" / "weekly.yml", ROOT / "tests" / "integration" / "test_benchmark_protocol.py"]
-NESTED = {"datasets", "benchmark", "waveforms", "measurements", "instruments", "adaptation"}
+NESTED = {"datasets", "benchmark", "waveforms", "measurements", "instruments", "adaptation", "leaderboard"}
 
 Family = Tuple[str, ...]
 
@@ -58,7 +58,7 @@ def option_strings() -> Dict[Family, Set[str]]:
     out: Dict[Family, Set[str]] = {}
 
     def walk(p, prefix: Family):
-        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command", "waveforms_command", "measurements_command", "instruments_command", "adaptation_command")]
+        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command", "waveforms_command", "measurements_command", "instruments_command", "adaptation_command", "leaderboard_command")]
         if not subs:
             out[prefix] = {s for a in p._actions for s in a.option_strings}
             return
@@ -236,6 +236,32 @@ def test_documented_commands_run_end_to_end(tmp_path):
     assert deployed["manifest"]["spec"]["spec_id"] == "fixed-point-v1" and (tmp_path / "deploy.zip").exists()
     assert deployed["manifest"]["verification"]["status"] in ("bit_exact", "not_run")
     assert [g["case_id"] for g in deployed["manifest"]["golden"]][:2] == ["normal", "extreme"]
+
+    # docs/tutorials/leaderboard-submission.md: a submission drafted from the PA run, blocked while statements are TODO,
+    # recomputed from its package in a fresh workspace, added to a board seeded from the repository's report, reviewed
+    # with a recomputation, and retracted with its history kept; the board stays a reference benchmark throughout
+    sub = tmp_path / "submission"
+    run("leaderboard", "prepare", pa_id, "--workspace", str(ws), "--out", str(sub), "--id", "docs-gru", "--submitter", "Docs Group")
+    proc = _cli("leaderboard", "check", str(sub / "submission.json"), cwd=tmp_path, expect=1)
+    executed.add(("leaderboard", "check"))
+    assert "still TODO" in proc.stdout
+    card = json.loads((sub / "submission.json").read_text())
+    card["method"].update(description="GRU of the smoke recipe", licence="Apache-2.0")
+    card["licence"] = {"code": "Apache-2.0", "weights": "Apache-2.0", "data": "built-in", "redistribution_allowed": True, "statement": "all"}
+    card.update(conflict_of_interest="none", citation="Docs Group 2026", isolated_validation="a machine without lab access")
+    (sub / "submission.json").write_text(json.dumps(card))
+    checked = json.loads(run("leaderboard", "check", str(sub / "submission.json"), "--recompute", "--by", "Docs Group", "--json").stdout)
+    assert checked["recomputation"]["within_tolerance"] and all(i["status"] != "fail" for i in checked["items"])
+    board = tmp_path / "board" / "pa_modeling.json"
+    run("leaderboard", "seed", str(ROOT / "benchmark" / "regression" / "cpu-regression-dpa-200mhz" / "report.json"), "--track", "pa_modeling",
+        "--board-id", "docs-pa", "--version", "v-docs", "--out", str(board))
+    run("leaderboard", "add", str(board), str(sub / "submission.json"))
+    proc = run("leaderboard", "review", str(board), "docs-gru", "--reviewer", "Docs Reviewer", "--kind", "external", "--decision", "accepted",
+               "--notes", "checklist passed; recomputed", "--recompute", "--packages", "../submission")
+    assert "independently_recomputed" in proc.stdout and "reference benchmark" in proc.stdout
+    run("leaderboard", "amend", str(board), "docs-gru", "--action", "retract", "--by", "Docs Group", "--reason", "tutorial: withdrawn")
+    rendered = board.with_suffix(".md").read_text()
+    assert rendered.startswith("# docs-pa v-docs — reference benchmark") and "| docs-gru | retracted |" in rendered and "previous metrics kept" in rendered
 
     package = json.loads(run("export", pa_id, "--workspace", str(ws), "--kind", "share", "--json").stdout)
     zip_path = Path(package["path"])

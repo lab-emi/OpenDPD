@@ -89,6 +89,18 @@ platform automatically. Version string in the candidate: `2.2.0.dev0`.
   float-to-fixed loss, the theoretical resources, the measured execution
   time of the C reference, and says that nothing was synthesised or
   measured for power (`docs/protocols/fixed-point-v1.md`).
+- **Leaderboard tooling (`leaderboard-v1`)**: `opendpd leaderboard prepare`
+  drafts a submission card and one share package per seed from finished
+  runs; `check` runs the same review checklist for everyone and, with
+  `--recompute`, reproduces every number from the packages in a fresh
+  workspace; boards are versioned files seeded from the hash-bound benchmark
+  report (`seed`), with `add`, `review` and `amend` keeping every review,
+  correction and retraction in the history. Entries rank only inside one
+  comparability group and are shown with uncertainty, resources, failure
+  conditions and evidence grade. Every board calls itself a **reference
+  benchmark** until three external submissions are accepted and two are
+  independently recomputed (`docs/leaderboard/README.md`,
+  `docs/community/governance.md`, `CITATION.cff`).
 - **Thread budget**: `execution.num_threads` is applied by the shared executor
   (torch intra-op threads) on every path; unset keeps torch's default. Run
   records stamp `started_at`/`finished_at` with the executor's own clock on
@@ -142,8 +154,11 @@ Tutorials: `docs/tutorials/gui-quickstart.md`, `docs/tutorials/headless-cli.md`,
   card has two capture batches, the three-condition cards are synthetic, and
   nobody outside the implementation has recomputed a report
   (`docs/protocols/conditions-v1.md` §7–8).
-- Regression baselines are drafts until a maintainer approves them; the
-  leaderboard policy (S20) does not exist yet.
+- Regression baselines are drafts until a maintainer approves them. The
+  leaderboard is a reference benchmark with the maintainers' own smoke-tier
+  entries: no external submission has been accepted, nobody outside the
+  maintainers has recomputed an entry, and no external researcher has
+  reviewed the protocol yet (`docs/leaderboard/README.md`).
 - CSV sources of stress size are parsed into RAM; use `.npy`/`.npz` for
   captures beyond about ten million samples.
 

@@ -80,3 +80,11 @@ browser launch on macOS/Windows is a human checklist item (plan S06).
 |---|---|---|---|
 | C99 reference (`fixed-point-v1`) | one-layer `gru` as `gru_stream` | verified bit for bit on every package (Linux, gcc), **rules pending human approval** | `tests/unit/test_fixed_point.py`, `tests/integration/test_deploy.py`, `test_docs_commands.py` |
 | ONNX, HLS, RTL | — | not provided | an implementer verifies against the package's golden vectors and state trace (`docs/protocols/fixed-point-v1.md` §7) |
+
+## Leaderboard tooling (S20)
+
+| Part | Status | Evidence |
+|---|---|---|
+| `opendpd leaderboard prepare / check / seed / add / review / amend` | verified on CPU (Linux) with share packages of the built-in data; recomputation imports into a fresh workspace and re-scores from the checkpoint | `tests/integration/test_leaderboard.py`, `test_docs_commands.py` |
+| Boards `docs/leaderboard/v2026.09/*` | reference benchmark: the maintainers' `cpu_regression` entries, self-reported; **no external submission, no independent recomputation, no external protocol reviewer yet (pending human)** | `tests/unit/test_leaderboard_schema.py` (intact hashes, copied from the report) |
+| Tracks `standard_evaluation`, `robustness`, `deployment` | closed until their stage gates pass (S15, S17, S19) | `TRACK_GATES` in `opendpd/schemas/leaderboard.py` |

@@ -27,6 +27,7 @@ repository; "pending human" means a maintainer decision is required;
 | S17 multi-condition, generalisation & fast-adaptation benchmark | protocol, executor tasks, CLI/API/GUI and tests done on synthetic cards; **a measured ≥ 3-condition card and an external recomputation pending human** | (this stage's commit) | `conditions-v1`: sealed condition card (one device, one dimension, one registered dataset per condition from its own capture batch, roles fixed before any run, identical raw hashes refused), pre-registered plan whose hash keys every run, cells for zero update (`evaluate_pa`, `run_dpd` transfer), few-shot (`initialization` warm start + `training.train_samples` budget) and full retrain, report with every cell (failures with reasons), seed vs batch repeats, cost columns and the evidence bar; `opendpd adaptation card/plan/run/report`, `GET /adaptation/reports`, Robustness page with filters; protocol `docs/protocols/conditions-v1.md` (protected path, science review), tutorial executed in CI |
 | S18 streaming execution, context & latency semantics | contract, two verified variants (`gru_stream`, `gmp_stream`), chunk-consistency tests and the semantics report done; **promotion of the variants to supported pending human** | (this stage's commit) | `streaming-v1`: `reset / state / chunk / flush` with declared look-ahead (samples and seconds), history, measured warm-up and tail policy (`opendpd/core/streaming.py`); variants are separate registry entries with `weights_from`, never trained, scored through `evaluate_pa` / `run_dpd` (`opendpd stream`, run-page action); every streaming result records its chunk-consistency check and is never ranked against or inherited from offline scores; result-page Execution panel; `docs/architecture/streaming.md`, `docs/releases/streaming-semantics-report.md`, tutorial executed in CI |
 | S19 bit-exact reference & deployment export | specification, software reference, golden vectors, verified C99 backend, CLI/API/GUI export done for the one-layer GRU; **approval of the fixed-point rules and any second target pending human** | (this stage's commit) | `fixed-point-v1` (`opendpd/core/fixed_point.py`, `docs/protocols/fixed-point-v1.md`): every operator and stored quantity specified; per-tensor weight fractions; exact accumulation with a checked bound; tables for sigmoid / tanh; `opendpd/export/c_backend.py` generates, compiles and replays the C99 reference and locates a mismatch at a sample and a signal; `opendpd deploy`, `POST /deploy/exports`, result-page Deployment panel with the reason for unsupported models; report labels: quality loss, theoretical, measured execution time, synthesis estimate and measured power (both absent, stated); tutorial executed in CI |
+| S20 community submissions, review & versioned leaderboard | tooling, governance, citation, three versioned reference boards and the CI-executed submission path done; **three external submissions, two independent recomputations and an external protocol reviewer pending human** | (this stage's commit) | `leaderboard-v1` (`opendpd/schemas/leaderboard.py`, `opendpd/services/leaderboard.py`): submission cards with method / model / data cards, licence check, conflict-of-interest, citation and isolated-validation statements, one share package per seed; `opendpd leaderboard prepare / check / seed / add / review / amend`; the same checklist for every submitter with a recomputation from the packages in a fresh workspace; boards per track (PA modelling, surrogate DPD, measured DPD; the other three tracks closed until their stage gates), entries ranked only inside one comparability group and shown with uncertainty, resources, failure conditions and evidence grade; versions are sealed files that are never overwritten, corrections and retractions keep the history; every board computes its label and says "reference benchmark" until the community bar is met; `docs/leaderboard/v2026.09/*` seeded from the hash-bound regression report; `docs/community/governance.md`, submission template + example, `docs/community/citation.md`, `CITATION.cff`; tutorial executed in CI |
 
 ## S00 acceptance items
 
@@ -335,9 +336,50 @@ as such; it adds a specification and relaxes nothing. **Pending human**:
 approval of the fixed-point rules; a second target verified on the same
 vectors.
 
+## S20 acceptance items
+
+| Item | Status |
+|---|---|
+| At least three complete submissions from non-maintainers pass review, at least two independently recomputed by someone who is not their author | **pending human**: the path exists and is executed in CI on a synthetic submission (`test_review_correction_and_retraction_keep_history_and_the_bar_counts_external_entries_only` reaches the bar with simulated external entries; `test_docs_commands.py` drafts, checks, recomputes, adds, reviews and retracts a real one); no external submission exists |
+| PA modelling, surrogate DPD and measured DPD are separate boards; standard, robustness and deployment tracks open only after their stage passes | done: one board per track under `docs/leaderboard/v2026.09/`, evidence type fixed per track (`TRACK_EVIDENCE`), the three closed tracks refused with the record that opens them (`TRACK_GATES`; `test_closed_tracks_and_mismatched_evidence_are_refused`) |
+| Every entry traces to obtainable artefacts and a protocol version; non-public data is marked, never presented as publicly reproducible | done: a card is refused without a share package per seed or a benchmark-report hash; every seed carries run id, configuration and checkpoint hashes; the data card's availability is shown and warned on the checklist (`test_an_entry_is_traceable_to_packages_or_a_report_and_the_aggregate_matches_the_seeds`, `test_prepare_drafts_the_card…`) |
+| Protocol and test set fixed per version; a new version never overwrites; retractions and corrections keep history | done: a version is a directory of sealed boards (`board_sha256`, `supersedes`); `amend` keeps the previous metrics in the entry's history and the rendering; a retracted entry is not ranked and cannot be corrected back (`test_review_correction_and_retraction_keep_history…`, `test_the_checked_in_boards_are_intact_and_copy_the_regression_report`) |
+| Ranking shows uncertainty, resources and failure conditions, not one ACLR number | done: entries rank only inside one comparability group; mean ± std with n, wall clock on the stated device, failure conditions, evidence grade and traceability are columns of every group; the ordering metric is stated and the other columns are not a tie-break (`test_non_comparable_entries_are_grouped_apart…`) |
+| Same review rules for external and maintainers' methods; at least one external researcher in the protocol review | tooling done: one checklist (`opendpd leaderboard check`) for every submitter, the maintainers' reference entries marked `self_reported`, appeals and conflicts in `docs/community/governance.md` §8; **the external protocol reviewer is pending human** (§1) |
+| Submitted code and models run in an isolated validation environment, never on the laboratory's self-hosted runner | policy: `docs/community/governance.md` §5, a statement on every card, an item of the checklist the reviewer confirms; **pending human**: an organisational rule the software cannot verify |
+| Below the external threshold the page says "reference benchmark", not community standard | done: `Leaderboard.label` is computed from the accepted external entries and the independent recomputations (never set by hand); every checked-in board and `docs/leaderboard/README.md` say reference benchmark (`test_the_label_is_computed_from_external_accepted_and_recomputed_entries`) |
+
+Deliverables: versioned boards (`docs/leaderboard/v2026.09/`), the submission
+template and example (`docs/community/`), the review tool
+(`opendpd leaderboard`), the public rules (`docs/community/governance.md`,
+with `docs/protocols/benchmark-protocol.md` unchanged) and the citation
+documents (`docs/community/citation.md`, `CITATION.cff`). No protected path
+is touched. **Pending human**: the community bar (three external
+submissions, two independent recomputations), the external protocol
+reviewer, and the isolated-validation confirmation per submission.
+
 ### G2 gate
 
 Not passed. End-to-end, trustworthy numbers, cross-platform install (Linux),
 security and performance hold with evidence; external usability (S14 trial
 and onboarding) and the macOS/Windows/Safari desktop checks are pending
 people. Per the plan, G2 is not marked complete on internal evidence alone.
+
+### G3 gate
+
+Not passed as a whole; per the plan each of S15–S19 is accepted and
+released on its own. Every one of them is implemented, tested and
+documented, and each has a human decision open: the S15 cross-validation
+record and error budget, the S16 hardware trial and a real instrument
+adapter, an S17 measured condition set that meets the evidence bar and an
+external recomputation, the S18 promotion of the streaming variants, and
+the S19 approval of the fixed-point rules with a second target. None of
+these is marked done on internal evidence.
+
+### G4 gate
+
+Not passed. The protocol is frozen per board version, evidence types are
+on separate boards, and the governance is written and executed by the
+tooling; independent reproduction by people outside the project does not
+exist yet, so every board is a reference benchmark and the project does not
+call it a community standard.
