@@ -75,6 +75,15 @@ never mistaken for a live worker.
 
 ## Restart and crash recovery
 
+`opendpd gui` holds an operating-system lock on `.studio.guard` from before
+server creation until shutdown finishes. A simultaneous launch reuses a
+healthy instance or refuses while that instance is starting or stopping;
+it cannot replace the workspace's supervisor. `.studio.lock` contains the
+instance metadata, and a failed health probe never removes a live owner's
+metadata. The guard file remains on disk after shutdown, but its OS lock is
+released on process exit, including a crash. Do not delete the guard file
+to force a second writer into a live workspace.
+
 At start-up `Supervisor.recover()` marks every `running` /
 `cancel_requested` / `queued` run as `interrupted` with a reason. An
 orphaned worker that is still alive (matching pid and creation time) is

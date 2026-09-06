@@ -90,3 +90,34 @@ def test_doctor_reports_frontend_and_port(tmp_path, capsys):
     assert "frontend" in out and "port" in out
     static = Path(launcher.__file__).parent / "static" / "index.html"
     assert rc == (0 if static.exists() else 1)
+
+
+def test_live_starting_instance_keeps_its_metadata(tmp_path, monkeypatch):
+    lock = launcher.write_lock(tmp_path, 8790, "http://127.0.0.1:8790/bootstrap?token=test")
+    before = lock.read_text()
+    monkeypatch.setattr(launcher, "probe", lambda *a, **kw: None)
+    assert launcher.existing_instance(tmp_path) is None
+    assert lock.read_text() == before
+    served = []
+    assert launcher.launch(tmp_path, serve=lambda *a: served.append(a), open_in_browser=False) == 2
+    assert served == []
+    assert lock.read_text() == before
+
+
+def test_guard_is_released_after_a_failed_launch(tmp_path):
+    with pytest.raises(RuntimeError, match="startup failed"):
+        with launcher.workspace_guard(tmp_path):
+            with pytest.raises(launcher.WorkspaceBusy):
+                with launcher.workspace_guard(tmp_path):
+                    pytest.fail("a second writer acquired the workspace")
+            raise RuntimeError("startup failed")
+    with launcher.workspace_guard(tmp_path):
+        assert (tmp_path / launcher.GUARD_FILE).exists()
+
+
+def test_workspace_creation_error_is_actionable(tmp_path, capsys):
+    workspace = tmp_path / "not-a-directory"
+    workspace.write_text("keep this file")
+    assert launcher.launch(workspace, open_in_browser=False) == 2
+    assert "check workspace permissions" in capsys.readouterr().err
+    assert workspace.read_text() == "keep this file"

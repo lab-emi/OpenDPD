@@ -12,6 +12,7 @@ existing instance instead of a second server on the same SQLite store.
 from __future__ import annotations
 
 import json
+import errno
 import os
 import secrets
 import socket
@@ -20,6 +21,7 @@ import threading
 import time
 import urllib.request
 import webbrowser
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
@@ -27,11 +29,45 @@ from typing import Callable, Optional
 DEFAULT_PORT = 8765
 PORT_SEARCH = 20
 LOCK_FILE = ".studio.lock"
+GUARD_FILE = ".studio.guard"
 HOST = "127.0.0.1"
 
 
 class LaunchError(RuntimeError):
     pass
+
+
+class WorkspaceBusy(LaunchError):
+    pass
+
+
+@contextmanager
+def workspace_guard(workspace: Path):
+    """Hold an OS lock for the server lifetime, including startup and shutdown.
+
+    Keep the file in place: unlinking it would let another process lock a new
+    inode while an existing waiter still holds the old one. The OS releases
+    the lock even when a server crashes before it can remove its metadata.
+    """
+    fd = os.open(workspace / GUARD_FILE, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        try:
+            if os.name == "nt":
+                import msvcrt
+                if os.fstat(fd).st_size == 0:
+                    os.write(fd, b"\0")
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as err:
+            if err.errno in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                raise WorkspaceBusy(f"workspace is already in use: {workspace}") from err
+            raise
+        yield
+    finally:
+        os.close(fd)
 
 
 @dataclass
@@ -123,8 +159,10 @@ def existing_instance(workspace: Path) -> Optional[Lock]:
     lock = Lock.read(workspace / LOCK_FILE)
     if lock is None:
         return None
-    if lock.alive() and probe(f"http://{HOST}:{lock.port}/healthz") is not None:
-        return lock
+    if lock.alive():
+        # A live server may still be starting or temporarily unresponsive.
+        # Its metadata must not be removed by another launcher or `doctor`.
+        return lock if probe(f"http://{HOST}:{lock.port}/healthz") is not None else None
     try:
         (workspace / LOCK_FILE).unlink()   # stale lock from a crashed/killed instance
     except OSError:
@@ -137,14 +175,44 @@ def launch(workspace: Path, *, port: Optional[int] = None, open_in_browser: bool
     """Run the Studio server for ``workspace``; returns a process exit code."""
     out = out or sys.stdout
     workspace = workspace.expanduser().resolve()
-    workspace.mkdir(parents=True, exist_ok=True)
+    try:
+        workspace.mkdir(parents=True, exist_ok=True)
+        with workspace_guard(workspace):
+            return _launch_locked(workspace, port=port, open_in_browser=open_in_browser,
+                                  out=out, serve=serve, opener=opener)
+    except WorkspaceBusy:
+        running = existing_instance(workspace)
+        if running is not None:
+            return _reuse_instance(workspace, running, open_in_browser, out, opener)
+        print(f"error: workspace {workspace} is already starting, running, or shutting down; "
+              "wait for that instance or use a different --workspace", file=sys.stderr)
+        return 2
+    except OSError as err:
+        print(f"error: could not launch Studio in {workspace}: {err}; "
+              "check workspace permissions and available disk space", file=sys.stderr)
+        return 2
 
+
+def _reuse_instance(workspace: Path, running: Lock, open_in_browser: bool, out, opener) -> int:
+    print(f"OpenDPD Studio is already running for {workspace} (pid {running.pid}) at {running.url}", file=out)
+    if open_in_browser and not open_browser(running.url, opener):
+        print("could not open a browser; open the URL above yourself", file=out)
+    return 0
+
+
+def _launch_locked(workspace: Path, *, port: Optional[int], open_in_browser: bool,
+                   out, serve, opener: Callable[[str], bool]) -> int:
     running = existing_instance(workspace)
     if running is not None:
-        print(f"OpenDPD Studio is already running for {workspace} (pid {running.pid}) at {running.url}", file=out)
-        if open_in_browser and not open_browser(running.url, opener):
-            print("could not open a browser; open the URL above yourself", file=out)
-        return 0
+        return _reuse_instance(workspace, running, open_in_browser, out, opener)
+
+    previous = Lock.read(workspace / LOCK_FILE)
+    if previous is not None and previous.alive():
+        # Older Studio versions have no OS guard. Never replace a live legacy
+        # instance just because its health endpoint has not answered yet.
+        print(f"error: a live Studio instance (pid {previous.pid}) owns {workspace} "
+              "but is not responding; wait for it or stop that instance first", file=sys.stderr)
+        return 2
 
     try:
         chosen = choose_port(port)
