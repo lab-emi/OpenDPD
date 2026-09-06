@@ -1,7 +1,9 @@
 """S04 API tests through the real ASGI app (real supervisor, real workers)."""
 
+import io
 import json
 import time
+import zipfile
 
 import pytest
 from fastapi.testclient import TestClient
@@ -307,8 +309,10 @@ def test_history_plots_and_comparison_routes(client, session):
 
 
 def test_export_download_import_and_report_routes(client, session):
+    # a run made by the worker (it has a worker log to leave out), not the one the CLI made in-process
     runs = [r for r in client.get("/api/v1/runs", params={"status": "succeeded"}).json() if r["task"] == "train_pa"]
-    run_id = runs[0]["run_id"]
+    run_id = next(r["run_id"] for r in runs
+                  if any(a["kind"] == "worker_log" for a in client.get(f"/api/v1/runs/{r['run_id']}/artifacts").json()["artifacts"]))
     r = client.post("/api/v1/exports", json={"run_id": run_id, "kind": "share"})
     assert r.status_code == 201, r.text
     info = r.json()
@@ -316,6 +320,12 @@ def test_export_download_import_and_report_routes(client, session):
     assert not info["manifest"]["dataset"]["included"] and info["manifest"]["redaction"]
     download = client.get(info["download_url"])
     assert download.status_code == 200 and download.headers["content-type"] == "application/zip"
+    # the worker log stays behind and the packaged artifact manifest no longer lists it
+    assert any(line.startswith("artifacts.json:") and "worker-log" in line for line in info["manifest"]["redaction"])
+    with zipfile.ZipFile(io.BytesIO(download.content)) as zf:
+        packaged = json.loads(zf.read(f"run/{run_id}/artifacts.json"))
+        assert packaged["complete"] and not any(a["kind"] == "worker_log" for a in packaged["artifacts"])
+        assert not any(n.startswith(f"run/{run_id}/logs/") for n in zf.namelist())
     assert client.get("/api/v1/exports/does-not-exist").status_code == 404
     # importing into the same workspace is refused with the specific code, nothing is written
     r = client.post("/api/v1/imports", files={"file": (info["filename"], download.content, "application/zip")})

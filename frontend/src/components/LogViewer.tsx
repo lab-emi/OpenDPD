@@ -88,7 +88,7 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
         sx={{ height, overflow: 'auto', bgcolor: '#0f172a', color: '#e2e8f0', borderRadius: 1, fontFamily: tokens.typography.monoFamily, fontSize: 12 }}
       >
         {visible.length === 0 ? (
-          <Typography sx={{ p: 2, color: '#94a3b8' }}>{t('logs.empty')}</Typography>
+          <Typography sx={{ p: 2, color: '#94a3b8' }}>{!live && eof && lines.length === 0 ? t('logs.none.stored') : t('logs.empty')}</Typography>
         ) : (
           <div style={{ height: visible.length * ROW_HEIGHT, position: 'relative' }}>
             {slice.map((line, i) => (

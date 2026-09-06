@@ -7,6 +7,7 @@ Exit codes: 0 ok, 1 run failed, 2 invalid input / configuration, 130 cancelled.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -194,31 +195,35 @@ def cmd_run(args) -> int:
     except (WorkspaceError, ValueError, FileNotFoundError, KeyError) as err:
         print(f"error: {err}", file=sys.stderr)
         return 2
+    text = sys.stderr if args.json else sys.stdout      # with --json, stdout carries the JSON document only
     if record.status != RunStatus.queued:
         print(f"run {record.run_id} already exists for idempotency key {args.idempotency_key!r} "
-              f"(status {record.status.value})")
-        return 0
-    print(f"run {record.run_id} created in {ws.run_dir(record.run_id)}")
-    record = execute_run(ws, record.run_id)
-    print(f"run {record.run_id} {record.status.value}")
+              f"(status {record.status.value})", file=text)
+    else:
+        print(f"run {record.run_id} created in {ws.run_dir(record.run_id)}", file=text)
+        with contextlib.redirect_stdout(text):        # the legacy trainer prints progress to stdout
+            record = execute_run(ws, record.run_id)
+        print(f"run {record.run_id} {record.status.value}", file=text)
     if record.error:
         print(f"  {record.error.code} [{record.error.stage}]: {record.error.message}", file=sys.stderr)
     result = load_result(ws, record.run_id)
     if result is not None:
-        _print_result(result)
+        _print_result(result, file=text)
     if args.json:
         _print_json({"run": record.model_dump(mode="json"),
                      "result": result.model_dump(mode="json") if result else None})
     return {RunStatus.succeeded: 0, RunStatus.cancelled: 130}.get(record.status, 1)
 
 
-def _print_result(result) -> None:
-    print(f"  evidence: {result.evidence_type.value}  profile: {result.metric_profile_id} v{result.metric_profile_version}")
+def _print_result(result, file=None) -> None:
+    file = file or sys.stdout
+    print(f"  evidence: {result.evidence_type.value}  profile: {result.metric_profile_id} v{result.metric_profile_version}",
+          file=file)
     for m in result.metrics:
         shown = f"{m.value:.4f} {m.unit}" if m.value is not None else f"{m.status.value}: {m.reason}"
-        print(f"  {m.name:<9} {shown}")
+        print(f"  {m.name:<9} {shown}", file=file)
     for lim in result.limitations:
-        print(f"  note: {lim}")
+        print(f"  note: {lim}", file=file)
 
 
 def cmd_profiles(args) -> int:

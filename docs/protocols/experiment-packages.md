@@ -14,7 +14,7 @@ carries one run and everything needed to state what its numbers mean:
 |---|---|
 | `package.json` | the manifest: kind, software provenance, run id, task, resolved configuration hash, seed, result id and metric profile, dataset identity (id, raw sha256, data version, split version, source kind), referenced runs with their checkpoint hashes, every member with its sha256 and size, named reproduction commands, what was left out (`redaction`), what is still needed (`missing`), the retraining note |
 | `run/<id>/…` | the run directory: `config.user.json`, `config.resolved.json`, `provenance.json`, `run.json`, `artifacts.json`, `result.json`, `results/<profile>.json`, `plots/*.json`, `save/` (checkpoints), `dpd_out/` |
-| `refs/<id>/…` | every referenced run (PA surrogate of a DPD run, DPD model of a `run_dpd` run): its configurations, provenance, artifact manifest, results and checkpoint |
+| `refs/<id>/…` | every referenced run (PA surrogate of a DPD run, DPD model of a `run_dpd` run): its configurations, provenance, results, metric logs and checkpoint; its `artifacts.json` lists exactly these (worker logs and plot data stay behind) |
 | `dataset/manifest.json` | the dataset manifest (versions, split, hashes) |
 | `dataset/raw`, `dataset/versions/<v>` | the raw copy and the used data version — **full packages of non-built-in datasets only** |
 | `report.html`, `report.md` | the reports (below) |
@@ -27,7 +27,7 @@ Nothing is recomputed on export.
 | | `full` (private) | `share` (redacted) |
 |---|---|---|
 | Purpose | move an experiment to another machine of the same owner | give a collaborator the evidence without the private parts |
-| Run directory | complete | without `logs/` (worker logs) and `events.jsonl` |
+| Run directory | complete | without `logs/` (worker logs) and `events.jsonl`; `artifacts.json` is rewritten without the entries whose files stay behind, so an imported run never lists a file it does not have |
 | `provenance.json`, `run.json` | verbatim | machine paths replaced by `<workspace>` / `<home>` / `<host>`; the worker identity (host, pid) removed |
 | Dataset manifest | verbatim | the original import path removed |
 | User PA data | raw copy and the used version included | **never included** |

@@ -24,6 +24,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 from opendpd import __version__
 from opendpd.schemas import (
     ArtifactKind,
+    ArtifactManifest,
     DatasetSourceKind,
     ImportReport,
     PACKAGE_VERSION,
@@ -40,7 +41,8 @@ from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha
 MANIFEST_NAME = "package.json"
 REPORT_HTML = "report.html"
 REPORT_MD = "report.md"
-_RUN_JSON = ("run.json", "config.user.json", "config.resolved.json", "provenance.json", "artifacts.json")
+ARTIFACTS_FILE = "artifacts.json"
+_RUN_JSON = ("run.json", "config.user.json", "config.resolved.json", "provenance.json", ARTIFACTS_FILE)
 _SHARE_EXCLUDED_DIRS = ("logs",)          # worker / stdout logs may quote machine paths
 _SHARE_EXCLUDED_FILES = ("events.jsonl",)
 RETRAINING_NOTE = ("Re-evaluating the packaged checkpoint reproduces the stored metrics within the frozen tolerance "
@@ -94,15 +96,31 @@ def _walk(root: Path) -> Iterable[Path]:
             yield path
 
 
+_REFERENCE_KINDS = (ArtifactKind.checkpoint, ArtifactKind.result, ArtifactKind.log_history, ArtifactKind.log_best)
+
+
 def _reference_members(ws: Workspace, run_id: str) -> Iterable[Tuple[str, Path]]:
-    """The JSON files and the checkpoint of a referenced run, enough to evaluate through it."""
+    """The JSON files, results, metric logs and checkpoint of a referenced run: enough to evaluate through it and to
+    read what it scored; worker logs and plot data stay behind."""
     run_dir = ws.run_dir(run_id)
     for name in _RUN_JSON:
         if (run_dir / name).exists():
             yield f"refs/{run_id}/{name}", run_dir / name
     manifest = experiments.load_artifacts(ws, run_id)
-    for artifact in manifest.by_kind(ArtifactKind.checkpoint) if manifest else []:
-        yield f"refs/{run_id}/{artifact.file.path}", run_dir / artifact.file.path
+    for artifact in manifest.artifacts if manifest else []:
+        if artifact.kind in _REFERENCE_KINDS and (run_dir / artifact.file.path).is_file():
+            yield f"refs/{run_id}/{artifact.file.path}", run_dir / artifact.file.path
+
+
+def _artifacts_in_package(path: Path, prefix: str, present: set) -> Tuple[bytes, List[str]]:
+    """artifacts.json restricted to the members that travel with the package, so an imported run never lists a file
+    it does not have. Returns the bytes and the ids that were dropped; ``complete`` is cleared if a required one was."""
+    manifest = ArtifactManifest.model_validate(read_json(path))
+    kept = [a for a in manifest.artifacts if f"{prefix}/{a.file.path}" in present]
+    dropped = [a for a in manifest.artifacts if f"{prefix}/{a.file.path}" not in present]
+    complete = manifest.complete and not any(a.required for a in dropped)
+    payload = manifest.model_copy(update={"artifacts": kept, "complete": complete}).model_dump_json(indent=2)
+    return payload.encode("utf-8"), [a.artifact_id for a in dropped]
 
 
 def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share") -> PackageManifest:
@@ -134,6 +152,12 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share") ->
         redaction += ["worker logs (logs/) and the event journal are not included",
                       "provenance.json: machine paths replaced by <workspace> / <home> / <host>",
                       "run.json: worker identity (host, pid) removed"]
+        present = {name for name, _ in members} | set(rewritten)
+        payload, dropped = _artifacts_in_package(run_dir / ARTIFACTS_FILE, f"run/{run_id}", present)
+        if dropped:
+            members = [(name, path) for name, path in members if name != f"run/{run_id}/{ARTIFACTS_FILE}"]
+            rewritten[f"run/{run_id}/{ARTIFACTS_FILE}"] = payload
+            redaction.append(f"artifacts.json: entries for files not included were removed ({', '.join(dropped)})")
 
     references: List[PackageReference] = []
     ref_ids: List[Tuple[str, str]] = []
@@ -146,8 +170,12 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share") ->
         ckpt = ref_manifest.by_kind(ArtifactKind.checkpoint)[0] if ref_manifest else None
         if ckpt is None or ckpt.file.sha256 is None:
             raise PackageError("reference_incomplete", f"referenced run {ref_id} has no verified checkpoint")
-        for name, path in _reference_members(ws, ref_id):
-            if share and name.endswith(("/provenance.json", "/run.json")):
+        ref_members = list(_reference_members(ws, ref_id))
+        present = {name for name, _ in ref_members}
+        for name, path in ref_members:
+            if name.endswith(f"/{ARTIFACTS_FILE}"):
+                rewritten[name] = _artifacts_in_package(path, f"refs/{ref_id}", present)[0]
+            elif share and name.endswith(("/provenance.json", "/run.json")):
                 rewritten[name] = _redacted_json(path, secrets, drop_worker=name.endswith("/run.json"))
             else:
                 members.append((name, path))

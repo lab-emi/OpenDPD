@@ -139,6 +139,7 @@
   "logs.search": "Filter lines",
   "logs.loadMore": "Load more",
   "logs.empty": "No log output yet.",
+  "logs.none.stored": "No log is stored for this run. Runs imported from a share package have no worker log; the package says so under redaction.",
   "logs.follow": "Follow",
   "logs.lines": "{shown} of {total} loaded lines",
   "results.title": "Results",

@@ -13,7 +13,7 @@ from opendpd.cli import studio_main
 from opendpd.schemas import RunStatus
 from opendpd.services import datasets as ds
 from opendpd.services.evaluation import evaluate_run
-from opendpd.services.experiments import create_run, execute_run, load_result, load_run
+from opendpd.services.experiments import create_run, execute_run, load_artifacts, load_result, load_run
 from opendpd.services.packages import PackageError, export_run, import_package, inspect_package
 from opendpd.services.recipes import instantiate
 from opendpd.services.workspace import Workspace
@@ -64,6 +64,15 @@ def _texts(path: Path):
                 yield name, zf.read(name).decode("utf-8", errors="replace")
 
 
+def _assert_artifacts_present(ws2, run_id):
+    """An imported run lists only files it has; required ones keep their hashes."""
+    manifest = load_artifacts(ws2, run_id)
+    assert manifest is not None and manifest.artifacts
+    for a in manifest.artifacts:
+        assert (ws2.run_dir(run_id) / a.file.path).is_file(), f"{run_id} lists {a.artifact_id} without its file"
+    return manifest
+
+
 def _assert_close(a, b):
     for m in a.metrics:
         other = b.metric(m.name)
@@ -90,6 +99,11 @@ def test_full_package_round_trips_into_a_new_workspace_and_re_evaluates(ws, pa_r
     assert report.dataset_status == "imported" and set(report.imported_runs) == {dpd_run.run_id, pa_run.run_id}
     assert ws2.get_dataset("capture").raw_sha256 == ws.get_dataset("capture").raw_sha256
     assert load_run(ws2, dpd_run.run_id).status == RunStatus.succeeded
+    assert _assert_artifacts_present(ws2, dpd_run.run_id).complete
+    ref_manifest = _assert_artifacts_present(ws2, pa_run.run_id)
+    assert ref_manifest.complete and {a.kind.value for a in ref_manifest.artifacts} >= {"checkpoint", "result", "log_history"}
+    assert not any(a.kind.value == "worker_log" for a in ref_manifest.artifacts)
+    assert load_result(ws2, pa_run.run_id) is not None, "the surrogate's own result travels with the reference"
     packaged = load_result(ws2, dpd_run.run_id)
     assert packaged == load_result(ws, dpd_run.run_id)
     recomputed = evaluate_run(ws2, dpd_run.run_id, packaged.metric_profile_id)
@@ -127,6 +141,7 @@ def test_share_package_is_redacted_and_says_what_is_missing(ws, pa_run, tmp_path
     report = import_package(ws3, out)
     assert report.dataset_status == "missing" and report.missing and "capture" in report.missing[0]
     assert load_result(ws3, pa_run.run_id) is not None, "results are readable without the data"
+    assert _assert_artifacts_present(ws3, pa_run.run_id).complete      # in-process runs have no worker log to drop
     with pytest.raises(Exception, match="not registered"):
         evaluate_run(ws3, pa_run.run_id, "legacy-opendpd-v1")
 
