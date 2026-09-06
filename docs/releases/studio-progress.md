@@ -358,28 +358,16 @@ is touched. **Pending human**: the community bar (three external
 submissions, two independent recomputations), the external protocol
 reviewer, and the isolated-validation confirmation per submission.
 
-### G2 gate
+## Gates
 
-Not passed. End-to-end, trustworthy numbers, cross-platform install (Linux),
-security and performance hold with evidence; external usability (S14 trial
-and onboarding) and the macOS/Windows/Safari desktop checks are pending
-people. Per the plan, G2 is not marked complete on internal evidence alone.
+| Gate | Stages | Machine side | Open human decisions |
+|---|---|---|---|
+| G0 installable GUI base | S00–S06 | done on Linux: `opendpd gui` opens the packaged workbench, session security, workspace and the minimal task chain hold; samples and mock data are labelled | maintainer approval of the G0–G2 scope, support matrix, risks and thresholds (S00); macOS/Windows desktop checks (S06) |
+| G1 trustworthy experiment loop | S07–S11 | done: `tests/integration/test_g1_flow.py` walks import → doctor → PA → DPD → evaluate → export → import → re-evaluate on the measured built-in data with the GUI/CLI consistency test | one internal user not involved in the implementation completes the flow independently (S11) |
+| G2 externally usable version | S12–S14 | done: numerical regression, performance, security, accessibility and packaging hold with evidence | external trial with three groups and the onboarding session, macOS/Windows/Safari passes, baseline approval, release approval and publication (S14, backlog 1–4) |
+| G3 science and deployment extensions | S15–S19 | each stage implemented, tested and documented on its own; none marked done on internal evidence | S15 cross-validation record and error budget; S16 hardware trial and a real instrument adapter; S17 measured ≥ 3-condition card and an external recomputation; S18 promotion of the streaming variants; S19 approval of the fixed-point rules and a second target (backlog 9–10f) |
+| G4 community benchmark | S20 | done: protocol frozen per board version, evidence types on separate boards, governance written and executed by the tooling, every board a reference benchmark by computed label | three external submissions accepted and two independently recomputed; an external protocol reviewer; isolated validation confirmed per submission (backlog 11) |
 
-### G3 gate
-
-Not passed as a whole; per the plan each of S15–S19 is accepted and
-released on its own. Every one of them is implemented, tested and
-documented, and each has a human decision open: the S15 cross-validation
-record and error budget, the S16 hardware trial and a real instrument
-adapter, an S17 measured condition set that meets the evidence bar and an
-external recomputation, the S18 promotion of the streaming variants, and
-the S19 approval of the fixed-point rules with a second target. None of
-these is marked done on internal evidence.
-
-### G4 gate
-
-Not passed. The protocol is frozen per board version, evidence types are
-on separate boards, and the governance is written and executed by the
-tooling; independent reproduction by people outside the project does not
-exist yet, so every board is a reference benchmark and the project does not
-call it a community standard.
+No gate is marked passed on internal evidence alone; the plan reserves that
+call for the maintainers. Every stage S00–S20 has its acceptance table above
+with the evidence per item and the human decisions it waits for.
