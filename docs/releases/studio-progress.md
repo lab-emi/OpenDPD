@@ -13,7 +13,8 @@ repository; "pending human" means a maintainer decision is required;
 | S03 task runtime | done (Windows/macOS cleanup not verified) | `fd63107` | SQLite store, supervisor, worker subprocess, cancel, recovery |
 | S04 local service & API | done | `076de58` | FastAPI app, sessions/CSRF/Host checks, SSE replay, OpenAPI contract, threat model |
 | S05 React workbench | done (visual baselines local only) | `c002ca2` + `c5f5b83` | `frontend/`: pages, domain components, states, Vitest + Playwright journeys, generated API types |
-| S06 packaging & one-command launch | done on Linux; **macOS/Windows not verified** | — | `opendpd gui`, `opendpd doctor`, wheel/sdist carry the built frontend, packaged L2 test |
+| S06 packaging & one-command launch | done on Linux; **macOS/Windows not verified** | `86ddd7a` | `opendpd gui`, `opendpd doctor`, wheel/sdist carry the built frontend, packaged L2 test |
+| S07 data import, Dataset Doctor, traceable preprocessing | done | — | import roots + upload, `dataset-doctor-v1`, `preprocess-v1` versions, `contiguous-v1` split, datasets pages, J2 journey (mock) and headless CLI J2 on real data |
 
 ## S00 acceptance items
 
@@ -93,3 +94,17 @@ repository; "pending human" means a maintainer decision is required;
 | Browser opens only after the health check; missing/mismatched static shows a diagnostic, never a blank page | done (`test_browser_opens_only_after_health_check_with_bootstrap_url`; `/readyz` reports frontend presence and version; SPA route returns the diagnostic page when assets are missing or mismatched) |
 | Real browser launch on three platforms | Linux: verified 2026-09-06 in a real desktop browser against `opendpd gui` (bootstrap URL → register example → new experiment validated server-side → 3-epoch run with live metrics → result with evidence badge); the first real pass found and fixed two defects (`evaluation` was required in the contract; a port left in TIME_WAIT was reported busy). **macOS and Windows: pending human** |
 | Access session and file boundary active; no "open all local files for the demo" | done (S04 boundary unchanged; artifacts by id only) |
+
+## S07 acceptance items
+
+| Item | Status |
+|---|---|
+| Built-in data and user CSV import; wrong column names, lengths, I/Q order and units can be explained and corrected | done: `POST /datasets/inspect` returns headers, a preview, problems and a suggested mapping (alias table incl. `tx_i`/`rx_q`); the GUI mapping selects and the CLI `--map LOGICAL=COLUMN` fix swapped I/Q; length/dtype/object-array problems are reported before anything is written (`tests/unit/test_datasets_service.py`) |
+| Known delay, gain, outliers and clipping detected within the fixture protocol; natural PA non-linearity is not called "broken" | done: `tests/fixtures/manifest.json["doctor_protocol"]` (delay ±0.1 sample at 3/7/40, gain ±0.5 dB / ±3°, clipping at 60 % of peak, 5 spikes, NaN blocks); `tests/unit/test_doctor.py` (10 tests incl. clean memory-polynomial PA raising no defect) |
+| error/warning/info with evidence and suggestions; insufficient metadata blocks unreliable evaluation | done: every item carries `evidence`; `metadata_missing`, NaN, length, silent signal are blocking and set `evaluation_blocked` (`docs/protocols/dataset-doctor.md`) |
+| Preview before a new version is created on confirmation; raw hash unchanged; parameters and code version recorded | done: `POST …/preprocess/preview` then `POST …/preprocess` with a version name; `versions/<name>/version.json` stores params, `code_version=preprocess-v1`, `fit_range`, steps; `raw/` is hashed and never modified (`test_versions_keep_raw_untouched_and_fit_only_on_train`) |
+| Split before framing; boundary isolation covers the context | done: `contiguous-v1` splits the continuous signal with a guard (default 256 samples) before any framing (`opendpd/core/splits.py`, protected path); validation warns when `training.frame_length` exceeds the guard (`test_validate_names_missing_versions_and_guard_shorter_than_the_frame`). Built-in/legacy directories keep their original split (guard 0, no warning) |
+| Fit range of learned preprocessing recorded; never fitted on the test set | done: `normalize=peak_input` requires `fit_range` = the training split and refuses otherwise; measurement alignment (delay/gain) is a separate, declared correction |
+| Large files read incrementally; browser upload and authorised-directory import are distinct; no arbitrary path browsing | done: CSV read in 200k-row chunks, NumPy via memory-mapped `np.load(mmap_mode="r", allow_pickle=False)`; upload streams into `imports/uploads/` (2 GB cap, other bodies 2 MB); import only by `(root_id, relative path)` with traversal refused (`test_roots_listing_and_traversal_refused`) |
+| GUI, CLI and Python API return the same diagnostic report and manifest | done: one service (`opendpd.services.datasets`) behind `opendpd datasets import/doctor/preprocess` and the routes; `test_inspect_import_doctor_preprocess_flow` compares the CLI JSON report with the API one |
+| Real-data end-to-end through GUI/CLI consistency (G1 gate, partial) | CLI: `test_cli_import_doctor_preprocess_and_train_on_a_version` imports a synthetic CSV, runs the doctor, creates `aligned-v1`, trains on it and gets a result. GUI: J2 journey runs against the mock API (`frontend/e2e`); a real-browser pass on real data is a G1 checklist item, not yet done |

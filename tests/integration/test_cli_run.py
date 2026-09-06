@@ -194,3 +194,32 @@ def test_cli_lists_models_datasets_and_recipes(workspace, capsys):
     assert "pa-gru-smoke-v1" in capsys.readouterr().out
     assert studio_main(["datasets", "list", "--workspace", str(workspace.root)]) == 0
     assert "dpa-200mhz" in capsys.readouterr().out
+
+
+def test_cli_import_doctor_preprocess_and_train_on_a_version(tmp_path, capsys):
+    """J2 headless: import my CSV -> doctor -> preprocess -> train on the new version -> result."""
+    from tests.fixtures.synthetic import Impairments, write_dataset
+
+    write_dataset(tmp_path / "src", 20000, 9, 800e6, 200e6, Impairments(delay_samples=6), fmt="csv")
+    ws = ["--workspace", str(tmp_path / "ws")]
+    assert studio_main(["datasets", "import", str(tmp_path / "src" / "data.csv"), "--id", "mine", "--fs", "800e6",
+                        "--bandwidth", "200e6", "--n-sub-ch", "10", "--nperseg", "2560", "--units", "normalized",
+                        "--origin", "synthetic", *ws]) == 0
+    capsys.readouterr()
+    assert studio_main(["datasets", "doctor", "mine", "--json", *ws]) == 0
+    report = json.loads(capsys.readouterr().out)
+    delay = next(i for i in report["items"] if i["code"] == "time_misalignment")["evidence"]["delay_samples"]
+    assert abs(delay - 6) < 0.1
+    assert studio_main(["datasets", "preprocess", "mine", "--version", "aligned-v1", "--delay", str(round(delay)), *ws]) == 0
+    capsys.readouterr()
+    cfg = tmp_path / "cfg.json"
+    cfg.write_text(json.dumps({"task": "train_pa", "recipe_id": "pa-gru-smoke-v1",
+                               "dataset": {"id": "mine", "preprocessing_version": "aligned-v1"},
+                               "model": {"key": "gru", "parameters": {"hidden_size": 8, "num_layers": 1}},
+                               "training": {"epochs": 1, "frame_length": 50, "frame_stride": 16, "batch_size_eval": 256}}))
+    assert studio_main(["run", "--config", str(cfg), "--json", *ws]) == 0
+    out = capsys.readouterr().out
+    payload = json.loads(out[out.index("{"):])
+    assert payload["run"]["status"] == "succeeded"
+    assert payload["result"]["dataset"]["preprocessing_version"] == "aligned-v1"
+    assert payload["result"]["metrics"][0]["value"] is not None

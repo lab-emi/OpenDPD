@@ -6,7 +6,7 @@ import { DiagnosticItem } from './DiagnosticItem'
 const report = doctor.data as unknown as DiagnosticReport
 
 test('renders severity, evidence, suggestion and the blocking marker', () => {
-  const blocking = report.items.find((i) => i.blocking)!
+  const blocking = (report.items ?? []).find((i) => i.blocking)!
   render(<DiagnosticItem item={blocking} />)
   expect(screen.getByRole('article', { name: blocking.title })).toHaveAttribute('data-severity', blocking.severity)
   expect(screen.getByText('blocks evaluation')).toBeInTheDocument()

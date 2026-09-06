@@ -43,6 +43,26 @@ def cmd_recipes(args) -> int:
     return 0
 
 
+def _signal_from_args(args):
+    from opendpd.schemas import SignalSpec
+
+    fields = {"sample_rate_hz": args.fs, "bandwidth_hz": args.bandwidth, "n_sub_ch": args.n_sub_ch,
+              "nperseg": args.nperseg, "sub_channel_bandwidth_hz": args.bw_sub_ch}
+    spec = {k: v for k, v in fields.items() if v is not None}
+    if args.units:
+        spec["amplitude_units"] = args.units
+    return SignalSpec(**spec)
+
+
+def _print_report(report) -> None:
+    print(f"{report.doctor_version}  {report.report_id}  blocked={report.evaluation_blocked}")
+    for item in report.items:
+        conf = f" (confidence {item.confidence:.2f})" if item.confidence is not None else ""
+        print(f"  [{item.severity.value:7}] {item.code}: {item.message}{conf}")
+        if item.suggestion:
+            print(f"            -> {item.suggestion}")
+
+
 def cmd_datasets(args) -> int:
     from opendpd.services.workspace import Workspace, WorkspaceError
 
@@ -51,6 +71,59 @@ def cmd_datasets(args) -> int:
         if args.datasets_command == "import-builtin":
             manifest = ws.register_builtin_dataset(args.name, dataset_id=args.id)
             print(f"registered '{manifest.dataset_id}' ({manifest.display_name}) in {ws.root}")
+            return 0
+        if args.datasets_command == "import":
+            from opendpd.schemas import DatasetOrigin
+            from opendpd.services import datasets as ds
+
+            mapping = dict(pair.split("=", 1) for pair in (args.map or []))
+            manifest = ds.import_dataset(ws, Path(args.path), dataset_id=args.id, display_name=args.name, mapping=mapping,
+                                         signal=_signal_from_args(args), origin=DatasetOrigin(args.origin),
+                                         guard_samples=args.guard)
+            if args.json:
+                _print_json(manifest.model_dump(mode="json"))
+            else:
+                print(f"imported '{manifest.dataset_id}' ({manifest.n_samples} samples) from {args.path}")
+                missing = manifest.missing_metadata()
+                if missing:
+                    print("metadata still missing for evaluation: " + ", ".join(missing))
+            return 0
+        if args.datasets_command == "doctor":
+            from opendpd.services import datasets as ds
+
+            report = ds.run_doctor(ws, args.id, args.version)
+            if args.json:
+                _print_json(report.model_dump(mode="json"))
+            else:
+                _print_report(report)
+            return 0 if not report.evaluation_blocked else 1
+        if args.datasets_command == "preprocess":
+            from opendpd.schemas import PreprocessingParams
+            from opendpd.services import datasets as ds
+
+            params = PreprocessingParams(delay_samples=args.delay, gain_db=args.gain_db, phase_deg=args.phase_deg,
+                                         interpolate_non_finite=args.interpolate_non_finite,
+                                         remove_outliers=args.remove_outliers,
+                                         normalize="peak_input" if args.normalize else "none")
+            if args.preview:
+                preview = ds.preview_preprocess(ws, args.id, params, args.base)
+                if args.json:
+                    _print_json(preview)
+                else:
+                    print(f"{preview['n_samples_before']} -> {preview['n_samples_after']} samples; steps: {preview['record']['steps']}")
+                    from opendpd.schemas import DiagnosticReport
+                    _print_report(DiagnosticReport.model_validate(preview["report_after"]))
+                return 0
+            version = ds.create_version(ws, args.id, args.version, params, args.base)
+            if args.json:
+                _print_json(version.model_dump(mode="json"))
+            else:
+                print(f"created version '{version.version}' of '{args.id}': {version.n_samples} samples, "
+                      f"fit range {version.fit_range}, code {version.code_version}")
+            return 0
+        if args.datasets_command == "add-root":
+            ws.add_import_root(args.name, Path(args.path))
+            print(f"import roots: {', '.join(f'{k}={v}' for k, v in ws.import_roots().items())}")
             return 0
         datasets = ws.list_datasets()
         if args.json:
@@ -178,6 +251,44 @@ def build_parser() -> argparse.ArgumentParser:
     q = ds.add_parser("list", help="list workspace datasets")
     q.add_argument("--workspace", required=True)
     q.add_argument("--json", action="store_true")
+    q = ds.add_parser("import", help="import a CSV, .npy/.npz or OpenDPD split directory (raw copy + contiguous split)")
+    q.add_argument("path")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--id", default=None, help="dataset id (default: slug of the file name)")
+    q.add_argument("--name", default=None, help="display name")
+    q.add_argument("--map", action="append", metavar="LOGICAL=COLUMN",
+                   help="column mapping, e.g. --map I_in=tx_i (logical: I_in, Q_in, I_out, Q_out; npz: input, output)")
+    q.add_argument("--fs", type=float, default=None, help="sample rate in Hz")
+    q.add_argument("--bandwidth", type=float, default=None, help="main channel bandwidth in Hz")
+    q.add_argument("--bw-sub-ch", dest="bw_sub_ch", type=float, default=None)
+    q.add_argument("--n-sub-ch", dest="n_sub_ch", type=int, default=None)
+    q.add_argument("--nperseg", type=int, default=None)
+    q.add_argument("--units", choices=["normalized", "volts", "unknown"], default=None)
+    q.add_argument("--origin", choices=["measured", "synthetic", "unknown"], default="unknown")
+    q.add_argument("--guard", type=int, default=256, help="guard samples dropped between splits (>= frame length)")
+    q.add_argument("--json", action="store_true")
+    q = ds.add_parser("doctor", help="run Dataset Doctor and store the report")
+    q.add_argument("id")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--version", default="raw-v1")
+    q.add_argument("--json", action="store_true")
+    q = ds.add_parser("preprocess", help="preview or create a preprocessing version (raw files are never modified)")
+    q.add_argument("id")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--version", default=None, help="name of the new version (omit with --preview)")
+    q.add_argument("--base", default="raw-v1")
+    q.add_argument("--delay", type=float, default=0.0, help="output lags input by this many samples")
+    q.add_argument("--gain-db", dest="gain_db", type=float, default=0.0)
+    q.add_argument("--phase-deg", dest="phase_deg", type=float, default=0.0)
+    q.add_argument("--interpolate-non-finite", dest="interpolate_non_finite", action="store_true")
+    q.add_argument("--remove-outliers", dest="remove_outliers", action="store_true")
+    q.add_argument("--normalize", action="store_true", help="scale by the input peak of the training split")
+    q.add_argument("--preview", action="store_true")
+    q.add_argument("--json", action="store_true")
+    q = ds.add_parser("add-root", help="authorise a directory for imports")
+    q.add_argument("name")
+    q.add_argument("path")
+    q.add_argument("--workspace", required=True)
     p.set_defaults(func=cmd_datasets)
 
     p = sub.add_parser("gui", help="start the local Studio service and open the workbench in your browser")

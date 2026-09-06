@@ -207,6 +207,35 @@ class Workspace:
     def dataset_raw_dir(self, dataset_id: str) -> Path:
         return self.dataset_dir(dataset_id) / "raw"
 
+    def dataset_version_dir(self, dataset_id: str, version: str = "raw-v1") -> Path:
+        """Directory in the trainer's split-CSV layout for one data version.
+        Built-in datasets keep raw-v1 in ``raw/``; imports materialise every
+        version (raw-v1 included) under ``versions/<name>/``."""
+        candidate = self.dataset_dir(dataset_id) / "versions" / version
+        if candidate.is_dir():
+            return candidate
+        if version == "raw-v1":
+            return self.dataset_raw_dir(dataset_id)
+        raise WorkspaceError(f"dataset '{dataset_id}' has no version '{version}'")
+
+    # -- authorised import roots ------------------------------------------------
+    @property
+    def imports_dir(self) -> Path:
+        return self.root / "imports"
+
+    def import_roots(self) -> Dict[str, Path]:
+        """Directories the service may read user data from: the workspace's own
+        ``imports/`` plus any roots recorded in workspace.json. Nothing else."""
+        roots = {"imports": self.imports_dir}
+        for name, path in (self.meta.get("import_roots") or {}).items():
+            roots[slugify(name)] = Path(path).expanduser()
+        return roots
+
+    def add_import_root(self, name: str, path: Path) -> None:
+        meta = self.meta
+        meta.setdefault("import_roots", {})[slugify(name)] = str(Path(path).expanduser().resolve())
+        write_json_atomic(self.meta_path, meta)
+
     def register_builtin_dataset(self, name: str, dataset_id: Optional[str] = None) -> DatasetManifest:
         """Copy a packaged dataset (``datasets/<name>``) into the workspace."""
         src = BUILTIN_DATASETS_DIR / name

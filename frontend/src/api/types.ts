@@ -40,29 +40,13 @@ export interface ValidationReport {
   resolved: ResolvedExperimentConfig | null
 }
 
-/**
- * Dataset Doctor items are not part of the API until S07; the component is
- * designed now on the contract example (mocks/diagnostics_missing_metadata.json).
- */
-export type Severity = 'info' | 'warning' | 'error'
-export interface DiagnosticItem {
-  code: string
-  severity: Severity
-  title: string
-  message: string
-  evidence: Record<string, number | string | boolean>
-  suggestion?: string | null
-  confidence?: number | null
-  blocking: boolean
-}
-export interface DiagnosticReport {
-  report_id: string
-  dataset_id: string
-  doctor_version: string
-  generated_at: string
-  items: DiagnosticItem[]
-  evaluation_blocked: boolean
-}
+export type Severity = Schemas['Severity']
+export type DiagnosticItem = Schemas['DiagnosticItem']
+export type DiagnosticReport = Schemas['DiagnosticReport']
+export type DatasetVersion = Schemas['DatasetVersion']
+export type SignalSpec = Schemas['SignalSpec']
+export type DatasetOrigin = Schemas['DatasetOrigin']
+export type PreprocessingParams = Schemas['PreprocessingParams']
 
 type DP<T> = T extends object ? DeepPartial<T> : T
 type DeepPartial<T> = { [K in keyof T]?: DP<T[K]> }

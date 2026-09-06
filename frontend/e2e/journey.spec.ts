@@ -56,6 +56,51 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
   })
 })
 
+test.describe('J2 — my own data (mock API)', () => {
+  test('import CSV with odd headers → doctor → accept estimates → new version → experiment uses it', async ({ page }) => {
+    const state = await installFakeApi(page)
+    await page.goto('/datasets')
+    await page.getByRole('button', { name: 'Import my data' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByText('capture.csv').click()
+    await expect(dialog.getByRole('region', { name: 'Column mapping' })).toBeVisible()
+    await expect(dialog.getByLabel('I_out')).toHaveText('rx_i')
+    await expect(dialog.getByLabel('Dataset id')).toHaveValue('capture')
+    await dialog.getByLabel('Sample rate (Hz)').fill('800e6')
+    await dialog.getByLabel('Signal bandwidth (Hz)').fill('200e6')
+    await dialog.getByLabel('Sub-channels').fill('10')
+    await dialog.getByLabel('PSD segment length (nperseg)').fill('2560')
+    await dialog.getByRole('button', { name: 'Import', exact: true }).click()
+
+    await expect(page).toHaveURL(/\/datasets\/capture$/)
+    await expect(page.getByText(/No report yet/)).toBeVisible()
+    await page.getByRole('button', { name: 'Run Dataset Doctor' }).click()
+    await expect(page.getByRole('article', { name: 'Time misalignment' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Preprocess…' }).click()
+    const pre = page.getByRole('dialog')
+    await pre.getByRole('button', { name: 'Use doctor estimates' }).click()
+    await expect(pre.getByLabel('Delay correction (samples)')).toHaveValue('6')
+    await pre.getByRole('button', { name: 'Preview' }).click()
+    await expect(pre.getByRole('article', { name: 'Aligned' })).toBeVisible()
+    await pre.getByLabel('New version name').fill('aligned-v1')
+    await pre.getByRole('button', { name: 'Create version' }).click()
+    await expect(page.getByText('Version aligned-v1 created.')).toBeVisible()
+    await expect(page.locator('[data-version="aligned-v1"]')).toBeVisible()
+
+    // the version is a first-class choice when configuring an experiment and travels in the config
+    await page.goto('/experiments/new')
+    await expect(page.getByText('Configuration is valid')).toBeVisible()
+    await page.getByLabel('Data version').click()
+    await page.getByRole('option', { name: 'aligned-v1' }).click()
+    await expect(page.getByText('Configuration is valid')).toBeVisible()
+    await page.getByRole('button', { name: 'Start run' }).click()
+    await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
+    const config = state.submitted[0]?.['config'] as { dataset: { id: string; preprocessing_version?: string } }
+    expect(config.dataset).toEqual({ id: 'capture', preprocessing_version: 'aligned-v1' })
+  })
+})
+
 test.describe('component gallery', () => {
   test('renders real-size charts quickly and matches the visual baseline', async ({ page }) => {
     await installFakeApi(page)

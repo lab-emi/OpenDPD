@@ -135,7 +135,7 @@ export function GalleryPage() {
       </Section>
       <Section title="DiagnosticItem">
         <Stack spacing={1}>
-          {doctor.items.map((item) => (
+          {(doctor.items ?? []).map((item) => (
             <DiagnosticItem key={item.code} item={item} />
           ))}
         </Stack>

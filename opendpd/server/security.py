@@ -28,6 +28,8 @@ SESSION_COOKIE = "opendpd_session"
 CSRF_HEADER = "x-opendpd-csrf"
 SESSION_MAX_AGE = 7 * 24 * 3600
 DEFAULT_MAX_BODY = 2 * 1024 * 1024
+UPLOAD_MAX_BODY = 2 * 1024 * 1024 * 1024      # /api/v1/datasets/upload streams to disk in chunks
+UPLOAD_PATH = "/api/v1/datasets/upload"
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1", "[::1]"}
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
@@ -105,8 +107,9 @@ class LocalBoundaryMiddleware:
                 await _reject(send, 403, "cross_origin_write", "cross-origin state changes are refused")
                 return
             length = headers.get("content-length")
-            if length and length.isdigit() and int(length) > self.max_body:
-                await _reject(send, 413, "payload_too_large", f"request body exceeds {self.max_body} bytes")
+            limit = UPLOAD_MAX_BODY if scope.get("path") == UPLOAD_PATH else self.max_body
+            if length and length.isdigit() and int(length) > limit:
+                await _reject(send, 413, "payload_too_large", f"request body exceeds {limit} bytes")
                 return
         if method == "OPTIONS":
             await _reject(send, 403, "cors_not_supported", "cross-origin requests are not supported")

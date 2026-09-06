@@ -24,6 +24,8 @@ from .common import (
 )
 from .dataset import (
     DatasetManifest,
+    DatasetVersion,
+    PreprocessingParams,
     DatasetOrigin,
     DatasetSource,
     DatasetSourceKind,
@@ -64,7 +66,9 @@ __all__ = [
     "Artifact", "ArtifactKind", "ArtifactManifest",
     "BetterDirection", "EvidenceType", "FileRef", "MetricStatus", "MetricValue", "Severity",
     "SoftwareProvenance",
-    "DatasetManifest", "DatasetOrigin", "DatasetSource", "DatasetSourceKind", "SignalSpec", "SplitSpec",
+    "DatasetManifest",
+    "DatasetVersion",
+    "PreprocessingParams", "DatasetOrigin", "DatasetSource", "DatasetSourceKind", "SignalSpec", "SplitSpec",
     "DiagnosticItem", "DiagnosticReport",
     "DatasetRef", "DPDReference", "EvaluationConfig", "ExecutionConfig", "ExperimentConfig",
     "ModelSpec", "PAReference", "QuantizationConfig", "ResolvedExperimentConfig", "ResolutionInfo",

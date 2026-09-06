@@ -18,7 +18,7 @@ const SEVERITY: Record<Severity, { color: string; Icon: typeof InfoOutlinedIcon 
 /** One Dataset Doctor finding: severity, evidence numbers, suggestion and confidence. */
 export function DiagnosticItem({ item }: { item: Item }) {
   const { color, Icon } = SEVERITY[item.severity]
-  const evidence = Object.entries(item.evidence)
+  const evidence = Object.entries(item.evidence ?? {})
   return (
     <Paper component="article" aria-label={item.title} data-severity={item.severity} data-code={item.code} sx={{ p: 2, borderLeft: `4px solid ${color}` }}>
       <Stack sx={{ alignItems: 'center', flexWrap: 'wrap' }} direction="row" spacing={1} useFlexGap>

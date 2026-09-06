@@ -69,9 +69,19 @@ async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown):
   return (await response.json()) as T
 }
 
+/** Multipart POST (file upload): same cookie/CSRF rules, no JSON body. */
+async function upload<T>(path: string, form: FormData): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  if (csrfToken) headers[CSRF_HEADER] = csrfToken
+  const response = await fetch(`${API}${path}`, { method: 'POST', headers, credentials: 'same-origin', body: form })
+  if (!response.ok) throw await parseError(response)
+  return (await response.json()) as T
+}
+
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
+  upload,
 }
 
 /** Loads the session and remembers the CSRF token for later writes. */

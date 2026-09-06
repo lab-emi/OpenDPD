@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -164,14 +163,3 @@ def _diagnostic_page(title: str, detail: str) -> str:
             f"<body style='font-family:system-ui;margin:3rem;max-width:40rem'><h1>{title}</h1>"
             f"<p>{detail}</p><p>The API is running (opendpd {__version__}); see <code>/readyz</code>.</p>"
             f"</body></html>")
-
-
-def serve(workspace_root: Path, host: str = "127.0.0.1", port: int = 8765, bootstrap_token: Optional[str] = None,
-          log_level: str = "warning") -> None:
-    """Blocking development server (the `opendpd gui` launcher wraps this)."""
-    import uvicorn
-
-    token = bootstrap_token or secrets.token_urlsafe(32)
-    app = create_app(workspace_root, bootstrap_token=token)
-    print(f"OpenDPD Studio API on http://{host}:{port}/bootstrap?token={token}")
-    uvicorn.run(app, host=host, port=port, log_level=log_level)

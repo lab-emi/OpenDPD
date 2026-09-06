@@ -63,7 +63,7 @@ inline.
 |---|---|
 | `GET /healthz`, `GET /readyz` | done (`readyz` also reports whether the built frontend is present and matches the package version) |
 | `GET /system/capabilities`, `GET /models` | done (plus `GET /recipes`) |
-| `POST /datasets/import`, `POST /datasets/{id}/diagnostics` | S07; today only `POST /datasets/import-builtin` |
+| `POST /datasets/import`, `POST /datasets/{id}/diagnostics` | done (S07): import roots (`GET /datasets/import-roots`, `…/{root}/files`), `POST /datasets/inspect`, `POST /datasets/import` (by root + relative path only), `POST /datasets/upload` (multipart, streamed, 2 GB cap), `GET/POST /datasets/{id}/diagnostics`, `POST /datasets/{id}/manifest`, `POST /datasets/{id}/preprocess[/preview]`; plus `import-builtin` |
 | `POST /experiments/validate`, `POST /runs`, `GET /runs/{id}`, `GET /runs/{id}/events`, `POST /runs/{id}/cancel` | done (plus `retry`, `config`, `artifacts`, `logs`, `events/list`) |
 | `GET /results/{id}` | done (result id = run id: one formal result per run) |
 | `GET /artifacts/{id}` | done as `/artifacts/{run_id}/{artifact_id}` (artifact ids are scoped to a run) |

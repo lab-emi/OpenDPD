@@ -33,6 +33,44 @@ opens the existing instance instead of a second server.
    the surrogate, DPD measured). Mock data used for interface work is always
    badged **MOCK** and cannot be exported.
 
+## Your own data
+
+1. **Datasets → Import my data.** Files are read only from authorised import
+   roots: `<workspace>/imports` (also the target of the upload button) and
+   any directory added with `opendpd datasets add-root NAME PATH`. The browser
+   never sends absolute paths; nothing outside these roots can be reached.
+2. **Inspect.** Pick a CSV, `.npy` or `.npz` (or an existing OpenDPD split
+   directory). The server reads the header/shape, shows the first rows, guesses
+   the column mapping (`tx_i`, `rx_q`, … are understood) and lists problems.
+   Fix swapped I/Q or wrong columns in the mapping selects; enter the sample
+   rate, bandwidth, sub-channel count and `nperseg`, and confirm the
+   amplitude units. Without this metadata formal metrics are blocked, not
+   guessed.
+3. **Import.** The original file is copied under `datasets/<id>/raw/`,
+   hashed and never modified. The split (`contiguous-v1`: train | guard | val |
+   guard | test, before any framing) and `raw-v1` are written.
+4. **Run Dataset Doctor.** NaN/Inf, length, outliers, clipping plateaus,
+   delay, gain/phase, amplitude range, bandwidth coverage and metadata are
+   checked; each finding has evidence, a severity and a suggestion. Blocking
+   findings stop evaluation until resolved.
+5. **Preprocess → new version.** Accept the doctor's estimates (delay, gain,
+   phase, outlier and NaN handling) or type your own, **Preview** the
+   result (sample counts and the doctor's verdict after processing), then
+   **Create version**. Versions are immutable; normalisation is fitted on the
+   training split only and the fit range is recorded.
+6. **New experiment → Data version** lets you train on any version; the
+   result records which one was used.
+
+The same flow headless:
+
+```bash
+opendpd datasets import capture.csv --id mine --fs 800e6 --bandwidth 200e6 --n-sub-ch 10 --nperseg 2560 --units normalized
+opendpd datasets doctor mine --json
+opendpd datasets preprocess mine --version aligned-v1 --delay 6 --preview
+opendpd datasets preprocess mine --version aligned-v1 --delay 6
+opendpd run --config exp.json   # with "dataset": {"id": "mine", "preprocessing_version": "aligned-v1"}
+```
+
 ## When something is wrong
 
 - `opendpd doctor` prints versions, whether the frontend assets are present,

@@ -13,6 +13,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
+import { versionNames } from '@/api/datasets'
 import { useCapabilities, useDatasets, useModels, useRecipes, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
 import type { ConfigIssue, Device, ExperimentConfigInput, RecipeInfo, ValidationReport } from '@/api/types'
 import { t } from '@/i18n'
@@ -21,6 +22,7 @@ import { ErrorState, LoadingState } from '@/components/StateBlock'
 interface FormState {
   recipeId: string
   datasetId: string
+  dataVersion: string
   paRunId: string
   device: string
   seed: string
@@ -55,7 +57,7 @@ function buildConfig(recipe: RecipeInfo, f: FormState): ExperimentConfigInput {
     task: recipe.task,
     recipe_id: recipe.recipe_id,
     name: f.name.trim() || null,
-    dataset: { id: f.datasetId },
+    dataset: f.dataVersion ? { id: f.datasetId, preprocessing_version: f.dataVersion } : { id: f.datasetId },
     model: { key: recipe.model.key, parameters },
     training,
     execution: { device: f.device as Device },
@@ -73,6 +75,7 @@ const FIELD_MAP: Record<string, keyof FormState> = {
   'training.seed': 'seed',
   'model.parameters.hidden_size': 'hiddenSize',
   'dataset.id': 'datasetId',
+  'dataset.preprocessing_version': 'dataVersion',
   'pa_reference': 'paRunId',
   'pa_reference.run_id': 'paRunId',
   'execution.device': 'device',
@@ -88,12 +91,16 @@ export function NewExperimentPage() {
   const succeeded = useRuns('succeeded')
   const submit = useSubmitRun()
   const idempotencyKey = useRef(crypto.randomUUID())
-  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', hiddenSize: '' })
+  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', hiddenSize: '' })
   // The report is stored with the config it validated, so "checking" is derived, not duplicated state.
   const [validated, setValidated] = useState<{ configJson: string; report: ValidationReport | null } | null>(null)
 
   // Defaults (first recipe / first dataset) are derived during render, never copied into state.
-  const form: FormState = { ...edits, recipeId: edits.recipeId || recipes.data?.[0]?.recipe_id || '', datasetId: edits.datasetId || datasets.data?.[0]?.dataset_id || '' }
+  const datasetId = edits.datasetId || datasets.data?.[0]?.dataset_id || ''
+  const dataset = datasets.data?.find((d) => d.dataset_id === datasetId)
+  const versions = dataset ? versionNames(dataset) : ['raw-v1']
+  // '' means "server default (raw-v1)"; a version that no longer exists for the chosen dataset falls back too.
+  const form: FormState = { ...edits, recipeId: edits.recipeId || recipes.data?.[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(edits.dataVersion) ? edits.dataVersion : '' }
   const recipe = recipes.data?.find((r) => r.recipe_id === form.recipeId) ?? null
 
   const paRuns = useMemo(() => (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === form.datasetId), [succeeded.data, form.datasetId])
@@ -160,6 +167,17 @@ export function NewExperimentPage() {
               ))}
             </TextField>
           </Grid>
+          {versions.length > 1 && (
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField select fullWidth label={t('form.dataVersion')} value={form.dataVersion || 'raw-v1'} onChange={(e) => setEdits((f) => ({ ...f, dataVersion: e.target.value === 'raw-v1' ? '' : e.target.value }))} error={issuesFor('dataVersion').length > 0} helperText={errorText('dataVersion') || ' '}>
+                {versions.map((v) => (
+                  <MenuItem key={v} value={v}>
+                    {v}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          )}
           {recipe?.task === 'train_dpd' && (
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField select fullWidth required label={t('form.paRun')} value={form.paRunId} onChange={set('paRunId')} error={issuesFor('paRunId').length > 0} helperText={errorText('paRunId') || (paRuns.length === 0 ? t('form.paRun.none') : t('form.paRun.help'))}>

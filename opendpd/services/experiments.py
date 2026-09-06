@@ -17,7 +17,7 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 from pydantic import ValidationError
 
@@ -45,6 +45,7 @@ from opendpd.schemas import (
     TaskType,
     WorkerInfo,
     can_transition,
+    DatasetSourceKind,
 )
 from opendpd.services.config import ConfigError, ConfigIssue, resolve
 from opendpd.services.legacy_adapter import (
@@ -134,6 +135,31 @@ def _checkpoint_of(ws: Workspace, run_id: str, expected_task: TaskType, field: s
     return record, load_resolved(ws, run_id), checkpoints[0]
 
 
+def dataset_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[ConfigIssue], List[ConfigIssue]]:
+    """Checks the pure resolver cannot make: the data version exists, and the split
+    guard covers the frame context (plan S07: boundary isolation >= context so
+    adjacent overlapping frames never share samples across train/val/test)."""
+    errors: List[ConfigIssue] = []
+    warnings: List[ConfigIssue] = []
+    manifest = ws.get_dataset(config.dataset.id)
+    version = config.dataset.preprocessing_version
+    dv = manifest.version(version)
+    if dv is None and version != "raw-v1":
+        names = ", ".join(["raw-v1", *(v.version for v in manifest.versions)])
+        errors.append(ConfigIssue("dataset.preprocessing_version",
+                                  f"dataset '{manifest.dataset_id}' has no version '{version}'",
+                                  hint=f"available: {names}"))
+        return errors, warnings
+    split = dv.split if dv is not None else manifest.split
+    frame = config.training.frame_length
+    if split.guard_samples < frame and manifest.source.kind != DatasetSourceKind.builtin:
+        warnings.append(ConfigIssue("training.frame_length",
+                                    f"frame_length {frame} exceeds the split guard of {split.guard_samples} samples, "
+                                    "so frames next to a split boundary share context across train/val/test",
+                                    hint=f"re-import with a guard of at least {frame} samples or use a shorter frame"))
+    return errors, warnings
+
+
 def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig:
     """Turn ``run_id``-only references into fully bound references."""
     updates = {}
@@ -194,14 +220,18 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
         raise WorkspaceError("; ".join(problems))
     ws.get_dataset(config.dataset.id)
     bound = bind_references(ws, config)
-    resolved = resolve(bound)
+    errors, warnings = dataset_issues(ws, bound)
+    if errors:
+        raise ConfigError(errors)
+    resolved = resolve(bound, warnings=warnings)
 
     run_id = ws.new_run_id()
     run_dir = ws.run_dir(run_id)
     (run_dir / "logs").mkdir(parents=True)
     write_json_atomic(run_dir / USER_CONFIG_FILE, config)
     write_json_atomic(run_dir / RESOLVED_CONFIG_FILE, resolved)
-    ns = build_namespace(resolved, dataset_dir=ws.dataset_raw_dir(config.dataset.id), dataset_name=config.dataset.id)
+    ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(config.dataset.id, config.dataset.preprocessing_version),
+                         dataset_name=config.dataset.id)
     write_json_atomic(run_dir / PROVENANCE_FILE, {
         "run_id": run_id,
         "created_at": _now().isoformat(),
@@ -286,7 +316,8 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
     resolved = load_resolved(ws, run_id)
     dataset = ws.get_dataset(resolved.dataset.id)
     run_dir = ws.run_dir(run_id)
-    ns = build_namespace(resolved, dataset_dir=ws.dataset_raw_dir(dataset.dataset_id), dataset_name=dataset.dataset_id)
+    ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(dataset.dataset_id, resolved.dataset.preprocessing_version),
+                         dataset_name=dataset.dataset_id)
 
     record = _transition(record, RunStatus.running, started_at=_now(), worker=_worker_info(),
                          last_heartbeat_at=_now())

@@ -18,7 +18,34 @@ export interface FakeState {
   datasets: Json[]
   runs: Json[]
   submitted: Json[]
+  diagnostics: Record<string, Json>
 }
+
+const source = {
+  kind: 'csv_import',
+  path: 'capture.csv',
+  columns: ['tx_i', 'tx_q', 'rx_q', 'rx_i'],
+  n_rows: 20000,
+  arrays: {},
+  legacy_files: [],
+  preview: [{ tx_i: 0.1, tx_q: -0.2, rx_q: 0.3, rx_i: 0.4 }],
+  problems: [],
+  suggested_mapping: { I_in: 'tx_i', Q_in: 'tx_q', I_out: 'rx_i', Q_out: 'rx_q' },
+}
+const report: Json = {
+  report_id: 'doc-20260906-abcd1234',
+  dataset_id: 'capture',
+  doctor_version: 'dataset-doctor-v1',
+  generated_at: '2026-09-06T08:00:00Z',
+  evaluation_blocked: false,
+  schema_version: 1,
+  dataset_raw_sha256: null,
+  items: [
+    { code: 'time_misalignment', severity: 'warning', title: 'Time misalignment', message: 'Output lags input by 6.0 samples', evidence: { delay_samples: 6, confidence: 0.98 }, suggestion: 'Apply delay correction', confidence: 0.98, blocking: false },
+    { code: 'linear_gain_phase', severity: 'info', title: 'Linear gain and phase', message: 'gain 2.9 dB, phase 25.1 deg', evidence: { gain_db: 2.9, phase_deg: 25.1 }, blocking: false },
+  ],
+}
+const aligned = { code: 'alignment_ok', severity: 'info', title: 'Aligned', message: 'residual 0.01 samples', evidence: { delay_samples: 0.01 }, blocking: false }
 
 export async function installFakeApi(page: Page): Promise<FakeState> {
   const dataset = mock<Json>('dataset_builtin')
@@ -26,7 +53,8 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
   const events = mock<Json[]>('events_running')
   const result = mock<Json>('result_pa_modeling_mock')
   const resolved = mock<Json>('resolved_train_pa_smoke')
-  const state: FakeState = { datasets: [], runs: [], submitted: [] }
+  const state: FakeState = { datasets: [], runs: [], submitted: [], diagnostics: {} }
+  const rawVersion: Json = { version: 'raw-v1', base_version: null, created_at: '2026-09-06T08:00:00Z', params: null, code_version: null, fit_range: null, record: {}, n_samples: 20000, split: dataset['split'], files: [], sha256: null }
   const recipes = [
     {
       recipe_id: 'pa-gru-smoke-v1',
@@ -59,7 +87,39 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
       state.datasets = [dataset]
       return json(route, dataset, 201)
     }
-    if (path.startsWith('/datasets/')) return json(route, dataset)
+    if (path === '/datasets/import-roots') return json(route, [{ root_id: 'imports', path: '/home/user/opendpd workspace/imports', exists: true }])
+    if (path.startsWith('/datasets/import-roots/')) return json(route, [{ path: 'capture.csv', kind: 'file', size_bytes: 1_280_000, suffix: '.csv' }])
+    if (path === '/datasets/inspect') return json(route, source)
+    if (path === '/datasets/import') {
+      const body = req.postDataJSON() as { dataset_id?: string | null; display_name?: string | null; signal: Json; mapping: Json; origin: string }
+      const id = body.dataset_id ?? 'capture'
+      const imported: Json = { ...dataset, dataset_id: id, display_name: body.display_name || id, origin: body.origin, columns: body.mapping, signal: body.signal, n_samples: 20000, source: { kind: 'csv_import', name: 'capture.csv', original_path: null, imported_at: '2026-09-06T08:00:00Z' }, versions: [rawVersion] }
+      state.datasets = [...state.datasets, imported]
+      return json(route, imported, 201)
+    }
+    const dm = path.match(/^\/datasets\/([^/]+)(?:\/(.*))?$/)
+    if (dm) {
+      const id = decodeURIComponent(dm[1])
+      const found = state.datasets.find((d) => d['dataset_id'] === id) ?? dataset
+      const sub = dm[2] ?? ''
+      if (sub === '') return json(route, found)
+      if (sub === 'diagnostics' && method === 'GET') return json(route, state.diagnostics[id] ?? null)
+      if (sub === 'diagnostics') {
+        state.diagnostics[id] = { ...report, dataset_id: id }
+        return json(route, state.diagnostics[id])
+      }
+      if (sub === 'preprocess/preview') return json(route, { n_samples_before: 20000, n_samples_after: 19994, record: {}, report_after: { ...report, items: [aligned] } })
+      if (sub === 'preprocess') {
+        const body = req.postDataJSON() as { version: string; params: Json; base_version: string }
+        const version: Json = { ...rawVersion, version: body.version, base_version: body.base_version, params: body.params, n_samples: 19994, fit_range: [0, 11996] }
+        found['versions'] = [...((found['versions'] as Json[] | undefined) ?? []), version]
+        return json(route, version, 201)
+      }
+      if (sub === 'manifest') {
+        Object.assign(found, req.postDataJSON() as Json)
+        return json(route, found)
+      }
+    }
     if (path === '/experiments/validate') return json(route, { ok: true, errors: [], warnings: [{ field: 'training.epochs', message: 'smoke length', hint: null }], resolved })
     if (path === '/runs' && method === 'GET') {
       const status = url.searchParams.get('status')

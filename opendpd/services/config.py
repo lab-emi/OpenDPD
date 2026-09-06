@@ -76,9 +76,15 @@ def _pydantic_issues(err: ValidationError) -> List[ConfigIssue]:
     return issues
 
 
-def validate(config_data: Any) -> ValidationReport:
-    """Validate raw config data (dict or ExperimentConfig) without running anything."""
+def validate(config_data: Any, warnings: Optional[List[ConfigIssue]] = None) -> ValidationReport:
+    """Validate raw config data (dict or ExperimentConfig) without running anything.
+
+    ``warnings`` seeds workspace-level findings (e.g. split guard vs frame
+    length) so they are part of the frozen resolution like the resolver's own.
+    """
     report = ValidationReport()
+    if warnings:
+        report.warnings.extend(warnings)
     try:
         config = config_data if isinstance(config_data, ExperimentConfig) \
             else ExperimentConfig.model_validate(config_data)

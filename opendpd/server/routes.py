@@ -8,29 +8,36 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from opendpd import __version__
 from opendpd.core.registry import list_models
+from opendpd.core.splits import DEFAULT_GUARD_SAMPLES
 from opendpd.schemas import (
     ArtifactManifest,
     DatasetManifest,
+    DatasetOrigin,
+    DatasetVersion,
+    DiagnosticReport,
     EvaluationResult,
     ExperimentConfig,
     ModelSpec,
+    PreprocessingParams,
     ResolvedExperimentConfig,
     RunEvent,
     RunRecord,
     RunStatus,
     TERMINAL_STATUSES,
+    SignalSpec,
     TaskType,
     TrainingConfig,
     heartbeat_is_stale,
     utcnow,
 )
-from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, Session
+from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, UPLOAD_MAX_BODY, Session
+from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
 from opendpd.services.config import ConfigError, ConfigIssue, validate as validate_config
 from opendpd.services.workspace import WorkspaceError
@@ -205,22 +212,180 @@ class ImportBuiltinRequest(BaseModel):
     dataset_id: Optional[str] = None
 
 
+class ImportRootInfo(BaseModel):
+    root_id: str
+    path: str
+    exists: bool
+
+
+class FileEntryInfo(BaseModel):
+    path: str
+    kind: str
+    size_bytes: int = 0
+    suffix: str = ""
+
+
+class SourceRef(BaseModel):
+    """A file inside an authorised import root; clients never send absolute paths."""
+    root_id: str
+    path: str = Field(max_length=1024)
+
+
+class SourceInfoOut(BaseModel):
+    kind: str
+    path: str
+    columns: List[str]
+    suggested_mapping: Dict[str, str]
+    n_rows: Optional[int] = None
+    preview: List[Dict[str, float]]
+    arrays: Dict[str, Dict[str, Any]]
+    problems: List[str]
+    legacy_files: List[str]
+
+
+class ImportRequest(BaseModel):
+    source: SourceRef
+    dataset_id: Optional[str] = Field(default=None, max_length=64)
+    display_name: Optional[str] = Field(default=None, max_length=200)
+    mapping: Dict[str, str] = Field(default_factory=dict)
+    signal: SignalSpec = SignalSpec()
+    origin: DatasetOrigin = DatasetOrigin.unknown
+    guard_samples: int = Field(default=DEFAULT_GUARD_SAMPLES, ge=0, le=100_000)
+    ratios: Optional[Dict[str, float]] = None
+    notes: Optional[str] = Field(default=None, max_length=2000)
+
+
+class ManifestUpdate(BaseModel):
+    signal: Optional[SignalSpec] = None
+    display_name: Optional[str] = Field(default=None, max_length=200)
+    origin: Optional[DatasetOrigin] = None
+    notes: Optional[str] = Field(default=None, max_length=2000)
+
+
+class PreprocessRequest(BaseModel):
+    params: PreprocessingParams
+    base_version: str = "raw-v1"
+    version: Optional[str] = Field(default=None, max_length=64)   # required to create, ignored for preview
+
+
+class PreprocessPreview(BaseModel):
+    n_samples_before: int
+    n_samples_after: int
+    record: Dict[str, Any]
+    report_after: DiagnosticReport
+
+
+class UploadResult(BaseModel):
+    root_id: str
+    path: str
+    size_bytes: int
+
+
+def _ws(request: Request):
+    return request.app.state.ws
+
+
 @router.get("/datasets", response_model=List[DatasetManifest], tags=["datasets"],
             dependencies=[Depends(require_session)])
 def datasets_list(request: Request):
-    return request.app.state.ws.list_datasets()
+    return _ws(request).list_datasets()
+
+
+@router.get("/datasets/import-roots", response_model=List[ImportRootInfo], tags=["datasets"],
+            dependencies=[Depends(require_session)])
+def import_roots(request: Request):
+    return [ImportRootInfo(root_id=k, path=str(v), exists=v.exists()) for k, v in _ws(request).import_roots().items()]
+
+
+@router.get("/datasets/import-roots/{root_id}/files", response_model=List[FileEntryInfo], tags=["datasets"],
+            dependencies=[Depends(require_session)])
+def import_root_files(root_id: str, request: Request, path: str = Query("", max_length=1024)):
+    return [FileEntryInfo(**vars(e)) for e in datasets_service.list_files(_ws(request), root_id, path)]
+
+
+@router.post("/datasets/inspect", response_model=SourceInfoOut, tags=["datasets"], dependencies=[Depends(require_session)])
+def dataset_inspect(body: SourceRef, request: Request):
+    target = datasets_service.resolve_in_root(_ws(request), body.root_id, body.path)
+    if not target.exists():
+        raise _error(404, "source_not_found", f"{body.path} does not exist in root '{body.root_id}'")
+    info = datasets_service.inspect_source(target)
+    return SourceInfoOut(kind=info.kind.value, path=body.path, columns=info.columns, suggested_mapping=info.suggested_mapping,
+                         n_rows=info.n_rows, preview=info.preview, arrays=info.arrays, problems=info.problems,
+                         legacy_files=info.legacy_files)
+
+
+@router.post("/datasets/import", response_model=DatasetManifest, status_code=201, tags=["datasets"],
+             dependencies=[Depends(require_csrf)])
+def dataset_import(body: ImportRequest, request: Request):
+    ws = _ws(request)
+    target = datasets_service.resolve_in_root(ws, body.source.root_id, body.source.path)
+    return datasets_service.import_dataset(ws, target, dataset_id=body.dataset_id, display_name=body.display_name,
+                                           mapping=body.mapping, signal=body.signal, origin=body.origin,
+                                           ratios=body.ratios, guard_samples=body.guard_samples, notes=body.notes)
+
+
+@router.post("/datasets/upload", response_model=UploadResult, status_code=201, tags=["datasets"],
+             dependencies=[Depends(require_csrf)])
+async def dataset_upload(request: Request, file: UploadFile):
+    """Browser upload, streamed into <workspace>/imports/uploads (then imported like any root file)."""
+    ws = _ws(request)
+
+    def chunks():
+        while True:
+            chunk = file.file.read(1 << 20)
+            if not chunk:
+                return
+            yield chunk
+
+    path = datasets_service.receive_upload(ws, file.filename or "upload.csv", chunks(), UPLOAD_MAX_BODY)
+    return UploadResult(root_id="imports", path=path.relative_to(ws.imports_dir).as_posix(), size_bytes=path.stat().st_size)
 
 
 @router.get("/datasets/{dataset_id}", response_model=DatasetManifest, tags=["datasets"],
             dependencies=[Depends(require_session)])
 def dataset_get(dataset_id: str, request: Request):
-    return request.app.state.ws.get_dataset(dataset_id)
+    return _ws(request).get_dataset(dataset_id)
+
+
+@router.post("/datasets/{dataset_id}/manifest", response_model=DatasetManifest, tags=["datasets"],
+             dependencies=[Depends(require_csrf)])
+def dataset_update(dataset_id: str, body: ManifestUpdate, request: Request):
+    return datasets_service.update_manifest(_ws(request), dataset_id, signal=body.signal, display_name=body.display_name,
+                                            origin=body.origin, notes=body.notes)
+
+
+@router.get("/datasets/{dataset_id}/diagnostics", response_model=Optional[DiagnosticReport], tags=["datasets"],
+            dependencies=[Depends(require_session)])
+def dataset_diagnostics_latest(dataset_id: str, request: Request):
+    _ws(request).get_dataset(dataset_id)
+    return datasets_service.latest_report(_ws(request), dataset_id)
+
+
+@router.post("/datasets/{dataset_id}/diagnostics", response_model=DiagnosticReport, tags=["datasets"],
+             dependencies=[Depends(require_csrf)])
+def dataset_diagnostics_run(dataset_id: str, request: Request, version: str = Query("raw-v1", max_length=64)):
+    return datasets_service.run_doctor(_ws(request), dataset_id, version)
+
+
+@router.post("/datasets/{dataset_id}/preprocess/preview", response_model=PreprocessPreview, tags=["datasets"],
+             dependencies=[Depends(require_session)])
+def dataset_preprocess_preview(dataset_id: str, body: PreprocessRequest, request: Request):
+    return datasets_service.preview_preprocess(_ws(request), dataset_id, body.params, body.base_version)
+
+
+@router.post("/datasets/{dataset_id}/preprocess", response_model=DatasetVersion, status_code=201, tags=["datasets"],
+             dependencies=[Depends(require_csrf)])
+def dataset_preprocess(dataset_id: str, body: PreprocessRequest, request: Request):
+    if not body.version:
+        raise _error(422, "invalid_request", "a version name is required to create a data version",
+                     details=[{"field": "version", "message": "required"}])
+    return datasets_service.create_version(_ws(request), dataset_id, body.version, body.params, body.base_version)
 
 
 @router.post("/datasets/import-builtin", response_model=DatasetManifest, status_code=201, tags=["datasets"],
              dependencies=[Depends(require_csrf)])
 def dataset_import_builtin(body: ImportBuiltinRequest, request: Request):
-    return request.app.state.ws.register_builtin_dataset(body.name, dataset_id=body.dataset_id)
+    return _ws(request).register_builtin_dataset(body.name, dataset_id=body.dataset_id)
 
 
 # --- experiments and runs ------------------------------------------------------------
@@ -238,7 +403,11 @@ def experiments_validate(body: ValidateRequest, request: Request) -> Dict[str, A
         try:
             ws.get_dataset(report.resolved.dataset.id)
             bound = experiments.bind_references(ws, ExperimentConfig.model_validate(body.config))
-            report = validate_config(bound.model_dump(mode="json"))
+            errors, warnings = experiments.dataset_issues(ws, bound)
+            report = validate_config(bound.model_dump(mode="json"), warnings=warnings)
+            report.errors.extend(errors)
+            if errors:
+                report.resolved = None
         except ConfigError as err:
             report.errors.extend(err.issues)
             report.resolved = None

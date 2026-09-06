@@ -41,6 +41,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset Import */
+        post: operations["dataset_import_api_v1_datasets_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/import-builtin": {
         parameters: {
             query?: never;
@@ -58,6 +75,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/import-roots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Import Roots */
+        get: operations["import_roots_api_v1_datasets_import_roots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/import-roots/{root_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Import Root Files */
+        get: operations["import_root_files_api_v1_datasets_import_roots__root_id__files_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset Inspect */
+        post: operations["dataset_inspect_api_v1_datasets_inspect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dataset Upload
+         * @description Browser upload, streamed into <workspace>/imports/uploads (then imported like any root file).
+         */
+        post: operations["dataset_upload_api_v1_datasets_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/{dataset_id}": {
         parameters: {
             query?: never;
@@ -69,6 +157,75 @@ export interface paths {
         get: operations["dataset_get_api_v1_datasets__dataset_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/{dataset_id}/diagnostics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dataset Diagnostics Latest */
+        get: operations["dataset_diagnostics_latest_api_v1_datasets__dataset_id__diagnostics_get"];
+        put?: never;
+        /** Dataset Diagnostics Run */
+        post: operations["dataset_diagnostics_run_api_v1_datasets__dataset_id__diagnostics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/{dataset_id}/manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset Update */
+        post: operations["dataset_update_api_v1_datasets__dataset_id__manifest_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/{dataset_id}/preprocess": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset Preprocess */
+        post: operations["dataset_preprocess_api_v1_datasets__dataset_id__preprocess_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/{dataset_id}/preprocess/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset Preprocess Preview */
+        post: operations["dataset_preprocess_preview_api_v1_datasets__dataset_id__preprocess_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -410,6 +567,11 @@ export interface components {
          * @enum {string}
          */
         BetterDirection: "lower" | "higher";
+        /** Body_dataset_upload_api_v1_datasets_upload_post */
+        Body_dataset_upload_api_v1_datasets_upload_post: {
+            /** File */
+            file: string;
+        };
         /** BootstrapRequest */
         BootstrapRequest: {
             /** Token */
@@ -493,6 +655,8 @@ export interface components {
             signal: components["schemas"]["SignalSpec"];
             source: components["schemas"]["DatasetSource"];
             split: components["schemas"]["SplitSpec"];
+            /** Versions */
+            versions?: components["schemas"]["DatasetVersion"][];
         };
         /**
          * DatasetOrigin
@@ -532,6 +696,41 @@ export interface components {
          * @enum {string}
          */
         DatasetSourceKind: "builtin" | "csv_import" | "numpy_import" | "legacy_dir_import";
+        /**
+         * DatasetVersion
+         * @description One materialised data version (raw-v1 or a preprocessing result), in the
+         *     directory layout the trainer reads (split CSV files).
+         */
+        DatasetVersion: {
+            /** Base Version */
+            base_version?: string | null;
+            /** Code Version */
+            code_version?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Files */
+            files?: components["schemas"]["FileRef"][];
+            /** Fit Range */
+            fit_range?: [
+                number,
+                number
+            ] | null;
+            /** N Samples */
+            n_samples: number;
+            params?: components["schemas"]["PreprocessingParams"] | null;
+            /** Record */
+            record?: {
+                [key: string]: unknown;
+            };
+            /** Sha256 */
+            sha256?: string | null;
+            split: components["schemas"]["SplitSpec"];
+            /** Version */
+            version: string;
+        };
         /** DeviceInfo */
         DeviceInfo: {
             /**
@@ -547,6 +746,60 @@ export interface components {
             name?: string | null;
             /** Tested Models */
             tested_models?: string[];
+        };
+        /** DiagnosticItem */
+        DiagnosticItem: {
+            /**
+             * Blocking
+             * @default false
+             */
+            blocking: boolean;
+            /** Code */
+            code: string;
+            /** Confidence */
+            confidence?: number | null;
+            /** Evidence */
+            evidence?: {
+                [key: string]: unknown;
+            };
+            /** Message */
+            message: string;
+            severity: components["schemas"]["Severity"];
+            /** Suggestion */
+            suggestion?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** DiagnosticReport */
+        DiagnosticReport: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Dataset Raw Sha256 */
+            dataset_raw_sha256?: string | null;
+            /**
+             * Doctor Version
+             * @default dataset-doctor-v1
+             */
+            doctor_version: string;
+            /**
+             * Evaluation Blocked
+             * @default false
+             */
+            evaluation_blocked: boolean;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at?: string;
+            /** Items */
+            items?: components["schemas"]["DiagnosticItem"][];
+            /** Report Id */
+            report_id: string;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
         };
         /** EvaluationConfig */
         EvaluationConfig: {
@@ -684,6 +937,23 @@ export interface components {
             task: components["schemas"]["TaskType"];
             training?: components["schemas"]["TrainingConfig"];
         };
+        /** FileEntryInfo */
+        FileEntryInfo: {
+            /** Kind */
+            kind: string;
+            /** Path */
+            path: string;
+            /**
+             * Size Bytes
+             * @default 0
+             */
+            size_bytes: number;
+            /**
+             * Suffix
+             * @default
+             */
+            suffix: string;
+        };
         /**
          * FileRef
          * @description A file inside a known container (workspace, run or dataset directory).
@@ -710,6 +980,46 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** ImportRequest */
+        ImportRequest: {
+            /** Dataset Id */
+            dataset_id?: string | null;
+            /** Display Name */
+            display_name?: string | null;
+            /**
+             * Guard Samples
+             * @default 256
+             */
+            guard_samples: number;
+            /** Mapping */
+            mapping?: {
+                [key: string]: string;
+            };
+            /** Notes */
+            notes?: string | null;
+            /** @default unknown */
+            origin: components["schemas"]["DatasetOrigin"];
+            /** Ratios */
+            ratios?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * @default {
+             *       "amplitude_units": "unknown"
+             *     }
+             */
+            signal: components["schemas"]["SignalSpec"];
+            source: components["schemas"]["SourceRef"];
+        };
+        /** ImportRootInfo */
+        ImportRootInfo: {
+            /** Exists */
+            exists: boolean;
+            /** Path */
+            path: string;
+            /** Root Id */
+            root_id: string;
+        };
         /** LogPage */
         LogPage: {
             /** Eof */
@@ -720,6 +1030,15 @@ export interface components {
             next_offset: number;
             /** Size */
             size: number;
+        };
+        /** ManifestUpdate */
+        ManifestUpdate: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Notes */
+            notes?: string | null;
+            origin?: components["schemas"]["DatasetOrigin"] | null;
+            signal?: components["schemas"]["SignalSpec"] | null;
         };
         /**
          * MetricStatus
@@ -848,6 +1167,66 @@ export interface components {
             name: string;
             /** Type */
             type: string;
+        };
+        /** PreprocessPreview */
+        PreprocessPreview: {
+            /** N Samples After */
+            n_samples_after: number;
+            /** N Samples Before */
+            n_samples_before: number;
+            /** Record */
+            record: {
+                [key: string]: unknown;
+            };
+            report_after: components["schemas"]["DiagnosticReport"];
+        };
+        /** PreprocessRequest */
+        PreprocessRequest: {
+            /**
+             * Base Version
+             * @default raw-v1
+             */
+            base_version: string;
+            params: components["schemas"]["PreprocessingParams"];
+            /** Version */
+            version?: string | null;
+        };
+        /**
+         * PreprocessingParams
+         * @description User-confirmed preprocessing; applied by ``opendpd.core.preprocess``.
+         */
+        PreprocessingParams: {
+            /**
+             * Delay Samples
+             * @default 0
+             */
+            delay_samples: number;
+            /**
+             * Gain Db
+             * @default 0
+             */
+            gain_db: number;
+            /**
+             * Interpolate Non Finite
+             * @default false
+             */
+            interpolate_non_finite: boolean;
+            /**
+             * Normalize
+             * @default none
+             * @enum {string}
+             */
+            normalize: "none" | "peak_input";
+            /**
+             * Phase Deg
+             * @default 0
+             */
+            phase_deg: number;
+            /**
+             * Remove Outliers
+             * @default false
+             */
+            remove_outliers: boolean;
         };
         /** QuantizationConfig */
         QuantizationConfig: {
@@ -1056,6 +1435,11 @@ export interface components {
             version: string;
         };
         /**
+         * Severity
+         * @enum {string}
+         */
+        Severity: "error" | "warning" | "info";
+        /**
          * SignalReference
          * @description What the evaluated signal was compared against.
          */
@@ -1114,6 +1498,45 @@ export interface components {
             python_version: string;
             /** Torch Version */
             torch_version?: string | null;
+        };
+        /** SourceInfoOut */
+        SourceInfoOut: {
+            /** Arrays */
+            arrays: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /** Columns */
+            columns: string[];
+            /** Kind */
+            kind: string;
+            /** Legacy Files */
+            legacy_files: string[];
+            /** N Rows */
+            n_rows?: number | null;
+            /** Path */
+            path: string;
+            /** Preview */
+            preview: {
+                [key: string]: number;
+            }[];
+            /** Problems */
+            problems: string[];
+            /** Suggested Mapping */
+            suggested_mapping: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * SourceRef
+         * @description A file inside an authorised import root; clients never send absolute paths.
+         */
+        SourceRef: {
+            /** Path */
+            path: string;
+            /** Root Id */
+            root_id: string;
         };
         /**
          * SplitSpec
@@ -1257,6 +1680,15 @@ export interface components {
              */
             seed: number;
         };
+        /** UploadResult */
+        UploadResult: {
+            /** Path */
+            path: string;
+            /** Root Id */
+            root_id: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
         /** ValidateRequest */
         ValidateRequest: {
             /** Config */
@@ -1351,6 +1783,39 @@ export interface operations {
             };
         };
     };
+    dataset_import_api_v1_datasets_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetManifest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dataset_import_builtin_api_v1_datasets_import_builtin_post: {
         parameters: {
             query?: never;
@@ -1384,6 +1849,125 @@ export interface operations {
             };
         };
     };
+    import_roots_api_v1_datasets_import_roots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportRootInfo"][];
+                };
+            };
+        };
+    };
+    import_root_files_api_v1_datasets_import_roots__root_id__files_get: {
+        parameters: {
+            query?: {
+                path?: string;
+            };
+            header?: never;
+            path: {
+                root_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileEntryInfo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_inspect_api_v1_datasets_inspect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceRef"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceInfoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_upload_api_v1_datasets_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_dataset_upload_api_v1_datasets_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dataset_get_api_v1_datasets__dataset_id__get: {
         parameters: {
             query?: never;
@@ -1402,6 +1986,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetManifest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_diagnostics_latest_api_v1_datasets__dataset_id__diagnostics_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticReport"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_diagnostics_run_api_v1_datasets__dataset_id__diagnostics_post: {
+        parameters: {
+            query?: {
+                version?: string;
+            };
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_update_api_v1_datasets__dataset_id__manifest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManifestUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetManifest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_preprocess_api_v1_datasets__dataset_id__preprocess_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreprocessRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_preprocess_preview_api_v1_datasets__dataset_id__preprocess_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreprocessRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreprocessPreview"];
                 };
             };
             /** @description Validation Error */

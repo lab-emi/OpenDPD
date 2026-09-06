@@ -82,6 +82,34 @@ class SplitSpec(StrictModel):
         return self
 
 
+class PreprocessingParams(StrictModel):
+    """User-confirmed preprocessing; applied by ``opendpd.core.preprocess``."""
+
+    delay_samples: float = 0.0          # output lags input by this many samples (may be fractional)
+    gain_db: float = 0.0                # linear output gain to divide out
+    phase_deg: float = Field(default=0.0, ge=-180.0, le=180.0)
+    interpolate_non_finite: bool = False
+    remove_outliers: bool = False
+    normalize: Literal["none", "peak_input"] = "none"
+
+
+class DatasetVersion(StrictModel):
+    """One materialised data version (raw-v1 or a preprocessing result), in the
+    directory layout the trainer reads (split CSV files)."""
+
+    version: Slug
+    base_version: Optional[Slug] = None
+    created_at: datetime = Field(default_factory=utcnow)
+    params: Optional[PreprocessingParams] = None
+    code_version: Optional[str] = None
+    fit_range: Optional[Tuple[int, int]] = None   # samples used to fit normalisation (train split)
+    record: Dict[str, object] = Field(default_factory=dict)
+    n_samples: int = Field(ge=0)
+    split: SplitSpec
+    files: List[FileRef] = Field(default_factory=list)
+    sha256: Optional[Sha256] = None
+
+
 class DatasetManifest(StrictModel):
     schema_version: int = SCHEMA_VERSION
     dataset_id: Slug
@@ -95,7 +123,11 @@ class DatasetManifest(StrictModel):
     split: SplitSpec
     preprocessing_version: str = "raw-v1"
     raw_sha256: Optional[Sha256] = None
+    versions: List[DatasetVersion] = Field(default_factory=list)   # empty for built-ins: raw/ is the split dir
     notes: Optional[str] = None
+
+    def version(self, name: str) -> Optional[DatasetVersion]:
+        return next((v for v in self.versions if v.version == name), None)
 
     def missing_metadata(self) -> List[str]:
         return self.signal.missing_for_legacy_evaluation()
