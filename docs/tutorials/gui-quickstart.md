@@ -119,6 +119,45 @@ opendpd apply run-DPD --workspace WS --pa run-PA2    # score the same DPD throug
   to the same hash and, on CPU with `reproducibility: hard`, to the same
   numbers (`tests/integration/test_entry_consistency.py`).
 
+## Compare, charts, packages and reports
+
+- A result page draws the **spectrum** (with the main and adjacent bands of
+  the profile), a **time excerpt** and **AM-AM / AM-PM** from plot data the
+  worker stored at run end (`plots/*.json`, plots-v1, fixed point budgets).
+  Hiding a trace or zooming changes nothing in the stored metrics; the
+  browser never recomputes a score. A run's **Overview** tab shows the
+  per-epoch curves from the same source. Constellation/EVM plots are not
+  drawn: there is no demodulation reference in the data.
+- **Results → select two or more → Compare selected** puts the metrics side by
+  side under one profile, marks the best value per metric, overlays the
+  spectra with one colour per result and shows the configuration diff for a
+  pair. Results from different data, data versions, splits, references,
+  profile versions, evidence types or execution semantics are still shown,
+  but the page says exactly which pair differs in what and does not rank
+  them. **Download CSV** gives the same table.
+- **Export share package** on a result page writes a zip with the resolved
+  configuration, results under every profile, plot data, the checkpoints of
+  every referenced run, the reports and the reproduction commands, and lists
+  what it left out (worker logs, machine paths, your PA data) and what a
+  recipient needs to re-evaluate. **Export full package (private)** adds the
+  raw data and the used data version. Both stay in `<workspace>/exports/`
+  until you move them.
+- **Experiments → Import package…** verifies every file hash before anything
+  is written, refuses damaged or conflicting packages with the reason, and
+  reports whether the dataset arrived, already existed, was registered
+  (built-in) or is missing. Re-evaluating an imported checkpoint reproduces
+  the packaged numbers within the frozen tolerance; re-training is a new
+  experiment and is never implied by that.
+- **Report (HTML)** / **Report (Markdown)** render a document bound to the
+  stored result and plot data. Same from the terminal:
+
+```bash
+opendpd export run-… --workspace WS --kind share     # or --kind full
+opendpd import run-…-share-….zip --workspace WS2      # --inspect verifies only
+opendpd evaluate run-… --workspace WS2 --profile legacy-opendpd-v1
+opendpd report run-… --workspace WS --format html
+```
+
 ## When something is wrong
 
 - `opendpd doctor` prints versions, whether the frontend assets are present,

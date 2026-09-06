@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
@@ -26,7 +27,9 @@ from opendpd.schemas import (
     EvaluationResult,
     ExperimentConfig,
     HistoryPoint,
+    ImportReport,
     ModelSpec,
+    PackageManifest,
     PreprocessingParams,
     ResolvedExperimentConfig,
     RunEvent,
@@ -46,7 +49,10 @@ from opendpd.services import capabilities as capabilities_service
 from opendpd.services import datasets as datasets_service
 from opendpd.services import experiments
 from opendpd.services.config import ConfigError, ConfigIssue, validate as validate_config
+from opendpd.services import packages
 from opendpd.services.evaluation import available_profiles, compare_results, comparison_csv
+from opendpd.services.packages import PackageError
+from opendpd.services.reports import report_html, report_markdown
 from opendpd.services.workspace import WorkspaceError
 from opendpd.services.recipes import list_recipes
 
@@ -557,6 +563,97 @@ def results_get(run_id: str, request: Request, profile: Optional[str] = Query(No
                      hint=("stored profiles: " + ", ".join(stored)) if stored
                      else "results exist only for succeeded train_pa / train_dpd runs")
     return result
+
+
+# --- reports, packages ----------------------------------------------------------------------
+
+@router.get("/results/{run_id}/report", tags=["results"], dependencies=[Depends(require_session)])
+def results_report(run_id: str, request: Request, format: Literal["html", "md"] = Query("html")):
+    """A report bound to the stored result and plot data (nothing recomputed), for download."""
+    _get_run(request, run_id)
+    ws = request.app.state.ws
+    try:
+        if format == "md":
+            body, media, ext = report_markdown(ws, run_id), "text/markdown", "md"
+        else:
+            body, media, ext = report_html(ws, run_id), "text/html", "html"
+    except (WorkspaceError, FileNotFoundError) as err:
+        raise _error(404, "report_not_available", str(err))
+    return Response(content=body, media_type=media,
+                    headers={"Content-Disposition": f"attachment; filename=\"{run_id}-report.{ext}\""})
+
+
+class ExportRequest(BaseModel):
+    run_id: str = Field(max_length=128)
+    kind: Literal["full", "share"] = "share"
+
+
+class ExportInfo(BaseModel):
+    export_id: str
+    filename: str
+    size_bytes: int
+    download_url: str
+    manifest: PackageManifest
+
+
+_EXPORT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$")
+
+
+def _package_error(err: PackageError) -> HTTPException:
+    return _error(422, err.code, str(err), hint=err.hint)
+
+
+@router.post("/exports", response_model=ExportInfo, status_code=201, tags=["exports"],
+             dependencies=[Depends(require_csrf)])
+def exports_create(body: ExportRequest, request: Request):
+    """Write an experiment package into <workspace>/exports. `share` leaves user data, logs and machine paths out."""
+    record = _get_run(request, body.run_id)
+    if record.status != RunStatus.succeeded:
+        raise _error(409, "run_not_finished", "only succeeded runs can be exported")
+    ws = request.app.state.ws
+    stamp = utcnow().strftime("%Y%m%d-%H%M%S")
+    filename = f"{body.run_id}-{body.kind}-{stamp}.zip"
+    try:
+        manifest = packages.export_run(ws, body.run_id, ws.exports_dir / filename, kind=body.kind)
+    except PackageError as err:
+        raise _package_error(err)
+    except (WorkspaceError, FileNotFoundError) as err:
+        raise _error(409, "export_failed", str(err))
+    export_id = filename[:-4]
+    return ExportInfo(export_id=export_id, filename=filename, size_bytes=(ws.exports_dir / filename).stat().st_size,
+                      download_url=f"/api/v1/exports/{export_id}", manifest=manifest)
+
+
+@router.get("/exports/{export_id}", tags=["exports"], dependencies=[Depends(require_session)])
+def exports_download(export_id: str, request: Request):
+    if not _EXPORT_ID.match(export_id):
+        raise _error(404, "export_not_found", "no such export")
+    path = request.app.state.ws.exports_dir / f"{export_id}.zip"
+    if not path.is_file():
+        raise _error(404, "export_not_found", f"export '{export_id}' does not exist")
+    return FileResponse(path, media_type="application/zip", filename=path.name)
+
+
+@router.post("/imports", response_model=ImportReport, status_code=201, tags=["exports"],
+             dependencies=[Depends(require_csrf)])
+async def imports_create(request: Request, file: UploadFile):
+    """Upload an experiment package and import it; every hash is verified before anything is written."""
+    ws = _ws(request)
+
+    def chunks():
+        while True:
+            chunk = file.file.read(1 << 20)
+            if not chunk:
+                return
+            yield chunk
+
+    try:
+        path = packages.receive_package(ws, file.filename or "package.zip", chunks(), UPLOAD_MAX_BODY)
+        return packages.import_package(ws, path)
+    except PackageError as err:
+        raise _package_error(err)
+    except WorkspaceError as err:
+        raise _error(409, "import_failed", str(err))
 
 
 # --- events: replayable list, SSE stream --------------------------------------------------

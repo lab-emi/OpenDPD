@@ -252,6 +252,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exports Create
+         * @description Write an experiment package into <workspace>/exports. `share` leaves user data, logs and machine paths out.
+         */
+        post: operations["exports_create_api_v1_exports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/exports/{export_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exports Download */
+        get: operations["exports_download_api_v1_exports__export_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Imports Create
+         * @description Upload an experiment package and import it; every hash is verified before anything is written.
+         */
+        post: operations["imports_create_api_v1_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/metrics/profiles": {
         parameters: {
             query?: never;
@@ -373,6 +430,26 @@ export interface paths {
          * @description Metric profiles under which this run has a stored result (primary first).
          */
         get: operations["results_profiles_api_v1_results__run_id__profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/results/{run_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Results Report
+         * @description A report bound to the stored result and plot data (nothing recomputed), for download.
+         */
+        get: operations["results_report_api_v1_results__run_id__report_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -703,6 +780,11 @@ export interface components {
         BetterDirection: "lower" | "higher";
         /** Body_dataset_upload_api_v1_datasets_upload_post */
         Body_dataset_upload_api_v1_datasets_upload_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_imports_create_api_v1_imports_post */
+        Body_imports_create_api_v1_imports_post: {
             /** File */
             file: string;
         };
@@ -1111,6 +1193,29 @@ export interface components {
             task: components["schemas"]["TaskType"];
             training?: components["schemas"]["TrainingConfig"];
         };
+        /** ExportInfo */
+        ExportInfo: {
+            /** Download Url */
+            download_url: string;
+            /** Export Id */
+            export_id: string;
+            /** Filename */
+            filename: string;
+            manifest: components["schemas"]["PackageManifest"];
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** ExportRequest */
+        ExportRequest: {
+            /**
+             * Kind
+             * @default share
+             * @enum {string}
+             */
+            kind: "full" | "share";
+            /** Run Id */
+            run_id: string;
+        };
         /** FileEntryInfo */
         FileEntryInfo: {
             /** Kind */
@@ -1167,6 +1272,33 @@ export interface components {
             dataset_id?: string | null;
             /** Name */
             name: string;
+        };
+        /** ImportReport */
+        ImportReport: {
+            /** Dataset Id */
+            dataset_id: string;
+            /**
+             * Dataset Status
+             * @enum {string}
+             */
+            dataset_status: "imported" | "existing" | "registered_builtin" | "missing";
+            /** Evaluate Command */
+            evaluate_command: string;
+            /** Imported Runs */
+            imported_runs?: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "full" | "share";
+            /** Missing */
+            missing?: string[];
+            /** Note */
+            note: string;
+            /** Package Version */
+            package_version: number;
+            /** Run Id */
+            run_id: string;
         };
         /** ImportRequest */
         ImportRequest: {
@@ -1390,6 +1522,108 @@ export interface components {
             /** Checkpoint Sha256 */
             checkpoint_sha256?: string | null;
             model?: components["schemas"]["ModelSpec"] | null;
+            /** Run Id */
+            run_id: string;
+        };
+        /** PackageDataset */
+        PackageDataset: {
+            /** Builtin Name */
+            builtin_name?: string | null;
+            /** Dataset Id */
+            dataset_id: string;
+            /** How To Obtain */
+            how_to_obtain: string;
+            /** Included */
+            included: boolean;
+            /** Preprocessing Version */
+            preprocessing_version: string;
+            /** Raw Sha256 */
+            raw_sha256?: string | null;
+            source_kind: components["schemas"]["DatasetSourceKind"];
+            /** Split Version */
+            split_version: string;
+        };
+        /**
+         * PackageFile
+         * @description A member of the archive; the hash is verified before anything is imported.
+         */
+        PackageFile: {
+            /** Path */
+            path: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** PackageManifest */
+        PackageManifest: {
+            /** Config Sha256 */
+            config_sha256: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            dataset: components["schemas"]["PackageDataset"];
+            /** Files */
+            files?: components["schemas"]["PackageFile"][];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "full" | "share";
+            /** Metric Profile Id */
+            metric_profile_id?: string | null;
+            /** Missing */
+            missing?: string[];
+            /** Opendpd Version */
+            opendpd_version: string;
+            /**
+             * Package Version
+             * @default 1
+             */
+            package_version: number;
+            /** Redaction */
+            redaction?: string[];
+            /** References */
+            references?: components["schemas"]["PackageReference"][];
+            /** Reproduction */
+            reproduction?: {
+                [key: string]: string;
+            };
+            /** Result Id */
+            result_id?: string | null;
+            /** Retraining Note */
+            retraining_note: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** Seed */
+            seed: number;
+            software: components["schemas"]["SoftwareProvenance"];
+            task: components["schemas"]["TaskType"];
+        };
+        /**
+         * PackageReference
+         * @description Another run this one depends on (PA surrogate, DPD model); its checkpoint travels under refs/.
+         */
+        PackageReference: {
+            /** Checkpoint Sha256 */
+            checkpoint_sha256: string;
+            /**
+             * Included
+             * @default true
+             */
+            included: boolean;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "pa_surrogate" | "dpd_model";
             /** Run Id */
             run_id: string;
         };
@@ -2528,6 +2762,103 @@ export interface operations {
             };
         };
     };
+    exports_create_api_v1_exports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportInfo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    exports_download_api_v1_exports__export_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                export_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    imports_create_api_v1_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_imports_create_api_v1_imports_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     metric_profiles_api_v1_metrics_profiles_get: {
         parameters: {
             query?: never;
@@ -2703,6 +3034,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": string[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    results_report_api_v1_results__run_id__report_get: {
+        parameters: {
+            query?: {
+                format?: "html" | "md";
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

@@ -48,6 +48,14 @@ from .experiment import (
     TrainingConfig,
 )
 from .metrics import MetricDefinition, MetricProfile
+from .package import (
+    PACKAGE_VERSION,
+    ImportReport,
+    PackageDataset,
+    PackageFile,
+    PackageManifest,
+    PackageReference,
+)
 from .results import (
     BaselineScore,
     ComparisonPair,
@@ -89,6 +97,7 @@ __all__ = [
     "ModelSpec", "PAReference", "QuantizationConfig", "ResolvedExperimentConfig", "ResolutionInfo",
     "TaskType", "TrainingConfig",
     "MetricDefinition", "MetricProfile",
+    "PACKAGE_VERSION", "ImportReport", "PackageDataset", "PackageFile", "PackageManifest", "PackageReference",
     "BaselineScore", "ComparisonPair", "ComparisonReport", "DatasetEvidence", "EvaluationResult", "HistoryPoint",
     "ModelEvidence", "ScalingInfo", "SignalReference", "SignalStage", "SurrogateCoverage",
     "TERMINAL_STATUSES", "LineageLink", "LineageRelation", "RunError", "RunEvent", "RunEventType", "RunLineage",

@@ -34,6 +34,9 @@ export type LineageRelation = Schemas['LineageRelation']
 export type BaselineScore = Schemas['BaselineScore']
 export type ComparisonReport = Schemas['ComparisonReport']
 export type HistoryPoint = Schemas['HistoryPoint']
+export type PackageManifest = Schemas['PackageManifest']
+export type ImportReport = Schemas['ImportReport']
+export type ExportInfo = Schemas['ExportInfo']
 
 /** Shape of POST /experiments/validate (a plain dict on the server side). */
 export interface ConfigIssue {

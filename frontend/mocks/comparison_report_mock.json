@@ -11,7 +11,9 @@
         "b": "run-dpd-0001",
         "incompatibilities": [
           "evidence type: pa_modeling vs dpd_surrogate",
-          "reference kind: measured_pa_output vs linear_gain_target"
+          "reference kind: measured_pa_output vs linear_gain_target",
+          "reference gain: none vs 1.0273",
+          "PA surrogate: n/a vs aaaaaaaaaaaa"
         ]
       }
     ],

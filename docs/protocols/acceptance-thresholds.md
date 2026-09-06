@@ -44,6 +44,7 @@ test machine, never from cloud CI variance.
 | Frozen checkpoint re-evaluation, CUDA/MPS | recorded per device | never assumed bit-identical across devices |
 | GUI (API + worker subprocess) vs CLI (in-process), same config, CPU, `reproducibility: hard` | abs 1e-3 dB on every metric; identical resolved config hash and selected epoch | `tests/integration/test_entry_consistency.py` (S09); proposed, pending maintainer approval |
 | `run_dpd` through the DPD's training surrogate vs the DPD run's own result (same weights, same reference gain), CPU | abs 1e-3 dB on every metric and on both no-DPD baselines | `test_apply_through_the_training_surrogate_reproduces_the_dpd_result` (S10); proposed, pending maintainer approval |
+| Packaged checkpoint imported into a new workspace and re-evaluated under the stored profile, CPU | rel 1e-4 / abs 1e-5 on every metric (the frozen-checkpoint row above) | `test_full_package_round_trips_into_a_new_workspace_and_re_evaluates` (S11); proposed, pending maintainer approval. Says nothing about re-training (`docs/protocols/experiment-packages.md`) |
 
 Re-training regressions are *statistical* (fixed seed set, budget, protocol)
 and use thresholds approved from baseline spread; see S12.

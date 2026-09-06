@@ -70,6 +70,31 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
   })
 })
 
+test.describe('J3 — share and reproduce (mock API)', () => {
+  test('export a share package from a result, then import a package and open the imported run', async ({ page }) => {
+    await installFakeApi(page)
+    await page.goto('/results/run-pa-0001')
+    const panel = page.getByRole('region', { name: 'Export and report' })
+    await expect(panel.getByRole('link', { name: 'Report (HTML)' })).toHaveAttribute('href', '/api/v1/results/run-pa-0001/report?format=html')
+    await expect(panel.getByRole('link', { name: 'Report (Markdown)' })).toHaveAttribute('href', '/api/v1/results/run-pa-0001/report?format=md')
+    await panel.getByRole('button', { name: 'Export share package' }).click()
+    const ready = page.getByTestId('export-ready')
+    await expect(ready).toContainText('Package ready: run-pa-0001-share-20260906.zip')
+    await expect(ready).toContainText('worker logs are not included')
+    await expect(ready.getByRole('link', { name: 'Download package' })).toHaveAttribute('href', '/api/v1/exports/run-pa-0001-share-20260906')
+
+    await page.goto('/experiments')
+    await page.getByTestId('import-package').setInputFiles({ name: 'run-pa-0001-share.zip', mimeType: 'application/zip', buffer: Buffer.from('zip') })
+    const report = page.getByTestId('import-report')
+    await expect(report).toContainText('Imported run-imported-0001 into this workspace. Dataset capture: missing.')
+    await expect(report).toContainText('dataset capture (raw sha256 …)')
+    await expect(page.getByRole('table', { name: 'Experiments' })).toContainText('imported share package')
+    await report.getByRole('link', { name: 'Open the imported run' }).click()
+    await expect(page).toHaveURL(/\/runs\/run-imported-0001$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'imported share package' })).toBeVisible()
+  })
+})
+
 test.describe('J2 — my own data (mock API)', () => {
   test('import CSV with odd headers → doctor → accept estimates → new version → experiment uses it', async ({ page }) => {
     const state = await installFakeApi(page)

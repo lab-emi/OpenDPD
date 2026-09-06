@@ -151,6 +151,20 @@
         "title": "Body_dataset_upload_api_v1_datasets_upload_post",
         "type": "object"
       },
+      "Body_imports_create_api_v1_imports_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_imports_create_api_v1_imports_post",
+        "type": "object"
+      },
       "BootstrapRequest": {
         "properties": {
           "token": {
@@ -1316,6 +1330,61 @@
         "title": "ExperimentConfig",
         "type": "object"
       },
+      "ExportInfo": {
+        "properties": {
+          "download_url": {
+            "title": "Download Url",
+            "type": "string"
+          },
+          "export_id": {
+            "title": "Export Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/PackageManifest"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "export_id",
+          "filename",
+          "size_bytes",
+          "download_url",
+          "manifest"
+        ],
+        "title": "ExportInfo",
+        "type": "object"
+      },
+      "ExportRequest": {
+        "properties": {
+          "kind": {
+            "default": "share",
+            "enum": [
+              "full",
+              "share"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 128,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "ExportRequest",
+        "type": "object"
+      },
       "FileEntryInfo": {
         "properties": {
           "kind": {
@@ -1457,6 +1526,79 @@
           "name"
         ],
         "title": "ImportBuiltinRequest",
+        "type": "object"
+      },
+      "ImportReport": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "dataset_status": {
+            "enum": [
+              "imported",
+              "existing",
+              "registered_builtin",
+              "missing"
+            ],
+            "title": "Dataset Status",
+            "type": "string"
+          },
+          "evaluate_command": {
+            "minLength": 1,
+            "title": "Evaluate Command",
+            "type": "string"
+          },
+          "imported_runs": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            "title": "Imported Runs",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "full",
+              "share"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "note": {
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "package_version": {
+            "title": "Package Version",
+            "type": "integer"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "package_version",
+          "kind",
+          "run_id",
+          "dataset_status",
+          "dataset_id",
+          "evaluate_command",
+          "note"
+        ],
+        "title": "ImportReport",
         "type": "object"
       },
       "ImportRequest": {
@@ -2152,6 +2294,265 @@
           "run_id"
         ],
         "title": "PAReference",
+        "type": "object"
+      },
+      "PackageDataset": {
+        "additionalProperties": false,
+        "properties": {
+          "builtin_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Builtin Name"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "how_to_obtain": {
+            "minLength": 1,
+            "title": "How To Obtain",
+            "type": "string"
+          },
+          "included": {
+            "title": "Included",
+            "type": "boolean"
+          },
+          "preprocessing_version": {
+            "title": "Preprocessing Version",
+            "type": "string"
+          },
+          "raw_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Sha256"
+          },
+          "source_kind": {
+            "$ref": "#/components/schemas/DatasetSourceKind"
+          },
+          "split_version": {
+            "title": "Split Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "preprocessing_version",
+          "split_version",
+          "source_kind",
+          "included",
+          "how_to_obtain"
+        ],
+        "title": "PackageDataset",
+        "type": "object"
+      },
+      "PackageFile": {
+        "additionalProperties": false,
+        "description": "A member of the archive; the hash is verified before anything is imported.",
+        "properties": {
+          "path": {
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "minimum": 0.0,
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "size_bytes"
+        ],
+        "title": "PackageFile",
+        "type": "object"
+      },
+      "PackageManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "config_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Config Sha256",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset": {
+            "$ref": "#/components/schemas/PackageDataset"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/PackageFile"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "full",
+              "share"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "metric_profile_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric Profile Id"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "opendpd_version": {
+            "title": "Opendpd Version",
+            "type": "string"
+          },
+          "package_version": {
+            "default": 1,
+            "title": "Package Version",
+            "type": "integer"
+          },
+          "redaction": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Redaction",
+            "type": "array"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/PackageReference"
+            },
+            "title": "References",
+            "type": "array"
+          },
+          "reproduction": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reproduction",
+            "type": "object"
+          },
+          "result_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Id"
+          },
+          "retraining_note": {
+            "minLength": 1,
+            "title": "Retraining Note",
+            "type": "string"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "software": {
+            "$ref": "#/components/schemas/SoftwareProvenance"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": [
+          "kind",
+          "opendpd_version",
+          "software",
+          "run_id",
+          "task",
+          "config_sha256",
+          "seed",
+          "dataset",
+          "retraining_note"
+        ],
+        "title": "PackageManifest",
+        "type": "object"
+      },
+      "PackageReference": {
+        "additionalProperties": false,
+        "description": "Another run this one depends on (PA surrogate, DPD model); its checkpoint travels under refs/.",
+        "properties": {
+          "checkpoint_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Checkpoint Sha256",
+            "type": "string"
+          },
+          "included": {
+            "default": true,
+            "title": "Included",
+            "type": "boolean"
+          },
+          "role": {
+            "enum": [
+              "pa_surrogate",
+              "dpd_model"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "role",
+          "checkpoint_sha256"
+        ],
+        "title": "PackageReference",
         "type": "object"
       },
       "ParamSpecInfo": {
@@ -4477,6 +4878,130 @@
         ]
       }
     },
+    "/api/v1/exports": {
+      "post": {
+        "description": "Write an experiment package into <workspace>/exports. `share` leaves user data, logs and machine paths out.",
+        "operationId": "exports_create_api_v1_exports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exports Create",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/api/v1/exports/{export_id}": {
+      "get": {
+        "operationId": "exports_download_api_v1_exports__export_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "title": "Export Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exports Download",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/api/v1/imports": {
+      "post": {
+        "description": "Upload an experiment package and import it; every hash is verified before anything is written.",
+        "operationId": "imports_create_api_v1_imports_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_imports_create_api_v1_imports_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Imports Create",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
     "/api/v1/metrics/profiles": {
       "get": {
         "description": "Every registered metric profile: the definition behind each score.",
@@ -4775,6 +5300,61 @@
           }
         },
         "summary": "Results Profiles",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/results/{run_id}/report": {
+      "get": {
+        "description": "A report bound to the stored result and plot data (nothing recomputed), for download.",
+        "operationId": "results_report_api_v1_results__run_id__report_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "html",
+              "enum": [
+                "html",
+                "md"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Results Report",
         "tags": [
           "results"
         ]

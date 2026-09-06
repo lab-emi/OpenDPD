@@ -87,3 +87,55 @@ test('a result without plot artifacts says so instead of drawing anything', asyn
   await within(charts).findByText(/No derived plot data/)
   expect(within(charts).queryByTestId('spectrum-plot')).not.toBeInTheDocument()
 })
+
+test('exporting a share package shows what was left out and a download link; reports link to the server', async () => {
+  const manifest = {
+    schema_version: 1,
+    package_version: 1,
+    kind: 'share',
+    created_at: '2026-09-06T08:00:00Z',
+    opendpd_version: '2.2.0.dev0',
+    software: { opendpd_version: '2.2.0.dev0', python_version: '3.13', platform: 'linux' },
+    run_id: 'run-pa-0001',
+    task: 'train_pa',
+    config_sha256: 'a'.repeat(64),
+    seed: 0,
+    dataset: { dataset_id: 'capture', raw_sha256: 'b'.repeat(64), preprocessing_version: 'raw-v1', split_version: 'contiguous-v1', source_kind: 'upload', included: false, how_to_obtain: 'ask the author for the capture with raw sha256 bbbb…' },
+    references: [],
+    files: [],
+    reproduction: {},
+    redaction: ['worker logs are not included', 'machine paths rewritten to <workspace>'],
+    missing: ['dataset capture (raw sha256 bbbb…)'],
+    retraining_note: 'Re-training is a new experiment, not a reproduction of the stored result.',
+  }
+  const { calls } = mockApi({
+    'GET /api/v1/results/run-pa-0001': () => ({ ...legacy, is_mock: false }),
+    'GET /api/v1/results/run-pa-0001/profiles': () => ['legacy-opendpd-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
+    'POST /api/v1/exports': () => ({ status: 201, body: { export_id: 'run-pa-0001-share-20260906T080000', filename: 'run-pa-0001-share-20260906T080000.zip', size_bytes: 2_621_440, download_url: '/api/v1/exports/run-pa-0001-share-20260906T080000', manifest } }),
+  })
+  renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
+  const panel = await screen.findByRole('region', { name: 'Export and report' })
+  expect(within(panel).getByRole('link', { name: 'Report (HTML)' })).toHaveAttribute('href', '/api/v1/results/run-pa-0001/report?format=html')
+  expect(within(panel).getByRole('link', { name: 'Report (Markdown)' })).toHaveAttribute('href', '/api/v1/results/run-pa-0001/report?format=md')
+  await userEvent.click(within(panel).getByRole('button', { name: 'Export share package' }))
+  const ready = await screen.findByTestId('export-ready')
+  expect(ready).toHaveTextContent('Package ready: run-pa-0001-share-20260906T080000.zip (2.5 MB)')
+  expect(within(ready).getByRole('link', { name: 'Download package' })).toHaveAttribute('href', '/api/v1/exports/run-pa-0001-share-20260906T080000')
+  expect(within(ready).getByText('machine paths rewritten to <workspace>')).toBeInTheDocument()
+  expect(within(ready).getByText('dataset capture (raw sha256 bbbb…)')).toBeInTheDocument()
+  expect(ready).toHaveTextContent('Re-training is a new experiment')
+  const post = calls.find((c) => c.method === 'POST' && c.path === '/api/v1/exports')
+  expect(post?.body).toEqual({ run_id: 'run-pa-0001', kind: 'share' })
+})
+
+test('the export panel is not offered for a mock result', async () => {
+  mockApi({
+    'GET /api/v1/results/run-pa-0001': () => legacy,
+    'GET /api/v1/results/run-pa-0001/profiles': () => ['legacy-opendpd-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
+  })
+  renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
+  await screen.findByText('legacy-opendpd-v1 v1 · frozen')
+  expect(screen.queryByRole('region', { name: 'Export and report' })).not.toBeInTheDocument()
+})

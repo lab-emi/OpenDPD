@@ -79,6 +79,8 @@ computed here.
 `opendpd.core.metrics.incompatibilities(a, b)` lists why two results must not
 be ranked against each other: different profile/version, evidence type
 (`pa_modeling` vs `dpd_surrogate` vs `dpd_measured`), dataset, preprocessing
-version, split protocol, evaluated split, reference kind or mock status.
+version, split protocol, evaluated split, reference kind, reference gain
+(the operating point), PA surrogate (for simulated DPD results: the weight
+hash the DPD was scored through), execution semantics or mock status.
 Results with an empty list may be ranked; others may only be shown side by
-side with the reasons.
+side with the reasons (`GET /results/compare`, the Compare page).

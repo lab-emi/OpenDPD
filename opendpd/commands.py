@@ -300,6 +300,83 @@ def cmd_apply(args) -> int:
     return {RunStatus.succeeded: 0, RunStatus.cancelled: 130}.get(record.status, 1)
 
 
+def cmd_export(args) -> int:
+    from opendpd.services.packages import PackageError, export_run
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        out = Path(args.out) if args.out else ws.exports_dir / f"{args.run_id}-{args.kind}.zip"
+        manifest = export_run(ws, args.run_id, out, kind=args.kind)
+    except PackageError as err:
+        print(f"error: {err.code}: {err}" + (f" ({err.hint})" if err.hint else ""), file=sys.stderr)
+        return 2
+    except (WorkspaceError, FileNotFoundError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    if args.json:
+        _print_json({"path": str(out), "manifest": manifest.model_dump(mode="json")})
+        return 0
+    print(f"{manifest.kind} package written to {out} ({len(manifest.files)} files)")
+    for line in manifest.redaction:
+        print(f"  redacted: {line}")
+    for line in manifest.missing:
+        print(f"  not included: {line}")
+    print(f"  import with: {manifest.reproduction['import']}")
+    return 0
+
+
+def cmd_import(args) -> int:
+    from opendpd.services.packages import PackageError, import_package, inspect_package
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open_or_create(Path(args.workspace))
+        if args.inspect:
+            manifest = inspect_package(Path(args.path))
+            if args.json:
+                _print_json(manifest.model_dump(mode="json"))
+            else:
+                print(f"valid {manifest.kind} package: run {manifest.run_id} ({manifest.task.value}), "
+                      f"{len(manifest.files)} files verified; dataset {manifest.dataset.dataset_id} "
+                      f"{'included' if manifest.dataset.included else 'not included'}")
+            return 0
+        report = import_package(ws, Path(args.path))
+    except PackageError as err:
+        print(f"error: {err.code}: {err}" + (f" ({err.hint})" if err.hint else ""), file=sys.stderr)
+        return 2
+    except WorkspaceError as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    if args.json:
+        _print_json(report.model_dump(mode="json"))
+        return 0
+    print(f"imported {', '.join(report.imported_runs)} into {ws.root}; dataset {report.dataset_id}: {report.dataset_status}")
+    for line in report.missing:
+        print(f"  missing: {line}")
+    print(f"  {report.note}")
+    print(f"  re-evaluate with: {report.evaluate_command}")
+    return 0
+
+
+def cmd_report(args) -> int:
+    from opendpd.services.reports import report_html, report_markdown
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        body = report_markdown(ws, args.run_id) if args.format == "md" else report_html(ws, args.run_id)
+    except (WorkspaceError, FileNotFoundError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    if args.out:
+        Path(args.out).write_text(body, encoding="utf-8")
+        print(f"report written to {args.out}")
+    else:
+        print(body)
+    return 0
+
+
 def cmd_gui(args) -> int:
     from opendpd.studio.launcher import default_workspace, launch
 
@@ -343,6 +420,28 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", default="cpu")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_apply)
+
+    p = sub.add_parser("export", help="write a reproducible experiment package (full: private and complete; share: redacted)")
+    p.add_argument("run_id")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--out", default=None, help="zip path (default: <workspace>/exports/<run>-<kind>.zip)")
+    p.add_argument("--kind", choices=["full", "share"], default="share")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("import", help="verify an experiment package and import it into a workspace")
+    p.add_argument("path")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--inspect", action="store_true", help="verify only; import nothing")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_import)
+
+    p = sub.add_parser("report", help="render a report bound to a run's stored result and plot data")
+    p.add_argument("run_id")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--format", choices=["html", "md"], default="html")
+    p.add_argument("--out", default=None)
+    p.set_defaults(func=cmd_report)
 
     p = sub.add_parser("datasets", help="manage workspace datasets")
     ds = p.add_subparsers(dest="datasets_command", required=True)

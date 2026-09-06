@@ -3,6 +3,7 @@ import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Grid from '@mui/material/Grid'
 import Link from '@mui/material/Link'
@@ -18,14 +19,78 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
-import { artifactUrl } from '@/api/client'
-import { useMetricProfiles, useResult, useResultProfiles } from '@/api/hooks'
+import { API, artifactUrl } from '@/api/client'
+import { useExportRun, useMetricProfiles, useResult, useResultProfiles } from '@/api/hooks'
 import type { BaselineScore, EvaluationResult, MetricProfile, MetricValue } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
 import { ResultCharts } from '@/components/ResultCharts'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
+
+const bytes = (n: number) => (n >= 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} kB`)
+
+/** Package export (share / full) and report downloads for one run. */
+function ExportPanel({ runId }: { runId: string }) {
+  const exportRun = useExportRun()
+  const info = exportRun.data
+  return (
+    <Paper sx={{ p: 2 }} component="section" aria-label={t('results.export')}>
+      <Typography variant="h3" component="h2" gutterBottom>
+        {t('results.export')}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
+        {t('results.export.help')}
+      </Typography>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+        <Button variant="contained" size="small" disabled={exportRun.isPending} onClick={() => exportRun.mutate({ run_id: runId, kind: 'share' })}>
+          {t('results.export.share')}
+        </Button>
+        <Button variant="outlined" size="small" disabled={exportRun.isPending} onClick={() => exportRun.mutate({ run_id: runId, kind: 'full' })}>
+          {t('results.export.full')}
+        </Button>
+        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=html`} download>
+          {t('results.report.html')}
+        </Button>
+        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=md`} download>
+          {t('results.report.md')}
+        </Button>
+      </Stack>
+      {exportRun.isError && <ErrorState error={exportRun.error} />}
+      {info && (
+        <Alert severity="success" sx={{ mt: 2 }} data-testid="export-ready">
+          <strong>{t('results.export.ready', { filename: info.filename, size: bytes(info.size_bytes) })}</strong>{' '}
+          <Link href={info.download_url} download={info.filename}>
+            {t('results.export.download')}
+          </Link>
+          {(info.manifest.redaction ?? []).length > 0 && (
+            <Typography variant="body2" component="div" sx={{ mt: 1 }}>
+              <strong>{t('results.export.redaction')}:</strong>
+              <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+                {(info.manifest.redaction ?? []).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </Typography>
+          )}
+          {(info.manifest.missing ?? []).length > 0 && (
+            <Typography variant="body2" component="div" sx={{ mt: 1 }}>
+              <strong>{t('results.export.missing')}:</strong>
+              <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+                {(info.manifest.missing ?? []).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </Typography>
+          )}
+          <Typography variant="caption" component="p" sx={{ mt: 1 }}>
+            <strong>{t('results.export.retraining')}:</strong> {info.manifest.retraining_note}
+          </Typography>
+        </Alert>
+      )}
+    </Paper>
+  )
+}
 
 const BASELINE: Record<BaselineScore['kind'], MessageKey> = {
   surrogate_without_dpd: 'results.detail.baselines.surrogate_without_dpd',
@@ -287,9 +352,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
         </Alert>
       )}
       {result.run_id && <ResultCharts runId={result.run_id} />}
-      <Typography variant="caption" color="text.secondary">
-        {t('results.export.soon')}
-      </Typography>
+      {result.run_id && !result.is_mock && <ExportPanel runId={result.run_id} />}
     </Stack>
   )
 }

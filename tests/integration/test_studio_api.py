@@ -306,6 +306,29 @@ def test_history_plots_and_comparison_routes(client, session):
     assert r.status_code == 404 and r.json()["error"]["code"] == "run_not_found"
 
 
+def test_export_download_import_and_report_routes(client, session):
+    runs = [r for r in client.get("/api/v1/runs", params={"status": "succeeded"}).json() if r["task"] == "train_pa"]
+    run_id = runs[0]["run_id"]
+    r = client.post("/api/v1/exports", json={"run_id": run_id, "kind": "share"})
+    assert r.status_code == 201, r.text
+    info = r.json()
+    assert info["manifest"]["kind"] == "share" and info["manifest"]["run_id"] == run_id and info["size_bytes"] > 0
+    assert not info["manifest"]["dataset"]["included"] and info["manifest"]["redaction"]
+    download = client.get(info["download_url"])
+    assert download.status_code == 200 and download.headers["content-type"] == "application/zip"
+    assert client.get("/api/v1/exports/does-not-exist").status_code == 404
+    # importing into the same workspace is refused with the specific code, nothing is written
+    r = client.post("/api/v1/imports", files={"file": (info["filename"], download.content, "application/zip")})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "run_exists", r.text
+    r = client.post("/api/v1/imports", files={"file": ("x.zip", b"not a zip", "application/zip")})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "not_a_package"
+    report = client.get(f"/api/v1/results/{run_id}/report", params={"format": "md"})
+    assert report.status_code == 200 and report.text.startswith("# OpenDPD Studio report")
+    assert "text/markdown" in report.headers["content-type"]
+    assert client.get(f"/api/v1/results/{run_id}/report").headers["content-type"].startswith("text/html")
+    assert client.post("/api/v1/exports", json={"run_id": "run-does-not-exist", "kind": "full"}).status_code == 404
+
+
 def test_lineage_route_reads_the_graph_from_resolved_configs(client, session):
     runs = client.get("/api/v1/runs", params={"status": "succeeded"}).json()
     pa = next(r for r in runs if r["task"] == "train_pa")

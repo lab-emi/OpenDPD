@@ -17,7 +17,9 @@ import type {
   RecipeInfo,
   ResolvedExperimentConfig,
   ComparisonReport,
+  ExportInfo,
   HistoryPoint,
+  ImportReport,
   RunLineage,
   RunStatus,
   RunView,
@@ -126,6 +128,27 @@ export function useSubmitRun() {
     onSuccess: (run) => {
       qc.setQueryData(keys.run(run.run_id), run)
       void qc.invalidateQueries({ queryKey: ['runs'] })
+    },
+  })
+}
+
+/** Write an experiment package into <workspace>/exports; the response carries the download URL and the manifest. */
+export function useExportRun() {
+  return useMutation({ mutationFn: (input: { run_id: string; kind: 'full' | 'share' }) => api.post<ExportInfo>('/exports', input) })
+}
+
+/** Upload a package; every hash is verified server-side before anything is written. */
+export function useImportPackage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData()
+      form.append('file', file, file.name)
+      return api.upload<ImportReport>('/imports', form)
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['runs'] })
+      void qc.invalidateQueries({ queryKey: keys.datasets })
     },
   })
 }

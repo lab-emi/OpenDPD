@@ -56,4 +56,9 @@ def test_results_under_different_protocols_are_not_comparable():
     assert incompatibilities(pa, pa) == []
     reasons = incompatibilities(pa, dpd)
     assert any(r.startswith("evidence type") for r in reasons) and any(r.startswith("reference kind") for r in reasons)
+    assert any(r.startswith("PA surrogate: n/a vs ") for r in reasons)
     assert comparison_key(pa)["metric profile"] == "legacy-opendpd-v1 v1"
+    # the same DPD scored through another surrogate is shown side by side, never ranked
+    other = dpd.model_copy(update={"models": [m.model_copy(update={"weights_sha256": "f" * 64}) if m.role == "pa" else m
+                                              for m in dpd.models]})
+    assert [r for r in incompatibilities(dpd, other) if r.startswith("PA surrogate")] and comparison_key(dpd) != comparison_key(other)
