@@ -36,6 +36,7 @@ opendpd_env/
 # Jupyter Notebooks
 .ipynb_checkpoints
 *.ipynb
+!examples/OpenDPD_Tutorial.ipynb
 
 # PyTorch specific
 *.pt

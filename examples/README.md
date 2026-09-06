@@ -95,8 +95,16 @@ import opendpd
 opendpd.train_pa(dataset_path='my_data.csv', n_epochs=50)
 ```
 
+## Interactive tutorial
+
+`OpenDPD_Tutorial.ipynb` is the notebook behind the "Open in Colab" badge of the README: it installs OpenDPD
+from the `main` branch, inspects the measured DPA_200MHz data, trains a PA model and a DPD with the per-epoch
+plots and GIFs of V2.1, compares *without DPD* and *with DPD*, exports the predistorted signal, fine-tunes a
+W16A16 quantized DPD, tries TRes-DeltaGRU with temporal sparsity, and builds a dataset from a CSV. Open it in
+Colab straight from GitHub:
+[colab.research.google.com/github/lab-emi/OpenDPD/blob/main/examples/OpenDPD_Tutorial.ipynb](https://colab.research.google.com/github/lab-emi/OpenDPD/blob/main/examples/OpenDPD_Tutorial.ipynb).
+
 ## More Information
 
-- API Quick Start: See `../API_QUICKSTART.md`
-- Full Documentation: See `../PACKAGE_INSTALLATION.md`
+- Documentation site: <https://lab-emi.github.io/OpenDPD/> (installation, end-to-end training, datasets, benchmark, API reference)
 - Main README: See `../README.md`
