@@ -698,9 +698,10 @@ def main(argv=None) -> int:
     ap.add_argument("--training-epochs", type=int, default=80)
     ap.add_argument("--overhead-pairs", type=int, default=3)
     ap.add_argument("--overhead-epochs", type=int, default=30)
-    ap.add_argument("--overhead-threads", default="default,8",
+    ap.add_argument("--overhead-threads", default="default",
                     help="comma list of thread budgets for the overhead pairs: 'default' keeps torch's own count on both legs "
-                         "(the out-of-the-box figure the target applies to), a number sets execution.num_threads on both")
+                         "(the out-of-the-box figure the target applies to); add a number ('default,8') to also measure "
+                         "with an explicit execution.num_threads on both legs as a diagnostic")
     ap.add_argument("--stress", action="store_true")
     ap.add_argument("--stress-samples", type=int, default=100_000_000)
     ap.add_argument("--skip-browser", action="store_true")
