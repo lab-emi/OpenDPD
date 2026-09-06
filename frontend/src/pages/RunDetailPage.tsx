@@ -30,6 +30,7 @@ import { keys, useCancelRun, useRetryRun, useRun, useRunArtifacts, useRunConfig,
 import { isTerminal, type LineageLink, type LineageRelation, type RunView } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
 import { LogViewer } from '@/components/LogViewer'
+import { MeasurementDialog } from '@/components/MeasurementDialog'
 import { MetricHistoryChart } from '@/components/MetricHistoryChart'
 import { RunTimeline } from '@/components/RunTimeline'
 import { StatusChip } from '@/components/StatusChip'
@@ -42,6 +43,7 @@ const RELATION: Record<LineageRelation, MessageKey> = {
   pa_surrogate: 'run.lineage.relation.pa_surrogate',
   dpd_model: 'run.lineage.relation.dpd_model',
   retry_of: 'run.lineage.relation.retry_of',
+  measured_playback: 'run.lineage.relation.measured_playback',
 }
 
 const NEXT_STEP: Partial<Record<RunView['status'], MessageKey>> = {
@@ -66,6 +68,7 @@ export function RunDetailPage() {
   const retry = useRetryRun()
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
+  const [measureOpen, setMeasureOpen] = useState(false)
 
   if (run.isPending) return <LoadingState />
   if (run.isError) return <ErrorState error={run.error} onRetry={() => void run.refetch()} />
@@ -112,6 +115,11 @@ export function RunDetailPage() {
               {t('run.apply')}
             </Button>
           )}
+          {r.status === 'succeeded' && r.task === 'run_dpd' && (
+            <Button variant="outlined" size="small" onClick={() => setMeasureOpen(true)}>
+              {t('run.measure')}
+            </Button>
+          )}
           {r.status === 'succeeded' && r.result_id && (
             <Button component={RouterLink} to={`/results/${encodeURIComponent(r.run_id)}`} variant="contained" size="small">
               {t('run.result')}
@@ -120,6 +128,7 @@ export function RunDetailPage() {
         </Stack>
       </Stack>
       {applyOpen && <ApplyDpdDialog run={r} onClose={() => setApplyOpen(false)} />}
+      {measureOpen && <MeasurementDialog run={r} onClose={() => setMeasureOpen(false)} />}
       <Typography variant="body2" color="text.secondary">
         <code>{r.run_id}</code> · {r.task} · {r.model_key} · {r.dataset_id} · {r.device}
         {r.parent_run_id && (

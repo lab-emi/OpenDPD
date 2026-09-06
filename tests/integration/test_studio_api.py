@@ -381,3 +381,77 @@ def test_undetected_device_is_refused_never_switched(client, session, monkeypatc
     r = client.post("/api/v1/runs", json={"config": cfg, "idempotency_key": "cuda-refused"})
     assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_config"
     assert r.json()["error"]["details"][0]["field"] == "execution.device"
+
+
+# --- S16: measured captures through the service ---------------------------------------------
+
+def test_measured_captures_are_uploaded_bound_and_scored_as_dpd_measured(client, session):
+    import numpy as np
+
+    from opendpd.core.measurement import to_iq
+    from opendpd.services.measurements import read_played
+
+    ws = client.app.state.ws
+    pa = client.post("/api/v1/runs", json={"config": smoke_config(), "idempotency_key": "s16-pa"}).json()
+    assert wait_terminal(client, pa["run_id"])["status"] == "succeeded"
+    dpd_cfg = json.loads(instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa["run_id"]).model_dump_json())
+    dpd = client.post("/api/v1/runs", json={"config": dpd_cfg, "idempotency_key": "s16-dpd"}).json()
+    assert wait_terminal(client, dpd["run_id"])["status"] == "succeeded"
+    apply_cfg = {"task": "run_dpd", "dataset": {"id": "dpa-200mhz"}, "model": {"key": "gru"},
+                 "evaluation": {"evidence_type": "dpd_surrogate"}, "dpd_reference": {"run_id": dpd["run_id"]}}
+    applied = client.post("/api/v1/runs", json={"config": apply_cfg, "idempotency_key": "s16-apply"}).json()
+    assert wait_terminal(client, applied["run_id"])["status"] == "succeeded"
+    out = next(a for a in client.get(f"/api/v1/runs/{applied['run_id']}/artifacts").json()["artifacts"]
+               if a["artifact_id"] == "dpd-output")
+    x, u = read_played(ws.run_dir(applied["run_id"]) / out["file"]["path"])
+
+    rng = np.random.default_rng(0)
+    y = np.roll(np.tile(2.5 * (u - 0.1 * np.abs(u) ** 2 * u), 2), 77)
+    y = y + 1e-4 * (rng.normal(size=y.size) + 1j * rng.normal(size=y.size))
+    buf = io.BytesIO()
+    np.save(buf, to_iq(y))
+    up = client.post("/api/v1/datasets/upload", files={"file": ("with_dpd.npy", buf.getvalue(), "application/octet-stream")})
+    assert up.status_code == 201, up.text
+    conditions = {"pa": "API test PA", "capture_chain": "synthetic through the upload path", "sample_rate_hz": 800e6,
+                  "drive": "digital full scale", "calibration": "none", "measured_at": "2026-09-06T12:00:00Z", "operator": "api"}
+    cfg = {"task": "evaluate_measured", "dataset": {"id": "dpa-200mhz"}, "model": {"key": "gru"},
+           "evaluation": {"evidence_type": "dpd_measured"},
+           "measurement": {"apply_run_id": applied["run_id"], "with_dpd": {"path": up.json()["path"], "declared_output_power_dbm": 27.5},
+                           "conditions": conditions}}
+
+    # validation binds the played run: dataset, DPD weights and the capture hash appear in the resolved configuration
+    validated = client.post("/api/v1/experiments/validate", json={"config": cfg}).json()
+    assert validated["ok"], validated
+    bound = validated["resolved"]
+    assert bound["dpd_reference"]["run_id"] == dpd["run_id"] and bound["measurement"]["played_sha256"] == out["file"]["sha256"]
+    assert len(bound["measurement"]["with_dpd"]["sha256"]) == 64 and bound["pa_reference"] is None
+
+    # a capture path outside the imports directory, or a missing file, is refused as configuration data
+    bad = dict(cfg, measurement=dict(cfg["measurement"], with_dpd={"path": "../workspace.json"}))
+    refused = client.post("/api/v1/experiments/validate", json={"config": bad}).json()
+    assert not refused["ok"] and any("escapes" in e["message"] for e in refused["errors"])
+
+    created = client.post("/api/v1/runs", json={"config": cfg, "idempotency_key": "s16-measured"})
+    assert created.status_code == 201, created.text
+    run = wait_terminal(client, created.json()["run_id"])
+    assert run["status"] == "succeeded" and run["task"] == "evaluate_measured", run
+    result = client.get(f"/api/v1/results/{run['run_id']}").json()
+    assert result["evidence_type"] == "dpd_measured" and result["is_mock"] is False and result["source"] == "opendpd-studio"
+    m = result["measurement"]
+    assert m["attestation"].startswith("user-provided measurement") and m["conditions"]["pa"] == "API test PA"
+    assert [c["role"] for c in m["captures"]] == ["with_dpd"] and m["captures"][0]["delay_samples"] == 77
+    assert m["captures"][0]["declared_output_power_dbm"] == 27.5 and m["level_difference_db"] is None
+    assert result["baselines"] == [] and [mdl["role"] for mdl in result["models"]] == ["dpd"]
+    assert all(not s["simulated"] for s in result["signal_chain"])
+    # traceability through the API: the capture copy downloads and hashes to the recorded raw file hash
+    import hashlib
+    download = client.get(f"/api/v1/artifacts/{run['run_id']}/capture-with-dpd")
+    assert download.status_code == 200 and hashlib.sha256(download.content).hexdigest() == m["captures"][0]["raw_sha256"]
+    lineage = client.get(f"/api/v1/runs/{run['run_id']}/lineage").json()
+    assert {(p["run_id"], p["relation"]) for p in lineage["parents"]} >= {(applied["run_id"], "measured_playback"), (dpd["run_id"], "dpd_model")}
+    compare = client.get("/api/v1/results/compare", params=[("runs", applied["run_id"]), ("runs", run["run_id"])])
+    assert compare.status_code == 200, compare.text
+    assert compare.json()["comparable"] is False
+    assert any("evidence type: dpd_surrogate vs dpd_measured" in reason for pair in compare.json()["pairs"] for reason in pair["incompatibilities"])
+    report = client.get(f"/api/v1/results/{run['run_id']}/report", params={"format": "md"})
+    assert report.status_code == 200 and "not independently verified" in report.text

@@ -22,6 +22,7 @@ SELECTION_METRIC = {
     TaskType.train_pa: "NMSE",
     TaskType.train_dpd: "ACLR_AVG",
     TaskType.run_dpd: "not_applicable",
+    TaskType.evaluate_measured: "not_applicable",
 }
 
 SMOKE_EPOCH_LIMIT = 10
@@ -154,7 +155,7 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
 
     model = get_model(config.model.key) if not issues else None
     least_squares = model is not None and model.training_method == "least_squares"
-    if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task != TaskType.run_dpd and not least_squares:
+    if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task in (TaskType.train_pa, TaskType.train_dpd) and not least_squares:
         warn.append(ConfigIssue("training.epochs",
                                 f"{config.training.epochs} epochs is a smoke/demo run, not a benchmark result"))
     if least_squares and config.quantization is not None and config.quantization.enabled:

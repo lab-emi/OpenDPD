@@ -15,6 +15,26 @@ from typing import Dict, List
 from opendpd.schemas.results import EvaluationResult, EvidenceType
 
 
+def _reference_gain(r: EvaluationResult) -> str:
+    """The reference gain is a protocol choice for simulated results; a measured capture's least-squares gain is an
+    alignment of that capture (capture units), so measured results compare on their operating point instead."""
+    if r.evidence_type == EvidenceType.dpd_measured:
+        return "per-capture least-squares alignment"
+    return "none" if r.reference.gain_value is None else f"{r.reference.gain_value:.6g}"
+
+
+def _operating_point(r: EvaluationResult) -> str:
+    """PA, drive, declared output power, capture chain and rate, as the operator declared them (S16). Two measured
+    results rank only when every one of them agrees; a lower drive or output power is a different operating point."""
+    m = r.measurement
+    if r.evidence_type != EvidenceType.dpd_measured or m is None:
+        return "n/a"
+    c = m.conditions
+    power = m.captures[0].declared_output_power_dbm
+    return " | ".join([c.pa, c.drive, f"{power:g} dBm" if power is not None else "output power not declared",
+                       c.capture_chain, f"{c.sample_rate_hz:g} Hz"])
+
+
 def _surrogate(r: EvaluationResult) -> str:
     """The PA surrogate a simulated DPD result was scored through; PA-modeling results have none."""
     if r.evidence_type != EvidenceType.dpd_surrogate:
@@ -31,8 +51,9 @@ _FIELDS = (
     ("split protocol", lambda r: r.dataset.split_version),
     ("evaluated split", lambda r: r.dataset.split),
     ("reference kind", lambda r: r.reference.kind),
-    ("reference gain", lambda r: "none" if r.reference.gain_value is None else f"{r.reference.gain_value:.6g}"),
+    ("reference gain", _reference_gain),
     ("PA surrogate", _surrogate),
+    ("operating point", _operating_point),
     ("execution semantics", lambda r: ",".join(sorted({m.execution_semantics for m in r.models})) or "none"),
     ("mock", lambda r: "mock" if r.is_mock else "real"),
 )

@@ -105,6 +105,25 @@ class _Report:
                 facts.append((f"Model ({m.role})", f"{m.model.key} {json.dumps(m.model.parameters)} · run {m.run_id} · "
                                                    f"weights {m.weights_sha256}"
                                                    + (f" · training path {m.training_path}" if m.training_path else "")))
+            if r.measurement is not None:
+                c = r.measurement.conditions
+                facts.append(("Measurement", f"{r.measurement.attestation}. PA {c.pa}; chain {c.capture_chain}; "
+                                             f"{c.sample_rate_hz:g} Hz; drive {c.drive}; gain "
+                                             f"{c.gain_db if c.gain_db is not None else 'n/a'} dB; calibration "
+                                             f"{c.calibration}; measured {c.measured_at.isoformat()}; operator "
+                                             f"{c.operator or 'n/a'}; played export of run {r.measurement.apply_run_id} "
+                                             f"(sha256 {r.measurement.played_sha256})"))
+                for cap in r.measurement.captures:
+                    power = f"{cap.declared_output_power_dbm:g} dBm" if cap.declared_output_power_dbm is not None else "not declared"
+                    facts.append((f"Capture ({cap.role.replace('_', ' ')})",
+                                  f"{cap.artifact_id} raw sha256 {cap.raw_sha256}; {cap.n_samples_raw} samples at "
+                                  f"{cap.sample_rate_hz:g} Hz; delay {cap.delay_samples} samples"
+                                  f"{' (wrapped)' if cap.wrapped else ''}; correlation {cap.correlation:.4f}; least-squares "
+                                  f"gain {cap.gain_db:+.2f} dB at {cap.gain_phase_deg:+.1f} deg; rms {cap.rms:.4g}; "
+                                  f"declared output power {power}"))
+                if r.measurement.level_difference_db is not None:
+                    facts.append(("Output level with DPD relative to without",
+                                  f"{r.measurement.level_difference_db:+.2f} dB (capture units); reported, never normalised"))
         sw = self.provenance.get("software", {})
         facts.append(("Software", f"opendpd {sw.get('opendpd_version')} · python {sw.get('python_version')} · "
                                   f"torch {sw.get('torch_version')} · {sw.get('platform')} · git {sw.get('git_commit')}"

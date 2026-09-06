@@ -1,4 +1,4 @@
-# Backlog after S13/S14 (prioritised)
+# Backlog after S13–S16 (prioritised)
 
 Ordered by what blocks the next gate first. Items marked **human** need a
 person or a machine this environment does not have; the rest are ordinary
@@ -16,5 +16,7 @@ agent tasks bound by `AGENTS.md`.
 | 8 | Reserved-port and instance-reuse behaviour documented for SSH tunnels (`--no-browser`, port forwarding) | remote use is an SSH-tunnel story only | later |
 | 8a | Expose `execution.num_threads` in the New experiment form (advanced section) | the field is applied on every path since S14 but only a downloaded configuration or the CLI can set it today | later |
 | 9 | **human** S15 cross-validation of `ofdm-lte20-evm-v1` against MATLAB LTE Toolbox on the same signals, standard versions fixed, error budget approved (`docs/protocols/waveform-profiles.md` §5–7) | the waveform, profile, packages and tests exist; the profile stays hidden in the GUI until this record is filled | G3 |
-| 10 | S16–S19 tracks (hardware capture import, instrument adapter, quantisation/deployment exports, community models) as scoped in the plan | after G2 | G3 |
+| 10 | **human** S16 supervised hardware trial on one laboratory chain: export → play → capture → import → evaluate with a real PA, recorded in `docs/protocols/measured-dpd.md` §7; a real instrument adapter for that chain (`docs/architecture/instruments.md` §4) | the manual import, the alignment, the mock adapter and the interlock are verified on synthetic captures only; no measurement of a physical PA exists | G3 |
+| 10a | Repeated captures per condition (repeatability statistics) and fractional-delay alignment for measured results | S16 scores one capture per condition with an integer-sample delay and says so in every result | later |
+| 10b | S17–S19 tracks (multi-condition benchmark, streaming semantics, bit-exact export) as scoped in the plan | after G2 | G3 |
 | 11 | S20 versioned leaderboard policy once external submissions exist | needs a community first (risk R11) | G4 |

@@ -22,6 +22,7 @@
       "imported from a legacy CSV log: software version, git commit, device and data hashes unknown",
       "EVM column present in the log but its exact profile version could not be verified"
     ],
+    "measurement": null,
     "metric_profile_id": "legacy-opendpd-v1",
     "metric_profile_version": 1,
     "metrics": [

@@ -67,4 +67,6 @@ disagrees with the code, stop and report; do not "fix" the expectation.
 
 Publish a release, upload data or models to external platforms, enable
 telemetry, bind the server to non-loopback addresses by default, unlock RF
-output on instruments, or widen CI permissions.
+output on instruments (never set `OPENDPD_ALLOW_RF_OUTPUT`, register a real
+instrument adapter or relax a safety limit; only the mock adapter runs in CI),
+or widen CI permissions.

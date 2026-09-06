@@ -21,6 +21,7 @@ from opendpd.services.experiments import (
     bind_references,
     create_run,
     execute_run,
+    lineage,
     load_artifacts,
     load_resolved,
     load_result,
@@ -460,3 +461,229 @@ def test_cli_import_doctor_preprocess_and_train_on_a_version(tmp_path, capsys):
     assert payload["run"]["status"] == "succeeded"
     assert payload["result"]["dataset"]["preprocessing_version"] == "aligned-v1"
     assert payload["result"]["metrics"][0]["value"] is not None
+
+
+# --- S16: measured DPD evidence ------------------------------------------------------------
+
+def _synthetic_capture(signal, *, gain=3.0, phase=0.4, cubic=0.15, delay=123, seed=0, periods=2):
+    """A stand-in PA output for a played signal: compression, delay, gain, a little noise, looped twice."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    y = gain * np.exp(1j * phase) * (signal - cubic * np.abs(signal) ** 2 * signal)
+    y = np.roll(np.tile(y, periods), delay)
+    return y + 2e-4 * (rng.normal(size=y.size) + 1j * rng.normal(size=y.size))
+
+
+def _conditions(**overrides):
+    from datetime import datetime, timezone
+
+    from opendpd.schemas import MeasurementConditions
+
+    base = dict(pa="synthetic cubic PA (test)", capture_chain="synthetic: cubic + delay 123 + gain 3 at 0.4 rad",
+                sample_rate_hz=800e6, drive="digital full scale", calibration="none",
+                measured_at=datetime(2026, 9, 6, 12, 0, tzinfo=timezone.utc), operator="pytest")
+    base.update(overrides)
+    return MeasurementConditions(**base)
+
+
+def _played(workspace, apply_run):
+    from opendpd.services.measurements import read_played
+
+    out = load_artifacts(workspace, apply_run.run_id).by_kind(ArtifactKind.dpd_output)[0]
+    return read_played(workspace.run_dir(apply_run.run_id) / out.file.path), out.file.sha256
+
+
+def _write_capture(workspace, name, z):
+    import numpy as np
+
+    from opendpd.core.measurement import to_iq
+
+    cap = workspace.imports_dir / "captures"
+    cap.mkdir(parents=True, exist_ok=True)
+    path = cap / name
+    if name.endswith(".csv"):
+        import pandas as pd
+        pd.DataFrame({"I": z.real, "Q": z.imag}).to_csv(path, index=False)
+    else:
+        np.save(path, to_iq(z))
+    return f"captures/{name}"
+
+
+def _measured(workspace, apply_run, *, with_name, without_name=None, powers=(30.0, 30.0), conditions=None, **kwargs):
+    from opendpd.schemas import CaptureRef
+    from opendpd.services.measurements import measurement_config
+
+    cfg = measurement_config(workspace, apply_run.run_id,
+                             with_dpd=CaptureRef(path=with_name, declared_output_power_dbm=powers[0]),
+                             without_dpd=CaptureRef(path=without_name, declared_output_power_dbm=powers[1]) if without_name else None,
+                             conditions=conditions or _conditions(), **kwargs)
+    return execute_run(workspace, create_run(workspace, cfg).run_id)
+
+
+@pytest.fixture(scope="module")
+def measured_run(workspace, apply_run):
+    """An evaluate_measured run over synthetic captures of the apply run's export (with and without DPD)."""
+    (x, u), _ = _played(workspace, apply_run)
+    with_path = _write_capture(workspace, "with.npy", _synthetic_capture(u))
+    without_path = _write_capture(workspace, "without.csv", _synthetic_capture(x, seed=1))
+    record = _measured(workspace, apply_run, with_name=with_path, without_name=without_path)
+    assert record.status == RunStatus.succeeded, record.error
+    return record
+
+
+def test_measured_run_carries_dpd_measured_evidence_traceable_to_files_and_conditions(workspace, dpd_run, apply_run, measured_run):
+    import numpy as np
+
+    from opendpd.schemas import ATTESTATION
+    from opendpd.services.workspace import sha256_file
+
+    result = load_result(workspace, measured_run.run_id)
+    assert result.evidence_type.value == "dpd_measured" and result.source == "opendpd-studio" and not result.is_mock
+    m = result.measurement
+    _, played_sha = _played(workspace, apply_run)
+    assert m.attestation == ATTESTATION and m.apply_run_id == apply_run.run_id and m.played_sha256 == played_sha
+    assert [c.role for c in m.captures] == ["with_dpd", "without_dpd"]
+    for cap in m.captures:
+        name = "with.npy" if cap.role == "with_dpd" else "without.csv"
+        assert cap.raw_sha256 == sha256_file(workspace.imports_dir / "captures" / name)
+        assert cap.delay_samples == 123 and not cap.wrapped and cap.correlation > 0.99
+        assert cap.gain_phase_deg == pytest.approx(np.degrees(0.4), abs=3)
+        assert cap.declared_output_power_dbm == 30.0 and cap.resample_ratio is None
+    assert 2.0 < m.captures[1].gain_abs < 3.0            # compression pulls the least-squares gain below the small-signal 3.0
+    assert m.conditions.pa == "synthetic cubic PA (test)" and m.conditions.operator == "pytest"
+    # the chain: nothing simulated, u links the played export, y links the capture
+    stages = {s.symbol: s for s in result.signal_chain}
+    assert list(stages) == ["x", "u", "y"] and not any(s.simulated for s in result.signal_chain)
+    assert stages["u"].artifact_id == "played-signal" and stages["y"].artifact_id == "capture-with-dpd"
+    assert "not independently verified" in stages["y"].source
+    # models: only the DPD, with the exact weights the apply run used; no surrogate anywhere
+    resolved = load_resolved(workspace, measured_run.run_id)
+    apply_resolved = load_resolved(workspace, apply_run.run_id)
+    assert [mdl.role for mdl in result.models] == ["dpd"]
+    assert result.models[0].weights_sha256 == apply_resolved.dpd_reference.checkpoint_sha256 == resolved.dpd_reference.checkpoint_sha256
+    assert resolved.dataset == apply_resolved.dataset and resolved.pa_reference is None
+    assert result.reference.kind == "linear_gain_target" and result.reference.gain_value == pytest.approx(m.captures[0].gain_abs)
+    assert any("not independently verified" in lim for lim in result.limitations)
+    assert any("no physical calibration" in lim and "30 dBm" in lim for lim in result.limitations)
+    assert [b.kind for b in result.baselines] == ["measured_without_dpd"]
+    assert m.level_difference_db is not None and m.declared_power_difference_db == 0.0
+    # self-contained run: copies of the played export and the captures with verified hashes
+    manifest = load_artifacts(workspace, measured_run.run_id)
+    ids = {a.artifact_id: a for a in manifest.artifacts}
+    assert manifest.complete and {"played-signal", "capture-with-dpd", "capture-without-dpd", "measurement"} <= set(ids)
+    assert ids["played-signal"].file.sha256 == played_sha and ids["capture-with-dpd"].file.sha256 == m.captures[0].raw_sha256
+    parents = {(link.run_id, link.relation.value) for link in lineage(workspace, measured_run.run_id).parents}
+    assert (apply_run.run_id, "measured_playback") in parents and (dpd_run.run_id, "dpd_model") in parents
+    assert measured_run.progress_total_epochs is None and measured_run.task.value == "evaluate_measured"
+
+
+def test_measured_result_reevaluates_from_the_stored_captures_and_renders_in_reports(workspace, measured_run):
+    from opendpd.services.evaluation import available_profiles, evaluate_run
+    from opendpd.services.reports import report_html, report_markdown
+
+    assert available_profiles(workspace, measured_run.run_id) == ["legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-v1"]
+    stored = load_result(workspace, measured_run.run_id, "general-spectral-v1")
+    again = evaluate_run(workspace, measured_run.run_id, "general-spectral-v1")
+    assert [m.value for m in again.metrics] == [m.value for m in stored.metrics]
+    md = report_markdown(workspace, measured_run.run_id)
+    assert "not independently verified" in md and "Capture (with dpd)" in md and "raw sha256" in md
+    assert "Output level with DPD relative to without" in md
+    assert "not independently verified" in report_html(workspace, measured_run.run_id)
+
+
+def test_a_level_difference_between_the_captures_is_reported_never_normalised(workspace, apply_run, measured_run):
+    import numpy as np
+
+    (x, u), _ = _played(workspace, apply_run)
+    with_path = _write_capture(workspace, "with-level.npy", _synthetic_capture(u))
+    low_path = _write_capture(workspace, "without-low.npy", _synthetic_capture(x, gain=3.0 * 0.7, seed=2))
+    record = _measured(workspace, apply_run, with_name=with_path, without_name=low_path, powers=(30.0, 33.0))
+    assert record.status == RunStatus.succeeded, record.error
+    result = load_result(workspace, record.run_id)
+    m = result.measurement
+    assert m.declared_power_difference_db == -3.0
+    # the same captures at equal gain gave the fixture's level difference; the 0.7 backs the without capture off by 3.1 dB
+    equal_gain = load_result(workspace, measured_run.run_id).measurement.level_difference_db
+    assert m.level_difference_db == pytest.approx(equal_gain + 20 * np.log10(1 / 0.7), abs=0.02)
+    assert abs(m.level_difference_db) > 0.5
+    assert any("differs from the capture without DPD by" in lim and "not attributable to the DPD alone" in lim
+               for lim in result.limitations)
+    # the baseline was scored as captured: its rms is the low capture's rms, not rescaled to the with-DPD level
+    assert m.captures[1].rms == pytest.approx(m.captures[0].rms / 10 ** (m.level_difference_db / 20), rel=1e-6)
+
+
+def test_unrelated_short_or_misreferenced_captures_are_refused_with_the_reason(workspace, dpd_run, apply_run):
+    import numpy as np
+
+    from opendpd.schemas import CaptureRef
+    from opendpd.services.measurements import measurement_config
+
+    (x, u), _ = _played(workspace, apply_run)
+    rng = np.random.default_rng(3)
+    noise = _write_capture(workspace, "noise.npy", rng.normal(size=2 * u.size) + 1j * rng.normal(size=2 * u.size))
+    record = _measured(workspace, apply_run, with_name=noise)
+    assert record.status == RunStatus.failed and record.error.code == "capture_rejected"
+    assert "does not correlate" in record.error.message and load_result(workspace, record.run_id) is None
+    short = _write_capture(workspace, "short.npy", _synthetic_capture(u)[: u.size // 2])
+    record = _measured(workspace, apply_run, with_name=short)
+    assert record.status == RunStatus.failed and "at least one full period" in record.error.message
+    # refused before any run exists: not a run_dpd run, a missing file, an unconvertible rate
+    with pytest.raises(ConfigError, match="train_dpd run"):
+        create_run(workspace, measurement_config(workspace, dpd_run.run_id, with_dpd=CaptureRef(path=noise), without_dpd=None,
+                                                 conditions=_conditions()))
+    with pytest.raises(ConfigError, match="no file at imports/captures/missing.npy"):
+        create_run(workspace, measurement_config(workspace, apply_run.run_id, with_dpd=CaptureRef(path="captures/missing.npy"),
+                                                 without_dpd=None, conditions=_conditions()))
+    with pytest.raises(ConfigError, match="rational ratio"):
+        create_run(workspace, measurement_config(workspace, apply_run.run_id, with_dpd=CaptureRef(path=noise), without_dpd=None,
+                                                 conditions=_conditions(sample_rate_hz=800e6 * np.pi)))
+    with pytest.raises(ConfigError, match="escapes"):
+        create_run(workspace, measurement_config(workspace, apply_run.run_id, with_dpd=CaptureRef(path="../datasets/x.npy"),
+                                                 without_dpd=None, conditions=_conditions()))
+
+
+def test_measured_and_simulated_results_are_never_ranked_and_operating_points_must_agree(workspace, apply_run, measured_run):
+    from opendpd.services.evaluation import compare_results
+
+    report = compare_results(workspace, [apply_run.run_id, measured_run.run_id])
+    assert not report.comparable
+    reasons = report.pairs[0].incompatibilities
+    assert "evidence type: dpd_surrogate vs dpd_measured" in reasons and any(r.startswith("operating point:") for r in reasons)
+    same_point = _measured(workspace, apply_run, with_name="captures/with.npy", without_name="captures/without.csv")
+    assert same_point.status == RunStatus.succeeded, same_point.error
+    assert compare_results(workspace, [measured_run.run_id, same_point.run_id]).comparable
+    lower_drive = _measured(workspace, apply_run, with_name="captures/with.npy", without_name="captures/without.csv",
+                            conditions=_conditions(drive="digital full scale minus 3 dB"))
+    report = compare_results(workspace, [measured_run.run_id, lower_drive.run_id])
+    assert not report.comparable and any(r.startswith("operating point:") and "minus 3 dB" in r for r in report.pairs[0].incompatibilities)
+
+
+def test_cli_dry_run_refuses_unarmed_then_captures_through_the_mock_and_imports_it(workspace, apply_run, tmp_path, capsys):
+    from opendpd.instruments.mock import MOCK_DELAY_SAMPLES
+
+    out = tmp_path / "dry"
+    assert studio_main(["instruments", "list"]) == 0
+    assert "mock" in capsys.readouterr().out
+    rc = studio_main(["instruments", "dry-run", "--apply-run", apply_run.run_id, "--out", str(out), "--workspace", str(workspace.root)])
+    assert rc == 2 and not out.exists() and "RF output stays off" in capsys.readouterr().err
+    rc = studio_main(["instruments", "dry-run", "--apply-run", apply_run.run_id, "--out", str(out), "--workspace", str(workspace.root),
+                      "--arm", "pytest operator", "--json"])
+    assert rc == 0
+    info = json.loads(capsys.readouterr().out)
+    session = json.loads((out / "with_dpd.npy.session.json").read_text())
+    assert session["mock"] is True and session["interlock"]["final_state"] == "disarmed" and session["operator"] == "pytest operator"
+    assert "--mock" in info["next_command"]
+    rc = studio_main(["measurements", "import", "--apply-run", apply_run.run_id, "--with-dpd", str(out / "with_dpd.npy"),
+                      "--without-dpd", str(out / "without_dpd.npy"), "--conditions", str(out / "conditions.json"), "--mock",
+                      "--workspace", str(workspace.root), "--json"])
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["run"]["status"] == "succeeded" and payload["result"]["is_mock"] is True and payload["result"]["source"] == "mock"
+    caps = payload["result"]["measurement"]["captures"]
+    assert [c["delay_samples"] for c in caps] == [MOCK_DELAY_SAMPLES] * 2 and all(c["correlation"] > 0.999 for c in caps)
+    assert "mock instrument adapter" in payload["result"]["measurement"]["attestation"]
+    # the captures were staged under the workspace imports directory by hash, never referenced by an absolute path
+    resolved = load_resolved(workspace, payload["run"]["run_id"])
+    assert resolved.measurement.with_dpd.path.startswith("captures/") and not Path(resolved.measurement.with_dpd.path).is_absolute()
+    assert (workspace.imports_dir / resolved.measurement.with_dpd.path).exists()

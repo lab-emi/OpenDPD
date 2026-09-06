@@ -37,6 +37,7 @@ from opendpd.schemas import (
     HistoryPoint,
     LineageLink,
     LineageRelation,
+    MeasurementEvidence,
     MetricProfile,
     MetricValue,
     ModelEvidence,
@@ -58,6 +59,8 @@ from opendpd.schemas import (
     can_transition,
 )
 from opendpd.services.config import ConfigError, ConfigIssue, resolve
+
+TRAINING_TASKS = (TaskType.train_pa, TaskType.train_dpd, TaskType.run_dpd)   # tasks the legacy step machinery runs
 from opendpd.services.legacy_adapter import (
     RunCancelled,
     build_namespace,
@@ -218,6 +221,10 @@ def _bind_pa(ws: Workspace, run_id: str, dataset_id: str, training: Optional[Tra
 
 def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig:
     """Turn ``run_id``-only references into fully bound references."""
+    if config.task == TaskType.evaluate_measured:
+        from opendpd.services.measurements import bind_measurement
+
+        return bind_measurement(ws, config)
     updates = {}
     if config.task == TaskType.run_dpd:
         assert config.dpd_reference is not None
@@ -281,23 +288,26 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
     (run_dir / "logs").mkdir(parents=True)
     write_json_atomic(run_dir / USER_CONFIG_FILE, config)
     write_json_atomic(run_dir / RESOLVED_CONFIG_FILE, resolved)
-    ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(config.dataset.id, config.dataset.preprocessing_version),
-                         dataset_name=config.dataset.id)
+    legacy_command = None
+    if resolved.task in TRAINING_TASKS and not _is_least_squares(resolved.model.key):
+        ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(resolved.dataset.id, resolved.dataset.preprocessing_version),
+                             dataset_name=resolved.dataset.id)
+        legacy_command = legacy_command_line(ns)
     write_json_atomic(run_dir / PROVENANCE_FILE, {
         "run_id": run_id,
         "created_at": _now().isoformat(),
         "config_sha256": resolved.resolution.config_sha256,
-        "dataset_raw_sha256": ws.get_dataset(config.dataset.id).raw_sha256,
+        "dataset_raw_sha256": ws.get_dataset(resolved.dataset.id).raw_sha256,
         "software": software_provenance().model_dump(mode="json"),
-        "legacy_equivalent_command": None if _is_least_squares(config.model.key) else legacy_command_line(ns),
+        "legacy_equivalent_command": legacy_command,
         "parent_run_id": parent_run_id,
     })
     record = RunRecord(
-        run_id=run_id, task=config.task, name=name or config.name or config.recipe_id,
-        dataset_id=config.dataset.id, model_key=config.model.key, status=RunStatus.queued,
+        run_id=run_id, task=resolved.task, name=name or config.name or config.recipe_id,
+        dataset_id=resolved.dataset.id, model_key=resolved.model.key, status=RunStatus.queued,
         created_at=_now(), config_sha256=resolved.resolution.config_sha256,
-        device=config.execution.device, idempotency_key=idempotency_key, parent_run_id=parent_run_id,
-        progress_total_epochs=config.training.epochs if config.task != TaskType.run_dpd else None,
+        device=resolved.execution.device, idempotency_key=idempotency_key, parent_run_id=parent_run_id,
+        progress_total_epochs=resolved.training.epochs if resolved.task in (TaskType.train_pa, TaskType.train_dpd) else None,
     )
     save_run(ws, record)
     return record
@@ -399,8 +409,10 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
     resolved = load_resolved(ws, run_id)
     dataset = ws.get_dataset(resolved.dataset.id)
     run_dir = ws.run_dir(run_id)
-    ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(dataset.dataset_id, resolved.dataset.preprocessing_version),
-                         dataset_name=dataset.dataset_id)
+    measured = resolved.task == TaskType.evaluate_measured
+    ns = None if measured else build_namespace(
+        resolved, dataset_dir=ws.dataset_version_dir(dataset.dataset_id, resolved.dataset.preprocessing_version),
+        dataset_name=dataset.dataset_id)
 
     record = _transition(record, RunStatus.running, started_at=_now(), worker=_worker_info(),
                          last_heartbeat_at=_now())
@@ -424,24 +436,29 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
         save_run(ws, state["record"])
 
     project = None
+    signals = None
     error: Optional[RunError] = None
     outcome = RunStatus.succeeded
     reason = None
+    stage = {TaskType.run_dpd: "apply", TaskType.evaluate_measured: "measure"}.get(resolved.task, "train")
     apply_thread_budget(resolved)
     with run_in_directory(run_dir):
         try:
-            from opendpd.services import polynomial
+            from opendpd.services import measurements, polynomial
 
-            _prepare_inputs(ws, run_dir, resolved, ns)
-            if polynomial.is_least_squares(resolved.model.key):
-                # baselines never enter the legacy trainer: a deterministic fit, or a one-pass apply for run_dpd
-                project = polynomial.apply_run(ws, run_dir, resolved, ns) if resolved.task == TaskType.run_dpd \
-                    else polynomial.fit_run(ws, run_dir, resolved, ns, on_epoch=on_epoch)
+            if measured:
+                signals = measurements.execute_measurement(ws, run_dir, resolved)
             else:
-                project = run_step(ns, on_epoch=on_epoch, should_cancel=should_cancel)
-            if resolved.task == TaskType.run_dpd:
-                from opendpd.services.evaluation import write_dpd_output_metadata
-                write_dpd_output_metadata(ws, run_id, resolved, ns)
+                _prepare_inputs(ws, run_dir, resolved, ns)
+                if polynomial.is_least_squares(resolved.model.key):
+                    # baselines never enter the legacy trainer: a deterministic fit, or a one-pass apply for run_dpd
+                    project = polynomial.apply_run(ws, run_dir, resolved, ns) if resolved.task == TaskType.run_dpd \
+                        else polynomial.fit_run(ws, run_dir, resolved, ns, on_epoch=on_epoch)
+                else:
+                    project = run_step(ns, on_epoch=on_epoch, should_cancel=should_cancel)
+                if resolved.task == TaskType.run_dpd:
+                    from opendpd.services.evaluation import write_dpd_output_metadata
+                    write_dpd_output_metadata(ws, run_id, resolved, ns)
         except RunCancelled as err:
             outcome, reason = RunStatus.cancelled, str(err)
         except KeyboardInterrupt:
@@ -450,9 +467,14 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
             outcome = RunStatus.failed
             error = RunError(code="input_missing", stage="prepare", message=str(err),
                              hint="the referenced run's artifacts were deleted or modified")
+        except measurements.MeasurementError as err:
+            outcome = RunStatus.failed
+            error = RunError(code="capture_rejected", stage=stage, message=str(err),
+                             hint="check that the file is the analyser capture of this run's export at the declared "
+                                  "sample rate, at least one full period long")
         except Exception as err:  # noqa: BLE001 - the worker must record any failure
             outcome = RunStatus.failed
-            error = classify_failure(err, stage="apply" if resolved.task == TaskType.run_dpd else "train")
+            error = classify_failure(err, stage=stage)
 
     record = state["record"]
     manifest = collect_artifacts(run_dir, run_id, resolved, project)
@@ -469,7 +491,8 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
 
             try:
                 with run_in_directory(run_dir):
-                    results = evaluate_all(ws, run_id, resolved, manifest)
+                    results = measurements.evaluate_measured(ws, run_id, resolved, manifest, signals) if measured \
+                        else evaluate_all(ws, run_id, resolved, manifest)
                 result_id = results[resolved.evaluation.profile_id].result_id
                 manifest = collect_artifacts(run_dir, run_id, resolved, project)     # results and plots registered
                 write_json_atomic(run_dir / ARTIFACTS_FILE, manifest)
@@ -545,6 +568,17 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
                 "pre-distorted PA *input* u = DPD(x) for the test split; not a PA output")
             add("dpd-output-meta", ArtifactKind.other, csv.with_suffix(".meta.json"), True,
                 "what the exported columns are, their order, dtype, scaling and the checkpoints that produced them")
+    if resolved.task == TaskType.evaluate_measured:
+        from opendpd.services.measurements import CAPTURES_DIR, MEASUREMENT_FILE, PLAYED_FILE
+
+        add("played-signal", ArtifactKind.other, run_dir / CAPTURES_DIR / PLAYED_FILE, True,
+            "the run_dpd export that was played: x (I, Q) and u = DPD(x) (I_dpd, Q_dpd)")
+        for role in ("with_dpd", "without_dpd"):
+            for path in sorted((run_dir / CAPTURES_DIR).glob(f"{role}.*")):
+                add("capture-" + role.replace("_", "-"), ArtifactKind.other, path, role == "with_dpd",
+                    f"operator-provided capture of the PA output {role.replace('_', ' ')} (raw file, as uploaded)")
+        add("measurement", ArtifactKind.other, run_dir / MEASUREMENT_FILE, True,
+            "conditions declared by the operator, capture hashes, alignment and level statistics")
     for name in ("worker.log", "stdout.log"):
         add(name.replace(".", "-"), ArtifactKind.worker_log, run_dir / "logs" / name, False)
     add("fit-diagnostics", ArtifactKind.other, run_dir / "fit.json", False,
@@ -558,10 +592,14 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
     for plot in sorted((run_dir / PLOTS_DIR).glob("*.json")) if (run_dir / PLOTS_DIR).exists() else []:
         add(f"plot-{plot.stem}", ArtifactKind.plot, plot, False,
             "plots-v1 derived data computed by the worker from the evaluated arrays; display only")
-    required_kinds = {ArtifactKind.dpd_output, ArtifactKind.other} if resolved.task == TaskType.run_dpd \
-        else {ArtifactKind.checkpoint, ArtifactKind.log_history, ArtifactKind.log_best}
-    present = {a.kind for a in artifacts}
-    complete = required_kinds <= present and all(a.file.sha256 for a in artifacts if a.required)
+    ids = {a.artifact_id for a in artifacts}
+    if resolved.task == TaskType.evaluate_measured:
+        present = {"played-signal", "capture-with-dpd", "measurement"} <= ids
+    elif resolved.task == TaskType.run_dpd:
+        present = {"dpd-output", "dpd-output-meta"} <= ids
+    else:
+        present = {"checkpoint-best", "log-history", "log-best"} <= ids
+    complete = present and all(a.file.sha256 for a in artifacts if a.required)
     return ArtifactManifest(run_id=run_id, artifacts=artifacts, complete=complete)
 
 
@@ -585,12 +623,14 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                  profile: MetricProfile, metrics: List[MetricValue], n_valid: int,
                  target_gain: Optional[float], signal_chain: Optional[List[SignalStage]] = None,
                  baselines: Optional[List[BaselineScore]] = None, surrogate_coverage: Optional[SurrogateCoverage] = None,
-                 scaling: Optional[ScalingInfo] = None) -> EvaluationResult:
+                 scaling: Optional[ScalingInfo] = None, measurement: Optional[MeasurementEvidence] = None,
+                 limitations: Optional[List[str]] = None) -> EvaluationResult:
     """Assemble the evidence around metrics scored by ``opendpd.core.metrics``."""
     run_dir = ws.run_dir(run_id)
     dataset = ws.get_dataset(resolved.dataset.id)
-    if resolved.task == TaskType.run_dpd:
-        # the weights come from the DPD run; this run only applied them
+    measured = resolved.task == TaskType.evaluate_measured
+    if resolved.task == TaskType.run_dpd or measured:
+        # the weights come from the DPD run; this run only applied them (or played its export)
         dpd_ref = resolved.dpd_reference
         dpd_manifest = load_artifacts(ws, dpd_ref.run_id)
         dpd_artifact = next(a for a in dpd_manifest.artifacts if a.artifact_id == dpd_ref.checkpoint_artifact_id)
@@ -609,13 +649,14 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     from opendpd.services.polynomial import fit_limitations, is_least_squares
 
     least_squares = is_least_squares(resolved.model.key)
-    limitations: List[str] = []
+    limitations: List[str] = list(limitations or [])
     if least_squares:
         selected_epoch = None                       # a fit has no epochs to select from
-        limitations += fit_limitations(ws, run_id, resolved)
+        if not measured:
+            limitations += fit_limitations(ws, run_id, resolved)
     elif resolved.training.epochs < SMOKE_EPOCH_LIMIT:
         limitations.append(f"{resolved.training.epochs}-epoch smoke/demo training; not a benchmark result")
-    if resolved.training.reproducibility == "soft":
+    if resolved.training.reproducibility == "soft" and not measured:
         limitations.append("soft reproducibility (non-deterministic algorithms allowed); repeated runs may differ")
     if dataset.missing_metadata():
         limitations.append(f"dataset metadata missing: {', '.join(dataset.missing_metadata())}")
@@ -624,7 +665,22 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                            "backend; its numbers are not standard-conformance results")
 
     models = []
-    if resolved.task == TaskType.train_pa:
+    source, is_mock = "opendpd-studio", False
+    if measured:
+        assert measurement is not None
+        evidence = EvidenceType.dpd_measured
+        reference = SignalReference(kind="linear_gain_target",
+                                    description="target = g * x with g the complex least-squares gain of the aligned "
+                                                "measured output onto x (capture units); the PA output is measured, "
+                                                "not simulated",
+                                    gain_rule="least-squares complex gain of the aligned capture onto x, per capture",
+                                    gain_value=target_gain)
+        models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
+                                    n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
+                                    training_path="ila_least_squares" if least_squares else "gradient_dla"))
+        if resolved.measurement is not None and resolved.measurement.source == "mock_adapter":
+            source, is_mock = "mock", True
+    elif resolved.task == TaskType.train_pa:
         evidence = EvidenceType.pa_modeling
         reference = SignalReference(kind="measured_pa_output",
                                     description="measured PA output of the test split (dataset *_output)")
@@ -656,7 +712,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
 
     return EvaluationResult(
         result_id=f"res-{run_id[4:]}" + ("" if profile.profile_id == resolved.evaluation.profile_id else f"-{profile.profile_id}"),
-        run_id=run_id, source="opendpd-studio",
+        run_id=run_id, source=source, is_mock=is_mock,
         evidence_type=evidence, metric_profile_id=profile.profile_id, metric_profile_version=profile.version,
         dataset=DatasetEvidence(dataset_id=dataset.dataset_id, split="test", raw_sha256=dataset.raw_sha256,
                                 preprocessing_version=resolved.dataset.preprocessing_version,
@@ -667,7 +723,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         software=software_provenance(), device=resolved.execution.device, seed=resolved.training.seed,
         numeric_mode=f"float32 / reproducibility={resolved.training.reproducibility}",
         limitations=limitations, signal_chain=signal_chain or [], baselines=baselines or [],
-        surrogate_coverage=surrogate_coverage, scaling=scaling,
+        surrogate_coverage=surrogate_coverage, scaling=scaling, measurement=measurement,
     )
 
 
@@ -717,6 +773,8 @@ def lineage(ws: Workspace, run_id: str) -> RunLineage:
         if resolved.pa_reference is not None:
             out.append(_link(records, resolved.pa_reference.run_id, LineageRelation.pa_surrogate,
                              resolved.pa_reference.checkpoint_sha256))
+        if resolved.measurement is not None:
+            out.append(_link(records, resolved.measurement.apply_run_id, LineageRelation.measured_playback))
         return out
 
     parents = links_of(run_id)

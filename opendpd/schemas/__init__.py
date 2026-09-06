@@ -47,6 +47,15 @@ from .experiment import (
     TaskType,
     TrainingConfig,
 )
+from .measurement import (
+    ATTESTATION,
+    MOCK_ATTESTATION,
+    CaptureAlignment,
+    CaptureRef,
+    MeasurementConditions,
+    MeasurementConfig,
+    MeasurementEvidence,
+)
 from .metrics import MetricDefinition, MetricProfile, ProfileValidation
 from .waveform import WaveformBinding, WaveformSpec
 from .benchmark import (
@@ -113,6 +122,8 @@ __all__ = [
     "ModelSpec", "PAReference", "QuantizationConfig", "ResolvedExperimentConfig", "ResolutionInfo",
     "TaskType", "TrainingConfig",
     "MetricDefinition", "MetricProfile", "ProfileValidation", "WaveformBinding", "WaveformSpec",
+    "ATTESTATION", "MOCK_ATTESTATION", "CaptureAlignment", "CaptureRef", "MeasurementConditions",
+    "MeasurementConfig", "MeasurementEvidence",
     "PACKAGE_VERSION", "ImportReport", "PackageDataset", "PackageFile", "PackageManifest", "PackageReference",
     "BaselineScore", "ComparisonPair", "ComparisonReport", "DatasetEvidence", "EvaluationResult", "HistoryPoint",
     "ModelEvidence", "ScalingInfo", "SignalReference", "SignalStage", "SurrogateCoverage",

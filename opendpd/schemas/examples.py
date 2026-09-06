@@ -38,6 +38,7 @@ from .experiment import (
     TaskType,
     TrainingConfig,
 )
+from .measurement import MOCK_ATTESTATION, CaptureAlignment, CaptureRef, MeasurementConditions, MeasurementConfig, MeasurementEvidence
 from .metrics import MetricProfile
 from .results import (
     BaselineScore,
@@ -181,6 +182,26 @@ def experiment_run_dpd() -> ExperimentConfig:
         evaluation=EvaluationConfig(evidence_type=EvidenceType.dpd_surrogate),
         pa_reference=PAReference(run_id="run-pa-0001"),
         dpd_reference=DPDReference(run_id="run-dpd-0001"),
+    )
+
+
+def measurement_conditions() -> MeasurementConditions:
+    return MeasurementConditions(pa="example GaN Doherty PA, unit 2", capture_chain="SMW200A -> PA -> 30 dB pad -> FSW (I/Q analyser)",
+                                 sample_rate_hz=800e6, drive="generator -12 dBm, PA input +8 dBm", gain_db=28.5,
+                                 calibration="none", measured_at=T0, temperature_c=25.0, operator="example operator")
+
+
+def experiment_evaluate_measured() -> ExperimentConfig:
+    return ExperimentConfig(
+        task=TaskType.evaluate_measured,
+        dataset=DatasetRef(id="dpa-200mhz"),
+        model=ModelSpec(key="gru", parameters={"hidden_size": 15, "num_layers": 1}),
+        evaluation=EvaluationConfig(evidence_type=EvidenceType.dpd_measured),
+        dpd_reference=DPDReference(run_id="run-dpd-0001"),
+        measurement=MeasurementConfig(apply_run_id="run-apply-0001",
+                                      with_dpd=CaptureRef(path="uploads/with_dpd.npy", declared_output_power_dbm=30.0),
+                                      without_dpd=CaptureRef(path="uploads/without_dpd.npy", declared_output_power_dbm=30.0),
+                                      conditions=measurement_conditions()),
     )
 
 
@@ -401,6 +422,68 @@ def run_lineage_dpd() -> RunLineage:
     )
 
 
+def result_dpd_measured_mock() -> EvaluationResult:
+    lower = BetterDirection.lower
+    evidence = MeasurementEvidence(
+        attestation=MOCK_ATTESTATION, apply_run_id="run-apply-0001", played_artifact_id="played-signal", played_sha256=SHA_A,
+        conditions=measurement_conditions(),
+        captures=[CaptureAlignment(role="with_dpd", artifact_id="capture-with-dpd", raw_sha256=SHA_B, n_samples_raw=15360,
+                                   sample_rate_hz=800e6, delay_samples=123, correlation=0.9998, gain_abs=2.31, gain_db=7.28,
+                                   gain_phase_deg=22.5, rms=0.855, peak_abs=2.18, declared_output_power_dbm=30.0),
+                  CaptureAlignment(role="without_dpd", artifact_id="capture-without-dpd", raw_sha256=SHA_C, n_samples_raw=15360,
+                                   sample_rate_hz=800e6, delay_samples=123, correlation=0.9996, gain_abs=2.87, gain_db=9.16,
+                                   gain_phase_deg=22.6, rms=1.058, peak_abs=2.45, declared_output_power_dbm=30.0)],
+        level_difference_db=-1.85, declared_power_difference_db=0.0)
+    return EvaluationResult(
+        result_id="res-meas-0001", run_id="run-meas-0001", generated_at=T0, source="mock", is_mock=True,
+        evidence_type=EvidenceType.dpd_measured, metric_profile_id="legacy-opendpd-v1", metric_profile_version=1,
+        dataset=DatasetEvidence(dataset_id="dpa-200mhz", split="test", raw_sha256=SHA_C,
+                                preprocessing_version="raw-v1", split_version="contiguous-v1", n_samples=15360),
+        models=[ModelEvidence(role="dpd", model=ModelSpec(key="gru", parameters={"hidden_size": 15}), run_id="run-dpd-0001",
+                              weights_sha256=SHA_B, n_parameters=887, training_path="gradient_dla")],
+        reference=SignalReference(kind="linear_gain_target",
+                                  description="target = g * x with g the complex least-squares gain of the aligned measured "
+                                              "output onto x (capture units); the PA output is measured, not simulated",
+                                  gain_rule="least-squares complex gain of the aligned capture onto x, per capture", gain_value=2.31),
+        n_segments=6, nperseg=2560,
+        metrics=[
+            MetricValue(name="NMSE", value=-18.70, unit="dB", better=lower),
+            MetricValue(name="EVM", value=-19.43, unit="dB", better=lower),
+            MetricValue(name="ACLR_L", value=-29.12, unit="dBc", better=lower),
+            MetricValue(name="ACLR_R", value=-29.87, unit="dBc", better=lower),
+            MetricValue(name="ACLR_AVG", value=-29.50, unit="dBc", better=lower),
+        ],
+        software=SOFTWARE, device="cpu", seed=0,
+        limitations=["MOCK DATA for UI development", MOCK_ATTESTATION,
+                     "no physical calibration: output power is the operator's declaration (with dpd: 30 dBm, without dpd: 30 dBm), "
+                     "not measured by OpenDPD; capture units are the analyser's",
+                     "output level with DPD differs from the capture without DPD by -1.85 dB (declared powers: with dpd: 30 dBm, "
+                     "without dpd: 30 dBm); the difference between the two captures is not attributable to the DPD alone"],
+        signal_chain=[
+            SignalStage(symbol="x", role="target input: the PA output should equal g * x",
+                        source="dataset dpa-200mhz version raw-v1, test split (columns I/Q of the played export)",
+                        n_samples=15360, peak_abs=0.842, rms=0.301),
+            SignalStage(symbol="u", role="pre-distorted PA input, u = DPD(x), as played",
+                        source=f"DPD gru weights {SHA_B[:12]} from run run-dpd-0001; exported by run_dpd run-apply-0001 (sha256 {SHA_A[:12]})",
+                        n_samples=15360, peak_abs=0.913, rms=0.318, artifact_id="played-signal"),
+            SignalStage(symbol="y", role="measured PA output while u was played, aligned (capture units)",
+                        source=f"capture capture-with-dpd sha256 {SHA_B[:12]}, delay 123 samples, correlation 0.9998; {MOCK_ATTESTATION}",
+                        simulated=False, n_samples=15360, peak_abs=2.18, rms=0.855, artifact_id="capture-with-dpd"),
+        ],
+        baselines=[BaselineScore(kind="measured_without_dpd",
+                                 description="the same PA driven by x directly (no DPD), aligned with its own delay and least-squares "
+                                             "gain |g0| = 2.87 (with DPD |g| = 2.31); level difference -1.85 dB is reported, not normalised",
+                                 metrics=[MetricValue(name="NMSE", value=-12.40, unit="dB", better=lower),
+                                          MetricValue(name="EVM", value=-13.11, unit="dB", better=lower),
+                                          MetricValue(name="ACLR_L", value=-22.05, unit="dBc", better=lower),
+                                          MetricValue(name="ACLR_R", value=-22.60, unit="dBc", better=lower),
+                                          MetricValue(name="ACLR_AVG", value=-22.33, unit="dBc", better=lower)])],
+        scaling=ScalingInfo(amplitude_units="unknown", input_scaling="capture units as received from the analyser (SMW200A -> PA -> 30 dB pad -> FSW (I/Q analyser))",
+                            reference_gain=2.31, physical_calibration=False),
+        measurement=evidence,
+    )
+
+
 def result_legacy_import() -> EvaluationResult:
     """A row imported from an old log/<dataset>/.../best/*.csv: provenance unknown."""
     lower = BetterDirection.lower
@@ -447,6 +530,7 @@ def all_examples() -> Dict[str, object]:
         "experiment_train_pa_smoke": experiment_train_pa_smoke(),
         "experiment_train_dpd_smoke": experiment_train_dpd_smoke(),
         "experiment_run_dpd": experiment_run_dpd(),
+        "experiment_evaluate_measured": experiment_evaluate_measured(),
         "resolved_train_pa_smoke": resolved_train_pa_smoke(),
         "run_queued": run_queued(),
         "run_running": run_running(),
@@ -457,6 +541,7 @@ def all_examples() -> Dict[str, object]:
         "result_pa_modeling_mock": result_pa_modeling_mock(),
         "result_metric_not_applicable_mock": result_metric_not_applicable_mock(),
         "result_dpd_surrogate_mock": result_dpd_surrogate_mock(),
+        "result_dpd_measured_mock": result_dpd_measured_mock(),
         "run_lineage_dpd": run_lineage_dpd(),
         "comparison_report_mock": comparison_report_mock(),
         "history_points_mock": history_points_mock(),

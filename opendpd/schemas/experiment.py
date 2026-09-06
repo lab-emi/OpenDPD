@@ -13,6 +13,7 @@ from typing import Dict, Literal, Optional, Union
 
 from pydantic import Field, model_validator
 
+from .measurement import MeasurementConfig
 from .common import SCHEMA_VERSION, EvidenceType, Sha256, Slug, StrictModel, utcnow
 
 ParamValue = Union[int, float, str, bool]
@@ -22,6 +23,7 @@ class TaskType(str, Enum):
     train_pa = "train_pa"
     train_dpd = "train_dpd"
     run_dpd = "run_dpd"
+    evaluate_measured = "evaluate_measured"   # score captures of a physical PA driven by a run_dpd export (S16)
 
 
 class DatasetRef(StrictModel):
@@ -117,15 +119,19 @@ class ExperimentConfig(StrictModel):
     pa_reference: Optional[PAReference] = None
     dpd_reference: Optional[DPDReference] = None
     quantization: Optional[QuantizationConfig] = None
+    measurement: Optional[MeasurementConfig] = None
     notes: Optional[str] = None
 
     @model_validator(mode="after")
     def _task_rules(self) -> "ExperimentConfig":
         t = self.task
         if self.evaluation.evidence_type is None:
-            derived = EvidenceType.pa_modeling if t == TaskType.train_pa else EvidenceType.dpd_surrogate
+            derived = {TaskType.train_pa: EvidenceType.pa_modeling,
+                       TaskType.evaluate_measured: EvidenceType.dpd_measured}.get(t, EvidenceType.dpd_surrogate)
             self.evaluation = self.evaluation.model_copy(update={"evidence_type": derived})
         ev = self.evaluation.evidence_type
+        if self.measurement is not None and t != TaskType.evaluate_measured:
+            raise ValueError("only evaluate_measured takes a measurement block")
         if t == TaskType.train_pa:
             if ev != EvidenceType.pa_modeling:
                 raise ValueError("train_pa produces pa_modeling evidence")
@@ -139,6 +145,13 @@ class ExperimentConfig(StrictModel):
         elif t == TaskType.run_dpd:
             if self.dpd_reference is None:
                 raise ValueError("run_dpd requires dpd_reference (the trained DPD run)")
+        elif t == TaskType.evaluate_measured:
+            if ev != EvidenceType.dpd_measured:
+                raise ValueError("evaluate_measured scores a physical PA and produces dpd_measured evidence")
+            if self.measurement is None:
+                raise ValueError("evaluate_measured requires a measurement block (played run, captures, conditions)")
+            if self.pa_reference is not None:
+                raise ValueError("evaluate_measured takes no PA surrogate: the PA output is captured, not simulated")
         return self
 
 

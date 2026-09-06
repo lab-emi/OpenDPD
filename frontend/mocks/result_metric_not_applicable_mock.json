@@ -22,6 +22,7 @@
       "MOCK DATA for UI development",
       "signal metadata missing: spectral metrics not applicable"
     ],
+    "measurement": null,
     "metric_profile_id": "legacy-opendpd-v1",
     "metric_profile_version": 1,
     "metrics": [

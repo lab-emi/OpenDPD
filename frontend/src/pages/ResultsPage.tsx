@@ -62,7 +62,7 @@ export function ResultsPage() {
                 <TableCell>{r.model_key}</TableCell>
                 <TableCell>{r.dataset_id}</TableCell>
                 <TableCell>
-                  <EvidenceBadge evidence={r.task === 'train_pa' ? 'pa_modeling' : 'dpd_surrogate'} />
+                  <EvidenceBadge evidence={r.task === 'train_pa' ? 'pa_modeling' : r.task === 'evaluate_measured' ? 'dpd_measured' : 'dpd_surrogate'} />
                 </TableCell>
                 <TableCell>{new Date(r.created_at).toLocaleString()}</TableCell>
               </TableRow>

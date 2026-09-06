@@ -15,7 +15,7 @@
     },
     "evaluation": {
       "checkpoint_selection_metric": null,
-      "evidence_type": "dpd_surrogate",
+      "evidence_type": "dpd_measured",
       "profile_id": "legacy-opendpd-v1"
     },
     "execution": {
@@ -24,7 +24,36 @@
       "device_index": 0,
       "num_threads": null
     },
-    "measurement": null,
+    "measurement": {
+      "apply_run_id": "run-apply-0001",
+      "conditions": {
+        "calibration": "none",
+        "capture_chain": "SMW200A -> PA -> 30 dB pad -> FSW (I/Q analyser)",
+        "drive": "generator -12 dBm, PA input +8 dBm",
+        "gain_db": 28.5,
+        "measured_at": "2026-09-06T08:00:00Z",
+        "notes": null,
+        "operator": "example operator",
+        "pa": "example GaN Doherty PA, unit 2",
+        "sample_rate_hz": 800000000.0,
+        "temperature_c": 25.0
+      },
+      "playback": "loop",
+      "played_sha256": null,
+      "source": "manual",
+      "with_dpd": {
+        "columns": null,
+        "declared_output_power_dbm": 30.0,
+        "path": "uploads/with_dpd.npy",
+        "sha256": null
+      },
+      "without_dpd": {
+        "columns": null,
+        "declared_output_power_dbm": 30.0,
+        "path": "uploads/without_dpd.npy",
+        "sha256": null
+      }
+    },
     "model": {
       "key": "gru",
       "parameters": {
@@ -34,16 +63,11 @@
     },
     "name": null,
     "notes": null,
-    "pa_reference": {
-      "checkpoint_artifact_id": null,
-      "checkpoint_sha256": null,
-      "model": null,
-      "run_id": "run-pa-0001"
-    },
+    "pa_reference": null,
     "quantization": null,
     "recipe_id": null,
     "schema_version": 1,
-    "task": "run_dpd",
+    "task": "evaluate_measured",
     "training": {
       "batch_size": 64,
       "batch_size_eval": 64,

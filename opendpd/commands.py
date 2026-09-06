@@ -278,6 +278,131 @@ def cmd_waveforms(args) -> int:
     return 0 if digest == regenerated else 1
 
 
+def cmd_measurements(args) -> int:
+    """Import operator-provided captures of a physical PA driven by a run_dpd export and score them (S16)."""
+    import contextlib
+
+    from pydantic import ValidationError
+
+    from opendpd.schemas import CaptureRef, MeasurementConditions, RunStatus
+    from opendpd.services.config import ConfigError
+    from opendpd.services.experiments import create_run, execute_run, load_result
+    from opendpd.services.measurements import measurement_config, stage_capture
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        conditions = MeasurementConditions.model_validate(json.loads(Path(args.conditions).read_text()))
+        columns = tuple(args.columns.split(",")) if args.columns else None
+        with_dpd = CaptureRef(path=stage_capture(ws, Path(args.with_dpd)), columns=columns,
+                              declared_output_power_dbm=args.power_with)
+        without_dpd = CaptureRef(path=stage_capture(ws, Path(args.without_dpd)), columns=columns,
+                                 declared_output_power_dbm=args.power_without) if args.without_dpd else None
+        config = measurement_config(ws, args.apply_run, with_dpd=with_dpd, without_dpd=without_dpd, conditions=conditions,
+                                    source="mock_adapter" if args.mock else "manual", playback=args.playback,
+                                    profile_id=args.profile, name=args.name)
+        record = create_run(ws, config)
+    except ConfigError as err:
+        for issue in err.issues:
+            print(f"error: {issue.field}: {issue.message}" + (f" ({issue.hint})" if issue.hint else ""), file=sys.stderr)
+        return 2
+    except (WorkspaceError, ValidationError, ValueError, OSError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    with contextlib.redirect_stdout(sys.stderr):
+        record = execute_run(ws, record.run_id)
+    result = load_result(ws, record.run_id)
+    if args.json:
+        _print_json({"run": record.model_dump(mode="json"), "result": result.model_dump(mode="json") if result else None})
+    else:
+        print(f"run {record.run_id} {record.status.value}")
+        if record.error:
+            print(f"  {record.error.code} [{record.error.stage}]: {record.error.message}", file=sys.stderr)
+        if result is not None:
+            m = result.measurement
+            print(f"  {m.attestation}")
+            for c in m.captures:
+                print(f"  {c.role.replace('_', ' ')}: delay {c.delay_samples} samples, correlation {c.correlation:.3f}, "
+                      f"gain {c.gain_db:+.2f} dB at {c.gain_phase_deg:+.1f} deg, rms {c.rms:.4g} (capture units)")
+            if m.level_difference_db is not None:
+                print(f"  output level with DPD relative to without: {m.level_difference_db:+.2f} dB")
+            _print_result(result)
+            for b in result.baselines:
+                print(f"  baseline {b.kind}: " + ", ".join(f"{x.name} {x.value:.4f}" if x.value is not None
+                                                            else f"{x.name} {x.status.value}" for x in b.metrics))
+    return {RunStatus.succeeded: 0, RunStatus.cancelled: 130}.get(record.status, 1)
+
+
+def cmd_instruments(args) -> int:
+    """Instrument adapters (S16): list them, or run the export → play → capture procedure through one (mock only)."""
+    from opendpd.instruments import ADAPTERS, InstrumentError, list_adapters, run_capture_session
+
+    if args.instruments_command == "list":
+        infos = list_adapters()
+        if args.json:
+            _print_json([i.model_dump(mode="json") for i in infos])
+        else:
+            for i in infos:
+                rf = "emits RF (needs OPENDPD_ALLOW_RF_OUTPUT=1 and --arm)" if i.rf_output_capable else "no RF output"
+                print(f"{i.adapter_id:<8} {i.kind:<5} {rf}; {i.description}; limits: peak {i.default_limits.max_peak_abs:g}, "
+                      f"timeout {i.default_limits.timeout_s:g} s, link {i.default_limits.link_timeout_s:g} s")
+        return 0
+
+    from datetime import datetime, timezone
+
+    from opendpd.core.measurement import to_iq
+    from opendpd.schemas import ArtifactKind
+    from opendpd.services.experiments import load_artifacts, load_resolved
+    from opendpd.services.measurements import read_played
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        manifest = load_artifacts(ws, args.apply_run)
+        played = manifest.by_kind(ArtifactKind.dpd_output) if manifest else []
+        if not played:
+            raise WorkspaceError(f"run '{args.apply_run}' has no dpd-output export (it must be a succeeded run_dpd run)")
+        x, u = read_played(ws.run_dir(args.apply_run) / played[0].file.path)
+        dataset = ws.get_dataset(load_resolved(ws, args.apply_run).dataset.id)
+    except WorkspaceError as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    fs = dataset.signal.sample_rate_hz or 1.0
+    adapter = ADAPTERS[args.adapter]()
+    out = Path(args.out)
+    if not args.arm:
+        print(f"RF output stays off: nothing was played. A person arms the session with --arm <operator name>; "
+              f"adapter {adapter.info.adapter_id} ({adapter.info.kind}).", file=sys.stderr)
+        return 2
+    try:
+        with_path = run_capture_session(adapter, to_iq(u), fs, operator=args.arm, out=out / "with_dpd.npy",
+                                        requested_power_dbm=args.requested_power)
+        without_path = run_capture_session(adapter, to_iq(x), fs, operator=args.arm, out=out / "without_dpd.npy",
+                                           requested_power_dbm=args.requested_power)
+    except InstrumentError as err:
+        print(f"aborted (RF output off): {err}", file=sys.stderr)
+        return 1
+    conditions = {"pa": adapter.info.description if adapter.info.kind == "mock" else "fill in: device under test",
+                  "capture_chain": f"{adapter.info.adapter_id} adapter: generator -> PA -> analyser"
+                                   + (" (dry run, no RF)" if adapter.info.kind == "mock" else ""),
+                  "sample_rate_hz": fs, "drive": "digital full scale 1.0 into the adapter", "calibration": "none",
+                  "measured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "operator": args.arm,
+                  "notes": "written by opendpd instruments dry-run; edit before importing a real measurement"}
+    (out / "conditions.json").write_text(json.dumps(conditions, indent=2))
+    mock_flag = " --mock" if adapter.info.kind == "mock" else ""
+    next_command = (f"opendpd measurements import --apply-run {args.apply_run} --with-dpd {with_path} --without-dpd "
+                    f"{without_path} --conditions {out / 'conditions.json'}{mock_flag} --workspace {args.workspace}")
+    if args.json:
+        _print_json({"adapter": adapter.info.model_dump(mode="json"), "with_dpd": str(with_path),
+                     "without_dpd": str(without_path), "conditions": str(out / "conditions.json"),
+                     "next_command": next_command})
+    else:
+        print(f"captured through {adapter.info.adapter_id} ({adapter.info.kind}; RF output off again): {with_path}, {without_path}")
+        print(f"conditions template: {out / 'conditions.json'}")
+        print(f"next: {next_command}")
+    return 0
+
+
 def cmd_evaluate(args) -> int:
     from opendpd.services.evaluation import evaluate_run
     from opendpd.services.workspace import Workspace, WorkspaceError
@@ -624,6 +749,39 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("path", help="waveform.json or its directory")
     q.add_argument("--json", action="store_true")
     q.set_defaults(func=cmd_waveforms)
+
+    p = sub.add_parser("measurements", help="measured DPD evidence (plan S16): import captures of a physical PA driven by a run_dpd export")
+    ms = p.add_subparsers(dest="measurements_command", required=True)
+    q = ms.add_parser("import", help="align, score and store operator-provided captures as an evaluate_measured run")
+    q.add_argument("--apply-run", required=True, help="the run_dpd run whose dpd-output file was played")
+    q.add_argument("--with-dpd", required=True, help="capture of the PA output while u = DPD(x) was played (.csv/.npy/.npz)")
+    q.add_argument("--without-dpd", help="capture of the PA output while x was played under the same conditions")
+    q.add_argument("--conditions", required=True, help="JSON file with the declared conditions (MeasurementConditions)")
+    q.add_argument("--columns", help="I,Q column names or .npz keys when they are not I,Q / I_out,Q_out")
+    q.add_argument("--power-with", type=float, help="declared output power with DPD (dBm)")
+    q.add_argument("--power-without", type=float, help="declared output power without DPD (dBm)")
+    q.add_argument("--playback", choices=["loop", "single"], default="loop")
+    q.add_argument("--profile", help="primary metric profile (default legacy-opendpd-v1; every profile is stored)")
+    q.add_argument("--mock", action="store_true", help="the captures come from the mock adapter: the result is marked mock")
+    q.add_argument("--name")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--json", action="store_true")
+    q.set_defaults(func=cmd_measurements)
+
+    p = sub.add_parser("instruments", help="instrument adapters with fail-closed safety (plan S16); only the mock ships")
+    ins = p.add_subparsers(dest="instruments_command", required=True)
+    q = ins.add_parser("list", help="registered adapters, their kind, RF capability and default limits")
+    q.add_argument("--json", action="store_true")
+    q.set_defaults(func=cmd_instruments)
+    q = ins.add_parser("dry-run", help="export -> arm -> play -> capture -> RF off through an adapter; writes captures + a conditions template")
+    q.add_argument("--apply-run", required=True, help="the run_dpd run whose dpd-output file is played")
+    q.add_argument("--out", required=True, help="directory for with_dpd.npy, without_dpd.npy, session records and conditions.json")
+    q.add_argument("--adapter", choices=["mock"], default="mock")
+    q.add_argument("--arm", metavar="OPERATOR", help="the person arming the session; without it nothing is played")
+    q.add_argument("--requested-power", type=float, help="requested output power (dBm), checked against the adapter ceiling")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--json", action="store_true")
+    q.set_defaults(func=cmd_instruments)
 
     p = sub.add_parser("gui", help="start the local Studio service and open the workbench in your browser")
     p.add_argument("--workspace", default=None, help="workspace directory (default: $OPENDPD_WORKSPACE or ~/opendpd-workspace)")

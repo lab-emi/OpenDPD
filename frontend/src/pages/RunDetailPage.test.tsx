@@ -5,6 +5,7 @@ import failedMock from '@mocks/run_failed.json'
 import eventsMock from '@mocks/events_running.json'
 import lineageMock from '@mocks/run_lineage_dpd.json'
 import historyMock from '@mocks/history_points_mock.json'
+import datasetMock from '@mocks/dataset_builtin.json'
 import { vi } from 'vitest'
 import type { RunEvent, RunView } from '@/api/types'
 import { installFakeEventSource, mockApi, renderWithProviders } from '@/test/utils'
@@ -113,4 +114,49 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   await screen.findByText('run-apply-0003')
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(screen.getByText(/applied a trained DPD to the test split/)).toBeInTheDocument()
+})
+
+test('a succeeded run_dpd run offers the measured-capture import: files are uploaded, conditions declared, one evaluate_measured run submitted', async () => {
+  installFakeEventSource()
+  const applied: RunView = { ...running, run_id: 'run-apply-0001', task: 'run_dpd', status: 'succeeded', finished_at: '2026-09-06T08:10:00Z', result_id: 'res-apply-0001', dataset_id: 'dpa-200mhz', model_key: 'gru', progress_epoch: null, progress_total_epochs: null }
+  const created: RunView = { ...running, run_id: 'run-meas-0002', task: 'evaluate_measured', status: 'queued', started_at: null, worker: null, result_id: null, name: 'measured run-apply-0001' }
+  const { calls } = mockApi({
+    ...routes(applied),
+    ...routes(created),
+    'GET /api/v1/datasets/dpa-200mhz': () => datasetMock.data,
+    'POST /api/v1/datasets/upload': () => ({ status: 201, body: { root_id: 'imports', path: 'uploads/20260906-with.npy', size_bytes: 8 } }),
+    'POST /api/v1/runs': () => ({ status: 201, body: created }),
+  })
+  renderWithProviders(<RunDetailPage />, { route: `/runs/${applied.run_id}`, path: '/runs/:runId' })
+  await screen.findByRole('heading', { level: 1 })
+  await userEvent.click(screen.getByRole('button', { name: 'Import measured captures…' }))
+  const dialog = await screen.findByRole('dialog', { name: 'Score captures of a physical PA driven by this export' })
+  expect(within(dialog).getByText(/not independently verified/)).toBeInTheDocument()
+  const submitButton = within(dialog).getByRole('button', { name: 'Align and score' })
+  expect(submitButton).toBeDisabled()
+  await userEvent.upload(within(dialog).getByLabelText('Capture with DPD'), new File(['iq-bytes'], 'with.npy'))
+  await within(dialog).findByText(/with\.npy/)
+  await userEvent.type(within(dialog).getByLabelText(/Device under test/), 'GaN Doherty unit 2')
+  await userEvent.type(within(dialog).getByLabelText(/Capture chain/), 'SMW200A -> PA -> 30 dB pad -> FSW')
+  await userEvent.type(within(dialog).getByLabelText(/^Drive/), 'generator -12 dBm')
+  await userEvent.type(within(dialog).getByLabelText(/Output power with DPD/), '30')
+  // the dataset rate is prefilled; the operator may overwrite it
+  expect(within(dialog).getByLabelText(/Capture sample rate/)).toHaveValue(datasetMock.data.signal.sample_rate_hz)
+  await waitFor(() => expect(submitButton).toBeEnabled())
+  await userEvent.click(submitButton)
+  await screen.findByText('run-meas-0002')
+  const upload = calls.filter((c) => c.path === '/api/v1/datasets/upload')
+  expect(upload).toHaveLength(1)
+  const submitted = calls.find((c) => c.path === '/api/v1/runs' && c.method === 'POST')!.body as { config: Record<string, unknown> }
+  const config = submitted.config
+  expect(config.task).toBe('evaluate_measured')
+  expect(config.evaluation).toEqual({ evidence_type: 'dpd_measured' })
+  const measurement = config.measurement as { apply_run_id: string; with_dpd: { path: string; declared_output_power_dbm: number | null }; without_dpd: unknown; conditions: Record<string, unknown>; source: string; playback: string }
+  expect(measurement.apply_run_id).toBe('run-apply-0001')
+  expect(measurement.with_dpd).toEqual({ path: 'uploads/20260906-with.npy', declared_output_power_dbm: 30 })
+  expect(measurement.without_dpd).toBeNull()
+  expect(measurement.source).toBe('manual')
+  expect(measurement.playback).toBe('loop')
+  expect(measurement.conditions).toMatchObject({ pa: 'GaN Doherty unit 2', capture_chain: 'SMW200A -> PA -> 30 dB pad -> FSW', drive: 'generator -12 dBm', sample_rate_hz: datasetMock.data.signal.sample_rate_hz, calibration: 'none' })
+  expect(typeof measurement.conditions.measured_at).toBe('string')
 })

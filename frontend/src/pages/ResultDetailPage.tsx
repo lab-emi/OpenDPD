@@ -154,6 +154,101 @@ function SignalChain({ result }: { result: EvaluationResult }) {
   )
 }
 
+/** dpd_measured: what the operator declared, how each capture was aligned, and the level difference (S16). */
+function MeasurementPanel({ result }: { result: EvaluationResult }) {
+  const m = result.measurement
+  if (!m) return null
+  const c = m.conditions
+  const facts: Array<[string, string]> = [
+    [t('results.detail.measurement.pa'), c.pa],
+    [t('results.detail.measurement.chain'), c.capture_chain],
+    [t('results.detail.measurement.rate'), `${(c.sample_rate_hz / 1e6).toLocaleString(undefined, { maximumFractionDigits: 3 })} MS/s`],
+    [t('results.detail.measurement.drive'), c.drive],
+    [t('results.detail.measurement.gain'), typeof c.gain_db === 'number' ? `${c.gain_db} dB` : t('common.na')],
+    [t('results.detail.measurement.calibration'), c.calibration],
+    [t('results.detail.measurement.measured_at'), new Date(c.measured_at).toLocaleString()],
+    [t('results.detail.measurement.temperature'), typeof c.temperature_c === 'number' ? `${c.temperature_c} °C` : t('common.na')],
+    [t('results.detail.measurement.operator'), c.operator ?? t('common.na')],
+    [t('results.detail.measurement.played'), `${m.apply_run_id} · ${m.played_sha256.slice(0, 12)}`],
+  ]
+  const level = m.level_difference_db
+  return (
+    <Paper sx={{ p: 2 }} component="section" aria-label={t('results.detail.measurement')} data-testid="measurement">
+      <Typography variant="h3" component="h2" gutterBottom>
+        {t('results.detail.measurement')}
+      </Typography>
+      <Alert severity={result.is_mock ? 'error' : 'warning'} sx={{ mb: 2 }} data-testid="attestation">
+        {m.attestation}
+      </Alert>
+      <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }}>
+        {facts.map(([k, v]) => (
+          <div key={k} style={{ display: 'contents' }}>
+            <dt style={{ color: '#4B5563' }}>{k}</dt>
+            <dd style={{ margin: 0 }}>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {c.notes && (
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          {c.notes}
+        </Typography>
+      )}
+      <Table size="small" sx={{ mt: 2 }} aria-label={t('results.detail.measurement.captures')}>
+        <TableHead>
+          <TableRow>
+            <TableCell>{t('results.detail.measurement.capture')}</TableCell>
+            <TableCell>{t('results.detail.measurement.file')}</TableCell>
+            <TableCell align="right">{t('results.detail.chain.samples')}</TableCell>
+            <TableCell align="right">{t('results.detail.measurement.delay')}</TableCell>
+            <TableCell align="right">{t('results.detail.measurement.correlation')}</TableCell>
+            <TableCell align="right">{t('results.detail.measurement.fit')}</TableCell>
+            <TableCell align="right">{t('results.detail.chain.rms')}</TableCell>
+            <TableCell align="right">{t('results.detail.chain.peak')}</TableCell>
+            <TableCell align="right">{t('results.detail.measurement.power')}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {m.captures.map((cap) => (
+            <TableRow key={cap.role} data-capture={cap.role}>
+              <TableCell>{t(cap.role === 'with_dpd' ? 'results.detail.measurement.with' : 'results.detail.measurement.without')}</TableCell>
+              <TableCell>
+                {result.run_id ? (
+                  <Link href={artifactUrl(result.run_id, cap.artifact_id)} download>
+                    {cap.artifact_id}
+                  </Link>
+                ) : (
+                  cap.artifact_id
+                )}{' '}
+                <code>{cap.raw_sha256.slice(0, 12)}</code>
+                {cap.resample_ratio ? ` · ×${cap.resample_ratio[0]}/${cap.resample_ratio[1]}` : ''}
+              </TableCell>
+              <TableCell align="right">{cap.n_samples_raw.toLocaleString()}</TableCell>
+              <TableCell align="right">
+                {cap.delay_samples}
+                {cap.wrapped ? ` (${t('results.detail.measurement.wrapped')})` : ''}
+              </TableCell>
+              <TableCell align="right">{cap.correlation.toFixed(4)}</TableCell>
+              <TableCell align="right">
+                {cap.gain_db.toFixed(2)} dB ∠ {cap.gain_phase_deg.toFixed(1)}°
+              </TableCell>
+              <TableCell align="right">{fmt(cap.rms, 4)}</TableCell>
+              <TableCell align="right">{fmt(cap.peak_abs, 4)}</TableCell>
+              <TableCell align="right">{typeof cap.declared_output_power_dbm === 'number' ? `${cap.declared_output_power_dbm} dBm` : t('common.na')}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {typeof level === 'number' && (
+        <Typography variant="body2" sx={{ mt: 1 }} color={Math.abs(level) > 0.5 ? 'warning.main' : 'text.secondary'} data-testid="level-difference">
+          {t('results.detail.measurement.level', { db: `${level >= 0 ? '+' : ''}${level.toFixed(2)}` })}
+          {Math.abs(level) > 0.5 ? ` ${t('results.detail.measurement.level.warn')}` : ''}
+          {typeof m.declared_power_difference_db === 'number' ? ` ${t('results.detail.measurement.level.declared', { db: `${m.declared_power_difference_db >= 0 ? '+' : ''}${m.declared_power_difference_db.toFixed(2)}` })}` : ''}
+        </Typography>
+      )}
+    </Paper>
+  )
+}
+
 /** The DPD result next to the no-DPD baselines, all scored against the same reference. */
 function Baselines({ result }: { result: EvaluationResult }) {
   const baselines = result.baselines ?? []
@@ -243,6 +338,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
         ))}
       </Grid>
       <SignalChain result={result} />
+      <MeasurementPanel result={result} />
       <Baselines result={result} />
       {result.surrogate_coverage && (
         <Alert severity={result.surrogate_coverage.fraction_above_fitted_peak > 0 ? 'warning' : 'info'} data-testid="surrogate-coverage">

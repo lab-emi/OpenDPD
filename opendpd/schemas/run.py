@@ -117,6 +117,7 @@ class LineageRelation(str, Enum):
     pa_surrogate = "pa_surrogate"              # DPD training / evaluation went through this PA run's checkpoint
     dpd_model = "dpd_model"                    # run_dpd applied this DPD run's checkpoint
     retry_of = "retry_of"                      # retried from this run (parent_run_id)
+    measured_playback = "measured_playback"    # evaluate_measured scored captures of this run_dpd run's exported signal
 
 
 class LineageLink(StrictModel):

@@ -784,6 +784,9 @@ export interface components {
          * BaselineScore
          * @description Scores of a comparison signal under the *same* reference, profile and
          *     valid range as ``EvaluationResult.metrics``; never normalised separately.
+         *     A measured baseline is a second capture: it carries its own alignment (delay
+         *     and least-squares gain, both recorded in the measurement) and the level
+         *     difference between the captures is reported, never scaled away.
          */
         BaselineScore: {
             /** Description */
@@ -826,6 +829,68 @@ export interface components {
             version: string;
             /** Workspace */
             workspace: string;
+        };
+        /**
+         * CaptureAlignment
+         * @description How one capture was aligned to the signal that was played, in capture units.
+         */
+        CaptureAlignment: {
+            /** Artifact Id */
+            artifact_id: string;
+            /** Correlation */
+            correlation: number;
+            /** Declared Output Power Dbm */
+            declared_output_power_dbm?: number | null;
+            /** Delay Samples */
+            delay_samples: number;
+            /** Gain Abs */
+            gain_abs: number;
+            /** Gain Db */
+            gain_db: number;
+            /** Gain Phase Deg */
+            gain_phase_deg: number;
+            /** N Samples Raw */
+            n_samples_raw: number;
+            /** Peak Abs */
+            peak_abs: number;
+            /** Raw Sha256 */
+            raw_sha256: string;
+            /** Resample Ratio */
+            resample_ratio?: [
+                number,
+                number
+            ] | null;
+            /** Rms */
+            rms: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "with_dpd" | "without_dpd";
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /**
+             * Wrapped
+             * @default false
+             */
+            wrapped: boolean;
+        };
+        /**
+         * CaptureRef
+         * @description A capture file under ``<workspace>/imports`` (an upload or a copied file); never an arbitrary path.
+         */
+        CaptureRef: {
+            /** Columns */
+            columns?: [
+                string,
+                string
+            ] | null;
+            /** Declared Output Power Dbm */
+            declared_output_power_dbm?: number | null;
+            /** Path */
+            path: string;
+            /** Sha256 */
+            sha256?: string | null;
         };
         /** ComparisonPair */
         ComparisonPair: {
@@ -1110,6 +1175,7 @@ export interface components {
             is_mock: boolean;
             /** Limitations */
             limitations?: string[];
+            measurement?: components["schemas"]["MeasurementEvidence"] | null;
             /** Metric Profile Id */
             metric_profile_id: string;
             /** Metric Profile Version */
@@ -1199,6 +1265,7 @@ export interface components {
             dpd_reference?: components["schemas"]["DPDReference"] | null;
             evaluation?: components["schemas"]["EvaluationConfig"];
             execution?: components["schemas"]["ExecutionConfig"];
+            measurement?: components["schemas"]["MeasurementConfig"] | null;
             model: components["schemas"]["ModelSpec"];
             /** Name */
             name?: string | null;
@@ -1374,7 +1441,7 @@ export interface components {
          * @description How one run depends on another. Recorded from resolved configurations, never inferred from names.
          * @enum {string}
          */
-        LineageRelation: "pa_surrogate" | "dpd_model" | "retry_of";
+        LineageRelation: "pa_surrogate" | "dpd_model" | "retry_of" | "measured_playback";
         /** LogPage */
         LogPage: {
             /** Eof */
@@ -1394,6 +1461,84 @@ export interface components {
             notes?: string | null;
             origin?: components["schemas"]["DatasetOrigin"] | null;
             signal?: components["schemas"]["SignalSpec"] | null;
+        };
+        /**
+         * MeasurementConditions
+         * @description What the operator declares about the set-up. Recorded verbatim, never inferred.
+         */
+        MeasurementConditions: {
+            /**
+             * Calibration
+             * @default none
+             */
+            calibration: string;
+            /** Capture Chain */
+            capture_chain: string;
+            /** Drive */
+            drive: string;
+            /** Gain Db */
+            gain_db?: number | null;
+            /**
+             * Measured At
+             * Format: date-time
+             */
+            measured_at: string;
+            /** Notes */
+            notes?: string | null;
+            /** Operator */
+            operator?: string | null;
+            /** Pa */
+            pa: string;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /** Temperature C */
+            temperature_c?: number | null;
+        };
+        /**
+         * MeasurementConfig
+         * @description The ``evaluate_measured`` task: which exported signal was played and what came back.
+         */
+        MeasurementConfig: {
+            /** Apply Run Id */
+            apply_run_id: string;
+            conditions: components["schemas"]["MeasurementConditions"];
+            /**
+             * Playback
+             * @default loop
+             * @enum {string}
+             */
+            playback: "loop" | "single";
+            /** Played Sha256 */
+            played_sha256?: string | null;
+            /**
+             * Source
+             * @default manual
+             * @enum {string}
+             */
+            source: "manual" | "mock_adapter";
+            with_dpd: components["schemas"]["CaptureRef"];
+            without_dpd?: components["schemas"]["CaptureRef"] | null;
+        };
+        /**
+         * MeasurementEvidence
+         * @description Stored as ``measurement.json`` in the run and embedded in every result of the run.
+         */
+        MeasurementEvidence: {
+            /** Apply Run Id */
+            apply_run_id: string;
+            /** Attestation */
+            attestation: string;
+            /** Captures */
+            captures: components["schemas"]["CaptureAlignment"][];
+            conditions: components["schemas"]["MeasurementConditions"];
+            /** Declared Power Difference Db */
+            declared_power_difference_db?: number | null;
+            /** Level Difference Db */
+            level_difference_db?: number | null;
+            /** Played Artifact Id */
+            played_artifact_id: string;
+            /** Played Sha256 */
+            played_sha256: string;
         };
         /** MetricDefinition */
         MetricDefinition: {
@@ -1807,6 +1952,7 @@ export interface components {
             dpd_reference?: components["schemas"]["DPDReference"] | null;
             evaluation?: components["schemas"]["EvaluationConfig"];
             execution?: components["schemas"]["ExecutionConfig"];
+            measurement?: components["schemas"]["MeasurementConfig"] | null;
             model: components["schemas"]["ModelSpec"];
             /** Name */
             name?: string | null;
@@ -2178,7 +2324,7 @@ export interface components {
          * TaskType
          * @enum {string}
          */
-        TaskType: "train_pa" | "train_dpd" | "run_dpd";
+        TaskType: "train_pa" | "train_dpd" | "run_dpd" | "evaluate_measured";
         /**
          * TrainingConfig
          * @description Defaults mirror the OpenDPDv2 recipe (arguments.py); they are the

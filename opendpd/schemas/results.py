@@ -19,6 +19,7 @@ from .common import (
     utcnow,
 )
 from .experiment import ModelSpec, ParamValue
+from .measurement import MeasurementEvidence
 
 
 class SignalReference(StrictModel):
@@ -47,7 +48,10 @@ class SignalStage(StrictModel):
 
 class BaselineScore(StrictModel):
     """Scores of a comparison signal under the *same* reference, profile and
-    valid range as ``EvaluationResult.metrics``; never normalised separately."""
+    valid range as ``EvaluationResult.metrics``; never normalised separately.
+    A measured baseline is a second capture: it carries its own alignment (delay
+    and least-squares gain, both recorded in the measurement) and the level
+    difference between the captures is reported, never scaled away."""
 
     kind: Literal["surrogate_without_dpd", "measured_without_dpd"]
     description: str = Field(min_length=1)
@@ -126,6 +130,7 @@ class EvaluationResult(StrictModel):
     baselines: List[BaselineScore] = Field(default_factory=list)
     surrogate_coverage: Optional[SurrogateCoverage] = None
     scaling: Optional[ScalingInfo] = None
+    measurement: Optional[MeasurementEvidence] = None       # dpd_measured only: conditions, captures, alignment
     extra: Dict[str, ParamValue] = Field(default_factory=dict)
 
     def metric(self, name: str) -> MetricValue:
@@ -159,6 +164,10 @@ class EvaluationResult(StrictModel):
                 raise ValueError("dpd_measured result must name the DPD model")
             if self.reference.kind == "pa_surrogate_output":
                 raise ValueError("dpd_measured evidence cannot come from a PA surrogate")
+            if self.source == "opendpd-studio" and self.measurement is None:
+                raise ValueError("a dpd_measured result produced here records its measurement (conditions and captures)")
+        if self.measurement is not None and self.evidence_type != EvidenceType.dpd_measured:
+            raise ValueError("only dpd_measured results carry a measurement record")
         if self.source == "legacy-log-import" and not self.limitations:
             raise ValueError("legacy imports must list what is unknown")
         symbols = [s.symbol for s in self.signal_chain]

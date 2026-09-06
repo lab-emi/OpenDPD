@@ -306,13 +306,17 @@ def evaluate_all(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     predictions = predict_test_split(ws, run_id, resolved, manifest)
     results = {p.profile_id: result_for(ws, run_id, resolved, manifest, predictions, p.profile_id)
                for p in list_profiles()}
-    run_dir = ws.run_dir(run_id)
+    store_results(ws.run_dir(run_id), results, resolved.evaluation.profile_id)
+    write_plots(ws, run_id, resolved, predictions)
+    return results
+
+
+def store_results(run_dir: Path, results: Dict[str, EvaluationResult], primary_profile: str) -> None:
+    """One file per profile under results/ plus the primary result as result.json."""
     (run_dir / RESULTS_DIR).mkdir(parents=True, exist_ok=True)
     for profile_id, result in results.items():
         write_json_atomic(run_dir / RESULTS_DIR / f"{profile_id}.json", result)
-    write_json_atomic(run_dir / RESULT_FILE, results[resolved.evaluation.profile_id])
-    write_plots(ws, run_id, resolved, predictions)
-    return results
+    write_json_atomic(run_dir / RESULT_FILE, results[primary_profile])
 
 
 def compare_results(ws: Workspace, run_ids: List[str], profile_id: Optional[str] = None) -> ComparisonReport:
@@ -378,6 +382,11 @@ def evaluate_run(ws: Workspace, run_id: str, profile_id: str) -> EvaluationResul
     if manifest is None or not manifest.complete:
         raise WorkspaceError(f"run '{run_id}' has no complete artifact manifest")
     get_profile(profile_id)
+    if resolved.task == TaskType.evaluate_measured:
+        from opendpd.services import measurements
+
+        signals = measurements.load_signals(ws, run_id, resolved)
+        return measurements.result_for_measured(ws, run_id, resolved, manifest, signals, profile_id)
     predictions = predict_test_split(ws, run_id, resolved, manifest)
     return result_for(ws, run_id, resolved, manifest, predictions, profile_id)
 

@@ -25,9 +25,9 @@ from tests.fixtures.synthetic import Impairments, synthesize
 pytestmark = pytest.mark.integration
 ROOT = Path(__file__).resolve().parents[2]
 TUTORIALS = [ROOT / "docs" / "tutorials" / "gui-quickstart.md", ROOT / "docs" / "tutorials" / "headless-cli.md",
-             ROOT / "docs" / "tutorials" / "waveform-evaluation.md"]
+             ROOT / "docs" / "tutorials" / "waveform-evaluation.md", ROOT / "docs" / "tutorials" / "measured-dpd.md"]
 OTHER_CI_SOURCES = [ROOT / ".github" / "workflows" / "weekly.yml", ROOT / "tests" / "integration" / "test_benchmark_protocol.py"]
-NESTED = {"datasets", "benchmark", "waveforms"}
+NESTED = {"datasets", "benchmark", "waveforms", "measurements", "instruments"}
 
 Family = Tuple[str, ...]
 
@@ -56,7 +56,7 @@ def option_strings() -> Dict[Family, Set[str]]:
     out: Dict[Family, Set[str]] = {}
 
     def walk(p, prefix: Family):
-        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command", "waveforms_command")]
+        subs = [a for a in p._actions if hasattr(a, "choices") and isinstance(a.choices, dict) and a.dest in ("command", "datasets_command", "benchmark_command", "waveforms_command", "measurements_command", "instruments_command")]
         if not subs:
             out[prefix] = {s for a in p._actions for s in a.option_strings}
             return
@@ -139,6 +139,31 @@ def test_documented_commands_run_end_to_end(tmp_path):
 
     applied = json.loads(run("apply", dpd_id, "--workspace", str(ws), "--json").stdout)
     assert applied["run"]["status"] == "succeeded"
+    apply_id = applied["run"]["run_id"]
+
+    # docs/tutorials/measured-dpd.md: the mock adapter refuses unarmed, captures when armed, and the import scores the
+    # pair as mock dpd_measured evidence; a manual import of operator files takes the same path
+    captures = tmp_path / "captures"
+    assert "mock" in run("instruments", "list").stdout
+    proc = _cli("instruments", "dry-run", "--apply-run", apply_id, "--out", str(captures), "--workspace", str(ws), cwd=tmp_path, expect=2)
+    executed.add(("instruments", "dry-run"))
+    assert "RF output stays off" in proc.stderr and not captures.exists()
+    run("instruments", "dry-run", "--apply-run", apply_id, "--out", str(captures), "--workspace", str(ws), "--arm", "Docs Operator")
+    measured = json.loads(run("measurements", "import", "--apply-run", apply_id, "--with-dpd", str(captures / "with_dpd.npy"),
+                              "--without-dpd", str(captures / "without_dpd.npy"), "--conditions", str(captures / "conditions.json"),
+                              "--mock", "--workspace", str(ws), "--json").stdout)
+    assert measured["run"]["status"] == "succeeded" and measured["result"]["is_mock"] is True
+    assert measured["result"]["evidence_type"] == "dpd_measured" and measured["result"]["measurement"]["captures"][0]["delay_samples"] == 37
+    measured_id = measured["run"]["run_id"]
+    manual = json.loads(run("measurements", "import", "--apply-run", apply_id, "--with-dpd", str(captures / "with_dpd.npy"),
+                            "--without-dpd", str(captures / "without_dpd.npy"), "--conditions", str(captures / "conditions.json"),
+                            "--power-with", "30.0", "--power-without", "30.0", "--workspace", str(ws), "--json").stdout)
+    assert manual["result"]["is_mock"] is False and manual["result"]["measurement"]["declared_power_difference_db"] == 0.0
+    assert any("not independently verified" in lim for lim in manual["result"]["limitations"])
+    scored = json.loads(run("evaluate", measured_id, "--workspace", str(ws), "--profile", "general-spectral-v1", "--json").stdout)
+    assert scored["evidence_type"] == "dpd_measured" and scored["is_mock"] is True
+    run("report", measured_id, "--workspace", str(ws), "--format", "md", "--out", str(tmp_path / "measured-report.md"))
+    assert "Capture (with dpd)" in (tmp_path / "measured-report.md").read_text()
 
     # docs/tutorials/waveform-evaluation.md: generate a reference waveform, capture it through a (synthetic) PA,
     # import with the binding, train, and read the pending profile's numbers

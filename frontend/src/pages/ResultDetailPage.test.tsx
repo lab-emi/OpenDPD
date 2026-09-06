@@ -6,6 +6,7 @@ import legacyProfile from '@mocks/metric_profile_legacy.json'
 import ofdmProfile from '@mocks/metric_profile_ofdm_evm.json'
 import resultMock from '@mocks/result_pa_modeling_mock.json'
 import dpdMock from '@mocks/result_dpd_surrogate_mock.json'
+import measuredMock from '@mocks/result_dpd_measured_mock.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { ResultDetailPage } from './ResultDetailPage'
 
@@ -143,4 +144,35 @@ test('the export panel is not offered for a mock result', async () => {
   renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
   await screen.findByText('legacy-opendpd-v1 v1 · frozen')
   expect(screen.queryByRole('region', { name: 'Export and report' })).not.toBeInTheDocument()
+})
+
+test('a measured result shows the attestation, the declared conditions, every capture with its hash and alignment, and the level difference', async () => {
+  const measured = measuredMock.data
+  mockApi({
+    'GET /api/v1/results/run-meas-0001': () => measured,
+    'GET /api/v1/results/run-meas-0001/profiles': () => ['legacy-opendpd-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
+  })
+  renderWithProviders(<ResultDetailPage />, { route: '/results/run-meas-0001', path: '/results/:runId' })
+  await screen.findByText('legacy-opendpd-v1 v1 · frozen')
+  expect(screen.getByText('MOCK · DPD · measured')).toBeInTheDocument()
+  const panel = screen.getByRole('region', { name: 'Measurement' })
+  expect(within(panel).getByTestId('attestation')).toHaveTextContent('mock instrument adapter')
+  expect(within(panel).getByText('example GaN Doherty PA, unit 2')).toBeInTheDocument()
+  expect(within(panel).getByText('SMW200A -> PA -> 30 dB pad -> FSW (I/Q analyser)')).toBeInTheDocument()
+  expect(within(panel).getByText('800 MS/s')).toBeInTheDocument()
+  const withRow = panel.querySelector('[data-capture="with_dpd"]')!
+  expect(within(withRow as HTMLElement).getByRole('link', { name: 'capture-with-dpd' })).toHaveAttribute('href', expect.stringContaining('/artifacts/run-meas-0001/capture-with-dpd'))
+  expect(withRow).toHaveTextContent('bbbbbbbbbbbb')       // raw file hash, first 12 hex digits
+  expect(withRow).toHaveTextContent('123')                // delay in samples
+  expect(withRow).toHaveTextContent('7.28 dB')
+  expect(withRow).toHaveTextContent('30 dBm')
+  expect(panel.querySelector('[data-capture="without_dpd"]')).toHaveTextContent('9.16 dB')
+  expect(screen.getByTestId('level-difference')).toHaveTextContent('-1.85 dB')
+  expect(screen.getByTestId('level-difference')).toHaveTextContent('not attributable to the DPD alone')
+  // the chain marks nothing as simulated, and the y stage links the capture
+  const chain = screen.getByRole('region', { name: 'Signal chain' })
+  expect(within(chain).queryByText('simulated')).not.toBeInTheDocument()
+  expect(within(chain).getByText(/mock instrument adapter/)).toBeInTheDocument()
+  expect(screen.getByRole('region', { name: 'Baselines under the same reference' })).toHaveTextContent('Measured PA without DPD')
 })

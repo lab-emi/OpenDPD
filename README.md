@@ -28,7 +28,9 @@ reproducible package. The same configuration runs unchanged through
 [docs/tutorials/gui-quickstart.md](docs/tutorials/gui-quickstart.md); the
 headless path is [docs/tutorials/headless-cli.md](docs/tutorials/headless-cli.md);
 reference waveforms and the data-aided EVM/ACLR profile are in
-[docs/tutorials/waveform-evaluation.md](docs/tutorials/waveform-evaluation.md).
+[docs/tutorials/waveform-evaluation.md](docs/tutorials/waveform-evaluation.md);
+measured DPD evidence from captures of a physical PA (and the mock instrument
+adapter to rehearse it) in [docs/tutorials/measured-dpd.md](docs/tutorials/measured-dpd.md).
 What is verified where: [support matrix](docs/releases/support-matrix.md),
 [performance report](docs/releases/performance-report.md),
 [hardening report](docs/releases/hardening-report.md); status per plan stage:

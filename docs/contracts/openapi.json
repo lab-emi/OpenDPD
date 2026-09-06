@@ -97,7 +97,7 @@
       },
       "BaselineScore": {
         "additionalProperties": false,
-        "description": "Scores of a comparison signal under the *same* reference, profile and\nvalid range as ``EvaluationResult.metrics``; never normalised separately.",
+        "description": "Scores of a comparison signal under the *same* reference, profile and\nvalid range as ``EvaluationResult.metrics``; never normalised separately.\nA measured baseline is a second capture: it carries its own alignment (delay\nand least-squares gain, both recorded in the measurement) and the level\ndifference between the captures is reported, never scaled away.",
         "properties": {
           "description": {
             "minLength": 1,
@@ -207,6 +207,188 @@
           "note"
         ],
         "title": "Capabilities",
+        "type": "object"
+      },
+      "CaptureAlignment": {
+        "additionalProperties": false,
+        "description": "How one capture was aligned to the signal that was played, in capture units.",
+        "properties": {
+          "artifact_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "correlation": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Correlation",
+            "type": "number"
+          },
+          "declared_output_power_dbm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Output Power Dbm"
+          },
+          "delay_samples": {
+            "minimum": 0.0,
+            "title": "Delay Samples",
+            "type": "integer"
+          },
+          "gain_abs": {
+            "minimum": 0.0,
+            "title": "Gain Abs",
+            "type": "number"
+          },
+          "gain_db": {
+            "title": "Gain Db",
+            "type": "number"
+          },
+          "gain_phase_deg": {
+            "title": "Gain Phase Deg",
+            "type": "number"
+          },
+          "n_samples_raw": {
+            "minimum": 1.0,
+            "title": "N Samples Raw",
+            "type": "integer"
+          },
+          "peak_abs": {
+            "minimum": 0.0,
+            "title": "Peak Abs",
+            "type": "number"
+          },
+          "raw_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Raw Sha256",
+            "type": "string"
+          },
+          "resample_ratio": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resample Ratio"
+          },
+          "rms": {
+            "minimum": 0.0,
+            "title": "Rms",
+            "type": "number"
+          },
+          "role": {
+            "enum": [
+              "with_dpd",
+              "without_dpd"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "exclusiveMinimum": 0.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "wrapped": {
+            "default": false,
+            "title": "Wrapped",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "role",
+          "artifact_id",
+          "raw_sha256",
+          "n_samples_raw",
+          "sample_rate_hz",
+          "delay_samples",
+          "correlation",
+          "gain_abs",
+          "gain_db",
+          "gain_phase_deg",
+          "rms",
+          "peak_abs"
+        ],
+        "title": "CaptureAlignment",
+        "type": "object"
+      },
+      "CaptureRef": {
+        "additionalProperties": false,
+        "description": "A capture file under ``<workspace>/imports`` (an upload or a copied file); never an arbitrary path.",
+        "properties": {
+          "columns": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Columns"
+          },
+          "declared_output_power_dbm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Output Power Dbm"
+          },
+          "path": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "CaptureRef",
         "type": "object"
       },
       "ComparisonPair": {
@@ -977,6 +1159,16 @@
             "title": "Limitations",
             "type": "array"
           },
+          "measurement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeasurementEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "metric_profile_id": {
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Metric Profile Id",
@@ -1252,6 +1444,16 @@
           },
           "execution": {
             "$ref": "#/components/schemas/ExecutionConfig"
+          },
+          "measurement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeasurementConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "model": {
             "$ref": "#/components/schemas/ModelSpec"
@@ -1752,7 +1954,8 @@
         "enum": [
           "pa_surrogate",
           "dpd_model",
-          "retry_of"
+          "retry_of",
+          "measured_playback"
         ],
         "title": "LineageRelation",
         "type": "string"
@@ -1836,6 +2039,236 @@
           }
         },
         "title": "ManifestUpdate",
+        "type": "object"
+      },
+      "MeasurementConditions": {
+        "additionalProperties": false,
+        "description": "What the operator declares about the set-up. Recorded verbatim, never inferred.",
+        "properties": {
+          "calibration": {
+            "default": "none",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Calibration",
+            "type": "string"
+          },
+          "capture_chain": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Capture Chain",
+            "type": "string"
+          },
+          "drive": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Drive",
+            "type": "string"
+          },
+          "gain_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain Db"
+          },
+          "measured_at": {
+            "format": "date-time",
+            "title": "Measured At",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
+          },
+          "pa": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Pa",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "exclusiveMinimum": 0.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "temperature_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature C"
+          }
+        },
+        "required": [
+          "pa",
+          "capture_chain",
+          "sample_rate_hz",
+          "drive",
+          "measured_at"
+        ],
+        "title": "MeasurementConditions",
+        "type": "object"
+      },
+      "MeasurementConfig": {
+        "additionalProperties": false,
+        "description": "The ``evaluate_measured`` task: which exported signal was played and what came back.",
+        "properties": {
+          "apply_run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Apply Run Id",
+            "type": "string"
+          },
+          "conditions": {
+            "$ref": "#/components/schemas/MeasurementConditions"
+          },
+          "playback": {
+            "default": "loop",
+            "enum": [
+              "loop",
+              "single"
+            ],
+            "title": "Playback",
+            "type": "string"
+          },
+          "played_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Played Sha256"
+          },
+          "source": {
+            "default": "manual",
+            "enum": [
+              "manual",
+              "mock_adapter"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "with_dpd": {
+            "$ref": "#/components/schemas/CaptureRef"
+          },
+          "without_dpd": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaptureRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "apply_run_id",
+          "with_dpd",
+          "conditions"
+        ],
+        "title": "MeasurementConfig",
+        "type": "object"
+      },
+      "MeasurementEvidence": {
+        "additionalProperties": false,
+        "description": "Stored as ``measurement.json`` in the run and embedded in every result of the run.",
+        "properties": {
+          "apply_run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Apply Run Id",
+            "type": "string"
+          },
+          "attestation": {
+            "minLength": 1,
+            "title": "Attestation",
+            "type": "string"
+          },
+          "captures": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureAlignment"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Captures",
+            "type": "array"
+          },
+          "conditions": {
+            "$ref": "#/components/schemas/MeasurementConditions"
+          },
+          "declared_power_difference_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Power Difference Db"
+          },
+          "level_difference_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Difference Db"
+          },
+          "played_artifact_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Played Artifact Id",
+            "type": "string"
+          },
+          "played_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Played Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attestation",
+          "apply_run_id",
+          "played_artifact_id",
+          "played_sha256",
+          "conditions",
+          "captures"
+        ],
+        "title": "MeasurementEvidence",
         "type": "object"
       },
       "MetricDefinition": {
@@ -2903,6 +3336,16 @@
           },
           "execution": {
             "$ref": "#/components/schemas/ExecutionConfig"
+          },
+          "measurement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeasurementConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "model": {
             "$ref": "#/components/schemas/ModelSpec"
@@ -4027,7 +4470,8 @@
         "enum": [
           "train_pa",
           "train_dpd",
-          "run_dpd"
+          "run_dpd",
+          "evaluate_measured"
         ],
         "title": "TaskType",
         "type": "string"

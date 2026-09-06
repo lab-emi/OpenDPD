@@ -116,6 +116,7 @@
       "simulated through the learned PA surrogate run-pa-0001, not a measured PA output",
       "no physical calibration: absolute output power (dBm) and efficiency are not derived"
     ],
+    "measurement": null,
     "metric_profile_id": "legacy-opendpd-v1",
     "metric_profile_version": 1,
     "metrics": [

@@ -1,0 +1,255 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "baselines": [
+      {
+        "description": "the same PA driven by x directly (no DPD), aligned with its own delay and least-squares gain |g0| = 2.87 (with DPD |g| = 2.31); level difference -1.85 dB is reported, not normalised",
+        "kind": "measured_without_dpd",
+        "metrics": [
+          {
+            "better": "lower",
+            "name": "NMSE",
+            "reason": null,
+            "status": "ok",
+            "unit": "dB",
+            "value": -12.4
+          },
+          {
+            "better": "lower",
+            "name": "EVM",
+            "reason": null,
+            "status": "ok",
+            "unit": "dB",
+            "value": -13.11
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_L",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -22.05
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_R",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -22.6
+          },
+          {
+            "better": "lower",
+            "name": "ACLR_AVG",
+            "reason": null,
+            "status": "ok",
+            "unit": "dBc",
+            "value": -22.33
+          }
+        ]
+      }
+    ],
+    "dataset": {
+      "dataset_id": "dpa-200mhz",
+      "n_samples": 15360,
+      "preprocessing_version": "raw-v1",
+      "processed_sha256": null,
+      "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "split": "test",
+      "split_version": "contiguous-v1"
+    },
+    "device": "cpu",
+    "evidence_type": "dpd_measured",
+    "extra": {},
+    "generated_at": "2026-09-06T08:00:00Z",
+    "history": null,
+    "is_mock": true,
+    "limitations": [
+      "MOCK DATA for UI development",
+      "mock instrument adapter: a synthetic stand-in for a PA, not a measurement",
+      "no physical calibration: output power is the operator's declaration (with dpd: 30 dBm, without dpd: 30 dBm), not measured by OpenDPD; capture units are the analyser's",
+      "output level with DPD differs from the capture without DPD by -1.85 dB (declared powers: with dpd: 30 dBm, without dpd: 30 dBm); the difference between the two captures is not attributable to the DPD alone"
+    ],
+    "measurement": {
+      "apply_run_id": "run-apply-0001",
+      "attestation": "mock instrument adapter: a synthetic stand-in for a PA, not a measurement",
+      "captures": [
+        {
+          "artifact_id": "capture-with-dpd",
+          "correlation": 0.9998,
+          "declared_output_power_dbm": 30.0,
+          "delay_samples": 123,
+          "gain_abs": 2.31,
+          "gain_db": 7.28,
+          "gain_phase_deg": 22.5,
+          "n_samples_raw": 15360,
+          "peak_abs": 2.18,
+          "raw_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "resample_ratio": null,
+          "rms": 0.855,
+          "role": "with_dpd",
+          "sample_rate_hz": 800000000.0,
+          "wrapped": false
+        },
+        {
+          "artifact_id": "capture-without-dpd",
+          "correlation": 0.9996,
+          "declared_output_power_dbm": 30.0,
+          "delay_samples": 123,
+          "gain_abs": 2.87,
+          "gain_db": 9.16,
+          "gain_phase_deg": 22.6,
+          "n_samples_raw": 15360,
+          "peak_abs": 2.45,
+          "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "resample_ratio": null,
+          "rms": 1.058,
+          "role": "without_dpd",
+          "sample_rate_hz": 800000000.0,
+          "wrapped": false
+        }
+      ],
+      "conditions": {
+        "calibration": "none",
+        "capture_chain": "SMW200A -> PA -> 30 dB pad -> FSW (I/Q analyser)",
+        "drive": "generator -12 dBm, PA input +8 dBm",
+        "gain_db": 28.5,
+        "measured_at": "2026-09-06T08:00:00Z",
+        "notes": null,
+        "operator": "example operator",
+        "pa": "example GaN Doherty PA, unit 2",
+        "sample_rate_hz": 800000000.0,
+        "temperature_c": 25.0
+      },
+      "declared_power_difference_db": 0.0,
+      "level_difference_db": -1.85,
+      "played_artifact_id": "played-signal",
+      "played_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "metric_profile_id": "legacy-opendpd-v1",
+    "metric_profile_version": 1,
+    "metrics": [
+      {
+        "better": "lower",
+        "name": "NMSE",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -18.7
+      },
+      {
+        "better": "lower",
+        "name": "EVM",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -19.43
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_L",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -29.12
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_R",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -29.87
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_AVG",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -29.5
+      }
+    ],
+    "models": [
+      {
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": null,
+        "model": {
+          "key": "gru",
+          "parameters": {
+            "hidden_size": 15
+          }
+        },
+        "n_parameters": 887,
+        "role": "dpd",
+        "run_id": "run-dpd-0001",
+        "training_path": "gradient_dla",
+        "weights_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "n_segments": 6,
+    "nperseg": 2560,
+    "numeric_mode": "float32",
+    "reference": {
+      "description": "target = g * x with g the complex least-squares gain of the aligned measured output onto x (capture units); the PA output is measured, not simulated",
+      "gain_rule": "least-squares complex gain of the aligned capture onto x, per capture",
+      "gain_value": 2.31,
+      "kind": "linear_gain_target"
+    },
+    "result_id": "res-meas-0001",
+    "run_id": "run-meas-0001",
+    "scaling": {
+      "amplitude_units": "unknown",
+      "input_scaling": "capture units as received from the analyser (SMW200A -> PA -> 30 dB pad -> FSW (I/Q analyser))",
+      "physical_calibration": false,
+      "reference_gain": 2.31
+    },
+    "schema_version": 1,
+    "seed": 0,
+    "selected_epoch": null,
+    "signal_chain": [
+      {
+        "artifact_id": null,
+        "n_samples": 15360,
+        "peak_abs": 0.842,
+        "rms": 0.301,
+        "role": "target input: the PA output should equal g * x",
+        "simulated": false,
+        "source": "dataset dpa-200mhz version raw-v1, test split (columns I/Q of the played export)",
+        "symbol": "x"
+      },
+      {
+        "artifact_id": "played-signal",
+        "n_samples": 15360,
+        "peak_abs": 0.913,
+        "rms": 0.318,
+        "role": "pre-distorted PA input, u = DPD(x), as played",
+        "simulated": false,
+        "source": "DPD gru weights bbbbbbbbbbbb from run run-dpd-0001; exported by run_dpd run-apply-0001 (sha256 aaaaaaaaaaaa)",
+        "symbol": "u"
+      },
+      {
+        "artifact_id": "capture-with-dpd",
+        "n_samples": 15360,
+        "peak_abs": 2.18,
+        "rms": 0.855,
+        "role": "measured PA output while u was played, aligned (capture units)",
+        "simulated": false,
+        "source": "capture capture-with-dpd sha256 bbbbbbbbbbbb, delay 123 samples, correlation 0.9998; mock instrument adapter: a synthetic stand-in for a PA, not a measurement",
+        "symbol": "y"
+      }
+    ],
+    "software": {
+      "git_commit": "6f026b1",
+      "git_dirty": false,
+      "opendpd_version": "2.2.0.dev0",
+      "platform": "Linux-x86_64",
+      "python_version": "3.13.14",
+      "torch_version": "2.13.0+cu132"
+    },
+    "source": "mock",
+    "surrogate_coverage": null,
+    "valid_sample_range": null
+  }
+}

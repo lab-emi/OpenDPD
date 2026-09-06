@@ -38,6 +38,22 @@ platform automatically. Version string in the candidate: `2.2.0.dev0`.
   `validation` status; this one is `pending_cross_validation`, so the GUI does
   not offer it and every result under it says so
   (`docs/protocols/waveform-profiles.md`).
+- **Measured DPD evidence (`dpd_measured`)**: play a `run_dpd` export through a
+  physical PA, capture the output, and import the captures with the conditions
+  you declare (`opendpd measurements import`, or the run page's "Import
+  measured captures…"). The service aligns each capture to what was played
+  (integer delay, one complex gain), scores it as captured under every
+  profile, stores the files with their hashes and labels the result
+  "user-provided, not independently verified"; the output level difference
+  between the with/without captures is reported, never normalised. Measured
+  and simulated results are shown side by side and never ranked
+  (`docs/protocols/measured-dpd.md`).
+- **Instrument adapters with a fail-closed interlock**: RF output off by
+  default, arming by a named person, limits checked before anything is sent,
+  timeouts, loss of link, adapter failures and aborts all end with the output
+  off. Only the mock adapter ships (`opendpd instruments list`, `dry-run`);
+  a real adapter needs `OPENDPD_ALLOW_RF_OUTPUT=1` in an approved laboratory
+  session (`docs/architecture/instruments.md`).
 - **Thread budget**: `execution.num_threads` is applied by the shared executor
   (torch intra-op threads) on every path; unset keeps torch's default. Run
   records stamp `started_at`/`finished_at` with the executor's own clock on
@@ -77,6 +93,9 @@ Tutorials: `docs/tutorials/gui-quickstart.md`, `docs/tutorials/headless-cli.md`,
   browser are not verified by a person yet.
 - External trial and onboarding measurements (S14) have not happened; this is
   an alpha for that purpose.
+- No physical PA has been measured with the S16 path yet: the protocol is
+  verified on synthetic and mock captures only, and no real instrument adapter
+  exists (`docs/protocols/measured-dpd.md` §7).
 - Regression baselines are drafts until a maintainer approves them; the
   leaderboard policy (S20) does not exist yet.
 - CSV sources of stress size are parsed into RAM; use `.npy`/`.npz` for
