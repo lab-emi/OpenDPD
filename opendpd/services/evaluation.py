@@ -112,25 +112,30 @@ def _fitted_peak(ws: Workspace, pa_run_id: str) -> float:
     return float(np.max(_amplitude(np.asarray(x_train, dtype=np.float32))))
 
 
-def _build_net(proj, task: TaskType, input_size: int):
-    """Mirror of steps/train_pa.py and steps/train_dpd.py model construction."""
+def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
+    """Mirror of steps/train_pa.py and steps/train_dpd.py model construction. Least-squares baselines are torch
+    modules of the compute core (no legacy backbone); a DPD is always cascaded with a gradient-trained PA."""
     import torch
     import models as model
     from quant import get_quant_model
     from utils.util import count_net_params
+    from opendpd.services.polynomial import is_least_squares, polynomial_module
 
-    pa = model.CoreModel(input_size=input_size, hidden_size=proj.PA_hidden_size, num_layers=proj.PA_num_layers,
-                         backbone_type=proj.PA_backbone, window_size=proj.window_size,
-                         num_dvr_units=proj.num_dvr_units, thx=proj.thx, thh=proj.thh)
-    if task == TaskType.train_pa:
-        return pa
+    def core(hidden: int, layers: int, backbone: str):
+        return model.CoreModel(input_size=input_size, hidden_size=hidden, num_layers=layers, backbone_type=backbone,
+                               window_size=proj.window_size, num_dvr_units=proj.num_dvr_units, thx=proj.thx, thh=proj.thh)
+
+    least_squares = is_least_squares(resolved.model.key)
+    if resolved.task == TaskType.train_pa:
+        return polynomial_module(resolved.model) if least_squares \
+            else core(proj.PA_hidden_size, proj.PA_num_layers, proj.PA_backbone)
+    pa = core(proj.PA_hidden_size, proj.PA_num_layers, proj.PA_backbone)
     pa_id = proj.gen_pa_model_id(count_net_params(pa))
     pa.load_state_dict(torch.load(os.path.join("save", proj.dataset_name, "train_pa", pa_id + ".pt"),
                                   map_location="cpu", weights_only=True))
-    dpd = model.CoreModel(input_size=input_size, hidden_size=proj.DPD_hidden_size, num_layers=proj.DPD_num_layers,
-                          backbone_type=proj.DPD_backbone, window_size=proj.window_size,
-                          num_dvr_units=proj.num_dvr_units, thx=proj.thx, thh=proj.thh)
-    return model.CascadedModel(dpd_model=get_quant_model(proj, dpd), pa_model=pa)
+    dpd = polynomial_module(resolved.model) if least_squares \
+        else get_quant_model(proj, core(proj.DPD_hidden_size, proj.DPD_num_layers, proj.DPD_backbone))
+    return model.CascadedModel(dpd_model=dpd, pa_model=pa)
 
 
 def _checkpoint_path(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest) -> Path:
@@ -168,7 +173,7 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
         proj = Project(args=ns)
         proj.set_device()
         (_, _, test_loader), input_size = proj.build_dataloaders()
-        net = _build_net(proj, resolved.task, input_size)
+        net = _build_net(proj, resolved, input_size)
         state = torch.load(checkpoint, map_location="cpu", weights_only=True)
         (net.dpd_model if dpd_task else net).load_state_dict(state)
         net = net.to(proj.device)

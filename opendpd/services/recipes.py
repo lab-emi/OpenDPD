@@ -28,7 +28,7 @@ from opendpd.schemas import (
 class Recipe:
     recipe_id: str
     title: str
-    purpose: str            # "smoke" | "research"
+    purpose: str            # "smoke" | "research" | "baseline"
     task: TaskType
     model: ModelSpec
     training: TrainingConfig
@@ -75,6 +75,39 @@ RECIPES: List[Recipe] = [
            "Full 300-epoch DPD learning through a research-grade PA surrogate.",
            "Requires a research PA run (frame_length 200, seed 0). Surrogate evidence only.",
            "hours on CPU; tens of minutes on a GPU"),
+]
+
+_LS = dict(epochs=1, frame_length=200, frame_stride=1)      # not used by a least-squares fit (recorded for the layout)
+_GMP_PA = {"Ka": 5, "La": 30, "Kb": 4, "Lb": 30, "Mb": 5, "Kc": 4, "Lc": 30, "Mc": 5, "rcond": 1e-4}
+_GMP_DPD = {"Ka": 5, "La": 20, "Kb": 4, "Lb": 20, "Mb": 3, "Kc": 4, "Lc": 20, "Mc": 2, "rcond": 0.0}
+RECIPES += [
+    Recipe("pa-mp-ls-v1", "PA model, MP, least squares (benchmark baseline)", "baseline", TaskType.train_pa,
+           ModelSpec(key="mp_ls", parameters={"K": 9, "Q": 150, "rcond": 0.0}), TrainingConfig(**_LS),
+           "Memory polynomial identified by direct least squares on the train split: the classical PA-modeling "
+           "baseline of benchmark_report.md (1,350 complex = 2,700 real parameters).",
+           "Deterministic, no seed. Rank, condition number and cutoff are recorded with the result. The basis "
+           "(train samples x 1,350 complex columns) is held in memory.",
+           "seconds to a minute on CPU"),
+    Recipe("pa-gmp-ls-v1", "PA model, GMP, truncated SVD (benchmark baseline)", "baseline", TaskType.train_pa,
+           ModelSpec(key="gmp_ls", parameters=dict(_GMP_PA)), TrainingConfig(**_LS),
+           "Generalised memory polynomial (aligned, lagging and leading envelope terms) with a 1e-4 singular-value "
+           "cutoff, as in benchmark_report.md (2,700 real parameters).",
+           "The cutoff is part of the protocol: the retained rank is reported and must not be tuned per result. "
+           "Leading terms read Mc = 5 future samples.",
+           "seconds to a minute on CPU"),
+    Recipe("dpd-mp-ila-v1", "DPD, MP, indirect learning (benchmark baseline)", "baseline", TaskType.train_dpd,
+           ModelSpec(key="mp_ls", parameters={"K": 5, "Q": 100, "rcond": 0.0}), TrainingConfig(**_LS),
+           "Memory-polynomial predistorter identified by ILA on the measured train split (1,000 real parameters) "
+           "and scored through a gradient-trained PA surrogate.",
+           "A different training path from gradient DPD (DLA through the surrogate): comparable under one "
+           "protocol, but the result states the path. Requires a gradient-trained PA run on the dataset.",
+           "seconds on CPU"),
+    Recipe("dpd-gmp-ila-v1", "DPD, GMP, indirect learning (benchmark baseline)", "baseline", TaskType.train_dpd,
+           ModelSpec(key="gmp_ls", parameters=dict(_GMP_DPD)), TrainingConfig(**_LS),
+           "Generalised memory-polynomial predistorter identified by ILA (1,000 real parameters), scored through "
+           "a gradient-trained PA surrogate.",
+           "Same path statement as dpd-mp-ila-v1; leading terms read Mc = 2 future samples.",
+           "seconds on CPU"),
 ]
 
 _BY_ID = {r.recipe_id: r for r in RECIPES}

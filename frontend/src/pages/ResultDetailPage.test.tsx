@@ -15,6 +15,7 @@ const general = {
   ...legacy,
   result_id: 'res-pa-0001-general-spectral-v1',
   metric_profile_id: 'general-spectral-v1',
+  models: legacy.models.map((m) => ({ ...m, training_path: 'least_squares' })),
   metrics: [
     { name: 'NMSE', value: -22.5, unit: 'dB', better: 'lower', status: 'ok', reason: null },
     { name: 'IBE', value: -23.1, unit: 'dB', better: 'lower', status: 'ok', reason: null },
@@ -45,6 +46,7 @@ test('shows the profile behind every score, its definitions, and switches to ano
   expect(within(acprL).getByText(/exceeds the captured range/)).toBeInTheDocument()
   expect(calls.some((c) => c.path === '/api/v1/results/run-pa-0001' && c.method === 'GET')).toBe(true)
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('res-pa-0001-general-spectral-v1')
+  expect(screen.getByText(/least squares/)).toBeInTheDocument()       // the training path is part of the evidence
 })
 
 test('a DPD result shows the x/u/y chain, baselines under one reference, coverage and the uncalibrated note', async () => {

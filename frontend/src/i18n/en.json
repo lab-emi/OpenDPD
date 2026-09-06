@@ -306,6 +306,7 @@
   "results.detail.scaling": "Scaling",
   "results.detail.scaling.body": "Amplitude units: {units} · input scaling: {scaling} · reference gain: {gain}.",
   "results.detail.scaling.uncalibrated": "No physical calibration: absolute output power (dBm) and efficiency are not derived from these numbers.",
+  "run.metrics.fitted": "This run finished without per-epoch metrics: the model was fitted in one step (a least-squares baseline). Open the result for its scores and the fit record.",
   "run.metrics.apply": "This run applied a trained DPD to the test split; there is no training history. Open the result for the signal chain and the scores.",
   "results.compare": "Compare selected ({n})",
   "results.select": "Select {run} for comparison",

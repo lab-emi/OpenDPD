@@ -102,6 +102,23 @@ opendpd apply run-DPD --workspace WS                 # export u = DPD(x), score 
 opendpd apply run-DPD --workspace WS --pa run-PA2    # score the same DPD through another surrogate
 ```
 
+## Classical baselines (MP / GMP by least squares)
+
+- The recipes **pa-mp-ls-v1**, **pa-gmp-ls-v1**, **dpd-mp-ila-v1** and
+  **dpd-gmp-ila-v1** fit the memory-polynomial baselines of the benchmark
+  report in seconds on CPU. PA fits use direct least squares on the train
+  split; DPD fits use indirect learning (ILA) on the measured train split and
+  are scored through a gradient-trained PA surrogate like any other DPD.
+- A fit has no seed and no epochs. Its stability is recorded instead: the
+  retained rank, the condition number, the singular-value cutoff (`rcond`) and
+  the train residual appear in the result's limitations and in `fit.json`.
+- Every result names its **training path** (gradient, gradient through the
+  surrogate, least squares, ILA least squares), so a comparison between a
+  polynomial and a neural DPD shows that the two were obtained differently
+  even when they are ranked under one protocol.
+- A least-squares PA is a PA-modeling reference only; it is refused as a
+  surrogate for DPD simulation.
+
 ## Reproduce, export and import a configuration
 
 - Every run's **Configuration** tab shows the resolved configuration (what

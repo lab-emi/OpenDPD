@@ -55,6 +55,7 @@
         "n_parameters": 1911,
         "role": "pa",
         "run_id": null,
+        "training_path": null,
         "weights_sha256": null
       }
     ],

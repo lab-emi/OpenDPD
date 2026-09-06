@@ -334,7 +334,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
             </Typography>
             {(result.models ?? []).map((m) => (
               <Typography key={`${m.role}-${m.run_id}`} variant="body2">
-                <strong>{m.role}</strong> {m.model.key} {JSON.stringify(m.model.parameters)} · {m.n_parameters ?? '?'} params · {m.execution_semantics}
+                <strong>{m.role}</strong> {m.model.key} {JSON.stringify(m.model.parameters)} · {m.n_parameters ?? '?'} params · {m.execution_semantics}{m.training_path ? ` · ${m.training_path.replace(/_/g, ' ')}` : ''}
                 {typeof m.lookahead_samples === 'number' ? ` · look-ahead ${m.lookahead_samples}` : ''}
               </Typography>
             ))}

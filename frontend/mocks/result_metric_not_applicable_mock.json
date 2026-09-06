@@ -79,6 +79,7 @@
         "n_parameters": null,
         "role": "pa",
         "run_id": "run-pa-0003",
+        "training_path": null,
         "weights_sha256": null
       }
     ],

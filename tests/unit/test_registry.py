@@ -25,9 +25,15 @@ def _constructible_legacy_backbones():
 
 def test_every_registered_model_is_constructible():
     from models import CoreModel
+    from opendpd.core.polynomial import PolynomialModel, coefficient_count
 
     for m in list_models():
         p = m.defaults()
+        if m.training_method == "least_squares":
+            # fitted in the compute core, never through a legacy backbone
+            module = PolynomialModel(m.key, p)
+            assert module.n_real_parameters == 2 * coefficient_count(m.key, p)
+            continue
         CoreModel(input_size=2, hidden_size=int(p.get("hidden_size", 8)), num_layers=int(p.get("num_layers", 1)),
                   backbone_type=m.legacy_backbone, window_size=4, num_dvr_units=int(p.get("num_dvr_units", 3)),
                   thx=float(p.get("thx", 0.0)), thh=float(p.get("thh", 0.0)))

@@ -47,7 +47,7 @@ repository; "pending human" means a maintainer decision is required;
 | Two experiments in sequence do not leak configuration; parallel workers do not share output files | done (`tests/integration/test_cli_run.py::test_sequential_runs_do_not_leak_configuration`; each run has its own directory) |
 | GUI / CLI / Python API normalise identically; defaults have one source | done (`opendpd.services.config.resolve`; `test_training_defaults_have_one_source`; legacy-CLI numeric equality test) |
 | Model list from the registry; CLI choices and GUI options not hand-written twice; unknown models cannot be submitted | done for the new path (`opendpd models`, `test_registry_covers_every_working_legacy_backbone`); the legacy parser keeps its own list for compatibility |
-| MP/GMP-style non-neural methods can express their own fitting logic | registry has `training_method`; least-squares MP/GMP integration is S12 work — **open** |
+| MP/GMP-style non-neural methods can express their own fitting logic | done (S12): `mp_ls` / `gmp_ls` are registry models with `training_method: least_squares`; `opendpd/core/polynomial.py` fits them (column-normalised truncated SVD, diagnostics recorded) and `opendpd/services/polynomial.py` runs them as ordinary runs (PA: direct least squares; DPD: indirect learning on the measured train split, scored through a gradient-trained surrogate); the result states the training path |
 | Legacy commands and public API compatibility tests pass; deprecations announced | done (existing suite passes; nothing deprecated yet) |
 | Plain `pip install opendpd` needs no GUI dependency; runs work from a read-only install into an external workspace | done (`tests/packaging/test_wheel_install.py`, `tests/unit/test_lazy_imports.py`) |
 

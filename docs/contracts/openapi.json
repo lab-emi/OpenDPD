@@ -2066,6 +2066,23 @@
             ],
             "title": "Run Id"
           },
+          "training_path": {
+            "anyOf": [
+              {
+                "enum": [
+                  "gradient",
+                  "gradient_dla",
+                  "least_squares",
+                  "ila_least_squares"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Path"
+          },
           "weights_sha256": {
             "anyOf": [
               {

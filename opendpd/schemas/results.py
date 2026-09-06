@@ -93,6 +93,9 @@ class ModelEvidence(StrictModel):
     n_parameters: Optional[int] = Field(default=None, ge=0)
     execution_semantics: str = "offline_segmented"   # vs. "streaming"
     lookahead_samples: Optional[int] = Field(default=None, ge=0)
+    # how the weights were obtained: gradient descent (PA), gradient descent through the surrogate (DPD, DLA),
+    # direct least squares (PA) or indirect learning by least squares on measured data (DPD, ILA)
+    training_path: Optional[Literal["gradient", "gradient_dla", "least_squares", "ila_least_squares"]] = None
 
 
 class EvaluationResult(StrictModel):

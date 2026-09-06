@@ -152,11 +152,14 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
                                   f"metric profile '{config.evaluation.profile_id}' is not registered",
                                   "one of: " + ", ".join(sorted(PROFILES))))
 
-    if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task != TaskType.run_dpd:
+    model = get_model(config.model.key) if not issues else None
+    least_squares = model is not None and model.training_method == "least_squares"
+    if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task != TaskType.run_dpd and not least_squares:
         warn.append(ConfigIssue("training.epochs",
                                 f"{config.training.epochs} epochs is a smoke/demo run, not a benchmark result"))
-
-    model = get_model(config.model.key) if not issues else None
+    if least_squares and config.quantization is not None and config.quantization.enabled:
+        issues.append(ConfigIssue("quantization.enabled", f"model '{config.model.key}' is fitted by least squares; "
+                                  "quantisation-aware training does not apply", "disable quantization"))
     if model is not None and config.execution.device not in model.devices_tested:
         warn.append(ConfigIssue("execution.device",
                                 f"model '{config.model.key}' has no recorded test evidence on "

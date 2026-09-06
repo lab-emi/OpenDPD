@@ -173,6 +173,7 @@
         "n_parameters": 887,
         "role": "dpd",
         "run_id": "run-dpd-0001",
+        "training_path": null,
         "weights_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       },
       {
@@ -187,6 +188,7 @@
         "n_parameters": 1911,
         "role": "pa",
         "run_id": "run-pa-0001",
+        "training_path": null,
         "weights_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       }
     ],

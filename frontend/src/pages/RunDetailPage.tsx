@@ -199,7 +199,7 @@ function OverviewTab({ run, metrics, fromHistory, statusEvents, heartbeats }: { 
           </Typography>
         )}
         {names.length === 0 ? (
-          <EmptyState body={t(run.task === 'run_dpd' ? 'run.metrics.apply' : 'run.metrics.empty')} />
+          <EmptyState body={t(run.task === 'run_dpd' ? 'run.metrics.apply' : run.status === 'succeeded' ? 'run.metrics.fitted' : 'run.metrics.empty')} />
         ) : (
           <Grid container spacing={2}>
             {names.map((name) => (

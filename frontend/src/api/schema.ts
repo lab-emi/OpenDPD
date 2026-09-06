@@ -1462,6 +1462,8 @@ export interface components {
             role: "pa" | "dpd";
             /** Run Id */
             run_id?: string | null;
+            /** Training Path */
+            training_path?: ("gradient" | "gradient_dla" | "least_squares" | "ila_least_squares") | null;
             /** Weights Sha256 */
             weights_sha256?: string | null;
         };

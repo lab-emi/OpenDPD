@@ -39,6 +39,7 @@ from opendpd.schemas import (
     MetricProfile,
     MetricValue,
     ModelEvidence,
+    ModelSpec,
     PAReference,
     ResolvedExperimentConfig,
     RunError,
@@ -171,7 +172,11 @@ def submission_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[Con
                                   hint=f"available: {names}"))
         return errors, warnings
     split = dv.split if dv is not None else manifest.split
-    frame = config.training.frame_length
+    from opendpd.core.polynomial import POLYNOMIAL_KEYS, context_samples
+
+    # the context a model reads: its frame for the gradient trainer, its memory depth for a least-squares fit
+    frame = context_samples(config.model.key, config.model.parameters) if config.model.key in POLYNOMIAL_KEYS \
+        else config.training.frame_length
     if split.guard_samples < frame and manifest.source.kind != DatasetSourceKind.builtin:
         warnings.append(ConfigIssue("training.frame_length",
                                     f"frame_length {frame} exceeds the split guard of {split.guard_samples} samples, "
@@ -189,6 +194,13 @@ def _bind_pa(ws: Workspace, run_id: str, dataset_id: str, training: Optional[Tra
                                        f"PA surrogate '{pa_record.run_id}' was trained on dataset "
                                        f"'{pa_resolved.dataset.id}', not '{dataset_id}'",
                                        "pick a PA run from the same dataset or train one")])
+    from opendpd.core.registry import get_model
+    if get_model(pa_resolved.model.key).training_method != "gradient":
+        raise ConfigError([ConfigIssue("pa_reference.run_id",
+                                       f"PA run '{pa_record.run_id}' is a least-squares baseline "
+                                       f"({pa_resolved.model.key}): a PA-modeling reference, not a DPD surrogate",
+                                       "simulate DPD through a gradient-trained PA run (for example recipe "
+                                       "pa-gru-smoke-v1 or pa-gru-research-v1)")])
     if training is not None and (pa_resolved.training.frame_length != training.frame_length
                                  or pa_resolved.training.seed != training.seed):
         raise ConfigError([ConfigIssue("training",
@@ -227,8 +239,13 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
         updates["training"] = dpd_resolved.training
         updates["quantization"] = dpd_resolved.quantization
     if config.task == TaskType.train_dpd:
+        from opendpd.services.polynomial import is_least_squares
+
         assert config.pa_reference is not None
-        updates["pa_reference"] = _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=config.training)
+        # the legacy checkpoint convention (same seed / frame_length as the surrogate) binds the gradient trainer
+        # only; a least-squares predistorter is fitted on the data and merely evaluated through the surrogate
+        training = None if is_least_squares(config.model.key) else config.training
+        updates["pa_reference"] = _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=training)
     return config.model_copy(update=updates) if updates else config
 
 
@@ -271,7 +288,7 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
         "config_sha256": resolved.resolution.config_sha256,
         "dataset_raw_sha256": ws.get_dataset(config.dataset.id).raw_sha256,
         "software": software_provenance().model_dump(mode="json"),
-        "legacy_equivalent_command": legacy_command_line(ns),
+        "legacy_equivalent_command": None if _is_least_squares(config.model.key) else legacy_command_line(ns),
         "parent_run_id": parent_run_id,
     })
     record = RunRecord(
@@ -378,8 +395,15 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
     reason = None
     with run_in_directory(run_dir):
         try:
+            from opendpd.services import polynomial
+
             _prepare_inputs(ws, run_dir, resolved, ns)
-            project = run_step(ns, on_epoch=on_epoch, should_cancel=should_cancel)
+            if polynomial.is_least_squares(resolved.model.key):
+                # baselines never enter the legacy trainer: a deterministic fit, or a one-pass apply for run_dpd
+                project = polynomial.apply_run(ws, run_dir, resolved, ns) if resolved.task == TaskType.run_dpd \
+                    else polynomial.fit_run(ws, run_dir, resolved, ns, on_epoch=on_epoch)
+            else:
+                project = run_step(ns, on_epoch=on_epoch, should_cancel=should_cancel)
             if resolved.task == TaskType.run_dpd:
                 from opendpd.services.evaluation import write_dpd_output_metadata
                 write_dpd_output_metadata(ws, run_id, resolved, ns)
@@ -490,6 +514,8 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
                 "what the exported columns are, their order, dtype, scaling and the checkpoints that produced them")
     for name in ("worker.log", "stdout.log"):
         add(name.replace(".", "-"), ArtifactKind.worker_log, run_dir / "logs" / name, False)
+    add("fit-diagnostics", ArtifactKind.other, run_dir / "fit.json", False,
+        "least-squares fit record: method, rank, condition number, cutoff, residual")
     add("config-resolved", ArtifactKind.config, run_dir / RESOLVED_CONFIG_FILE, True)
     add("provenance", ArtifactKind.provenance, run_dir / PROVENANCE_FILE, True)
     # written by the evaluation stage; registered on the second pass after it ran
@@ -547,8 +573,14 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     nperseg = dataset.signal.nperseg
     n_segments = math.ceil(n_valid / nperseg) if (n_valid and nperseg) else None
 
+    from opendpd.services.polynomial import fit_limitations, is_least_squares
+
+    least_squares = is_least_squares(resolved.model.key)
     limitations: List[str] = []
-    if resolved.training.epochs < SMOKE_EPOCH_LIMIT:
+    if least_squares:
+        selected_epoch = None                       # a fit has no epochs to select from
+        limitations += fit_limitations(ws, run_id, resolved)
+    elif resolved.training.epochs < SMOKE_EPOCH_LIMIT:
         limitations.append(f"{resolved.training.epochs}-epoch smoke/demo training; not a benchmark result")
     if resolved.training.reproducibility == "soft":
         limitations.append("soft reproducibility (non-deterministic algorithms allowed); repeated runs may differ")
@@ -561,7 +593,8 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         reference = SignalReference(kind="measured_pa_output",
                                     description="measured PA output of the test split (dataset *_output)")
         models.append(ModelEvidence(role="pa", model=resolved.model, run_id=run_id, weights_sha256=dpd_sha,
-                                    n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model.key)))
+                                    n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
+                                    training_path="least_squares" if least_squares else "gradient"))
     else:
         evidence = EvidenceType.dpd_surrogate
         reference = SignalReference(kind="linear_gain_target", description="target = gain * PA input (test split)",
@@ -569,13 +602,15 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                     gain_value=target_gain)
         pa = resolved.pa_reference
         models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
-                                    n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model.key)))
+                                    n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
+                                    training_path="ila_least_squares" if least_squares else "gradient_dla"))
         pa_manifest = load_artifacts(ws, pa.run_id)
         pa_artifact = next((a for a in (pa_manifest.artifacts if pa_manifest else [])
                             if a.artifact_id == pa.checkpoint_artifact_id), None)
         models.append(ModelEvidence(role="pa", model=pa.model, run_id=pa.run_id, weights_sha256=pa.checkpoint_sha256,
                                     n_parameters=_n_params(pa_artifact.file.path) if pa_artifact else None,
-                                    lookahead_samples=_lookahead(pa.model.key)))
+                                    lookahead_samples=_lookahead(pa.model),
+                                    training_path="least_squares" if is_least_squares(pa.model.key) else "gradient"))
         limitations.append(f"simulated through the learned PA surrogate {pa.run_id}; not a measured PA output")
         if surrogate_coverage is not None and surrogate_coverage.fraction_above_fitted_peak > 0:
             limitations.append(f"{surrogate_coverage.fraction_above_fitted_peak:.2%} of the pre-distorted samples exceed "
@@ -666,6 +701,14 @@ def _link(records: Dict[str, RunRecord], run_id: str, relation: LineageRelation,
                        status=record.status if record else None, checkpoint_sha256=sha)
 
 
-def _lookahead(key: str) -> Optional[int]:
+def _is_least_squares(key: str) -> bool:
     from opendpd.core.registry import get_model
-    return get_model(key).lookahead_samples
+    return get_model(key).training_method == "least_squares"
+
+
+def _lookahead(spec: ModelSpec) -> Optional[int]:
+    from opendpd.core.polynomial import POLYNOMIAL_KEYS, lookahead_samples
+    from opendpd.core.registry import get_model
+    if spec.key in POLYNOMIAL_KEYS:
+        return lookahead_samples(spec.key, spec.parameters)
+    return get_model(spec.key).lookahead_samples

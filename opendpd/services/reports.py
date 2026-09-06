@@ -103,7 +103,8 @@ class _Report:
                       ("Selected epoch", str(r.selected_epoch) if r.selected_epoch is not None else "n/a")]
             for m in r.models:
                 facts.append((f"Model ({m.role})", f"{m.model.key} {json.dumps(m.model.parameters)} · run {m.run_id} · "
-                                                   f"weights {m.weights_sha256}"))
+                                                   f"weights {m.weights_sha256}"
+                                                   + (f" · training path {m.training_path}" if m.training_path else "")))
         sw = self.provenance.get("software", {})
         facts.append(("Software", f"opendpd {sw.get('opendpd_version')} · python {sw.get('python_version')} · "
                                   f"torch {sw.get('torch_version')} · {sw.get('platform')} · git {sw.get('git_commit')}"
@@ -114,7 +115,8 @@ class _Report:
         return [("Re-evaluate the stored checkpoint", f"opendpd evaluate {self.run_id} --workspace <workspace> --profile "
                                                       f"{self.resolved.evaluation.profile_id}"),
                 ("Re-run the configuration (a new experiment)", f"opendpd run --config config.user.json --workspace <workspace>"),
-                ("Legacy equivalent", str(self.provenance.get("legacy_equivalent_command", "n/a")))]
+                ("Legacy equivalent", self.provenance.get("legacy_equivalent_command")
+                 or "n/a (least-squares baselines run only through opendpd)")]
 
 
 def report_markdown(ws: Workspace, run_id: str) -> str:

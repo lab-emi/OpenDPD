@@ -95,6 +95,15 @@ class ModelDescriptor:
 
 # --- parameter specs shared by several models -------------------------------
 
+def _poly(name: str, default: int, maximum: int, description: str, minimum: int = 1) -> ParamSpec:
+    return ParamSpec(name, "int", default, description, minimum=minimum, maximum=maximum)
+
+
+def _rcond() -> ParamSpec:
+    return ParamSpec("rcond", "float", 0.0, "singular-value cutoff relative to the largest (column-normalised "
+                     "truncated SVD); 0 = machine precision", minimum=0.0, maximum=0.999)
+
+
 def _hidden(default: int, maximum: int = 1024) -> ParamSpec:
     return ParamSpec("hidden_size", "int", default, "Hidden state size of the backbone", minimum=1,
                      maximum=maximum, legacy_arg={"pa": "PA_hidden_size", "dpd": "DPD_hidden_size"})
@@ -147,6 +156,36 @@ MODELS: Tuple[ModelDescriptor, ...] = (
         lookahead_note="zero-padded past window of 11 samples; causal",
         constraints="memory length 11 and degree 5 are fixed in backbones/gmp.py (the --K / --gmp_memory_length "
                     "flags are not wired)", reference="OpenDPD (ISCAS 2024)", evidence=_CPU_WEEKLY,
+    ),
+    ModelDescriptor(
+        key="mp_ls", display_name="MP (least squares)", family="polynomial", legacy_backbone="mp",
+        training_method="least_squares", roles=("pa", "dpd"),
+        params=(_poly("K", 5, 15, "nonlinearity order: envelope powers |x|^k for k = 0..K-1"),
+                _poly("Q", 50, 500, "memory depth in samples"), _rcond()),
+        status="supported", devices_tested=("cpu",), lookahead_samples=0,
+        lookahead_note="causal; the Q-1 sample history is zero-filled at every segment start",
+        constraints="PA: direct least squares on the train split. DPD: indirect learning (ILA) on the measured train "
+                    "split, evaluated through a gradient-trained PA surrogate; not usable as a surrogate itself. "
+                    "Deterministic (no seed, no epochs); rank, condition number and cutoff are recorded.",
+        reference="OpenDPD benchmark (benchmark/benchmark_volterra.py, benchmark_report.md)",
+        evidence="tests/unit/test_polynomial.py (analytic), tests/integration/test_baselines.py",
+    ),
+    ModelDescriptor(
+        key="gmp_ls", display_name="GMP (least squares)", family="polynomial", legacy_backbone="gmp",
+        training_method="least_squares", roles=("pa", "dpd"),
+        params=(_poly("Ka", 5, 15, "aligned terms: envelope orders"), _poly("La", 15, 200, "aligned terms: memory depth"),
+                _poly("Kb", 4, 15, "lagging envelope terms: orders (0 = none)", minimum=0),
+                _poly("Lb", 15, 200, "lagging terms: memory depth"), _poly("Mb", 2, 20, "lagging terms: envelope lags"),
+                _poly("Kc", 4, 15, "leading envelope terms: orders (0 = none)", minimum=0),
+                _poly("Lc", 15, 200, "leading terms: memory depth"), _poly("Mc", 1, 20, "leading terms: envelope leads"),
+                _rcond()),
+        status="supported", devices_tested=("cpu",), lookahead_samples=None,
+        lookahead_note="not characterised as a constant: the leading envelope terms |x(n+m)| read Mc future samples "
+                       "(0 when Kc = 0); every result records the value for its parameters",
+        constraints="Same fitting and roles as mp_ls. The cross-term basis is often ill-conditioned: a cutoff "
+                    "(rcond, e.g. 1e-4) keeps the fit stable and the retained rank is recorded.",
+        reference="OpenDPD benchmark (benchmark/benchmark_volterra.py, benchmark_report.md)",
+        evidence="tests/unit/test_polynomial.py (analytic), tests/integration/test_baselines.py",
     ),
     ModelDescriptor(
         key="lstm", display_name="LSTM", family="recurrent", legacy_backbone="lstm", training_method="gradient",
