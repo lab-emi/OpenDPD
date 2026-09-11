@@ -62,7 +62,10 @@ def desktop_session(platform: str = sys.platform, environ=os.environ) -> Optiona
 
 def gui_backend() -> str:
     """Name of the pywebview backend usable here ("cocoa", "edgechromium", "gtk", "qt"); raises otherwise."""
-    from webview import guilib
+    import importlib
+    # The package attribute ``webview.guilib`` is a placeholder pywebview fills at start();
+    # the probe needs the submodule of the same name.
+    guilib = importlib.import_module("webview.guilib")
     guilib.initialize()
     return guilib.guilib.__name__.rsplit(".", 1)[-1]
 
