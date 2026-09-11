@@ -70,7 +70,8 @@ def test_running_instance_is_reused_not_duplicated(tmp_path, monkeypatch):
     monkeypatch.setattr(launcher, "probe", lambda url, timeout=1.0: {"status": "ok"})
     opened = []
     served = []
-    rc = launcher.launch(ws, serve=lambda *a: served.append(a), opener=lambda u: opened.append(u) or True)
+    # browser mode explicitly: on a desktop with the extra installed, 'auto' would open a real window
+    rc = launcher.launch(ws, mode="browser", serve=lambda *a: served.append(a), opener=lambda u: opened.append(u) or True)
     assert rc == 0 and served == [] and opened == ["http://127.0.0.1:8790/bootstrap?token=abc"]
 
 
