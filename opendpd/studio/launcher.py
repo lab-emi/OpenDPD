@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import errno
+import locale
 import os
 import secrets
 import socket
@@ -200,10 +201,28 @@ def _active_run_count(app) -> int:
     return sum(store.count_runs(status=s) for s in (RunStatus.queued, RunStatus.running, RunStatus.cancel_requested))
 
 
-def _default_window_runner(url: str, active_runs: Callable[[], int]) -> None:
+def preferred_language(workspace: Path) -> str:
+    """The workspace's stored UI language, else the OS locale when supported, else English."""
+    from opendpd.schemas import UI_LANGUAGES
+    try:
+        from opendpd.services.workspace import Workspace
+        stored = Workspace.open(workspace).settings().language
+        if stored:
+            return stored
+    except Exception:  # noqa: BLE001 - no workspace yet or a broken file: never blocks the window
+        pass
+    try:
+        code = (locale.getlocale()[0] or "").split("_")[0].lower()
+    except ValueError:
+        code = ""
+    return code if code in UI_LANGUAGES else "en"
+
+
+def _default_window_runner(url: str, active_runs: Callable[[], int], workspace: Path) -> None:
     from opendpd.studio import window as window_shell
     from opendpd.studio.strings import shell_strings
-    window_shell.run_window(url, active_runs=active_runs, strings=shell_strings, icon=window_shell.icon_path())
+    window_shell.run_window(url, active_runs=active_runs, strings=lambda: shell_strings(preferred_language(workspace)),
+                            icon=window_shell.icon_path())
 
 
 def _choose_surface(mode: Mode, availability: Callable[[], "object"]) -> tuple:
@@ -247,7 +266,7 @@ def launch(workspace: Path, *, port: Optional[int] = None, mode: Mode = "auto", 
     if note:
         print(note, file=out)
         _flush(out)
-    window_runner = window_runner or _default_window_runner
+    window_runner = window_runner or (lambda url, active: _default_window_runner(url, active, workspace))
     try:
         workspace.mkdir(parents=True, exist_ok=True)
         with workspace_guard(workspace):

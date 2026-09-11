@@ -75,3 +75,15 @@ def test_icon_files_ship_with_the_package(monkeypatch):
     assert window.icon_path().name == "icon.png"
     monkeypatch.setattr(window.os, "name", "nt")
     assert window.icon_path().name == "icon.ico"
+
+
+def test_every_language_has_every_native_string():
+    from opendpd.schemas import UI_LANGUAGES
+    from opendpd.studio.strings import STRINGS
+    assert set(STRINGS) == set(UI_LANGUAGES)
+    for code, s in STRINGS.items():
+        assert "{count}" in s.quit_body, code
+        assert set(s.localization) == set(ENGLISH.localization), code
+        assert all(v.strip() for v in s.localization.values()), code
+    assert shell_strings("xx") is ENGLISH and shell_strings(None) is ENGLISH
+    assert shell_strings("ja").quit_title != ENGLISH.quit_title

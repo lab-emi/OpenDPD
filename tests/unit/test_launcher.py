@@ -275,3 +275,17 @@ def test_doctor_reports_the_window_backend(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "window    not available: no display" in out
     assert "problem: no display" not in out, "a missing window is never a blocking problem"
+
+
+def test_preferred_language_reads_the_workspace_then_the_os_locale(tmp_path, monkeypatch):
+    from opendpd.schemas import WorkspaceSettings
+    from opendpd.services.workspace import Workspace
+    ws = Workspace.create(tmp_path / "ws")
+    monkeypatch.setattr(launcher.locale, "getlocale", lambda: ("fr_FR", "UTF-8"))
+    assert launcher.preferred_language(ws.root) == "fr"
+    ws.save_settings(WorkspaceSettings(language="ja"))
+    assert launcher.preferred_language(ws.root) == "ja"
+    monkeypatch.setattr(launcher.locale, "getlocale", lambda: ("pt_BR", "UTF-8"))
+    assert launcher.preferred_language(tmp_path / "missing") == "en"
+    ws.settings_path.write_text("{broken")
+    assert launcher.preferred_language(ws.root) == "en", "a broken file never blocks the window"
