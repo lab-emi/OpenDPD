@@ -53,6 +53,12 @@ gui = [
     "psutil>=5.9",
     "python-multipart>=0.0.9",
 ]
+# Native application window for `opendpd gui` (pywebview: WKWebView on macOS, WebView2 on
+# Windows, WebKit2GTK or Qt on Linux). Pure Python; the browser stays the fallback.
+desktop = [
+    "opendpd[gui]",
+    "pywebview>=6.2,<7",
+]
 dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",

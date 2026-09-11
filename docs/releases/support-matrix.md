@@ -25,6 +25,14 @@ Last update: 2026-09-06 (S13; baseline in `docs/baseline/baseline-report.md`, ha
 | macOS Apple Silicon | 3.11–3.13 | **unverified** | needs a person to run `opendpd gui` on a real desktop (browser opening, Ctrl+C cleanup); weekly CI covers only the headless service on macOS |
 | Windows x86-64 | 3.11–3.13 | **unverified** | needs a person: browser opening, process-group cleanup, paths with spaces/Unicode |
 
+## Native window (`opendpd[desktop]`)
+
+| OS | Backend | Status | Evidence |
+|---|---|---|---|
+| macOS Apple Silicon | cocoa / WKWebView | **unverified** | pending the manual run recorded below |
+| Windows x86-64 | edgechromium / WebView2 | **unverified** | needs a person: WebView2 runtime, downloads, Ctrl+C in a console |
+| Linux x86-64 | gtk / WebKit2GTK or qt | **unverified** | needs a person with the distribution packages; CI only proves the headless fallback reason |
+
 ## Browsers (Studio frontend)
 
 | Engine | Where | Status | Evidence |
