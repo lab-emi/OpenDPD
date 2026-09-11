@@ -24,7 +24,7 @@ import { useState } from 'react'
 import { api } from '@/api/client'
 import { inspectSource, useImportDataset, useImportRoots, useRootFiles, type ImportRequest, type SourceInfo, type UploadResult } from '@/api/datasets'
 import type { DatasetOrigin } from '@/api/types'
-import { t } from '@/i18n'
+import { formatNumber, t } from '@/i18n'
 import { ORIGINS } from '@/components/ManifestDialog'
 import { SignalFields, emptySignalForm, signalSpecFrom, type SignalForm } from '@/components/SignalFields'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
@@ -168,7 +168,7 @@ export function ImportDatasetDialog({ onClose, onImported }: { onClose: () => vo
                   )}
                   {files.data.map((f) => (
                     <ListItemButton key={f.path} selected={picked?.path === f.path} onClick={() => (f.kind === 'dir' ? setDir(f.path) : inspect.mutate({ root_id: rootId, path: f.path }))}>
-                      <ListItemText primary={basename(f.path)} secondary={f.kind === 'dir' ? t('datasets.import.folder') : `${f.size_bytes.toLocaleString()} B`} />
+                      <ListItemText primary={basename(f.path)} secondary={f.kind === 'dir' ? t('datasets.import.folder') : `${formatNumber(f.size_bytes)} B`} />
                     </ListItemButton>
                   ))}
                 </List>
@@ -186,7 +186,7 @@ export function ImportDatasetDialog({ onClose, onImported }: { onClose: () => vo
               <Stack spacing={2}>
                 <Typography variant="body2">
                   <code>{picked.path}</code> · {info.kind}
-                  {info.n_rows !== null && info.n_rows !== undefined ? ` · ${t('datasets.rows', { count: info.n_rows.toLocaleString() })}` : ''}
+                  {info.n_rows !== null && info.n_rows !== undefined ? ` · ${t('datasets.rows', { count: formatNumber(info.n_rows) })}` : ''}
                   {info.legacy_files.length > 0 ? ` · ${t('datasets.import.legacy', { count: info.legacy_files.length })}` : ''}
                 </Typography>
                 {info.problems.length > 0 && (

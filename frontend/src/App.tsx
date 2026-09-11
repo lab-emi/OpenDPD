@@ -1,7 +1,10 @@
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
+import { useLanguage } from '@/i18n'
+import { LanguageGate } from '@/i18n/LanguageGate'
 import { AppShell } from '@/layout/AppShell'
 import { DatasetDetailPage } from '@/pages/DatasetDetailPage'
 import { DatasetsPage } from '@/pages/DatasetsPage'
@@ -16,7 +19,7 @@ import { RunDetailPage } from '@/pages/RunDetailPage'
 import { SessionGate } from '@/pages/SessionGate'
 import { RobustnessPage } from '@/pages/RobustnessPage'
 import { SettingsPage } from '@/pages/SettingsPage'
-import { theme } from '@/theme'
+import { themeFor } from '@/theme'
 
 function createQueryClient(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } } })
@@ -46,13 +49,18 @@ function AppRoutes() {
 }
 
 export default function App({ queryClient = createQueryClient() }: { queryClient?: QueryClient }) {
+  // A language change re-renders from here: new route elements for every page (state kept) and the matching MUI locale.
+  const language = useLanguage()
+  const muiTheme = useMemo(() => themeFor(language), [language])
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={muiTheme}>
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <SessionGate>
-            <AppRoutes />
+            <LanguageGate>
+              <AppRoutes />
+            </LanguageGate>
           </SessionGate>
         </BrowserRouter>
       </QueryClientProvider>

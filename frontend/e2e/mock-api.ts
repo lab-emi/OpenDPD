@@ -15,6 +15,7 @@ function mock<T>(name: string): T {
 type Json = Record<string, unknown>
 
 export interface FakeState {
+  language: string | null
   datasets: Json[]
   runs: Json[]
   submitted: Json[]
@@ -47,14 +48,14 @@ const report: Json = {
 }
 const aligned = { code: 'alignment_ok', severity: 'info', title: 'Aligned', message: 'residual 0.01 samples', evidence: { delay_samples: 0.01 }, blocking: false }
 
-export async function installFakeApi(page: Page): Promise<FakeState> {
+export async function installFakeApi(page: Page, options: { language?: string | null } = {}): Promise<FakeState> {
   const dataset = mock<Json>('dataset_builtin')
   const running = mock<Json>('run_running')
   const events = mock<Json[]>('events_running')
   const result = mock<Json>('result_pa_modeling_mock')
   const profiles = [mock<Json>('metric_profile_legacy'), mock<Json>('metric_profile_general')]
   const resolved = mock<Json>('resolved_train_pa_smoke')
-  const state: FakeState = { datasets: [], runs: [], submitted: [], diagnostics: {} }
+  const state: FakeState = { language: options.language ?? null, datasets: [], runs: [], submitted: [], diagnostics: {} }
   const rawVersion: Json = { version: 'raw-v1', base_version: null, created_at: '2026-09-06T08:00:00Z', params: null, code_version: null, fit_range: null, record: {}, n_samples: 20000, split: dataset['split'], files: [], sha256: null }
   const recipes = [
     {
@@ -76,6 +77,11 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
     const url = new URL(req.url())
     const path = url.pathname.replace('/api/v1', '')
     const method = req.method()
+    if (path === '/settings' && method === 'GET') return json(route, { language: state.language })
+    if (path === '/settings' && method === 'PUT') {
+      state.language = (req.postDataJSON() as { language: string | null }).language
+      return json(route, { language: state.language })
+    }
     if (path === '/session') return json(route, { authenticated: true, csrf_token: 'e2e-csrf', version: '2.2.0.dev0' })
     if (path === '/system/capabilities') {
       return json(route, { version: '2.2.0.dev0', workspace: '/home/user/opendpd workspace', note: 'detected does not imply tested', devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru', 'tres_deltagru'] }, { device: 'mps', detected: false, count: 0, tested_models: [] }] })

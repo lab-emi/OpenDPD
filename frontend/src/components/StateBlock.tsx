@@ -7,7 +7,7 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import type { ReactNode } from 'react'
 import { ApiError } from '@/api/client'
-import { t } from '@/i18n'
+import { formatTime, t } from '@/i18n'
 
 /** The four non-happy states every list/detail must render (UX spec §2). */
 
@@ -64,7 +64,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
 }
 
 export function DisconnectedState({ lastUpdate, onRefresh }: { lastUpdate: Date | null; onRefresh: () => void }) {
-  const time = lastUpdate ? lastUpdate.toLocaleTimeString() : t('common.na')
+  const time = lastUpdate ? formatTime(lastUpdate) : t('common.na')
   return (
     <Alert
       severity="warning"

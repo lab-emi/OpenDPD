@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useCapabilities } from '@/api/hooks'
 import { t } from '@/i18n'
+import { LanguageMenu } from '@/components/LanguageMenu'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 
 export function SettingsPage() {
@@ -15,6 +16,15 @@ export function SettingsPage() {
   return (
     <Stack spacing={2}>
       <Typography variant="h1">{t('settings.title')}</Typography>
+      <Paper sx={{ p: 2 }} component="section" aria-labelledby="settings-language">
+        <Typography variant="h2" id="settings-language" gutterBottom>
+          {t('settings.language')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {t('settings.language.note')}
+        </Typography>
+        <LanguageMenu variant="settings" />
+      </Paper>
       <Paper sx={{ p: 2 }}>
         <Typography variant="h2" gutterBottom>
           {t('settings.workspace')}

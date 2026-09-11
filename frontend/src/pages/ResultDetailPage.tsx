@@ -23,7 +23,7 @@ import { API, artifactUrl } from '@/api/client'
 import { useDeployExport, useExportRun, useMetricProfiles, useModels, useResult, useResultProfiles } from '@/api/hooks'
 import { offeredProfiles } from '@/api/profiles'
 import type { BaselineScore, DeploymentManifest, EvaluationResult, ExecutionEvidence, MetricProfile, MetricValue } from '@/api/types'
-import { t, type MessageKey } from '@/i18n'
+import { formatNumber, formatDateTime, t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
 import { ResultCharts } from '@/components/ResultCharts'
@@ -229,7 +229,7 @@ function DeploymentSummary({ manifest, filename, downloadUrl }: { manifest: Depl
         <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.theoretical')}</dt>
         <dd style={{ margin: 0 }}>{t('results.deploy.resources', { mac: res.mac_per_sample, lookups: res.table_lookups_per_sample, weights: res.weight_bytes, state: res.state_bytes, tables: res.table_bytes })}</dd>
         <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.measured')}</dt>
-        <dd style={{ margin: 0 }}>{r.measured_execution ? t('results.deploy.measured', { rate: Math.round(r.measured_execution.samples_per_second).toLocaleString(), what: r.measured_execution.what }) : t('results.deploy.notAvailable')}</dd>
+        <dd style={{ margin: 0 }}>{r.measured_execution ? t('results.deploy.measured', { rate: formatNumber(Math.round(r.measured_execution.samples_per_second)), what: r.measured_execution.what }) : t('results.deploy.notAvailable')}</dd>
         <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.synthesis')}</dt>
         <dd style={{ margin: 0 }}>{r.synthesis_estimate ?? t('results.deploy.notSynthesised')}</dd>
         <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.power')}</dt>
@@ -243,7 +243,7 @@ function DeploymentSummary({ manifest, filename, downloadUrl }: { manifest: Depl
 function ExecutionPanel({ result }: { result: EvaluationResult }) {
   const e: ExecutionEvidence | null | undefined = result.execution
   if (!e) return null
-  const micro = typeof e.lookahead_s === 'number' ? `${(e.lookahead_s * 1e6).toLocaleString(undefined, { maximumFractionDigits: 4 })} µs` : t('common.na')
+  const micro = typeof e.lookahead_s === 'number' ? `${formatNumber(e.lookahead_s * 1e6, { maximumFractionDigits: 4 })} µs` : t('common.na')
   const facts: Array<[string, string]> = [
     [t('results.detail.execution.semantics'), `${e.semantics} · ${t(`results.detail.execution.state.${e.state}` as MessageKey)}`],
     [t('results.detail.execution.chunk'), t('results.detail.execution.samples', { n: e.chunk_samples })],
@@ -282,11 +282,11 @@ function MeasurementPanel({ result }: { result: EvaluationResult }) {
   const facts: Array<[string, string]> = [
     [t('results.detail.measurement.pa'), c.pa],
     [t('results.detail.measurement.chain'), c.capture_chain],
-    [t('results.detail.measurement.rate'), `${(c.sample_rate_hz / 1e6).toLocaleString(undefined, { maximumFractionDigits: 3 })} MS/s`],
+    [t('results.detail.measurement.rate'), `${formatNumber(c.sample_rate_hz / 1e6, { maximumFractionDigits: 3 })} MS/s`],
     [t('results.detail.measurement.drive'), c.drive],
     [t('results.detail.measurement.gain'), typeof c.gain_db === 'number' ? `${c.gain_db} dB` : t('common.na')],
     [t('results.detail.measurement.calibration'), c.calibration],
-    [t('results.detail.measurement.measured_at'), new Date(c.measured_at).toLocaleString()],
+    [t('results.detail.measurement.measured_at'), formatDateTime(c.measured_at)],
     [t('results.detail.measurement.temperature'), typeof c.temperature_c === 'number' ? `${c.temperature_c} °C` : t('common.na')],
     [t('results.detail.measurement.operator'), c.operator ?? t('common.na')],
     [t('results.detail.measurement.played'), `${m.apply_run_id} · ${m.played_sha256.slice(0, 12)}`],
@@ -342,7 +342,7 @@ function MeasurementPanel({ result }: { result: EvaluationResult }) {
                 <code>{cap.raw_sha256.slice(0, 12)}</code>
                 {cap.resample_ratio ? ` · ×${cap.resample_ratio[0]}/${cap.resample_ratio[1]}` : ''}
               </TableCell>
-              <TableCell align="right">{cap.n_samples_raw.toLocaleString()}</TableCell>
+              <TableCell align="right">{formatNumber(cap.n_samples_raw)}</TableCell>
               <TableCell align="right">
                 {cap.delay_samples}
                 {cap.wrapped ? ` (${t('results.detail.measurement.wrapped')})` : ''}

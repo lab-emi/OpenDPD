@@ -1,4 +1,6 @@
+import { deDE, enUS, esES, frFR, jaJP, koKR, zhCN, type Localization } from '@mui/material/locale'
 import { createTheme } from '@mui/material/styles'
+import type { LanguageCode } from '@/i18n'
 import tokens from './tokens.json'
 
 export { tokens }
@@ -42,6 +44,13 @@ export const theme = createTheme({
     },
   },
 })
+
+const MUI_LOCALES: Record<LanguageCode, Localization> = { en: enUS, fr: frFR, de: deDE, es: esES, zh: zhCN, ja: jaJP, ko: koKR }
+
+/** The design tokens theme merged with MUI's own strings (pagination, …) for a language. */
+export function themeFor(code: LanguageCode) {
+  return createTheme(theme, MUI_LOCALES[code])
+}
 
 /** Plotly layout defaults derived from the same tokens. */
 export const plotLayoutBase = {

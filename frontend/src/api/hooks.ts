@@ -27,11 +27,13 @@ import type {
   RunStatus,
   RunView,
   ValidationReport,
+  WorkspaceSettings,
 } from './types'
 import { isTerminal } from './types'
 
 export const keys = {
   capabilities: ['capabilities'] as const,
+  settings: ['settings'] as const,
   models: ['models'] as const,
   recipes: ['recipes'] as const,
   datasets: ['datasets'] as const,
@@ -54,6 +56,16 @@ export const keys = {
 
 export const useCapabilities = () =>
   useQuery({ queryKey: keys.capabilities, queryFn: () => api.get<Capabilities>('/system/capabilities'), staleTime: 60_000 })
+export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api.get<WorkspaceSettings>('/settings'), staleTime: Infinity })
+
+/** Full replacement of the workbench settings; the response is the stored state. */
+export function useUpdateSettings() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (settings: WorkspaceSettings) => api.put<WorkspaceSettings>('/settings', settings),
+    onSuccess: (saved) => qc.setQueryData(keys.settings, saved),
+  })
+}
 export const useModels = () => useQuery({ queryKey: keys.models, queryFn: () => api.get<ModelInfo[]>('/models'), staleTime: Infinity })
 export const useRecipes = () => useQuery({ queryKey: keys.recipes, queryFn: () => api.get<RecipeInfo[]>('/recipes'), staleTime: Infinity })
 export const useDatasets = () => useQuery({ queryKey: keys.datasets, queryFn: () => api.get<DatasetManifest[]>('/datasets') })

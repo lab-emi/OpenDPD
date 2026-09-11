@@ -17,6 +17,7 @@ import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import { NavLink, Outlet } from 'react-router'
 import { useCapabilities, useRuns } from '@/api/hooks'
+import { LanguageMenu } from '@/components/LanguageMenu'
 import { t, type MessageKey } from '@/i18n'
 import { tokens } from '@/theme'
 
@@ -55,6 +56,7 @@ export function AppShell() {
             {t('topbar.workspace')}: <code>{caps.data?.workspace ?? '…'}</code>
           </Typography>
           <Box sx={{ flex: 1 }} />
+          <LanguageMenu />
           <Chip size="small" color={count > 0 ? 'info' : 'default'} variant={count > 0 ? 'filled' : 'outlined'} label={count > 0 ? t('topbar.nowRunning', { count }) : t('topbar.idle')} data-testid="now-running" />
         </Toolbar>
       </AppBar>

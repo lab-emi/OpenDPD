@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 import { useRuns } from '@/api/hooks'
-import { t } from '@/i18n'
+import { formatDateTime, t } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
@@ -64,7 +64,7 @@ export function ResultsPage() {
                 <TableCell>
                   <EvidenceBadge evidence={r.task === 'train_pa' || r.task === 'evaluate_pa' ? 'pa_modeling' : r.task === 'evaluate_measured' ? 'dpd_measured' : 'dpd_surrogate'} />
                 </TableCell>
-                <TableCell>{new Date(r.created_at).toLocaleString()}</TableCell>
+                <TableCell>{formatDateTime(r.created_at)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -15,7 +15,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { previewPreprocess, useCreateVersion, type PreprocessRequest } from '@/api/datasets'
 import type { DiagnosticReport, PreprocessingParams } from '@/api/types'
-import { t } from '@/i18n'
+import { formatNumber, t } from '@/i18n'
 import { DiagnosticItem } from '@/components/DiagnosticItem'
 import { ErrorState } from '@/components/StateBlock'
 
@@ -118,7 +118,7 @@ export function PreprocessDialog({ datasetId, versions, report, onClose, onCreat
           {preview.isError && <ErrorState error={preview.error} />}
           {preview.data && (
             <section aria-label={t('datasets.preprocess.preview')}>
-              <Typography gutterBottom>{t('datasets.preprocess.previewResult', { before: preview.data.n_samples_before.toLocaleString(), after: preview.data.n_samples_after.toLocaleString() })}</Typography>
+              <Typography gutterBottom>{t('datasets.preprocess.previewResult', { before: formatNumber(preview.data.n_samples_before), after: formatNumber(preview.data.n_samples_after) })}</Typography>
               <Stack spacing={1}>
                 {(preview.data.report_after.items ?? []).map((item) => (
                   <DiagnosticItem key={item.code} item={item} />

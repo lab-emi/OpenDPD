@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router'
 import { useImportPackage, useRunCount, useRuns } from '@/api/hooks'
 import type { RunStatus, RunView } from '@/api/types'
-import { t } from '@/i18n'
+import { formatDateTime, t } from '@/i18n'
 import { StatusChip, statusLabel } from '@/components/StatusChip'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
@@ -70,7 +70,7 @@ export function RunTable({ runs }: { runs: RunView[] }) {
                 <Typography variant="caption">{progressText(r)}</Typography>
               </TableCell>
               <TableCell>
-                <time dateTime={r.created_at}>{new Date(r.created_at).toLocaleString()}</time>
+                <time dateTime={r.created_at}>{formatDateTime(r.created_at)}</time>
               </TableCell>
             </TableRow>
           )

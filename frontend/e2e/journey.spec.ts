@@ -52,13 +52,28 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
     await expect(page.getByText(/pooled over all valid samples/)).toBeVisible()
   })
 
-  test('main pages fit 1366×768 and 1920×1080 without horizontal scroll', async ({ page }, testInfo) => {
+  test('the language selector is in the top bar; a choice applies at once and survives a reload', async ({ page }) => {
     await installFakeApi(page)
-    for (const path of ['/', '/datasets', '/experiments', '/experiments/new', '/results', '/settings']) {
-      await page.goto(path)
-      await expect(page.getByRole('main')).toBeVisible()
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
-      expect(overflow, `${path} overflows horizontally at ${testInfo.project.name}`).toBeLessThanOrEqual(0)
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Language' }).click()
+    const items = page.getByRole('menuitem')
+    await expect(items).toHaveText(['English', 'Français', 'Deutsch', 'Español', '中文', '日本語', '한국어'])
+    await items.filter({ hasText: '中文' }).click()
+    await expect(page.getByRole('link', { name: '数据集' })).toBeVisible()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
+    await page.reload()
+    await expect(page.getByRole('link', { name: '数据集' })).toBeVisible()
+  })
+
+  test('main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages', async ({ page }, testInfo) => {
+    for (const language of [null, 'de', 'fr']) {
+      await installFakeApi(page, { language })
+      for (const path of ['/', '/datasets', '/experiments', '/experiments/new', '/results', '/settings']) {
+        await page.goto(path)
+        await expect(page.getByRole('main')).toBeVisible()
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+        expect(overflow, `${path} (${language ?? 'en'}) overflows horizontally at ${testInfo.project.name}`).toBeLessThanOrEqual(0)
+      }
     }
   })
 

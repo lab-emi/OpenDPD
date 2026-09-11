@@ -10,7 +10,7 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 import { useDatasets, useImportBuiltin } from '@/api/hooks'
-import { t } from '@/i18n'
+import { formatNumber, t } from '@/i18n'
 import { ImportDatasetDialog } from '@/components/ImportDatasetDialog'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
@@ -64,7 +64,7 @@ export function DatasetsPage() {
                     {d.dataset_id}
                   </Typography>
                 </TableCell>
-                <TableCell align="right">{(d.n_samples ?? 0).toLocaleString()}</TableCell>
+                <TableCell align="right">{formatNumber(d.n_samples ?? 0)}</TableCell>
                 <TableCell align="right">{d.signal.sample_rate_hz ? `${(d.signal.sample_rate_hz / 1e6).toFixed(2)} MHz` : t('common.na')}</TableCell>
                 <TableCell>{d.origin}</TableCell>
                 <TableCell align="right">{Math.max(1, d.versions?.length ?? 0)}</TableCell>

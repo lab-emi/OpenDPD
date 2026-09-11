@@ -16,7 +16,7 @@ import { useParams } from 'react-router'
 import { useDiagnostics, useRunDoctor, versionNames } from '@/api/datasets'
 import { useDataset } from '@/api/hooks'
 import type { DatasetManifest, PreprocessingParams } from '@/api/types'
-import { t } from '@/i18n'
+import { formatNumber, formatDateTime, t } from '@/i18n'
 import { DiagnosticItem } from '@/components/DiagnosticItem'
 import { ManifestDialog } from '@/components/ManifestDialog'
 import { PreprocessDialog } from '@/components/PreprocessDialog'
@@ -80,10 +80,10 @@ function VersionsTable({ d }: { d: DatasetManifest }) {
                 </Typography>
               )}
             </TableCell>
-            <TableCell align="right">{v.n_samples.toLocaleString()}</TableCell>
+            <TableCell align="right">{formatNumber(v.n_samples)}</TableCell>
             <TableCell>{v.params ? describeParams(v.params) : t('common.na')}</TableCell>
             <TableCell>{v.fit_range ? `${v.fit_range[0]}–${v.fit_range[1]}` : t('common.na')}</TableCell>
-            <TableCell>{v.created_at ? new Date(v.created_at).toLocaleString() : t('common.na')}</TableCell>
+            <TableCell>{v.created_at ? formatDateTime(v.created_at) : t('common.na')}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -194,7 +194,7 @@ export function DatasetDetailPage() {
           <Stack spacing={1}>
             <Alert severity={report.evaluation_blocked ? 'error' : 'success'}>{report.evaluation_blocked ? t('datasets.detail.doctor.blocked') : t('datasets.detail.doctor.ok')}</Alert>
             <Typography variant="caption" color="text.secondary">
-              {t('datasets.detail.doctor.generated', { id: report.report_id, time: report.generated_at ? new Date(report.generated_at).toLocaleString() : t('common.na') })}
+              {t('datasets.detail.doctor.generated', { id: report.report_id, time: report.generated_at ? formatDateTime(report.generated_at) : t('common.na') })}
             </Typography>
             {(report.items ?? []).map((item) => (
               <DiagnosticItem key={item.code} item={item} />
