@@ -592,7 +592,8 @@ def cmd_gui(args) -> int:
     from opendpd.studio.launcher import default_workspace, launch
 
     workspace = Path(args.workspace) if args.workspace else default_workspace()
-    return launch(workspace, port=args.port, open_in_browser=not args.no_browser)
+    mode = "none" if args.no_browser else "browser" if args.browser else "window" if args.window else "auto"
+    return launch(workspace, port=args.port, mode=mode)
 
 
 def cmd_doctor(args) -> int:
@@ -1042,10 +1043,15 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--json", action="store_true")
     q.set_defaults(func=cmd_instruments)
 
-    p = sub.add_parser("gui", help="start the local Studio service and open the workbench in your browser")
+    p = sub.add_parser("gui", help="start the local Studio service and open the workbench "
+                                   "(a native window when opendpd[desktop] is installed, else your browser)")
     p.add_argument("--workspace", default=None, help="workspace directory (default: $OPENDPD_WORKSPACE or ~/opendpd-workspace)")
-    p.add_argument("--port", type=int, default=None, help=f"loopback port (default: first free from 8765)")
-    p.add_argument("--no-browser", dest="no_browser", action="store_true", help="print the URL instead of opening a browser")
+    p.add_argument("--port", type=int, default=None, help="loopback port (default: first free from 8765)")
+    surface = p.add_mutually_exclusive_group()
+    surface.add_argument("--no-browser", dest="no_browser", action="store_true",
+                         help="print the URL only (SSH sessions, servers without a desktop)")
+    surface.add_argument("--browser", action="store_true", help="open the system browser even when the native window is available")
+    surface.add_argument("--window", action="store_true", help="require the native window; fail when it is not available")
     p.set_defaults(func=cmd_gui)
 
     p = sub.add_parser("benchmark", help="benchmark-v1: pre-registered plans, per-seed reports, regression checks")
