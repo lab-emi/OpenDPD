@@ -135,6 +135,8 @@ opendpd run --config "./experiment.json" --workspace "./my-workspace"
 | 后端测试 | pytest + API/进程/数值参考测试 | 测试必须包含失败路径，不以覆盖率替代正确性。 |
 | 分发 | Python wheel/sdist 携带预构建前端资源 | 最终用户无 Node.js、Redis、Docker 等额外服务前置条件。 |
 
+> **修订（2026-09-11，维护者决定）**：界面提供英、法、德、西、中、日、韩七种语言，顶部栏提供带国旗和语言名称的切换菜单，选择按工作区保存（`settings.json`）；服务端文本、日志、报告与 CLI 保持英文。详见 ADR-0003。
+
 组件库、图表库的建议在 S01 通过一份 ADR 固化；一旦通过，不允许 agent 在普通功能 PR 中更换技术栈。各依赖的确切版本由 S00/S01 验证后锁定，不在计划中臆测“最新版本号”。
 
 FastAPI 官方将重计算与轻量后台任务区分开来；本项目明确选择独立进程执行训练，而不是把训练直接交给 `BackgroundTasks`。[R8]

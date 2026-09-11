@@ -1,6 +1,6 @@
 # Seven UI Languages Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** The Studio workbench runs in English, French, German, Spanish, Chinese, Japanese and Korean, with a flag-and-name selector in the top bar and the choice stored per workspace.
 
@@ -201,7 +201,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Produces (from `@/i18n`): `MessageKey`, `Catalogue = Record<MessageKey, string>`, `LanguageCode`, `Language { code, tag, name, flag }`, `LANGUAGES: readonly Language[]`, `DEFAULT_LANGUAGE`, `t(key, vars?)`, `getLanguage()`, `useLanguage()`, `languageInfo(code?)`, `isLanguageCode(x)`, `resolveLanguage(stored, navigatorLanguages?)`, `loadCatalogue(code)`, `setLanguage(code): Promise<void>`, `resetLanguage()` (tests), `formatNumber(value, options?)`, `formatDateTime(value)`, `formatTime(value)`.
 - New English keys: `language.label` = "Language", `language.saveFailed` = "The language could not be saved to the workspace: {error}. It stays selected for this session.", `settings.language` = "Language", `settings.language.note` = "Applies at once and is remembered in this workspace. Server messages, worker logs and reports stay in English."
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `frontend/src/i18n/catalogues.test.ts`:
 
@@ -282,12 +282,12 @@ test('numbers and dates follow the UI language; English is the default', async (
 })
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `cd frontend && npx vitest run src/i18n`
 Expected: FAIL (missing catalogue modules and exports).
 
-- [ ] **Step 3: Flags**
+- [x] **Step 3: Flags**
 
 Copy `gb.svg`, `fr.svg`, `de.svg`, `cn.svg`, `jp.svg`, `kr.svg` from the flag-icons 7.5.0 package (`flags/4x3/`) into `frontend/src/assets/flags/`. Write `es.svg` by hand:
 
@@ -297,7 +297,7 @@ Copy `gb.svg`, `fr.svg`, `de.svg`, `cn.svg`, `jp.svg`, `kr.svg` from the flag-ic
 
 Write `LICENSE-flag-icons.txt` with the MIT text of flag-icons (copyright Panayiotis Lipiridis) and the line "Files gb.svg, fr.svg, de.svg, cn.svg, jp.svg, kr.svg come from https://github.com/lipis/flag-icons (7.5.0); es.svg is drawn here (civil flag, no coat of arms)."
 
-- [ ] **Step 4: Rewrite `frontend/src/i18n/index.ts`**
+- [x] **Step 4: Rewrite `frontend/src/i18n/index.ts`**
 
 ```ts
 /**
@@ -436,7 +436,7 @@ export function formatTime(value: string | number | Date): string {
 
 Add the four English keys to `en.json` (after `"settings.contract"` for the settings ones; `language.*` after `"topbar.idle"`).
 
-- [ ] **Step 5: Write the six catalogues**
+- [x] **Step 5: Write the six catalogues**
 
 For each of `fr`, `de`, `es`, `zh`, `ja`, `ko`: a flat JSON object with every key of `en.json`, in the same order, translated according to the spec's terminology table and constraints. Style samples that every catalogue follows:
 
@@ -451,12 +451,12 @@ For each of `fr`, `de`, `es`, `zh`, `ja`, `ko`: a flat JSON object with every ke
 
 Japanese uses polite form (です・ます), Korean uses the formal polite ending (-습니다 / -하세요), Chinese is Simplified. Sentences keep the caveats of the English original; nothing is shortened into a friendlier claim.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd frontend && npx vitest run src/i18n && npm run typecheck && npm run lint`
 Expected: PASS, no type errors, no lint errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/src/assets/flags frontend/src/i18n
@@ -481,7 +481,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Consumes: Task 2 exports; `WorkspaceSettings` from the generated schema (Task 1).
 - Produces: `api.put<T>(path, body)`; `keys.settings = ['settings']`; `useSettings()`; `useUpdateSettings()` (mutation over `WorkspaceSettings`); `themeFor(code: LanguageCode): Theme`; `<LanguageGate>`; `<LanguageMenu variant?: 'toolbar' | 'settings' />` with `data-testid="language-menu"`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `frontend/src/components/LanguageMenu.test.tsx`:
 
@@ -553,12 +553,12 @@ test('a settings failure shows the error state with retry, not a blank page', as
 })
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `cd frontend && npx vitest run src/components/LanguageMenu.test.tsx src/i18n/LanguageGate.test.tsx`
 Expected: FAIL (modules missing).
 
-- [ ] **Step 3: API client and hooks**
+- [x] **Step 3: API client and hooks**
 
 `client.ts`: change the union to `'GET' | 'POST' | 'PUT'` and add `put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),` to `api`.
 
@@ -579,7 +579,7 @@ export function useUpdateSettings() {
 }
 ```
 
-- [ ] **Step 4: Gate, theme and App**
+- [x] **Step 4: Gate, theme and App**
 
 `frontend/src/i18n/LanguageGate.tsx`:
 
@@ -655,7 +655,7 @@ export default function App({ queryClient = createQueryClient() }: { queryClient
 
 (`App` re-renders on a language change, which re-creates every route element, so every page re-renders with its state kept.)
 
-- [ ] **Step 5: The selector and its two placements**
+- [x] **Step 5: The selector and its two placements**
 
 `frontend/src/components/LanguageMenu.tsx`:
 
@@ -748,11 +748,11 @@ export function LanguageMenu({ variant = 'toolbar' }: { variant?: 'toolbar' | 's
       </Paper>
 ```
 
-- [ ] **Step 6: Locale-aware formatting**
+- [x] **Step 6: Locale-aware formatting**
 
 Replace every `x.toLocaleString()` on a number with `formatNumber(x)`, `x.toLocaleString(undefined, opts)` with `formatNumber(x, opts)`, `new Date(v).toLocaleString()` with `formatDateTime(v)` and `d.toLocaleTimeString()` with `formatTime(d)` in the ten files listed above (import from `@/i18n`). Metric values formatted with `toFixed` are left alone.
 
-- [ ] **Step 7: Playwright**
+- [x] **Step 7: Playwright**
 
 `e2e/mock-api.ts`: add `language: string | null` to `FakeState` (initial `null`, or the value passed as `installFakeApi(page, { language })`), and in the router before the `/session` line:
 
@@ -784,12 +784,12 @@ Replace every `x.toLocaleString()` on a number with `formatNumber(x)`, `x.toLoca
 
 and extend the layout test to run its loop for `[null, 'de', 'fr']` (`installFakeApi(page, { language })` before the loop, so the longest strings are checked at 1366×768).
 
-- [ ] **Step 8: Run everything**
+- [x] **Step 8: Run everything**
 
 Run: `cd frontend && npm run typecheck && npm run lint && npm test && npm run build && npx playwright test --project=chromium-1366 --update-snapshots` (the gallery baselines change only if the top bar is inside the captured regions; they are element screenshots of the StatusChip / MetricCard regions, so expect no change) then `npx playwright test --project=chromium-1366`.
 Expected: all green.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add frontend/src frontend/e2e
@@ -927,7 +927,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Create: `docs/architecture/adr/0003-ui-languages.md`
 - Modify: `docs/architecture/ux-spec.md`, `docs/tutorials/gui-quickstart.md`, `README.md`, `docs/releases/release-notes-2.2.0.md`, `OpenDPD_Studio_Development_Plan.md`
 
-- [ ] **Step 1: ADR-0003**
+- [x] **Step 1: ADR-0003**
 
 ```markdown
 # ADR-0003: Seven UI languages with a per-workspace setting
@@ -976,7 +976,7 @@ users cannot miss, marked with the flag and the native name.
 `frontend/src/i18n/catalogues.test.ts`, `index.test.ts`, `LanguageMenu.test.tsx`, `LanguageGate.test.tsx`; `frontend/e2e/journey.spec.ts` (selector, reload, layout in `de`/`fr`); `tests/integration/test_studio_api.py` (settings routes); `tests/unit/test_window.py` (native strings).
 ```
 
-- [ ] **Step 2: User documentation**
+- [x] **Step 2: User documentation**
 
 `docs/architecture/ux-spec.md`: add `| \`LanguageMenu\` | flag-and-name language switcher (top bar and Settings); applies at once, stored per workspace |` to the component catalogue and, in §2, the line "The top bar carries the language selector on every page."
 
@@ -999,12 +999,12 @@ English so that a GUI screen, a package and a terminal say the same thing.
 
 `OpenDPD_Studio_Development_Plan.md` §4.1, after the table: `> **修订（2026-09-11，维护者决定）**：界面提供英、法、德、西、中、日、韩七种语言，顶部栏提供带国旗和语言名称的切换菜单，选择按工作区保存（`settings.json`）；服务端文本、日志、报告与 CLI 保持英文。详见 ADR-0003。`
 
-- [ ] **Step 3: Full verification**
+- [x] **Step 3: Full verification**
 
 Run: `.venv/bin/python -m pytest tests/unit tests/integration/test_studio_api.py tests/integration/test_launcher_ownership.py -q`, `.venv/bin/python scripts/export_openapi.py --check`, `cd frontend && npm run types:check && npm run typecheck && npm run lint && npm test && npm run build && npx playwright test --project=chromium-1366`.
 Expected: all green; the built bundle in `opendpd/studio/static` serves the selector (check with `opendpd gui` on a scratch workspace: the menu is visible and 中文 renders).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/architecture/adr/0003-ui-languages.md docs/architecture/ux-spec.md docs/tutorials/gui-quickstart.md README.md docs/releases/release-notes-2.2.0.md OpenDPD_Studio_Development_Plan.md

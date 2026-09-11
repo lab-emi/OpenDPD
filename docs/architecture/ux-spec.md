@@ -52,6 +52,11 @@ Settings    workspace, devices (detected vs tested), about, diagnostics bundle
 - Every list has loading, empty (with next action), error (with retry) and
   **disconnected** (SSE lost; "reconnecting… last update hh:mm") states.
 
+- The top bar carries the language selector on every page: the flag and the
+  native name of the current language; a choice applies at once and is stored
+  in the workspace (`settings.json`). Seven languages: English, Français,
+  Deutsch, Español, 中文, 日本語, 한국어. Server text stays English.
+
 ## 3. State labels
 
 | Status | Label | Colour token | Icon (never colour alone) |
@@ -86,6 +91,7 @@ Contrast ≥ 4.5:1 for text; status colours are paired with icons and text.
 | `RunTimeline` | status transitions and heartbeats |
 | `ConfigDiff` | resolved-config diff between two runs |
 | `LogViewer` | virtualised, searchable, paged |
+| `LanguageMenu` | flag-and-name language switcher (top bar and Settings); applies at once, stored per workspace |
 
 ## 6. Accessibility and layout
 

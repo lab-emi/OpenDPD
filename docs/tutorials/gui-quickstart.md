@@ -37,6 +37,15 @@ other preference live in the workspace. `opendpd doctor` prints the backend
 in use or the reason none is available (on Linux install `python3-gi
 gir1.2-webkit2-4.1` or `pip install "pywebview[qt]"`).
 
+## Language
+
+The top bar shows the current language with its flag; the menu lists
+English, Français, Deutsch, Español, 中文, 日本語 and 한국어. A choice applies
+at once and is stored in `<workspace>/settings.json`, so it is the same in
+the native window and in any browser. The first launch follows your browser
+or system language. Server messages, worker logs, reports and the CLI stay in
+English so that a GUI screen, a package and a terminal say the same thing.
+
 ## What the browser shows
 
 1. **Home**: the workspace path and the built-in example (measured DPA 200 MHz
