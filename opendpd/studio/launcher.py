@@ -246,6 +246,7 @@ def launch(workspace: Path, *, port: Optional[int] = None, mode: Mode = "auto", 
         return 2
     if note:
         print(note, file=out)
+        _flush(out)
     window_runner = window_runner or _default_window_runner
     try:
         workspace.mkdir(parents=True, exist_ok=True)
@@ -346,6 +347,15 @@ def _print_ready(port: int, url: str, out, stop_hint: str) -> None:
         print(f"warning: {problem}", file=out)
     print(f"OpenDPD Studio: {url}", file=out)
     print(stop_hint, file=out)
+    _flush(out)
+
+
+def _flush(out) -> None:
+    """The URL must reach a piped or redirected stdout while the server is still running."""
+    try:
+        out.flush()
+    except (AttributeError, OSError):
+        pass
 
 
 def _serve_with_window(app, port: int, url: str, lock_path: Path, *, out, opener, window_runner, background_server) -> int:

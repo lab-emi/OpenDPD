@@ -113,6 +113,66 @@ def _name_the_application(title: str) -> None:
         pass
 
 
+# -- macOS: Ctrl+C and Cmd+Q must end in a window close, never in a process exit -----------
+
+_mac_quit_target = None          # the pywebview window the quit delegate closes
+_mac_quit_delegate = None        # kept alive for the lifetime of the process
+_mac_quit_delegate_class = None  # an Objective-C class may be defined only once per process
+
+
+def _macos_quit_delegate_class():
+    global _mac_quit_delegate_class
+    if _mac_quit_delegate_class is None:
+        import AppKit
+        import Foundation
+
+        class OpenDPDQuitDelegate(AppKit.NSObject):
+            def applicationShouldTerminate_(self, app):
+                # Quit from the menu behaves like the close button: it may ask, and the window
+                # close is what ends the run loop, so webview.start() returns and the launcher cleans up.
+                target = _mac_quit_target
+                try:
+                    target.native.performClose_(None)
+                except Exception:  # noqa: BLE001 - no native handle: close without asking
+                    target.destroy()
+                return Foundation.NO     # NSTerminateCancel: AppKit must never exit the process itself
+
+            def applicationSupportsSecureRestorableState_(self, app):
+                return Foundation.YES
+
+        _mac_quit_delegate_class = OpenDPDQuitDelegate
+    return _mac_quit_delegate_class
+
+
+def _install_macos_hooks(window, finished) -> None:
+    """Runs in a helper thread once the Cocoa loop is up.
+
+    pywebview installs pyobjc's Mach interrupt handler for Ctrl+C and an
+    application delegate for Cmd+Q; both end in ``NSApplication.terminate``,
+    which exits the process without returning from ``webview.start()``. The
+    launcher's cleanup (supervisor stop, workers terminated, lock released)
+    runs after that return, so the delegate is replaced by one that answers
+    ``terminate`` with a window close: Ctrl+C and Cmd+Q then behave exactly
+    like the close button, including the question while runs are active.
+    """
+    import time
+
+    import AppKit
+    from PyObjCTools import AppHelper
+
+    global _mac_quit_target, _mac_quit_delegate
+    window.events.shown.wait()
+    app = AppKit.NSApplication.sharedApplication()
+    deadline = time.monotonic() + 10.0
+    while not app.isRunning() and time.monotonic() < deadline and not finished.is_set():
+        time.sleep(0.05)
+    if finished.is_set():
+        return
+    _mac_quit_target = window
+    _mac_quit_delegate = _macos_quit_delegate_class().alloc().init()
+    AppHelper.callAfter(app.setDelegate_, _mac_quit_delegate)     # on the main thread, like every AppKit call
+
+
 def run_window(url: str, *, active_runs: Callable[[], int], strings: Callable[[], ShellStrings],
                title: str = TITLE, icon: Optional[Path] = None, out=None) -> None:
     """Show the workbench in a native window and return when it is closed.
@@ -120,8 +180,16 @@ def run_window(url: str, *, active_runs: Callable[[], int], strings: Callable[[]
     ``strings()`` is read when the window opens (menus, dialogs of the toolkit)
     and again at every close request (the quit question), so a language change
     made in the page is honoured without restarting.
+
+    Ctrl+C / SIGTERM: the main thread sits in the toolkit's native run loop and
+    executes no Python there, so a Python-level signal handler would never run.
+    The interpreter's C-level handler writes to a wake-up socket instead; a
+    watcher thread reads it and destroys the window, which ends the run loop.
     """
+    import select
     import signal
+    import socket
+    import threading
 
     import webview
 
@@ -136,23 +204,59 @@ def run_window(url: str, *, active_runs: Callable[[], int], strings: Callable[[]
 
     window.events.closing += on_closing
 
-    def on_signal(signum, frame):
-        window.destroy()
+    finished = threading.Event()
+    wake_r, wake_w = socket.socketpair()
+    wake_r.setblocking(False)
+    wake_w.setblocking(False)
 
-    previous = {}
+    def watcher() -> None:
+        while not finished.is_set():
+            try:
+                ready, _, _ = select.select([wake_r], [], [], 0.5)
+            except (OSError, ValueError):     # sockets closed underneath: the window is gone
+                return
+            if ready and not finished.is_set():
+                try:
+                    window.destroy()
+                except Exception:  # noqa: BLE001 - already closing
+                    pass
+                return
+
+    def request_stop(signum, frame):
+        pass    # the wake-up socket carries the request; nothing to do when Python runs again
+
+    previous_handlers = {}
     for sig in (signal.SIGINT, getattr(signal, "SIGTERM", None)):
         if sig is None:
             continue
         try:
-            previous[sig] = signal.signal(sig, on_signal)
+            previous_handlers[sig] = signal.signal(sig, request_stop)
         except (ValueError, OSError):
             pass    # not the main thread
+    try:
+        previous_fd = signal.set_wakeup_fd(wake_w.fileno(), warn_on_full_buffer=False)
+    except (ValueError, OSError):
+        previous_fd = None
+    watcher_thread = threading.Thread(target=watcher, name="opendpd-window-signals", daemon=True)
+    watcher_thread.start()
+    if sys.platform == "darwin":
+        threading.Thread(target=_install_macos_hooks, args=(window, finished), name="opendpd-window-macos",
+                         daemon=True).start()
     try:
         webview.start(localization=strings().localization, private_mode=True,
                       icon=str(icon) if icon else None)
     finally:
-        for sig, handler in previous.items():
+        finished.set()
+        watcher_thread.join(1.0)
+        if previous_fd is not None:
+            try:
+                signal.set_wakeup_fd(previous_fd)
+            except (ValueError, OSError):
+                pass
+        for sig, handler in previous_handlers.items():
             try:
                 signal.signal(sig, handler)
             except (ValueError, OSError):
                 pass
+        wake_r.close()
+        wake_w.close()
