@@ -66,3 +66,12 @@ def test_english_strings_are_complete():
     s = shell_strings()
     assert "{count}" in s.quit_body
     assert {"global.quit", "global.cancel", "global.ok", "global.saveFile", "global.quitConfirmation"} <= set(s.localization)
+
+
+def test_icon_files_ship_with_the_package(monkeypatch):
+    for name in ("icon.png", "icon.ico"):
+        assert (window.ICON_DIR / name).is_file(), name
+    monkeypatch.setattr(window.os, "name", "posix")
+    assert window.icon_path().name == "icon.png"
+    monkeypatch.setattr(window.os, "name", "nt")
+    assert window.icon_path().name == "icon.ico"
