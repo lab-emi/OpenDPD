@@ -46,6 +46,7 @@ from opendpd.schemas import (
     heartbeat_is_stale,
     utcnow,
     MetricProfile,
+    WorkspaceSettings,
 )
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, UPLOAD_MAX_BODY, Session
 from opendpd.services import adaptation as adaptation_service
@@ -116,6 +117,18 @@ def session_info(request: Request):
 
 
 # --- system -----------------------------------------------------------------------
+
+# --- workbench settings -----------------------------------------------------------
+
+@router.get("/settings", response_model=WorkspaceSettings, tags=["settings"], dependencies=[Depends(require_session)])
+def settings_get(request: Request):
+    return _ws(request).settings()
+
+
+@router.put("/settings", response_model=WorkspaceSettings, tags=["settings"], dependencies=[Depends(require_csrf)])
+def settings_put(body: WorkspaceSettings, request: Request):
+    return _ws(request).save_settings(body)
+
 
 class DeviceInfo(BaseModel):
     device: str

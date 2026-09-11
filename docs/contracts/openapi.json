@@ -6490,6 +6490,34 @@
         ],
         "title": "WorkerInfo",
         "type": "object"
+      },
+      "WorkspaceSettings": {
+        "additionalProperties": false,
+        "description": "Stored as ``<workspace>/settings.json``; ``language`` None means \"follow the browser or system language\".",
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "enum": [
+                  "en",
+                  "fr",
+                  "de",
+                  "es",
+                  "zh",
+                  "ja",
+                  "ko"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          }
+        },
+        "title": "WorkspaceSettings",
+        "type": "object"
       }
     }
   },
@@ -8513,6 +8541,66 @@
         "summary": "Session Bootstrap",
         "tags": [
           "session"
+        ]
+      }
+    },
+    "/api/v1/settings": {
+      "get": {
+        "operationId": "settings_get_api_v1_settings_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Settings Get",
+        "tags": [
+          "settings"
+        ]
+      },
+      "put": {
+        "operationId": "settings_put_api_v1_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Settings Put",
+        "tags": [
+          "settings"
         ]
       }
     },

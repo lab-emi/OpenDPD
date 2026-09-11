@@ -87,3 +87,18 @@ def test_run_ids_are_unique(tmp_path):
 def test_slugify():
     assert slugify("DPA_200MHz") == "dpa-200mhz"
     assert slugify("My PA  capture!") == "my-pa-capture"
+
+
+def test_settings_default_roundtrip_and_corruption(tmp_path):
+    from opendpd.schemas import WorkspaceSettings
+    ws = Workspace.create(tmp_path / "ws")
+    assert ws.settings().language is None and not ws.settings_path.exists()
+    ws.save_settings(WorkspaceSettings(language="ja"))
+    assert Workspace.open(ws.root).settings().language == "ja"
+    assert json.loads(ws.settings_path.read_text())["language"] == "ja"
+    ws.settings_path.write_text("{not json")
+    with pytest.raises(WorkspaceError, match="settings.json"):
+        ws.settings()
+    ws.settings_path.write_text('{"language": "xx"}')
+    with pytest.raises(WorkspaceError, match="settings.json"):
+        ws.settings()

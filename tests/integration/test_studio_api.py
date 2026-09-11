@@ -532,3 +532,23 @@ def test_polynomial_preview_normalizes_parameters_before_workspace_checks(client
     assert any(e["field"] == "model.parameters.Q" for e in refused.json()["errors"])
     assert client.post("/api/v1/runs", json={"config": cfg}).status_code == 422
     assert len(list_runs(ws)) == before
+
+
+# --- workbench settings ----------------------------------------------------------
+
+def test_settings_default_roundtrip_validation_and_csrf(client, session):
+    from pathlib import Path
+    assert client.get("/api/v1/settings").json() == {"language": None}
+    r = client.put("/api/v1/settings", json={"language": "de"})
+    assert r.status_code == 200 and r.json() == {"language": "de"}
+    stored = json.loads((Path(client.app.state.ws.root) / "settings.json").read_text())
+    assert stored == {"language": "de"}
+    assert client.get("/api/v1/settings").json()["language"] == "de"
+    r = client.put("/api/v1/settings", json={"language": "xx"})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_request"
+    r = client.put("/api/v1/settings", json={"language": "fr", "theme": "dark"})
+    assert r.status_code == 422, "unknown settings are refused, not ignored"
+    bare = TestClient(client.app, base_url="http://127.0.0.1:8765")
+    bare.cookies = client.cookies
+    assert bare.put("/api/v1/settings", json={"language": "fr"}).status_code == 403
+    assert client.put("/api/v1/settings", json={"language": None}).json() == {"language": None}

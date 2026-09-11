@@ -39,6 +39,7 @@ from opendpd.schemas import (
     SignalSpec,
     SoftwareProvenance,
     SplitSpec,
+    WorkspaceSettings,
 )
 
 WORKSPACE_VERSION = 1
@@ -188,6 +189,24 @@ class Workspace:
         except OSError as err:
             problems.append(f"cannot determine free disk space ({err})")
         return problems
+
+    # -- workbench preferences ----------------------------------------------
+    @property
+    def settings_path(self) -> Path:
+        return self.root / "settings.json"
+
+    def settings(self) -> WorkspaceSettings:
+        """A missing file means defaults; a broken or unknown one is an error that names the file."""
+        if not self.settings_path.exists():
+            return WorkspaceSettings()
+        try:
+            return WorkspaceSettings.model_validate(read_json(self.settings_path))
+        except (OSError, ValueError) as err:     # pydantic's ValidationError is a ValueError
+            raise WorkspaceError(f"cannot read {self.settings_path}: {err}") from err
+
+    def save_settings(self, settings: WorkspaceSettings) -> WorkspaceSettings:
+        write_json_atomic(self.settings_path, settings)
+        return settings
 
     # -- datasets ----------------------------------------------------------
     def dataset_dir(self, dataset_id: str) -> Path:
