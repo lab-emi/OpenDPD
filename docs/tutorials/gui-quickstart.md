@@ -9,9 +9,9 @@ opendpd gui
 and opens the workbench in a native application window (`opendpd[desktop]`)
 or, without that extra, in your default browser after printing a one-time
 URL such as `http://127.0.0.1:8765/bootstrap?token=…`. No Node.js, no second
-terminal, no copying of addresses. Close the window or press Ctrl+C to stop;
-running workers are terminated and the workspace lock is released. When runs
-are still active, closing the window asks first.
+terminal, no copying of addresses. Close the window, quit the application or
+press Ctrl+C to stop; running workers are terminated and the workspace lock
+is released. When runs are still active, all three ask first.
 
 | Option | Effect |
 |---|---|

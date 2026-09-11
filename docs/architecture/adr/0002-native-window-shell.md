@@ -19,7 +19,7 @@ security, no silent scientific change.
 |---|---|---|
 | Shell | **pywebview** (`desktop` extra: `pywebview>=6.2,<7`) hosting the same loopback URL | WKWebView / WebView2 / WebKit2GTK / Qt; no bundled browser engine, no Rust or Node toolchain |
 | Default surface | window when the extra is installed and a desktop session exists; otherwise the browser with a printed reason; `--browser`, `--window`, `--no-browser` override | `opendpd doctor` reports the backend |
-| Process model | uvicorn in a daemon thread, the toolkit on the main thread; closing the window (or Ctrl+C) stops the supervisor and releases the lock | a native confirmation when runs are queued, running or stopping |
+| Process model | uvicorn in a daemon thread, the toolkit on the main thread; closing the window, quitting the application or Ctrl+C stops the supervisor and releases the lock | a native confirmation when runs are queued, running or stopping; on macOS a replacement application delegate turns `terminate` into a window close because pywebview's own answer to Ctrl+C and Cmd+Q would exit the process before the cleanup |
 | Boundary | no JavaScript bridge, no CSP change, private WebKit storage | the page's CSP refuses injected scripts anyway |
 | Preferences | none in the window; the server holds them per workspace | see ADR-0003 |
 

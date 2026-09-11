@@ -29,7 +29,7 @@ Last update: 2026-09-06 (S13; baseline in `docs/baseline/baseline-report.md`, ha
 
 | OS | Backend | Status | Evidence |
 |---|---|---|---|
-| macOS Apple Silicon | cocoa / WKWebView | **unverified** | pending the manual run recorded below |
+| macOS Apple Silicon (macOS 26.6.2, Python 3.13.12, pywebview 6.2.1, pyobjc 12.2.2) | cocoa / WKWebView | verified (desktop run, 2026-09-11) for launch, session, run, Ctrl+C; **pending human** for the close question, downloads, menu name and Dock icon | `opendpd gui --workspace … --port 8797` printed the URL and the stop hint and opened a 1366×860 window owned by the launcher; through the served app: bootstrap → session → capabilities → built-in dataset → `pa-gru-smoke-v1` succeeded with a result (NMSE, EVM, ACLR) and 13 artifacts; Ctrl+C with no active run: exit 0 in 0.8 s, window gone, lock released, no worker left, server stopped; Cmd+Q, Ctrl+C and SIGTERM return from the window loop in an in-process check (`opendpd/studio/window.py`). Not exercised here because it needs a person at the desk: the question shown when a run is active (unit-tested only), a download through the save dialog, the application menu name and the Dock icon |
 | Windows x86-64 | edgechromium / WebView2 | **unverified** | needs a person: WebView2 runtime, downloads, Ctrl+C in a console |
 | Linux x86-64 | gtk / WebKit2GTK or qt | **unverified** | needs a person with the distribution packages; CI only proves the headless fallback reason |
 
