@@ -50,7 +50,7 @@ Spec: `docs/superpowers/specs/2026-09-11-ui-languages-design.md`. Depends on the
 **Interfaces:**
 - Produces: `UILanguage = Literal["en","fr","de","es","zh","ja","ko"]`, `UI_LANGUAGES: Tuple[str, ...]`, `WorkspaceSettings(language: Optional[UILanguage] = None)` (extra fields forbidden); `Workspace.settings_path: Path`, `Workspace.settings() -> WorkspaceSettings`, `Workspace.save_settings(settings) -> WorkspaceSettings`; routes `GET /api/v1/settings` (session) and `PUT /api/v1/settings` (CSRF) returning `WorkspaceSettings`; example name `workspace_settings_default`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/unit/test_workspace.py`:
 
@@ -93,12 +93,12 @@ def test_settings_default_roundtrip_validation_and_csrf(client, session):
     assert client.put("/api/v1/settings", json={"language": None}).json() == {"language": None}
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_workspace.py -q -k settings` and `.venv/bin/python -m pytest tests/integration/test_studio_api.py -q -k settings`
 Expected: FAIL (`ImportError: cannot import name 'WorkspaceSettings'`; 404 on `/api/v1/settings`).
 
-- [ ] **Step 3: Schema, example, service, routes**
+- [x] **Step 3: Schema, example, service, routes**
 
 `opendpd/schemas/settings.py`:
 
@@ -172,12 +172,12 @@ def settings_put(body: WorkspaceSettings, request: Request):
 
 Then regenerate: `.venv/bin/python -m opendpd.schemas export-mocks --out frontend/mocks`, `.venv/bin/python scripts/export_openapi.py`, `cd frontend && npm run types:generate`.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_workspace.py tests/unit/test_frontend_mocks_in_sync.py tests/unit/test_schemas.py -q` and `.venv/bin/python -m pytest tests/integration/test_studio_api.py -q -k "settings or session"` and `.venv/bin/python scripts/export_openapi.py --check` and `cd frontend && npm run types:check`
 Expected: all PASS / up to date.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add opendpd/schemas/settings.py opendpd/schemas/__init__.py opendpd/schemas/examples.py opendpd/services/workspace.py opendpd/server/routes.py frontend/mocks/workspace_settings_default.json docs/contracts/openapi.json frontend/src/api/schema.ts tests/unit/test_workspace.py tests/integration/test_studio_api.py
@@ -810,7 +810,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Consumes: `Workspace.settings()` (Task 1), `UI_LANGUAGES`.
 - Produces: `STRINGS: Dict[str, ShellStrings]` for the seven codes; `shell_strings(language) -> ShellStrings` (unknown → English); `launcher.preferred_language(workspace: Path) -> str`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/unit/test_window.py`:
 
@@ -846,12 +846,12 @@ def test_preferred_language_reads_the_workspace_then_the_os_locale(tmp_path, mon
     assert launcher.preferred_language(ws.root) == "en", "a broken file never blocks the window"
 ```
 
-- [ ] **Step 2: Run them to verify they fail**
+- [x] **Step 2: Run them to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_window.py tests/unit/test_launcher.py -q -k "native_string or preferred_language"`
 Expected: FAIL (`STRINGS` and `preferred_language` missing).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `opendpd/studio/strings.py`: keep `ShellStrings` and `ENGLISH`; extend `ENGLISH.localization` with the macOS menu keys (`cocoa.menu.about` "About", `cocoa.menu.services` "Services", `cocoa.menu.view` "View", `cocoa.menu.edit` "Edit", `cocoa.menu.hide` "Hide", `cocoa.menu.hideOthers` "Hide Others", `cocoa.menu.showAll` "Show All", `cocoa.menu.quit` "Quit", `cocoa.menu.fullscreen` "Enter Fullscreen", `cocoa.menu.cut` "Cut", `cocoa.menu.copy` "Copy", `cocoa.menu.paste` "Paste", `cocoa.menu.selectAll` "Select All", `windows.fileFilter.allFiles` "All files", `windows.fileFilter.otherFiles` "Other file types", `linux.openFile` "Open file", `linux.openFiles` "Open files", `linux.openFolder` "Open folder"); add the six other `ShellStrings` with the same keys, for example French:
 
@@ -905,12 +905,12 @@ def _default_window_runner(url: str, active_runs: Callable[[], int], workspace: 
 
 and in `launch()` bind the workspace: `window_runner = window_runner or (lambda url, active: _default_window_runner(url, active, workspace))`.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_window.py tests/unit/test_launcher.py -q`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add opendpd/studio/strings.py opendpd/studio/launcher.py tests/unit/test_window.py tests/unit/test_launcher.py

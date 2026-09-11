@@ -1,6 +1,6 @@
 # Native Window Shell Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** `opendpd gui` opens the Studio workbench in a native application window (pywebview) when the `desktop` extra is installed, with the browser as the unchanged fallback.
 
@@ -49,7 +49,7 @@ Spec: `docs/superpowers/specs/2026-09-11-native-window-shell-design.md`.
 - Produces: `Availability(backend: Optional[str], reason: str = "")` with `.ok`; `availability(platform=sys.platform, environ=os.environ) -> Availability`; `should_close(active: int, ask: Callable[[str, str], bool], strings: ShellStrings, out=None) -> bool`; `run_window(url: str, *, active_runs: Callable[[], int], strings: Callable[[], ShellStrings], title: str = "OpenDPD Studio", icon: Optional[Path] = None, out=None) -> None`; `icon_path() -> Optional[Path]`.
 - Test seams: module functions `pywebview_version()`, `desktop_session(platform, environ)`, `gui_backend()` are monkeypatched by tests.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 # tests/unit/test_window.py
@@ -123,12 +123,12 @@ def test_english_strings_are_complete():
     assert {"global.quit", "global.cancel", "global.ok", "global.saveFile", "global.quitConfirmation"} <= set(s.localization)
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_window.py -q`
 Expected: FAIL with `ModuleNotFoundError: No module named 'opendpd.studio.window'`.
 
-- [ ] **Step 3: Write `opendpd/studio/strings.py`**
+- [x] **Step 3: Write `opendpd/studio/strings.py`**
 
 ```python
 """Strings the desktop window shows outside the page: the quit dialog and pywebview's own dialogs/menus.
@@ -168,7 +168,7 @@ def shell_strings(language: Optional[str] = None) -> ShellStrings:
     return ENGLISH
 ```
 
-- [ ] **Step 4: Write `opendpd/studio/window.py`**
+- [x] **Step 4: Write `opendpd/studio/window.py`**
 
 ```python
 """Native application window for the Studio (pywebview): a display surface only.
@@ -328,12 +328,12 @@ def run_window(url: str, *, active_runs: Callable[[], int], strings: Callable[[]
                 pass
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_window.py tests/unit/test_lazy_imports.py -q`
 Expected: all PASS (the lazy-import test proves `opendpd.commands` still loads without pywebview).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add opendpd/studio/strings.py opendpd/studio/window.py tests/unit/test_window.py
@@ -357,7 +357,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Produces: `Mode = Literal["auto", "window", "browser", "none"]`; `launch(workspace, *, port=None, mode: Mode = "auto", out=None, serve=None, opener=webbrowser.open, window_runner=None, background_server=None, availability=None) -> int`; `BackgroundServer(app, host, port)` with `start()` and `stop(timeout)`; `window_runner(url: str, active_runs: Callable[[], int]) -> None` (default: `_default_window_runner`); `_active_run_count(app) -> int`.
 - The old keyword `open_in_browser` is removed (`True` → `mode="browser"`, `False` → `mode="none"`).
 
-- [ ] **Step 1: Update the existing call sites and write the failing tests**
+- [x] **Step 1: Update the existing call sites and write the failing tests**
 
 In `tests/unit/test_launcher.py` replace `open_in_browser=True` with `mode="browser"` (line 53) and `open_in_browser=False` with `mode="none"` (lines 102, 121). In `tests/integration/test_launcher_ownership.py:46` replace `open_in_browser=False` with `mode="none"`. Then append:
 
@@ -515,12 +515,12 @@ def test_doctor_reports_the_window_backend(tmp_path, monkeypatch, capsys):
 
 Also extend `test_doctor_reports_frontend_and_port`: add `assert "window" in out`.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_launcher.py -q`
 Expected: the new tests FAIL with `TypeError: launch() got an unexpected keyword argument 'mode'` (and the CLI test with `argparse` errors); the updated old tests also fail until `launch` accepts `mode`.
 
-- [ ] **Step 3: Implement the launcher changes**
+- [x] **Step 3: Implement the launcher changes**
 
 In `opendpd/studio/launcher.py`:
 
@@ -739,12 +739,12 @@ and the parser:
     surface.add_argument("--window", action="store_true", help="require the native window; fail when it is not available")
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_launcher.py tests/unit/test_window.py tests/unit/test_lazy_imports.py tests/integration/test_launcher_ownership.py -q`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add opendpd/studio/launcher.py opendpd/commands.py tests/unit/test_launcher.py tests/integration/test_launcher_ownership.py
@@ -767,7 +767,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Consumes: `window.icon_path()` from Task 1.
 - Produces: the two icon files as package data.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/unit/test_window.py`:
 
@@ -781,12 +781,12 @@ def test_icon_files_ship_with_the_package(monkeypatch):
     assert window.icon_path().name == "icon.ico"
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_window.py::test_icon_files_ship_with_the_package -q`
 Expected: FAIL on `icon.png` missing.
 
-- [ ] **Step 3: Write the generator and run it**
+- [x] **Step 3: Write the generator and run it**
 
 ```python
 # scripts/make_app_icon.py
@@ -839,16 +839,16 @@ if __name__ == "__main__":
 
 Run: `.venv/bin/python scripts/make_app_icon.py`
 
-- [ ] **Step 4: Ship the files**
+- [x] **Step 4: Ship the files**
 
 In `pyproject.toml` change the package-data line to `"opendpd.studio" = ["static/*", "static/assets/*", "icon.png", "icon.ico"]`. In `MANIFEST.in` add `include opendpd/studio/icon.png` and `include opendpd/studio/icon.ico` under the Studio block.
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `.venv/bin/python -m pytest tests/unit/test_window.py -q`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add scripts/make_app_icon.py opendpd/studio/icon.png opendpd/studio/icon.ico pyproject.toml MANIFEST.in tests/unit/test_window.py
@@ -866,7 +866,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - Create: `docs/architecture/adr/0002-native-window-shell.md`
 - Modify: `docs/tutorials/gui-quickstart.md`, `docs/releases/support-matrix.md`, `docs/releases/release-notes-2.2.0.md`, `docs/releases/backlog.md`, `README.md` (Studio paragraph), `OpenDPD_Studio_Development_Plan.md` (§3.1 amendment)
 
-- [ ] **Step 1: Add the extra and the CI install**
+- [x] **Step 1: Add the extra and the CI install**
 
 `pyproject.toml`, after the `gui` extra:
 
@@ -883,7 +883,7 @@ desktop = [
 
 Verify locally: `.venv/bin/python -c "import tomllib; d=tomllib.load(open('pyproject.toml','rb')); print(d['project']['optional-dependencies']['desktop'])"`.
 
-- [ ] **Step 2: Write ADR-0002**
+- [x] **Step 2: Write ADR-0002**
 
 ```markdown
 # ADR-0002: Native window shell for `opendpd gui`
@@ -930,7 +930,7 @@ security, no silent scientific change.
 `tests/unit/test_window.py`, `tests/unit/test_launcher.py` (window mode, fallback, refusal, reuse, CLI flags, doctor); the macOS evidence in `docs/releases/support-matrix.md`.
 ```
 
-- [ ] **Step 3: Update the user documentation**
+- [x] **Step 3: Update the user documentation**
 
 `docs/tutorials/gui-quickstart.md`: change the opening block to
 
@@ -989,12 +989,12 @@ gir1.2-webkit2-4.1` or `pip install "pywebview[qt]"`).
 > **修订（2026-09-11，维护者决定）**：安装 `opendpd[desktop]` 后，`opendpd gui` 默认在原生应用窗口（pywebview）中打开工作台；未安装该 extra、无桌面会话或使用 `--browser` 时仍按上文打开默认浏览器。`--window` 强制窗口，`--no-browser` 行为不变。详见 ADR-0002。
 ```
 
-- [ ] **Step 4: Run the docs-command test and the full unit layer**
+- [x] **Step 4: Run the docs-command test and the full unit layer**
 
 Run: `.venv/bin/python -m pytest tests/unit -q -x` and `.venv/bin/python -m pytest tests/integration/test_docs_commands.py -q -k quickstart`
 Expected: PASS (the quickstart's commands are executed by that test; `opendpd gui` lines are not executed there — confirm the test only runs the headless commands it lists).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml .github/workflows/ci.yml docs/architecture/adr/0002-native-window-shell.md docs/tutorials/gui-quickstart.md docs/releases/support-matrix.md docs/releases/release-notes-2.2.0.md docs/releases/backlog.md README.md OpenDPD_Studio_Development_Plan.md
@@ -1010,23 +1010,23 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 **Files:**
 - Modify: `docs/releases/support-matrix.md` (fill the macOS row with what actually happened)
 
-- [ ] **Step 1: Install the extra into the repo environment**
+- [x] **Step 1: Install the extra into the repo environment**
 
 Run: `uv pip install --python .venv/bin/python "pywebview>=6.2,<7"` then `.venv/bin/opendpd doctor`
 Expected: the `window` line reads `cocoa (pywebview 6.2.1)`; `ok: ready to launch`.
 
-- [ ] **Step 2: Launch and exercise the window**
+- [x] **Step 2: Launch and exercise the window**
 
 Run in the background with a scratch workspace: `.venv/bin/opendpd gui --workspace <scratch>/ws-window --port 8797`
 Expected: the console prints the URL and "Close the window or press Ctrl+C to stop."; a window titled "OpenDPD Studio" shows the Home page with the workspace path (no "Session required" page).
 
 Then, in the window: register the example dataset, start `pa-gru-smoke-v1`, download the resolved configuration (a save dialog appears and writes the file), close the window while the run is active (the confirmation names the count; *Cancel* keeps the window), wait for the run to finish, close the window (the process exits with code 0, `.studio.lock` is gone). Start again and press Ctrl+C in the terminal: the window closes and the process exits 0.
 
-- [ ] **Step 3: Record the evidence**
+- [x] **Step 3: Record the evidence**
 
 Fill the macOS row of the "Native window" table with the observed results, the macOS build, Python and pywebview versions and the date. Anything that did not work is written as observed, never as passed.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/releases/support-matrix.md
