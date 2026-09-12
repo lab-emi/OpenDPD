@@ -93,7 +93,7 @@ Cloudflare response header for `/studio/` because a meta CSP cannot enforce it.
 
 | Limit | Default |
 |---|---|
-| Live sessions | 16 globally; 4 created per IP per UTC day |
+| Live sessions | 16 globally; 8 created per IP per UTC day |
 | HTTP requests | 120/minute per IP, including preflight; 8 concurrent globally, 3/session |
 | JSON request body | 64 KiB, 10-second receive deadline; no multipart |
 | Jobs | 8/session, 12/IP/day, 60/day globally; 2 pending/session |

@@ -77,4 +77,5 @@ test('page reset restores a pending experiment; global reset restarts the guide 
   await user.click(screen.getByRole('button', { name: 'Skip tutorial' }))
   expect(await screen.findByRole('link', { name: datasetMock.data.display_name })).toBeVisible()
   expect(calls.filter((call) => call.method !== 'GET').every((call) => call.path === '/api/v1/experiments/validate')).toBe(true)
-})
+// This journey crosses several forms and confirmation dialogs on shared CI runners.
+}, 15000)

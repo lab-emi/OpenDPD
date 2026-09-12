@@ -46,7 +46,7 @@ class WebConfig:
     # origin credential, NOT a frontend secret. Never trust arbitrary proxy headers.
     tunnel_host: str
     max_sessions: int = 16
-    sessions_per_ip: int = 4
+    sessions_per_ip: int = 8
     requests_per_minute: int = 120
     runs_per_ip: int = 12
     runs_per_session: int = 8
