@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 254.6 84" width="254.6" height="84" role="img" aria-labelledby="t d">
+<title id="t">EMI</title><desc id="d">EMI Lab, Efficient Machine Intelligence at TU Delft. A brain wired with circuit traces beside the letters EMI.</desc>
+<g fill="none" stroke="#f4f9fc" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M18.5 4.5L18.5 14.5L25.5 21.5L35.34 21.5M4.5 20L14 20L23 29L32.38 29M11 29L20 38L31.03 38M11 55L20 46L31.03 46M4.5 64L14 64L23 55L32.38 55M18.5 79.5L18.5 69.5L25.5 62.5L35.34 62.5M81.5 4.5L81.5 14.5L74.5 21.5L64.66 21.5M95.5 20L86 20L77 29L67.62 29M89 29L80 38L68.97 38M89 55L80 46L68.97 46M95.5 64L86 64L77 55L67.62 55M81.5 79.5L81.5 69.5L74.5 62.5L64.66 62.5M33.5 4.5L39.5 10.5L60.5 10.5L66.5 4.5M33.5 79.5L39.5 73.5L60.5 73.5L66.5 79.5"/>
+<path d="M50 20.5C48.6 17.6 44.6 16.2 40.5 17C34.4 18.2 30.5 29 30.5 42C30.5 55 34.4 65.8 40.5 67C44.6 67.8 48.6 66.4 50 63.5M50 20.5C51.4 17.6 55.4 16.2 59.5 17C65.6 18.2 69.5 29 69.5 42C69.5 55 65.6 65.8 59.5 67C55.4 67.8 51.4 66.4 50 63.5M50 19.6V64.4"/>
+<path stroke-width="2.8" d="M36 25.5C39.5 25 40.5 30 44.5 31M32.4 43C35.5 39 40.5 44.5 45.5 40.5M36 58.5C39.5 59 40.5 54 44.5 53M64 25.5C60.5 25 59.5 30 55.5 31M67.6 43C64.5 39 59.5 44.5 54.5 40.5M64 58.5C60.5 59 59.5 54 55.5 53"/>
+<g fill="#101f31" stroke="#f4f9fc">
+<circle cx="18.5" cy="4.5" r="2.9"/><circle cx="4.5" cy="20" r="2.9"/><circle cx="11" cy="29" r="2.9"/><circle cx="11" cy="55" r="2.9"/><circle cx="4.5" cy="64" r="2.9"/><circle cx="18.5" cy="79.5" r="2.9"/><circle cx="81.5" cy="4.5" r="2.9"/><circle cx="95.5" cy="20" r="2.9"/><circle cx="89" cy="29" r="2.9"/><circle cx="89" cy="55" r="2.9"/><circle cx="95.5" cy="64" r="2.9"/><circle cx="81.5" cy="79.5" r="2.9"/><circle cx="33.5" cy="4.5" r="2.9"/><circle cx="66.5" cy="4.5" r="2.9"/><circle cx="33.5" cy="79.5" r="2.9"/><circle cx="66.5" cy="79.5" r="2.9"/>
+</g></g>
+<g fill="#37b9e8">
+<path transform="translate(103 78) scale(0.05 -0.05)" d="M140 0V1440H1080V1186H412V878H960V624H412V254H1080V0Z"/>
+<path transform="translate(154.5 78) scale(0.05 -0.05)" d="M140 0V1440H384L860 484L1336 1440H1580V0H1326V860L908 0H812L394 860V0Z"/>
+<path transform="translate(233 78) scale(0.05 -0.05)" d="M160 0V1440H432V0Z"/>
+</g></svg>
