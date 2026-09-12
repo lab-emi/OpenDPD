@@ -1,8 +1,9 @@
 # OpenDPD documentation site: MkDocs + Material, deployed to GitHub Pages by .github/workflows/docs.yml.
 #
-# The pages under docs/ are single-sourced. They include sections of README.md, datasets/README.md,
-# examples/README.md and benchmark/benchmark_report.md between `--8<--` markers (pymdownx.snippets), so those
-# files remain the only place to edit. docs/hooks/assets.py publishes the images and evidence files they refer to.
+# README holds the short landing snippets; detailed guides live under docs/.
+# Dataset, example and benchmark pages include their canonical repository sources.
+# See docs/documentation.md for ownership, links and screenshot maintenance.
+# docs/hooks/assets.py publishes shared images without copying them into docs/.
 #
 # Preview locally:  pip install -r docs/requirements.txt && mkdocs serve
 # CI builds with:   mkdocs build --strict
@@ -47,28 +48,32 @@ nav:
   - Home: index.md
   - Get started:
       - Installation: install.md
-      - What's new in V2.1: whats-new.md
-  - User guide:
-      - End-to-end training: training.md
-      - Datasets: datasets.md
-      - Examples: examples.md
-      - Reproducing published results: reproducing.md
-  - Benchmark: benchmark/index.md
-  - Studio:
-      - Quick start: tutorials/gui-quickstart.md
+      - First Studio experiment: tutorials/gui-quickstart.md
       - Headless CLI: tutorials/headless-cli.md
-      - Adding a model: tutorials/adding-a-model.md
+      - Python examples & Colab: examples.md
+  - Core workflow:
+      - PA and DPD training: training.md
+      - Datasets: datasets.md
+      - Visualization: visualization.md
+      - API reference: api.md
+  - Research & deployment:
+      - Choose a workflow: advanced.md
+      - Benchmark: benchmark/index.md
+      - Reproduce published results: reproducing.md
+      - Add a model: tutorials/adding-a-model.md
       - Waveform evaluation: tutorials/waveform-evaluation.md
       - Measured DPD: tutorials/measured-dpd.md
       - Adaptation experiments: tutorials/adaptation-benchmark.md
       - Streaming: tutorials/streaming.md
       - Deployment export: tutorials/deployment-export.md
       - Leaderboard submission: tutorials/leaderboard-submission.md
-  - API reference: api.md
   - Project:
-      - Testing and CI: testing.md
-      - About and citation: about.md
+      - What's new: whats-new.md
+      - Team and research: about.md
+      - Citation: community/citation.md
       - FAQ: faq.md
+      - Testing and CI: testing.md
+      - Maintaining documentation: documentation.md
 
 markdown_extensions:
   - admonition

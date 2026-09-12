@@ -12,26 +12,23 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu   # or your C
 pip install -e ".[dev,gui]"
 ```
 
-Frontend development additionally needs Node.js 20+:
+Frontend development additionally needs Node.js 22.22+:
 
 ```bash
 cd frontend && npm ci && npm run dev
 ```
 
-End users never need Node.js: the built frontend is shipped inside the wheel.
+The current Studio preview is installed from source and needs a frontend build
+(`npm run build` in `frontend/`). A wheel that already contains the built
+frontend does not need Node.js at runtime.
 
-## Test layers
+## Testing and documentation
 
-| Layer | What | Command | When |
-|---|---|---|---|
-| L0 static + unit | flake8 critical errors, schema/state-machine/metric unit tests, frontend `tsc`/vitest | `pytest tests -m "not extended and not integration"` | every PR |
-| L1 integration | tiny CPU training through worker, dataset doctor, cancel, event replay, GUI/CLI consistency | `pytest tests -m integration` | every relevant PR |
-| L2 packaged E2E | build wheel, install in a clean venv without Node.js, start `opendpd gui`, browser journey | `python -m build && pytest tests/packaging` | release candidates and packaging PRs |
-| L3 platform / stress | multi-OS, stress datasets, long logs, crash recovery | scheduled `weekly.yml` | scheduled |
-| L4 GPU / statistical | CUDA/MPS capability, multi-seed benchmark | manual, bound to an exact commit | after human approval |
-| Performance report | plan §8.2 targets against a real `opendpd gui` server and a real browser | `python scripts/perf_report.py --workspace <scratch>/ws --minutes 30 --stress` (regenerates `docs/releases/performance-report.md`; run on an idle machine, never next to pytest) | release candidates |
-
-Tests must include failure paths. Coverage numbers do not replace correctness.
+Use the [test guide](docs/testing.md) for commands and test layers, and the
+[documentation guide](docs/documentation.md) for content ownership and preview.
+The README is the short entry point; detailed guides live under `docs/` and are
+also published by MkDocs. Edit shared content at its source instead of copying
+it into a second page.
 
 ## Pull request definition of done
 
@@ -63,10 +60,10 @@ replace expected values to make a failing test pass.
   CLI, API and GUI; evidence before "supported").
 - New metric profiles or thresholds: protected paths, separate science-reviewed
   change (`docs/protocols/metric-profiles.md`, `docs/protocols/acceptance-thresholds.md`).
-- Tutorials: every `opendpd …` command in `docs/tutorials/*.md` is executed by
-  `tests/integration/test_docs_commands.py` (or by the weekly workflow for the
-  benchmark family) and every documented flag must exist in the parser, so
-  update the docs and the CLI together.
+- Tutorials: `tests/integration/test_docs_commands.py` checks documented flags
+  and executes the command families in its tutorial list (the benchmark family
+  also has weekly/protocol checks). Keep that list and the CLI documentation
+  aligned when adding a guide or command.
 
 ## Commit messages
 

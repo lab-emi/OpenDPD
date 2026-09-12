@@ -1,260 +1,74 @@
-# OpenDPD Studio: one command to the workbench
+# Your first experiment in Studio
+
+First complete the [source installation](../install.md). Studio is part of the **2.2 development preview**; the PyPI 2.1.0 package does not include it.
 
 ```bash
-pip install "opendpd[desktop]"   # or "opendpd[gui]" for the browser-only variant
 opendpd gui
 ```
 
-`opendpd gui` starts a local service on `127.0.0.1`, waits until it answers
-and opens the workbench in a native application window (`opendpd[desktop]`)
-or, without that extra, in your default browser after printing a one-time
-URL such as `http://127.0.0.1:8765/bootstrap?token=…`. No Node.js, no second
-terminal, no copying of addresses. Close the window, quit the application or
-press Ctrl+C to stop; running workers are terminated and the workspace lock
-is released. When runs are still active, all three ask first.
+Studio opens locally in your browser, or in a native window if you installed the desktop extra. The interface and experiment services are the same in both.
+
+## 1. Open and inspect a dataset
+
+On **Home**, click **Get Started → Try a built-in dataset**. Choose **Add & inspect** beside **DPA_200MHz**, then **Inspect my dataset**.
+
+The dataset page shows input/output I/Q signals, sample rate, bandwidth and signal quality. Use the **Dataset Doctor** tab to inspect findings, then **Configure experiment** to continue. Built-in measured datasets keep their supplied splits; **MyCustomPA** is explicitly labeled synthetic tutorial data.
+
+Custom dataset creation and upload in the UI are disabled and labeled **Coming soon**. The local Python and CLI workflows remain available; see [import and preprocessing](headless-cli.md#use-your-own-data).
+
+## 2. Train and test a PA model
+
+In **PA Model Training**, choose the dataset and model architecture. Under **Starting settings**, choose **Quick trial** for a short pipeline check (a smoke recipe) or **Full training** for a longer budget. Pick an available device and review the configuration. Continue through the review steps, optionally name the run, then click **Start run**.
+
+The experiment form offers models from the shared registry. Advanced parameters come from that registry too; the server validates them before a run can start. Use the PA test step after a successful PA run to inspect predictions on held-out data.
+
+During training, watch the **NMSE curve**, progress and signal comparisons. The view reports the configured and actual batch sizes, I/Q samples per sequence and sample rate. Live probe scores are previews; the final test result is identified separately.
+
+## 3. Train and test DPD
+
+Choose a DPD training recipe and select a **successful PA run on the same dataset** as its surrogate. The service checks checkpoint compatibility, including seed and frame length, before starting.
+
+The chain is **x → u = DPD(x) → y = PA(u)**. The last stage uses the learned PA model and is labeled *simulated*. Inspect ACLR/NMSE or the metrics available under the selected profile, plus without/with-DPD signal comparisons. The result also records how much of the predistorted input lies outside the surrogate's fitted amplitude range.
+
+The DPD test/apply step exports **u**, the predistorted PA input, with metadata identifying the signals and checkpoints used. It can score the cascade through the selected surrogate. This is not a measured linearized PA output; follow the [measured DPD guide](measured-dpd.md) for physical captures.
+
+## 4. Follow progress in the terminal
+
+The **Terminal** bar at the bottom starts collapsed. It highlights with a **Running** status while an experiment is active. Expand it to read the worker's actual output.
+
+Its tabs follow the experiment step when you move from PA to DPD. You can also select an earlier step's terminal or another run without navigating away from the current experiment. The run-detail **Logs** tab provides the saved log and filtering controls.
+
+Plots use throttled previews with bounded point counts. Their current cadence is shown in the UI; saved results and formal metrics remain independent of how frequently the browser draws. See [Visualization](../visualization.md) for live and saved plot behavior.
+
+## 5. Keep and compare the results
+
+- **Run detail:** inspect metrics, logs, artifacts and the resolved configuration. Reloading the page does not submit another run.
+- **Configuration:** download the JSON or use **Re-run with this configuration**. The same configuration can run through `opendpd run --config`.
+- **Results:** select results to compare metrics, spectra and configuration differences. Incompatible datasets, profiles, references or evidence types are explained and are not ranked together.
+- **Export:** create a share package or a full private package, and generate HTML/Markdown reports. Share packages omit raw PA data and worker logs; full packages include the data. See the [package protocol](../protocols/experiment-packages.md).
+
+For classical MP/GMP fits, streaming and deployment, continue to [Advanced guides](../advanced.md).
+
+## Language, theme and reset
+
+The language menu offers **English, Dutch and Chinese first**, followed by French, German, Italian, Japanese, Korean and Spanish. Your choice is stored in the workspace. Interface text and generated report prose are localized; raw worker logs, commands, configuration keys, user text and GitHub messages retain their original text for provenance.
+
+Select a light, dark or system theme in **Settings**. The layout adapts to the window size. Interactive plots can be panned and zoomed; double-click to fit, and an automatic fit recovers views that have moved too far from the data.
+
+**Reset page** restarts the current page's workflow after a confirmation explaining what progress will be removed. **Cancel** keeps it; continue only when you want to start that page again. **Reset Studio** has a broader scope and its own confirmation.
+
+## Launch options
 
 | Option | Effect |
-|---|---|
-| `--workspace DIR` | where datasets, runs and results live (default `$OPENDPD_WORKSPACE` or `~/opendpd-workspace`) |
-| `--port N` | use exactly this port (fails if busy); without it the first free port from 8765 is used |
-| `--no-browser` | print the URL only (SSH sessions, servers without a desktop) |
-| `--browser` | open the system browser even when the native window is available |
-| `--window` | require the native window; fail with the reason when it is not available |
+| --- | --- |
+| `--workspace DIR` | Choose the data/results directory; default is `$OPENDPD_WORKSPACE` or `~/opendpd-workspace`. |
+| `--port N` | Use exactly this port; otherwise use the first free port starting at 8765. |
+| `--browser` | Open the system browser even if the native backend is available. |
+| `--window` | Require a native window and report why it cannot start. |
+| `--no-browser` | Print the local session URL for a headless or SSH session. |
 
-Starting `opendpd gui` again for the same workspace while one is running
-opens the existing instance instead of a second server. If the first instance
-is still starting or shutting down, the second command refuses with a message
-to wait or use another workspace. An OS lock prevents simultaneous launchers
-from writing to the same workspace, even before the service becomes healthy.
+A second launch for the same active workspace opens the existing instance. Close Studio or press Ctrl+C to stop the launcher; active workers trigger a confirmation before shutdown.
 
-## Native window
+The native window uses the operating system's web view. Run `opendpd doctor` for backend diagnostics; on Linux a WebKit2GTK installation may need `python3-gi gir1.2-webkit2-4.1`, or install a Qt backend with `python -m pip install "pywebview[qt]"`. Consult the [support matrix](../releases/support-matrix.md) for verified platforms.
 
-The window is the same page a browser would show, hosted by the operating
-system's web view (WKWebView on macOS, WebView2 on Windows, WebKit2GTK or Qt
-on Linux). Downloads go through the platform's save dialog. The window cannot
-script the page and keeps no data of its own: your language choice and every
-other preference live in the workspace. `opendpd doctor` prints the backend
-in use or the reason none is available (on Linux install `python3-gi
-gir1.2-webkit2-4.1` or `pip install "pywebview[qt]"`).
-
-## Language
-
-The top bar shows the current language with its flag; the menu lists
-English, Français, Deutsch, Español, 中文, 日本語 and 한국어. A choice applies
-at once and is stored in `<workspace>/settings.json`, so it is the same in
-the native window and in any browser. The first launch follows your browser
-or system language. Server messages, worker logs, reports and the CLI stay in
-English so that a GUI screen, a package and a terminal say the same thing.
-
-## What the browser shows
-
-1. **Home**: the workspace path and the built-in example (measured DPA 200 MHz
-   data). Register it with one click.
-2. **Experiments → New**: pick a recipe (smoke recipes prove the pipeline in a
-   minute and say so; research recipes are the paper settings), a dataset and
-   a device. The server validates every change; errors are shown on the field.
-3. **Run detail**: live progress, per-epoch metrics, logs, artifacts and the
-   resolved configuration. Refreshing the page never resubmits anything.
-4. **Results**: metrics with units and their evidence type (PA model, DPD on
-   the surrogate, DPD measured). Mock data used for interface work is always
-   badged **MOCK** and cannot be exported.
-
-## Your own data
-
-1. **Datasets → Import my data.** Files are read only from authorised import
-   roots: `<workspace>/imports` (also the target of the upload button) and
-   any directory added with `opendpd datasets add-root NAME PATH`. The browser
-   never sends absolute paths; nothing outside these roots can be reached.
-2. **Inspect.** Pick a CSV, `.npy` or `.npz` (or an existing OpenDPD split
-   directory). The server reads the header/shape, shows the first rows, guesses
-   the column mapping (`tx_i`, `rx_q`, … are understood) and lists problems.
-   Fix swapped I/Q or wrong columns in the mapping selects; enter the sample
-   rate, bandwidth, sub-channel count and `nperseg`, and confirm the
-   amplitude units. Without this metadata formal metrics are blocked, not
-   guessed.
-3. **Import.** The original file is copied under `datasets/<id>/raw/`,
-   hashed and never modified. The split (`contiguous-v1`: train | guard | val |
-   guard | test, before any framing) and `raw-v1` are written.
-4. **Run Dataset Doctor.** NaN/Inf, length, outliers, clipping plateaus,
-   delay, gain/phase, amplitude range, bandwidth coverage and metadata are
-   checked; each finding has evidence, a severity and a suggestion. Blocking
-   findings stop evaluation until resolved.
-5. **Preprocess → new version.** Accept the doctor's estimates (delay, gain,
-   phase, outlier and NaN handling) or type your own, **Preview** the
-   result (sample counts and the doctor's verdict after processing), then
-   **Create version**. Versions are immutable; normalisation is fitted on the
-   training split only and the fit range is recorded.
-6. **New experiment → Data version** lets you train on any version; the
-   result records which one was used.
-
-The same flow headless:
-
-```bash
-opendpd datasets import capture.csv --id mine --fs 800e6 --bandwidth 200e6 --n-sub-ch 10 --nperseg 2560 --units normalized
-opendpd datasets doctor mine --json
-opendpd datasets preprocess mine --version aligned-v1 --delay 6 --preview
-opendpd datasets preprocess mine --version aligned-v1 --delay 6
-opendpd run --config exp.json   # with "dataset": {"id": "mine", "preprocessing_version": "aligned-v1"}
-```
-
-## DPD through a PA surrogate
-
-1. **Train a PA model first** (a `pa-…` recipe on your dataset). A DPD recipe
-   lists only succeeded PA runs of the same dataset as surrogate; without one
-   it cannot start, and the validation error says what to train (same seed
-   and frame length).
-2. **Train the DPD** (a `dpd-…` recipe). The result page shows the chain
-   **x → u = DPD(x) → y = PA(u)** with the source of every stage; `y` is
-   marked *simulated* because it comes from the learned surrogate. Under the
-   metrics, **Baselines under the same reference** scores the surrogate
-   without DPD and the measured PA without DPD against the same linear
-   target, and **Surrogate amplitude coverage** says how much of `u` leaves
-   the amplitude range the surrogate was fitted on.
-3. **Apply DPD to the test split…** on the DPD run page exports `u` (a PA
-   *input*, downloadable from the result's chain table and the artifacts
-   tab, with a `.meta.json` sidecar describing columns, order, dtype, scaling
-   and the checkpoints used) and scores it through the chosen surrogate.
-   Picking another PA run gives a new result; the DPD's own result is never
-   overwritten. The run page's **Lineage** card shows which checkpoints a run
-   used and which runs used it.
-4. No absolute power is shown anywhere: the dataset carries no physical
-   calibration, so dBm and efficiency are not derived.
-
-The same headless:
-
-```bash
-opendpd run --config dpd.json --workspace WS        # "task": "train_dpd", "pa_reference": {"run_id": "run-…"}
-opendpd apply run-DPD --workspace WS                 # export u = DPD(x), score through the training surrogate
-opendpd apply run-DPD --workspace WS --pa run-PA2    # score the same DPD through another surrogate
-```
-
-## Classical baselines (MP / GMP by least squares)
-
-- The recipes **pa-mp-ls-v1**, **pa-gmp-ls-v1**, **dpd-mp-ila-v1** and
-  **dpd-gmp-ila-v1** fit the memory-polynomial baselines of the benchmark
-  report in seconds on CPU. PA fits use direct least squares on the train
-  split; DPD fits use indirect learning (ILA) on the measured train split and
-  are scored through a gradient-trained PA surrogate like any other DPD.
-- A fit has no seed and no epochs. Its stability is recorded instead: the
-  retained rank, the condition number, the singular-value cutoff (`rcond`) and
-  the train residual appear in the result's limitations and in `fit.json`.
-- Every result names its **training path** (gradient, gradient through the
-  surrogate, least squares, ILA least squares), so a comparison between a
-  polynomial and a neural DPD shows that the two were obtained differently
-  even when they are ranked under one protocol.
-- A least-squares PA is a PA-modeling reference only; it is refused as a
-  surrogate for DPD simulation.
-
-## Benchmark protocol from the terminal
-
-```bash
-opendpd benchmark plan --dataset dpa-200mhz --tier cpu_regression --out plan.json
-opendpd benchmark run plan.json --workspace WS
-opendpd benchmark report plan.json --workspace WS --out report.json --markdown report.md
-opendpd benchmark baseline report.json --out baseline.json
-opendpd benchmark check report.json --baseline baseline.json
-```
-
-A plan fixes the model matrix, the budget and at least three seeds before
-anything runs; the report lists every seed next to the aggregate with the
-run ids and hashes behind each number; a baseline blocks a release only after
-a maintainer approved it (`docs/protocols/benchmark-protocol.md`).
-
-## Reproduce, export and import a configuration
-
-- Every run's **Configuration** tab shows the resolved configuration (what
-  actually ran, with its hash), a **Download configuration (JSON)** button and
-  **Re-run with this configuration**, which opens the experiment form with
-  that configuration imported.
-- The experiment form's **Import configuration…** button accepts such a JSON
-  file (the `resolution` block is dropped). An imported configuration is
-  validated by the server and shown in a read-only preview. Only the optional
-  run name can be changed; **Discard import** returns to the recipe form.
-  If the source run cannot be loaded, retry the request before starting a run.
-- Model parameters in **Advanced settings** are generated from the model
-  registry (`opendpd models`): the same names, types and limits the CLI and
-  the Python API accept, so nothing is hand-written twice. Invalid values
-  are sent unchanged for server validation. A failed validation request shows
-  its error and a **Retry** button; it never silently enables submission.
-- The same configuration through the GUI and `opendpd run --config` resolves
-  to the same hash and, on CPU with `reproducibility: hard`, to the same
-  numbers (`tests/integration/test_entry_consistency.py`).
-- `opendpd validate --workspace WS --config experiment.json --json` previews
-  the same workspace-bound configuration as GUI validation and run submission,
-  including PA/DPD checkpoint references, without creating a run. Omit
-  `--workspace` for configuration-only validation without reference binding.
-
-## Compare, charts, packages and reports
-
-- A result page draws the **spectrum** (with the main and adjacent bands of
-  the profile), a **time excerpt** and **AM-AM / AM-PM** from plot data the
-  worker stored at run end (`plots/*.json`, plots-v1, fixed point budgets).
-  Hiding a trace or zooming changes nothing in the stored metrics; the
-  browser never recomputes a score. A run's **Overview** tab shows the
-  per-epoch curves from the same source. Constellation/EVM plots are not
-  drawn: there is no demodulation reference in the data.
-- **Results → select two or more → Compare selected** puts the metrics side by
-  side under one profile, marks the best value per metric, overlays the
-  spectra with one colour per result and shows the configuration diff for a
-  pair. Results from different data, data versions, splits, references,
-  profile versions, evidence types or execution semantics are still shown,
-  but the page says exactly which pair differs in what and does not rank
-  them. **Download CSV** gives the same table.
-- **Export share package** on a result page writes a zip with the resolved
-  configuration, results under every profile, plot data, the checkpoints of
-  every referenced run, the reports and the reproduction commands, and lists
-  what it left out (worker logs, machine paths, your PA data) and what a
-  recipient needs to re-evaluate. **Export full package (private)** adds the
-  raw data and the used data version. Both stay in `<workspace>/exports/`
-  until you move them.
-- **Experiments → Import package…** verifies every file hash before anything
-  is written, refuses damaged or conflicting packages with the reason, and
-  reports whether the dataset arrived, already existed, was registered
-  (built-in) or is missing. Re-evaluating an imported checkpoint reproduces
-  the packaged numbers within the frozen tolerance; re-training is a new
-  experiment and is never implied by that.
-- **Report (HTML)** / **Report (Markdown)** render a document bound to the
-  stored result and plot data. Same from the terminal:
-
-```bash
-opendpd export run-… --workspace WS --kind share     # or --kind full
-opendpd import run-…-share-….zip --workspace WS2      # --inspect verifies only
-opendpd evaluate run-… --workspace WS2 --profile legacy-opendpd-v1
-opendpd report run-… --workspace WS --format html
-```
-
-## Long histories and long logs
-
-The Experiments page asks the server for one page at a time (25, 50 or 100
-rows) and searches on the server: type part of a run id, name, dataset or
-model in **Search runs** and the list narrows without loading the whole
-history. The URL keeps the filter, search and page, so a view can be
-bookmarked. A worker log is fetched in pages of bytes; **Load all remaining
-lines** pulls the rest so the filter box covers the whole file, while the
-viewer keeps only the last 50 000 lines and draws only the visible rows.
-
-Binary captures (`.npy`/`.npz`) are imported without being copied into
-memory: the converter reads the memory-mapped file chunk by chunk, and the
-Dataset Doctor analyses a central window of at most two million samples
-(the report says which window). CSV files are parsed in chunks but the
-parsed arrays stay in memory, so keep CSV sources to the Standard tier
-(about ten million rows) and use `.npy` for larger captures.
-
-## When something is wrong
-
-- `opendpd doctor` prints versions, whether the frontend assets are present,
-  the workspace state and a free port, and lists every blocking problem.
-- If the page says the frontend is not available, the installed wheel was
-  built without the frontend (source checkout without `npm run build`);
-  install a release wheel or run `cd frontend && npm ci && npm run build`.
-- Lost session (server restarted, cookie cleared): open the URL printed by
-  `opendpd gui`, or paste its token into the "Session required" page.
-- The service only ever listens on loopback. For remote machines use an SSH
-  tunnel (`ssh -L 8765:127.0.0.1:8765 host`) and `--no-browser` on the host.
-
-## Platform status
-
-See `docs/releases/support-matrix.md`. Linux is verified by the packaged
-test (`tests/packaging/test_wheel_install.py`); macOS and Windows launches
-must be verified by a person on a real desktop before they are listed as
-supported.
+For remote use, keep the server on loopback and use an SSH tunnel, for example `ssh -L 8765:127.0.0.1:8765 host`, with `--no-browser` on the host. If the session expires, reopen the current launcher's URL. Other setup problems are covered in [Installation](../install.md#troubleshooting).
