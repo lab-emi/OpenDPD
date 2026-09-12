@@ -59,7 +59,7 @@ test('bootstrap, train the smoke recipe, read the result and export a share pack
     return supported
   })
   await expect.poll(() => transfer.evaluate((el) =>
-    (el as HTMLElement & { _fullData?: Array<{ type: string }> })._fullData?.[0]?.type,
+    (el as HTMLElement & { _fullData?: Array<{ type: string }> })['_fullData']?.[0]?.type,
   )).toBe(hasWebGL ? 'scattergl' : 'scatter')
   if (hasWebGL) await expect(transfer.locator('canvas').first()).toBeVisible()
   await page.getByRole('link', { name: 'Configure experiment' }).click()

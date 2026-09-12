@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { PlotlyChart, type PlotTrace } from './PlotlyChart'
 import type { PlotElement, Range } from './plotInteractions'
@@ -102,6 +102,9 @@ test('live updates preserve the camera but a different signal starts at its own 
 test('uses WebGL for dense scatter without dropping any data points', async () => {
   enableWebGL()
   render(<PlotlyChart title="dense" traces={dense} />)
+  // This is the first lazy GL import. Settle Vitest's module transformation
+  // before asserting the draw; browser performance has its own real test.
+  await act(() => vi.dynamicImportSettled())
   await waitFor(() => expect(api.react).toHaveBeenCalledTimes(1))
   const data = api.react.mock.lastCall![1]
   expect(data[0].type).toBe('scattergl')
