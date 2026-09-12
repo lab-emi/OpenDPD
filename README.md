@@ -4,6 +4,24 @@
 
 # OpenDPD
 
+<!-- --8<-- [start:brand] -->
+<p>
+  <a href="https://github.com/lab-emi/OpenDPD">
+    <picture class="brand-logo">
+      <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/opendpd-studio-logo-inverse.svg" />
+      <img src="frontend/src/assets/opendpd-studio-logo.svg" alt="OpenDPD Studio" width="300" />
+    </picture>
+  </a>
+  &nbsp;
+  <a href="https://www.tudemi.com/">
+    <picture class="brand-logo">
+      <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/emi-logo-inverse.svg" />
+      <img src="frontend/src/assets/emi-logo.svg" alt="EMI Lab — Efficient Machine Intelligence, TU Delft" width="150" />
+    </picture>
+  </a>
+</p>
+<!-- --8<-- [end:brand] -->
+
 <!-- --8<-- [start:intro] -->
 **Model a power amplifier. Train a digital predistorter. Understand the result.**
 
