@@ -18,8 +18,8 @@ copyright: Copyright &copy; Lab of Efficient Machine Intelligence, Delft Univers
 
 theme:
   name: material
-  logo: pics/OpenDPDlogo.svg
-  favicon: pics/OpenDPDlogo.svg
+  logo: frontend/src/assets/opendpd-studio-mark.svg
+  favicon: frontend/public/favicon.svg
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default

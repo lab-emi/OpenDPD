@@ -6,6 +6,8 @@ title: Home
 
 # OpenDPD
 
+--8<-- "README.md:brand"
+
 --8<-- "README.md:intro"
 
 [Get started with Studio](install.md){ .md-button .md-button--primary }
