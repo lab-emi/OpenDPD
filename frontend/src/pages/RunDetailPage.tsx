@@ -24,12 +24,11 @@ import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router'
 import { artifactUrl } from '@/api/client'
 import { useRunStream } from '@/api/events'
-import { keys, useCancelRun, useCustomDatasetImports, useModels, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
+import { useCancelRun, useCustomDatasetImports, useModels, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
 import { isTerminal, type LineageLink, type LineageRelation, type RunView } from '@/api/types'
 import { message, t, type MessageKey } from '@/i18n'
 import { LogViewer } from '@/components/LogViewer'
@@ -66,7 +65,6 @@ export function RunDetailPage() {
   const { runId = '' } = useParams()
   const [params, setParams] = useSearchParams()
   const tab: TabKey = TABS.includes(params.get('tab') as TabKey) ? (params.get('tab') as TabKey) : 'overview'
-  const qc = useQueryClient()
   const run = useRun(runId)
   const active = !!run.data && !isTerminal(run.data.status)
   const stream = useRunStream(runId, !!run.data)
@@ -79,11 +77,11 @@ export function RunDetailPage() {
   const [measureOpen, setMeasureOpen] = useState(false)
 
   if (run.isPending) return <LoadingState />
-  if (run.isError) return <ErrorState error={run.error} onRetry={() => void run.refetch()} />
+  if (!run.data) return <ErrorState error={run.error} onRetry={() => void run.refetch()} />
   const r = run.data
   // the record stores completed epochs (1-based); stream progress events carry the 0-based epoch index
   const progress = stream.progress ?? (typeof r.progress_epoch === 'number' && r.progress_epoch > 0 && typeof r.progress_total_epochs === 'number' ? { epoch: r.progress_epoch - 1, total: r.progress_total_epochs } : null)
-  const disconnected = active && stream.connection === 'disconnected'
+  const disconnected = run.isError || stream.connection === 'disconnected'
   const nextStep = NEXT_STEP[r.status]
 
   return (
@@ -95,6 +93,7 @@ export function RunDetailPage() {
         <StatusChip status={r.status} stale={r.heartbeat_stale} size="medium" />
         {active && <Chip size="small" variant="outlined" label={stream.connection === 'live' ? t('run.live') : stream.connection === 'ended' ? t('run.ended') : t('run.connecting')} data-testid="stream-state" />}
         <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+          <Button size="small" onClick={stream.reconnect}>{t('run.reconnect')}</Button>
           {active &&
             (confirmCancel ? (
               <>
@@ -160,7 +159,7 @@ export function RunDetailPage() {
       )}
       {cancel.isError && <ErrorState error={cancel.error} />}
       {retry.isError && <ErrorState error={retry.error} />}
-      {disconnected && <DisconnectedState lastUpdate={stream.lastUpdate ?? (r.last_heartbeat_at ? new Date(r.last_heartbeat_at) : null)} onRefresh={() => void qc.invalidateQueries({ queryKey: keys.run(runId) })} />}
+      {disconnected && <DisconnectedState lastUpdate={stream.lastUpdate ?? (r.last_heartbeat_at ? new Date(r.last_heartbeat_at) : null)} onRefresh={stream.reconnect} />}
       {r.error && (
         <Alert severity="error" data-testid="run-error">
           <AlertTitle>
@@ -181,6 +180,7 @@ export function RunDetailPage() {
         </Alert>
       )}
       {nextStep && !r.error && <Alert severity={r.status === 'succeeded' ? 'success' : 'info'}>{t(nextStep)}</Alert>}
+      {r.status === 'queued' && r.device === 'cuda' && <Alert severity="info">{t('run.gpuQueue')}</Alert>}
       {r.status_reason && r.status !== 'succeeded' && !r.error && <Typography color="text.secondary">{message(r.status_reason)}</Typography>}
       {(progress || (active && (r.task === 'train_pa' || r.task === 'train_dpd'))) && <Paper sx={{ p: 2 }}>
         <Typography variant="body2" gutterBottom>

@@ -756,5 +756,12 @@
   "web.retention": "임시 작업 공간 · {date} 전에 결과를 다운로드하세요. 파일은 자동으로 삭제됩니다.",
   "web.connection.title": "연산 서버에 연결할 수 없습니다",
   "web.connection.body": "브라우저가 {origin}에 연결하지 못했습니다.",
-  "web.connection.hint": "네트워크 연결을 확인한 후 다시 시도하세요. 도메인이 최근 이전되었다면 이전 DNS 레코드가 캐시되어 있을 수 있습니다. 다른 네트워크나 신뢰할 수 있는 DNS 서비스를 사용해 보세요."
+  "web.connection.hint": "네트워크 연결을 확인한 후 다시 시도하세요. 도메인이 최근 이전되었다면 이전 DNS 레코드가 캐시되어 있을 수 있습니다. 다른 네트워크나 신뢰할 수 있는 DNS 서비스를 사용해 보세요.",
+  "terminal.stop": "실험 중지",
+  "terminal.stopping": "중지 중…",
+  "terminal.openRun": "실험 및 그래프 열기",
+  "terminal.readOnly": "출력은 읽기 전용입니다. 이 실행을 종료하려면 «실험 중지»를 누르세요.",
+  "logs.refresh": "출력 새로고침",
+  "run.reconnect": "실험 다시 동기화",
+  "run.gpuQueue": "공유 GPU는 한 번에 하나의 실험을 실행합니다. 실험이 대기 중이며, 이 페이지를 나갔다가 돌아올 수 있습니다."
 }

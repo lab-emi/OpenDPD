@@ -160,7 +160,7 @@ class Capabilities(BaseModel):
 @router.get("/system/capabilities", response_model=Capabilities, tags=["system"],
             dependencies=[Depends(require_session)])
 def capabilities(request: Request):
-    detected = capabilities_service.detect_devices()
+    detected = getattr(request.app.state, "device_detector", capabilities_service.detect_devices)()
     models = list_models()
     devices = [DeviceInfo(device="cpu", detected=True, count=1,
                           tested_models=[m.key for m in models if "cpu" in m.devices_tested])]

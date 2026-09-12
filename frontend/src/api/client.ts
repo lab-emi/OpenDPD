@@ -3,6 +3,7 @@
  * writes, and the uniform error envelope turned into ApiError.
  */
 import type { SessionInfo } from './types'
+import { boundedRead } from './read-queue'
 
 export const WEB_MODE = import.meta.env.VITE_STUDIO_MODE === 'web'
 export const API_ORIGIN = WEB_MODE ? String(import.meta.env.VITE_API_ORIGIN).replace(/\/$/, '') : ''
@@ -22,6 +23,7 @@ export class ApiError extends Error {
   readonly code: string
   readonly details: ApiErrorDetail[]
   readonly hint: string | null
+  retryAfterMs = 0
 
   constructor(status: number, code: string, message: string, details: ApiErrorDetail[] = [], hint: string | null = null) {
     super(message)
@@ -95,12 +97,16 @@ async function parseError(response: Response): Promise<ApiError> {
   } catch {
     // non-JSON body: keep the HTTP status text
   }
-  return new ApiError(response.status, code, message, details, hint)
+  const error = new ApiError(response.status, code, message, details, hint)
+  const retry = response.headers.get('retry-after')
+  if (retry) error.retryAfterMs = Math.max(0, Math.min(60_000, /^\d+$/.test(retry) ? Number(retry) * 1000 : Date.parse(retry) - Date.now())) || 0
+  return error
 }
 
-async function request<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown): Promise<T> {
+async function request<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  const session = bearerToken()
   const headers: Record<string, string> = { Accept: 'application/json', ...authorizationHeaders() }
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (body !== undefined || method !== 'GET') headers['Content-Type'] = 'application/json'
   if (!WEB_MODE && method !== 'GET' && csrfToken) headers[CSRF_HEADER] = csrfToken
   const response = await fetchApi(`${API}${path}`, {
     method,
@@ -108,7 +114,9 @@ async function request<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: u
     redirect: 'error',
     credentials: WEB_MODE ? 'omit' : 'same-origin',
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal,
   })
+  if (WEB_MODE && bearerToken() !== session) throw new DOMException('Session changed', 'AbortError')
   if (!response.ok) { expired(response); throw await parseError(response) }
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
@@ -125,7 +133,13 @@ async function upload<T>(path: string, form: FormData): Promise<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
+  get: <T>(path: string, signal?: AbortSignal) => {
+    const session = bearerToken()
+    return WEB_MODE ? boundedRead((readSignal) => {
+      if (bearerToken() !== session) throw new DOMException('Session changed', 'AbortError')
+      return request<T>('GET', path, undefined, readSignal)
+    }, signal) : request<T>('GET', path, undefined, signal)
+  },
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
   upload,
@@ -158,11 +172,17 @@ export async function downloadFile(href: string, filename?: string): Promise<voi
   const url = new URL(href, WEB_MODE ? API_ORIGIN : window.location.origin)
   const expected = WEB_MODE ? API_ORIGIN : window.location.origin
   if (url.origin !== expected || !url.pathname.startsWith('/api/v1/')) throw new Error('Invalid artifact URL')
-  const response = await fetchApi(url.href, { headers: authorizationHeaders(), credentials: WEB_MODE ? 'omit' : 'same-origin', redirect: 'error' })
-  if (!response.ok) { expired(response); throw await parseError(response) }
-  const disposition = response.headers.get('content-disposition') ?? ''
+  const session = bearerToken()
+  const download = async (signal?: AbortSignal) => {
+    if (WEB_MODE && bearerToken() !== session) throw new DOMException('Session changed', 'AbortError')
+    const response = await fetchApi(url.href, { headers: authorizationHeaders(), credentials: WEB_MODE ? 'omit' : 'same-origin', redirect: 'error', signal })
+    if (WEB_MODE && bearerToken() !== session) throw new DOMException('Session changed', 'AbortError')
+    if (!response.ok) { expired(response); throw await parseError(response) }
+    return { data: await response.blob(), disposition: response.headers.get('content-disposition') ?? '' }
+  }
+  const { data, disposition } = WEB_MODE ? await boundedRead(download, undefined, 120_000) : await download()
   const suggested = disposition.match(/filename="([^"\r\n]+)"/)?.[1]
-  const blob = URL.createObjectURL(await response.blob())
+  const blob = URL.createObjectURL(data)
   const link = document.createElement('a')
   link.href = blob
   link.download = (filename || suggested || url.pathname.split('/').pop() || 'download').replace(/[/\\]/g, '_')

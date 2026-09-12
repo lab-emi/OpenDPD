@@ -2,8 +2,9 @@
 
 The public Studio is a static build at `https://opendpd.com/studio/`. It calls
 `https://api.opendpd.com` through a named Cloudflare Tunnel. Dataset analysis,
-preprocessing, training, inference and result generation execute inside the
-dedicated local QEMU VM. GitHub Pages serves JavaScript, styles and images only.
+preprocessing and CPU execution run inside the dedicated local QEMU VM.
+CUDA training and inference run in a restricted host container pulled by a
+private agent; the VM remains the only public API and owns every session. GitHub Pages serves JavaScript, styles and images only.
 This deployment replaces the earlier [cloud pull proposal](cloud-pull-deployment-plan.md).
 
 ```text
@@ -17,7 +18,11 @@ Browser ──HTTPS──> GitHub Pages: opendpd.com/studio/
                   Public API boundary (worker user)
                          ├── random session A / private database / supervisor
                          └── random session B / private database / supervisor
-                                   └── one shared compute slot
+                                   └── global FIFO compute slot
+                  Private /_gpu API (not in Tunnel ingress)
+                         ▲ authenticated pull via 127.0.0.1:18765
+                  Host GPU agent (no listening socket)
+                         └── one restricted CUDA container / one temporary job
 ```
 
 ## Sessions and deletion
@@ -47,8 +52,9 @@ margin before any session data reaches 24 hours. Sessions do not get a fresh
 24 hours when they are accessed or when new files are generated. Late visitors
 therefore have a shorter session; the UI displays their exact expiry.
 
-Restarting the API or VM also discards every session. There is no resume,
-backup, persistent user database or recoverable job history in this deployment.
+Refreshing a browser or reconnecting within the same tab resumes the existing
+session, events and saved plots. Restarting the API or VM discards every session;
+there is no recovery across a service restart, backup or persistent user database.
 Swap and core dumps are disabled. Do not introduce VM memory snapshots,
 hibernation, workspace backups or request-body logging: those would invalidate
 the retention design. If the host is suspended across the deadline, the
@@ -94,10 +100,10 @@ Cloudflare response header for `/studio/` because a meta CSP cannot enforce it.
 | Limit | Default |
 |---|---|
 | Live sessions | 16 globally; 8 created per IP per UTC day |
-| HTTP requests | 120/minute per IP, including preflight; 8 concurrent globally, 3/session |
+| HTTP requests | 120/minute per session, 600/minute per IP; preflight has a separate 600/minute bucket; 8 concurrent globally, 3/session |
 | JSON request body | 64 KiB, 10-second receive deadline; no multipart |
 | Jobs | 8/session, 12/IP/day, 60/day globally; 2 pending/session |
-| Concurrent training/inference | 1 globally across every session |
+| Concurrent training/inference | 1 globally across every session, oldest queued experiment first |
 | Job runtime | 30 minutes, followed by cancellation and forced termination |
 | Public model/training parameters | bounded layers, widths, batches, frames, epochs and threads |
 | Storage | 256 MiB/session checked every 15 seconds; **2 GiB hard limit globally** |
@@ -110,10 +116,48 @@ budgets bound the effect of IP rotation. There is no Turnstile implementation;
 do not describe this demo as bot-proof. Cloudflare edge controls and monitoring
 remain useful for floods that exceed the local admission layer.
 
-The installed baseline is a CPU VM with 4 vCPUs and 8 GiB RAM. GPU passthrough
-is a separate deployment change; the existing GPU validation VM is unchanged.
-The public API can support an intentionally configured CUDA device, but the
-CPU deployment does not advertise an available GPU.
+The VM has 4 vCPUs and 8 GiB RAM. The host's RTX 4090 Laptop GPU also drives
+the desktop, so it is not passed through to QEMU. CUDA is advertised only while
+the private agent is healthy and after its exact container image has executed a
+real CUDA operation. CPU work continues inside the VM.
+
+### Shared CUDA execution
+
+`opendpd-gpu.service` pulls reviewed jobs from `/_gpu/` using a separate random
+secret. That path is outside the Tunnel's `^/api/v1/.*$` ingress. The VM also
+requires the host-local Host header and refuses Origin/Cloudflare headers on
+private operations. It never initiates a network connection back to the host.
+Neither a browser session token nor the tunnel Host grants GPU broker access.
+
+Every job receives a fresh 0700 directory on the host agent's **2 GiB tmpfs**,
+containing only that tenant's data and experiment dependencies. No credentials,
+SQLite database, host home or container-engine socket enter the container.
+Transfers enforce regular files, canonical relative paths, member counts and
+size limits. Live-output reads use `openat` with `O_NOFOLLOW` for every path
+component, including against a running container changing a parent directory.
+
+Podman runs a pinned image as UID 65532 with a read-only root filesystem, all
+capabilities dropped, no-new-privileges, no network, 6 GiB memory with no swap,
+4 CPU equivalents, 128 processes, 64 MiB files and a maximum 30-minute lifetime.
+OCI logging is disabled: stdout goes only to the temporary workspace. The agent
+streams logs, events and snapshots into the VM; final artifacts are copied back
+before the supervisor records completion. Each completed, failed or cancelled
+job is removed from the host immediately. Stop/restart removes labelled
+containers and discards the service's tmpfs. Deadline checks and 30-second
+leases stop work if the VM is unavailable or a session expires.
+
+The global FIFO admits **one experiment at a time**, across browser sessions and
+IPs. Opening another tab cannot acquire another GPU slot. Users see queued
+status and can cancel their own queued or running job. The agent also refuses a
+second GPU lease until the previous one finishes. This intentionally favors
+predictable memory use over simultaneous kernels from different users.
+
+The 50% PyTorch allocator ceiling and a 4 GiB free-memory admission check leave
+headroom for the desktop; they are not hardware memory partitions. This GPU
+has no MIG isolation in this deployment. Containers share the host NVIDIA
+kernel driver, a weaker boundary than the CPU VM. Only reviewed application
+code and built-in datasets are accepted; enabling arbitrary uploaded code would
+require a new isolation design.
 
 ## Deployment
 
@@ -233,6 +277,12 @@ test with the normal resolver after removing any diagnostic override. A
 successful lookup immediately after removal can still be a cached positive
 answer; also check the configured upstream resolver directly.
 
+The web client bounds concurrent reads to two, leaving an API slot for Stop.
+Reads time out after 30 seconds. Event polls resume from their last sequence,
+replay backlog, honor rate-limit backoff and resume when the tab comes online.
+A background request failure preserves the existing experiment view. Resync
+invalidates the run's snapshots, history and artifacts without submitting a new
+experiment; the terminal remains read-only and has a Stop experiment button.
 The frontend gives a localized connection error and an explicit Retry action.
 It does not automatically retry session creation or other POST requests, or
 send a bearer token to an alternate origin. Browser fetch errors cannot by
@@ -254,7 +304,36 @@ session directory. Source is read-only to the worker, guest Internet egress
 is blocked and swap is disabled. Public DNS/Tunnel activation and a browser
 test through the real HTTPS hostname are separate release checks.
 
+GPU/reconnection validation on 2026-09-13 passed 281 Python unit tests,
+191 frontend tests and the web-mode browser recovery journey. The candidate
+systemd GPU service completed PA training, DPD training and inference on CUDA.
+Two sessions exercised queueing and cross-session cancellation denial; both
+cancellation and loss of the VM transport removed the container and left no
+host job files. Private bridge tests also cover lease expiry and unsafe archive
+or live-output paths.
+
 References: [GitHub Pages custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages),
 [Cloudflare domain onboarding](https://developers.cloudflare.com/fundamentals/manage-domains/add-site/),
 [Tunnel routing](https://developers.cloudflare.com/tunnel/concepts/routing/),
 [Tunnel origin parameters](https://developers.cloudflare.com/tunnel/reference/origin-parameters/).
+
+### Installing the GPU agent
+
+Install Podman and [NVIDIA Container Toolkit with CDI](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html) on the host. Build the reviewed source with
+`podman build --network=host -f deployment/web/GpuContainerfile -t localhost/opendpd-gpu:studio .`.
+Network access here is for dependency installation during the build; experiment
+containers always use `--network=none`. Record the resulting local `sha256:`
+image ID in `/etc/opendpd-web/gpu-agent.env` as `OPENDPD_GPU_IMAGE`.
+
+Install the reviewed Python source at `/opt/opendpd-gpu`, owned by root and not
+writable by the worker. Create a random 32-byte hex secret in a root-only file
+and point `OPENDPD_GPU_TOKEN_FILE` at it in the host environment file. Set the
+same value as `OPENDPD_GPU_TOKEN` in the guest's root-only API environment file.
+Never place this value in Git, frontend variables or deployment output.
+
+Install `opendpd-gpu-cdi.service` and `opendpd-gpu.service`, refresh systemd and
+enable the GPU agent. Restart the guest API only after draining existing runs,
+since that operation expires all sessions. The CDI service regenerates the
+device specification on startup; rebuild or reprobe after driver/image changes.
+Validate real CUDA training, queueing, cancellation, restored plots, lost-lease
+termination and empty host temporary storage before publishing the frontend.

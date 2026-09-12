@@ -756,5 +756,12 @@
   "web.retention": "Espacio temporal · descarga los resultados antes del {date}. Los archivos se eliminan automáticamente.",
   "web.connection.title": "No se puede conectar con el servidor de cálculo",
   "web.connection.body": "El navegador no pudo acceder a {origin}.",
-  "web.connection.hint": "Comprueba tu conexión de red y vuelve a intentarlo. Si el dominio se ha migrado recientemente, tu red podría conservar registros DNS antiguos; prueba otra red o un servicio DNS de confianza."
+  "web.connection.hint": "Comprueba tu conexión de red y vuelve a intentarlo. Si el dominio se ha migrado recientemente, tu red podría conservar registros DNS antiguos; prueba otra red o un servicio DNS de confianza.",
+  "terminal.stop": "Detener experimento",
+  "terminal.stopping": "Deteniendo…",
+  "terminal.openRun": "Abrir experimento y gráficas",
+  "terminal.readOnly": "Solo lectura. Usa «Detener experimento» para finalizar esta ejecución.",
+  "logs.refresh": "Actualizar salida",
+  "run.reconnect": "Sincronizar experimento",
+  "run.gpuQueue": "La GPU compartida ejecuta un experimento a la vez. Tu experimento está en cola; puedes salir de esta página y volver."
 }

@@ -756,5 +756,12 @@
   "web.retention": "Temporary workspace · download your results before {date}. Files are deleted automatically.",
   "web.connection.title": "Cannot connect to the compute server",
   "web.connection.body": "The browser could not reach {origin}.",
-  "web.connection.hint": "Check your network connection and retry. If the domain was recently moved, your network may still have old DNS records; try another network or a trusted DNS resolver."
+  "web.connection.hint": "Check your network connection and retry. If the domain was recently moved, your network may still have old DNS records; try another network or a trusted DNS resolver.",
+  "terminal.stop": "Stop experiment",
+  "terminal.stopping": "Stopping…",
+  "terminal.openRun": "Open experiment and plots",
+  "terminal.readOnly": "Read-only output. Use Stop experiment to terminate this run.",
+  "logs.refresh": "Refresh output",
+  "run.reconnect": "Resync experiment",
+  "run.gpuQueue": "The shared GPU runs one experiment at a time. Your experiment is queued; you can leave this page and return to it."
 }

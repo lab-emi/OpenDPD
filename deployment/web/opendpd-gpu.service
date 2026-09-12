@@ -1,0 +1,33 @@
+[Unit]
+Description=OpenDPD private GPU container worker (host pull from isolated VM)
+After=opendpd-web-vm.service network.target opendpd-gpu-cdi.service
+Requires=opendpd-web-vm.service opendpd-gpu-cdi.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/opendpd-gpu
+EnvironmentFile=/etc/opendpd-web/gpu-agent.env
+Environment=PYTHONPATH=/opt/opendpd-gpu PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+Environment=OPENDPD_GPU_ROOT=/run/opendpd-gpu
+ExecStart=/usr/bin/python3 -m opendpd.web.gpu_agent
+ExecStopPost=/usr/bin/python3 -m opendpd.web.gpu_agent --cleanup
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+KillMode=control-group
+UMask=0077
+LimitCORE=0
+MemoryMax=10G
+MemorySwapMax=0
+# Worker copies exist only in this service's mount namespace. The container's
+# read-only image and log-driver=none keep user files out of OCI storage.
+TemporaryFileSystem=/run/opendpd-gpu:rw,size=2G,mode=0700,nodev,nosuid,noexec
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/containers /run/containers /run/libpod /run/lock /run/runc
+# Podman needs namespaces and device setup here. Every experiment container
+# drops all capabilities, runs as UID 65532 and has no network or host sockets.
+
+[Install]
+WantedBy=multi-user.target

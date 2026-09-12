@@ -756,5 +756,12 @@
   "web.retention": "Espace temporaire · téléchargez vos résultats avant {date}. Les fichiers sont supprimés automatiquement.",
   "web.connection.title": "Connexion au serveur de calcul impossible",
   "web.connection.body": "Le navigateur ne peut pas joindre {origin}.",
-  "web.connection.hint": "Vérifiez votre connexion réseau et réessayez. Si le domaine a été migré récemment, votre réseau peut encore conserver des enregistrements DNS obsolètes ; essayez un autre réseau ou un résolveur DNS de confiance."
+  "web.connection.hint": "Vérifiez votre connexion réseau et réessayez. Si le domaine a été migré récemment, votre réseau peut encore conserver des enregistrements DNS obsolètes ; essayez un autre réseau ou un résolveur DNS de confiance.",
+  "terminal.stop": "Arrêter l’expérience",
+  "terminal.stopping": "Arrêt en cours…",
+  "terminal.openRun": "Ouvrir l’expérience et les graphiques",
+  "terminal.readOnly": "Sortie en lecture seule. Utilisez « Arrêter l’expérience » pour arrêter cette exécution.",
+  "logs.refresh": "Actualiser la sortie",
+  "run.reconnect": "Resynchroniser l’expérience",
+  "run.gpuQueue": "Le GPU partagé exécute une expérience à la fois. Votre expérience est en attente ; vous pouvez quitter cette page et y revenir."
 }

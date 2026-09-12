@@ -64,3 +64,12 @@ test('HTTP quota responses remain distinguishable from a connection failure', as
   const { createWebSession } = await import('./client')
   await expect(createWebSession()).rejects.toMatchObject({ status: 429, code: 'rate_limited' })
 })
+
+test('Stop without a payload still supplies the JSON content type required by the public API', async () => {
+  const fetcher = vi.fn().mockResolvedValue(new Response('{"status":"cancel_requested"}'))
+  vi.stubGlobal('fetch', fetcher)
+  const { api } = await import('./client')
+  await api.post('/runs/my-run/cancel')
+  expect(fetcher.mock.calls[0]![1].headers['Content-Type']).toBe('application/json')
+  expect(fetcher).toHaveBeenCalledOnce()
+})

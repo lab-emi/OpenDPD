@@ -1,4 +1,4 @@
-"""Public ASGI boundary with isolated local-app instances; no host compute."""
+"""Public ASGI boundary with isolated local-app instances and a private GPU bridge."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import contextlib
 import ipaddress
 import json
 import logging
+import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -17,6 +18,7 @@ from opendpd import __version__
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE
 from opendpd.web.policy import WebConfig, allowed, check_body, check_query, reject
 from opendpd.web.runtime import TenantManager
+from opendpd.web.gpu_archive import MAX_BYTES
 
 log = logging.getLogger(__name__)
 PREFIX = "/api/v1"
@@ -82,6 +84,9 @@ class PublicBoundary:
         peer = request.client.host if request.client else ""
         if peer not in {"127.0.0.1", "::1", "10.0.2.2"}:
             reject(403, "untrusted_peer", "requests must arrive through the configured tunnel")
+        if request.url.path.startswith("/_gpu/"):
+            await self.gpu_request(request, scope, receive, send)
+            return
         if request.url.path == "/healthz" and headers.get("host") in {"127.0.0.1", "localhost"}:
             code = 200 if self.manager.cleanup_healthy else 503
             await JSONResponse({"status": "ok" if code == 200 else "cleanup_failed"}, status_code=code)(scope, receive, send)
@@ -98,7 +103,7 @@ class PublicBoundary:
         except ValueError:
             reject(403, "client_ip_required", "a verified Cloudflare client address is required")
         ip_key = self.manager.ip_key(address)
-        self.manager.rate_limit(ip_key)
+        self.manager.rate_limit(ip_key + (":preflight" if request.method == "OPTIONS" else ""))
         path = request.url.path
         if not path.startswith(PREFIX + "/") or len(path) > 512 or len(scope.get("query_string", b"")) > 4096:
             reject(404, "not_found", "unknown public API route")
@@ -126,6 +131,8 @@ class PublicBoundary:
             tenant = self.manager.authenticate(auth[7:])
         if not tenant and not special:
             reject(401, "unauthorized", "start a temporary session first")
+        if tenant:
+            self.manager.rate_limit("session:" + tenant.identifier, self.config.requests_per_session_minute)
         if self.manager.inflight >= self.config.max_requests or (tenant and tenant.inflight >= 3):
             reject(429, "service_busy", "too many simultaneous requests; try again later")
         # Reserve before receiving the body, including chunked and slow requests.
@@ -199,6 +206,57 @@ class PublicBoundary:
             self.manager.inflight -= 1
             if tenant:
                 tenant.inflight -= 1
+
+    async def gpu_request(self, request, scope, receive, send):
+        # This path is outside the Cloudflare Tunnel ingress. It also requires a
+        # separate secret and the host-local Host header; browser requests fail closed.
+        headers = request.headers
+        token = self.config.gpu_token
+        if (not token or request.url.hostname != "127.0.0.1" or len(headers.getlist("host")) != 1 or headers.get("origin")
+                or headers.get("cf-connecting-ip") or headers.get("x-forwarded-proto")
+                or len(headers.getlist("x-opendpd-gpu")) != 1
+                or not secrets.compare_digest(headers.get("x-opendpd-gpu", ""), token)):
+            reject(403, "private_endpoint", "private compute endpoint")
+        path = request.url.path.split("/")
+        broker = self.manager.gpu
+        if request.method == "POST":
+            limit = MAX_BYTES if path[-1] == "result" else 4 * 1024 * 1024
+            async def read():
+                data = bytearray()
+                async for chunk in request.stream():
+                    data.extend(chunk)
+                    if len(data) > limit:
+                        reject(413, "transfer_limit", "GPU transfer exceeds limit")
+                return bytes(data)
+            raw = await asyncio.wait_for(read(), timeout=20)
+        else:
+            raw = b""
+        try:
+            if request.url.path == "/_gpu/poll" and request.method == "POST":
+                body = json.loads(raw)
+                result = {"job": broker.poll(body["name"])}
+            else:
+                if len(path) != 5 or path[2] != "jobs":
+                    raise ValueError("unknown GPU operation")
+                with broker.lock:
+                    job = broker.get(path[3], headers.get("x-opendpd-lease", ""))
+                if path[4] == "input" and request.method == "GET":
+                    data = await asyncio.to_thread(broker.input, job)
+                    await Response(data, media_type="application/zip")(scope, receive, send)
+                    return
+                if path[4] == "update" and request.method == "POST":
+                    result = broker.update(job, json.loads(raw))
+                elif path[4] == "result" and request.method == "POST":
+                    code = int(headers.get("x-opendpd-exit", "1"))
+                    if code not in {0, 1, 3}:
+                        raise ValueError("invalid exit code")
+                    await asyncio.to_thread(broker.result, job, raw, code)
+                    result = {"ok": True}
+                else:
+                    raise ValueError("unknown GPU operation")
+            await JSONResponse(result)(scope, receive, send)
+        except (ValueError, KeyError, TypeError):
+            reject(409, "invalid_gpu_transfer", "invalid or expired GPU transfer")
 
 
 def create_web_app(config: WebConfig, *, now=None):

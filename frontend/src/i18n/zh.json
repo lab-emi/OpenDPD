@@ -756,5 +756,12 @@
   "web.retention": "临时工作区 · 请在 {date} 前下载结果，文件将自动删除。",
   "web.connection.title": "无法连接计算服务器",
   "web.connection.body": "浏览器无法访问 {origin}。",
-  "web.connection.hint": "请检查网络连接后重试。如果域名刚刚迁移，当前网络可能仍缓存旧 DNS 记录；可尝试其他网络或可信的 DNS 解析服务。"
+  "web.connection.hint": "请检查网络连接后重试。如果域名刚刚迁移，当前网络可能仍缓存旧 DNS 记录；可尝试其他网络或可信的 DNS 解析服务。",
+  "terminal.stop": "停止实验",
+  "terminal.stopping": "正在停止…",
+  "terminal.openRun": "打开实验与图表",
+  "terminal.readOnly": "终端仅显示输出；可用“停止实验”终止该任务。",
+  "logs.refresh": "刷新输出",
+  "run.reconnect": "重新同步实验",
+  "run.gpuQueue": "共享 GPU 每次执行一个实验。你的实验正在排队，离开此页面后仍可返回查看。"
 }

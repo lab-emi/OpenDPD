@@ -18,9 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from opendpd.runtime.supervisor import Supervisor
-from opendpd.schemas import TERMINAL_STATUSES
+from opendpd.schemas import TERMINAL_STATUSES, RunStatus
 from opendpd.server.app import create_app
 from opendpd.web.policy import WebConfig, check_config, reject
+from opendpd.web.gpu_broker import GpuBroker
 
 log = logging.getLogger(__name__)
 MARKER = "OpenDPD disposable web workspaces v1\n"
@@ -91,6 +92,28 @@ class WebSupervisor(Supervisor):
                                      "MKL_NUM_THREADS": "4", "OPENBLAS_NUM_THREADS": "4",
                                      "PYTHONDONTWRITEBYTECODE": "1"}, **kwargs)
 
+    def worker_command(self, record):
+        command = super().worker_command(record)
+        if record.device == "cuda" and self.manager.config.gpu_token:
+            command[2] = "opendpd.web.gpu_proxy"
+        return command
+
+    def _spawn(self, record):
+        super()._spawn(record)
+        if record.device == "cuda" and self.manager.config.gpu_token and record.run_id in self._active:
+            self.manager.gpu.enqueue(self, record)
+
+    def _dispatch(self):
+        # Cross-tenant FIFO: a fast-polling supervisor cannot jump ahead of an
+        # older queued experiment in another workspace.
+        queued = [r for t in list(self.manager.tenants.values())
+                  for r in t.app.state.store.list_runs(status=RunStatus.queued, limit=100)]
+        if queued:
+            first = min(queued, key=lambda r: (r.created_at, r.run_id))
+            if self.store.get_run(first.run_id) is None:
+                return
+        super()._dispatch()
+
     def submit(self, config, **kwargs):
         check_config(config)
         # Admission, including retry and idempotency, is one transaction across
@@ -118,6 +141,7 @@ class WebSupervisor(Supervisor):
 class TenantManager:
     def __init__(self, config: WebConfig, *, now=time.time):
         self.config, self.now = config, now
+        self.gpu = GpuBroker()
         self.tenants: dict[str, Tenant] = {}
         self.slots = threading.BoundedSemaphore(config.max_parallel)
         self.budget_lock = threading.RLock()
@@ -144,7 +168,7 @@ class TenantManager:
         network = str(ipaddress.ip_network(f"{ip}/64", strict=False)) if ip.version == 6 else str(ip)
         return hmac.new(self.ip_secret, network.encode(), hashlib.sha256).hexdigest()
 
-    def rate_limit(self, ip_key: str):
+    def rate_limit(self, ip_key: str, limit: int | None = None):
         minute = int(self.now() // 60)
         if len(self.rate) >= 4096 and ip_key not in self.rate:
             self.rate = {k: v for k, v in self.rate.items() if v[0] == minute}
@@ -153,7 +177,7 @@ class TenantManager:
         stamp, count = self.rate.get(ip_key, (minute, 0))
         count = count + 1 if stamp == minute else 1
         self.rate[ip_key] = (minute, count)
-        if count > self.config.requests_per_minute:
+        if count > (limit or self.config.requests_per_minute):
             reject(429, "rate_limited", "too many requests; try again in a minute")
 
     @property
@@ -192,11 +216,15 @@ class TenantManager:
                 return WebSupervisor(ws, store, manager=self, ip_key=ip_key, expires_at=expires_at, **kwargs)
 
             app = create_app(root / "workspace", supervisor_factory=factory, shutdown_timeout=0)
+            if self.config.gpu_token:
+                app.state.device_detector = self.gpu.devices
             app.state.workspace_label = "Temporary workspace (deleted within 24 hours)"
             local_session = app.state.sessions.exchange(app.state.sessions.bootstrap_token)
             context = app.router.lifespan_context(app)
             try:
                 await context.__aenter__()
+                if self.config.gpu_token:
+                    app.state.ws.device_available = lambda device: device == "cpu" or bool(self.gpu.devices().get(device, {}).get("detected"))
             except BaseException:
                 shutil.rmtree(root)
                 raise
@@ -216,6 +244,7 @@ class TenantManager:
         self.tenants.pop(tenant.token_hash, None)
 
     async def sweep(self):
+        self.gpu.sweep()
         day = int(self.now() // DAY)
         for tenant in list(self.tenants.values()):
             try:
