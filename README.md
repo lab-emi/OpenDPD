@@ -42,7 +42,7 @@ The **2.2 development preview** brings OpenDPD Studio to the desktop and browser
 
 Studio currently requires a **source installation**. The PyPI **2.1.0** release provides the core Python API and legacy CLI; it does not include Studio. Custom dataset upload in Studio is marked **Coming soon**; start with the packaged examples.
 
-For a hosted installation, the [public Studio deployment guide](https://opendpd.com/architecture/public-studio/) covers GitHub Pages, a Cloudflare Tunnel and isolated local VM compute, with temporary sessions and automatic file deletion within 24 hours.
+For a hosted installation, the [public Studio deployment guide](https://lab-emi.github.io/OpenDPD/architecture/public-studio/) covers GitHub Pages, a Cloudflare Tunnel and isolated local VM compute, with temporary sessions and automatic file deletion within 24 hours.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)

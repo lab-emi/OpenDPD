@@ -41,10 +41,12 @@ jobs:
           VITE_API_ORIGIN: ${{ vars.STUDIO_API_ORIGIN || 'https://api.opendpd.com' }}
           VITE_BASE_PATH: ./
         run: npm ci && npm run build
-      - name: Include Studio alongside documentation
+      - name: Link the documentation preview to the canonical Studio
         run: |
           mkdir -p site/studio
-          cp -a frontend/dist/. site/studio/
+          cat > site/studio/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=https://opendpd.com/studio/"><title>OpenDPD Studio</title><a href="https://opendpd.com/studio/">Open OpenDPD Studio</a>
+          HTML
           touch site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

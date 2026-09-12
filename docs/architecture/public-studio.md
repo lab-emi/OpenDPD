@@ -132,12 +132,18 @@ Use the versioned units and scripts in
    `ali.ns.cloudflare.com` and `scott.ns.cloudflare.com`. Check authoritative
    NS and DS records before and after switching. Never remove an active DNSSEC
    chain without coordinating the registrar change.
-2. Configure GitHub Pages to deploy with GitHub Actions and custom domain
-   `opendpd.com`, with HTTPS enforced. The `Docs` workflow builds both MkDocs
-   and the Studio into **one** Pages artifact, preserving the documentation
-   homepage. Merge the deployment change to `main` to publish. The optional
-   repository variable `STUDIO_API_ORIGIN` defaults to `https://api.opendpd.com`.
-   No API secrets belong in Actions variables or frontend build variables.
+2. The existing custom domain belongs to `lab-emi/opendpd-site`. Its Pages
+   workflow builds the landing page, checks out a reviewed commit of this
+   repository, builds `frontend/` with `VITE_STUDIO_MODE=web`,
+   `VITE_API_ORIGIN=https://api.opendpd.com` and relative base URLs, then adds
+   that build at `/studio/` in **one** Pages artifact. This preserves the
+   existing homepage and makes the frontend run at the exact allowed Origin.
+   Set that workflow's `STUDIO_REF` variable or its `studio_ref` dispatch input
+   to deploy a later reviewed OpenDPD revision. Updating this repository alone
+   does not update the production frontend. This repository's `Docs` workflow
+   validates the web build and publishes documentation with a redirect from
+   its `/studio/` to the canonical app. No API secrets belong in either
+   repository's Actions variables or frontend build variables.
 3. On the existing sandbox host, stop the CPU validation VM before running
    `sudo bash deployment/web/provision-vm.sh`. It creates a separate frozen
    base, writable web overlay and SSH public-key seed. It refuses to overwrite
@@ -161,16 +167,23 @@ Use the versioned units and scripts in
    placeholder. Run `sudo bash /opt/opendpd/deployment/web/install-guest.sh`.
    The provided units require worker UID/GID 1001 and systemd with tmpfs and
    cgroup resource controls.
-6. Create a **named** Cloudflare Tunnel for `api.opendpd.com`. Copy the example
-   cloudflared configuration into host `/etc/opendpd-web/cloudflared.yml`,
-   replace the tunnel UUID, credential path and private Host, and retain its
-   path allowlist and final 404 rule. Run the connector as a dedicated
-   `opendpd-tunnel` account; give only that account read access to its config
-   and tunnel credential. An account-wide management certificate is not
-   needed by the running service. Publish no SSH, TCP, private-network or
-   catch-all service routes. Never use a Quick Tunnel for this service.
-7. Verify ingress with `cloudflared tunnel ingress validate`, install
-   `cloudflared-opendpd.service`, and enable it with `opendpd-web-vm.service`.
+6. Create a **named**, dashboard-managed Cloudflare Tunnel for
+   `api.opendpd.com`. The installed production tunnel is `opendpd-studio`.
+   Configure one published application with hostname `api.opendpd.com`, path
+   `^/api/v1/.*$`, service `http://127.0.0.1:18765`, and the private HTTP Host
+   from step 5. Retain the default 404 for unmatched requests. Save its token
+   at host `/etc/opendpd-web/tunnel.token` (0600), owned by the dedicated
+   `opendpd-tunnel` account. Install `cloudflared-opendpd-remote.service`;
+   the token is read from that file and is absent from command-line arguments.
+   An account-wide management certificate is not needed by the service.
+   Publish no SSH, TCP, private-network or catch-all service routes.
+   Never use a Quick Tunnel for this service.
+7. Enable the connector and `opendpd-web-vm.service`. Verify that Cloudflare
+   reports it healthy and that local `127.0.0.1:20242/ready` has active
+   connections. The alternative `cloudflared.yml.example` and
+   `cloudflared-opendpd.service` are for a **locally managed** tunnel with a
+   JSON credential; do not run both connector variants or expect local
+   ingress YAML to replace dashboard-managed configuration.
    Route only the API hostname to the tunnel. Keep the API cache bypassed,
    use HTTPS, and avoid browser challenges on API OPTIONS requests. If the
    frontend is proxied through Cloudflare, use Full (strict) TLS to GitHub

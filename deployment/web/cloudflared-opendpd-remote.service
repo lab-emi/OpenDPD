@@ -1,0 +1,32 @@
+[Unit]
+Description=OpenDPD dashboard-managed Cloudflare Tunnel (host)
+After=network-online.target opendpd-web-vm.service
+Wants=network-online.target
+Requires=opendpd-web-vm.service
+
+[Service]
+User=opendpd-tunnel
+Group=opendpd-tunnel
+# Ingress, private HTTP Host and the final 404 rule are configured in Cloudflare.
+# The token is read from a private file, never a command-line argument.
+ExecStart=/usr/bin/cloudflared --no-autoupdate --metrics 127.0.0.1:20242 tunnel run --token-file /etc/opendpd-web/tunnel.token
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=256M
+TasksMax=128
+LimitCORE=0
+
+[Install]
+WantedBy=multi-user.target
