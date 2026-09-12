@@ -39,12 +39,12 @@ const model = {
 }
 const caps = { version: 'x', workspace: '/ws', note: '', devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru'] }] }
 
-function base(validate: (config: Record<string, unknown>) => unknown, availableDatasets: unknown[] = [datasetMock.data]) {
+function base(validate: (config: Record<string, unknown>) => unknown, availableDatasets: unknown[] = [datasetMock.data], availableCaps = caps) {
   return mockApi({
     'GET /api/v1/recipes': () => [recipe],
     'GET /api/v1/datasets': () => availableDatasets,
     'GET /api/v1/models': () => [model],
-    'GET /api/v1/system/capabilities': () => caps,
+    'GET /api/v1/system/capabilities': () => availableCaps,
     'GET /api/v1/runs': () => [],
     'POST /api/v1/experiments/validate': (_url, init) => validate((JSON.parse(String(init.body)) as { config: Record<string, unknown> }).config),
     'POST /api/v1/runs': () => ({ status: 201, body: runQueued.data }),
@@ -62,6 +62,19 @@ async function continueStep() {
   await waitFor(() => expect(button).toBeEnabled())
   await userEvent.click(button)
 }
+
+test('prefers detected CUDA for a new experiment and keeps an explicit CPU choice', async () => {
+  const availableCaps = { ...caps, devices: caps.devices.map((d) => ({ ...d, detected: true, count: 1 })) }
+  const { calls } = base(() => ({ ok: true, errors: [], warnings: [], resolved: null }), [datasetMock.data], availableCaps)
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid'); await continueStep()
+  expect(screen.getByRole('combobox', { name: 'Device' })).toHaveTextContent('cuda')
+  await userEvent.click(screen.getByRole('combobox', { name: 'Device' }))
+  await userEvent.click(screen.getByRole('option', { name: 'cpu' }))
+  await screen.findByText('Configuration is valid'); await continueStep()
+  await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
+  await waitFor(() => expect(calls.find((c) => c.path === '/api/v1/runs' && c.method === 'POST')?.body).toMatchObject({ config: { execution: { device: 'cpu' } } }))
+})
 
 test('server validation errors are shown on the field and block submit', async () => {
   base((config) => {

@@ -30,6 +30,14 @@ export interface PlotInteractionApi {
 
 interface Bounds { left: number; top: number; width: number; height: number }
 interface Gesture extends Event { scale: number; clientX?: number; clientY?: number }
+interface TouchPinch {
+  ids: number[]
+  view: PlotViewport
+  rect: Bounds
+  x: number
+  y: number
+  distance: number
+}
 
 export function readViewport(element: PlotElement): PlotViewport | undefined {
   const layout = element['_fullLayout']
@@ -91,6 +99,8 @@ export function attachPlotInteractions(
   let gesturePoint: { x: number; y: number } | undefined
   let pointer: { x: number; y: number } | undefined
   let pointerDown = false
+  let touchActive = false
+  let touchPinch: TouchPinch | undefined
   let recoveryTimer: ReturnType<typeof setTimeout> | undefined
   let observed = readViewport(element)
 
@@ -98,10 +108,10 @@ export function attachPlotInteractions(
   const clearRecovery = () => { cancelRecoveryTimer(); if (recovery) recovery.state.pendingSince = undefined }
   const scheduleRecovery = () => {
     cancelRecoveryTimer()
-    if (disposed || !recovery?.settings.enabled || recovery.state.pendingSince === undefined || pointerDown || gestureScale !== undefined || drawing || target || resizing) return
+    if (disposed || !recovery?.settings.enabled || recovery.state.pendingSince === undefined || pointerDown || touchActive || gestureScale !== undefined || drawing || target || resizing) return
     recoveryTimer = setTimeout(() => {
       recoveryTimer = undefined
-      if (disposed || drawing || target || resizing || pointerDown || gestureScale !== undefined) return
+      if (disposed || drawing || target || resizing || pointerDown || touchActive || gestureScale !== undefined) return
       const view = readViewport(element)
       clearRecovery()
       if (view && !(view.autoX && view.autoY) && shouldRecoverPlot(view, recovery.traces(), recovery.settings.emptyThreshold)) {
@@ -166,7 +176,7 @@ export function attachPlotInteractions(
     event.preventDefault()
     event.stopPropagation()
     // WebKit can emit both gesture events and wheel events for one pinch.
-    if (gestureScale !== undefined) return
+    if (gestureScale !== undefined || touchActive) return
     const zoom = event.ctrlKey || event.metaKey || (target ?? readViewport(element))?.dragmode === 'zoom'
     if (zoom) {
       const delta = pixels.y || pixels.x
@@ -177,6 +187,7 @@ export function attachPlotInteractions(
   const move = (event: PointerEvent) => { pointer = { x: event.clientX, y: event.clientY } }
   const leave = () => { pointer = undefined }
   const focus = (event: PointerEvent) => {
+    if (event.pointerType === 'touch') return
     const rect = bounds()
     if (rect && inside(event.clientX, event.clientY, rect)) {
       pointerDown = true
@@ -185,7 +196,50 @@ export function attachPlotInteractions(
     }
   }
   const release = () => { if (pointerDown) { pointerDown = false; interacted() } }
+  const touch = (event: TouchEvent) => {
+    const points = Array.from(event.touches)
+    const rect = bounds()
+    // Own only touches starting on the plotting area. Controls, legends and
+    // page pinch-zoom outside it retain their normal browser behavior.
+    if (!touchActive) {
+      if (event.type !== 'touchstart' || !rect || !(event.target instanceof Element)
+          || !event.target.closest('.nsewdrag') || !points.every((p) => inside(p.clientX, p.clientY, rect))) return
+      touchActive = true
+    }
+    // Do not let Plotly's touch drag and Safari's GestureEvent zoom both act on
+    // the same fingers. Single-finger movement remains native page scrolling.
+    event.stopPropagation()
+    cancelRecoveryTimer()
+    if (points.length !== 2 || event.type === 'touchcancel') {
+      touchPinch = undefined
+      if (points.length > 1) event.preventDefault()
+      if (!points.length || event.type === 'touchcancel') { touchActive = false; interacted() }
+      return
+    }
+    event.preventDefault()
+    gestureScale = undefined; gesturePoint = undefined
+    const [a, b] = points as [Touch, Touch]
+    const x = (a.clientX + b.clientX) / 2, y = (a.clientY + b.clientY) / 2
+    const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    if (distance < 8 || !rect) return
+    if (!touchPinch || !points.every((p) => touchPinch!.ids.includes(p.identifier))) {
+      const view = target ?? readViewport(element)
+      if (view) touchPinch = { ids: points.map((p) => p.identifier), view, rect, x, y, distance }
+      return
+    }
+    const start = touchPinch
+    const factor = start.distance / distance
+    // Always solve from the gesture's initial geometry, avoiding accumulated
+    // rounding/redraw drift. The data under the midpoint follows both fingers.
+    update(transformViewport(start.view,
+      (start.x - x) / start.rect.width * factor,
+      (y - start.y) / start.rect.height * factor, factor,
+      (start.x - start.rect.left) / start.rect.width,
+      1 - (start.y - start.rect.top) / start.rect.height))
+    interacted()
+  }
   const gestureStart = (event: Event) => {
+    if (touchActive) { event.preventDefault(); event.stopPropagation(); return }
     const gesture = event as Gesture, rect = bounds()
     if (!rect) return
     // Safari's trackpad gesture coordinates may be absent; use the last pointer
@@ -199,6 +253,7 @@ export function attachPlotInteractions(
     cancelRecoveryTimer()
   }
   const gestureChange = (event: Event) => {
+    if (touchActive) { event.preventDefault(); event.stopPropagation(); return }
     if (gestureScale === undefined || !gesturePoint) return
     event.preventDefault(); event.stopPropagation()
     const scale = (event as Gesture).scale
@@ -241,6 +296,8 @@ export function attachPlotInteractions(
   }
   const restyle = () => { if (!drawing) interacted() }
   element.addEventListener('wheel', wheel, { passive: false, capture: true })
+  const touchEvents = ['touchstart', 'touchmove', 'touchend', 'touchcancel'] as const
+  for (const name of touchEvents) element.addEventListener(name, touch, { passive: false, capture: true })
   element.addEventListener('gesturestart', gestureStart, { passive: false, capture: true })
   element.addEventListener('gesturechange', gestureChange, { passive: false, capture: true })
   element.addEventListener('gestureend', gestureEnd, { passive: false, capture: true })
@@ -262,6 +319,7 @@ export function attachPlotInteractions(
       cancelRecoveryTimer()
       cancelAnimationFrame(frame)
       element.removeEventListener('wheel', wheel, true)
+      for (const name of touchEvents) element.removeEventListener(name, touch, true)
       element.removeEventListener('gesturestart', gestureStart, true)
       element.removeEventListener('gesturechange', gestureChange, true)
       element.removeEventListener('gestureend', gestureEnd, true)

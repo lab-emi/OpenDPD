@@ -763,5 +763,6 @@
   "terminal.readOnly": "Solo lectura. Usa «Detener experimento» para finalizar esta ejecución.",
   "logs.refresh": "Actualizar salida",
   "run.reconnect": "Sincronizar experimento",
-  "run.gpuQueue": "La GPU compartida ejecuta un experimento a la vez. Tu experimento está en cola; puedes salir de esta página y volver."
+  "run.gpuQueue": "La GPU compartida ejecuta un experimento a la vez. Tu experimento está en cola; puedes salir de esta página y volver.",
+  "chart.controls.touch": "Dos dedos: ampliar y mover. Un dedo: desplazar la página."
 }

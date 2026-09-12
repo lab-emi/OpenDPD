@@ -10,12 +10,11 @@ test('nine languages with tags, native names and flags', () => {
   for (const l of LANGUAGES) expect(l.flag, l.code).toMatch(/\.svg$|^data:image\/svg\+xml/)
 })
 
-test('resolution: stored value, then the browser languages, then English', () => {
-  expect(resolveLanguage('ja', ['fr-CA'])).toBe('ja')
-  expect(resolveLanguage(null, ['fr-CA', 'en-US'])).toBe('fr')
-  expect(resolveLanguage(null, ['pt-BR', 'zh-TW'])).toBe('zh')
-  expect(resolveLanguage(null, ['pt-BR'])).toBe('en')
-  expect(resolveLanguage('xx', [])).toBe('en')
+test('resolution: an explicit stored choice, otherwise English', () => {
+  expect(resolveLanguage('ja')).toBe('ja')
+  expect(resolveLanguage(null)).toBe('en')
+  expect(resolveLanguage(undefined)).toBe('en')
+  expect(resolveLanguage('xx')).toBe('en')
 })
 
 test('switching the language translates t() and updates <html lang>', async () => {

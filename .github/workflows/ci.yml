@@ -130,6 +130,9 @@ jobs:
       - name: Web transport recovery, plots and cancellation
         run: npm run e2e:web
 
+      - name: Mobile defaults and touch plots on WebKit and Chromium
+        run: npx playwright test --config playwright.touch.config.ts
+
   build:
     name: Build & check distribution
     runs-on: ubuntu-latest

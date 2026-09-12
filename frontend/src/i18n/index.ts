@@ -79,14 +79,9 @@ export function languageInfo(code: LanguageCode = current): Language {
   return LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0]!
 }
 
-/** Stored choice → first supported browser language → English. */
-export function resolveLanguage(stored: string | null | undefined, navigatorLanguages: readonly string[] = navigator.languages ?? [navigator.language]): LanguageCode {
-  if (isLanguageCode(stored)) return stored
-  for (const tag of navigatorLanguages) {
-    const base = tag.toLowerCase().split('-')[0]
-    if (isLanguageCode(base)) return base
-  }
-  return DEFAULT_LANGUAGE
+/** An explicit workspace choice wins; every new workspace starts in English. */
+export function resolveLanguage(stored: string | null | undefined): LanguageCode {
+  return isLanguageCode(stored) ? stored : DEFAULT_LANGUAGE
 }
 
 export async function loadCatalogue(code: LanguageCode): Promise<Catalogue> {

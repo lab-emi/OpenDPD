@@ -763,5 +763,6 @@
   "terminal.readOnly": "终端仅显示输出；可用“停止实验”终止该任务。",
   "logs.refresh": "刷新输出",
   "run.reconnect": "重新同步实验",
-  "run.gpuQueue": "共享 GPU 每次执行一个实验。你的实验正在排队，离开此页面后仍可返回查看。"
+  "run.gpuQueue": "共享 GPU 每次执行一个实验。你的实验正在排队，离开此页面后仍可返回查看。",
+  "chart.controls.touch": "双指缩放和平移图表，单指滚动页面。"
 }

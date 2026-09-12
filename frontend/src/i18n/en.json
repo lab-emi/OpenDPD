@@ -763,5 +763,6 @@
   "terminal.readOnly": "Read-only output. Use Stop experiment to terminate this run.",
   "logs.refresh": "Refresh output",
   "run.reconnect": "Resync experiment",
-  "run.gpuQueue": "The shared GPU runs one experiment at a time. Your experiment is queued; you can leave this page and return to it."
+  "run.gpuQueue": "The shared GPU runs one experiment at a time. Your experiment is queued; you can leave this page and return to it.",
+  "chart.controls.touch": "Two fingers: zoom and pan. One finger: scroll the page."
 }

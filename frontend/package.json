@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "lint": "oxlint src e2e",
+    "lint": "oxlint src e2e web-e2e touch-e2e",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",

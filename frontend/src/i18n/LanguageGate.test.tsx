@@ -14,12 +14,12 @@ test('applies the stored language before rendering the children', async () => {
   expect(document.documentElement.lang).toBe('ja')
 })
 
-test('without a stored language the browser language decides', async () => {
+test('a new workspace starts in English even in a French browser', async () => {
   vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-CA', 'en'])
   mockApi({ 'GET /api/v1/settings': () => ({ language: null }) })
   renderWithProviders(<LanguageGate><p>ready</p></LanguageGate>)
   expect(await screen.findByText('ready')).toBeInTheDocument()
-  expect(getLanguage()).toBe('fr')
+  expect(getLanguage()).toBe('en')
 })
 
 test('a settings failure shows the error state with retry, not a blank page', async () => {

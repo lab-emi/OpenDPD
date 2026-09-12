@@ -142,7 +142,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const [importedFile, setImportedFile] = useState<{ config: ExperimentConfigInput; source: string } | null>(null)
   const [jsonOpen, setJsonOpen] = useState(false)
   const idempotencyKey = useRef(crypto.randomUUID())
-  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: 'cpu', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', params: {}, profileId: '', sourceRunId: '', variantKey: '', numThreads: '', chunkSamples: '', optimizer: '', loss: '' })
+  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: '', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', params: {}, profileId: '', sourceRunId: '', variantKey: '', numThreads: '', chunkSamples: '', optimizer: '', loss: '' })
   // The report is stored with the config it validated, so "checking" is derived, not duplicated state.
   const [validated, setValidated] = useState<{ configJson: string; attempt: number; report: ValidationReport | null; error: unknown } | null>(null)
   const [validationAttempt, setValidationAttempt] = useState(0)
@@ -162,7 +162,10 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const versions = dataset ? versionNames(dataset) : ['raw-v1']
   // '' means "server default (raw-v1)"; a version that no longer exists for the chosen dataset falls back too.
   const requestedVersion = edits.dataVersion || (datasetId === params.get('dataset') ? params.get('version') : '') || (testing && source.data?.dataset.id === datasetId ? source.data.dataset.preprocessing_version : '') || ''
-  const form: FormState = { ...edits, recipeId: edits.recipeId || taskRecipes[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(requestedVersion) ? requestedVersion : '' }
+  // Capability discovery is asynchronous. Derive the initial device until the
+  // user chooses one; later refetches must never overwrite that explicit choice.
+  const defaultDevice = caps.data?.devices.some((d) => d.device === 'cuda' && d.detected) ? 'cuda' : 'cpu'
+  const form: FormState = { ...edits, device: edits.device || defaultDevice, recipeId: edits.recipeId || taskRecipes[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(requestedVersion) ? requestedVersion : '' }
   const recipe = taskRecipes.find((r) => r.recipe_id === form.recipeId) ?? null
 
   const paRuns = (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === datasetId)

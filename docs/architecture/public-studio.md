@@ -55,6 +55,19 @@ therefore have a shorter session; the UI displays their exact expiry.
 Refreshing a browser or reconnecting within the same tab resumes the existing
 session, events and saved plots. Restarting the API or VM discards every session;
 there is no recovery across a service restart, backup or persistent user database.
+
+New workspaces start in English; an explicit saved language still wins. New
+experiments prefer detected CUDA, falling back to CPU when it is unavailable.
+An explicit device choice or imported experiment configuration is preserved.
+
+On touchscreens, one finger scrolls the page and two fingers zoom/pan the plot.
+The shared controller uses the fingers' distance and moving midpoint, suppresses
+duplicate Safari/Plotly handling, and defers live-data redraws until touch ends.
+Phone controls have 44-pixel targets and enlarged plots fill the viewport.
+Native page zoom remains available outside plot axes. Touch handling follows
+the [Touch Events guidance](https://developer.mozilla.org/en-US/docs/Web/API/Touch_events)
+and [touch-action behavior](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/touch-action).
+
 Swap and core dumps are disabled. Do not introduce VM memory snapshots,
 hibernation, workspace backups or request-body logging: those would invalidate
 the retention design. If the host is suspended across the deadline, the

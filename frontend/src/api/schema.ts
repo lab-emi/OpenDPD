@@ -3775,7 +3775,7 @@ export interface components {
         };
         /**
          * WorkspaceSettings
-         * @description Stored as ``<workspace>/settings.json``; ``language`` None means "follow the browser or system language".
+         * @description Stored as ``<workspace>/settings.json``; ``language`` None uses the English UI default.
          */
         WorkspaceSettings: {
             /** Language */

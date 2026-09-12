@@ -71,6 +71,25 @@ test('new chart data waits for an in-flight gesture draw before React redraws', 
   expect(layout.xaxis.range[1] - layout.xaxis.range[0]).toBeCloseTo(100 / 1.2)
 })
 
+test('live snapshots wait until every finger lifts without resetting the touch viewport', async () => {
+  const { rerender } = render(<PlotlyChart title="signal" traces={traces} />)
+  await waitFor(() => expect(api.react).toHaveBeenCalledTimes(1))
+  const figure = screen.getByRole('figure', { name: 'signal' })
+  fireEvent.touchStart(figure, { touches: [{ identifier: 1 }, { identifier: 2 }] })
+  fireEvent.keyDown(figure, { key: '+' })
+  await waitFor(() => expect(api.relayout).toHaveBeenCalledTimes(1))
+  const latest = [{ x: [0, 1, 2], y: [5, 6, 7] }]
+  rerender(<PlotlyChart title="signal" traces={latest} />)
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 30)) })
+  expect(api.react).toHaveBeenCalledTimes(1)
+  fireEvent.touchEnd(figure, { touches: [{ identifier: 1 }] })
+  expect(api.react).toHaveBeenCalledTimes(1)
+  fireEvent.touchEnd(figure, { touches: [] })
+  await waitFor(() => expect(api.react).toHaveBeenCalledTimes(2))
+  expect(api.react.mock.lastCall![1][0].y).toEqual([5, 6, 7])
+  expect(api.react.mock.lastCall![2].xaxis.range[1] - api.react.mock.lastCall![2].xaxis.range[0]).toBeCloseTo(100 / 1.2)
+})
+
 test('unmount waits for the gesture draw before purging its graph', async () => {
   let finish!: () => void
   api.relayout.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve }))

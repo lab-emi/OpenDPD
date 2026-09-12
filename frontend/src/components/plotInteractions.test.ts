@@ -48,7 +48,13 @@ function setup(recovery?: Parameters<typeof attachPlotInteractions>[4]) {
     Object.assign(event, { scale, clientX: 200, clientY: 100 }); area.dispatchEvent(event)
   }
   const key = (value: string, options: KeyboardEventInit = {}) => element.dispatchEvent(new KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true, ...options }))
-  return { element, area, frames, frame, api, controls, wheel, gesture, key, onView, onError, emit: (event: string) => listeners.get(event)?.() }
+  const touch = (type: string, points: Array<[number, number, number]>) => {
+    const event = new Event(type, { bubbles: true, cancelable: true })
+    Object.assign(event, { touches: points.map(([identifier, clientX, clientY]) => ({ identifier, clientX, clientY })) })
+    area.dispatchEvent(event)
+    return event
+  }
+  return { element, area, frames, frame, api, controls, wheel, gesture, key, touch, onView, onError, emit: (event: string) => listeners.get(event)?.() }
 }
 
 afterEach(() => { document.body.replaceChildren(); vi.unstubAllGlobals(); vi.useRealTimers() })
@@ -131,6 +137,46 @@ describe('plot viewport input', () => {
     h.gesture('gestureend', 2)
     await h.frame()
     expect(readViewport(h.element)?.x).toEqual([12.5, 62.5])
+    await h.controls.dispose()
+  })
+
+  it('tracks the fingers midpoint exactly and suppresses duplicate Safari/Plotly gestures', async () => {
+    const h = setup(), native = vi.fn()
+    h.area.addEventListener('touchmove', native)
+    expect(h.touch('touchstart', [[1, 200, 150], [2, 300, 150]]).defaultPrevented).toBe(true)
+    h.gesture('gesturestart', 1); h.gesture('gesturechange', 2)
+    h.touch('touchmove', [[2, 390, 180], [1, 190, 180]])
+    h.wheel({ ctrlKey: true, deltaY: -100 })
+    await h.frame()
+    expect(readViewport(h.element)?.x).toEqual([13.75, 63.75])
+    expect(readViewport(h.element)?.y).toEqual([-3.5, 6.5])
+    expect(native).not.toHaveBeenCalled()
+    // Return the same fingers to their starting positions: no cumulative drift.
+    for (let i = 0; i < 100; i++) h.touch('touchmove', [[1, 200 + i / 10, 150], [2, 300 - i / 10, 150]])
+    h.touch('touchmove', [[1, 200, 150], [2, 300, 150]])
+    h.touch('touchend', [])
+    await h.frame()
+    expect(readViewport(h.element)).toMatchObject({ x: [0, 100], y: [-10, 10] })
+    await h.controls.dispose()
+  })
+
+  it('keeps one-finger page scrolling and rebases after a finger is replaced', async () => {
+    const h = setup()
+    expect(h.touch('touchstart', [[1, 200, 150]]).defaultPrevented).toBe(false)
+    expect(h.touch('touchmove', [[1, 200, 170]]).defaultPrevented).toBe(false)
+    await h.frame(); expect(h.api.relayout).not.toHaveBeenCalled()
+    h.touch('touchstart', [[1, 200, 150], [2, 300, 150]])
+    h.touch('touchmove', [[1, 150, 150], [2, 350, 150]])
+    await h.frame()
+    const before = readViewport(h.element)
+    h.touch('touchend', [[1, 150, 150]])
+    h.touch('touchstart', [[1, 150, 150], [3, 400, 150]])
+    h.touch('touchmove', [[1, 150, 150], [3, 400, 150]])
+    await h.frame(); expect(readViewport(h.element)).toEqual(before)
+    h.touch('touchcancel', [])
+    h.gesture('gesturestart', 1); h.gesture('gesturechange', 2); h.gesture('gestureend', 2)
+    await h.frame()
+    expect(readViewport(h.element)!.x[1] - readViewport(h.element)!.x[0]).toBeCloseTo(25)
     await h.controls.dispose()
   })
 
