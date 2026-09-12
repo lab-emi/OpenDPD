@@ -12,14 +12,21 @@ import { installFakeApi } from './mock-api'
 const PAGES = ['/', '/datasets', '/experiments', '/experiments/new', '/results', '/results/run-pa-0001', '/settings', '/gallery']
 
 async function scan(page: Page, path: string) {
-  // audit the settled page: queries answered and MUI's colour transitions (~300 ms) finished
+  // Audit the settled page: wait for actual MUI transitions instead of
+  // sampling an intermediate dialog opacity after a wall-clock delay.
   await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(600)
+  await page.evaluate(async () => {
+    const animations = document.getAnimations().filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity)
+    await Promise.allSettled(animations.map(animation => animation.finished))
+  })
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   const blocking = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
   const summary = results.violations.map((v) => `${v.impact}: ${v.id} (${v.nodes.length} nodes) — ${v.help}`)
   test.info().annotations.push({ type: `axe ${path}`, description: summary.length ? summary.join('; ') : 'no violations' })
-  expect(blocking.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`), `${path} has blocking accessibility violations`).toEqual([])
+  expect(blocking.map((v) => ({
+    id: v.id,
+    nodes: v.nodes.map(n => ({ target: n.target, summary: n.failureSummary, checks: n.any.map(check => check.data) })),
+  })), `${path} has blocking accessibility violations`).toEqual([])
 }
 
 test.describe('accessibility (axe-core)', () => {
