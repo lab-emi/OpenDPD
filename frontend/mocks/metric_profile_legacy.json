@@ -1,0 +1,72 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "deprecated": false,
+    "description": "Historical OpenDPD metrics as implemented in utils/metrics.py (OpenDPDv1/v2 papers and benchmark_report.md).",
+    "frozen": true,
+    "metrics": [
+      {
+        "aggregation": "mean of per-segment dB (not pooled)",
+        "better": "lower",
+        "display_name": "NMSE (mean of segment dB)",
+        "formula": "mean over segments of 10*log10(sum|e|^2 / sum|y|^2)",
+        "name": "NMSE",
+        "notes": null,
+        "requires_reference": true,
+        "unit": "dB"
+      },
+      {
+        "aggregation": "mean of sub-channel ratios, then dB",
+        "better": "lower",
+        "display_name": "Spectral EVM (repo-specific)",
+        "formula": "20*log10(mean over segments of mean over sub-channels of mean|X_pred - X_ref| / mean|X_ref|), FFT of nperseg samples",
+        "name": "EVM",
+        "notes": "Not a demodulated constellation EVM. Do not compare with standard EVM.",
+        "requires_reference": true,
+        "unit": "dB"
+      },
+      {
+        "aggregation": "Welch PSD averaged over segments",
+        "better": "lower",
+        "display_name": "ACLR left",
+        "formula": "10*log10(P_adjacent_left / max sub-channel power)",
+        "name": "ACLR_L",
+        "notes": "Leakage convention (adjacent / strongest main sub-channel): negative dBc, lower is better.",
+        "requires_reference": false,
+        "unit": "dBc"
+      },
+      {
+        "aggregation": "Welch PSD averaged over segments",
+        "better": "lower",
+        "display_name": "ACLR right",
+        "formula": "10*log10(P_adjacent_right / max sub-channel power)",
+        "name": "ACLR_R",
+        "notes": "Leakage convention (adjacent / strongest main sub-channel): negative dBc, lower is better.",
+        "requires_reference": false,
+        "unit": "dBc"
+      },
+      {
+        "aggregation": "arithmetic mean of dB values",
+        "better": "lower",
+        "display_name": "ACLR average",
+        "formula": "(ACLR_L + ACLR_R) / 2",
+        "name": "ACLR_AVG",
+        "notes": null,
+        "requires_reference": false,
+        "unit": "dBc"
+      }
+    ],
+    "parameters": {
+      "aggregation": "NMSE and EVM are means of per-segment values (dB and ratio respectively), not pooled",
+      "main_channel": "[-bw_main_ch/2, +bw_main_ch/2] split into n_sub_ch sub-channels",
+      "normalization": "none; signals compared as stored (target = gain * input for DPD)",
+      "psd": "scipy.signal.welch, nperseg=nperseg, scaling=spectrum, two-sided, mean over segments",
+      "sample_range": "whole split, zero-padded last segment",
+      "segmenting": "independent nperseg segments from the dataset spec; the last segment is zero-padded"
+    },
+    "profile_id": "legacy-opendpd-v1",
+    "validation": "golden",
+    "version": 1
+  }
+}

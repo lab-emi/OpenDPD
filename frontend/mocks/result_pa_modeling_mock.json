@@ -1,0 +1,124 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "baselines": [],
+    "dataset": {
+      "dataset_id": "dpa-200mhz",
+      "n_samples": 7680,
+      "preprocessing_version": "raw-v1",
+      "processed_sha256": null,
+      "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "split": "test",
+      "split_version": "contiguous-v1"
+    },
+    "device": "cpu",
+    "evidence_type": "pa_modeling",
+    "execution": null,
+    "extra": {},
+    "generated_at": "2026-09-06T08:01:00Z",
+    "history": {
+      "path": "log/DPA_200MHz/train_pa/history/PA_S_0_M_GRU_H_23_F_50_P_1911.csv",
+      "sha256": null,
+      "size_bytes": null
+    },
+    "is_mock": true,
+    "limitations": [
+      "MOCK DATA for UI development; not a computed result",
+      "3-epoch smoke recipe"
+    ],
+    "measurement": null,
+    "metric_profile_id": "legacy-opendpd-v1",
+    "metric_profile_version": 1,
+    "metrics": [
+      {
+        "better": "lower",
+        "name": "NMSE",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -16.092247
+      },
+      {
+        "better": "lower",
+        "name": "EVM",
+        "reason": null,
+        "status": "ok",
+        "unit": "dB",
+        "value": -16.731844
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_L",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -29.788186
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_R",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -26.347937
+      },
+      {
+        "better": "lower",
+        "name": "ACLR_AVG",
+        "reason": null,
+        "status": "ok",
+        "unit": "dBc",
+        "value": -28.068062
+      }
+    ],
+    "models": [
+      {
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": null,
+        "model": {
+          "key": "gru",
+          "parameters": {
+            "hidden_size": 23,
+            "num_layers": 1
+          }
+        },
+        "n_parameters": 1911,
+        "role": "pa",
+        "run_id": "run-pa-0001",
+        "training_path": null,
+        "weights_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "n_segments": 3,
+    "nperseg": 2560,
+    "numeric_mode": "float32",
+    "reference": {
+      "description": "measured PA output of the test split",
+      "gain_rule": null,
+      "gain_value": null,
+      "kind": "measured_pa_output"
+    },
+    "result_id": "res-pa-0001",
+    "run_id": "run-pa-0001",
+    "scaling": null,
+    "schema_version": 1,
+    "seed": 0,
+    "selected_epoch": 1,
+    "signal_chain": [],
+    "software": {
+      "git_commit": "6f026b1",
+      "git_dirty": false,
+      "opendpd_version": "2.2.0.dev0",
+      "platform": "Linux-x86_64",
+      "python_version": "3.13.14",
+      "torch_version": "2.13.0+cu132"
+    },
+    "source": "mock",
+    "surrogate_coverage": null,
+    "valid_sample_range": [
+      0,
+      7680
+    ]
+  }
+}

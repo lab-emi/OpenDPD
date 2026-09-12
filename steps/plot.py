@@ -29,8 +29,11 @@ def main(proj: Project):
     ###########################################################################################################
     proj.set_device()
 
-    # Load Dataset (original PA input/output)
-    X_train, y_train, _, _, X_test, y_test = load_dataset(dataset_name=proj.dataset_name)
+    # Load Dataset (original PA input/output); a custom --dataset_path takes precedence
+    if getattr(proj, 'dataset_path', None):
+        X_train, y_train, _, _, X_test, y_test = load_dataset(dataset_path=proj.dataset_path)
+    else:
+        X_train, y_train, _, _, X_test, y_test = load_dataset(dataset_name=proj.dataset_name)
 
     ###########################################################################################################
     # Build PA Model and run inference without DPD

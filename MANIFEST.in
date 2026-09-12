@@ -8,6 +8,9 @@ include LICENSE
 recursive-include datasets *.json *.csv
 recursive-include backbones *
 
+# Include the built Studio frontend when present (release builds)
+recursive-include opendpd/studio/static *
+
 # Include automation scripts
 recursive-include bash_scripts *.sh
 

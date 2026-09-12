@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "protocol_id": "leaderboard-v1",
+  "board_id": "opendpd-dpd-surrogate",
+  "version": "v2026.09",
+  "track": "dpd_surrogate",
+  "supersedes": null,
+  "entries": [
+    {
+      "entry_id": "dpd-gru",
+      "submission": {
+        "schema_version": 1,
+        "protocol_id": "leaderboard-v1",
+        "submission_id": "be10351c3fea-dpd-gru",
+        "track": "dpd_surrogate",
+        "submitter": {
+          "name": "OpenDPD maintainers",
+          "kind": "maintainer",
+          "affiliation": "OpenDPD"
+        },
+        "method": {
+          "name": "GRU",
+          "description": "GRU (gru) trained by gradient_dla under benchmark plan d79883def16e",
+          "reference": "https://arxiv.org/abs/2507.06849",
+          "code_url": "https://github.com/lab-emi/OpenDPD",
+          "licence": "Apache-2.0"
+        },
+        "model": {
+          "model_key": "gru",
+          "parameters": {
+            "hidden_size": 15,
+            "num_layers": 1
+          },
+          "n_parameters": 887,
+          "lookahead_samples": 0,
+          "execution_semantics": "offline_segmented",
+          "training_path": "gradient_dla"
+        },
+        "data": {
+          "dataset_id": "dpa-200mhz",
+          "raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+          "availability": "public",
+          "statement": "built-in OpenDPD dataset (opendpd datasets import-builtin)",
+          "operating_point": "as captured"
+        },
+        "result": {
+          "metric_profile_id": "legacy-opendpd-v1",
+          "metric_profile_version": 1,
+          "split_version": "contiguous-v1",
+          "evidence_type": "dpd_surrogate",
+          "seeds": [
+            {
+              "seed": 0,
+              "run_id": "run-20260906-114018-6448fc",
+              "config_sha256": "6f596c9cebbeec0d1615461e3cee75c31773543f9861cacc74b9606883ba66d7",
+              "checkpoint_sha256": "1ce8b7f349d21ca8d0c7c6d41aa75d23cf7463badb682ed44bd692c68b97737e",
+              "surrogate_run_id": "run-20260906-114016-39ad61",
+              "selected_epoch": 2,
+              "metrics": {
+                "NMSE": -20.01584872310792,
+                "EVM": -21.21607155182302,
+                "ACLR_L": -28.23780935997059,
+                "ACLR_R": -31.531870983496454,
+                "ACLR_AVG": -29.884840171733522
+              },
+              "wall_clock_s": 1.126109
+            },
+            {
+              "seed": 1,
+              "run_id": "run-20260906-114021-f34df4",
+              "config_sha256": "934c730d174e1d4dcd0ec9081884c8425cbdcca138966fb803b320395e1f73a9",
+              "checkpoint_sha256": "0ae6a4f643c2564852348da32680a852d69eb813f98e9c840fdfc543c5193195",
+              "surrogate_run_id": "run-20260906-114020-8c19f1",
+              "selected_epoch": 2,
+              "metrics": {
+                "NMSE": -20.88215201444571,
+                "EVM": -21.99126796183425,
+                "ACLR_L": -32.67234567537254,
+                "ACLR_R": -30.986663788332006,
+                "ACLR_AVG": -31.829504731852275
+              },
+              "wall_clock_s": 1.218794
+            },
+            {
+              "seed": 2,
+              "run_id": "run-20260906-114024-1a01e2",
+              "config_sha256": "eae567d5aa5c22c6d4c73352673cf2b4477b7d620a4f7e5a0a0e02682dca9b41",
+              "checkpoint_sha256": "50c75d3af220541b43666f21ee48118be8f173b10b6f91f22ad968c1a40340f8",
+              "surrogate_run_id": "run-20260906-114023-d5594d",
+              "selected_epoch": 2,
+              "metrics": {
+                "NMSE": -19.0180074576694,
+                "EVM": -20.27732509653272,
+                "ACLR_L": -29.530920479296356,
+                "ACLR_R": -29.356575964600182,
+                "ACLR_AVG": -29.44374822194827
+              },
+              "wall_clock_s": 1.156237
+            }
+          ],
+          "metrics": {
+            "ACLR_AVG": {
+              "n": 3,
+              "mean": -30.38603104184469,
+              "std": 1.2693906992527662,
+              "min": -31.829504731852275,
+              "max": -29.44374822194827
+            },
+            "ACLR_L": {
+              "n": 3,
+              "mean": -30.1470251715465,
+              "std": 2.2805628311919306,
+              "min": -32.67234567537254,
+              "max": -28.23780935997059
+            },
+            "ACLR_R": {
+              "n": 3,
+              "mean": -30.62503691214288,
+              "std": 1.1318381522971652,
+              "min": -31.531870983496454,
+              "max": -29.356575964600182
+            },
+            "EVM": {
+              "n": 3,
+              "mean": -21.16155487006333,
+              "std": 0.8582709874055336,
+              "min": -21.99126796183425,
+              "max": -20.27732509653272
+            },
+            "NMSE": {
+              "n": 3,
+              "mean": -19.97200273174101,
+              "std": 0.9328454241506985,
+              "min": -20.88215201444571,
+              "max": -19.0180074576694
+            }
+          },
+          "resources": {
+            "budget_class": "unbounded",
+            "device": "cpu",
+            "mean_wall_clock_s": 1.1670466666666666
+          }
+        },
+        "packages": [],
+        "benchmark_report_sha256": "be10351c3fea11be9aeed4837e844a98338cc27204f6e8cdab00b7ff1c697d81",
+        "benchmark_plan_sha256": "d79883def16e75c4738c20be447708e68acff95a5eb15bfe195746abaf37bdf0",
+        "failure_conditions": [
+          "not evaluated on any other dataset or operating point",
+          "the surrogate is a model fitted to measured data; agreement between a DPD's simulated and measured outcome is not established by this benchmark (cross-validation of the surrogate is not physical validation)",
+          "cpu_regression tier: smoke budgets, regression references for this data and hardware, never research results"
+        ],
+        "licence": {
+          "code": "Apache-2.0",
+          "weights": "not redistributed (runs of the maintainers' benchmark workspace)",
+          "data": "OpenDPD built-in dataset, as shipped",
+          "redistribution_allowed": false,
+          "statement": "the report, the plan and the run ids are the artefacts; weights are reproduced by the plan"
+        },
+        "conflict_of_interest": "the maintainers' own methods on their own data; the same review rules apply to every entry",
+        "citation": "docs/community/citation.md",
+        "isolated_validation": "the maintainers' weekly benchmark, not a submission",
+        "submitted_at": "2026-09-06T16:47:20.471960Z"
+      },
+      "key": {
+        "track": "dpd_surrogate",
+        "dataset_id": "dpa-200mhz",
+        "raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+        "operating_point": "as captured",
+        "metric_profile": "legacy-opendpd-v1 v1",
+        "split_version": "contiguous-v1",
+        "execution_semantics": "offline_segmented",
+        "budget_class": "unbounded"
+      },
+      "status": "accepted",
+      "evidence_grade": "self_reported",
+      "reviews": [],
+      "history": [
+        {
+          "date": "2026-09-06T16:47:20.472008Z",
+          "action": "created",
+          "by": "opendpd leaderboard seed (report be10351c3fea)",
+          "reason": "copied from the hash-bound benchmark-v1 report; no independent recomputation",
+          "previous_metrics": null
+        }
+      ]
+    },
+    {
+      "entry_id": "dpd-mp-ila",
+      "submission": {
+        "schema_version": 1,
+        "protocol_id": "leaderboard-v1",
+        "submission_id": "be10351c3fea-dpd-mp-ila",
+        "track": "dpd_surrogate",
+        "submitter": {
+          "name": "OpenDPD maintainers",
+          "kind": "maintainer",
+          "affiliation": "OpenDPD"
+        },
+        "method": {
+          "name": "MP (least squares)",
+          "description": "MP (least squares) (mp_ls) trained by ila_least_squares under benchmark plan d79883def16e",
+          "reference": "https://arxiv.org/abs/2507.06849",
+          "code_url": "https://github.com/lab-emi/OpenDPD",
+          "licence": "Apache-2.0"
+        },
+        "model": {
+          "model_key": "mp_ls",
+          "parameters": {
+            "K": 5,
+            "Q": 20,
+            "rcond": 0.0
+          },
+          "n_parameters": 200,
+          "lookahead_samples": 0,
+          "execution_semantics": "offline_segmented",
+          "training_path": "ila_least_squares"
+        },
+        "data": {
+          "dataset_id": "dpa-200mhz",
+          "raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+          "availability": "public",
+          "statement": "built-in OpenDPD dataset (opendpd datasets import-builtin)",
+          "operating_point": "as captured"
+        },
+        "result": {
+          "metric_profile_id": "legacy-opendpd-v1",
+          "metric_profile_version": 1,
+          "split_version": "contiguous-v1",
+          "evidence_type": "dpd_surrogate",
+          "seeds": [
+            {
+              "seed": 0,
+              "run_id": "run-20260906-114019-94885b",
+              "config_sha256": "de7521a9172e967163aaa4ac27ed811a90816b42f9be4ade41e50394acc3b58c",
+              "checkpoint_sha256": "57e9cb582e536bb23a53046060196d9c704243381f6444c290e8032e7f9ded95",
+              "surrogate_run_id": "run-20260906-114016-39ad61",
+              "selected_epoch": null,
+              "metrics": {
+                "NMSE": -21.48253641078146,
+                "EVM": -22.550498310129072,
+                "ACLR_L": -37.63478288975962,
+                "ACLR_R": -34.922837909214344,
+                "ACLR_AVG": -36.278810399486986
+              },
+              "wall_clock_s": 0.618104
+            },
+            {
+              "seed": 1,
+              "run_id": "run-20260906-114022-c66858",
+              "config_sha256": "ffb60a3320d6669b88ad8dc734f205132974cde84b83a2d55df5161730a9fee1",
+              "checkpoint_sha256": "b05cda8b2f9663a96ca4b2af5ce5f887e9f031963dc1d5d35dfc20332d9f57cb",
+              "surrogate_run_id": "run-20260906-114020-8c19f1",
+              "selected_epoch": null,
+              "metrics": {
+                "NMSE": -22.966646180595294,
+                "EVM": -23.947638093129946,
+                "ACLR_L": -36.03952683510452,
+                "ACLR_R": -33.0276225992545,
+                "ACLR_AVG": -34.533574717179505
+              },
+              "wall_clock_s": 0.563393
+            },
+            {
+              "seed": 2,
+              "run_id": "run-20260906-114025-3876a4",
+              "config_sha256": "393652113b8d0d32471ca7d2bb586c0ba4ba704093a1f017a512c0978ccccfac",
+              "checkpoint_sha256": "b55615effb532d101a85f1404e7c7a5ffe9acd42f182ea5cfc401348dd511df4",
+              "surrogate_run_id": "run-20260906-114023-d5594d",
+              "selected_epoch": null,
+              "metrics": {
+                "NMSE": -21.170229823340236,
+                "EVM": -22.102601503447737,
+                "ACLR_L": -34.84765247227884,
+                "ACLR_R": -31.746935630393523,
+                "ACLR_AVG": -33.29729405133618
+              },
+              "wall_clock_s": 0.454941
+            }
+          ],
+          "metrics": {
+            "ACLR_AVG": {
+              "n": 3,
+              "mean": -34.703226389334226,
+              "std": 1.4979807078101164,
+              "min": -36.278810399486986,
+              "max": -33.29729405133618
+            },
+            "ACLR_L": {
+              "n": 3,
+              "mean": -36.17398739904766,
+              "std": 1.398421868912804,
+              "min": -37.63478288975962,
+              "max": -34.84765247227884
+            },
+            "ACLR_R": {
+              "n": 3,
+              "mean": -33.232465379620784,
+              "std": 1.5978295418022428,
+              "min": -34.922837909214344,
+              "max": -31.746935630393523
+            },
+            "EVM": {
+              "n": 3,
+              "mean": -22.86691263556892,
+              "std": 0.9623557155876428,
+              "min": -23.947638093129946,
+              "max": -22.102601503447737
+            },
+            "NMSE": {
+              "n": 3,
+              "mean": -21.87313747157233,
+              "std": 0.9597941569272017,
+              "min": -22.966646180595294,
+              "max": -21.170229823340236
+            }
+          },
+          "resources": {
+            "budget_class": "unbounded",
+            "device": "cpu",
+            "mean_wall_clock_s": 0.5454793333333333
+          }
+        },
+        "packages": [],
+        "benchmark_report_sha256": "be10351c3fea11be9aeed4837e844a98338cc27204f6e8cdab00b7ff1c697d81",
+        "benchmark_plan_sha256": "d79883def16e75c4738c20be447708e68acff95a5eb15bfe195746abaf37bdf0",
+        "failure_conditions": [
+          "not evaluated on any other dataset or operating point",
+          "the surrogate is a model fitted to measured data; agreement between a DPD's simulated and measured outcome is not established by this benchmark (cross-validation of the surrogate is not physical validation)",
+          "cpu_regression tier: smoke budgets, regression references for this data and hardware, never research results"
+        ],
+        "licence": {
+          "code": "Apache-2.0",
+          "weights": "not redistributed (runs of the maintainers' benchmark workspace)",
+          "data": "OpenDPD built-in dataset, as shipped",
+          "redistribution_allowed": false,
+          "statement": "the report, the plan and the run ids are the artefacts; weights are reproduced by the plan"
+        },
+        "conflict_of_interest": "the maintainers' own methods on their own data; the same review rules apply to every entry",
+        "citation": "docs/community/citation.md",
+        "isolated_validation": "the maintainers' weekly benchmark, not a submission",
+        "submitted_at": "2026-09-06T16:47:20.472055Z"
+      },
+      "key": {
+        "track": "dpd_surrogate",
+        "dataset_id": "dpa-200mhz",
+        "raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+        "operating_point": "as captured",
+        "metric_profile": "legacy-opendpd-v1 v1",
+        "split_version": "contiguous-v1",
+        "execution_semantics": "offline_segmented",
+        "budget_class": "unbounded"
+      },
+      "status": "accepted",
+      "evidence_grade": "self_reported",
+      "reviews": [],
+      "history": [
+        {
+          "date": "2026-09-06T16:47:20.472066Z",
+          "action": "created",
+          "by": "opendpd leaderboard seed (report be10351c3fea)",
+          "reason": "copied from the hash-bound benchmark-v1 report; no independent recomputation",
+          "previous_metrics": null
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-09-06T16:47:20.472073Z",
+      "action": "created",
+      "by": "opendpd leaderboard seed (report be10351c3fea)",
+      "reason": "version v2026.09 seeded with 2 reference entries",
+      "previous_metrics": null
+    }
+  ],
+  "created_at": "2026-09-06T16:47:20.472090Z",
+  "board_sha256": "4a696e5deaa7c5879082aa3930bf4e9fb5a63530507bce2cc4c6bdf59a0bfd13"
+}

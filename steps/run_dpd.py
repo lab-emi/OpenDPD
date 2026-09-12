@@ -23,8 +23,11 @@ def main(proj: Project):
     # Set Accelerator Device
     proj.set_device()
 
-    # Load Dataset
-    _, _, _, _, X_test, _ = load_dataset(dataset_name=proj.dataset_name)
+    # Load Dataset (a custom --dataset_path takes precedence over the built-in name)
+    if getattr(proj, 'dataset_path', None):
+        _, _, _, _, X_test, _ = load_dataset(dataset_path=proj.dataset_path)
+    else:
+        _, _, _, _, X_test, _ = load_dataset(dataset_name=proj.dataset_name)
 
     # Create DPD Output Folder
     create_folder(['dpd_out'])
@@ -64,7 +67,7 @@ def main(proj: Project):
     if proj.args.quant:
         path_dpd_model = os.path.join('save', proj.dataset_name, 'train_dpd', pa_model_id.split('_P_')[0], proj.args.quant_dir_label, dpd_model_id + '.pt')
         print("::: Loading Quantized DPD Model: ", path_dpd_model)
-    net_dpd.load_state_dict(torch.load(path_dpd_model))
+    net_dpd.load_state_dict(torch.load(path_dpd_model, map_location='cpu', weights_only=True))
 
     # Get parameter count
     n_net_params = count_net_params(net_dpd)

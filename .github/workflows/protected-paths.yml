@@ -1,0 +1,50 @@
+name: Protected paths
+
+# Fails a pull request that edits scientific-semantics paths unless a
+# maintainer has attached the `science-review-approved` label.
+# The path list mirrors AGENTS.md §3 and .github/CODEOWNERS.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect protected-path changes
+        id: detect
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          changed="$(git diff --name-only "$base" "$head")"
+          echo "$changed"
+          protected='^(tests/golden/|opendpd/core/metrics/|opendpd/core/splits\.py|benchmark/|docs/protocols/|\.github/CODEOWNERS|\.github/workflows/protected-paths\.yml)'
+          if echo "$changed" | grep -Eq "$protected"; then
+            echo "touched=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "touched=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require science-review-approved label
+        if: steps.detect.outputs.touched == 'true'
+        run: |
+          set -euo pipefail
+          labels='${{ toJson(github.event.pull_request.labels.*.name) }}'
+          echo "labels: $labels"
+          if echo "$labels" | grep -q '"science-review-approved"'; then
+            echo "protected path change approved by label"
+          else
+            echo "::error::This PR changes a protected scientific path (golden references, metrics, splits, benchmark or protocols) and lacks the 'science-review-approved' label. Split it into its own PR and request maintainer review."
+            exit 1
+          fi

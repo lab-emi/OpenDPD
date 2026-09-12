@@ -5,8 +5,12 @@ __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 import argparse
 
 
-def get_arguments():
-    # Process Arguments
+def build_parser():
+    """Build the legacy argument parser without parsing anything.
+
+    Studio's explicit-config path (opendpd.services.legacy_adapter) uses this to
+    obtain the recipe defaults from their single source instead of sys.argv.
+    """
     parser = argparse.ArgumentParser(description='Train a GRU network.')
     # Dataset & Log
     parser.add_argument('--dataset_name', default=None, help='Dataset names')
@@ -106,4 +110,9 @@ def get_arguments():
     parser.add_argument('--gif_duration', default=10.0, type=float,
                         help='Duration of GIF animations in seconds (default: 10.0).')
 
-    return parser.parse_args()
+    return parser
+
+
+def get_arguments():
+    # Process Arguments
+    return build_parser().parse_args()

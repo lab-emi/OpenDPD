@@ -1,0 +1,71 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": [
+    {
+      "payload": {
+        "from": "queued",
+        "to": "running"
+      },
+      "run_id": "run-pa-0001",
+      "seq": 1,
+      "ts": "2026-09-06T08:00:02Z",
+      "type": "status"
+    },
+    {
+      "payload": {
+        "level": "info",
+        "line": "::: Number of PA Model Parameters:  1911"
+      },
+      "run_id": "run-pa-0001",
+      "seq": 2,
+      "ts": "2026-09-06T08:00:03Z",
+      "type": "log"
+    },
+    {
+      "payload": {
+        "epoch": 0,
+        "phase": "train",
+        "total_epochs": 3
+      },
+      "run_id": "run-pa-0001",
+      "seq": 3,
+      "ts": "2026-09-06T08:00:12Z",
+      "type": "progress"
+    },
+    {
+      "payload": {
+        "epoch": 0,
+        "split": "val",
+        "values": {
+          "ACLR_AVG": -28.07,
+          "EVM": -16.73,
+          "NMSE": -16.09
+        }
+      },
+      "run_id": "run-pa-0001",
+      "seq": 4,
+      "ts": "2026-09-06T08:00:15Z",
+      "type": "metric"
+    },
+    {
+      "payload": {
+        "epoch": 0,
+        "metric": "NMSE",
+        "path": "save/DPA_200MHz/train_pa/PA_S_0_M_GRU_H_23_F_50_P_1911.pt",
+        "value": -16.09
+      },
+      "run_id": "run-pa-0001",
+      "seq": 5,
+      "ts": "2026-09-06T08:00:15Z",
+      "type": "checkpoint"
+    },
+    {
+      "payload": {},
+      "run_id": "run-pa-0001",
+      "seq": 6,
+      "ts": "2026-09-06T08:00:30Z",
+      "type": "heartbeat"
+    }
+  ]
+}

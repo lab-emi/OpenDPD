@@ -1,0 +1,488 @@
+{
+  "schema_version": 1,
+  "protocol_id": "benchmark-v1",
+  "tier": "cpu_regression",
+  "plan_sha256": "d79883def16e75c4738c20be447708e68acff95a5eb15bfe195746abaf37bdf0",
+  "dataset": {
+    "dataset_id": "dpa-200mhz",
+    "raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+    "preprocessing_version": "raw-v1",
+    "split_version": "contiguous-v1",
+    "guard_samples": 0,
+    "surrogate_training_split": "train",
+    "dpd_optimisation": "train split: through the frozen PA surrogate of the same seed (gradient, DLA) or on the measured data (least squares, ILA)",
+    "selection_split": "val",
+    "reported_split": "test",
+    "statement": "the surrogate is a model fitted to measured data; agreement between a DPD's simulated and measured outcome is not established by this benchmark (cross-validation of the surrogate is not physical validation)"
+  },
+  "metric_profile_id": "legacy-opendpd-v1",
+  "metric_profile_version": 1,
+  "device": "cpu",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "entries": [
+    {
+      "entry_id": "pa-gru",
+      "task": "train_pa",
+      "model": {
+        "key": "gru",
+        "parameters": {
+          "hidden_size": 23,
+          "num_layers": 1
+        }
+      },
+      "training_path": "gradient",
+      "n_parameters": 1911,
+      "lookahead_samples": 0,
+      "execution_semantics": "offline_segmented",
+      "fit": null,
+      "seeds": [
+        {
+          "seed": 0,
+          "run_id": "run-20260906-114016-39ad61",
+          "config_sha256": "71224268f24c297d73483e0c6caf10c758f7db43f640c5481c56eefc46099e7a",
+          "checkpoint_sha256": "a67791136bc842a41fce157ca8063f0c2440080dc9df891d050c50729bb7a235",
+          "surrogate_run_id": null,
+          "selected_epoch": 2,
+          "metrics": {
+            "NMSE": -21.383867392236912,
+            "EVM": -22.368009986613945,
+            "ACLR_L": -33.13219007789536,
+            "ACLR_R": -32.04780496090193,
+            "ACLR_AVG": -32.58999751939864
+          },
+          "wall_clock_s": 2.250806
+        },
+        {
+          "seed": 1,
+          "run_id": "run-20260906-114020-8c19f1",
+          "config_sha256": "53c653e80b172e266a14d5ce34c566c69b38e53a595733612c07825b9a980270",
+          "checkpoint_sha256": "c94f5d5a59e2b314d4e48df78973b945ea3449fb82d3a5a3bbf2845d977e9c00",
+          "surrogate_run_id": null,
+          "selected_epoch": 2,
+          "metrics": {
+            "NMSE": -22.578405097699402,
+            "EVM": -23.810113031601823,
+            "ACLR_L": -34.35720833126392,
+            "ACLR_R": -31.416841585685592,
+            "ACLR_AVG": -32.887024958474754
+          },
+          "wall_clock_s": 0.843956
+        },
+        {
+          "seed": 2,
+          "run_id": "run-20260906-114023-d5594d",
+          "config_sha256": "5bb89348834503369d21c507eeba62abf7bf45e86c31c2e79f3d7e8ee75d1aa8",
+          "checkpoint_sha256": "d1a70128240603fadb6ab94972f7ce704f7147eab235c5d01c6f1ee848d23007",
+          "surrogate_run_id": null,
+          "selected_epoch": 2,
+          "metrics": {
+            "NMSE": -20.83667588687672,
+            "EVM": -21.955003578047517,
+            "ACLR_L": -33.053283449958826,
+            "ACLR_R": -30.180730365343386,
+            "ACLR_AVG": -31.617006907651106
+          },
+          "wall_clock_s": 0.594246
+        }
+      ],
+      "missing_seeds": [],
+      "aggregate": {
+        "ACLR_AVG": {
+          "n": 3,
+          "mean": -32.364676461841505,
+          "std": 0.66431441847101,
+          "min": -32.887024958474754,
+          "max": -31.617006907651106
+        },
+        "ACLR_L": {
+          "n": 3,
+          "mean": -33.5142272863727,
+          "std": 0.7311082994450929,
+          "min": -34.35720833126392,
+          "max": -33.053283449958826
+        },
+        "ACLR_R": {
+          "n": 3,
+          "mean": -31.215125637310305,
+          "std": 0.9497414802022338,
+          "min": -32.04780496090193,
+          "max": -30.180730365343386
+        },
+        "EVM": {
+          "n": 3,
+          "mean": -22.711042198754427,
+          "std": 0.9739666806883764,
+          "min": -23.810113031601823,
+          "max": -21.955003578047517
+        },
+        "NMSE": {
+          "n": 3,
+          "mean": -21.599649458937677,
+          "std": 0.8906888268023193,
+          "min": -22.578405097699402,
+          "max": -20.83667588687672
+        }
+      }
+    },
+    {
+      "entry_id": "pa-mp-ls",
+      "task": "train_pa",
+      "model": {
+        "key": "mp_ls",
+        "parameters": {
+          "K": 5,
+          "Q": 20,
+          "rcond": 0.0
+        }
+      },
+      "training_path": "least_squares",
+      "n_parameters": 200,
+      "lookahead_samples": 0,
+      "execution_semantics": "offline_segmented",
+      "fit": {
+        "column_norm_ratio": 6.337413202995065,
+        "condition_number": 12072.172729069585,
+        "n_coefficients": 100,
+        "n_observations": 23040,
+        "rank": 100,
+        "rcond": 0.0,
+        "retained_condition_number": 12072.172729069585,
+        "solver": "column-normalised least squares (SVD, numpy.linalg.lstsq)",
+        "train_nmse_db": -34.92339343691279
+      },
+      "seeds": [
+        {
+          "seed": 0,
+          "run_id": "run-20260906-114018-790002",
+          "config_sha256": "9b45c124a7924f005f6ef2451196f6829ffc7cd08ab08d837197383227c3e500",
+          "checkpoint_sha256": "8a7975cad5101d3a34c478142404e3aa01246ec02f12462c4b6bac8d22bb419a",
+          "surrogate_run_id": null,
+          "selected_epoch": null,
+          "metrics": {
+            "NMSE": -34.909947626377516,
+            "EVM": -39.35758262126116,
+            "ACLR_L": -31.875955773922378,
+            "ACLR_R": -30.452724064117717,
+            "ACLR_AVG": -31.164339919020048
+          },
+          "wall_clock_s": 0.315253
+        },
+        {
+          "seed": 1,
+          "run_id": "run-20260906-114021-88b110",
+          "config_sha256": "e4412c5e28648b7a2682e62390f04a43fc48241402659409638f83dffc4fd6bc",
+          "checkpoint_sha256": "b80aced066fdf66409f2bcb32cf73e33713ae9ab74bdd267006804399afd38be",
+          "surrogate_run_id": null,
+          "selected_epoch": null,
+          "metrics": {
+            "NMSE": -34.909947626377516,
+            "EVM": -39.35758262126116,
+            "ACLR_L": -31.875955773922378,
+            "ACLR_R": -30.452724064117717,
+            "ACLR_AVG": -31.164339919020048
+          },
+          "wall_clock_s": 0.301412
+        },
+        {
+          "seed": 2,
+          "run_id": "run-20260906-114023-6a3b3b",
+          "config_sha256": "4f7ef49cd0157d5078720be3fdac4d9029cd2fd51cb98fa326a740378d3882c8",
+          "checkpoint_sha256": "6fe2ac3b7138bda2950cd0d4ecdc05ee9da8c1e545f5c8e7586f12ac3210e3ea",
+          "surrogate_run_id": null,
+          "selected_epoch": null,
+          "metrics": {
+            "NMSE": -34.909947626377516,
+            "EVM": -39.35758262126116,
+            "ACLR_L": -31.875955773922378,
+            "ACLR_R": -30.452724064117717,
+            "ACLR_AVG": -31.164339919020048
+          },
+          "wall_clock_s": 0.272192
+        }
+      ],
+      "missing_seeds": [],
+      "aggregate": {
+        "ACLR_AVG": {
+          "n": 3,
+          "mean": -31.164339919020048,
+          "std": 0.0,
+          "min": -31.164339919020048,
+          "max": -31.164339919020048
+        },
+        "ACLR_L": {
+          "n": 3,
+          "mean": -31.875955773922374,
+          "std": 0.0,
+          "min": -31.875955773922378,
+          "max": -31.875955773922378
+        },
+        "ACLR_R": {
+          "n": 3,
+          "mean": -30.452724064117717,
+          "std": 0.0,
+          "min": -30.452724064117717,
+          "max": -30.452724064117717
+        },
+        "EVM": {
+          "n": 3,
+          "mean": -39.35758262126116,
+          "std": 0.0,
+          "min": -39.35758262126116,
+          "max": -39.35758262126116
+        },
+        "NMSE": {
+          "n": 3,
+          "mean": -34.909947626377516,
+          "std": 0.0,
+          "min": -34.909947626377516,
+          "max": -34.909947626377516
+        }
+      }
+    },
+    {
+      "entry_id": "dpd-gru",
+      "task": "train_dpd",
+      "model": {
+        "key": "gru",
+        "parameters": {
+          "hidden_size": 15,
+          "num_layers": 1
+        }
+      },
+      "training_path": "gradient_dla",
+      "n_parameters": 887,
+      "lookahead_samples": 0,
+      "execution_semantics": "offline_segmented",
+      "fit": null,
+      "seeds": [
+        {
+          "seed": 0,
+          "run_id": "run-20260906-114018-6448fc",
+          "config_sha256": "6f596c9cebbeec0d1615461e3cee75c31773543f9861cacc74b9606883ba66d7",
+          "checkpoint_sha256": "1ce8b7f349d21ca8d0c7c6d41aa75d23cf7463badb682ed44bd692c68b97737e",
+          "surrogate_run_id": "run-20260906-114016-39ad61",
+          "selected_epoch": 2,
+          "metrics": {
+            "NMSE": -20.01584872310792,
+            "EVM": -21.21607155182302,
+            "ACLR_L": -28.23780935997059,
+            "ACLR_R": -31.531870983496454,
+            "ACLR_AVG": -29.884840171733522
+          },
+          "wall_clock_s": 1.126109
+        },
+        {
+          "seed": 1,
+          "run_id": "run-20260906-114021-f34df4",
+          "config_sha256": "934c730d174e1d4dcd0ec9081884c8425cbdcca138966fb803b320395e1f73a9",
+          "checkpoint_sha256": "0ae6a4f643c2564852348da32680a852d69eb813f98e9c840fdfc543c5193195",
+          "surrogate_run_id": "run-20260906-114020-8c19f1",
+          "selected_epoch": 2,
+          "metrics": {
+            "NMSE": -20.88215201444571,
+            "EVM": -21.99126796183425,
+            "ACLR_L": -32.67234567537254,
+            "ACLR_R": -30.986663788332006,
+            "ACLR_AVG": -31.829504731852275
+          },
+          "wall_clock_s": 1.218794
+        },
+        {
+          "seed": 2,
+          "run_id": "run-20260906-114024-1a01e2",
+          "config_sha256": "eae567d5aa5c22c6d4c73352673cf2b4477b7d620a4f7e5a0a0e02682dca9b41",
+          "checkpoint_sha256": "50c75d3af220541b43666f21ee48118be8f173b10b6f91f22ad968c1a40340f8",
+          "surrogate_run_id": "run-20260906-114023-d5594d",
+          "selected_epoch": 2,
+          "metrics": {
+            "NMSE": -19.0180074576694,
+            "EVM": -20.27732509653272,
+            "ACLR_L": -29.530920479296356,
+            "ACLR_R": -29.356575964600182,
+            "ACLR_AVG": -29.44374822194827
+          },
+          "wall_clock_s": 1.156237
+        }
+      ],
+      "missing_seeds": [],
+      "aggregate": {
+        "ACLR_AVG": {
+          "n": 3,
+          "mean": -30.38603104184469,
+          "std": 1.2693906992527662,
+          "min": -31.829504731852275,
+          "max": -29.44374822194827
+        },
+        "ACLR_L": {
+          "n": 3,
+          "mean": -30.1470251715465,
+          "std": 2.2805628311919306,
+          "min": -32.67234567537254,
+          "max": -28.23780935997059
+        },
+        "ACLR_R": {
+          "n": 3,
+          "mean": -30.62503691214288,
+          "std": 1.1318381522971652,
+          "min": -31.531870983496454,
+          "max": -29.356575964600182
+        },
+        "EVM": {
+          "n": 3,
+          "mean": -21.16155487006333,
+          "std": 0.8582709874055336,
+          "min": -21.99126796183425,
+          "max": -20.27732509653272
+        },
+        "NMSE": {
+          "n": 3,
+          "mean": -19.97200273174101,
+          "std": 0.9328454241506985,
+          "min": -20.88215201444571,
+          "max": -19.0180074576694
+        }
+      }
+    },
+    {
+      "entry_id": "dpd-mp-ila",
+      "task": "train_dpd",
+      "model": {
+        "key": "mp_ls",
+        "parameters": {
+          "K": 5,
+          "Q": 20,
+          "rcond": 0.0
+        }
+      },
+      "training_path": "ila_least_squares",
+      "n_parameters": 200,
+      "lookahead_samples": 0,
+      "execution_semantics": "offline_segmented",
+      "fit": {
+        "column_norm_ratio": 3.952619355394873,
+        "condition_number": 3156.9103355302136,
+        "n_coefficients": 100,
+        "n_observations": 23040,
+        "rank": 100,
+        "rcond": 0.0,
+        "retained_condition_number": 3156.9103355302136,
+        "solver": "column-normalised least squares (SVD, numpy.linalg.lstsq)",
+        "train_nmse_db": -35.38127223903396
+      },
+      "seeds": [
+        {
+          "seed": 0,
+          "run_id": "run-20260906-114019-94885b",
+          "config_sha256": "de7521a9172e967163aaa4ac27ed811a90816b42f9be4ade41e50394acc3b58c",
+          "checkpoint_sha256": "57e9cb582e536bb23a53046060196d9c704243381f6444c290e8032e7f9ded95",
+          "surrogate_run_id": "run-20260906-114016-39ad61",
+          "selected_epoch": null,
+          "metrics": {
+            "NMSE": -21.48253641078146,
+            "EVM": -22.550498310129072,
+            "ACLR_L": -37.63478288975962,
+            "ACLR_R": -34.922837909214344,
+            "ACLR_AVG": -36.278810399486986
+          },
+          "wall_clock_s": 0.618104
+        },
+        {
+          "seed": 1,
+          "run_id": "run-20260906-114022-c66858",
+          "config_sha256": "ffb60a3320d6669b88ad8dc734f205132974cde84b83a2d55df5161730a9fee1",
+          "checkpoint_sha256": "b05cda8b2f9663a96ca4b2af5ce5f887e9f031963dc1d5d35dfc20332d9f57cb",
+          "surrogate_run_id": "run-20260906-114020-8c19f1",
+          "selected_epoch": null,
+          "metrics": {
+            "NMSE": -22.966646180595294,
+            "EVM": -23.947638093129946,
+            "ACLR_L": -36.03952683510452,
+            "ACLR_R": -33.0276225992545,
+            "ACLR_AVG": -34.533574717179505
+          },
+          "wall_clock_s": 0.563393
+        },
+        {
+          "seed": 2,
+          "run_id": "run-20260906-114025-3876a4",
+          "config_sha256": "393652113b8d0d32471ca7d2bb586c0ba4ba704093a1f017a512c0978ccccfac",
+          "checkpoint_sha256": "b55615effb532d101a85f1404e7c7a5ffe9acd42f182ea5cfc401348dd511df4",
+          "surrogate_run_id": "run-20260906-114023-d5594d",
+          "selected_epoch": null,
+          "metrics": {
+            "NMSE": -21.170229823340236,
+            "EVM": -22.102601503447737,
+            "ACLR_L": -34.84765247227884,
+            "ACLR_R": -31.746935630393523,
+            "ACLR_AVG": -33.29729405133618
+          },
+          "wall_clock_s": 0.454941
+        }
+      ],
+      "missing_seeds": [],
+      "aggregate": {
+        "ACLR_AVG": {
+          "n": 3,
+          "mean": -34.703226389334226,
+          "std": 1.4979807078101164,
+          "min": -36.278810399486986,
+          "max": -33.29729405133618
+        },
+        "ACLR_L": {
+          "n": 3,
+          "mean": -36.17398739904766,
+          "std": 1.398421868912804,
+          "min": -37.63478288975962,
+          "max": -34.84765247227884
+        },
+        "ACLR_R": {
+          "n": 3,
+          "mean": -33.232465379620784,
+          "std": 1.5978295418022428,
+          "min": -34.922837909214344,
+          "max": -31.746935630393523
+        },
+        "EVM": {
+          "n": 3,
+          "mean": -22.86691263556892,
+          "std": 0.9623557155876428,
+          "min": -23.947638093129946,
+          "max": -22.102601503447737
+        },
+        "NMSE": {
+          "n": 3,
+          "mean": -21.87313747157233,
+          "std": 0.9597941569272017,
+          "min": -22.966646180595294,
+          "max": -21.170229823340236
+        }
+      }
+    }
+  ],
+  "software": {
+    "opendpd_version": "2.2.0.dev0",
+    "python_version": "3.13.14",
+    "platform": "Linux-x86_64",
+    "torch_version": "2.13.0+cu132",
+    "git_commit": "5fa202682726e2382cfa865f7ca5a2984cc009d8",
+    "git_dirty": true
+  },
+  "machine": {
+    "cpu": "x86_64",
+    "cores": "32",
+    "os": "Linux 7.2.2-1-cachyos (x86_64)"
+  },
+  "generated_at": "2026-09-06T11:41:34.302364Z",
+  "notes": [
+    "seeds are pre-registered in the plan; per-seed values are reported next to the aggregate; the spread of 3 seeds estimates run-to-run variation on this data and hardware and is not evidence of generality across devices, signals or operating points",
+    "equal parameter counts are not equal compute cost: families differ in operations per sample, memory and look-ahead; a least-squares fit and gradient training are different procedures with different budgets, and ILA and DLA are different training paths",
+    "the checkpoint is selected on the validation split by the protocol metric of the task (PA: NMSE, DPD: ACLR average); the test split is scored once, by the evaluation stage, and never used for selection or tuning",
+    "every entry and seed is scored on the test split exactly once from its selected checkpoint; re-evaluation under another metric profile re-reads the same checkpoint and is a deterministic regression, not a new attempt",
+    "cpu_regression uses the smoke budgets: its numbers are regression references for this data and hardware, never research results"
+  ],
+  "report_sha256": "be10351c3fea11be9aeed4837e844a98338cc27204f6e8cdab00b7ff1c697d81"
+}

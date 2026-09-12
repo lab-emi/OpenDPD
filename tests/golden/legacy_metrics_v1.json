@@ -1,0 +1,40 @@
+{
+  "metric_profile": "legacy-opendpd-v1",
+  "note": "Frozen reference values of utils.metrics on a deterministic stimulus. Changing these numbers is a scientific-semantics change (AGENTS.md \u00a73).",
+  "profiles": {
+    "dpa_200mhz": {
+      "config": {
+        "fs": 800000000.0,
+        "nperseg": 2560,
+        "bw_main_ch": 200000000.0,
+        "n_sub_ch": 10,
+        "n_segments": 4
+      },
+      "expected": {
+        "NMSE": -19.076105770403647,
+        "EVM": -19.21492650570918,
+        "ACLR_L": -24.042608356484344,
+        "ACLR_R": -24.042623111083657,
+        "ACLR_AVG": -24.042615733784,
+        "target_gain": 1.5000000000000002
+      }
+    },
+    "apa_200mhz": {
+      "config": {
+        "fs": 983040000.0,
+        "nperseg": 19662,
+        "bw_main_ch": 200000000.0,
+        "n_sub_ch": 5,
+        "n_segments": 2
+      },
+      "expected": {
+        "NMSE": -19.07338392325204,
+        "EVM": -19.40820172079281,
+        "ACLR_L": -24.33479980693523,
+        "ACLR_R": -24.33480006307484,
+        "ACLR_AVG": -24.334799935005037,
+        "target_gain": 1.5
+      }
+    }
+  }
+}

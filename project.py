@@ -27,7 +27,13 @@ from utils.util import set_target_gain
 
 
 class Project:
-    def __init__(self):
+    def __init__(self, args=None):
+        """Create a project from an explicit ``argparse.Namespace``.
+
+        ``args=None`` keeps the historical behaviour of parsing ``sys.argv``.
+        Studio passes a namespace built from a resolved experiment config so
+        no global state is read or written.
+        """
         ###########################################################################################################
         # Initialization
         ###########################################################################################################
@@ -38,7 +44,7 @@ class Project:
         self.log_test = {}
 
         # Load Hyperparameters
-        self.args = get_arguments()
+        self.args = get_arguments() if args is None else args
         self.hparams = vars(self.args)
         for k, v in self.hparams.items():
             setattr(self, k, v)
@@ -209,6 +215,11 @@ class Project:
 
         # Apply the PA Gain if training DPD
         self.target_gain = set_target_gain(X_train, y_train)
+        # OpenDPD Studio adaptation budget (plan S17): fit on the first N training samples only. The reference
+        # gain above and the validation / test splits always come from the full dataset.
+        budget = getattr(self, 'train_samples', None)
+        if budget:
+            X_train, y_train = X_train[:int(budget)], y_train[:int(budget)]
         if self.step == 'train_dpd':
             y_train = self.target_gain * X_train
             y_val = self.target_gain * X_val

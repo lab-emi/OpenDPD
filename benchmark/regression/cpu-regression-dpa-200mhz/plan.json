@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "protocol_id": "benchmark-v1",
+  "tier": "cpu_regression",
+  "dataset": {
+    "id": "dpa-200mhz",
+    "preprocessing_version": "raw-v1",
+    "split_version": "contiguous-v1"
+  },
+  "metric_profile_id": "legacy-opendpd-v1",
+  "device": "cpu",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "entries": [
+    {
+      "entry_id": "pa-gru",
+      "task": "train_pa",
+      "recipe_id": "pa-gru-smoke-v1",
+      "model": {
+        "key": "gru",
+        "parameters": {
+          "hidden_size": 23,
+          "num_layers": 1
+        }
+      },
+      "training": {
+        "epochs": 3,
+        "batch_size": 64,
+        "batch_size_eval": 256,
+        "learning_rate": 0.005,
+        "lr_end": 0.00005,
+        "lr_schedule": true,
+        "decay_factor": 0.5,
+        "patience": 5,
+        "optimizer": "adamw",
+        "loss": "l2",
+        "grad_clip": 200.0,
+        "frame_length": 50,
+        "frame_stride": 16,
+        "seed": 0,
+        "reproducibility": "soft",
+        "eval_val": true,
+        "eval_test": true
+      },
+      "pa_entry": null
+    },
+    {
+      "entry_id": "pa-mp-ls",
+      "task": "train_pa",
+      "recipe_id": "pa-mp-ls-v1",
+      "model": {
+        "key": "mp_ls",
+        "parameters": {
+          "K": 5,
+          "Q": 20,
+          "rcond": 0.0
+        }
+      },
+      "training": {
+        "epochs": 1,
+        "batch_size": 64,
+        "batch_size_eval": 64,
+        "learning_rate": 0.005,
+        "lr_end": 0.00005,
+        "lr_schedule": true,
+        "decay_factor": 0.5,
+        "patience": 5,
+        "optimizer": "adamw",
+        "loss": "l2",
+        "grad_clip": 200.0,
+        "frame_length": 200,
+        "frame_stride": 1,
+        "seed": 0,
+        "reproducibility": "soft",
+        "eval_val": true,
+        "eval_test": true
+      },
+      "pa_entry": null
+    },
+    {
+      "entry_id": "dpd-gru",
+      "task": "train_dpd",
+      "recipe_id": "dpd-gru-smoke-v1",
+      "model": {
+        "key": "gru",
+        "parameters": {
+          "hidden_size": 15,
+          "num_layers": 1
+        }
+      },
+      "training": {
+        "epochs": 3,
+        "batch_size": 64,
+        "batch_size_eval": 256,
+        "learning_rate": 0.005,
+        "lr_end": 0.00005,
+        "lr_schedule": true,
+        "decay_factor": 0.5,
+        "patience": 5,
+        "optimizer": "adamw",
+        "loss": "l2",
+        "grad_clip": 200.0,
+        "frame_length": 50,
+        "frame_stride": 16,
+        "seed": 0,
+        "reproducibility": "soft",
+        "eval_val": true,
+        "eval_test": true
+      },
+      "pa_entry": "pa-gru"
+    },
+    {
+      "entry_id": "dpd-mp-ila",
+      "task": "train_dpd",
+      "recipe_id": "dpd-mp-ila-v1",
+      "model": {
+        "key": "mp_ls",
+        "parameters": {
+          "K": 5,
+          "Q": 20,
+          "rcond": 0.0
+        }
+      },
+      "training": {
+        "epochs": 1,
+        "batch_size": 64,
+        "batch_size_eval": 64,
+        "learning_rate": 0.005,
+        "lr_end": 0.00005,
+        "lr_schedule": true,
+        "decay_factor": 0.5,
+        "patience": 5,
+        "optimizer": "adamw",
+        "loss": "l2",
+        "grad_clip": 200.0,
+        "frame_length": 200,
+        "frame_stride": 1,
+        "seed": 0,
+        "reproducibility": "soft",
+        "eval_val": true,
+        "eval_test": true
+      },
+      "pa_entry": "pa-gru"
+    }
+  ],
+  "selection_rule": "the checkpoint is selected on the validation split by the protocol metric of the task (PA: NMSE, DPD: ACLR average); the test split is scored once, by the evaluation stage, and never used for selection or tuning",
+  "test_set_policy": "every entry and seed is scored on the test split exactly once from its selected checkpoint; re-evaluation under another metric profile re-reads the same checkpoint and is a deterministic regression, not a new attempt",
+  "created_at": "2026-09-06T11:40:15.907437Z",
+  "plan_sha256": "d79883def16e75c4738c20be447708e68acff95a5eb15bfe195746abaf37bdf0"
+}

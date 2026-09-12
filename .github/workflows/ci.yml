@@ -68,10 +68,63 @@ jobs:
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install OpenDPD
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,gui]"
+
+      # The packaging layer (tests/packaging) checks that the wheel carries the
+      # built frontend and that `opendpd gui` serves it from a clean venv.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the Studio frontend
+        run: cd frontend && npm ci && npm run build
 
       - name: Run unit and smoke tests
-        run: pytest tests/ -v -m "not extended" --durations=10
+        run: python -m pytest tests/ -v -m "not extended" --durations=10
+
+      - name: API contract is committed (docs/contracts/openapi.json)
+        run: python scripts/export_openapi.py --check
+
+  frontend:
+    name: Frontend (types, lint, unit, build, browser journeys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Generated API types match docs/contracts/openapi.json
+        run: npm run types:check
+
+      - name: Typecheck (strict)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and interaction tests
+        run: npm test -- --maxWorkers=2
+
+      - name: Production build
+        run: npm run build
+
+      - name: Browser journeys and accessibility audit on Chromium, Firefox and WebKit (mock API; visual baselines are compared locally)
+        run: |
+          npx playwright install --with-deps chromium firefox webkit
+          npx playwright test --ignore-snapshots
 
   build:
     name: Build & check distribution
@@ -87,6 +140,15 @@ jobs:
       - name: Install build tooling
         run: pip install build twine
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the Studio frontend
+        run: cd frontend && npm ci && npm run build
+
       - name: Build sdist and wheel
         run: python -m build
 
@@ -95,6 +157,21 @@ jobs:
       # after a release tag has already been pushed.
       - name: Validate distribution metadata
         run: twine check dist/*
+
+      - name: Wheel and sdist carry the built frontend
+        run: |
+          python - <<'PY'
+          import glob, sys, tarfile, zipfile
+          wheel = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          assert "opendpd/studio/static/index.html" in names, names[:20]
+          assert any(n.startswith("opendpd/studio/static/assets/") for n in names)
+          assert "opendpd/studio/static/build-info.json" in names
+          sdist = glob.glob("dist/*.tar.gz")[0]
+          snames = tarfile.open(sdist).getnames()
+          assert any(n.endswith("opendpd/studio/static/index.html") for n in snames), snames[:20]
+          print("frontend present in", wheel, "and", sdist)
+          PY
 
       # Guard against pyproject `version` and opendpd.__version__ drifting
       # apart — the publish workflow trusts the tag against __version__.

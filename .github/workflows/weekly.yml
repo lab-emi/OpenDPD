@@ -40,9 +40,50 @@ jobs:
         run: pip install torch --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install OpenDPD
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,gui]"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Gives macOS automated evidence for the packaged service (not for a real browser launch).
+      - name: Build the Studio frontend
+        run: cd frontend && npm ci && npm run build
 
       # Runs the complete suite, including tests marked "extended"
       # (all-backbone training smoke tests and all-dataset E2E chains).
       - name: Run full test suite
         run: pytest tests/ -v --durations=20
+
+      # benchmark-v1, cpu_regression tier on the measured built-in data: 4 entries x 3 seeds under the smoke
+      # budgets. The check is advisory until a maintainer approves the baseline (then it fails the job).
+      - name: benchmark-v1 cpu_regression (statistical regression, advisory until the baseline is approved)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          plan=benchmark/regression/cpu-regression-dpa-200mhz/plan.json
+          opendpd datasets import-builtin DPA_200MHz --workspace /tmp/bench-ws
+          opendpd benchmark run "$plan" --workspace /tmp/bench-ws
+          opendpd benchmark report "$plan" --workspace /tmp/bench-ws --out /tmp/bench-report.json --markdown /tmp/bench-report.md
+          opendpd benchmark check /tmp/bench-report.json --baseline benchmark/regression/cpu-regression-dpa-200mhz/baseline.json
+      - name: Upload the benchmark report
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-v1-cpu-regression-report
+          path: |
+            /tmp/bench-report.json
+            /tmp/bench-report.md
+
+      # S13 platform evidence: the real service driven by real browsers (Chromium, Firefox, WebKit) through
+      # the whole smoke journey (bootstrap → train → result → export). WebKit here is the Linux port, not Safari.
+      - name: Live browser journey against the real service (three engines)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          opendpd gui --no-browser --workspace /tmp/live-ws --port 8765 > /tmp/live-gui.log 2>&1 &
+          for i in $(seq 1 60); do curl -fs http://127.0.0.1:8765/readyz >/dev/null && break; sleep 1; done
+          export OPENDPD_LIVE_URL="$(python -c "import json; print(json.load(open('/tmp/live-ws/.studio.lock'))['url'])")"
+          cd frontend && npx playwright install --with-deps chromium firefox webkit
+          npx playwright test e2e/live.spec.ts --project=chromium-1366 --project=firefox-1366 --project=webkit-1366
+      - name: Live journey server log
+        if: always() && matrix.os == 'ubuntu-latest'
+        run: tail -n 60 /tmp/live-gui.log || true

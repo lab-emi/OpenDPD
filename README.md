@@ -25,6 +25,40 @@ We invite you to contribute new backbone networks, pre-trained models, or measur
 
 <!-- --8<-- [end:intro] -->
 
+# OpenDPD Studio (alpha): one command to a local workbench
+
+```bash
+pip install "opendpd[gui]"
+opendpd gui
+```
+
+`opendpd gui` starts a loopback-only service, prints a one-time URL and opens
+your browser: register the built-in measured data, train a smoke recipe, read
+results with their evidence type and metric profile, compare runs, export a
+reproducible package. The same configuration runs unchanged through
+`opendpd run` and the Python API. Start with
+[docs/tutorials/gui-quickstart.md](docs/tutorials/gui-quickstart.md); the
+headless path is [docs/tutorials/headless-cli.md](docs/tutorials/headless-cli.md);
+reference waveforms and the data-aided EVM/ACLR profile are in
+[docs/tutorials/waveform-evaluation.md](docs/tutorials/waveform-evaluation.md);
+measured DPD evidence from captures of a physical PA (and the mock instrument
+adapter to rehearse it) in [docs/tutorials/measured-dpd.md](docs/tutorials/measured-dpd.md);
+adaptation across conditions (zero update, few-shot, full retrain, with
+failures and costs kept) in
+[docs/tutorials/adaptation-benchmark.md](docs/tutorials/adaptation-benchmark.md);
+streaming semantics (state carried across chunks, look-ahead as samples and
+time, chunk consistency) in [docs/tutorials/streaming.md](docs/tutorials/streaming.md);
+bit-exact fixed-point deployment packages (golden vectors, a verified C99
+reference) in [docs/tutorials/deployment-export.md](docs/tutorials/deployment-export.md);
+leaderboard submissions, reviews with recomputation and versioned boards
+(a reference benchmark until external submissions exist) in
+[docs/tutorials/leaderboard-submission.md](docs/tutorials/leaderboard-submission.md),
+with the rules in [docs/community/governance.md](docs/community/governance.md)
+and the boards under [docs/leaderboard](docs/leaderboard/README.md).
+What is verified where: [support matrix](docs/releases/support-matrix.md),
+[performance report](docs/releases/performance-report.md),
+[hardening report](docs/releases/hardening-report.md); status per plan stage:
+[studio-progress](docs/releases/studio-progress.md).
 
 # What's New in OpenDPD V2.1
 

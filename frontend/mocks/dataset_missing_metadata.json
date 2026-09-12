@@ -1,0 +1,56 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "columns": {
+      "input_i": "I_in",
+      "input_q": "Q_in",
+      "output_i": "I_out",
+      "output_q": "Q_out"
+    },
+    "dataset_id": "my-pa-capture",
+    "display_name": "my_pa_capture.csv",
+    "files": [
+      {
+        "path": "raw/my_pa_capture.csv",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "size_bytes": 52000
+      }
+    ],
+    "n_samples": 4096,
+    "notes": null,
+    "origin": "unknown",
+    "preprocessing_version": "raw-v1",
+    "raw_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "schema_version": 1,
+    "signal": {
+      "amplitude_units": "unknown",
+      "bandwidth_hz": null,
+      "modulation": null,
+      "n_sub_ch": null,
+      "nperseg": null,
+      "sample_rate_hz": null,
+      "standard": null,
+      "sub_channel_bandwidth_hz": null,
+      "waveform": null
+    },
+    "source": {
+      "imported_at": "2026-09-06T08:00:00Z",
+      "kind": "csv_import",
+      "name": null,
+      "original_path": "/home/user/my_pa_capture.csv"
+    },
+    "split": {
+      "boundaries": null,
+      "guard_samples": 0,
+      "method": "contiguous",
+      "ratios": {
+        "test": 0.2,
+        "train": 0.6,
+        "val": 0.2
+      },
+      "version": "contiguous-v1"
+    },
+    "versions": []
+  }
+}

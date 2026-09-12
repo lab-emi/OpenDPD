@@ -1,0 +1,69 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "columns": null,
+    "dataset_id": "dpa-200mhz",
+    "display_name": "DPA_200MHz (built-in, measured)",
+    "files": [
+      {
+        "path": "raw/train_input.csv",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "size_bytes": 1000000
+      },
+      {
+        "path": "raw/train_output.csv",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "size_bytes": 1000000
+      }
+    ],
+    "n_samples": 38400,
+    "notes": null,
+    "origin": "measured",
+    "preprocessing_version": "raw-v1",
+    "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "schema_version": 1,
+    "signal": {
+      "amplitude_units": "normalized",
+      "bandwidth_hz": 200000000.0,
+      "modulation": "64QAM",
+      "n_sub_ch": 10,
+      "nperseg": 2560,
+      "sample_rate_hz": 800000000.0,
+      "standard": "LTE",
+      "sub_channel_bandwidth_hz": 20000000.0,
+      "waveform": null
+    },
+    "source": {
+      "imported_at": "2026-09-06T08:00:00Z",
+      "kind": "builtin",
+      "name": "DPA_200MHz",
+      "original_path": null
+    },
+    "split": {
+      "boundaries": {
+        "test": [
+          30720,
+          38400
+        ],
+        "train": [
+          0,
+          23040
+        ],
+        "val": [
+          23040,
+          30720
+        ]
+      },
+      "guard_samples": 0,
+      "method": "contiguous",
+      "ratios": {
+        "test": 0.2,
+        "train": 0.6,
+        "val": 0.2
+      },
+      "version": "contiguous-v1"
+    },
+    "versions": []
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "artifacts": [
+      {
+        "artifact_id": "ckpt-best",
+        "created_at": "2026-09-06T08:00:00Z",
+        "description": null,
+        "file": {
+          "path": "save/DPA_200MHz/train_pa/PA_S_0_M_GRU_H_23_F_50_P_1911.pt",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "size_bytes": 10973
+        },
+        "kind": "checkpoint",
+        "required": true
+      },
+      {
+        "artifact_id": "log-history",
+        "created_at": "2026-09-06T08:00:00Z",
+        "description": null,
+        "file": {
+          "path": "log/DPA_200MHz/train_pa/history/PA_S_0_M_GRU_H_23_F_50_P_1911.csv",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "size_bytes": 1200
+        },
+        "kind": "log_history",
+        "required": true
+      },
+      {
+        "artifact_id": "worker-log",
+        "created_at": "2026-09-06T08:00:00Z",
+        "description": null,
+        "file": {
+          "path": "logs/worker.log",
+          "sha256": null,
+          "size_bytes": null
+        },
+        "kind": "worker_log",
+        "required": false
+      }
+    ],
+    "complete": true,
+    "run_id": "run-pa-0001",
+    "schema_version": 1
+  }
+}

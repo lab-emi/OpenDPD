@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use OpenDPD, its Studio or its benchmark, please cite the software and the paper below (docs/community/citation.md)."
+title: "OpenDPD"
+type: software
+version: 2.2.0.dev0
+license: Apache-2.0
+repository-code: "https://github.com/lab-emi/OpenDPD"
+authors:
+  - family-names: Gao
+    given-names: Chang
+  - family-names: Wu
+    given-names: Yizhuo
+  - family-names: Li
+    given-names: Ang
+preferred-citation:
+  type: conference-paper
+  title: "OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion"
+  authors:
+    - family-names: Wu
+      given-names: Yizhuo
+    - family-names: Singh
+      given-names: Gagan Deep
+    - family-names: Beikmirza
+      given-names: Mohammadreza
+    - family-names: de Vreede
+      given-names: Leo C. N.
+    - family-names: Alavi
+      given-names: Morteza
+    - family-names: Gao
+      given-names: Chang
+  collection-title: "2024 IEEE International Symposium on Circuits and Systems (ISCAS)"
+  year: 2024
+  pages: "1-5"
+  doi: 10.1109/ISCAS58744.2024.10558162

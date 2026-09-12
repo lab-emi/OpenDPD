@@ -1,0 +1,59 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "dataset_id": "my-pa-capture",
+    "dataset_raw_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "doctor_version": "dataset-doctor-v1",
+    "evaluation_blocked": true,
+    "generated_at": "2026-09-06T08:00:00Z",
+    "items": [
+      {
+        "blocking": true,
+        "code": "missing_metadata",
+        "confidence": null,
+        "evidence": {
+          "missing": [
+            "sample_rate_hz",
+            "bandwidth_hz",
+            "n_sub_ch",
+            "nperseg"
+          ]
+        },
+        "message": "ACLR and spectral EVM need sample_rate_hz, bandwidth_hz, n_sub_ch and nperseg.",
+        "severity": "error",
+        "suggestion": "Enter the signal parameters in the dataset manifest, then re-run the Doctor.",
+        "title": "Sample rate and bandwidth unknown"
+      },
+      {
+        "blocking": false,
+        "code": "delay_estimate",
+        "confidence": 0.85,
+        "evidence": {
+          "fractional_delay": 0.12,
+          "integer_delay": 3,
+          "peak_ratio": 0.93
+        },
+        "message": "Cross-correlation peak at +3 samples (fractional refinement +0.12).",
+        "severity": "info",
+        "suggestion": "Review and apply the alignment as a new preprocessing version.",
+        "title": "Output lags input by about 3 samples"
+      },
+      {
+        "blocking": false,
+        "code": "possible_clipping",
+        "confidence": 0.6,
+        "evidence": {
+          "fraction_at_max": 0.004,
+          "max_amplitude": 0.998
+        },
+        "message": "0.4% of output samples sit within 0.1% of the maximum amplitude.",
+        "severity": "warning",
+        "suggestion": "Natural PA compression can look similar; check the capture range.",
+        "title": "Flat-top samples detected"
+      }
+    ],
+    "report_id": "diag-my-pa-capture-1",
+    "schema_version": 1
+  }
+}

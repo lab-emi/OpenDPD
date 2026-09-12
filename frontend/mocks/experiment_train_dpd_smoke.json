@@ -1,0 +1,65 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "dataset": {
+      "id": "dpa-200mhz",
+      "preprocessing_version": "raw-v1",
+      "split_version": "contiguous-v1"
+    },
+    "dpd_reference": null,
+    "evaluation": {
+      "checkpoint_selection_metric": null,
+      "chunk_samples": null,
+      "evidence_type": "dpd_surrogate",
+      "profile_id": "legacy-opendpd-v1"
+    },
+    "execution": {
+      "cuda_graph_training": false,
+      "device": "cpu",
+      "device_index": 0,
+      "num_threads": null
+    },
+    "initialization": null,
+    "measurement": null,
+    "model": {
+      "key": "gru",
+      "parameters": {
+        "hidden_size": 15,
+        "num_layers": 1
+      }
+    },
+    "name": null,
+    "notes": null,
+    "pa_reference": {
+      "checkpoint_artifact_id": null,
+      "checkpoint_sha256": null,
+      "model": null,
+      "run_id": "run-pa-0001"
+    },
+    "quantization": null,
+    "recipe_id": "dpd-gru-smoke-v1",
+    "schema_version": 1,
+    "task": "train_dpd",
+    "training": {
+      "batch_size": 64,
+      "batch_size_eval": 256,
+      "decay_factor": 0.5,
+      "epochs": 3,
+      "eval_test": true,
+      "eval_val": true,
+      "frame_length": 50,
+      "frame_stride": 16,
+      "grad_clip": 200.0,
+      "learning_rate": 0.005,
+      "loss": "l2",
+      "lr_end": 5e-05,
+      "lr_schedule": true,
+      "optimizer": "adamw",
+      "patience": 5,
+      "reproducibility": "soft",
+      "seed": 0,
+      "train_samples": null
+    }
+  }
+}

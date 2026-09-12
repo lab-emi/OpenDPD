@@ -1,0 +1,67 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "dataset": {
+      "id": "dpa-200mhz",
+      "preprocessing_version": "raw-v1",
+      "split_version": "contiguous-v1"
+    },
+    "dpd_reference": null,
+    "evaluation": {
+      "checkpoint_selection_metric": "NMSE",
+      "chunk_samples": null,
+      "evidence_type": "pa_modeling",
+      "profile_id": "legacy-opendpd-v1"
+    },
+    "execution": {
+      "cuda_graph_training": false,
+      "device": "cpu",
+      "device_index": 0,
+      "num_threads": null
+    },
+    "initialization": null,
+    "measurement": null,
+    "model": {
+      "key": "gru",
+      "parameters": {
+        "hidden_size": 23,
+        "num_layers": 1
+      }
+    },
+    "name": "PA GRU smoke",
+    "notes": "Smoke recipe: 3 epochs. Not a research benchmark.",
+    "pa_reference": null,
+    "quantization": null,
+    "recipe_id": "pa-gru-smoke-v1",
+    "resolution": {
+      "config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "defaults_source": "opendpd 2.2.0.dev0 / schema 1 / registry gru",
+      "resolved_at": "2026-09-06T08:00:00Z",
+      "resolver_version": "config-resolver-v1",
+      "warnings": []
+    },
+    "schema_version": 1,
+    "task": "train_pa",
+    "training": {
+      "batch_size": 64,
+      "batch_size_eval": 256,
+      "decay_factor": 0.5,
+      "epochs": 3,
+      "eval_test": true,
+      "eval_val": true,
+      "frame_length": 50,
+      "frame_stride": 16,
+      "grad_clip": 200.0,
+      "learning_rate": 0.005,
+      "loss": "l2",
+      "lr_end": 5e-05,
+      "lr_schedule": true,
+      "optimizer": "adamw",
+      "patience": 5,
+      "reproducibility": "soft",
+      "seed": 0,
+      "train_samples": null
+    }
+  }
+}

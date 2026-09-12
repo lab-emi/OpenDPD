@@ -1,0 +1,66 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "deprecated": false,
+    "description": "General complex-baseband error and spectral-leakage metrics with explicit conventions: pooled NMSE, in-band error ratio and adjacent-channel power ratio (leakage, dBc).",
+    "frozen": false,
+    "metrics": [
+      {
+        "aggregation": "pooled over all valid samples",
+        "better": "lower",
+        "display_name": "NMSE (pooled)",
+        "formula": "10*log10( sum|y - r|^2 / sum|r|^2 ) over the valid range",
+        "name": "NMSE",
+        "notes": null,
+        "requires_reference": true,
+        "unit": "dB"
+      },
+      {
+        "aggregation": "pooled PSD over the valid range",
+        "better": "lower",
+        "display_name": "In-band error",
+        "formula": "10*log10( P_main(y - r) / P_main(r) ) with band powers from the Welch PSD",
+        "name": "IBE",
+        "notes": "Spectral error ratio inside the main channel; not a demodulated EVM. As an amplitude ratio it is 10^(IBE/20), as a percentage 100*10^(IBE/20).",
+        "requires_reference": true,
+        "unit": "dB"
+      },
+      {
+        "aggregation": "pooled PSD over the valid range",
+        "better": "lower",
+        "display_name": "ACPR left (leakage)",
+        "formula": "10*log10( P_adjacent_left(y) / P_main(y) )",
+        "name": "ACPR_L",
+        "notes": "Leakage convention: adjacent-channel power relative to the main channel of the same signal, negative dBc, lower is better. The positive 'suppression' convention (main / adjacent, higher is better) equals -ACPR_L and is not reported.",
+        "requires_reference": false,
+        "unit": "dBc"
+      },
+      {
+        "aggregation": "pooled PSD over the valid range",
+        "better": "lower",
+        "display_name": "ACPR right (leakage)",
+        "formula": "10*log10( P_adjacent_right(y) / P_main(y) )",
+        "name": "ACPR_R",
+        "notes": "Leakage convention: adjacent-channel power relative to the main channel of the same signal, negative dBc, lower is better. The positive 'suppression' convention (main / adjacent, higher is better) equals -ACPR_R and is not reported.",
+        "requires_reference": false,
+        "unit": "dBc"
+      }
+    ],
+    "parameters": {
+      "adjacent_channels": "[+bandwidth_hz/2, +3*bandwidth_hz/2) (right) and [-3*bandwidth_hz/2, -bandwidth_hz/2) (left): same width as the main channel, immediately adjacent",
+      "aggregation": "pooled over the whole valid range (sums of powers); never the mean of per-segment dB values",
+      "band_power": "sum over PSD bins whose centre frequency lies in [lo, hi) times the bin width fs/nperseg",
+      "capture_requirement": "a band must lie inside [-fs/2, +fs/2); otherwise the metric is not_applicable",
+      "floor_db": -300.0,
+      "main_channel": "[-bandwidth_hz/2, +bandwidth_hz/2) around 0 Hz (complex baseband)",
+      "normalization": "none: prediction and reference are compared as given (target = gain * input for DPD)",
+      "psd": "scipy.signal.welch, two-sided, window=hann, nperseg=dataset nperseg, noverlap=nperseg//2, detrend off, scaling=density",
+      "units": "NMSE and IBE are 10*log10 of power ratios in dB; ACPR is dBc relative to the main-channel power of the same signal. Ratio and percent forms are documented per metric, never mixed.",
+      "valid_range": "real samples of the evaluated split only; the zero padding of the last segment is excluded"
+    },
+    "profile_id": "general-spectral-v1",
+    "validation": "analytic",
+    "version": 1
+  }
+}

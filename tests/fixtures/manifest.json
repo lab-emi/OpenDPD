@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "note": "Test-data tiers from the development plan \u00a78.1. Only 'tiny' data is committed; larger tiers are generated on demand with tests/fixtures/synthetic.py and never used as scientific results.",
+  "tiers": {
+    "tiny": {
+      "real": {
+        "dataset": "datasets/DPA_200MHz",
+        "samples_per_split": {
+          "train": 23040,
+          "val": 7680,
+          "test": 7680
+        },
+        "origin": "measured 40nm CMOS digital PA, shipped with the package",
+        "used_by": [
+          "tests/test_e2e_pipeline.py",
+          "tests/golden/legacy_checkpoints"
+        ]
+      },
+      "synthetic": {
+        "generator": "tests/fixtures/synthetic.py:synthesize",
+        "samples": 20000,
+        "impairments": "configurable delay / complex gain / clipping / outliers / NaN",
+        "purpose": "Dataset Doctor detector tolerances and fast state/numeric tests"
+      }
+    },
+    "standard": {
+      "generator": "python -m tests.fixtures.synthetic --tier standard-1e6|standard-1e7 --out <dir>",
+      "samples": [
+        1000000,
+        10000000
+      ],
+      "purpose": "real-size import, diagnostics, chart and training flows"
+    },
+    "stress": {
+      "generator": "python -m tests.fixtures.synthetic --tier stress-1e8 --out <dir>",
+      "samples": 100000000,
+      "storage": "float32 I/Q binary (.npy), about 1.6 GB for input+output",
+      "purpose": "incremental reading and memory upper bound; not run per PR"
+    },
+    "history": {
+      "generator": "planned for S13: >= 1000 run summaries and 50000 log lines",
+      "purpose": "pagination, search, virtual lists"
+    }
+  },
+  "doctor_protocol": {
+    "note": "Tolerances the Dataset Doctor must meet on tests/fixtures/synthetic.py captures (tests/unit/test_doctor.py). Changing them is a protocol change (protected).",
+    "delay": {
+      "impairment": "delay_samples in {3, 7, 40}",
+      "tolerance_samples": 0.1,
+      "min_confidence": 0.9
+    },
+    "gain": {
+      "impairment": "complex gain 1.4*exp(j25deg)",
+      "tolerance_db": 0.5,
+      "tolerance_deg": 3.0
+    },
+    "clipping": {
+      "impairment": "clip_level at 60% of the unclipped output peak",
+      "must_detect": true,
+      "clean_pa_must_not_flag": "the memory-polynomial PA compresses smoothly; no clipping item on clean data"
+    },
+    "outliers": {
+      "impairment": "5 spikes of magnitude 50",
+      "min_recall": 1.0,
+      "false_positives_on_clean": 0
+    },
+    "non_finite": {
+      "impairment": "NaN at 2 positions",
+      "must_block": true
+    },
+    "metadata": {
+      "missing sample_rate/bandwidth/n_sub_ch/nperseg": "blocks evaluation"
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "protocol_id": "benchmark-v1",
+  "tier": "cpu_regression",
+  "plan_sha256": "d79883def16e75c4738c20be447708e68acff95a5eb15bfe195746abaf37bdf0",
+  "entries": {
+    "pa-gru": {
+      "ACLR_AVG": {
+        "reference": -32.364676461841505,
+        "tolerance": 1.32862883694202,
+        "worse_is": "higher"
+      },
+      "ACLR_L": {
+        "reference": -33.5142272863727,
+        "tolerance": 1.4622165988901858,
+        "worse_is": "higher"
+      },
+      "ACLR_R": {
+        "reference": -31.215125637310305,
+        "tolerance": 1.8994829604044676,
+        "worse_is": "higher"
+      },
+      "EVM": {
+        "reference": -22.711042198754427,
+        "tolerance": 1.9479333613767529,
+        "worse_is": "higher"
+      },
+      "NMSE": {
+        "reference": -21.599649458937677,
+        "tolerance": 1.7813776536046386,
+        "worse_is": "higher"
+      }
+    },
+    "pa-mp-ls": {
+      "ACLR_AVG": {
+        "reference": -31.164339919020048,
+        "tolerance": 0.5,
+        "worse_is": "higher"
+      },
+      "ACLR_L": {
+        "reference": -31.875955773922374,
+        "tolerance": 0.5,
+        "worse_is": "higher"
+      },
+      "ACLR_R": {
+        "reference": -30.452724064117717,
+        "tolerance": 0.5,
+        "worse_is": "higher"
+      },
+      "EVM": {
+        "reference": -39.35758262126116,
+        "tolerance": 0.5,
+        "worse_is": "higher"
+      },
+      "NMSE": {
+        "reference": -34.909947626377516,
+        "tolerance": 0.5,
+        "worse_is": "higher"
+      }
+    },
+    "dpd-gru": {
+      "ACLR_AVG": {
+        "reference": -30.38603104184469,
+        "tolerance": 2.5387813985055323,
+        "worse_is": "higher"
+      },
+      "ACLR_L": {
+        "reference": -30.1470251715465,
+        "tolerance": 4.561125662383861,
+        "worse_is": "higher"
+      },
+      "ACLR_R": {
+        "reference": -30.62503691214288,
+        "tolerance": 2.2636763045943304,
+        "worse_is": "higher"
+      },
+      "EVM": {
+        "reference": -21.16155487006333,
+        "tolerance": 1.7165419748110673,
+        "worse_is": "higher"
+      },
+      "NMSE": {
+        "reference": -19.97200273174101,
+        "tolerance": 1.865690848301397,
+        "worse_is": "higher"
+      }
+    },
+    "dpd-mp-ila": {
+      "ACLR_AVG": {
+        "reference": -34.703226389334226,
+        "tolerance": 2.9959614156202328,
+        "worse_is": "higher"
+      },
+      "ACLR_L": {
+        "reference": -36.17398739904766,
+        "tolerance": 2.796843737825608,
+        "worse_is": "higher"
+      },
+      "ACLR_R": {
+        "reference": -33.232465379620784,
+        "tolerance": 3.1956590836044856,
+        "worse_is": "higher"
+      },
+      "EVM": {
+        "reference": -22.86691263556892,
+        "tolerance": 1.9247114311752855,
+        "worse_is": "higher"
+      },
+      "NMSE": {
+        "reference": -21.87313747157233,
+        "tolerance": 1.9195883138544034,
+        "worse_is": "higher"
+      }
+    }
+  },
+  "basis": "reference = mean over seeds [0, 1, 2] of report be10351c3fea on x86_64 (Linux 7.2.2-1-cachyos (x86_64)); tolerance = max(0.5 dB, 2 x sample std); any excursion beyond the band, better or worse, needs a new approval",
+  "approved_by": null,
+  "approved_on": null,
+  "notes": [
+    "approve by filling approved_by and approved_on after reviewing the report; an unapproved baseline never blocks"
+  ]
+}
