@@ -1,0 +1,3 @@
+# Documentation site (see mkdocs.yml); installed by .github/workflows/docs.yml
+mkdocs-material>=9.6,<10
+mkdocstrings[python]>=0.27,<2

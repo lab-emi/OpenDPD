@@ -1,0 +1,119 @@
+# OpenDPD documentation site: MkDocs + Material, deployed to GitHub Pages by .github/workflows/docs.yml.
+#
+# The pages under docs/ are single-sourced. They include sections of README.md, datasets/README.md,
+# examples/README.md and benchmark/benchmark_report.md between `--8<--` markers (pymdownx.snippets), so those
+# files remain the only place to edit. docs/hooks/assets.py publishes the images and evidence files they refer to.
+#
+# Preview locally:  pip install -r docs/requirements.txt && mkdocs serve
+# CI builds with:   mkdocs build --strict
+
+site_name: OpenDPD
+site_description: Open-source end-to-end learning and benchmarking framework for wideband power amplifier modeling and digital pre-distortion
+site_url: https://lab-emi.github.io/OpenDPD/
+repo_url: https://github.com/lab-emi/OpenDPD
+repo_name: lab-emi/OpenDPD
+edit_uri: ""
+copyright: Copyright &copy; Lab of Efficient Machine Intelligence, Delft University of Technology &middot; Apache-2.0
+
+theme:
+  name: material
+  logo: pics/OpenDPDlogo.svg
+  favicon: pics/OpenDPDlogo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Get started:
+      - Installation: install.md
+      - What's new in V2.1: whats-new.md
+  - User guide:
+      - End-to-end training: training.md
+      - Datasets: datasets.md
+      - Examples: examples.md
+      - Reproducing published results: reproducing.md
+  - Benchmark: benchmark/index.md
+  - API reference: api.md
+  - Project:
+      - Testing and CI: testing.md
+      - About and citation: about.md
+      - FAQ: faq.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.snippets:
+      base_path:
+        - !relative $config_dir
+      check_paths: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: false
+            separate_signature: true
+            show_signature_annotations: true
+            merge_init_into_class: true
+            members_order: source
+
+hooks:
+  - docs/hooks/assets.py
+
+exclude_docs: |
+  hooks/
+  requirements.txt
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/lab-emi/OpenDPD
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/opendpd/
+    - icon: fontawesome/brands/youtube
+      link: https://youtu.be/n3765lm3QZI
+    - icon: material/web
+      link: https://www.tudemi.com
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn

@@ -53,7 +53,7 @@ def train_pa(
     seed: int = 0,
     plot: bool = False,
     plot_every: int = 1,
-    **kwargs
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """
     Train a Power Amplifier (PA) behavioral model.
@@ -145,7 +145,7 @@ def train_dpd(
     plot_every: int = 1,
     collect_delta_stats: bool = False,
     cuda_graph_training: bool = False,
-    **kwargs
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """
     Train a Digital Pre-Distortion (DPD) model.
@@ -235,7 +235,7 @@ def run_dpd(
     DPD_hidden_size: int = 15,
     accelerator: str = 'cpu',
     plot: bool = False,
-    **kwargs
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """
     Run the trained DPD model to generate pre-distorted signals.
@@ -298,7 +298,7 @@ def plot_dpd(
     DPD_backbone: str = 'tres_deltagru',
     DPD_hidden_size: int = 15,
     accelerator: str = 'cpu',
-    **kwargs
+    **kwargs: Any
 ) -> Dict[str, Any]:
     """
     Generate comparison plots: PA output without DPD vs with DPD.
@@ -411,7 +411,7 @@ def create_dataset(
     test_ratio: float = 0.2,
     dataset_format: str = 'single_csv',
     csv_filename: Optional[str] = None,
-    **spec_kwargs
+    **spec_kwargs: Any
 ) -> str:
     """
     Create a dataset in OpenDPD format from a single CSV file.
@@ -535,7 +535,7 @@ class OpenDPDTrainer:
         >>> trainer.evaluate()
     """
     
-    def __init__(self, dataset_name: Optional[str] = None, dataset_path: Optional[str] = None, **kwargs):
+    def __init__(self, dataset_name: Optional[str] = None, dataset_path: Optional[str] = None, **kwargs: Any):
         """
         Initialize the OpenDPD trainer.
         

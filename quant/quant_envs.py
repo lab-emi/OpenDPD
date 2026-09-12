@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import copy
+import re
 
 from .modules.gru import GRU as PYGRU
 from .modules.ops import Mul, Add, Sqrt, Pow
@@ -111,6 +112,33 @@ def recur_rpls_ops(args, model, op_type, rpls_op_type, *quantizers):
             recur_rpls_ops(args, module, op_type, rpls_op_type, *quantizers)
 
 
+_TORCH_GRU_PARAM = re.compile(r"^(?:(?P<prefix>.+)\.)?(?P<param>weight|bias)_(?P<gate>ih|hh)_l(?P<layer>\d+)$")
+
+
+def convert_gru_state_dict(state_dict):
+    """Rename ``torch.nn.GRU`` parameters to the names used by :class:`quant.modules.gru.GRU`.
+
+    ``torch.nn.GRU`` stores layer ``l`` as ``weight_ih_l{l}``, ``weight_hh_l{l}``, ``bias_ih_l{l}`` and
+    ``bias_hh_l{l}``; the cell-based GRU that the quantization environment substitutes for it stores the
+    same tensors as ``rnn_cell_list.{l}.x2h.weight``, ``rnn_cell_list.{l}.h2h.weight``,
+    ``rnn_cell_list.{l}.x2h.bias`` and ``rnn_cell_list.{l}.h2h.bias``. Both use the gate order
+    (reset, update, new) and the same update equations, so the tensors carry over unchanged.
+    Keys that do not belong to a ``torch.nn.GRU`` (already converted checkpoints, other layers) are
+    returned as they are, and a bidirectional GRU is not supported.
+    """
+    converted = {}
+    for key, value in state_dict.items():
+        match = _TORCH_GRU_PARAM.match(key)
+        if match is None:
+            converted[key] = value
+            continue
+        prefix = match.group('prefix')
+        linear = 'x2h' if match.group('gate') == 'ih' else 'h2h'
+        new_key = "rnn_cell_list.{}.{}.{}".format(match.group('layer'), linear, match.group('param'))
+        converted[prefix + '.' + new_key if prefix else new_key] = value
+    return converted
+
+
 def recur_rpls_gru(model):
     """ Recursively replace GRU module with the self-defined pytorch GRU module.
     Args:
@@ -171,11 +199,19 @@ class Base_GRUQuantEnv(object):
         self.q_model = self.create_quantized_model(copy.deepcopy(self.pygru_model))
         
     def load_model(self, model):
+        """Load ``args.pretrained_model`` into the cell-based GRU model.
+
+        The checkpoint may come from a float model whose recurrent layer is a ``torch.nn.GRU``
+        (the usual ``train_dpd`` output); its parameters are renamed with
+        :func:`convert_gru_state_dict` so that quantization-aware training fine-tunes the float
+        weights instead of starting from a random initialization.
+        """
         pretrained_model = self.args.pretrained_model
         use_pretrained = bool(pretrained_model)
         
         if use_pretrained:
-            model.load_state_dict(torch.load(pretrained_model))
+            state_dict = torch.load(pretrained_model, map_location='cpu')
+            model.load_state_dict(convert_gru_state_dict(state_dict))
             print("Load pretrained model from {}".format(pretrained_model))
         else:
             print("No pretrained model is loaded.")
