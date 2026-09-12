@@ -61,13 +61,16 @@ _NEEDS_METADATA = ("sample_rate_hz", "bandwidth_hz", "n_sub_ch", "nperseg")
 
 
 def _segments(iq: np.ndarray, nperseg: Optional[int]) -> np.ndarray:
-    arr = np.asarray(iq, dtype=np.float64)
+    # The legacy trainer scores its float32 tensors directly. Promoting them
+    # changes NMSE/FFT arithmetic even though the formula is unchanged; keep
+    # the caller's precision, including for the final padded segment.
+    arr = np.asarray(iq)
     if arr.ndim == 3:
         return arr
     if nperseg is None:
         return arr[None, ...]
     n = int(math.ceil(len(arr) / nperseg))
-    padded = np.zeros((n * nperseg, 2), dtype=np.float64)
+    padded = np.zeros((n * nperseg, 2), dtype=arr.dtype)
     padded[:len(arr)] = arr
     return padded.reshape(n, nperseg, 2)
 
