@@ -8,18 +8,18 @@
 
 ## 1. 已有基础与必须补齐的能力
 
-本次只读检查了本地代码和 GPU 宿主机，没有启动虚拟机、切换 GPU、购买资源或开放端口。
+下表的软件能力已对照 Studio 基线 `6d833969` 核查。宿主机条目来自原始规划时的只读检查记录，是历史快照；本文评审没有重新连接宿主机或执行 GPU 测试，部署前必须在 P0 阶段复核。本文未启动虚拟机、切换 GPU、购买资源或开放端口。
 
 | 项目 | 已确认的情况 | 实施影响 |
 |---|---|---|
-| 主仓库 | `<repository-root>`，当前代码版本字段为 `2.2.0.dev0`，工作区有未提交修改 | 实施前固定候选 commit，使用独立分支；既有验证镜像与当前 Studio 代码须重新对齐 |
+| 主仓库 | `<repository-root>`，软件基线 `6d833969`，代码版本字段为 `2.2.0.dev0` | 实施前固定候选 commit，使用独立分支；既有验证镜像与当前 Studio 代码须重新对齐 |
 | Studio API | `opendpd/server/app.py` 创建本地工作区、SQLite 和进程 supervisor；`security.py` 限制 loopback、同源与本地会话 | 新增云端入口与多用户权限，保留桌面模式边界 |
 | 前端 | `frontend/src/api/client.ts` 固定 `/api/v1`，使用同源 cookie | 增加本地/云端运行配置、跨 origin 会话和云端任务状态 |
 | 现有任务恢复 | `opendpd/runtime/supervisor.py` 将重启遗留任务标为 interrupted | 尚不能当作持久云队列或自动续训使用 |
 | 现有 checkpoint | 本次找到的 `modules/loggers.py` 保存模型 `state_dict` | 完整恢复还须保存优化器、调度器和随机状态，逐个训练流程验证 |
 | 宿主账户 | `opendpd-sandbox`，固定非特权 UID，home `/var/lib/opendpd-sandbox`，nologin | 延续专用服务账户，业务代理不使用宿主管理员账户 |
 | VM 实现 | systemd 直接运行 QEMU/KVM，本次未找到 virsh 命令 | 沿用现有 QEMU 管理方式，不按 libvirt 编写部署脚本 |
-| GPU VM | `opendpd-gpu-validation.service`，镜像 `/var/lib/opendpd-sandbox/gpu-validation.qcow2` | 当前 inactive、disabled；原镜像保留为验证基线 |
+| GPU VM | `opendpd-gpu-validation.service`，镜像 `/var/lib/opendpd-sandbox/gpu-validation.qcow2` | 规划时记录为 inactive、disabled；原镜像保留为验证基线 |
 | VM 规格与网络 | 4 vCPU、8 GiB RAM；QEMU `restrict=on`；SSH 仅映射宿主 `127.0.0.1:22223` | 目前不能直接主动访问云端；必须增加受限出站路径 |
 
 GPU 直通和容器计算沿用此前验证基础，本次没有重新运行 GPU 测试，也没有进入已关闭的 guest 核实其当前账户、目录和包版本。实施阶段先复核这些信息。
@@ -59,7 +59,7 @@ flowchart TB
   E -->|主动 HTTPS：下载输入、上传产物| O
 ```
 
-箭头表示主动发起的请求；云端经既有 HTTPS 请求返回任务，不向家庭网络建立新连接。Tailscale 仅作管理员访问通道，业务链路不依赖 Tailcat、Funnel 或反向隧道。
+箭头表示主动发起的请求；云端经既有 HTTPS 请求返回任务，不向家庭网络建立新连接。Tailscale 仅作管理员访问通道，业务任务通过前述 HTTPS 链路主动拉取。
 
 ## 3. 技术选型与代码布局
 
@@ -171,7 +171,9 @@ R2 签名 URL 是到期前可重复使用的访问凭证，并非一次性链接
 
 建议使用自有域名的两个子域，例如占位域名 `app.example.org` 和 `api.example.org`。前端可由 GitHub Pages 提供文件，仍使用自定义域名；这样与 API 同 site，降低跨站 cookie 的兼容问题。
 
-OAuth callback 在 API 域名处理；会话使用 API host-only、Secure、HttpOnly cookie，不设置宽泛 Domain。跨 origin 请求显式携带 credentials，API CORS 只允许确切前端 origin，写请求仍校验 CSRF 与 Origin，禁止通配符。CORS 不是身份认证。初版任务进度用有界轮询，避免依赖长期浏览器连接；事件 API 使用 cursor 支持重连。
+OAuth callback 在 API 域名的固定路径处理，禁用 callback 通配符；使用一次性的随机 `state` 和 PKCE `S256`，在后端验证并交换授权码。仅申请登录所需的最小身份信息权限，不申请仓库权限，OAuth token 不进入浏览器或计算容器。[GitHub OAuth 授权文档](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+
+会话使用 API host-only、Secure、HttpOnly cookie，不设置宽泛 Domain。跨 origin 请求显式携带 credentials，API CORS 只允许确切前端 origin，写请求仍校验 CSRF 与 Origin，禁止通配符。CORS 不是身份认证。初版任务进度用有界轮询，避免依赖长期浏览器连接；事件 API 使用 cursor 支持重连。
 
 前端本地模式继续使用原同源接口；云模式使用独立 API base，切换工作区路径操作为云数据集与产物 ID。Pages 项目路径、路由刷新、静态资产路径、OAuth 跳转与错误页均列入真实浏览器验收。源码、构建产物和前端环境变量中不放 secret。
 
@@ -220,6 +222,6 @@ P1–P3 可先完成协议和本地集成，云资源账户准备可与这些工
 
 沿用上一轮小规模预算：VPS 约 €94/年，域名 €15–20/年，对象存储与备份 €20–40/年，合计约 €130–160/年，不含人工、本地电费或高可用副本。价格与实际存量在采购时复核，费用随上传量、保留期和使用配额增长。[netcup 套餐](https://www.netcup.com/en/server/vps/vps-500-g12-iv-12m)、[R2 定价](https://developers.cloudflare.com/r2/pricing/)
 
-单 VPS 与单台本地 GPU 都是单点。云端可全天接收有界队列，不代表本地 GPU 全天可用。GPU 宿主机 的 GPU 直通会占用该 GPU；公开使用前必须明确专用服务时段或长期进入服务模式，页面展示在线/离线与排队情况。先验收来电重启、网络重连、磁盘空间与稳定负载，再把当前验证 VM 改为生产常驻服务。
+单 VPS 与单台本地 GPU 都是单点。云端可全天接收有界队列，不代表本地 GPU 全天可用。GPU 宿主机的 GPU 直通会占用该 GPU；公开使用前必须明确专用服务时段或长期进入服务模式，页面展示在线/离线与排队情况。先验收来电重启、网络重连、磁盘空间与稳定负载，再把当前验证 VM 改为生产常驻服务。
 
 正式实施时需要落实：VPS 账户与计费、域名/DNS、OAuth 应用归属、R2 账户、GPU 可用时间、试运行配额。这些都是部署输入；本计划不把尚未创建的资源或尚未通过的测试视为已完成。
