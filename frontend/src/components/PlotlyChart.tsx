@@ -17,6 +17,7 @@ import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { languageInfo, message, phaseLabel, t, useLanguage } from '@/i18n'
 import { plotLayoutFor, useStudioColors } from '@/theme'
@@ -109,6 +110,7 @@ function traceName(name: string | undefined) {
 function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, onRendered, viewKey = 0, memory, active = true, descriptionId, recovery }: PlotlyChartProps & { memory: RefObject<ViewMemory>; active?: boolean; descriptionId: string; recovery: PlotRecoverySettings }) {
   const language = useLanguage()
   const colors = useStudioColors()
+  const coarsePointer = useMediaQuery('(pointer: coarse)')
   const ref = useRef<PlotElement>(null)
   const revision = useRef(0)
   const rendering = useRef<Promise<unknown>>(Promise.resolve())
@@ -152,6 +154,8 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
         try {
           await Plotly.react(el, renderTraces, {
             ...plotLayoutBase, ...layout, height, autosize: true,
+            // Reserve separate rows for the mode bar and legend on a phone.
+            ...(coarsePointer ? { margin: { ...plotLayoutBase.margin, t: 64 }, legend: { ...plotLayoutBase.legend, y: 1 } } : {}),
             dragmode: view?.dragmode ?? 'pan',
             uirevision: String(viewKey),
             // Recompute bounds on layout-only updates too (for example a language
@@ -206,7 +210,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
       const stopped = inputs?.dispose()
       if (stopped) rendering.current = Promise.all([rendering.current, stopped])
     }
-  }, [traces, layout, height, active, viewKey, memory, useSVG, recovery, language, colors])
+  }, [traces, layout, height, active, viewKey, memory, useSVG, recovery, language, colors, coarsePointer])
   useEffect(() => {
     const el = ref.current
     return () => {
@@ -272,7 +276,7 @@ export function PlotlyChart(props: PlotlyChartProps) {
             <IconButton aria-label={t('chart.close')} sx={touchTarget} onClick={close}><CloseIcon /></IconButton>
           </DialogTitle>
           <DialogContent sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', p: 1 }}>
-            <Typography id={`${id}-large-controls`} variant="caption" color="text.secondary" sx={{ px: 1, flexShrink: 0 }}>{t('chart.controls.summary')}</Typography>
+            <Typography id={`${id}-large-controls`} variant="caption" color="text.secondary" sx={{ px: 1, flexShrink: 0, '@media (pointer: coarse)': { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' } }}>{t('chart.controls.summary')}</Typography>
             <Box sx={{ flex: 1, minHeight: 0 }}><Plot {...props} height={undefined} memory={memory} descriptionId={`${id}-large-controls`} recovery={recovery} /></Box>
           </DialogContent>
         </Dialog>

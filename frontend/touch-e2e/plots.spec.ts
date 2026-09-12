@@ -67,6 +67,9 @@ test('two-finger zoom follows its midpoint; touch controls and full-screen fit a
   await expect(dialog.getByTestId('touch-plot-controls').getByRole('button', { name: 'Reset axes', exact: true })).toBeVisible()
   expect((await dialog.boundingBox())!.x).toBeCloseTo(0)
   expect((await dialog.boundingBox())!.y).toBeCloseTo(0)
+  const legend = (await dialog.locator('.legend').boundingBox())!
+  const modebar = (await dialog.locator('.modebar').boundingBox())!
+  expect(legend.y).toBeGreaterThanOrEqual(modebar.y + modebar.height)
   await dialog.getByRole('button', { name: 'Close enlarged chart' }).click()
   if (cdp) {
     await area.scrollIntoViewIfNeeded()
