@@ -52,7 +52,9 @@ def test_no_auth_and_no_origin_bypass(public):
 def test_preflight_and_body_limits(public):
     client, _, _ = public
     headers = {"Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization,content-type"}
-    assert client.options("/api/v1/runs", headers=headers).status_code == 204
+    response = client.options("/api/v1/runs", headers=headers)
+    assert response.status_code == 204
+    assert response.content == b""
     assert client.options("/api/v1/datasets/upload", headers=headers).status_code == 403
     assert client.options("/api/v1/runs", headers={**headers, "Access-Control-Request-Headers": "x-forwarded-for"}).status_code == 403
     auth = new_session(client)

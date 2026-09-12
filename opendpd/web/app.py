@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 
 from opendpd import __version__
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE
@@ -113,7 +113,7 @@ class PublicBoundary:
             requested_headers = {h.strip().lower() for h in headers.get("access-control-request-headers", "").split(",") if h.strip()}
             if not requested_headers <= {"authorization", "content-type", "accept"}:
                 reject(403, "headers_not_allowed", "unsupported cross-origin headers")
-            await JSONResponse(None, status_code=204, headers={"Access-Control-Allow-Methods": "GET, POST, PUT",
+            await Response(status_code=204, headers={"Access-Control-Allow-Methods": "GET, POST, PUT",
                                "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept",
                                "Access-Control-Max-Age": "600"})(scope, receive, send)
             return

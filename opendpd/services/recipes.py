@@ -157,7 +157,8 @@ def instantiate(recipe_id: str, dataset_id: str, *, pa_run_id: Optional[str] = N
                 dpd_run_id: Optional[str] = None, device: str = "cpu", seed: Optional[int] = None,
                 name: Optional[str] = None) -> ExperimentConfig:
     recipe = get_recipe(recipe_id)
-    training = recipe.training if seed is None else recipe.training.model_copy(update={"seed": seed})
+    # Experiment edits must not mutate the shared recipe or later sessions.
+    training = recipe.training.model_copy(deep=True, update={} if seed is None else {"seed": seed})
     evidence = EvidenceType.pa_modeling if recipe.task == TaskType.train_pa else EvidenceType.dpd_surrogate
     pa_ref = PAReference(run_id=pa_run_id) if pa_run_id else None
     dpd_ref = DPDReference(run_id=dpd_run_id) if dpd_run_id else None
@@ -165,7 +166,7 @@ def instantiate(recipe_id: str, dataset_id: str, *, pa_run_id: Optional[str] = N
         raise ValueError(f"recipe '{recipe_id}' needs pa_run_id (a succeeded PA run on '{dataset_id}')")
     return ExperimentConfig(
         task=recipe.task, recipe_id=recipe.recipe_id, name=name or recipe.title,
-        dataset=DatasetRef(id=dataset_id), model=recipe.model, training=training,
+        dataset=DatasetRef(id=dataset_id), model=recipe.model.model_copy(deep=True), training=training,
         evaluation=EvaluationConfig(evidence_type=evidence),
         execution=ExecutionConfig(device=device), pa_reference=pa_ref, dpd_reference=dpd_ref,
         notes=f"{recipe.purpose}: {recipe.limits}",
