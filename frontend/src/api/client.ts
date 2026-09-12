@@ -33,6 +33,26 @@ export class ApiError extends Error {
   }
 }
 
+/** Fetch cannot distinguish DNS, offline, TLS and blocked cross-origin requests. */
+export class ApiConnectionError extends Error {
+  readonly origin: string
+
+  constructor(origin: string) {
+    super(`Cannot connect to the compute server at ${origin}`)
+    this.name = 'ApiConnectionError'
+    this.origin = origin
+  }
+}
+
+async function fetchApi(input: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init)
+  } catch (error) {
+    if (WEB_MODE && error instanceof TypeError) throw new ApiConnectionError(API_ORIGIN)
+    throw error
+  }
+}
+
 let csrfToken: string | null = null
 
 function bearerToken(): string | null {
@@ -82,7 +102,7 @@ async function request<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: u
   const headers: Record<string, string> = { Accept: 'application/json', ...authorizationHeaders() }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (!WEB_MODE && method !== 'GET' && csrfToken) headers[CSRF_HEADER] = csrfToken
-  const response = await fetch(`${API}${path}`, {
+  const response = await fetchApi(`${API}${path}`, {
     method,
     headers,
     redirect: 'error',
@@ -138,7 +158,7 @@ export async function downloadFile(href: string, filename?: string): Promise<voi
   const url = new URL(href, WEB_MODE ? API_ORIGIN : window.location.origin)
   const expected = WEB_MODE ? API_ORIGIN : window.location.origin
   if (url.origin !== expected || !url.pathname.startsWith('/api/v1/')) throw new Error('Invalid artifact URL')
-  const response = await fetch(url.href, { headers: authorizationHeaders(), credentials: WEB_MODE ? 'omit' : 'same-origin', redirect: 'error' })
+  const response = await fetchApi(url.href, { headers: authorizationHeaders(), credentials: WEB_MODE ? 'omit' : 'same-origin', redirect: 'error' })
   if (!response.ok) { expired(response); throw await parseError(response) }
   const disposition = response.headers.get('content-disposition') ?? ''
   const suggested = disposition.match(/filename="([^"\r\n]+)"/)?.[1]

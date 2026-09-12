@@ -6,7 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import type { ReactNode } from 'react'
-import { ApiError } from '@/api/client'
+import { ApiConnectionError, ApiError } from '@/api/client'
 import { formatTime, message as localize, t } from '@/i18n'
 
 /** The four non-happy states every list/detail must render (UX spec §2). */
@@ -37,6 +37,7 @@ export function EmptyState({ title = t('state.empty.title'), body, action }: { t
 }
 
 function describeError(error: unknown): { message: string; hint: string | null } {
+  if (error instanceof ApiConnectionError) return { message: t('web.connection.body', { origin: error.origin }), hint: t('web.connection.hint') }
   if (error instanceof ApiError) return { message: `${localize(error.message)} (${error.code})`, hint: error.hint ? localize(error.hint) : null }
   if (error instanceof Error) return { message: localize(error.message), hint: null }
   return { message: localize(String(error)), hint: null }
@@ -56,7 +57,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
         )
       }
     >
-      <AlertTitle>{t('state.error.title')}</AlertTitle>
+      <AlertTitle>{t(error instanceof ApiConnectionError ? 'web.connection.title' : 'state.error.title')}</AlertTitle>
       {message}
       {hint && <Typography variant="body2">{hint}</Typography>}
     </Alert>

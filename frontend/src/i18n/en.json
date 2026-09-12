@@ -753,5 +753,8 @@
   "web.description": "Explore built-in datasets and run analysis, neural network training and inference. Computation runs on our isolated server.",
   "web.temporary": "This is a temporary workspace. Download results before they expire, within 24 hours. Uploading datasets and code is not available.",
   "web.start": "Start a temporary session",
-  "web.retention": "Temporary workspace · download your results before {date}. Files are deleted automatically."
+  "web.retention": "Temporary workspace · download your results before {date}. Files are deleted automatically.",
+  "web.connection.title": "Cannot connect to the compute server",
+  "web.connection.body": "The browser could not reach {origin}.",
+  "web.connection.hint": "Check your network connection and retry. If the domain was recently moved, your network may still have old DNS records; try another network or a trusted DNS resolver."
 }

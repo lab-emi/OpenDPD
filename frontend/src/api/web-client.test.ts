@@ -46,3 +46,21 @@ test('web uploads are refused before reading or transmitting a file', async () =
   await expect(api.upload('/datasets/upload', new FormData())).rejects.toMatchObject({ status: 403 })
   expect(fetcher).not.toHaveBeenCalled()
 })
+
+test('a DNS or transport failure is recoverable without creating a session or retrying a POST automatically', async () => {
+  const fetcher = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: true, access_token: 'recovered' }), { status: 201 }))
+  vi.stubGlobal('fetch', fetcher)
+  const { createWebSession, ApiConnectionError } = await import('./client')
+  await expect(createWebSession()).rejects.toBeInstanceOf(ApiConnectionError)
+  expect(fetcher).toHaveBeenCalledTimes(1)
+  expect(sessionStorage.length).toBe(0)
+  expect(await createWebSession()).toMatchObject({ authenticated: true })
+  expect(sessionStorage.getItem('opendpd-web-session:https://api.opendpd.com')).toBe('recovered')
+})
+
+test('HTTP quota responses remain distinguishable from a connection failure', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"error":{"code":"rate_limited","message":"Try later"}}', { status: 429 })))
+  const { createWebSession } = await import('./client')
+  await expect(createWebSession()).rejects.toMatchObject({ status: 429, code: 'rate_limited' })
+})

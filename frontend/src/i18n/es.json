@@ -753,5 +753,8 @@
   "web.description": "Explora los conjuntos de datos integrados y ejecuta análisis, entrenamiento neuronal e inferencia en nuestro servidor aislado.",
   "web.temporary": "Este espacio es temporal. Descarga los resultados antes de que caduquen, en un máximo de 24 horas. No se pueden subir datos ni código.",
   "web.start": "Iniciar sesión temporal",
-  "web.retention": "Espacio temporal · descarga los resultados antes del {date}. Los archivos se eliminan automáticamente."
+  "web.retention": "Espacio temporal · descarga los resultados antes del {date}. Los archivos se eliminan automáticamente.",
+  "web.connection.title": "No se puede conectar con el servidor de cálculo",
+  "web.connection.body": "El navegador no pudo acceder a {origin}.",
+  "web.connection.hint": "Comprueba tu conexión de red y vuelve a intentarlo. Si el dominio se ha migrado recientemente, tu red podría conservar registros DNS antiguos; prueba otra red o un servicio DNS de confianza."
 }

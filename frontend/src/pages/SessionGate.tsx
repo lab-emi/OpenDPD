@@ -50,7 +50,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
           qc.setQueryData(['session'], info)
         })
           .catch(setWebError).finally(() => setBusy(false))
-      }}>{t('web.start')}</Button>
+      }}>{t(webError != null ? 'state.error.retry' : 'web.start')}</Button>
     </Stack>
   </Paper>
 

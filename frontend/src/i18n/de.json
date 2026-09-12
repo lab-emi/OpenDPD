@@ -753,5 +753,8 @@
   "web.description": "Analysieren Sie integrierte Datensätze und führen Sie neuronales Training und Inferenz auf unserem isolierten Server aus.",
   "web.temporary": "Dieser Arbeitsbereich ist temporär. Laden Sie Ergebnisse vor Ablauf innerhalb von 24 Stunden herunter. Datensatz- und Code-Uploads sind nicht verfügbar.",
   "web.start": "Temporäre Sitzung starten",
-  "web.retention": "Temporärer Arbeitsbereich · Ergebnisse vor {date} herunterladen. Dateien werden automatisch gelöscht."
+  "web.retention": "Temporärer Arbeitsbereich · Ergebnisse vor {date} herunterladen. Dateien werden automatisch gelöscht.",
+  "web.connection.title": "Keine Verbindung zum Rechenserver",
+  "web.connection.body": "Der Browser konnte {origin} nicht erreichen.",
+  "web.connection.hint": "Prüfen Sie Ihre Netzwerkverbindung und versuchen Sie es erneut. Nach einem kürzlichen Domainumzug kann Ihr Netzwerk noch alte DNS-Einträge verwenden; versuchen Sie ein anderes Netzwerk oder einen vertrauenswürdigen DNS-Resolver."
 }

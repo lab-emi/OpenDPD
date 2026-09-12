@@ -204,6 +204,40 @@ timer. A failed cleanup disables session admission and makes health return
 timer running so data is still purged. Source updates require restarting the
 guest API, which intentionally invalidates all existing sessions.
 
+### DNS migration and connection failures
+
+A healthy Tunnel does not prove that visitors can resolve the API hostname.
+After a nameserver change, some recursive resolvers can still query the old
+provider and cache `NXDOMAIN` for an API record created only at Cloudflare.
+Compare the client's configured resolver, public resolvers and both providers:
+
+```bash
+dig api.opendpd.com A
+dig @1.1.1.1 api.opendpd.com A
+dig @8.8.8.8 api.opendpd.com A
+dig @ali.ns.cloudflare.com api.opendpd.com A
+dig @ns01.squarespacedns.com api.opendpd.com A
+```
+
+Prepare the required records at both providers before changing nameservers
+where possible. If migration has already started, retain the old zone during
+the transition and update it where the old provider permits this. Do not
+switch nameservers back just to enable editing. Negative answers already
+cached by routers or recursive resolvers remain until their TTL expires or
+that resolver's administrator clears them; flushing only the browser or OS
+cache does not clear an upstream cache.
+
+An `/etc/hosts` override or `curl --resolve` can separate DNS failures from
+TLS/API failures, but does not validate public DNS. Repeat the browser session
+test with the normal resolver after removing any diagnostic override. A
+successful lookup immediately after removal can still be a cached positive
+answer; also check the configured upstream resolver directly.
+
+The frontend gives a localized connection error and an explicit Retry action.
+It does not automatically retry session creation or other POST requests, or
+send a bearer token to an alternate origin. Browser fetch errors cannot by
+themselves distinguish DNS, offline, TLS and CORS failures.
+
 ## Validation evidence
 
 Local validation on 2026-09-12 passed 279 Python unit tests (1 skipped),

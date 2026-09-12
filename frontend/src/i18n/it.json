@@ -753,5 +753,8 @@
   "web.description": "Esplora i dataset integrati ed esegui analisi, addestramento neurale e inferenza sul nostro server isolato.",
   "web.temporary": "Questo spazio è temporaneo. Scarica i risultati prima della scadenza, entro 24 ore. Non è possibile caricare dataset o codice.",
   "web.start": "Avvia una sessione temporanea",
-  "web.retention": "Spazio temporaneo · scarica i risultati prima di {date}. I file vengono eliminati automaticamente."
+  "web.retention": "Spazio temporaneo · scarica i risultati prima di {date}. I file vengono eliminati automaticamente.",
+  "web.connection.title": "Impossibile connettersi al server di calcolo",
+  "web.connection.body": "Il browser non riesce a raggiungere {origin}.",
+  "web.connection.hint": "Controlla la connessione di rete e riprova. Se il dominio è stato trasferito di recente, la rete potrebbe conservare vecchi record DNS; prova un’altra rete o un servizio DNS affidabile."
 }

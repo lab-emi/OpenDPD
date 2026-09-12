@@ -753,5 +753,8 @@
   "web.description": "Explorez les jeux de données intégrés et lancez des analyses, des entraînements neuronaux et des inférences sur notre serveur isolé.",
   "web.temporary": "Cet espace est temporaire. Téléchargez vos résultats avant leur expiration, dans les 24 heures. Le téléversement de données et de code est indisponible.",
   "web.start": "Démarrer une session temporaire",
-  "web.retention": "Espace temporaire · téléchargez vos résultats avant {date}. Les fichiers sont supprimés automatiquement."
+  "web.retention": "Espace temporaire · téléchargez vos résultats avant {date}. Les fichiers sont supprimés automatiquement.",
+  "web.connection.title": "Connexion au serveur de calcul impossible",
+  "web.connection.body": "Le navigateur ne peut pas joindre {origin}.",
+  "web.connection.hint": "Vérifiez votre connexion réseau et réessayez. Si le domaine a été migré récemment, votre réseau peut encore conserver des enregistrements DNS obsolètes ; essayez un autre réseau ou un résolveur DNS de confiance."
 }

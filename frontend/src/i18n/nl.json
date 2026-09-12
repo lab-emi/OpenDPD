@@ -753,5 +753,8 @@
   "web.description": "Verken ingebouwde datasets en voer analyses, neurale training en inferentie uit op onze geïsoleerde server.",
   "web.temporary": "Deze werkruimte is tijdelijk. Download resultaten vóór ze verlopen, binnen 24 uur. Uploads van datasets en code zijn niet beschikbaar.",
   "web.start": "Tijdelijke sessie starten",
-  "web.retention": "Tijdelijke werkruimte · download resultaten vóór {date}. Bestanden worden automatisch verwijderd."
+  "web.retention": "Tijdelijke werkruimte · download resultaten vóór {date}. Bestanden worden automatisch verwijderd.",
+  "web.connection.title": "Geen verbinding met de rekenserver",
+  "web.connection.body": "De browser kon {origin} niet bereiken.",
+  "web.connection.hint": "Controleer je netwerkverbinding en probeer het opnieuw. Als het domein onlangs is verhuisd, kan je netwerk nog oude DNS-records hebben; probeer een ander netwerk of een vertrouwde DNS-resolver."
 }

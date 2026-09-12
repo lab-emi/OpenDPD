@@ -753,5 +753,8 @@
   "web.description": "使用内置数据集进行分析、神经网络训练和推理。计算在隔离服务器上运行。",
   "web.temporary": "这是临时工作区，文件将在 24 小时内删除，请及时下载结果。目前不支持上传数据集和代码。",
   "web.start": "开始临时会话",
-  "web.retention": "临时工作区 · 请在 {date} 前下载结果，文件将自动删除。"
+  "web.retention": "临时工作区 · 请在 {date} 前下载结果，文件将自动删除。",
+  "web.connection.title": "无法连接计算服务器",
+  "web.connection.body": "浏览器无法访问 {origin}。",
+  "web.connection.hint": "请检查网络连接后重试。如果域名刚刚迁移，当前网络可能仍缓存旧 DNS 记录；可尝试其他网络或可信的 DNS 解析服务。"
 }
