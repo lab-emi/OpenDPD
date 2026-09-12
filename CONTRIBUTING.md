@@ -1,8 +1,8 @@
 # Contributing to OpenDPD
 
 Thanks for helping. This guide covers the development workflow for the core
-library and OpenDPD Studio (the local browser workbench). Rules for coding
-agents live in [AGENTS.md](AGENTS.md); both humans and agents follow them.
+library and OpenDPD Studio (the local browser workbench). Local agent instruction
+files (`AGENTS.md` and `CLAUDE.md`) are ignored and must not be committed.
 
 ## Setup
 
@@ -42,7 +42,7 @@ documentation and evidence land together. The PR template asks for:
 2. scope and non-goals,
 3. how it was verified (commands, environment, artifacts),
 4. anything left unfinished,
-5. whether a protected path (see AGENTS.md §3) is touched.
+5. whether a protected scientific path (listed below) is touched.
 
 Keep unrelated formatting, dependency swaps and seed changes out of feature PRs.
 Pure refactors must show unchanged behaviour on frozen inputs.
@@ -51,7 +51,11 @@ Pure refactors must show unchanged behaviour on frozen inputs.
 
 Metric definitions, data splits, golden references, acceptance thresholds and
 published benchmark results require a separate PR with the
-`science-review-approved` label. See AGENTS.md §3.
+`science-review-approved` label. Protected paths are `opendpd/core/metrics/`,
+`opendpd/core/splits.py`, `tests/golden/`, `benchmark/`, `docs/protocols/`,
+`.github/CODEOWNERS` and `.github/workflows/protected-paths.yml`.
+Never relax a tolerance, change a seed set or checkpoint-selection metric, or
+replace expected values to make a failing test pass.
 
 ## Adding models, metric profiles and documentation
 

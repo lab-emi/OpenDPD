@@ -17,8 +17,9 @@ frontend unit execution is bounded to two workers. Permissions are unchanged.
 There are 30 protected-path additions relative to main: the metric profiles and
 comparison rules, split protocol, frozen metric/checkpoint references, benchmark
 regression drafts, scientific protocol documents, CODEOWNERS and its guard.
-Their content is identical to `d3e7c5e`; this integration does not edit them.
-They require a separate scientific-review approval before merging.
+Their initial content was identical to `d3e7c5e`. The delegated scientific
+review below corrects the legacy wrapper's input precision; all other protected
+content, including frozen references and protocol thresholds, stays unchanged.
 
 ## Scientific scope for maintainer review
 
@@ -59,3 +60,43 @@ software references, public API compatibility and main's quantization regression
 The frontend production build passed. Full CPU regression and the Python version
 matrix are recorded in the PR CI runs; these focused checks do not replace them.
 Physical GPU/RF paths and Windows native behavior are not verified here.
+
+## Delegated scientific review and correction
+
+On 2026-09-12 the maintainer explicitly authorized Codex to perform the code and
+scientific review, repair the blockers and merge the complete Studio into main.
+This is a delegated software/scientific assessment, not an independent laboratory
+or standards-conformance certification.
+
+The Linux Python 3.10–3.13 matrix at `3957289` exposed a mismatch between the
+Studio legacy profile and the legacy CLI's best-checkpoint log. Studio promoted
+float32 neural-network outputs to float64 before calling `utils.metrics`; the
+trainer scores float32 directly. The difference exceeded the existing `1e-6` dB
+test tolerance. The correction preserves the caller's dtype, including the
+zero-padded final segment, while retaining the original functions, segment
+boundaries, aggregation and metadata. It restores the documented compatibility
+contract of `legacy-opendpd-v1`; it does not introduce a new metric definition.
+
+Added direct-call tests compare all five metrics exactly for float32 and float64,
+with presegmented inputs and with a partial final segment. Existing seeds,
+expected values, tolerances, goldens and checkpoint-selection rules are untouched.
+
+```sh
+python -m pytest tests/golden tests/unit/test_metrics_registry.py \
+  tests/integration/test_cli_run.py -q
+```
+
+Result on the same macOS/Python 3.13 CPU environment: **38 passed in 11.28 s**,
+including real PA/DPD execution and the previously failing CLI parity assertion.
+Linux CI must pass on the corrected commit before merge.
+
+Review conclusion: the legacy precision fix is appropriate for integration.
+The separate general profile retains pooled arithmetic and analytic validation;
+the split protocol retains raw-before-frame boundaries and its guards. OFDM
+remains explicitly pending external cross-validation and hidden in the GUI.
+Published reference values and benchmark drafts are unchanged; this review does
+not promote draft baselines, physical hardware claims or RF control.
+
+Local instruction files are ignored at every directory depth, case-insensitively.
+The tracked AGENTS.md copy was removed from the index while retained locally;
+CONTRIBUTING.md now states the public scientific-path policy directly.

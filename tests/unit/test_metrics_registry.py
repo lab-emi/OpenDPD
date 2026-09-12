@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from opendpd.core.metrics import DEFAULT_PROFILE_ID, PROFILES, comparison_key, evaluate, get_profile, incompatibilities
@@ -26,6 +27,41 @@ def test_legacy_profile_through_the_registry_reproduces_the_frozen_goldens(name)
     for metric, expected in GOLDEN["profiles"][name]["expected"].items():
         if metric in values:
             assert values[metric] == pytest.approx(expected, rel=1e-7, abs=1e-7), metric
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("flat_with_tail", [False, True])
+def test_legacy_registry_preserves_the_original_trainers_precision(dtype, flat_with_tail):
+    """The wrapper must match a direct legacy call, including float32 and padding.
+
+    Goldens exercise float64; real neural-network outputs use float32. Compare
+    every metric on the same samples so a precision conversion cannot hide
+    behind a numerical tolerance or differences between training runs.
+    """
+    from utils import metrics as legacy
+
+    cfg = GOLDEN["profiles"]["dpa_200mhz"]["config"]
+    prediction, reference, _ = goldens.stimulus(cfg)
+    prediction, reference = prediction.astype(dtype), reference.astype(dtype)
+    nperseg = cfg["nperseg"]
+    if flat_with_tail:
+        prediction, reference = prediction.reshape(-1, 2)[:-23], reference.reshape(-1, 2)[:-23]
+        direct_prediction = np.pad(prediction, ((0, 23), (0, 0))).reshape(-1, nperseg, 2)
+        direct_reference = np.pad(reference, ((0, 23), (0, 0))).reshape(-1, nperseg, 2)
+    else:
+        direct_prediction, direct_reference = prediction, reference
+    left, right = legacy.ACLR(direct_prediction, fs=cfg["fs"], nperseg=nperseg,
+                              bw_main_ch=cfg["bw_main_ch"], n_sub_ch=cfg["n_sub_ch"])
+    expected = {
+        "NMSE": float(legacy.NMSE(direct_prediction, direct_reference)),
+        "EVM": float(legacy.EVM(direct_prediction, direct_reference, sample_rate=cfg["fs"],
+                                bw_main_ch=cfg["bw_main_ch"], n_sub_ch=cfg["n_sub_ch"], nperseg=nperseg)),
+        "ACLR_L": float(left), "ACLR_R": float(right), "ACLR_AVG": float((left + right) / 2),
+    }
+    signal = SignalSpec(sample_rate_hz=cfg["fs"], bandwidth_hz=cfg["bw_main_ch"],
+                        n_sub_ch=cfg["n_sub_ch"], nperseg=nperseg)
+    actual = {m.name: m.value for m in evaluate("legacy-opendpd-v1", prediction, reference, signal)}
+    assert actual == expected
 
 
 def test_profiles_are_well_formed_and_the_default_is_the_frozen_one():

@@ -59,6 +59,9 @@ datasets/**/data/*.mat
 !datasets/**/data/sample*
 
 # IDE specific files
+# Local agent instructions (case-insensitive names, at any directory depth)
+[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
+[Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd]
 .idea/
 *.sublime-project
 *.sublime-workspace
