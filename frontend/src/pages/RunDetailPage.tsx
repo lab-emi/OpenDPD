@@ -1,3 +1,4 @@
+import { DownloadLink } from '@/components/DownloadLink'
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
 import Box from '@mui/material/Box'
@@ -409,9 +410,9 @@ function ArtifactsTab({ runId }: { runId: string }) {
               </TableCell>
               <TableCell align="right">{a.file.size_bytes ?? t('common.na')}</TableCell>
               <TableCell>
-                <Link href={artifactUrl(runId, a.artifact_id)} download>
+                <DownloadLink href={artifactUrl(runId, a.artifact_id)} download>
                   {t('run.artifacts.download')}
-                </Link>
+                </DownloadLink>
               </TableCell>
             </TableRow>
           ))}
@@ -431,9 +432,9 @@ function ConfigTab({ runId, run }: { runId: string; run: RunView }) {
         {t('run.config.sha')}: <code>{run.config_sha256}</code>
       </Typography>
       <Stack direction="row" spacing={1}>
-        <Button variant="outlined" size="small" component="a" href={artifactUrl(runId, 'config-resolved')} download={`${runId}.config.json`}>
+        <DownloadLink button variant="outlined" size="small"  href={artifactUrl(runId, 'config-resolved')} download={`${runId}.config.json`}>
           {t('run.config.download')}
-        </Button>
+        </DownloadLink>
         <Button variant="contained" size="small" component={RouterLink} to={`/experiments/new?from=${encodeURIComponent(runId)}`}>
           {t('run.config.rerun')}
         </Button>

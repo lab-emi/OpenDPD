@@ -59,12 +59,14 @@ class _Active:
     killed: bool = False
     partial: str = ""
     started_at: datetime = field(default_factory=_now)
+    owns_dispatch_slot: bool = False
 
 
 class Supervisor:
     def __init__(self, workspace: Workspace, store: RunStore, *, max_per_device: int = 1,
                  poll_interval: float = 0.25, cancel_grace: float = 30.0, heartbeat_timeout: float = 60.0,
-                 worker_env: Optional[Dict[str, str]] = None):
+                 worker_env: Optional[Dict[str, str]] = None, dispatch_slots=None,
+                 max_runtime_seconds: Optional[float] = None, inherit_worker_env: bool = True):
         self.ws = workspace
         self.store = store
         self.max_per_device = max_per_device
@@ -72,6 +74,9 @@ class Supervisor:
         self.cancel_grace = cancel_grace
         self.heartbeat_timeout = timedelta(seconds=heartbeat_timeout)
         self.worker_env = worker_env or {}
+        self.dispatch_slots = dispatch_slots
+        self.max_runtime_seconds = max_runtime_seconds
+        self.inherit_worker_env = inherit_worker_env
         self._active: Dict[str, _Active] = {}
         self._lock = threading.RLock()
         self._stop = threading.Event()
@@ -223,6 +228,9 @@ class Supervisor:
                     self._finalize(a)
                     del self._active[a.run_id]
                     continue
+                if (self.max_runtime_seconds is not None and a.cancel_requested_at is None
+                        and (_now() - a.started_at).total_seconds() >= self.max_runtime_seconds):
+                    self.cancel(a.run_id)
                 if a.cancel_requested_at and not a.killed:
                     waited = (_now() - a.cancel_requested_at).total_seconds()
                     if waited > self.cancel_grace:
@@ -240,7 +248,16 @@ class Supervisor:
             key = self._device_key(record)
             if busy.get(key, 0) >= self.max_per_device:
                 continue
-            self._spawn(record)
+            if self.dispatch_slots is not None and not self.dispatch_slots.acquire(blocking=False):
+                continue
+            try:
+                self._spawn(record)
+            finally:
+                if self.dispatch_slots is not None:
+                    if record.run_id in self._active:
+                        self._active[record.run_id].owns_dispatch_slot = True
+                    else:
+                        self.dispatch_slots.release()
             busy[key] = busy.get(key, 0) + 1
 
     @staticmethod
@@ -252,7 +269,7 @@ class Supervisor:
         (run_dir / "logs").mkdir(exist_ok=True)
         log_path = run_dir / "logs" / "worker.log"
         log_file = open(log_path, "ab", buffering=0)
-        env = dict(os.environ)
+        env = dict(os.environ) if self.inherit_worker_env else {"PATH": os.defpath, "LANG": "C.UTF-8"}
         env.update({"MPLBACKEND": "Agg", "TQDM_DISABLE": "1", "PYTHONUNBUFFERED": "1", "KMP_DUPLICATE_LIB_OK": "TRUE"})
         env.update(self.worker_env)
         creation = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
@@ -342,6 +359,9 @@ class Supervisor:
     # -- finalisation ------------------------------------------------------------------
     def _finalize(self, active: _Active, shutdown: bool = False) -> None:
         run_id = active.run_id
+        if active.owns_dispatch_slot:
+            self.dispatch_slots.release()
+            active.owns_dispatch_slot = False
         try:
             active.log_file.close()
         except OSError:

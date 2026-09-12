@@ -35,6 +35,7 @@ ENV/
 *.env.*
 # Only placeholder templates are safe to commit; never put real values in them.
 !.env.example
+!frontend/.env.web.example
 !.env.sample
 !.env.template
 !*.env.example

@@ -29,13 +29,30 @@ jobs:
           cache-dependency-path: docs/requirements.txt
       - run: pip install -r docs/requirements.txt
       - run: mkdocs build --strict
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build the public Studio (static frontend only)
+        working-directory: frontend
+        env:
+          VITE_STUDIO_MODE: web
+          VITE_API_ORIGIN: ${{ vars.STUDIO_API_ORIGIN || 'https://api.opendpd.com' }}
+          VITE_BASE_PATH: ./
+        run: npm ci && npm run build
+      - name: Include Studio alongside documentation
+        run: |
+          mkdir -p site/studio
+          cp -a frontend/dist/. site/studio/
+          touch site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
     name: Deploy to GitHub Pages
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:

@@ -56,14 +56,14 @@ def static_status(static_dir: Path = STATIC_DIR) -> dict:
 
 def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, static_dir: Path = STATIC_DIR,
                supervisor_kwargs: Optional[dict] = None, shutdown_timeout: float = 10.0,
-               allow_custom_datasets: bool = False) -> FastAPI:
+               allow_custom_datasets: bool = False, supervisor_factory=Supervisor) -> FastAPI:
     sessions = SessionStore(bootstrap_token)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         ws = Workspace.open_or_create(Path(workspace_root))
         store = RunStore(ws.root / "metadata.sqlite")
-        supervisor = Supervisor(ws, store, **(supervisor_kwargs or {}))
+        supervisor = supervisor_factory(ws, store, **(supervisor_kwargs or {}))
         supervisor.start()
         app.state.ws, app.state.store, app.state.supervisor = ws, store, supervisor
         try:

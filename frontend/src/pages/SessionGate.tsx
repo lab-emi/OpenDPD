@@ -5,8 +5,8 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState, type FormEvent, type ReactNode } from 'react'
-import { bootstrapSession, loadSession } from '@/api/client'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { WEB_MODE, bootstrapSession, clearWebSession, createWebSession, loadSession } from '@/api/client'
 import { t } from '@/i18n'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 
@@ -17,10 +17,42 @@ export function SessionGate({ children }: { children: ReactNode }) {
   const [token, setToken] = useState('')
   const [invalid, setInvalid] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [webError, setWebError] = useState<unknown>(null)
+  const expiresAt = session.data?.expires_at
+  useEffect(() => {
+    if (!WEB_MODE) return
+    const reset = () => {
+      clearWebSession()
+      void qc.cancelQueries()
+      qc.removeQueries({ predicate: (query) => query.queryKey[0] !== 'session' })
+      qc.setQueryData(['session'], { authenticated: false, mode: 'web', version: '' })
+    }
+    window.addEventListener('opendpd-session-expired', reset)
+    const delay = expiresAt ? new Date(expiresAt).getTime() - Date.now() : null
+    const timer = delay === null ? undefined : window.setTimeout(reset, Math.max(0, delay))
+    return () => { window.removeEventListener('opendpd-session-expired', reset); window.clearTimeout(timer) }
+  }, [qc, expiresAt])
 
   if (session.isPending) return <LoadingState />
   if (session.isError) return <ErrorState error={session.error} onRetry={() => void session.refetch()} />
   if (session.data.authenticated) return <>{children}</>
+
+  if (WEB_MODE) return <Paper sx={{ maxWidth: 560, mx: 'auto', my: '10vh', p: 3 }}>
+    <Stack spacing={2}>
+      <Typography variant="h1">{t('web.welcome')}</Typography>
+      <Typography>{t('web.description')}</Typography>
+      <Alert severity="info">{t('web.temporary')}</Alert>
+      {webError != null && <ErrorState error={webError} />}
+      <Button variant="contained" disabled={busy} onClick={() => {
+        setBusy(true); setWebError(null)
+        void createWebSession().then((info) => {
+          qc.removeQueries({ predicate: (query) => query.queryKey[0] !== 'session' })
+          qc.setQueryData(['session'], info)
+        })
+          .catch(setWebError).finally(() => setBusy(false))
+      }}>{t('web.start')}</Button>
+    </Stack>
+  </Paper>
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()

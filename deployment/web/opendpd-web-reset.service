@@ -1,0 +1,7 @@
+[Unit]
+Description=Stop all Studio processes and delete temporary data before restart
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart opendpd-web.service
+TimeoutStartSec=90

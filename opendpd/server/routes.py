@@ -169,7 +169,8 @@ def capabilities(request: Request):
         devices.append(DeviceInfo(device=dev, detected=bool(d.get("detected")), name=d.get("name"),
                                   count=int(d.get("count", 1 if d.get("detected") else 0)),
                                   tested_models=[m.key for m in models if dev in m.devices_tested]))
-    return Capabilities(version=__version__, devices=devices, workspace=str(request.app.state.ws.root),
+    return Capabilities(version=__version__, devices=devices,
+                        workspace=getattr(request.app.state, "workspace_label", None) or str(request.app.state.ws.root),
                         custom_dataset_imports=request.app.state.allow_custom_datasets,
                         note="'detected' means the driver reports the device; 'tested_models' lists models "
                              "with recorded evidence on it. One does not imply the other.")

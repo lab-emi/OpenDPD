@@ -1,3 +1,4 @@
+import { DownloadLink } from '@/components/DownloadLink'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
@@ -91,9 +92,9 @@ export function ComparePage() {
     <Stack spacing={2}>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
         <Typography variant="h1">{t('compare.title')}</Typography>
-        <Button component="a" href={csvHref} download="comparison.csv" variant="outlined" size="small" sx={{ ml: 'auto' }}>
+        <DownloadLink button  href={csvHref} download="comparison.csv" variant="outlined" size="small" sx={{ ml: 'auto' }}>
           {t('compare.csv')}
-        </Button>
+        </DownloadLink>
       </Stack>
       <Alert severity={rep.comparable ? 'success' : 'warning'} data-testid="compare-verdict">
         <strong>{rep.comparable ? t('compare.comparable') : t('compare.incompatible')}</strong> {rep.note}

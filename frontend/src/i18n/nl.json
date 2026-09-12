@@ -748,5 +748,10 @@
   "about.developer": "Hoofdontwikkelaar",
   "about.original": "Committitels worden in de oorspronkelijke taal getoond.",
   "logs.original": "Oorspronkelijke procesuitvoer · opdrachten en bibliotheekmeldingen behouden hun brontaal.",
-  "language.loadFailed": "De gekozen taal kon niet worden geladen. Probeer opnieuw."
+  "language.loadFailed": "De gekozen taal kon niet worden geladen. Probeer opnieuw.",
+  "web.welcome": "OpenDPD Studio op het web",
+  "web.description": "Verken ingebouwde datasets en voer analyses, neurale training en inferentie uit op onze geïsoleerde server.",
+  "web.temporary": "Deze werkruimte is tijdelijk. Download resultaten vóór ze verlopen, binnen 24 uur. Uploads van datasets en code zijn niet beschikbaar.",
+  "web.start": "Tijdelijke sessie starten",
+  "web.retention": "Tijdelijke werkruimte · download resultaten vóór {date}. Bestanden worden automatisch verwijderd."
 }

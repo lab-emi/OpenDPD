@@ -3,7 +3,8 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import { ThemeProvider } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { BrowserRouter, HashRouter, Route, Routes } from 'react-router'
+import { WEB_MODE } from '@/api/client'
 import { useLanguage } from '@/i18n'
 import { LanguageGate } from '@/i18n/LanguageGate'
 import { AppShell } from '@/layout/AppShell'
@@ -52,6 +53,7 @@ function AppRoutes() {
 }
 
 export default function App({ queryClient }: { queryClient?: QueryClient }) {
+  const Router = WEB_MODE ? HashRouter : BrowserRouter
   // Theme/locale changes must keep the query cache, subscriptions and active forms.
   const [defaultClient] = useState(createQueryClient)
   // A language change re-renders from here: new route elements for every page (state kept) and the matching MUI locale.
@@ -62,13 +64,13 @@ export default function App({ queryClient }: { queryClient?: QueryClient }) {
     <ThemeProvider theme={muiTheme}>
       <CssBaseline enableColorScheme />
       <QueryClientProvider client={queryClient ?? defaultClient}>
-        <BrowserRouter>
+        <Router>
           <SessionGate>
             <LanguageGate>
               <AppRoutes />
             </LanguageGate>
           </SessionGate>
-        </BrowserRouter>
+        </Router>
       </QueryClientProvider>
     </ThemeProvider>
   )

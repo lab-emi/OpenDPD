@@ -1,0 +1,58 @@
+[Unit]
+Description=OpenDPD public API and isolated temporary workspaces (inside VM)
+After=network.target
+Requires=opendpd-web-reset.timer
+
+[Service]
+User=worker
+Group=worker
+WorkingDirectory=/opt/opendpd
+EnvironmentFile=/etc/opendpd-web.env
+Environment=OPENDPD_WEB_ROOT=/run/opendpd-web
+Environment=PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+Environment=OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4
+Environment=TMPDIR=/run/opendpd-web/service-tmp
+Environment=MPLCONFIGDIR=/run/opendpd-web/service-tmp/matplotlib XDG_CACHE_HOME=/run/opendpd-web/service-tmp/cache
+ExecStartPre=/opt/opendpd-venv/bin/python -m opendpd.web --cleanup
+# 0.0.0.0 is inside QEMU user networking with restrict=on. On the host,
+# BOTH forwarded ports bind 127.0.0.1; no bridge / host networking is used.
+ExecStart=/opt/opendpd-venv/bin/python -m opendpd.web --host 0.0.0.0 --port 8765
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=20
+SendSIGKILL=yes
+# The supplied VM has worker UID/GID 1001. install-guest.sh checks this.
+# Namespace-local tmpfs is discarded when the service cgroup stops, including
+# on crashes and nightly reset; no user data enters the qcow2 disk or snapshots.
+TemporaryFileSystem=/run/opendpd-web:rw,size=2G,mode=0700,uid=1001,gid=1001,nodev,nosuid
+UMask=0077
+CPUQuota=400%
+MemoryMax=6G
+MemorySwapMax=0
+TasksMax=256
+LimitFSIZE=64M
+LimitCORE=0
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET
+# QEMU also prohibits all guest-initiated networking, including the host/LAN.
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+IPAddressAllow=10.0.2.2/32
+
+[Install]
+WantedBy=multi-user.target

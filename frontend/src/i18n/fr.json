@@ -748,5 +748,10 @@
   "about.developer": "Développeur principal",
   "about.original": "Les titres des commits sont affichés dans leur langue d’origine.",
   "logs.original": "Sortie originale du processus · commandes et messages des bibliothèques conservés dans leur langue d’origine.",
-  "language.loadFailed": "Impossible de charger la langue choisie. Réessayez."
+  "language.loadFailed": "Impossible de charger la langue choisie. Réessayez.",
+  "web.welcome": "OpenDPD Studio sur le Web",
+  "web.description": "Explorez les jeux de données intégrés et lancez des analyses, des entraînements neuronaux et des inférences sur notre serveur isolé.",
+  "web.temporary": "Cet espace est temporaire. Téléchargez vos résultats avant leur expiration, dans les 24 heures. Le téléversement de données et de code est indisponible.",
+  "web.start": "Démarrer une session temporaire",
+  "web.retention": "Espace temporaire · téléchargez vos résultats avant {date}. Les fichiers sont supprimés automatiquement."
 }

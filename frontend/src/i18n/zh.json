@@ -748,5 +748,10 @@
   "about.developer": "首席开发者",
   "about.original": "提交标题按原文显示。",
   "logs.original": "原始进程输出 · 命令与库日志保留原文。",
-  "language.loadFailed": "无法加载所选语言，请重试。"
+  "language.loadFailed": "无法加载所选语言，请重试。",
+  "web.welcome": "OpenDPD Studio 网页版",
+  "web.description": "使用内置数据集进行分析、神经网络训练和推理。计算在隔离服务器上运行。",
+  "web.temporary": "这是临时工作区，文件将在 24 小时内删除，请及时下载结果。目前不支持上传数据集和代码。",
+  "web.start": "开始临时会话",
+  "web.retention": "临时工作区 · 请在 {date} 前下载结果，文件将自动删除。"
 }

@@ -748,5 +748,10 @@
   "about.developer": "Leading Developer",
   "about.original": "Commit titles are shown in their original language.",
   "logs.original": "Original process output · commands and library messages retain their source language.",
-  "language.loadFailed": "Could not load the selected language. Try again."
+  "language.loadFailed": "Could not load the selected language. Try again.",
+  "web.welcome": "OpenDPD Studio on the web",
+  "web.description": "Explore built-in datasets and run analysis, neural network training and inference. Computation runs on our isolated server.",
+  "web.temporary": "This is a temporary workspace. Download results before they expire, within 24 hours. Uploading datasets and code is not available.",
+  "web.start": "Start a temporary session",
+  "web.retention": "Temporary workspace · download your results before {date}. Files are deleted automatically."
 }

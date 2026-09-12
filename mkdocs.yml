@@ -74,6 +74,7 @@ nav:
       - FAQ: faq.md
       - Testing and CI: testing.md
       - Maintaining documentation: documentation.md
+      - Hosting the public Studio: architecture/public-studio.md
 
 markdown_extensions:
   - admonition

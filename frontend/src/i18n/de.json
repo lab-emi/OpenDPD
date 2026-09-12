@@ -748,5 +748,10 @@
   "about.developer": "Leitender Entwickler",
   "about.original": "Commit-Titel werden in ihrer Originalsprache angezeigt.",
   "logs.original": "Originale Prozessausgabe · Befehle und Bibliotheksmeldungen bleiben in der Quellsprache.",
-  "language.loadFailed": "Die gewählte Sprache konnte nicht geladen werden. Bitte erneut versuchen."
+  "language.loadFailed": "Die gewählte Sprache konnte nicht geladen werden. Bitte erneut versuchen.",
+  "web.welcome": "OpenDPD Studio im Web",
+  "web.description": "Analysieren Sie integrierte Datensätze und führen Sie neuronales Training und Inferenz auf unserem isolierten Server aus.",
+  "web.temporary": "Dieser Arbeitsbereich ist temporär. Laden Sie Ergebnisse vor Ablauf innerhalb von 24 Stunden herunter. Datensatz- und Code-Uploads sind nicht verfügbar.",
+  "web.start": "Temporäre Sitzung starten",
+  "web.retention": "Temporärer Arbeitsbereich · Ergebnisse vor {date} herunterladen. Dateien werden automatisch gelöscht."
 }

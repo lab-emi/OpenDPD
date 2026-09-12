@@ -748,5 +748,10 @@
   "about.developer": "수석 개발자",
   "about.original": "커밋 제목은 원문으로 표시됩니다.",
   "logs.original": "원본 프로세스 출력 · 명령과 라이브러리 메시지는 원문을 유지합니다.",
-  "language.loadFailed": "선택한 언어를 불러올 수 없습니다. 다시 시도하세요."
+  "language.loadFailed": "선택한 언어를 불러올 수 없습니다. 다시 시도하세요.",
+  "web.welcome": "OpenDPD Studio 웹 버전",
+  "web.description": "내장 데이터셋 분석, 신경망 학습 및 추론을 격리된 서버에서 실행합니다.",
+  "web.temporary": "임시 작업 공간입니다. 파일은 24시간 이내에 삭제되므로 만료 전에 결과를 다운로드하세요. 데이터셋과 코드 업로드는 지원하지 않습니다.",
+  "web.start": "임시 세션 시작",
+  "web.retention": "임시 작업 공간 · {date} 전에 결과를 다운로드하세요. 파일은 자동으로 삭제됩니다."
 }

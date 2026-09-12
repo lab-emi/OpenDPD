@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 
 /** Version of the Python package this build belongs to (checked by /readyz). */
 function opendpdVersion(): string {
@@ -28,8 +28,25 @@ function buildInfo(): Plugin {
 
 // Production build lands in opendpd/studio/static and is served by FastAPI
 // (S06); in development the API is proxied to a running `opendpd gui`.
-export default defineConfig({
-  plugins: [react(), buildInfo()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const web = env.VITE_STUDIO_MODE === 'web'
+  const apiOrigin = env.VITE_API_ORIGIN ?? ''
+  if (web && (!apiOrigin || new URL(apiOrigin).origin !== apiOrigin || !apiOrigin.startsWith('https://'))) {
+    throw new Error('Web builds require VITE_API_ORIGIN as an exact HTTPS origin')
+  }
+  const csp: Plugin = {
+    name: 'public-studio-csp',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: () => web ? [{ tag: 'meta', injectTo: 'head-prepend', attrs: { 'http-equiv': 'Content-Security-Policy', content:
+        `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${apiOrigin}; object-src 'none'; base-uri 'self'; form-action 'none'` } },
+      { tag: 'meta', injectTo: 'head', attrs: { name: 'referrer', content: 'no-referrer' } }] : [],
+    },
+  }
+  return {
+  base: web ? (env.VITE_BASE_PATH || './') : '/',
+  plugins: [react(), buildInfo(), csp],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -37,7 +54,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../opendpd/studio/static',
+    outDir: web ? 'dist' : '../opendpd/studio/static',
     emptyOutDir: true,
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
@@ -54,4 +71,5 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
   },
+  }
 })

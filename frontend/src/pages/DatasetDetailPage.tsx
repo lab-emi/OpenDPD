@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { Link as RouterLink, useParams, useSearchParams } from 'react-router'
 import { useDatasetAnalysis, useRunDoctor, versionNames } from '@/api/datasets'
 import { useDataset } from '@/api/hooks'
+import { WEB_MODE } from '@/api/client'
 import type { DatasetManifest, PreprocessingParams } from '@/api/types'
 import { datasetLabel, formatNumber, formatDateTime, message, t } from '@/i18n'
 import { SignalInspection } from '@/components/SignalInspection'
@@ -125,9 +126,9 @@ export function DatasetDetailPage() {
         <Box sx={{ flex: '1 1 200px', minWidth: 0 }}><Typography variant="overline" color="primary" sx={{ fontSize: 11, lineHeight: 1.3, letterSpacing: ".12em", fontWeight: 700 }}>{t('inspection.step')}</Typography><Typography variant="h1" noWrap title={datasetLabel(d)}>{datasetLabel(d)}</Typography></Box>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: .5 }}>
           <TextField select size="small" label={t('form.dataVersion')} value={doctorVersion} onChange={(e) => select('version', e.target.value)} sx={{ minWidth: 125 }}>{names.map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}</TextField>
-          <Button variant="outlined" onClick={() => setDialog('manifest')}>
+          {!WEB_MODE && <Button variant="outlined" onClick={() => setDialog('manifest')}>
             {t('datasets.detail.edit')}
-          </Button>
+          </Button>}
           <Button variant="outlined" onClick={() => setDialog('preprocess')}>
             {t('datasets.detail.versions.new')}
           </Button>

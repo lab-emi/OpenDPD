@@ -1,0 +1,14 @@
+[Unit]
+Description=Hard daily deletion of public Studio temporary data
+
+[Timer]
+# Drain begins at 23:55 UTC. Kill every API/worker process and discard the
+# tmpfs RuntimeDirectory at 23:59, leaving margin before any file reaches 24 h.
+OnCalendar=*-*-* 23:59:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=true
+Unit=opendpd-web-reset.service
+
+[Install]
+WantedBy=timers.target

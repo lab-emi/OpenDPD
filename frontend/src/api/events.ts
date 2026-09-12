@@ -5,7 +5,7 @@
  */
 import { useEffect, useReducer, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { API } from './client'
+import { API, WEB_MODE, ApiError, api } from './client'
 import { keys } from './hooks'
 import type { RunEvent } from './types'
 
@@ -112,6 +112,39 @@ export function useRunStream(runId: string, enabled: boolean): StreamState {
 
   useEffect(() => {
     dispatch({ kind: 'reset' })
+    if (enabled && WEB_MODE) {
+      // Short, authenticated polls work across github.io and the Tunnel without
+      // third-party cookies or bearer tokens in EventSource query strings.
+      let stopped = false
+      let cursor = 0
+      let timer: number | undefined
+      const poll = async () => {
+        try {
+          const page = await api.get<{ events: RunEvent[]; last_seq: number; terminal: boolean }>(`/runs/${encodeURIComponent(runId)}/events/list?after=${cursor}&limit=500`)
+          if (stopped) return
+          cursor = page.last_seq
+          dispatch({ kind: 'events', events: page.events })
+          dispatch({ kind: 'connection', connection: 'live' })
+          if (page.events.length) {
+            void qc.invalidateQueries({ queryKey: keys.run(runId) })
+            void qc.invalidateQueries({ queryKey: ['run', runId, 'live'] })
+          }
+          if (page.terminal && page.events.length < 500) {
+            dispatch({ kind: 'connection', connection: 'ended' })
+            for (const key of [keys.run(runId), keys.result(runId), keys.runArtifacts(runId), ['runs']]) void qc.invalidateQueries({ queryKey: key })
+            return
+          }
+        } catch (error) {
+          if (stopped) return
+          dispatch({ kind: 'connection', connection: 'disconnected' })
+          if (error instanceof ApiError && error.status === 401) return
+        }
+        if (!stopped) timer = window.setTimeout(() => void poll(), 3000)
+      }
+      dispatch({ kind: 'connection', connection: 'connecting' })
+      void poll()
+      return () => { stopped = true; window.clearTimeout(timer) }
+    }
     if (!enabled || typeof EventSource === 'undefined') return
     const source = new EventSource(`${API}/runs/${encodeURIComponent(runId)}/events?after=0`)
     sourceRef.current = source

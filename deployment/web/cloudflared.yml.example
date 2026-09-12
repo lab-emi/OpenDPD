@@ -1,0 +1,15 @@
+# Host only. The VM stays offline. Use a named tunnel; never a Quick Tunnel.
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /etc/opendpd-web/TUNNEL_UUID.json
+metrics: 127.0.0.1:20242
+ingress:
+  - hostname: api.opendpd.com
+    path: ^/api/v1/.*$
+    service: http://127.0.0.1:18765
+    originRequest:
+      # Generate using secrets.token_hex(24) + '.internal'. This private value
+      # MUST match OPENDPD_WEB_TUNNEL_HOST in the VM. Never commit its real value.
+      httpHostHeader: REPLACE_WITH_RANDOM_48_HEX.internal
+      connectTimeout: 5s
+      keepAliveTimeout: 30s
+  - service: http_status:404

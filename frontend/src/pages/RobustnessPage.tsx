@@ -1,5 +1,5 @@
+import { DownloadLink } from '@/components/DownloadLink'
 import Alert from '@mui/material/Alert'
-import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Link from '@mui/material/Link'
@@ -254,9 +254,9 @@ function ReportBody({ report }: { report: AdaptationReport }) {
         ))}
       </ul>
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-        <Button size="small" component="a" href={`${API}/adaptation/reports/${encodeURIComponent(report.plan_sha256.slice(0, 12))}?format=md`} download>
+        <DownloadLink button size="small"  href={`${API}/adaptation/reports/${encodeURIComponent(report.plan_sha256.slice(0, 12))}?format=md`} download>
           {t('robustness.download')}
-        </Button>
+        </DownloadLink>
         <Typography variant="caption" color="text.secondary">
           {t('robustness.hashes', { report: report.report_sha256?.slice(0, 12) ?? '', plan: report.plan_sha256.slice(0, 12), card: report.condition_set.card_sha256?.slice(0, 12) ?? '' })}
         </Typography>

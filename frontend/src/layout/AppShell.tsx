@@ -5,6 +5,7 @@ import ScienceIcon from '@mui/icons-material/Science'
 import SettingsIcon from '@mui/icons-material/Settings'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import AppBar from '@mui/material/AppBar'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Drawer from '@mui/material/Drawer'
@@ -20,12 +21,13 @@ import { useIsMutating, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { useCapabilities, useRun, useRuns } from '@/api/hooks'
+import { WEB_MODE, type WebSessionInfo } from '@/api/client'
 import { LanguageMenu } from '@/components/LanguageMenu'
 import { ResetButton } from '@/components/ResetButton'
 import { StudioLogo } from '@/components/StudioLogo'
 import { ExperimentTerminal } from '@/components/ExperimentTerminal'
 import { isExperimentTask } from '@/components/ExperimentTasks'
-import { t, type MessageKey } from '@/i18n'
+import { formatDateTime, t, type MessageKey } from '@/i18n'
 import { tokens, useStudioColors } from '@/theme'
 
 const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
@@ -45,6 +47,7 @@ export function AppShell() {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const session = queryClient.getQueryData<WebSessionInfo>(['session'])
   const mutating = useIsMutating() > 0
   const [revision, setRevision] = useState(0)
   const runId = pathname.startsWith('/runs/') ? decodeURIComponent(pathname.split('/')[2] ?? '') : ''
@@ -101,7 +104,7 @@ export function AppShell() {
           ))}
         </List>
         <Box sx={{ mt: 'auto', px: 2.5, py: 2, display: { xs: 'none', md: 'block' }, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="caption">{t('shell.localWorkspace')}</Typography>
+          <Typography variant="caption">{WEB_MODE ? t('web.welcome') : t('shell.localWorkspace')}</Typography>
           <Typography variant="body2" sx={{ color: 'text.primary', mt: .5 }}>{caps.data?.version ? `v${caps.data.version}` : 'OpenDPD'}</Typography>
         </Box>
       </Drawer>
@@ -120,6 +123,7 @@ export function AppShell() {
         </Toolbar>
       </AppBar>
       <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: '76px', minWidth: 0 }}>
+        {WEB_MODE && session?.expires_at && <Alert severity="info" sx={{ mb: 2 }}>{t('web.retention', { date: formatDateTime(session.expires_at) })}</Alert>}
         <Box sx={{ maxWidth: tokens.layout.maxContent, mx: 'auto', minWidth: 0 }}>
           <Outlet />
           {(pathname.startsWith('/experiments') || pathname.startsWith('/runs/')) && <ExperimentTerminal />}

@@ -4,7 +4,11 @@
  */
 import type { SessionInfo } from './types'
 
-export const API = '/api/v1'
+export const WEB_MODE = import.meta.env.VITE_STUDIO_MODE === 'web'
+export const API_ORIGIN = WEB_MODE ? String(import.meta.env.VITE_API_ORIGIN).replace(/\/$/, '') : ''
+export const API = `${API_ORIGIN}/api/v1`
+const SESSION_KEY = `opendpd-web-session:${API_ORIGIN}`
+export type WebSessionInfo = SessionInfo & { mode?: 'web'; expires_at?: string; access_token?: string }
 const CSRF_HEADER = 'X-OpenDPD-CSRF'
 
 export interface ApiErrorDetail {
@@ -31,6 +35,26 @@ export class ApiError extends Error {
 
 let csrfToken: string | null = null
 
+function bearerToken(): string | null {
+  return WEB_MODE ? sessionStorage.getItem(SESSION_KEY) : null
+}
+
+export function clearWebSession(): void {
+  sessionStorage.removeItem(SESSION_KEY)
+}
+
+function authorizationHeaders(): Record<string, string> {
+  const token = bearerToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+function expired(response: Response): void {
+  if (WEB_MODE && response.status === 401) {
+    clearWebSession()
+    window.dispatchEvent(new Event('opendpd-session-expired'))
+  }
+}
+
 export function setCsrfToken(token: string | null): void {
   csrfToken = token
 }
@@ -55,22 +79,24 @@ async function parseError(response: Response): Promise<ApiError> {
 }
 
 async function request<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
+  const headers: Record<string, string> = { Accept: 'application/json', ...authorizationHeaders() }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
-  if (method !== 'GET' && csrfToken) headers[CSRF_HEADER] = csrfToken
+  if (!WEB_MODE && method !== 'GET' && csrfToken) headers[CSRF_HEADER] = csrfToken
   const response = await fetch(`${API}${path}`, {
     method,
     headers,
-    credentials: 'same-origin',
+    redirect: 'error',
+    credentials: WEB_MODE ? 'omit' : 'same-origin',
     body: body === undefined ? undefined : JSON.stringify(body),
   })
-  if (!response.ok) throw await parseError(response)
+  if (!response.ok) { expired(response); throw await parseError(response) }
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
 }
 
 /** Multipart POST (file upload): same cookie/CSRF rules, no JSON body. */
 async function upload<T>(path: string, form: FormData): Promise<T> {
+  if (WEB_MODE) throw new ApiError(403, 'feature_unavailable', 'Uploads are unavailable in the public demo')
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (csrfToken) headers[CSRF_HEADER] = csrfToken
   const response = await fetch(`${API}${path}`, { method: 'POST', headers, credentials: 'same-origin', body: form })
@@ -86,10 +112,42 @@ export const api = {
 }
 
 /** Loads the session and remembers the CSRF token for later writes. */
-export async function loadSession(): Promise<SessionInfo> {
-  const info = await api.get<SessionInfo>('/session')
+export async function loadSession(): Promise<WebSessionInfo> {
+  if (WEB_MODE && !bearerToken()) return { authenticated: false, mode: 'web', version: '' }
+  let info: WebSessionInfo
+  try {
+    info = await api.get<WebSessionInfo>('/session')
+  } catch (error) {
+    if (WEB_MODE && error instanceof ApiError && error.status === 401) return { authenticated: false, mode: 'web', version: '' }
+    throw error
+  }
   setCsrfToken(info.csrf_token ?? null)
   return info
+}
+
+export async function createWebSession(): Promise<WebSessionInfo> {
+  const info = await api.post<WebSessionInfo>('/web/sessions', {})
+  if (info.access_token) sessionStorage.setItem(SESSION_KEY, info.access_token)
+  // Keep the capability out of React Query caches and browser-visible diagnostics.
+  const { access_token: _token, ...publicInfo } = info
+  return publicInfo
+}
+
+/** Authenticated downloads never put bearer capabilities into URLs or referrers. */
+export async function downloadFile(href: string, filename?: string): Promise<void> {
+  const url = new URL(href, WEB_MODE ? API_ORIGIN : window.location.origin)
+  const expected = WEB_MODE ? API_ORIGIN : window.location.origin
+  if (url.origin !== expected || !url.pathname.startsWith('/api/v1/')) throw new Error('Invalid artifact URL')
+  const response = await fetch(url.href, { headers: authorizationHeaders(), credentials: WEB_MODE ? 'omit' : 'same-origin', redirect: 'error' })
+  if (!response.ok) { expired(response); throw await parseError(response) }
+  const disposition = response.headers.get('content-disposition') ?? ''
+  const suggested = disposition.match(/filename="([^"\r\n]+)"/)?.[1]
+  const blob = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = blob
+  link.download = (filename || suggested || url.pathname.split('/').pop() || 'download').replace(/[/\\]/g, '_')
+  link.click()
+  window.setTimeout(() => URL.revokeObjectURL(blob), 1000)
 }
 
 export async function bootstrapSession(token: string): Promise<SessionInfo> {

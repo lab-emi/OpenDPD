@@ -1,0 +1,45 @@
+[Unit]
+Description=OpenDPD public compute VM (CPU baseline, no host network access)
+After=network.target
+
+[Service]
+User=opendpd-sandbox
+Group=opendpd-sandbox
+UMask=0077
+RuntimeDirectory=opendpd-web-vm
+RuntimeDirectoryMode=0700
+WorkingDirectory=/var/lib/opendpd-sandbox
+ExecStart=/usr/bin/qemu-system-x86_64 -name opendpd-web -machine q35,accel=kvm -cpu host -smp 4 -m 8192 -nodefaults -display none -monitor none -serial file:/var/lib/opendpd-sandbox/web-console.log -qmp unix:/run/opendpd-web-vm/qmp.sock,server=on,wait=off -drive file=/var/lib/opendpd-sandbox/web.qcow2,format=qcow2,if=virtio -drive file=/var/lib/opendpd-sandbox/web-seed.iso,format=raw,media=cdrom,readonly=on -netdev user,id=net0,restrict=on,ipv6=off,hostfwd=tcp:127.0.0.1:22224-:22,hostfwd=tcp:127.0.0.1:18765-:8765 -device virtio-net-pci,netdev=net0 -device virtio-rng-pci -sandbox on,obsolete=deny,elevateprivileges=deny,spawn=deny,resourcecontrol=deny
+ExecStop=/usr/bin/python3 /etc/opendpd-web/poweroff.py
+CPUQuota=400%
+MemoryMax=10G
+MemorySwapMax=0
+TasksMax=256
+LimitCORE=0
+IOWeight=10
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/opendpd-sandbox
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+ProtectProc=invisible
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+DevicePolicy=closed
+DeviceAllow=/dev/kvm rw
+TimeoutStopSec=90
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

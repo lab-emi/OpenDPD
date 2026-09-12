@@ -748,5 +748,10 @@
   "about.developer": "Sviluppatore principale",
   "about.original": "I titoli dei commit sono mostrati nella lingua originale.",
   "logs.original": "Output originale del processo · comandi e messaggi delle librerie mantengono la lingua di origine.",
-  "language.loadFailed": "Impossibile caricare la lingua selezionata. Riprova."
+  "language.loadFailed": "Impossibile caricare la lingua selezionata. Riprova.",
+  "web.welcome": "OpenDPD Studio sul web",
+  "web.description": "Esplora i dataset integrati ed esegui analisi, addestramento neurale e inferenza sul nostro server isolato.",
+  "web.temporary": "Questo spazio è temporaneo. Scarica i risultati prima della scadenza, entro 24 ore. Non è possibile caricare dataset o codice.",
+  "web.start": "Avvia una sessione temporanea",
+  "web.retention": "Spazio temporaneo · scarica i risultati prima di {date}. I file vengono eliminati automaticamente."
 }

@@ -1,3 +1,4 @@
+import { DownloadLink } from '@/components/DownloadLink'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
@@ -21,7 +22,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
-import { API, artifactUrl } from '@/api/client'
+import { API, artifactUrl, WEB_MODE } from '@/api/client'
 import { useDeployExport, useExportRun, useMetricProfiles, useModels, useResult, useResultProfiles } from '@/api/hooks'
 import { offeredProfiles } from '@/api/profiles'
 import type { BaselineScore, DeploymentManifest, EvaluationResult, ExecutionEvidence, MetricProfile, MetricValue } from '@/api/types'
@@ -52,20 +53,20 @@ function ExportPanel({ runId }: { runId: string }) {
         <Button variant="outlined" size="small" disabled={exportRun.isPending} onClick={() => exportRun.mutate({ run_id: runId, kind: 'full' })}>
           {t('results.export.full')}
         </Button>
-        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=html${getLanguage() === 'en' ? '' : `&language=${getLanguage()}`}`} download>
+        <DownloadLink button size="small"  href={`${API}/results/${encodeURIComponent(runId)}/report?format=html${getLanguage() === 'en' ? '' : `&language=${getLanguage()}`}`} download>
           {t('results.report.html')}
-        </Button>
-        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=md${getLanguage() === 'en' ? '' : `&language=${getLanguage()}`}`} download>
+        </DownloadLink>
+        <DownloadLink button size="small"  href={`${API}/results/${encodeURIComponent(runId)}/report?format=md${getLanguage() === 'en' ? '' : `&language=${getLanguage()}`}`} download>
           {t('results.report.md')}
-        </Button>
+        </DownloadLink>
       </Stack>
       {exportRun.isError && <ErrorState error={exportRun.error} />}
       {info && (
         <Alert severity="success" sx={{ mt: 2 }} data-testid="export-ready">
           <strong>{t('results.export.ready', { filename: info.filename, size: bytes(info.size_bytes) })}</strong>{' '}
-          <Link href={info.download_url} download={info.filename}>
+          <DownloadLink href={info.download_url} download={info.filename}>
             {t('results.export.download')}
-          </Link>
+          </DownloadLink>
           {(info.manifest.redaction ?? []).length > 0 && (
             <Typography variant="body2" component="div" sx={{ mt: 1 }}>
               <strong>{t('results.export.redaction')}:</strong>
@@ -140,9 +141,9 @@ function SignalChain({ result }: { result: EvaluationResult }) {
                   {s.artifact_id && result.run_id && (
                     <>
                       {' '}
-                      <Link href={artifactUrl(result.run_id, s.artifact_id)} download>
+                      <DownloadLink href={artifactUrl(result.run_id, s.artifact_id)} download>
                         {t('results.detail.chain.export')}
-                      </Link>
+                      </DownloadLink>
                     </>
                   )}
                 </TableCell>
@@ -203,9 +204,9 @@ function DeploymentSummary({ manifest, filename, downloadUrl }: { manifest: Depl
         {v.status === 'mismatch' ? t('results.deploy.mismatch', { case: v.mismatch_case ?? '?', step: v.mismatch_step ?? '?', signal: v.mismatch_signal ?? '?' }) : (v.detail ?? '')}
       </Alert>
       <Typography variant="body2">
-        <Link href={downloadUrl} download={filename}>
+        <DownloadLink href={downloadUrl} download={filename}>
           {t('results.deploy.download', { filename })}
-        </Link>
+        </DownloadLink>
       </Typography>
       <TableContainer tabIndex={0} role="group" aria-label={t('results.deploy.loss')}>
         <Table size="small" aria-label={t('results.deploy.loss')}>
@@ -340,9 +341,9 @@ function MeasurementPanel({ result }: { result: EvaluationResult }) {
                 <TableCell>{t(cap.role === 'with_dpd' ? 'results.detail.measurement.with' : 'results.detail.measurement.without')}</TableCell>
                 <TableCell>
                   {result.run_id ? (
-                    <Link href={artifactUrl(result.run_id, cap.artifact_id)} download>
+                    <DownloadLink href={artifactUrl(result.run_id, cap.artifact_id)} download>
                       {cap.artifact_id}
-                    </Link>
+                    </DownloadLink>
                   ) : (
                     cap.artifact_id
                   )}{' '}
@@ -469,7 +470,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
       </Grid>
       <SignalChain result={result} />
       <ExecutionPanel result={result} />
-      <DeploymentPanel result={result} />
+      {!WEB_MODE && <DeploymentPanel result={result} />}
       <MeasurementPanel result={result} />
       <Baselines result={result} />
       {result.surrogate_coverage && (
