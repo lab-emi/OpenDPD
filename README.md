@@ -1,5 +1,5 @@
 <!-- --8<-- [start:hero] -->
-![OpenDPD Studio home: a guided workspace for PA modeling and digital predistortion](pics/studio-home.png)
+![OpenDPD Studio home in light mode: a guided workspace for PA modeling and digital predistortion](pics/studio-home.png)
 <!-- --8<-- [end:hero] -->
 
 # OpenDPD
