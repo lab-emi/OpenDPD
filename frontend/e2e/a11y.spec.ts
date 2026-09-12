@@ -63,13 +63,15 @@ test.describe('accessibility (axe-core)', () => {
 /** Press Tab until the focused element has the given accessible name (bounded so a trap fails the test). */
 async function tabTo(page: Page, name: RegExp, maxTabs = 80): Promise<void> {
   for (let i = 0; i < maxTabs; i++) {
-    await page.keyboard.press('Tab')
+    // Advancing a form can retain focus on Continue. Check it before moving;
+    // tabbing past the last control can hand focus to Firefox's browser chrome.
     const label = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null
       if (!el) return ''
       return el.getAttribute('aria-label') ?? el.textContent?.trim() ?? ''
     })
     if (name.test(label)) return
+    await page.keyboard.press('Tab')
   }
   throw new Error(`no focusable element named ${name} within ${maxTabs} tabs`)
 }
