@@ -5,6 +5,9 @@ split into [foundation PR #21](https://github.com/lab-emi/OpenDPD/pull/21) and
 [UI PR #20](https://github.com/lab-emi/OpenDPD/pull/20). Neither is merged.
 The UI diff against the foundation contains no protected paths.
 
+This records the initial blocking evidence and the follow-up below; the PR CI
+runs and review comments record the final merge decision.
+
 ## Foundation numerical regression
 
 The [CPU CI run](https://github.com/lab-emi/OpenDPD/actions/runs/34705497410)
@@ -104,3 +107,39 @@ decision before modifying the protected legacy profile. PR #21 remains draft
 without `science-review-approved`, and PR #20 remains draft pending that foundation
 and the outstanding WebKit checks. Local `main` was only fast-forwarded to the
 existing remote main; no Studio integration has been pushed to main.
+
+## Authorized follow-up
+
+The maintainer subsequently delegated code/scientific review, blocker repair and
+merge to Codex. Foundation commit `3c0af7e2` preserves the original array dtype in
+the legacy wrapper and its padding buffer. Four new tests compare all five metrics
+exactly against direct legacy calls for float32/float64 and segmented/tail-padded
+inputs. No frozen reference, seed, tolerance or checkpoint-selection rule changed.
+The local golden/registry/real PA-DPD-CLI suite passed **38 tests in 11.28 s**;
+the corrected Linux matrix is the remaining numerical evidence.
+
+The browser harness now runs one CI worker to isolate chart timing from other
+browser/Axe workloads. Accessibility scans wait for finite browser animations to
+finish instead of assuming a 600 ms delay means opacity/color transitions have
+settled. Failed scans retain their original blocking assertion and now include
+foreground/background/contrast diagnostics. The original 2,000 ms chart budget,
+60-second test timeout, zero retries and WCAG rule set are unchanged.
+
+```sh
+npm run lint
+npm run typecheck
+CI=1 npx playwright test --ignore-snapshots
+```
+
+Result on macOS / Apple Silicon: **48 passed, 12 skipped in 2.5 minutes** across
+Chromium at two sizes, Firefox and WebKit, including the previous failures.
+The skipped cases require an explicitly configured real server. A separate
+WebKit check against the real server found no guide color-contrast violations
+and rendered the 2,560-bin spectrum plus 20,000-sample I/Q window in 540 ms.
+This local timing is not a replacement for the isolated Linux CI timing check.
+
+AGENTS.md and CLAUDE.md are now ignored case-insensitively at all directory depths,
+and the previously tracked instruction file is removed from the index. Browser
+automation sessions and captures are also ignored. A tracked-file audit found no
+agent instruction files, common credential files or raw baseline captures.
+Previously committed history was not rewritten.

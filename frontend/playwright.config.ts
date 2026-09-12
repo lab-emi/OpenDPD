@@ -7,6 +7,9 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000, toHaveScreenshot: { maxDiffPixelRatio: 0.02 } },
   fullyParallel: true,
+  // Timed chart draws must not compete with another browser's axe scan on
+  // the same CI CPU. Keep the original budgets and run each journey alone.
+  workers: process.env.CI ? 1 : undefined,
   retries: 0,
   reporter: [['list']],
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure' },

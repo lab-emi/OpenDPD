@@ -152,6 +152,8 @@ id_ed25519*
 storage-state*.json
 storageState*.json
 *.har
+.playwright-cli/
+output/playwright/
 
 # IDE specific files
 # Local agent instructions (case-insensitive names, at any directory depth)
