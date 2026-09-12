@@ -6,7 +6,7 @@ declare module 'plotly.js-basic-dist-min' {
   const Plotly: unknown
   export default Plotly
 }
-declare module 'plotly.js-strict-dist-min' {
+declare module '@/vendor/plotly-scatter-strict.cjs' {
   const Plotly: unknown
   export default Plotly
 }

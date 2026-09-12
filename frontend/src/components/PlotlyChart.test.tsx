@@ -6,7 +6,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { themeFor } from '@/theme'
 
 const api = vi.hoisted(() => ({ react: vi.fn(), relayout: vi.fn(), purge: vi.fn(), Plots: { resize: vi.fn() } }))
-vi.mock('plotly.js-strict-dist-min', () => ({ default: api }))
+vi.mock('@/vendor/plotly-scatter-strict.cjs', () => ({ default: api }))
 vi.mock('plotly.js-basic-dist-min', () => ({ default: api }))
 
 beforeEach(() => {

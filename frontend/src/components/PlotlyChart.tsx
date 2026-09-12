@@ -54,10 +54,10 @@ interface PlotlyModule extends PlotInteractionApi {
 
 let svgPromise: Promise<PlotlyModule> | null = null
 let webGLPromise: Promise<PlotlyModule> | null = null
-/** Load WebGL only for dense scatter; the strict bundle preserves the app's CSP. */
+/** Load the offline strict scatter build only for dense markers; preserve the app's CSP. */
 function loadPlotly(accelerated: boolean): Promise<PlotlyModule> {
   if (accelerated) {
-    webGLPromise ??= import('plotly.js-strict-dist-min').then((m) => (m.default ?? m) as unknown as PlotlyModule)
+    webGLPromise ??= import('@/vendor/plotly-scatter-strict.cjs').then((m) => (m.default ?? m) as unknown as PlotlyModule)
     return webGLPromise
   }
   svgPromise ??= import('plotly.js-basic-dist-min').then((m) => (m.default ?? m) as unknown as PlotlyModule)

@@ -29,7 +29,7 @@ and their outcomes.
   request body. `python -m pytest tests/unit/test_about.py
   tests/integration/test_hardening.py -q`: **19 passed** after that change.
 
-## Remaining blocker
+## Initial blocker (resolved during the merge review)
 
 `tests/unit/test_offline_assets.py::test_built_assets_reference_no_external_hosts`
 still fails. The Plotly strict bundle includes map attribution hyperlinks and a
@@ -67,3 +67,31 @@ bundle failure remains.
   retroactively erase previously pushed data. No history rewrite was performed.
 
 Windows/Linux native rendering and physical GPU/RF paths remain unverified here.
+
+## Follow-up review for merging into main
+
+The offline bundle failure is now fixed in the implementation. The WebGL loader
+uses Plotly 4.0.0's official custom strict build with only `scatter` and `scattergl`.
+The unmodified, licensed runtime is vendored with its upstream commit, source
+lockfile hash, output hash and rebuild instructions. The full strict npm package
+is removed. Third-party generated code is excluded from application-source lint;
+the offline assertion and every numerical/performance threshold remain unchanged.
+
+Validation after the dependency change:
+
+- Production build and application lint passed. The WebGL output chunk is
+  1,612.53 kB (526.15 kB gzip).
+- `python -m pytest tests/unit/test_offline_assets.py -q`: **1 passed**.
+- `npm test -- --maxWorkers=2`: **178 passed** in 37 files.
+- Real-server Chromium journey: **1 passed** in 12.4 seconds, including bootstrap,
+  measured dataset analysis, dense WebGL scatter under the server CSP, a real CPU
+  PA training run, result inspection and share-package export. A new assertion
+  verifies that a WebGL-capable browser actually uses `scattergl` and draws its
+  canvas; the SVG-only mocked gallery could not detect a broken strict GL build.
+  Console/CSP errors were absent.
+
+Full integration now follows the separate foundation PR #21, which preserves
+main's quantization fix and documentation site. The foundation's 30 protected
+paths require explicit maintainer scientific approval. The root workspace is
+on `main`; fixes and verification use isolated worktrees. PR CI records the
+complete CPU/Python/browser matrix for the final branch revisions.
