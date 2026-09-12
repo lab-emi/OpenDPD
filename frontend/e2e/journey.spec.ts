@@ -18,7 +18,10 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
     await page.getByLabel('Name (optional)').fill('e2e smoke')
     // the metric profile is an explicit, registry-backed choice (S08); the default stays the frozen legacy one
     await page.getByRole('button', { name: 'Advanced settings' }).click()
-    await page.getByLabel('Metric profile').click()
+    const profile = page.getByRole('combobox', { name: 'Metric profile' })
+    await expect(profile).toContainText('legacy-opendpd-v1')
+    await profile.focus()
+    await page.keyboard.press('ArrowDown')
     await page.getByRole('option', { name: /general-spectral-v1/ }).click()
     await expect(page.getByText('Configuration is valid')).toBeVisible()
     await page.getByRole('button', { name: 'Continue' }).click()
