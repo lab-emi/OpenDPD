@@ -82,7 +82,7 @@ jobs:
         run: cd frontend && npm ci && npm run build
 
       - name: Run unit and smoke tests
-        run: pytest tests/ -v -m "not extended" --durations=10
+        run: python -m pytest tests/ -v -m "not extended" --durations=10
 
       - name: API contract is committed (docs/contracts/openapi.json)
         run: python scripts/export_openapi.py --check
@@ -116,7 +116,7 @@ jobs:
         run: npm run lint
 
       - name: Unit and interaction tests
-        run: npm test
+        run: npm test -- --maxWorkers=2
 
       - name: Production build
         run: npm run build

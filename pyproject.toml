@@ -68,7 +68,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/lab-emi/OpenDPD"
-Documentation = "https://github.com/lab-emi/OpenDPD/blob/main/README.md"
+Documentation = "https://lab-emi.github.io/OpenDPD/"
 Repository = "https://github.com/lab-emi/OpenDPD"
 Issues = "https://github.com/lab-emi/OpenDPD/issues"
 

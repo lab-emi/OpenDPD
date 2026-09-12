@@ -11,6 +11,7 @@ import math
 
 import numpy as np
 import pandas as pd
+import torch
 import pytest
 
 from conftest import SMOKE_DATASET, run_main
@@ -55,10 +56,14 @@ class TestTrainDPD:
 
 class TestQuantizedTrainDPD:
     def test_quantization_aware_training(self, dpd_trained):
-        """W16A16 quantization-aware DPD learning as documented in the README."""
+        """W16A16 quantization-aware DPD learning as documented in the README: a float ``qgru``
+        DPD is trained first, then fine-tuned with quantized weights and activations."""
+        save_dir = dpd_trained / "save" / SMOKE_DATASET / "train_dpd"
+        run_main(dpd_trained, "train_dpd", "--DPD_backbone", "qgru")
         pretrained = sorted(
-            (dpd_trained / "save" / SMOKE_DATASET / "train_dpd").rglob("DPD_*.pt")
-        )[0]
+            p for p in save_dir.rglob("DPD_*_M_QGRU_*.pt") if "ci_quant" not in p.parts
+        )
+        assert pretrained, "float qgru train_dpd did not save a checkpoint"
         run_main(
             dpd_trained,
             "train_dpd",
@@ -66,15 +71,15 @@ class TestQuantizedTrainDPD:
             "--quant",
             "--n_bits_w", "16",
             "--n_bits_a", "16",
-            "--pretrained_model", str(pretrained),
+            "--pretrained_model", str(pretrained[0]),
             "--quant_dir_label", "ci_quant",
         )
-        quant_ckpts = list(
-            (dpd_trained / "save" / SMOKE_DATASET / "train_dpd").rglob(
-                "ci_quant/DPD_*.pt"
-            )
-        )
+        quant_ckpts = list(save_dir.rglob("ci_quant/DPD_*.pt"))
         assert quant_ckpts, "quantized train_dpd did not save a checkpoint"
+        # The checkpoint must come from the quantized cell-based GRU, not from the float fallback
+        # that the quantization environment uses when the pretrained checkpoint cannot be loaded.
+        keys = torch.load(quant_ckpts[0], map_location="cpu").keys()
+        assert any("rnn_cell_list" in key for key in keys), "quantization did not engage"
 
 
 class TestRunDPD:

@@ -1,17 +1,29 @@
 ![OpenDPD](pics/OpenDPDlogo_new.png)
 
+<!-- --8<-- [start:badges] -->
+
 [![CI](https://github.com/lab-emi/OpenDPD/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/lab-emi/OpenDPD/actions/workflows/ci.yml)
 [![Weekly](https://github.com/lab-emi/OpenDPD/actions/workflows/weekly.yml/badge.svg?branch=main)](https://github.com/lab-emi/OpenDPD/actions/workflows/weekly.yml)
 [![PyPI](https://img.shields.io/pypi/v/opendpd)](https://pypi.org/project/opendpd/)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/lab-emi/OpenDPD/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](https://github.com/lab-emi/OpenDPD/blob/main/LICENSE)
+
+<!-- --8<-- [end:badges] -->
+
+
+📖 **Documentation:** <https://lab-emi.github.io/OpenDPD/>
+
+<!-- --8<-- [start:intro] -->
 
 **OpenDPD** is an end-to-end learning framework built in PyTorch for modeling power amplifiers (PA) and digital pre-distortion. Developed by the [Lab of Efficient Machine Intelligence](https://www.tudemi.com) @ Delft University of Technology, OpenDPD now ships as both a pip-installable package and a full research codebase.
+
 - `pip install opendpd` exposes high-level Python APIs (`train_pa`, `train_dpd`, `create_dataset`, etc.) and an `opendpd-cli` entry point for quick experiments.
 - The repository provides automation scripts, dataset tooling, quantization utilities, and reproducible baselines for RF researchers.
 - Documentation includes rich examples (Python scripts + Jupyter notebooks) and detailed setup instructions for advanced users.
 
 We invite you to contribute new backbone networks, pre-trained models, or measured PA datasets. This repository contains the complete training pipeline for OpenDPD using baseband signals from digital transmitters.
+
+<!-- --8<-- [end:intro] -->
 
 # OpenDPD Studio (alpha): one command to a local workbench
 
@@ -50,14 +62,19 @@ What is verified where: [support matrix](docs/releases/support-matrix.md),
 
 # What's New in OpenDPD V2.1
 
+<!-- --8<-- [start:whats-new] -->
+
+
 **OpenDPD V2.1** introduces a comprehensive visualization and plotting system that lets you observe model training dynamics in real time and generate publication-quality figures.
 
 ### Real-Time Training Visualization
+
 - **Per-epoch plot generation** during both PA modeling (`train_pa`) and DPD learning (`train_dpd`). Enable with the `--plot` flag and control frequency with `--plot_every N`.
 - **Plot types include:** PSD (Power Spectral Density), AM/AM, AM/PM, constellation diagrams, waveform overlays, and prediction error plots — generated for both validation and test sets at each epoch.
 - **Fixed-axis re-rendering:** After training completes, all epoch plots are automatically re-rendered with globally consistent axis limits for fair visual comparison across epochs.
 
 ### Animated GIF Generation
+
 - **Automatic GIF animations** are created from per-epoch plots at the end of training, producing smooth animations that show how the model learns over time.
 - **Configurable duration** via `--gif_duration` (default: 10 seconds). For 100 epochs at 10 seconds, this yields 10 fps for smooth playback.
 - GIFs are generated for every plot type (PSD, AM/AM, AM/PM, constellation, waveform, error) and overview panels.
@@ -65,19 +82,24 @@ What is verified where: [support matrix](docs/releases/support-matrix.md),
 ![DPD Training Animation](pics/overview_test.gif)
 
 ### Interactive Training Dashboard
+
 - An **HTML dashboard** (`dashboard.html`) is generated after training, providing an interactive view of all epoch plots with a slider to scrub through epochs.
 
 ### Training Curve Plots
+
 - **Loss, ACLR, EVM, and NMSE curves** are plotted across all epochs at the end of training, saved under `training_curves/`.
 
 ### Comparison Plots (New `plot` Step)
+
 - A new **`--step plot`** command generates side-by-side comparison figures of PA output **without DPD vs. with DPD**, including PSD, AM/AM, AM/PM, constellation, waveform, and a metrics summary table.
 - Available via CLI (`python main.py --step plot`) and the Python API (`opendpd.plot_dpd()`).
 
 ### OFDM Constellation Demodulation
+
 - A new **`Demodulator`** module (`datasets/demodulator.py`) supports OFDM demodulation for constellation diagram generation, with per-dataset configurations for APA and DPA signal types.
 
 ### Python API Enhancements
+
 - `opendpd.train_pa()` and `opendpd.train_dpd()` now accept `plot=True` and `plot_every=N` parameters.
 - New `opendpd.plot_dpd()` function for generating comparison plots from Python.
 
@@ -100,19 +122,35 @@ opendpd.train_dpd(dataset_name='DPA_200MHz', n_epochs=100, plot=True, plot_every
 opendpd.plot_dpd(dataset_name='DPA_200MHz')
 ```
 
+<!-- --8<-- [end:whats-new] -->
+
 # Quick Start
+
+<!-- --8<-- [start:quick-start] -->
+
 Start with the Google Colab tutorial by clicking the badge below for a zero-install guided walkthrough of OpenDPD’s workflow.
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1o5X8hztWyMKaMhPs2gUf2fZABCq2nUjn?usp=sharing)
 
+<!-- --8<-- [end:quick-start] -->
+
 # Demo Video
+
+<!-- --8<-- [start:demo] -->
+
 Watch our [Demo Video](https://youtu.be/n3765lm3QZI) to see a real OpenDPDv2-trained neural DPD model in action achieving close to -60 dBc ACPR on a 200 MHz 256-QAM 5G NR signal with a -41.5 dBm average output power GaN PA.
 
 [![OpenDPD Introduction Video](https://img.youtube.com/vi/n3765lm3QZI/0.jpg)](https://youtu.be/n3765lm3QZI)
 
 
+<!-- --8<-- [end:demo] -->
+
 # Version Update
+
+<!-- --8<-- [start:versions] -->
+
 **OpenDPDv2** embeds a new temporal residual (TRes)-DeltaGRU NN DPD algorithm and a new TM3.1a 5-channel x 40 MHz (200 MHz) test signal dataset, measured from a 3.5 GHz Ampleon GaN PA at 41.5 dBm average output power, named APA_200MHz, enabling fast prototyping of accurate and power-efficient NN-based DPD algorithms by streamlining learning and optimization through DPD quantization and temporal sparsity exploitation.
+
 | Version    | Related Papers|Dataset                                      |    Supported Backbones      | Performance <br> on APA_200MHz
 |------------|----|-------------------|----------------------|---------|
 | OpenDPDv1 | Algorithms <br>  [![paper](https://img.shields.io/badge/OpenDPD-ISCAS2024-orange)](https://ieeexplore.ieee.org/abstract/document/10558162) <br> [![paper](https://img.shields.io/badge/MP--DPD-MWTL2024-orange)](https://ieeexplore.ieee.org/document/10502240) <br> [![paper](https://img.shields.io/badge/DeltaDPD-MWTL2025-orange)](https://ieeexplore.ieee.org/abstract/document/11006082) <br> [![paper](https://img.shields.io/badge/TCN--DPD-IMS2025-orange)](https://www.arxiv.org/abs/2506.12165) <br> Hardware [![paper](https://img.shields.io/badge/DPD--NeuralEngine-ISCAS2025-blue)](https://ieeexplore.ieee.org/document/11043563) <br> [![paper](https://img.shields.io/badge/SparseDPD-FPL2025-blue)](https://arxiv.org/abs/2506.16591)|Collected from a 40nm CMOS DTX @ 2.4 GHz<br>DPA_100MHz,<br>DPA_160MHz,<br>DPA_200MHz | GRU,<br>LSTM,<br>GMP,<br>RVTDCNN, <br>VDLSTM,<br> DGRU,<br> TCN        | DGRU with 1041 params: <br> ACPR of -58.4 dBc, <br> EVM of -39.1 dB|
@@ -122,11 +160,14 @@ Watch our [Demo Video](https://youtu.be/n3765lm3QZI) to see a real OpenDPDv2-tra
 
 
 
-
+<!-- --8<-- [end:versions] -->
 
 # Advanced Usage (From Source)
 
 ## Repository Layout
+
+<!-- --8<-- [start:layout] -->
+
 ```
 .
 ├── backbones/       # Neural backbone implementations
@@ -144,7 +185,12 @@ Watch our [Demo Video](https://youtu.be/n3765lm3QZI) to see a real OpenDPDv2-tra
 └── project.py       # Core configuration & training orchestration
 ```
 
+<!-- --8<-- [end:layout] -->
+
 ## Environment Setup
+
+<!-- --8<-- [start:environment] -->
+
 
 This project has been tested with PyTorch 2.6 and Ubuntu 24.04 LTS.
 
@@ -169,10 +215,12 @@ conda activate opendpd
 ### Installing PyTorch
 
 For **Linux or Windows** systems:
+
 - With CPU only:
   ```bash
   pip3 install torch torchvision torchaudio
   ```
+
 - With NVIDIA GPU (CUDA 12.6):
   ```bash
   pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
@@ -184,11 +232,16 @@ For **macOS** systems:
 pip3 install torch torchvision torchaudio
 ```
 
+<!-- --8<-- [end:environment] -->
+
 # End-to-End (E2E) Training
+
+<!-- --8<-- [start:e2e] -->
+
 
 This section introduces the End-to-End learning architecture and how to execute each component using command-line instructions.
 
-<img style="float: left" src="pics/OpenDPDv2.png" alt="drawing"/> 
+![OpenDPDv2 end-to-end learning architecture](pics/OpenDPDv2.png)
 
 The E2E learning framework consists of three main components:
 
@@ -215,7 +268,8 @@ Quantization-Aware is a technique for training fixed-point quantized DPD models 
 
 ```bash
 # 16-bit Quantization example
-# Replace ${pretrained_model_from_previous_step} with the path to your pretrained model
+# The quantized model is fine-tuned from a float DPD of the same backbone: train it first with
+# `--step train_dpd --DPD_backbone qgru` and pass its checkpoint (save/.../DPD_*_M_QGRU_*.pt) as ${pretrained_model_from_previous_step}
 # Replace ${label_for_quantized_model} with your desired label for the quantized model
 python main.py --dataset_name DPA_200MHz --step train_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --pretrained_model ${pretrained_model_from_previous_step} --quant_dir_label ${label_for_quantized_model}
 ```
@@ -233,6 +287,10 @@ Command line for validation with quantization:
 python main.py --dataset_name DPA_200MHz --step run_dpd --accelerator cpu --DPD_backbone qgru --quant --n_bits_w 16 --n_bits_a 16 --quant_dir_label ${label_for_quantized_model}
 ```
 
+<!-- --8<-- [end:e2e] -->
+
+<!-- --8<-- [start:visualization] -->
+
 ## Enhanced Visualization with Rich Tables
 
 OpenDPD features advanced progress visualization using Rich tables, displaying training metrics in an organized, colorful format:
@@ -245,7 +303,12 @@ You can adjust the decimal precision for metric display using the `--log_precisi
 python main.py --dataset_name DPA_200MHz --step train_pa --log_precision 4
 ```
 
+<!-- --8<-- [end:visualization] -->
+
 ## Reproducing Published Results
+
+<!-- --8<-- [start:reproduce] -->
+
 
 ### OpenDPDv1
 To reproduce the PA modeling results shown in **OpenDPD** Figure 4(a):
@@ -273,9 +336,14 @@ To reproduce the quantized (W16A16) TRes-DeltaGRU-450 DPD modeling results shown
 bash bash_scripts/OpenDPDv2.sh
 ```
 
+<!-- --8<-- [end:reproduce] -->
+
 # Testing & Continuous Integration
 
-Every push and pull request to `main` is automatically tested by GitHub Actions ([CI workflow](.github/workflows/ci.yml)): a lint pass for critical errors plus the pytest suite on Python 3.10–3.13, covering unit tests (metrics, backbones, datasets, API) and a full CPU end-to-end smoke run of `train_pa → train_dpd → run_dpd → plot` (including W16A16 quantization-aware training). A scheduled [Weekly workflow](.github/workflows/weekly.yml) additionally trains every supported backbone and every built-in dataset on Linux and macOS. The badges at the top of this page reflect the latest results.
+<!-- --8<-- [start:testing] -->
+
+
+Every push and pull request to `main` is automatically tested by GitHub Actions ([CI workflow](https://github.com/lab-emi/OpenDPD/blob/main/.github/workflows/ci.yml)): a lint pass for critical errors plus the pytest suite on Python 3.10–3.13, covering unit tests (metrics, backbones, datasets, API) and a full CPU end-to-end smoke run of `train_pa → train_dpd → run_dpd → plot` (including W16A16 quantization-aware training). A scheduled [Weekly workflow](https://github.com/lab-emi/OpenDPD/blob/main/.github/workflows/weekly.yml) additionally trains every supported backbone and every built-in dataset on Linux and macOS. The badges at the top of this page reflect the latest results.
 
 To run the tests locally:
 ```bash
@@ -284,13 +352,24 @@ pytest -m "not extended"   # fast suite (~1 min on CPU)
 pytest                     # everything, incl. all backbones / all datasets
 ```
 
-# Experimental Setup
-<img style="float: left" src="pics\platform.png" alt="drawing"/> 
+<!-- --8<-- [end:testing] -->
 
+# Experimental Setup
+
+<!-- --8<-- [start:setup] -->
+
+![Experimental setup](pics/platform.png)
+
+
+<!-- --8<-- [end:setup] -->
 
 # Authors & Citation
+
+<!-- --8<-- [start:citation] -->
+
 If you find this repository helpful, please cite our work:
-- [ISCAS 2024] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://ieeexplore.ieee.org/abstract/document/10558162)
+
+- \[ISCAS 2024\] [OpenDPD: An Open-Source End-to-End Learning & Benchmarking Framework for Wideband Power Amplifier Modeling and Digital Pre-Distortion](https://ieeexplore.ieee.org/abstract/document/10558162)
 ```
 @INPROCEEDINGS{Wu2024ISCAS,
   author={Wu, Yizhuo and Singh, Gagan Deep and Beikmirza, Mohammadreza and de Vreede, Leo C. N. and Alavi, Morteza and Gao, Chang},
@@ -303,7 +382,8 @@ If you find this repository helpful, please cite our work:
   keywords={Codes;Transmitters;OFDM;Power amplifiers;Artificial neural networks;Documentation;Benchmark testing;digital pre-distortion;behavioral modeling;deep neural network;power amplifier;digital transmitter},
   doi={10.1109/ISCAS58744.2024.10558162}}
 ```
-- [IMS/MWTL 2024] [MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers](https://ieeexplore.ieee.org/document/10502240)
+
+- \[IMS/MWTL 2024\] [MP-DPD: Low-Complexity Mixed-Precision Neural Networks for Energy-Efficient Digital Pre-distortion of Wideband Power Amplifiers](https://ieeexplore.ieee.org/document/10502240)
 ```
 @ARTICLE{Wu2024IMS,
   author={Wu, Yizhuo and Li, Ang and Beikmirza, Mohammadreza and Singh, Gagan Deep and Chen, Qinyu and de Vreede, Leo C. N. and Alavi, Morteza and Gao, Chang},
@@ -316,7 +396,8 @@ If you find this repository helpful, please cite our work:
   keywords={Deep neural network (DNN);digital predistortion (DPD);digital transmitter (DTX);power amplifier (PA);quantization},
   doi={10.1109/LMWT.2024.3386330}}
 ```
-- [IMS/MWTL 2025] [DeltaDPD: Exploiting Dynamic Temporal Sparsity in Recurrent Neural Networks for Energy-Efficient Wideband Digital Predistortion](https://ieeexplore.ieee.org/abstract/document/11006082/)
+
+- \[IMS/MWTL 2025\] [DeltaDPD: Exploiting Dynamic Temporal Sparsity in Recurrent Neural Networks for Energy-Efficient Wideband Digital Predistortion](https://ieeexplore.ieee.org/abstract/document/11006082/)
 ```
 @article{Wu2025MWTL,
    title={DeltaDPD: Exploiting Dynamic Temporal Sparsity in Recurrent Neural Networks for Energy-Efficient Wideband Digital Predistortion},
@@ -329,7 +410,13 @@ If you find this repository helpful, please cite our work:
    year={2025},
    pages={1–4} }
 ```
+
+<!-- --8<-- [end:citation] -->
+
 # Contributors
+
+<!-- --8<-- [start:contributors] -->
+
 
 - **Chang Gao** - Project Lead
 - **Yizhuo Wu** - Core Developer
@@ -338,7 +425,12 @@ If you find this repository helpful, please cite our work:
 - **Ruishen Yang** - Contributor
 - **Qian Wu (qian.wu@ucdconnect.ie)** - Contributor
 
+<!-- --8<-- [end:contributors] -->
+
 # FAQs
+
+<!-- --8<-- [start:faq] -->
+
 
 **Q: The discrepancy between spec.json of APA_200MHz and the reported signal configuration in our paper.**
 
@@ -346,7 +438,7 @@ If you find this repository helpful, please cite our work:
 The reported signal configuration in our paper — TM3.1a, 5×40 MHz (200 MHz) 256-QAM with a sampling rate of 983.04e6 Hz — is accurate. We used the spec.json file as shown in this repository because of the complexity involved in demodulating 5G NR signals.
 
 As illustrated in the figure, the structure of a 5G NR test signal is:
-<img style="float: left" src="pics\5GNR.png" alt="drawing"/>
+![Structure of a 5G NR test signal](pics/5GNR.png)
 Generating a multi-channel 5G NR standard test signal is even more complex. In particular, handling cyclic prefix variations requires calling MATLAB functions from Python, which would introduce unnecessary barriers for reproduction. For this reason, we currently employ the simplest demodulation approach (direct FFT) in metrics simulations.
 
 Impact on simulation results:
@@ -358,3 +450,5 @@ ii. This approach produces relatively accurate simulated ACPR and NMSE results, 
 iii. For the constellation maps provided in deltadpd and opendpdv2, we include a dedicated MATLAB script for demodulation (calculate_200MHz_256QAM_evm.m). However, note that this script applies only to this specific signal and is not generalizable.
 
 iv. In future releases, we plan to: Provide a separate branch that integrates MATLAB functions directly into Python workflows and release additional signal generation–demodulation chains wherever feasible.
+
+<!-- --8<-- [end:faq] -->

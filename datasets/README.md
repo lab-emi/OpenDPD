@@ -107,6 +107,7 @@ The datasets use two fundamentally different signal structures, each with a corr
 The transmit signal is constructed by mapping random QAM symbols onto frequency-domain subcarriers across multiple carriers, taking the IFFT, and concatenating the resulting time-domain frames back-to-back without cyclic prefix insertion. Each frame is exactly `nperseg` samples long.
 
 **How the signal is demodulated (`IFFTFrameDemodulator`):**
+
 1. Chop the raw signal into non-overlapping frames of `nperseg` samples.
 2. FFT each frame once (one FFT covers all carriers simultaneously).
 3. For each carrier, read the `n_active` subcarrier bins centered on the carrier's frequency offset.
@@ -115,6 +116,7 @@ The transmit signal is constructed by mapping random QAM symbols onto frequency-
 Because each frame is a complete IFFT output, the FFT perfectly inverts the generation process with no spectral leakage. No bandpass filtering or carrier isolation is needed.
 
 **Key parameters:**
+
 - `nperseg` must exactly match the IFFT frame size used during generation. Incorrect values produce a blurred constellation.
 - `n_active` is auto-computed as `bw_sub_ch / (fs / nperseg)` if not specified.
 
@@ -126,6 +128,7 @@ Because each frame is a complete IFFT output, the FFT perfectly inverts the gene
 The signal is a standard LTE waveform (TM3.1a) generated at 491.52 MHz with SCS = 15 kHz, then transmitted and captured at 983.04 MHz (effectively doubling the SCS to 30 kHz). It consists of 5 independently-timed LTE carriers at 40 MHz spacing, each carrying 20 MHz of 256QAM data on PDSCH (Physical Downlink Shared Channel). Different OFDM symbols within the LTE frame carry different channels (PDCCH uses QPSK, PDSCH uses 256QAM).
 
 **How the signal is demodulated (`OFDMCPDemodulator`):**
+
 1. For each carrier, frequency-shift to baseband and bandpass-filter.
 2. Find OFDM symbol boundaries via cyclic prefix correlation.
 3. Fine-tune the FFT start offset by minimizing kurtosis over a wider subcarrier range (1200 bins) for timing sensitivity.
@@ -134,6 +137,7 @@ The signal is a standard LTE waveform (TM3.1a) generated at 491.52 MHz with SCS 
 6. For output signals, apply per-subcarrier zero-forcing equalization using the clean input as reference to remove the PA's linear frequency response, revealing only nonlinear distortion.
 
 **Key parameters:**
+
 - `ofdm_nfft`: FFT size (32768). At the effective 30 kHz SCS, this equals `fs / scs`.
 - `n_active`: Set to 600, covering the 18 MHz occupied bandwidth of each 20 MHz LTE carrier at 30 kHz bin spacing. Setting this too large (e.g. 1200) includes guard-band subcarriers that create circular artifacts on the constellation.
 - `cp_other`: Cyclic prefix length (2304 samples) used to locate symbol boundaries.
