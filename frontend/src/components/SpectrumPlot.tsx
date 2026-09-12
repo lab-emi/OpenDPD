@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { t } from '@/i18n'
-import { tokens } from '@/theme'
+import { useStudioColors } from '@/theme'
 import { PlotlyChart, seriesDash, type PlotLayout, type PlotTrace } from './PlotlyChart'
 
 export interface SpectrumTrace {
@@ -26,10 +26,12 @@ export interface SpectrumPlotProps {
   title?: string
   height?: number
   onRendered?: (ms: number) => void
+  viewKey?: string
 }
 
 /** PSD traces on a dB axis with the ACLR integration bands shaded (UX spec §5). */
-export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = t('chart.spectrum.title'), height, onRendered }: SpectrumPlotProps) {
+export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = t('chart.spectrum.title'), height, onRendered, viewKey = '' }: SpectrumPlotProps) {
+  const colors = useStudioColors()
   const mhz = useMemo(() => Float64Array.from(frequencyHz, (f) => (axis === 'hz' ? f / 1e6 : f)), [frequencyHz, axis])
   const data = useMemo<PlotTrace[]>(
     () => traces.map((tr, i) => ({ x: mhz, y: tr.psdDb, name: tr.name, mode: 'lines', type: 'scatter', line: { width: 1.2, dash: seriesDash(i), ...(tr.color ? { color: tr.color } : {}) } })),
@@ -37,16 +39,18 @@ export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = 
   )
   // Keyed by value so an inline `bands` literal does not redraw on every render.
   const bandsKey = JSON.stringify(bands ?? null)
+  const xTitle = t(axis === 'hz' ? 'chart.spectrum.x' : 'chart.spectrum.x.normalized')
+  const yTitle = t(axis === 'hz' ? 'chart.spectrum.y' : 'chart.spectrum.y.normalized')
   const layout = useMemo<PlotLayout>(() => {
     const parsed = JSON.parse(bandsKey) as SpectrumBands | null
     const shapes: NonNullable<PlotLayout['shapes']> = []
     if (parsed) {
       const shade = (edges: [number, number], color: string) =>
         shapes.push({ type: 'rect', x0: edges[0] / 1e6, x1: edges[1] / 1e6, y0: 0, y1: 1, yref: 'paper', fillcolor: color, line: { width: 0 } })
-      shade(parsed.main, `${tokens.color.primary}14`)
-      for (const adj of parsed.adjacent) shade(adj, `${tokens.color.status.warning}14`)
+      shade(parsed.main, `${colors.primary}14`)
+      for (const adj of parsed.adjacent) shade(adj, `${colors.status.warning}14`)
     }
-    return { xaxis: { title: { text: axis === 'hz' ? t('chart.spectrum.x') : t('chart.spectrum.x.normalized') } }, yaxis: { title: { text: t('chart.spectrum.y') } }, shapes, showlegend: true }
-  }, [bandsKey, axis])
-  return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} data-testid="spectrum-plot" />
+    return { xaxis: { title: { text: xTitle } }, yaxis: { title: { text: yTitle } }, shapes, showlegend: true }
+  }, [bandsKey, xTitle, yTitle, colors])
+  return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} viewKey={`${viewKey}:${axis}`} data-testid="spectrum-plot" />
 }

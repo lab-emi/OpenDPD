@@ -3,6 +3,7 @@ import Checkbox from '@mui/material/Checkbox'
 import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
+import TableContainer from '@mui/material/TableContainer'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
@@ -11,7 +12,7 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router'
 import { useRuns } from '@/api/hooks'
-import { t } from '@/i18n'
+import { formatDateTime, t } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
@@ -35,7 +36,7 @@ export function ResultsPage() {
       {withResult.length === 0 ? (
         <EmptyState body={t('results.empty')} />
       ) : (
-        <Table size="small" aria-label={t('results.title')}>
+        <TableContainer tabIndex={0} role="region" aria-label={t('results.title')}><Table size="small" aria-label={t('results.title')}>
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox" />
@@ -64,11 +65,11 @@ export function ResultsPage() {
                 <TableCell>
                   <EvidenceBadge evidence={r.task === 'train_pa' || r.task === 'evaluate_pa' ? 'pa_modeling' : r.task === 'evaluate_measured' ? 'dpd_measured' : 'dpd_surrogate'} />
                 </TableCell>
-                <TableCell>{new Date(r.created_at).toLocaleString()}</TableCell>
+                <TableCell>{formatDateTime(r.created_at)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </Table></TableContainer>
       )}
     </Stack>
   )

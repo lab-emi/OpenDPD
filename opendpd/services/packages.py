@@ -127,7 +127,7 @@ def _artifacts_in_package(path: Path, prefix: str, present: set) -> Tuple[bytes,
     return payload.encode("utf-8"), [a.artifact_id for a in dropped]
 
 
-def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share") -> PackageManifest:
+def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", language: str = "en") -> PackageManifest:
     """Write ``out`` (a zip) for ``run_id``. ``kind`` is ``full`` (private, complete) or ``share`` (redacted)."""
     if kind not in ("full", "share"):
         raise PackageError("invalid_kind", f"package kind must be full or share, not '{kind}'")
@@ -214,8 +214,8 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share") ->
         redaction.append("the user's PA data (raw copy and data versions) is not included")
 
     from opendpd.services.reports import report_html, report_markdown
-    rewritten[REPORT_HTML] = _redact_text(report_html(ws, run_id), secrets).encode("utf-8")
-    rewritten[REPORT_MD] = _redact_text(report_markdown(ws, run_id), secrets).encode("utf-8")
+    rewritten[REPORT_HTML] = _redact_text(report_html(ws, run_id, language=language), secrets).encode("utf-8")
+    rewritten[REPORT_MD] = _redact_text(report_markdown(ws, run_id, language=language), secrets).encode("utf-8")
 
     reproduction = {
         "import": f"opendpd import {out.name} --workspace <workspace>",

@@ -13,6 +13,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Dict
 
+from .settings import WorkspaceSettings
 from .artifacts import Artifact, ArtifactKind, ArtifactManifest
 from .benchmark import MetricStats
 from .fixed_point import (
@@ -653,6 +654,11 @@ def deployment_manifest_mock() -> DeploymentManifest:
                               "c/harness.c": SHA_C}, software=SOFTWARE, created_at=T0)
 
 
+def workspace_settings_default() -> WorkspaceSettings:
+    """No language stored yet: the client follows the browser or system language."""
+    return WorkspaceSettings()
+
+
 def all_examples() -> Dict[str, object]:
     """Name -> model instance; names double as mock fixture file names."""
     return {
@@ -685,4 +691,5 @@ def all_examples() -> Dict[str, object]:
         "artifact_manifest_complete": artifact_manifest_complete(),
         "adaptation_report_mock": adaptation_report_mock(),
         "deployment_manifest_mock": deployment_manifest_mock(),
+        "workspace_settings_default": workspace_settings_default(),
     }

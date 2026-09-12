@@ -15,6 +15,7 @@ function mock<T>(name: string): T {
 type Json = Record<string, unknown>
 
 export interface FakeState {
+  language: string | null
   datasets: Json[]
   runs: Json[]
   submitted: Json[]
@@ -47,14 +48,14 @@ const report: Json = {
 }
 const aligned = { code: 'alignment_ok', severity: 'info', title: 'Aligned', message: 'residual 0.01 samples', evidence: { delay_samples: 0.01 }, blocking: false }
 
-export async function installFakeApi(page: Page): Promise<FakeState> {
+export async function installFakeApi(page: Page, options: { language?: string | null; customDatasets?: boolean } = {}): Promise<FakeState> {
   const dataset = mock<Json>('dataset_builtin')
   const running = mock<Json>('run_running')
   const events = mock<Json[]>('events_running')
   const result = mock<Json>('result_pa_modeling_mock')
   const profiles = [mock<Json>('metric_profile_legacy'), mock<Json>('metric_profile_general')]
   const resolved = mock<Json>('resolved_train_pa_smoke')
-  const state: FakeState = { datasets: [], runs: [], submitted: [], diagnostics: {} }
+  const state: FakeState = { language: options.language ?? null, datasets: [], runs: [], submitted: [], diagnostics: {} }
   const rawVersion: Json = { version: 'raw-v1', base_version: null, created_at: '2026-09-06T08:00:00Z', params: null, code_version: null, fit_range: null, record: {}, n_samples: 20000, split: dataset['split'], files: [], sha256: null }
   const recipes = [
     {
@@ -76,13 +77,20 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
     const url = new URL(req.url())
     const path = url.pathname.replace('/api/v1', '')
     const method = req.method()
+    if (path === '/settings' && method === 'GET') return json(route, { language: state.language })
+    if (path === '/settings' && method === 'PUT') {
+      state.language = (req.postDataJSON() as { language: string | null }).language
+      return json(route, { language: state.language })
+    }
     if (path === '/session') return json(route, { authenticated: true, csrf_token: 'e2e-csrf', version: '2.2.0.dev0' })
+    if (path === '/system/about') return json(route, { version: '2.2.0.dev0', local_commit: null, status: 'unavailable', updated_at: null, contributors: [], commits: [] })
     if (path === '/system/capabilities') {
-      return json(route, { version: '2.2.0.dev0', workspace: '/home/user/opendpd workspace', note: 'detected does not imply tested', devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru', 'tres_deltagru'] }, { device: 'mps', detected: false, count: 0, tested_models: [] }] })
+      return json(route, { version: '2.2.0.dev0', workspace: '/home/user/opendpd workspace', note: 'detected does not imply tested', custom_dataset_imports: options.customDatasets === true, devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru', 'tres_deltagru'] }, { device: 'mps', detected: false, count: 0, tested_models: [] }] })
     }
     if (path === '/models') return json(route, [{ key: 'gru', display_name: 'GRU', family: 'recurrent', legacy_backbone: 'gru', training_method: 'gradient', roles: ['pa', 'dpd'], params: [], status: 'supported', devices_tested: ['cpu', 'cuda'], lookahead_samples: 0, lookahead_note: '', execution_semantics: 'offline_segmented', export_formats: [] }])
     if (path === '/recipes') return json(route, recipes)
     if (path === '/datasets' && method === 'GET') return json(route, state.datasets)
+    if (path === '/datasets/builtin') return json(route, [{ name: 'DPA_200MHz', dataset_format: 'split_csv', description: '', origin: 'measured', signal: dataset['signal'], n_samples: dataset['n_samples'], raw_sha256: dataset['raw_sha256'], has_demodulator: true, problem: null }])
     if (path === '/datasets/import-builtin') {
       if (req.headers()['x-opendpd-csrf'] !== 'e2e-csrf') return json(route, { error: { code: 'csrf_required', message: 'missing', details: [], hint: null } }, 403)
       state.datasets = [dataset]
@@ -104,6 +112,12 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
       const found = state.datasets.find((d) => d['dataset_id'] === id) ?? dataset
       const sub = dm[2] ?? ''
       if (sub === '') return json(route, found)
+      if (sub === 'analysis') return json(route, {
+        version: 'dataset-inspection-v1', dataset_id: id, data_version: url.searchParams.get('version') ?? 'raw-v1',
+        total_samples: 20000, sample_range: [0, 20000], metadata_complete: true, inspection_ready: true,
+        diagnostics: state.diagnostics[id] ?? { ...report, dataset_id: id, items: [] },
+        measurements: [], spectrum: null, time: null, iq: null, am: null, notes: [],
+      })
       if (sub === 'diagnostics' && method === 'GET') return json(route, state.diagnostics[id] ?? null)
       if (sub === 'diagnostics') {
         state.diagnostics[id] = { ...report, dataset_id: id }
@@ -144,6 +158,11 @@ export async function installFakeApi(page: Page): Promise<FakeState> {
         return route.fulfill({ status: 200, contentType: 'text/event-stream', body: lines.join('') + `event: end\ndata: {"status":"succeeded","last_seq":${events.length}}\n\n` })
       }
       if (sub === 'logs') return json(route, { lines: ['::: Number of PA Model Parameters: 1911', 'Training Completed...'], next_offset: 64, eof: true, size: 64 })
+      if (sub === 'live') return json(route, {
+        policy: { min_batches: 25, min_seconds: 2, overhead_target: .05 },
+        geometry: { batch_size: 64, sequence_samples: 50, sample_rate_hz: 800e6, frame_stride: 16 },
+        preview: { source: 'validation_probe', samples: 2560, metrics: { NMSE: -30 }, units: { NMSE: 'dB' }, plots: {}, updated_at: '2026-09-12T11:00:00Z' },
+      })
       if (sub === 'artifacts') return json(route, mock<Json>('artifact_manifest_complete'))
       if (sub === 'lineage') return json(route, { run_id: run['run_id'], parents: [], children: [] })
       if (sub === 'history') return json(route, mock<Json[]>('history_points_mock'))

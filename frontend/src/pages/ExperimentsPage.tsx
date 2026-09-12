@@ -4,6 +4,7 @@ import Link from '@mui/material/Link'
 import LinearProgress from '@mui/material/LinearProgress'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
+import TableContainer from '@mui/material/TableContainer'
 import TablePagination from '@mui/material/TablePagination'
 import TextField from '@mui/material/TextField'
 import TableBody from '@mui/material/TableBody'
@@ -15,11 +16,12 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { useEffect, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router'
-import { useImportPackage, useRunCount, useRuns } from '@/api/hooks'
+import { useCustomDatasetImports, useImportPackage, useRunCount, useRuns } from '@/api/hooks'
 import type { RunStatus, RunView } from '@/api/types'
-import { t } from '@/i18n'
+import { formatDateTime, t } from '@/i18n'
 import { StatusChip, statusLabel } from '@/components/StatusChip'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
+import { ExperimentTasks, taskLabel } from '@/components/ExperimentTasks'
 
 const FILTERS: Array<RunStatus | 'all'> = ['all', 'running', 'queued', 'succeeded', 'failed']
 
@@ -32,7 +34,7 @@ function progressText(run: RunView): string {
 
 export function RunTable({ runs }: { runs: RunView[] }) {
   return (
-    <Table size="small" aria-label={t('experiments.title')}>
+    <TableContainer tabIndex={0} role="region" aria-label={t('experiments.title')}><Table size="small" aria-label={t('experiments.title')}>
       <TableHead>
         <TableRow>
           <TableCell>{t('experiments.columns.run')}</TableCell>
@@ -59,7 +61,7 @@ export function RunTable({ runs }: { runs: RunView[] }) {
                   </Typography>
                 )}
               </TableCell>
-              <TableCell>{r.task}</TableCell>
+              <TableCell>{taskLabel(r.task)}</TableCell>
               <TableCell>{r.model_key ?? t('common.na')}</TableCell>
               <TableCell>{r.dataset_id ?? t('common.na')}</TableCell>
               <TableCell>
@@ -70,27 +72,28 @@ export function RunTable({ runs }: { runs: RunView[] }) {
                 <Typography variant="caption">{progressText(r)}</Typography>
               </TableCell>
               <TableCell>
-                <time dateTime={r.created_at}>{new Date(r.created_at).toLocaleString()}</time>
+                <time dateTime={r.created_at}>{formatDateTime(r.created_at)}</time>
               </TableCell>
             </TableRow>
           )
         })}
       </TableBody>
-    </Table>
+    </Table></TableContainer>
   )
 }
 
 /** Package import: a hidden file input behind a button; the report says what arrived and what is still missing. */
 function ImportPackage() {
+  const customDatasets = useCustomDatasetImports()
   const importPackage = useImportPackage()
   const report = importPackage.data
   const missing = report?.missing ?? []
   const imported = report?.imported_runs ?? []
   return (
     <Stack spacing={1} sx={{ alignItems: 'flex-start' }}>
-      <Button component="label" variant="outlined" disabled={importPackage.isPending} title={t('experiments.import.help')}>
-        {t('experiments.import')}
-        <input
+      <Button component={customDatasets ? 'label' : 'button'} variant="outlined" disabled={!customDatasets || importPackage.isPending} title={t('experiments.import.help')}>
+        {t('experiments.import')}{!customDatasets && ` · ${t('common.comingSoon')}`}
+        {customDatasets && <input
           hidden
           type="file"
           accept="application/zip,.zip"
@@ -100,7 +103,7 @@ function ImportPackage() {
             if (f) importPackage.mutate(f)
             e.target.value = ''
           }}
-        />
+        />}
       </Button>
       {importPackage.isError && <ErrorState error={importPackage.error} />}
       {report && (
@@ -162,14 +165,13 @@ export function ExperimentsPage() {
     <Stack spacing={2}>
       <Stack sx={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }} direction="row" useFlexGap>
         <Typography variant="h1">{t('experiments.title')}</Typography>
-        <Button component={RouterLink} to="/experiments/new" variant="contained">
-          {t('experiments.new')}
-        </Button>
       </Stack>
+      <ExperimentTasks />
       <ImportPackage />
       <Stack direction="row" spacing={2} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
         <ToggleButtonGroup
           size="small"
+          sx={{ flexWrap: 'wrap', gap: .5, '& .MuiToggleButtonGroup-grouped': { m: 0, border: '1px solid', borderColor: 'divider', borderRadius: 1 } }}
           exclusive
           value={filter}
           aria-label={t('experiments.columns.status')}
@@ -183,7 +185,7 @@ export function ExperimentsPage() {
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        <TextField size="small" label={t('experiments.search')} value={draft} onChange={(e) => setDraft(e.target.value)} slotProps={{ htmlInput: { 'aria-label': t('experiments.search') } }} sx={{ minWidth: 260 }} />
+        <TextField size="small" label={t('experiments.search')} value={draft} onChange={(e) => setDraft(e.target.value)} slotProps={{ htmlInput: { 'aria-label': t('experiments.search') } }} sx={{ width: 260, maxWidth: '100%' }} />
       </Stack>
       {runs.isPending ? (
         <LoadingState />
@@ -193,20 +195,14 @@ export function ExperimentsPage() {
         q ? (
           <EmptyState body={t('experiments.noMatch', { q })} />
         ) : (
-          <EmptyState
-            body={t('experiments.empty')}
-            action={
-              <Button component={RouterLink} to="/experiments/new" variant="outlined">
-                {t('experiments.new')}
-              </Button>
-            }
-          />
+          <EmptyState body={t('experiments.empty')} />
         )
       ) : (
         <>
           <RunTable runs={runs.data} />
           <TablePagination
             component="div"
+            sx={{ '& .MuiTablePagination-toolbar': { flexWrap: 'wrap', justifyContent: 'flex-end', px: 0 }, '& .MuiTablePagination-spacer': { display: 'none' }, '& .MuiTablePagination-actions': { ml: 1 } }}
             count={count.data?.count ?? -1}
             page={page}
             rowsPerPage={size}

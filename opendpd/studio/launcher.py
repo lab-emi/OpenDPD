@@ -1,8 +1,9 @@
-"""``opendpd gui``: start the local service, wait until it answers, open the browser.
+"""``opendpd gui``: start the local service, wait until it answers, open the workbench.
 
 Sequence (plan §3): bind loopback → serve → probe ``/healthz`` → print the
-bootstrap URL → open the default browser → block until Ctrl+C → stop the
-supervisor (workers terminated) → release the workspace lock.
+bootstrap URL → open a native window (desktop extra) or the default browser →
+block until the window closes or Ctrl+C → stop the supervisor (workers
+terminated) → release the workspace lock.
 
 Instance reuse: a running Studio writes ``<workspace>/.studio.lock`` with its
 pid, port and bootstrap URL. Starting again on the same workspace opens the
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import json
 import errno
+import locale
 import os
 import secrets
 import socket
@@ -24,13 +26,15 @@ import webbrowser
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 DEFAULT_PORT = 8765
 PORT_SEARCH = 20
 LOCK_FILE = ".studio.lock"
 GUARD_FILE = ".studio.guard"
 HOST = "127.0.0.1"
+Mode = Literal["auto", "window", "browser", "none"]
+SHUTDOWN_GRACE_S = 1.0     # HTTP connection drain; the supervisor has its own bounded shutdown budget
 
 
 class LaunchError(RuntimeError):
@@ -170,20 +174,114 @@ def existing_instance(workspace: Path) -> Optional[Lock]:
     return None
 
 
-def launch(workspace: Path, *, port: Optional[int] = None, open_in_browser: bool = True,
-           out=None, serve=None, opener: Callable[[str], bool] = webbrowser.open) -> int:
-    """Run the Studio server for ``workspace``; returns a process exit code."""
+# -- surfaces: native window or browser ----------------------------------------------
+
+class BackgroundServer:
+    """uvicorn in a daemon thread: the GUI toolkit needs the main thread."""
+
+    def __init__(self, app, host: str, port: int):
+        import uvicorn
+        self.server = uvicorn.Server(uvicorn.Config(app, host=host, port=port, log_level="warning"))
+        self.thread = threading.Thread(target=self.server.run, name="opendpd-server", daemon=True)
+
+    def start(self) -> None:
+        self.thread.start()
+
+    def stop(self, timeout: float) -> None:
+        # An open SSE response can outlive the window. Bound Uvicorn's HTTP
+        # drain so it reaches lifespan shutdown and stops the supervisor.
+        self.server.config.timeout_graceful_shutdown = timeout
+        self.server.should_exit = True
+        # Keep workspace ownership until lifespan cleanup actually finishes.
+        # A timed join here used to let the daemon thread (and its workers) be
+        # abandoned when the launcher exited, before supervisor.stop ran.
+        self.thread.join()
+
+
+def _active_run_count(app) -> int:
+    """Runs the supervisor would have to stop if the server went away now."""
+    store = getattr(app.state, "store", None)
+    if store is None:
+        return 0
+    from opendpd.schemas import RunStatus
+    return sum(store.count_runs(status=s) for s in (RunStatus.queued, RunStatus.running, RunStatus.cancel_requested))
+
+
+def preferred_language(workspace: Path) -> str:
+    """The workspace's stored UI language, else the OS locale when supported, else English."""
+    from opendpd.schemas import UI_LANGUAGES
+    try:
+        from opendpd.services.workspace import Workspace
+        stored = Workspace.open(workspace).settings().language
+        if stored:
+            return stored
+    except Exception:  # noqa: BLE001 - no workspace yet or a broken file: never blocks the window
+        pass
+    try:
+        code = (locale.getlocale()[0] or "").split("_")[0].lower()
+    except ValueError:
+        code = ""
+    return code if code in UI_LANGUAGES else "en"
+
+
+def _default_window_runner(url: str, active_runs: Callable[[], int], workspace: Path) -> None:
+    from opendpd.studio import window as window_shell
+    from opendpd.studio.strings import shell_strings
+    window_shell.run_window(url, active_runs=active_runs, strings=lambda: shell_strings(preferred_language(workspace)),
+                            icon=window_shell.icon_path())
+
+
+def _choose_surface(mode: Mode, availability: Callable[[], "object"]) -> tuple:
+    """(surface, note): the surface actually used and, for a fallback, why."""
+    if mode in ("browser", "none"):
+        return mode, ""
+    avail = availability()
+    if avail.ok:
+        return "window", ""
+    if mode == "window":
+        return "unavailable", avail.reason
+    return "browser", f"native window not available ({avail.reason}); opening the browser instead"
+
+
+def _block_until_interrupted() -> None:
+    try:
+        while True:
+            time.sleep(1.0)
+    except KeyboardInterrupt:
+        pass
+
+
+def launch(workspace: Path, *, port: Optional[int] = None, mode: Mode = "auto", out=None, serve=None,
+           opener: Callable[[str], bool] = webbrowser.open, window_runner=None, background_server=None,
+           availability=None) -> int:
+    """Run the Studio server for ``workspace``; returns a process exit code.
+
+    ``mode``: ``auto`` opens a native window when the desktop extra can show one
+    and the browser otherwise; ``window`` insists on the window; ``browser``
+    always uses the browser; ``none`` only prints the URL.
+    """
     out = out or sys.stdout
     workspace = workspace.expanduser().resolve()
+    if availability is None:
+        from opendpd.studio.window import availability as _availability
+        availability = _availability
+    surface, note = _choose_surface(mode, availability)
+    if surface == "unavailable":
+        print(f"error: native window not available: {note}", file=sys.stderr)
+        return 2
+    if note:
+        print(note, file=out)
+        _flush(out)
+    window_runner = window_runner or (lambda url, active: _default_window_runner(url, active, workspace))
     try:
         workspace.mkdir(parents=True, exist_ok=True)
         with workspace_guard(workspace):
-            return _launch_locked(workspace, port=port, open_in_browser=open_in_browser,
-                                  out=out, serve=serve, opener=opener)
+            return _launch_locked(workspace, port=port, surface=surface, out=out, serve=serve, opener=opener,
+                                  window_runner=window_runner, background_server=background_server or BackgroundServer)
     except WorkspaceBusy:
         running = existing_instance(workspace)
         if running is not None:
-            return _reuse_instance(workspace, running, open_in_browser, out, opener)
+            return _reuse_instance(workspace, running, surface, out, opener, window_runner)
         print(f"error: workspace {workspace} is already starting, running, or shutting down; "
               "wait for that instance or use a different --workspace", file=sys.stderr)
         return 2
@@ -193,18 +291,25 @@ def launch(workspace: Path, *, port: Optional[int] = None, open_in_browser: bool
         return 2
 
 
-def _reuse_instance(workspace: Path, running: Lock, open_in_browser: bool, out, opener) -> int:
+def _reuse_instance(workspace: Path, running: Lock, surface: str, out, opener, window_runner) -> int:
     print(f"OpenDPD Studio is already running for {workspace} (pid {running.pid}) at {running.url}", file=out)
-    if open_in_browser and not open_browser(running.url, opener):
+    if surface == "window":
+        try:
+            window_runner(running.url, lambda: 0)     # a window on someone else's server: never asks, never stops it
+            return 0
+        except Exception as err:  # noqa: BLE001 - toolkit failure: fall back like the launch path
+            print(f"warning: the native window failed ({err}); opening the browser instead", file=out)
+            surface = "browser"
+    if surface == "browser" and not open_browser(running.url, opener):
         print("could not open a browser; open the URL above yourself", file=out)
     return 0
 
 
-def _launch_locked(workspace: Path, *, port: Optional[int], open_in_browser: bool,
-                   out, serve, opener: Callable[[str], bool]) -> int:
+def _launch_locked(workspace: Path, *, port: Optional[int], surface: str, out, serve,
+                   opener: Callable[[str], bool], window_runner, background_server) -> int:
     running = existing_instance(workspace)
     if running is not None:
-        return _reuse_instance(workspace, running, open_in_browser, out, opener)
+        return _reuse_instance(workspace, running, surface, out, opener, window_runner)
 
     previous = Lock.read(workspace / LOCK_FILE)
     if previous is not None and previous.alive():
@@ -231,16 +336,16 @@ def _launch_locked(workspace: Path, *, port: Optional[int], open_in_browser: boo
     app = create_app(workspace, bootstrap_token=token)
     lock_path = write_lock(workspace, chosen, url)
 
+    if surface == "window":
+        return _serve_with_window(app, chosen, url, lock_path, out=out, opener=opener,
+                                  window_runner=window_runner, background_server=background_server)
+
     def after_ready() -> None:
         if not wait_until_healthy(chosen):
             print("error: the service did not become healthy within 30 s", file=sys.stderr)
             return
-        ready = probe(f"http://{HOST}:{chosen}/readyz") or {}
-        for problem in ready.get("problems", []):
-            print(f"warning: {problem}", file=out)
-        print(f"OpenDPD Studio: {url}", file=out)
-        print("Press Ctrl+C to stop.", file=out)
-        if open_in_browser and not open_browser(url, opener):
+        _print_ready(chosen, url, out, stop_hint="Press Ctrl+C to stop.")
+        if surface == "browser" and not open_browser(url, opener):
             print("could not open a browser (no desktop session?); open the URL above yourself", file=out)
 
     threading.Thread(target=after_ready, name="opendpd-launcher", daemon=True).start()
@@ -255,6 +360,48 @@ def _launch_locked(workspace: Path, *, port: Optional[int], open_in_browser: boo
     except KeyboardInterrupt:
         return 0
     finally:
+        try:
+            lock_path.unlink()
+        except OSError:
+            pass
+
+
+def _print_ready(port: int, url: str, out, stop_hint: str) -> None:
+    ready = probe(f"http://{HOST}:{port}/readyz") or {}
+    for problem in ready.get("problems", []):
+        print(f"warning: {problem}", file=out)
+    print(f"OpenDPD Studio: {url}", file=out)
+    print(stop_hint, file=out)
+    _flush(out)
+
+
+def _flush(out) -> None:
+    """The URL must reach a piped or redirected stdout while the server is still running."""
+    try:
+        out.flush()
+    except (AttributeError, OSError):
+        pass
+
+
+def _serve_with_window(app, port: int, url: str, lock_path: Path, *, out, opener, window_runner, background_server) -> int:
+    """Window mode: the server in a thread, the toolkit on the main thread; closing the window stops the server."""
+    server = background_server(app, HOST, port)
+    server.start()
+    try:
+        if not wait_until_healthy(port):
+            print("error: the service did not become healthy within 30 s", file=sys.stderr)
+            return 2
+        _print_ready(port, url, out, stop_hint="Close the window or press Ctrl+C to stop.")
+        try:
+            window_runner(url, lambda: _active_run_count(app))
+        except Exception as err:  # noqa: BLE001 - toolkit failure after the probe said it would work
+            print(f"warning: the native window failed ({err}); opening the browser instead", file=out)
+            if not open_browser(url, opener):
+                print("could not open a browser; open the URL above yourself", file=out)
+            _block_until_interrupted()
+        return 0
+    finally:
+        server.stop(timeout=SHUTDOWN_GRACE_S)
         try:
             lock_path.unlink()
         except OSError:
@@ -305,6 +452,9 @@ def doctor(workspace: Optional[Path] = None, out=None) -> int:
         problems.append("frontend assets missing: install a release wheel or run `npm run build` in frontend/")
     elif status["problem"]:
         problems.append(status["problem"])
+    from opendpd.studio import window as window_shell
+    avail = window_shell.availability()
+    print(f"  window    {avail.backend if avail.ok else 'not available: ' + avail.reason}", file=out)
     ws = (workspace or default_workspace()).expanduser()
     print(f"  workspace {ws}{'' if ws.exists() else '  (will be created)'}", file=out)
     if ws.exists():

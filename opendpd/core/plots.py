@@ -54,7 +54,7 @@ def spectrum(signals: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *, sam
         bands = {"main": [-bw / 2, bw / 2], "adjacent": [[-3 * bw / 2, -bw / 2], [bw / 2, 3 * bw / 2]]}
     return {
         "version": PLOTS_VERSION, "kind": "spectrum", "axis": axis, "sample_rate_hz": sample_rate_hz, "nperseg": seg,
-        "n_samples": int(n), "frequency": _round(freq, 3) if freq is not None else [], "traces": traces, "bands": bands,
+        "n_samples": int(n), "frequency": _round(freq, 9 if axis == "normalized" else 3) if freq is not None else [], "traces": traces, "bands": bands,
         "estimator": "scipy.signal.welch, window=hann, noverlap=nperseg//2, detrend off, density scaling, "
                      "two-sided; dB = 10*log10(PSD); identical to general-spectral-v1",
     }
@@ -73,6 +73,17 @@ def time_excerpt(signals: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *,
                        "i": _round(window.real, AMP_DECIMALS), "q": _round(window.imag, AMP_DECIMALS)})
     return {"version": PLOTS_VERSION, "kind": "time", "start": int(start), "n": int(min(n, total or 0)),
             "n_samples": int(total or 0), "traces": traces}
+
+
+def iq_scatter(signals: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *, max_points: int = AM_POINTS) -> Dict:
+    """Bounded I/Q sample cloud, explicitly not a demodulated constellation."""
+    z = {name: to_complex(arr) for name, arr in signals.items()}
+    n = min(len(arr) for arr in z.values())
+    stride = max(1, int(np.ceil(n / max_points)))
+    return {"version": PLOTS_VERSION, "kind": "iq", "mode": "samples", "stride": stride, "n_samples": n,
+            "traces": [{"name": name, "role": roles.get(name, "primary"),
+                        "i": _round(arr[:n:stride].real, AMP_DECIMALS),
+                        "q": _round(arr[:n:stride].imag, AMP_DECIMALS)} for name, arr in z.items()]}
 
 
 def am_am_pm(x: np.ndarray, outputs: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *,

@@ -151,7 +151,12 @@ from .run import (
     heartbeat_is_stale,
 )
 
+from .settings import UI_LANGUAGES, UILanguage, WorkspaceSettings
+
 __all__ = [
+    "UI_LANGUAGES",
+    "UILanguage",
+    "WorkspaceSettings",
     "BaselineBand", "BenchmarkEntry", "BenchmarkPlan", "BenchmarkReport", "DataAudit",
     "EntryResult", "MetricStats", "RegressionBaseline", "RegressionCheck", "RegressionItem", "SeedScore",
     "SCHEMA_VERSION", "utcnow",

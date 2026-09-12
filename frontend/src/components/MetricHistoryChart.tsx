@@ -11,12 +11,14 @@ export function MetricHistoryChart({ points, metric, height = 280 }: { points: M
       const v = p.values[metric]
       if (v === undefined) continue
       const acc = bySplit.get(p.split) ?? { x: [], y: [] }
-      acc.x.push(p.epoch)
+      // Epoch-end events are zero-based; batch probes already carry fractional completed epochs.
+      acc.x.push(p.split.endsWith('_probe') ? p.epoch : p.epoch + 1)
       acc.y.push(v)
       bySplit.set(p.split, acc)
     }
     return [...bySplit.entries()].map(([split, s], i) => ({ x: s.x, y: s.y, name: `${split} ${metric}`, mode: 'lines+markers', type: 'scatter', line: { dash: seriesDash(i) }, marker: { symbol: seriesSymbol(i) } }))
   }, [points, metric])
-  const layout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.history.x') } }, yaxis: { title: { text: metric } }, showlegend: true }), [metric])
-  return <PlotlyChart title={`${metric} per epoch`} traces={traces} layout={layout} height={height} data-testid={`history-${metric}`} />
+  const xTitle = t('chart.history.x')
+  const layout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: metric } }, showlegend: true }), [xTitle, metric])
+  return <PlotlyChart title={t('chart.history.title', { metric })} traces={traces} layout={layout} height={height} viewKey={metric} data-testid={`history-${metric}`} />
 }

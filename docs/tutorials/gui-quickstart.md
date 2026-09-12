@@ -1,27 +1,50 @@
 # OpenDPD Studio: one command to the workbench
 
 ```bash
-pip install "opendpd[gui]"
+pip install "opendpd[desktop]"   # or "opendpd[gui]" for the browser-only variant
 opendpd gui
 ```
 
-`opendpd gui` starts a local service on `127.0.0.1`, waits until it answers,
-prints a one-time URL such as `http://127.0.0.1:8765/bootstrap?token=…` and
-opens it in your default browser. No Node.js, no second terminal, no
-copying of addresses. Press Ctrl+C to stop; running workers are terminated
-and the workspace lock is released.
+`opendpd gui` starts a local service on `127.0.0.1`, waits until it answers
+and opens the workbench in a native application window (`opendpd[desktop]`)
+or, without that extra, in your default browser after printing a one-time
+URL such as `http://127.0.0.1:8765/bootstrap?token=…`. No Node.js, no second
+terminal, no copying of addresses. Close the window, quit the application or
+press Ctrl+C to stop; running workers are terminated and the workspace lock
+is released. When runs are still active, all three ask first.
 
 | Option | Effect |
 |---|---|
 | `--workspace DIR` | where datasets, runs and results live (default `$OPENDPD_WORKSPACE` or `~/opendpd-workspace`) |
 | `--port N` | use exactly this port (fails if busy); without it the first free port from 8765 is used |
 | `--no-browser` | print the URL only (SSH sessions, servers without a desktop) |
+| `--browser` | open the system browser even when the native window is available |
+| `--window` | require the native window; fail with the reason when it is not available |
 
 Starting `opendpd gui` again for the same workspace while one is running
 opens the existing instance instead of a second server. If the first instance
 is still starting or shutting down, the second command refuses with a message
 to wait or use another workspace. An OS lock prevents simultaneous launchers
 from writing to the same workspace, even before the service becomes healthy.
+
+## Native window
+
+The window is the same page a browser would show, hosted by the operating
+system's web view (WKWebView on macOS, WebView2 on Windows, WebKit2GTK or Qt
+on Linux). Downloads go through the platform's save dialog. The window cannot
+script the page and keeps no data of its own: your language choice and every
+other preference live in the workspace. `opendpd doctor` prints the backend
+in use or the reason none is available (on Linux install `python3-gi
+gir1.2-webkit2-4.1` or `pip install "pywebview[qt]"`).
+
+## Language
+
+The top bar shows the current language with its flag; the menu lists
+English, Français, Deutsch, Español, 中文, 日本語 and 한국어. A choice applies
+at once and is stored in `<workspace>/settings.json`, so it is the same in
+the native window and in any browser. The first launch follows your browser
+or system language. Server messages, worker logs, reports and the CLI stay in
+English so that a GUI screen, a package and a terminal say the same thing.
 
 ## What the browser shows
 

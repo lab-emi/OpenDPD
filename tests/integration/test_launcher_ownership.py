@@ -43,7 +43,7 @@ def serve(app, host, port):
         time.sleep(0.05)
     import uvicorn
     uvicorn.run(app, host=host, port=port, log_level="warning")
-sys.exit(launch(Path(sys.argv[1]), open_in_browser=False, serve=serve))
+sys.exit(launch(Path(sys.argv[1]), mode="none", serve=serve))
 """
     command = [sys.executable, "-m", "opendpd.commands", "gui", "--workspace", str(workspace), "--no-browser"]
     processes = []

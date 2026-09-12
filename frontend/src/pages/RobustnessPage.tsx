@@ -21,7 +21,7 @@ import { API } from '@/api/client'
 import { useAdaptationReport, useAdaptationReports } from '@/api/hooks'
 import type { AdaptationReport, AdaptationReportSummary, CellAggregate } from '@/api/types'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
-import { t, type MessageKey } from '@/i18n'
+import { formatDateTime, t, type MessageKey } from '@/i18n'
 
 type Task = CellAggregate['task']
 const TASKS: Task[] = ['zero_update', 'few_shot', 'full_retrain']
@@ -82,7 +82,7 @@ function ReportList({ reports, selected }: { reports: AdaptationReportSummary[];
             <TableCell>
               <EvidenceBarChip met={r.evidence_met} />
             </TableCell>
-            <TableCell>{new Date(r.generated_at).toLocaleString()}</TableCell>
+            <TableCell>{formatDateTime(r.generated_at)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

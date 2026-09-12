@@ -4,6 +4,7 @@ import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
+import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Grid from '@mui/material/Grid'
 import Link from '@mui/material/Link'
@@ -11,6 +12,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
+import TableContainer from '@mui/material/TableContainer'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
@@ -23,7 +25,7 @@ import { API, artifactUrl } from '@/api/client'
 import { useDeployExport, useExportRun, useMetricProfiles, useModels, useResult, useResultProfiles } from '@/api/hooks'
 import { offeredProfiles } from '@/api/profiles'
 import type { BaselineScore, DeploymentManifest, EvaluationResult, ExecutionEvidence, MetricProfile, MetricValue } from '@/api/types'
-import { t, type MessageKey } from '@/i18n'
+import { formatNumber, formatDateTime, getLanguage, message, t, type MessageKey } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
 import { ResultCharts } from '@/components/ResultCharts'
@@ -50,10 +52,10 @@ function ExportPanel({ runId }: { runId: string }) {
         <Button variant="outlined" size="small" disabled={exportRun.isPending} onClick={() => exportRun.mutate({ run_id: runId, kind: 'full' })}>
           {t('results.export.full')}
         </Button>
-        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=html`} download>
+        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=html${getLanguage() === 'en' ? '' : `&language=${getLanguage()}`}`} download>
           {t('results.report.html')}
         </Button>
-        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=md`} download>
+        <Button size="small" component="a" href={`${API}/results/${encodeURIComponent(runId)}/report?format=md${getLanguage() === 'en' ? '' : `&language=${getLanguage()}`}`} download>
           {t('results.report.md')}
         </Button>
       </Stack>
@@ -69,7 +71,7 @@ function ExportPanel({ runId }: { runId: string }) {
               <strong>{t('results.export.redaction')}:</strong>
               <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
                 {(info.manifest.redaction ?? []).map((line) => (
-                  <li key={line}>{line}</li>
+                  <li key={line}>{message(line)}</li>
                 ))}
               </ul>
             </Typography>
@@ -79,13 +81,13 @@ function ExportPanel({ runId }: { runId: string }) {
               <strong>{t('results.export.missing')}:</strong>
               <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
                 {(info.manifest.missing ?? []).map((line) => (
-                  <li key={line}>{line}</li>
+                  <li key={line}>{message(line)}</li>
                 ))}
               </ul>
             </Typography>
           )}
           <Typography variant="caption" component="p" sx={{ mt: 1 }}>
-            <strong>{t('results.export.retraining')}:</strong> {info.manifest.retraining_note}
+            <strong>{t('results.export.retraining')}:</strong> {message(info.manifest.retraining_note)}
           </Typography>
         </Alert>
       )}
@@ -99,7 +101,7 @@ const BASELINE: Record<BaselineScore['kind'], MessageKey> = {
 }
 
 const fmt = (v: number | null | undefined, digits = 3) => (typeof v === 'number' ? v.toFixed(digits) : t('common.na'))
-const score = (m: MetricValue | undefined) => (!m ? t('common.na') : m.status === 'ok' && typeof m.value === 'number' ? `${m.value.toFixed(2)} ${m.unit}` : (m.status ?? 'ok').replace('_', ' '))
+const score = (m: MetricValue | undefined) => (!m ? t('common.na') : m.status === 'ok' && typeof m.value === 'number' ? `${m.value.toFixed(2)} ${m.unit}` : message(m.status ?? 'ok'))
 
 /** x → u = DPD(x) → y = PA(u): every stage names its source; simulated stages are marked as such. */
 function SignalChain({ result }: { result: EvaluationResult }) {
@@ -113,43 +115,45 @@ function SignalChain({ result }: { result: EvaluationResult }) {
       <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
         {t('results.detail.chain.help')}
       </Typography>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>{t('results.detail.chain.stage')}</TableCell>
-            <TableCell>{t('results.detail.chain.role')}</TableCell>
-            <TableCell>{t('results.detail.chain.source')}</TableCell>
-            <TableCell align="right">{t('results.detail.chain.samples')}</TableCell>
-            <TableCell align="right">{t('results.detail.chain.peak')}</TableCell>
-            <TableCell align="right">{t('results.detail.chain.rms')}</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {chain.map((s) => (
-            <TableRow key={s.symbol} data-stage={s.symbol}>
-              <TableCell>
-                <code>{s.symbol}</code>
-              </TableCell>
-              <TableCell>{s.role}</TableCell>
-              <TableCell>
-                {s.source}
-                {s.simulated && <Chip size="small" color="warning" variant="outlined" label={t('results.detail.chain.simulated')} sx={{ ml: 1 }} />}
-                {s.artifact_id && result.run_id && (
-                  <>
-                    {' '}
-                    <Link href={artifactUrl(result.run_id, s.artifact_id)} download>
-                      {t('results.detail.chain.export')}
-                    </Link>
-                  </>
-                )}
-              </TableCell>
-              <TableCell align="right">{s.n_samples ?? t('common.na')}</TableCell>
-              <TableCell align="right">{fmt(s.peak_abs)}</TableCell>
-              <TableCell align="right">{fmt(s.rms)}</TableCell>
+      <TableContainer tabIndex={0} role="group" aria-label={t('results.detail.chain')}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>{t('results.detail.chain.stage')}</TableCell>
+              <TableCell>{t('results.detail.chain.role')}</TableCell>
+              <TableCell>{t('results.detail.chain.source')}</TableCell>
+              <TableCell align="right">{t('results.detail.chain.samples')}</TableCell>
+              <TableCell align="right">{t('results.detail.chain.peak')}</TableCell>
+              <TableCell align="right">{t('results.detail.chain.rms')}</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {chain.map((s) => (
+              <TableRow key={s.symbol} data-stage={s.symbol}>
+                <TableCell>
+                  <code>{s.symbol}</code>
+                </TableCell>
+                <TableCell>{message(s.role)}</TableCell>
+                <TableCell>
+                  {message(s.source)}
+                  {s.simulated && <Chip size="small" color="warning" variant="outlined" label={t('results.detail.chain.simulated')} sx={{ ml: 1 }} />}
+                  {s.artifact_id && result.run_id && (
+                    <>
+                      {' '}
+                      <Link href={artifactUrl(result.run_id, s.artifact_id)} download>
+                        {t('results.detail.chain.export')}
+                      </Link>
+                    </>
+                  )}
+                </TableCell>
+                <TableCell align="right">{s.n_samples ?? t('common.na')}</TableCell>
+                <TableCell align="right">{fmt(s.peak_abs)}</TableCell>
+                <TableCell align="right">{fmt(s.rms)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Paper>
   )
 }
@@ -203,38 +207,40 @@ function DeploymentSummary({ manifest, filename, downloadUrl }: { manifest: Depl
           {t('results.deploy.download', { filename })}
         </Link>
       </Typography>
-      <Table size="small" aria-label={t('results.deploy.loss')}>
-        <TableHead>
-          <TableRow>
-            <TableCell>{t('results.deploy.loss.metric')}</TableCell>
-            <TableCell align="right">{t('results.deploy.loss.float')}</TableCell>
-            <TableCell align="right">{t('results.deploy.loss.fixed')}</TableCell>
-            <TableCell align="right">{t('results.deploy.loss.delta')}</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {r.quality_loss.map((d) => (
-            <TableRow key={d.name}>
-              <TableCell>
-                {d.name} ({d.unit})
-              </TableCell>
-              <TableCell align="right">{d.float_value?.toFixed(2) ?? t('common.na')}</TableCell>
-              <TableCell align="right">{d.fixed_value?.toFixed(2) ?? t('common.na')}</TableCell>
-              <TableCell align="right">{d.delta === null || d.delta === undefined ? t('common.na') : `${d.delta >= 0 ? '+' : ''}${d.delta.toFixed(2)}`}</TableCell>
+      <TableContainer tabIndex={0} role="group" aria-label={t('results.deploy.loss')}>
+        <Table size="small" aria-label={t('results.deploy.loss')}>
+          <TableHead>
+            <TableRow>
+              <TableCell>{t('results.deploy.loss.metric')}</TableCell>
+              <TableCell align="right">{t('results.deploy.loss.float')}</TableCell>
+              <TableCell align="right">{t('results.deploy.loss.fixed')}</TableCell>
+              <TableCell align="right">{t('results.deploy.loss.delta')}</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }} data-testid="deploy-resources">
-        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.theoretical')}</dt>
+          </TableHead>
+          <TableBody>
+            {r.quality_loss.map((d) => (
+              <TableRow key={d.name}>
+                <TableCell>
+                  {d.name} ({d.unit})
+                </TableCell>
+                <TableCell align="right">{d.float_value?.toFixed(2) ?? t('common.na')}</TableCell>
+                <TableCell align="right">{d.fixed_value?.toFixed(2) ?? t('common.na')}</TableCell>
+                <TableCell align="right">{d.delta === null || d.delta === undefined ? t('common.na') : `${d.delta >= 0 ? '+' : ''}${d.delta.toFixed(2)}`}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'minmax(0, 1fr) minmax(0, 2fr)' }, columnGap: 2, rowGap: .5, overflowWrap: 'anywhere' }} data-testid="deploy-resources">
+        <dt>{t('results.deploy.label.theoretical')}</dt>
         <dd style={{ margin: 0 }}>{t('results.deploy.resources', { mac: res.mac_per_sample, lookups: res.table_lookups_per_sample, weights: res.weight_bytes, state: res.state_bytes, tables: res.table_bytes })}</dd>
-        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.measured')}</dt>
-        <dd style={{ margin: 0 }}>{r.measured_execution ? t('results.deploy.measured', { rate: Math.round(r.measured_execution.samples_per_second).toLocaleString(), what: r.measured_execution.what }) : t('results.deploy.notAvailable')}</dd>
-        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.synthesis')}</dt>
+        <dt>{t('results.deploy.label.measured')}</dt>
+        <dd style={{ margin: 0 }}>{r.measured_execution ? t('results.deploy.measured', { rate: formatNumber(Math.round(r.measured_execution.samples_per_second)), what: r.measured_execution.what }) : t('results.deploy.notAvailable')}</dd>
+        <dt>{t('results.deploy.label.synthesis')}</dt>
         <dd style={{ margin: 0 }}>{r.synthesis_estimate ?? t('results.deploy.notSynthesised')}</dd>
-        <dt style={{ color: '#4B5563' }}>{t('results.deploy.label.power')}</dt>
+        <dt>{t('results.deploy.label.power')}</dt>
         <dd style={{ margin: 0 }}>{r.measured_power ?? t('results.deploy.notMeasuredPower')}</dd>
-      </dl>
+      </Box>
     </Stack>
   )
 }
@@ -243,7 +249,7 @@ function DeploymentSummary({ manifest, filename, downloadUrl }: { manifest: Depl
 function ExecutionPanel({ result }: { result: EvaluationResult }) {
   const e: ExecutionEvidence | null | undefined = result.execution
   if (!e) return null
-  const micro = typeof e.lookahead_s === 'number' ? `${(e.lookahead_s * 1e6).toLocaleString(undefined, { maximumFractionDigits: 4 })} µs` : t('common.na')
+  const micro = typeof e.lookahead_s === 'number' ? `${formatNumber(e.lookahead_s * 1e6, { maximumFractionDigits: 4 })} µs` : t('common.na')
   const facts: Array<[string, string]> = [
     [t('results.detail.execution.semantics'), `${e.semantics} · ${t(`results.detail.execution.state.${e.state}` as MessageKey)}`],
     [t('results.detail.execution.chunk'), t('results.detail.execution.samples', { n: e.chunk_samples })],
@@ -260,14 +266,14 @@ function ExecutionPanel({ result }: { result: EvaluationResult }) {
       <Alert severity={c.within_tolerance ? 'success' : 'error'} sx={{ mb: 2 }} data-testid="chunk-consistency">
         {t(c.within_tolerance ? 'results.detail.execution.consistent' : 'results.detail.execution.inconsistent', { chunk: c.chunk_samples, error: c.max_abs_error.toExponential(2), tolerance: c.tolerance.toExponential(0) })}
       </Alert>
-      <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }}>
+      <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'minmax(0, 1fr) minmax(0, 2fr)' }, columnGap: 2, rowGap: .5, overflowWrap: 'anywhere' }}>
         {facts.map(([k, v]) => (
           <div key={k} style={{ display: 'contents' }}>
-            <dt style={{ color: '#4B5563' }}>{k}</dt>
+            <dt>{k}</dt>
             <dd style={{ margin: 0 }}>{v}</dd>
           </div>
         ))}
-      </dl>
+      </Box>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
         {t('results.detail.execution.note')}
       </Typography>
@@ -282,11 +288,11 @@ function MeasurementPanel({ result }: { result: EvaluationResult }) {
   const facts: Array<[string, string]> = [
     [t('results.detail.measurement.pa'), c.pa],
     [t('results.detail.measurement.chain'), c.capture_chain],
-    [t('results.detail.measurement.rate'), `${(c.sample_rate_hz / 1e6).toLocaleString(undefined, { maximumFractionDigits: 3 })} MS/s`],
+    [t('results.detail.measurement.rate'), `${formatNumber(c.sample_rate_hz / 1e6, { maximumFractionDigits: 3 })} MS/s`],
     [t('results.detail.measurement.drive'), c.drive],
     [t('results.detail.measurement.gain'), typeof c.gain_db === 'number' ? `${c.gain_db} dB` : t('common.na')],
     [t('results.detail.measurement.calibration'), c.calibration],
-    [t('results.detail.measurement.measured_at'), new Date(c.measured_at).toLocaleString()],
+    [t('results.detail.measurement.measured_at'), formatDateTime(c.measured_at)],
     [t('results.detail.measurement.temperature'), typeof c.temperature_c === 'number' ? `${c.temperature_c} °C` : t('common.na')],
     [t('results.detail.measurement.operator'), c.operator ?? t('common.na')],
     [t('results.detail.measurement.played'), `${m.apply_run_id} · ${m.played_sha256.slice(0, 12)}`],
@@ -300,64 +306,66 @@ function MeasurementPanel({ result }: { result: EvaluationResult }) {
       <Alert severity={result.is_mock ? 'error' : 'warning'} sx={{ mb: 2 }} data-testid="attestation">
         {m.attestation}
       </Alert>
-      <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }}>
+      <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'minmax(0, 1fr) minmax(0, 2fr)' }, columnGap: 2, rowGap: .5, overflowWrap: 'anywhere' }}>
         {facts.map(([k, v]) => (
           <div key={k} style={{ display: 'contents' }}>
-            <dt style={{ color: '#4B5563' }}>{k}</dt>
+            <dt>{k}</dt>
             <dd style={{ margin: 0 }}>{v}</dd>
           </div>
         ))}
-      </dl>
+      </Box>
       {c.notes && (
         <Typography variant="body2" sx={{ mt: 1 }}>
           {c.notes}
         </Typography>
       )}
-      <Table size="small" sx={{ mt: 2 }} aria-label={t('results.detail.measurement.captures')}>
-        <TableHead>
-          <TableRow>
-            <TableCell>{t('results.detail.measurement.capture')}</TableCell>
-            <TableCell>{t('results.detail.measurement.file')}</TableCell>
-            <TableCell align="right">{t('results.detail.chain.samples')}</TableCell>
-            <TableCell align="right">{t('results.detail.measurement.delay')}</TableCell>
-            <TableCell align="right">{t('results.detail.measurement.correlation')}</TableCell>
-            <TableCell align="right">{t('results.detail.measurement.fit')}</TableCell>
-            <TableCell align="right">{t('results.detail.chain.rms')}</TableCell>
-            <TableCell align="right">{t('results.detail.chain.peak')}</TableCell>
-            <TableCell align="right">{t('results.detail.measurement.power')}</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {m.captures.map((cap) => (
-            <TableRow key={cap.role} data-capture={cap.role}>
-              <TableCell>{t(cap.role === 'with_dpd' ? 'results.detail.measurement.with' : 'results.detail.measurement.without')}</TableCell>
-              <TableCell>
-                {result.run_id ? (
-                  <Link href={artifactUrl(result.run_id, cap.artifact_id)} download>
-                    {cap.artifact_id}
-                  </Link>
-                ) : (
-                  cap.artifact_id
-                )}{' '}
-                <code>{cap.raw_sha256.slice(0, 12)}</code>
-                {cap.resample_ratio ? ` · ×${cap.resample_ratio[0]}/${cap.resample_ratio[1]}` : ''}
-              </TableCell>
-              <TableCell align="right">{cap.n_samples_raw.toLocaleString()}</TableCell>
-              <TableCell align="right">
-                {cap.delay_samples}
-                {cap.wrapped ? ` (${t('results.detail.measurement.wrapped')})` : ''}
-              </TableCell>
-              <TableCell align="right">{cap.correlation.toFixed(4)}</TableCell>
-              <TableCell align="right">
-                {cap.gain_db.toFixed(2)} dB ∠ {cap.gain_phase_deg.toFixed(1)}°
-              </TableCell>
-              <TableCell align="right">{fmt(cap.rms, 4)}</TableCell>
-              <TableCell align="right">{fmt(cap.peak_abs, 4)}</TableCell>
-              <TableCell align="right">{typeof cap.declared_output_power_dbm === 'number' ? `${cap.declared_output_power_dbm} dBm` : t('common.na')}</TableCell>
+      <TableContainer tabIndex={0} role="group" aria-label={t('results.detail.measurement.captures')}>
+        <Table size="small" sx={{ mt: 2 }} aria-label={t('results.detail.measurement.captures')}>
+          <TableHead>
+            <TableRow>
+              <TableCell>{t('results.detail.measurement.capture')}</TableCell>
+              <TableCell>{t('results.detail.measurement.file')}</TableCell>
+              <TableCell align="right">{t('results.detail.chain.samples')}</TableCell>
+              <TableCell align="right">{t('results.detail.measurement.delay')}</TableCell>
+              <TableCell align="right">{t('results.detail.measurement.correlation')}</TableCell>
+              <TableCell align="right">{t('results.detail.measurement.fit')}</TableCell>
+              <TableCell align="right">{t('results.detail.chain.rms')}</TableCell>
+              <TableCell align="right">{t('results.detail.chain.peak')}</TableCell>
+              <TableCell align="right">{t('results.detail.measurement.power')}</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {m.captures.map((cap) => (
+              <TableRow key={cap.role} data-capture={cap.role}>
+                <TableCell>{t(cap.role === 'with_dpd' ? 'results.detail.measurement.with' : 'results.detail.measurement.without')}</TableCell>
+                <TableCell>
+                  {result.run_id ? (
+                    <Link href={artifactUrl(result.run_id, cap.artifact_id)} download>
+                      {cap.artifact_id}
+                    </Link>
+                  ) : (
+                    cap.artifact_id
+                  )}{' '}
+                  <code>{cap.raw_sha256.slice(0, 12)}</code>
+                  {cap.resample_ratio ? ` · ×${cap.resample_ratio[0]}/${cap.resample_ratio[1]}` : ''}
+                </TableCell>
+                <TableCell align="right">{formatNumber(cap.n_samples_raw)}</TableCell>
+                <TableCell align="right">
+                  {cap.delay_samples}
+                  {cap.wrapped ? ` (${t('results.detail.measurement.wrapped')})` : ''}
+                </TableCell>
+                <TableCell align="right">{cap.correlation.toFixed(4)}</TableCell>
+                <TableCell align="right">
+                  {cap.gain_db.toFixed(2)} dB ∠ {cap.gain_phase_deg.toFixed(1)}°
+                </TableCell>
+                <TableCell align="right">{fmt(cap.rms, 4)}</TableCell>
+                <TableCell align="right">{fmt(cap.peak_abs, 4)}</TableCell>
+                <TableCell align="right">{typeof cap.declared_output_power_dbm === 'number' ? `${cap.declared_output_power_dbm} dBm` : t('common.na')}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
       {typeof level === 'number' && (
         <Typography variant="body2" sx={{ mt: 1 }} color={Math.abs(level) > 0.5 ? 'warning.main' : 'text.secondary'} data-testid="level-difference">
           {t('results.detail.measurement.level', { db: `${level >= 0 ? '+' : ''}${level.toFixed(2)}` })}
@@ -381,34 +389,36 @@ function Baselines({ result }: { result: EvaluationResult }) {
       <Typography variant="caption" color="text.secondary" component="p" gutterBottom>
         {t('results.detail.baselines.help')}
       </Typography>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>{t('results.detail.metric')}</TableCell>
-            <TableCell align="right">{t('results.detail.baselines.dpd')}</TableCell>
-            {baselines.map((b) => (
-              <TableCell key={b.kind} align="right">
-                {t(BASELINE[b.kind])}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {result.metrics.map((m) => (
-            <TableRow key={m.name}>
-              <TableCell>
-                <code>{m.name}</code>
-              </TableCell>
-              <TableCell align="right">{score(m)}</TableCell>
+      <TableContainer tabIndex={0} role="group" aria-label={t('results.detail.baselines')}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>{t('results.detail.metric')}</TableCell>
+              <TableCell align="right">{t('results.detail.baselines.dpd')}</TableCell>
               {baselines.map((b) => (
                 <TableCell key={b.kind} align="right">
-                  {score(b.metrics.find((x) => x.name === m.name))}
+                  {t(BASELINE[b.kind])}
                 </TableCell>
               ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {result.metrics.map((m) => (
+              <TableRow key={m.name}>
+                <TableCell>
+                  <code>{m.name}</code>
+                </TableCell>
+                <TableCell align="right">{score(m)}</TableCell>
+                {baselines.map((b) => (
+                  <TableCell key={b.kind} align="right">
+                    {score(b.metrics.find((x) => x.name === m.name))}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Paper>
   )
 }
@@ -452,7 +462,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
       </Typography>
       <Grid container spacing={2}>
         {result.metrics.map((m) => (
-          <Grid key={m.name} size={{ xs: 6, sm: 4, md: 2.4 }}>
+          <Grid key={m.name} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
             <MetricCard metric={m} definition={definitions.get(m.name)} />
           </Grid>
         ))}
@@ -470,13 +480,13 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
             peak: fmt(result.surrogate_coverage.u_peak_abs),
             fraction: `${(100 * result.surrogate_coverage.fraction_above_fitted_peak).toFixed(2)}%`,
           })}{' '}
-          {result.surrogate_coverage.note}
+          {message(result.surrogate_coverage.note)}
         </Alert>
       )}
       {result.scaling && (
         <Typography variant="body2" color="text.secondary" data-testid="scaling">
           <strong>{t('results.detail.scaling')}</strong>{' '}
-          {t('results.detail.scaling.body', { units: result.scaling.amplitude_units, scaling: result.scaling.input_scaling, gain: fmt(result.scaling.reference_gain, 4) })}{' '}
+          {t('results.detail.scaling.body', { units: message(result.scaling.amplitude_units), scaling: message(result.scaling.input_scaling), gain: fmt(result.scaling.reference_gain, 4) })}{' '}
           {!result.scaling.physical_calibration && t('results.detail.scaling.uncalibrated')}
         </Typography>
       )}
@@ -485,52 +495,54 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
           <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="definitions-panel" id="definitions-header">
             <Typography>{t('results.detail.definitions')}</Typography>
           </AccordionSummary>
-          <AccordionDetails id="definitions-panel">
+          <AccordionDetails>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              {t('results.detail.definitions.help', { profile: profile.profile_id, version: profile.version })} {profile.description}
+              {t('results.detail.definitions.help', { profile: profile.profile_id, version: profile.version })} {message(profile.description)}
             </Typography>
-            <Table size="small" aria-label={t('results.detail.definitions')}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('results.detail.metric')}</TableCell>
-                  <TableCell>{t('metric.formula')}</TableCell>
-                  <TableCell>{t('metric.aggregation')}</TableCell>
-                  <TableCell>{t('results.detail.unit')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {profile.metrics.map((m) => (
-                  <TableRow key={m.name}>
-                    <TableCell>
-                      <code>{m.name}</code> {m.display_name}
-                    </TableCell>
-                    <TableCell>
-                      {m.formula}
-                      {m.notes ? (
-                        <Typography variant="caption" color="text.secondary" component="div">
-                          {m.notes}
-                        </Typography>
-                      ) : null}
-                    </TableCell>
-                    <TableCell>{m.aggregation}</TableCell>
-                    <TableCell>
-                      {m.unit} · {m.better === 'lower' ? t('metric.lowerBetter') : t('metric.higherBetter')}
-                    </TableCell>
+            <TableContainer tabIndex={0} role="group" aria-label={t('results.detail.definitions')}>
+              <Table size="small" aria-label={t('results.detail.definitions')}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{t('results.detail.metric')}</TableCell>
+                    <TableCell>{t('metric.formula')}</TableCell>
+                    <TableCell>{t('metric.aggregation')}</TableCell>
+                    <TableCell>{t('results.detail.unit')}</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {profile.metrics.map((m) => (
+                    <TableRow key={m.name}>
+                      <TableCell>
+                        <code>{m.name}</code> {message(m.display_name)}
+                      </TableCell>
+                      <TableCell>
+                        {m.formula}
+                        {m.notes ? (
+                          <Typography variant="caption" color="text.secondary" component="div">
+                            {message(m.notes)}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+                      <TableCell>{m.aggregation}</TableCell>
+                      <TableCell>
+                        {m.unit} · {m.better === 'lower' ? t('metric.lowerBetter') : t('metric.higherBetter')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
             <Typography variant="h3" component="h3" sx={{ mt: 2 }} gutterBottom>
               {t('results.detail.parameters')}
             </Typography>
-            <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 16, rowGap: 4 }}>
+            <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'minmax(0, 1fr) minmax(0, 2fr)' }, columnGap: 2, rowGap: .5, overflowWrap: 'anywhere' }}>
               {Object.entries(profile.parameters ?? {}).map(([k, v]) => (
                 <div key={k} style={{ display: 'contents' }}>
-                  <dt style={{ color: '#4B5563' }}>{k}</dt>
+                  <dt>{k}</dt>
                   <dd style={{ margin: 0 }}>{typeof v === 'string' ? v : JSON.stringify(v)}</dd>
                 </div>
               ))}
-            </dl>
+            </Box>
           </AccordionDetails>
         </Accordion>
       )}
@@ -541,7 +553,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
               {t('results.detail.reference')}
             </Typography>
             <Typography>
-              <code>{result.reference.kind}</code> — {result.reference.description}
+              <code>{result.reference.kind}</code> — {message(result.reference.description)}
               {result.reference.gain_rule ? ` (${result.reference.gain_rule}${typeof result.reference.gain_value === 'number' ? ` = ${result.reference.gain_value}` : ''})` : ''}
             </Typography>
           </Paper>
@@ -553,7 +565,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
             </Typography>
             {(result.models ?? []).map((m) => (
               <Typography key={`${m.role}-${m.run_id}`} variant="body2">
-                <strong>{m.role}</strong> {m.model.key} {JSON.stringify(m.model.parameters)} · {m.n_parameters ?? '?'} params · {m.execution_semantics}{m.training_path ? ` · ${m.training_path.replace(/_/g, ' ')}` : ''}
+                <strong>{message(m.role)}</strong> {m.model.key} {JSON.stringify(m.model.parameters)} · {message(`${m.n_parameters ?? '?'} parameters`)} · {message(m.execution_semantics)}{m.training_path ? ` · ${message(m.training_path.replace(/_/g, ' '))}` : ''}
                 {typeof m.lookahead_samples === 'number' ? ` · look-ahead ${m.lookahead_samples}` : ''}
               </Typography>
             ))}
@@ -565,7 +577,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
           <strong>{t('results.detail.limitations')}</strong>
           <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
             {(result.limitations ?? []).map((l) => (
-              <li key={l}>{l}</li>
+              <li key={l}>{message(l)}</li>
             ))}
           </ul>
         </Alert>

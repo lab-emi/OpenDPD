@@ -15,10 +15,11 @@ export interface IQPreviewProps {
   title?: string
   height?: number
   onRendered?: (ms: number) => void
+  viewKey?: string
 }
 
 /** Short time-domain window; the server chooses the window, the browser never receives whole captures. */
-export function IQPreview({ start, series, title = t('chart.iq.title'), height, onRendered }: IQPreviewProps) {
+export function IQPreview({ start, series, title = t('chart.iq.title'), height, onRendered, viewKey = '' }: IQPreviewProps) {
   const data = useMemo<PlotTrace[]>(() => {
     const out: PlotTrace[] = []
     for (const s of series) {
@@ -29,6 +30,7 @@ export function IQPreview({ start, series, title = t('chart.iq.title'), height, 
     }
     return out
   }, [series, start])
-  const layout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.iq.x') } }, yaxis: { title: { text: t('chart.iq.y') } }, showlegend: true }), [])
-  return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} data-testid="iq-preview" />
+  const xTitle = t('chart.iq.x'), yTitle = t('chart.iq.y')
+  const layout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: yTitle } }, showlegend: true }), [xTitle, yTitle])
+  return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} viewKey={`${viewKey}:${start}`} data-testid="iq-preview" />
 }

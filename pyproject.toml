@@ -53,6 +53,12 @@ gui = [
     "psutil>=5.9",
     "python-multipart>=0.0.9",
 ]
+# Native application window for `opendpd gui` (pywebview: WKWebView on macOS, WebView2 on
+# Windows, WebKit2GTK or Qt on Linux). Pure Python; the browser stays the fallback.
+desktop = [
+    "opendpd[gui]",
+    "pywebview>=6.2,<7",
+]
 dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",
@@ -101,7 +107,7 @@ include = [
 datasets = ["*/spec.json", "*/*.csv"]
 # Built frontend (frontend/ -> opendpd/studio/static via `npm run build`); the
 # release workflow builds it before `python -m build` so wheels are self-contained.
-"opendpd.studio" = ["static/*", "static/assets/*"]
+"opendpd.studio" = ["static/*", "static/assets/*", "locales/*.json", "icon.png", "icon.ico"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -110,4 +116,3 @@ markers = [
     "integration: L1 tests that run a real worker process or a real HTTP server",
     "packaging: L2 tests that build and install the wheel in a clean environment",
 ]
-

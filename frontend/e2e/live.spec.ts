@@ -44,14 +44,29 @@ test('bootstrap, train the smoke recipe, read the result and export a share pack
   await page.goto(LIVE!)
   await expect(page).toHaveURL(`${origin}/`)
   await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible()
-  const register = page.getByRole('button', { name: 'Register example dataset' })
-  if (await register.isVisible()) {
-    await register.click()
-    await expect(page.getByText('Example dataset registered')).toBeVisible()
-  }
-  await page.getByRole('link', { name: 'New experiment' }).click()
+  await page.getByRole('link', { name: 'Get Started' }).click()
+  await page.getByRole('button', { name: 'Try a built-in dataset' }).click()
+  await page.getByRole('button', { name: /^(Add & inspect|Open) DPA_200MHz$/ }).click()
+  await page.getByRole('button', { name: 'Inspect my dataset' }).click()
+  // Exercise the actual strict WebGL distribution under the server's CSP;
+  // the mock gallery contains SVG lines and cannot detect a broken GL bundle.
+  const transfer = page.getByTestId('dataset-am-plot').locator('.js-plotly-plot')
+  await expect(transfer).toBeVisible()
+  const hasWebGL = await page.evaluate(() => {
+    const context = document.createElement('canvas').getContext('webgl')
+    const supported = !!context
+    context?.getExtension('WEBGL_lose_context')?.loseContext()
+    return supported
+  })
+  await expect.poll(() => transfer.evaluate((el) =>
+    (el as HTMLElement & { _fullData?: Array<{ type: string }> })['_fullData']?.[0]?.type,
+  )).toBe(hasWebGL ? 'scattergl' : 'scatter')
+  if (hasWebGL) await expect(transfer.locator('canvas').first()).toBeVisible()
+  await page.getByRole('link', { name: 'Configure experiment' }).click()
   await expect(page.getByText('Configuration is valid')).toBeVisible({ timeout: 20_000 })
+  await page.getByRole('button', { name: 'Continue' }).click()
   await page.getByLabel('Name (optional)').fill(`live ${browserName}`)
+  await page.getByRole('button', { name: 'Continue' }).click()
   await page.getByRole('button', { name: 'Start run' }).click()
   await expect(page).toHaveURL(/\/runs\/run-/)
   runId = decodeURIComponent(page.url().split('/runs/')[1] ?? '')

@@ -53,7 +53,7 @@ jobs:
       # Runs the complete suite, including tests marked "extended"
       # (all-backbone training smoke tests and all-dataset E2E chains).
       - name: Run full test suite
-        run: pytest tests/ -v --durations=20
+        run: python -m pytest tests/ -v --durations=20
 
       # benchmark-v1, cpu_regression tier on the measured built-in data: 4 entries x 3 seeds under the smoke
       # budgets. The check is advisory until a maintainer approves the baseline (then it fails the job).
@@ -79,11 +79,17 @@ jobs:
       - name: Live browser journey against the real service (three engines)
         if: matrix.os == 'ubuntu-latest'
         run: |
+          umask 077
           opendpd gui --no-browser --workspace /tmp/live-ws --port 8765 > /tmp/live-gui.log 2>&1 &
+          printf '%s\n' "$!" > /tmp/live-gui.pid
           for i in $(seq 1 60); do curl -fs http://127.0.0.1:8765/readyz >/dev/null && break; sleep 1; done
           export OPENDPD_LIVE_URL="$(python -c "import json; print(json.load(open('/tmp/live-ws/.studio.lock'))['url'])")"
           cd frontend && npx playwright install --with-deps chromium firefox webkit
           npx playwright test e2e/live.spec.ts --project=chromium-1366 --project=firefox-1366 --project=webkit-1366
-      - name: Live journey server log
+      # The launcher log contains a bootstrap URL. Keep it off public CI logs.
+      - name: Stop the live journey server
         if: always() && matrix.os == 'ubuntu-latest'
-        run: tail -n 60 /tmp/live-gui.log || true
+        run: |
+          if [ -f /tmp/live-gui.pid ]; then
+            kill "$(cat /tmp/live-gui.pid)" 2>/dev/null || true
+          fi

@@ -30,6 +30,16 @@ venv/
 env/
 ENV/
 .env
+.env.*
+*.env
+*.env.*
+# Only placeholder templates are safe to commit; never put real values in them.
+!.env.example
+!.env.sample
+!.env.template
+!*.env.example
+!*.env.sample
+!*.env.template
 .venv
 env/
 opendpd_env/
@@ -48,15 +58,102 @@ opendpd_env/
 # OpenDPD specific
 dpd_out/
 log/
+logs/
 save/
+checkpoints/
+*.ckpt
+*.safetensors
+opendpd-workspace*/
+/workspace/
+/workspaces/
+.opendpd/
+.studio.lock*
+.studio.guard
+workspace.json
+events.jsonl
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.db-wal
+*.db-shm
 benchmark/results/reproduced/
 
-# Allow sample data but not large datasets
-datasets/**/data/*.csv
-datasets/**/data/*.npy
-datasets/**/data/*.npz
-datasets/**/data/*.mat
-!datasets/**/data/sample*
+# New captures stay local; preserve the published built-ins and synthetic tutorial.
+datasets/**/*.csv
+datasets/**/*.npy
+datasets/**/*.npz
+datasets/**/*.mat
+datasets/**/*.hdf5
+datasets/**/*.parquet
+!datasets/APA_200MHz/train_input.csv
+!datasets/APA_200MHz/train_output.csv
+!datasets/APA_200MHz/val_input.csv
+!datasets/APA_200MHz/val_output.csv
+!datasets/APA_200MHz/test_input.csv
+!datasets/APA_200MHz/test_output.csv
+!datasets/APA_200MHz_b/train_input.csv
+!datasets/APA_200MHz_b/train_output.csv
+!datasets/APA_200MHz_b/val_input.csv
+!datasets/APA_200MHz_b/val_output.csv
+!datasets/APA_200MHz_b/test_input.csv
+!datasets/APA_200MHz_b/test_output.csv
+!datasets/DPA_160MHz/train_input.csv
+!datasets/DPA_160MHz/train_output.csv
+!datasets/DPA_160MHz/val_input.csv
+!datasets/DPA_160MHz/val_output.csv
+!datasets/DPA_160MHz/test_input.csv
+!datasets/DPA_160MHz/test_output.csv
+!datasets/DPA_200MHz/train_input.csv
+!datasets/DPA_200MHz/train_output.csv
+!datasets/DPA_200MHz/val_input.csv
+!datasets/DPA_200MHz/val_output.csv
+!datasets/DPA_200MHz/test_input.csv
+!datasets/DPA_200MHz/test_output.csv
+!datasets/MyCustomPA/data.csv
+/imports/
+/exports/
+/captures/
+/experiment-data/
+
+# Credentials, private keys and authenticated browser state.
+.secrets/
+secrets/
+.ssh/
+.aws/
+.azure/
+.gcloud/
+.config/gcloud/
+.netrc
+.npmrc
+.pypirc
+credentials.json
+credentials.yaml
+credentials.yml
+client_secret*.json
+service-account*.json
+service_account*.json
+token.json
+tokens.json
+# This file holds UI color/spacing tokens, not authentication tokens.
+!frontend/src/theme/tokens.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+.auth/
+storage-state*.json
+storageState*.json
+*.har
+.playwright-cli/
+output/playwright/
 
 # IDE specific files
 # Local agent instructions (case-insensitive names, at any directory depth)
@@ -83,6 +180,19 @@ Thumbs.db
 tensorboard/
 runs/
 wandb/
+mlruns/
+*.tfevents.*
+
+# Raw local validation/experiment captures (keep reviewed Markdown reports,
+# screenshots and reusable probe source; see docs/baseline/README.md).
+docs/baseline/**/*.json
+docs/baseline/**/*.jsonl
+docs/baseline/**/*.csv
+docs/baseline/**/*.txt
+docs/baseline/**/*.diff
+docs/baseline/**/*.patch
+docs/baseline/**/*.zip
+docs/baseline/**/*.trace
 
 # Temporary files
 *.swp
@@ -94,7 +204,7 @@ wandb/
 *.tmp
 
 # Keep empty directories
-!*/.gitkeep 
+!*/.gitkeep
 
 steps/__pycache__/
 

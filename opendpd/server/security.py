@@ -106,6 +106,27 @@ class _BodyTooLarge(Exception):
     pass
 
 
+class DatasetImportBoundary:
+    """Pause custom-data web entry points before multipart parsing or file access."""
+
+    PATHS = {
+        "/api/v1/datasets/upload", "/api/v1/datasets/inspect", "/api/v1/datasets/import",
+        "/api/v1/datasets/csv", "/api/v1/datasets/csv/preview", "/api/v1/imports",
+    }
+
+    def __init__(self, app, enabled: bool = False):
+        self.app = app
+        self.enabled = enabled
+
+    async def __call__(self, scope, receive, send):
+        path = scope.get("path", "").rstrip("/")
+        blocked = path in self.PATHS or path == "/api/v1/datasets/import-roots" or path.startswith("/api/v1/datasets/import-roots/")
+        if scope["type"] == "http" and not self.enabled and blocked:
+            await _reject(send, 403, "custom_datasets_coming_soon", "Custom dataset uploads and imports are coming soon. Use a built-in dataset.")
+            return
+        await self.app(scope, receive, send)
+
+
 class LocalBoundaryMiddleware:
     """Pure ASGI middleware: Host/Origin checks, body size cap and security headers for every request."""
 

@@ -1,3 +1,4 @@
+import { getLanguage } from '@/i18n'
 /**
  * Server state lives in TanStack Query; URL state in the router; only
  * transient interaction state is kept in components. Nothing here caches a
@@ -27,11 +28,13 @@ import type {
   RunStatus,
   RunView,
   ValidationReport,
+  WorkspaceSettings,
 } from './types'
 import { isTerminal } from './types'
 
 export const keys = {
   capabilities: ['capabilities'] as const,
+  settings: ['settings'] as const,
   models: ['models'] as const,
   recipes: ['recipes'] as const,
   datasets: ['datasets'] as const,
@@ -54,6 +57,20 @@ export const keys = {
 
 export const useCapabilities = () =>
   useQuery({ queryKey: keys.capabilities, queryFn: () => api.get<Capabilities>('/system/capabilities'), staleTime: 60_000 })
+/** Closed until the server explicitly enables the retained custom-data workflow. */
+export const useCustomDatasetImports = () => useCapabilities().data?.custom_dataset_imports === true
+export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api.get<WorkspaceSettings>('/settings'), staleTime: Infinity })
+
+/** Full replacement of the workbench settings; the response is the stored state. */
+export function useUpdateSettings() {
+  const qc = useQueryClient()
+  return useMutation({
+    // Toolbar and Settings can both write this file; preserve selection order.
+    scope: { id: 'workspace-settings' },
+    mutationFn: (settings: WorkspaceSettings) => api.put<WorkspaceSettings>('/settings', settings),
+    onSuccess: (saved) => qc.setQueryData(keys.settings, saved),
+  })
+}
 export const useModels = () => useQuery({ queryKey: keys.models, queryFn: () => api.get<ModelInfo[]>('/models'), staleTime: Infinity })
 export const useRecipes = () => useQuery({ queryKey: keys.recipes, queryFn: () => api.get<RecipeInfo[]>('/recipes'), staleTime: Infinity })
 export const useDatasets = () => useQuery({ queryKey: keys.datasets, queryFn: () => api.get<DatasetManifest[]>('/datasets') })
@@ -91,9 +108,10 @@ export const useRunCount = (status?: RunStatus, q?: string) =>
   })
 
 /** Snapshot of one run; polls slowly while active as a fallback to the event stream. */
-export const useRun = (id: string) =>
+export const useRun = (id: string, enabled = true) =>
   useQuery({
     queryKey: keys.run(id),
+    enabled,
     queryFn: () => api.get<RunView>(`/runs/${encodeURIComponent(id)}`),
     refetchInterval: (query) => (query.state.data && !isTerminal(query.state.data.status) ? 10_000 : false),
   })
@@ -131,8 +149,8 @@ export const useResult = (id: string, enabled = true, profile: string | null = n
 export const useResultProfiles = (id: string) => useQuery({ queryKey: keys.resultProfiles(id), queryFn: () => api.get<string[]>(`/results/${encodeURIComponent(id)}/profiles`) })
 export const useMetricProfiles = () => useQuery({ queryKey: keys.metricProfiles, queryFn: () => api.get<MetricProfile[]>('/metrics/profiles'), staleTime: Infinity })
 
-export const fetchLogPage = (id: string, offset: number, limit = 500) =>
-  api.get<LogPage>(`/runs/${encodeURIComponent(id)}/logs?offset=${offset}&limit=${limit}`)
+export const fetchLogPage = (id: string, offset: number, limit = 500, tail = false) =>
+  api.get<LogPage>(`/runs/${encodeURIComponent(id)}/logs?offset=${offset}&limit=${limit}${tail ? '&tail=true' : ''}`)
 
 export const validateConfig = (config: unknown) => api.post<ValidationReport>('/experiments/validate', { config })
 
@@ -163,7 +181,7 @@ export function useSubmitRun() {
 
 /** Write an experiment package into <workspace>/exports; the response carries the download URL and the manifest. */
 export function useExportRun() {
-  return useMutation({ mutationFn: (input: { run_id: string; kind: 'full' | 'share' }) => api.post<ExportInfo>('/exports', input) })
+  return useMutation({ mutationFn: (input: { run_id: string; kind: 'full' | 'share' }) => api.post<ExportInfo>(`/exports${getLanguage() === 'en' ? '' : `?language=${getLanguage()}`}`, input) })
 }
 
 /** Upload a package; every hash is verified server-side before anything is written. */

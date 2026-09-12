@@ -7,7 +7,7 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import type { ReactNode } from 'react'
 import { ApiError } from '@/api/client'
-import { t } from '@/i18n'
+import { formatTime, message as localize, t } from '@/i18n'
 
 /** The four non-happy states every list/detail must render (UX spec §2). */
 
@@ -37,9 +37,9 @@ export function EmptyState({ title = t('state.empty.title'), body, action }: { t
 }
 
 function describeError(error: unknown): { message: string; hint: string | null } {
-  if (error instanceof ApiError) return { message: `${error.message} (${error.code})`, hint: error.hint }
-  if (error instanceof Error) return { message: error.message, hint: null }
-  return { message: String(error), hint: null }
+  if (error instanceof ApiError) return { message: `${localize(error.message)} (${error.code})`, hint: error.hint ? localize(error.hint) : null }
+  if (error instanceof Error) return { message: localize(error.message), hint: null }
+  return { message: localize(String(error)), hint: null }
 }
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
@@ -64,7 +64,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
 }
 
 export function DisconnectedState({ lastUpdate, onRefresh }: { lastUpdate: Date | null; onRefresh: () => void }) {
-  const time = lastUpdate ? lastUpdate.toLocaleTimeString() : t('common.na')
+  const time = lastUpdate ? formatTime(lastUpdate) : t('common.na')
   return (
     <Alert
       severity="warning"

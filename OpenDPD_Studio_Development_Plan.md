@@ -76,6 +76,8 @@ opendpd gui
 
 成功行为必须是：**启动本地服务 → 确认服务和前端资源就绪 → 自动打开系统默认浏览器 → 显示工作台。**
 
+> **修订（2026-09-11，维护者决定）**：安装 `opendpd[desktop]` 后，`opendpd gui` 默认在原生应用窗口（pywebview）中打开工作台；未安装该 extra、无桌面会话或使用 `--browser` 时仍按上文打开默认浏览器。`--window` 强制窗口，`--no-browser` 行为不变。详见 ADR-0002。
+
 用户不需要安装 Node.js、运行 `npm`、启动 Vite、复制地址到浏览器，或打开第二个终端。Node.js 仅用于前端开发和发布构建；Vite 生成的静态资源随 Python 分发包发布，由 FastAPI 提供。[R5][R6]
 
 保留以下高级入口：
@@ -132,6 +134,8 @@ opendpd run --config "./experiment.json" --workspace "./my-workspace"
 | 前端测试 | Vitest + React Testing Library + Playwright | 单元、交互、视觉回归和跨浏览器端到端测试。 |
 | 后端测试 | pytest + API/进程/数值参考测试 | 测试必须包含失败路径，不以覆盖率替代正确性。 |
 | 分发 | Python wheel/sdist 携带预构建前端资源 | 最终用户无 Node.js、Redis、Docker 等额外服务前置条件。 |
+
+> **修订（2026-09-11，维护者决定）**：界面提供英、法、德、西、中、日、韩七种语言，顶部栏提供带国旗和语言名称的切换菜单，选择按工作区保存（`settings.json`）；服务端文本、日志、报告与 CLI 保持英文。详见 ADR-0003。
 
 组件库、图表库的建议在 S01 通过一份 ADR 固化；一旦通过，不允许 agent 在普通功能 PR 中更换技术栈。各依赖的确切版本由 S00/S01 验证后锁定，不在计划中臆测“最新版本号”。
 

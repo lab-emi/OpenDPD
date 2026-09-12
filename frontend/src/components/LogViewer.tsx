@@ -7,15 +7,20 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchLogPage } from '@/api/hooks'
-import { t } from '@/i18n'
-import { tokens } from '@/theme'
+import { message, t } from '@/i18n'
+import { tokens, useStudioColors } from '@/theme'
 
 const ROW_HEIGHT = 20
 const PAGE = 500
 const MAX_LINES = 50_000
 
 /** Paged (byte offset) and windowed log view; only visible rows are in the DOM. */
-export function LogViewer({ runId, live, height = 420 }: { runId: string; live: boolean; height?: number }) {
+export function LogViewer(props: { runId: string; live: boolean; height?: number; tail?: boolean }) {
+  return <LogContent key={props.runId} {...props} />
+}
+
+function LogContent({ runId, live, height = 420, tail = false }: { runId: string; live: boolean; height?: number; tail?: boolean }) {
+  const colors = useStudioColors()
   const [lines, setLines] = useState<string[]>([])
   const [offset, setOffset] = useState(0)
   const [eof, setEof] = useState(true)
@@ -30,7 +35,7 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
     if (loadingRef.current) return
     loadingRef.current = true
     try {
-      const page = await fetchLogPage(runId, offset, PAGE)
+      const page = await fetchLogPage(runId, offset, PAGE, tail && offset === 0)
       setOffset(page.next_offset)
       setEof(page.eof)
       if (page.lines.length > 0) setLines((prev) => [...prev, ...page.lines].slice(-MAX_LINES))
@@ -40,7 +45,7 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
     } finally {
       loadingRef.current = false
     }
-  }, [runId, offset])
+  }, [runId, offset, tail])
 
   /** Fetch every remaining page (2000 lines each) so a long log can be searched; the view keeps MAX_LINES. */
   const loadAll = useCallback(async () => {
@@ -72,7 +77,7 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
     void loadMore()
     // initial page only; later pages are explicit or timer driven
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runId])
+  }, [runId, live])
 
   useEffect(() => {
     if (!live) return
@@ -93,7 +98,7 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
   return (
     <Stack spacing={1} data-testid="log-viewer">
       <Stack sx={{ alignItems: 'center', flexWrap: 'wrap' }} direction="row" spacing={2} useFlexGap>
-        <TextField label={t('logs.search')} value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ minWidth: 240 }} />
+        <TextField label={t('logs.search')} value={filter} onChange={(e) => setFilter(e.target.value)} sx={{ width: 240, maxWidth: '100%' }} />
         <FormControlLabel control={<Switch checked={follow} onChange={(e) => setFollow(e.target.checked)} />} label={t('logs.follow')} />
         <Typography variant="caption" color="text.secondary">
           {t('logs.lines', { shown: visible.length, total: lines.length })}
@@ -114,17 +119,18 @@ export function LogViewer({ runId, live, height = 420 }: { runId: string; live: 
           </Typography>
         )}
       </Stack>
-      {error && <Typography color="error">{error}</Typography>}
+      {error && <Typography color="error">{message(error)}</Typography>}
+      <Typography variant="caption" color="text.secondary">{t('logs.original')}</Typography>
       <Box
         ref={boxRef}
         role="log"
         aria-live={live ? 'polite' : 'off'}
         tabIndex={0}
         onScroll={(e) => setScrollTop((e.target as HTMLDivElement).scrollTop)}
-        sx={{ height, overflow: 'auto', bgcolor: '#0f172a', color: '#e2e8f0', borderRadius: 1, fontFamily: tokens.typography.monoFamily, fontSize: 12 }}
+        sx={{ height, overflow: 'auto', bgcolor: colors.terminal.background, color: colors.terminal.text, colorScheme: 'inherit', borderRadius: 1, fontFamily: tokens.typography.monoFamily, fontSize: 12 }}
       >
         {visible.length === 0 ? (
-          <Typography sx={{ p: 2, color: '#94a3b8' }}>{!live && eof && lines.length === 0 ? t('logs.none.stored') : t('logs.empty')}</Typography>
+          <Typography sx={{ p: 2, color: colors.terminal.muted }}>{!live && eof && lines.length === 0 ? t('logs.none.stored') : t('logs.empty')}</Typography>
         ) : (
           <div style={{ height: visible.length * ROW_HEIGHT, position: 'relative' }}>
             {slice.map((line, i) => (

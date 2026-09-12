@@ -153,11 +153,13 @@ def attach_epoch_hooks(project, on_epoch: Callable[[dict], None],
 
 
 def run_step(ns: argparse.Namespace, on_epoch: Optional[Callable[[dict], None]] = None,
-             should_cancel: Optional[Callable[[], bool]] = None):
+             should_cancel: Optional[Callable[[], bool]] = None, observer=None):
     """Execute one legacy step in the current directory and return the Project."""
     from project import Project
 
     project = Project(args=ns)
+    if observer is not None:
+        observer.attach(project)
     if on_epoch is not None or should_cancel is not None:
         attach_epoch_hooks(project, on_epoch or (lambda _: None), should_cancel)
     if ns.step == "train_pa":

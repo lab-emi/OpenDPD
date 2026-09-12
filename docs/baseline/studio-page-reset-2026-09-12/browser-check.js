@@ -1,0 +1,74 @@
+async (page) => {
+  const checks = [];
+  const base = page.url().split('/').slice(0, 3).join('/');
+  const check = (ok, message) => { if (!ok) throw new Error(message); };
+  const prompt = () => page.getByRole('dialog', { name: 'Reset this page?', exact: true });
+  const open = async () => { await page.getByRole('button', { name: 'Reset page', exact: true }).click(); await prompt().waitFor(); };
+  const act = async (name) => { await prompt().getByRole('button', { name, exact: true }).click(); await page.getByRole('dialog', { name: 'Reset this page?', exact: true, includeHidden: true }).waitFor({ state: 'detached' }); };
+  if (await prompt().count()) await act('Cancel');
+  await page.setViewportSize({ width: 1366, height: 900 });
+  await page.goto(base + '/datasets/dpa-200mhz?tab=overview');
+  const chart = page.getByTestId('spectrum-plot').getByRole('figure');
+  await chart.locator('.nsewdrag').waitFor();
+  const rect = await chart.locator('.nsewdrag').boundingBox();
+  await page.mouse.move(rect.x + rect.width/2, rect.y + rect.height/2);
+  await page.mouse.wheel(30, 0);
+  await page.waitForFunction(() => !document.querySelector('[data-testid="spectrum-plot"] [role="figure"]')._fullLayout.xaxis.autorange);
+  const range = await chart.evaluate(el => [...el._fullLayout.xaxis.range]);
+  await open(); await act('Cancel');
+  check(JSON.stringify(range) === JSON.stringify(await chart.evaluate(el => [...el._fullLayout.xaxis.range])), 'cancel changed plot');
+  await open(); await act('Continue');
+  check(page.url().slice(base.length).split('?')[0] === '/datasets', 'dataset did not restart');
+  await page.locator('a[href="/datasets/dpa-200mhz"]').waitFor();
+  checks.push({ check:'dataset reset and cancel preserve saved data', passed:true });
+  const runs = await (await page.request.get(base + '/api/v1/runs')).json();
+  for (const run of runs) {
+    await page.goto(base + '/runs/' + run.run_id + '?tab=logs');
+    await page.getByRole('heading', { level:1, name:run.name || run.run_id, exact:true }).waitFor();
+    const bar = page.getByTestId('experiment-terminal').getByRole('button', { name:/Terminal/ });
+    await bar.click();
+    await page.getByRole('tablist', { name:'Terminal steps' }).waitFor();
+    await open(); await act('Cancel');
+    check(page.url().slice(base.length).split('?')[0] === '/runs/' + run.run_id, 'cancel navigated');
+    check(await bar.getAttribute('aria-expanded') === 'true', 'cancel collapsed terminal');
+    await open(); await act('Continue');
+    check(page.url().slice(base.length).split('?')[0] === '/experiments/new' && (page.url().includes('?') ? '?' + page.url().split('?')[1] : '') === '?task=' + run.task, 'wrong restarted task');
+    await page.locator('#workflow-step-0[aria-selected="true"]').waitFor();
+    check(await page.getByTestId('experiment-terminal').getByRole('button', { name:/Terminal/ }).getAttribute('aria-expanded') === 'false', 'terminal not reset');
+    checks.push({ check:'run restart '+run.task, run:run.run_id, passed:true });
+  }
+  await page.goto(base + '/experiments/new?task=train_pa');
+  await page.getByRole('button', { name:'Continue', exact:true }).click();
+  await page.getByLabel('Epochs', { exact:true }).fill('7');
+  await page.getByLabel('Name (optional)', { exact:true }).fill('Reset QA draft');
+  await open(); await act('Cancel');
+  check(await page.getByLabel('Name (optional)', { exact:true }).inputValue() === 'Reset QA draft', 'draft lost on cancel');
+  await open(); await act('Continue');
+  await page.locator('#workflow-step-0[aria-selected="true"]').waitFor();
+  await page.getByRole('button', { name:'Continue', exact:true }).click();
+  check(await page.getByLabel('Epochs', { exact:true }).inputValue() === '', 'epochs not reset');
+  check(await page.getByLabel('Name (optional)', { exact:true }).inputValue() === '', 'name not reset');
+  checks.push({ check:'actual PA setup cancel and reset', passed:true });
+  await page.goto(base + '/results');
+  await page.getByRole('checkbox').first().check();
+  await page.getByRole('checkbox').nth(1).check();
+  await open(); await act('Continue');
+  check(await page.getByRole('checkbox', { checked:true }).count() === 0, 'result selections not reset');
+  await page.goto(base + '/results/compare?runs='+runs[0].run_id+'&runs='+runs[1].run_id);
+  await open(); await act('Continue');
+  check(page.url().slice(base.length).split('?')[0] === '/results' && !(page.url().includes('?') ? '?' + page.url().split('?')[1] : ''), 'comparison not reset');
+  checks.push({check:'results selection and comparison', passed:true});
+  await page.goto(base + '/experiments?status=failed&q=no-match&page=2&size=25');
+  await open(); await act('Continue');
+  check((page.url().includes('?') ? '?' + page.url().split('?')[1] : '') === '', 'filters not reset');
+  for (const route of ['/', '/settings', '/about']) {
+    await page.goto(base + route);
+    await page.getByRole('heading', {level:1}).waitFor();
+    await page.evaluate(() => window.scrollTo(0,document.body.scrollHeight));
+    await open(); await act('Continue');
+    check(await page.evaluate(() => window.scrollY) === 0, 'scroll not reset');
+    await page.getByRole('alert').filter({hasText:'Reset complete.'}).waitFor();
+    checks.push({check:'reset feedback '+route, passed:true});
+  }
+  return checks;
+}

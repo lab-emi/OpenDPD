@@ -1,5 +1,7 @@
 {
-    "description": "User-created custom PA dataset (single-channel).",
+    "description": "Synthetic 64QAM PA example \u2014 dummy dataset for tutorial purpose. Generated independently; not a physical PA measurement or benchmark.",
+    "origin": "synthetic",
+    "tutorial": true,
     "dataset_format": "single_csv",
     "csv_filename": "data.csv",
     "split_ratios": {
@@ -8,13 +10,16 @@
         "test": 0.2
     },
     "split_indices": {
-        "train_end": 58982,
-        "val_end": 78642
+        "train_end": 61440,
+        "val_end": 81920
     },
-
-    "input_signal_fs": 800e6,
-    "bw_main_ch": 200e6,
-    "bw_sub_ch": 200e6,
+    "input_signal_fs": 80000000.0,
+    "bw_main_ch": 2000000.0,
+    "bw_sub_ch": 2000000.0,
     "n_sub_ch": 1,
-    "nperseg": 2560
+    "nperseg": 2560,
+    "n_active": 64,
+    "modulation": "64QAM",
+    "generator": "datasets.MyCustomPA.generate",
+    "generator_seed": 20260912
 }

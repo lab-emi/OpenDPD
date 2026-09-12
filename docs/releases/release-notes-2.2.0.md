@@ -10,6 +10,13 @@ platform automatically. Version string in the candidate: `2.2.0.dev0`.
   local, loopback-only workbench in your browser (no Node.js, no second
   terminal). Datasets, runs, results, comparison, packages and reports; live
   progress from a worker subprocess; cancel that stops at the epoch boundary.
+- **Native window**: `pip install "opendpd[desktop]"` makes `opendpd gui` open
+  the workbench in an application window (WKWebView / WebView2 / WebKit2GTK)
+  instead of a browser tab; the browser stays the fallback and `--browser` /
+  `--window` / `--no-browser` choose explicitly.
+- **Seven UI languages**: English, French, German, Spanish, Chinese, Japanese
+  and Korean, chosen from the flag menu in the top bar and stored per
+  workspace; server text stays English.
 - **One compute core, three entry points**: the GUI, `opendpd …` commands and
   the Python API resolve the same configuration to the same hash and the same
   numbers on CPU (`tests/integration/test_entry_consistency.py`).

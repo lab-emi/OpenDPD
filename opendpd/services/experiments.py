@@ -493,6 +493,9 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
     emit(RunEventType.status, {"from": "queued", "to": "running"})
 
     state = {"record": record}
+    from opendpd.services.live import LiveMonitor
+    monitor = LiveMonitor(ws, run_id, resolved, dataset, emit)
+    monitor.stage("prepare")
 
     def on_epoch(row: Dict) -> None:
         epoch = int(row.get("EPOCH", 0))
@@ -527,11 +530,14 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
             else:
                 _prepare_inputs(ws, run_dir, resolved, ns)
                 if polynomial.is_least_squares(resolved.model.key):
+                    monitor.stage("apply" if resolved.task == TaskType.run_dpd else "fit")
                     # baselines never enter the legacy trainer: a deterministic fit, or a one-pass apply for run_dpd
                     project = polynomial.apply_run(ws, run_dir, resolved, ns) if resolved.task == TaskType.run_dpd \
                         else polynomial.fit_run(ws, run_dir, resolved, ns, on_epoch=on_epoch)
                 else:
-                    project = run_step(ns, on_epoch=on_epoch, should_cancel=should_cancel)
+                    if resolved.task == TaskType.run_dpd:
+                        monitor.stage("apply")
+                    project = run_step(ns, on_epoch=on_epoch, should_cancel=should_cancel, observer=monitor)
                 if resolved.task == TaskType.run_dpd:
                     from opendpd.services.evaluation import write_dpd_output_metadata
                     write_dpd_output_metadata(ws, run_id, resolved, ns)
@@ -568,8 +574,9 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
             try:
                 with run_in_directory(run_dir):
                     results = measurements.evaluate_measured(ws, run_id, resolved, manifest, signals) if measured \
-                        else evaluate_all(ws, run_id, resolved, manifest)
+                        else evaluate_all(ws, run_id, resolved, manifest, observer=monitor)
                 result_id = results[resolved.evaluation.profile_id].result_id
+                monitor.complete(results[resolved.evaluation.profile_id])
                 manifest = collect_artifacts(run_dir, run_id, resolved, project)     # results and plots registered
                 write_json_atomic(run_dir / ARTIFACTS_FILE, manifest)
                 emit(RunEventType.artifact, {"artifact_id": "result", "kind": "result", "path": RESULT_FILE,

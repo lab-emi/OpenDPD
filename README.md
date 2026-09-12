@@ -28,14 +28,16 @@ We invite you to contribute new backbone networks, pre-trained models, or measur
 # OpenDPD Studio (alpha): one command to a local workbench
 
 ```bash
-pip install "opendpd[gui]"
+pip install "opendpd[desktop]"
 opendpd gui
 ```
 
-`opendpd gui` starts a loopback-only service, prints a one-time URL and opens
-your browser: register the built-in measured data, train a smoke recipe, read
+`opendpd gui` starts a loopback-only service and opens the workbench in an
+application window (or, with the plain `gui` extra, in your browser after
+printing a one-time URL): register the built-in measured data, train a smoke recipe, read
 results with their evidence type and metric profile, compare runs, export a
-reproducible package. The same configuration runs unchanged through
+reproducible package. The interface is available in English, French, German,
+Spanish, Chinese, Japanese and Korean. The same configuration runs unchanged through
 `opendpd run` and the Python API. Start with
 [docs/tutorials/gui-quickstart.md](docs/tutorials/gui-quickstart.md); the
 headless path is [docs/tutorials/headless-cli.md](docs/tutorials/headless-cli.md);
