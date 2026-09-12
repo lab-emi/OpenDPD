@@ -763,5 +763,6 @@
   "terminal.readOnly": "Output di sola lettura. Usa «Interrompi esperimento» per terminare questa esecuzione.",
   "logs.refresh": "Aggiorna output",
   "run.reconnect": "Sincronizza esperimento",
-  "run.gpuQueue": "La GPU condivisa esegue un esperimento alla volta. Il tuo esperimento è in coda; puoi lasciare questa pagina e tornare."
+  "run.gpuQueue": "La GPU condivisa esegue un esperimento alla volta. Il tuo esperimento è in coda; puoi lasciare questa pagina e tornare.",
+  "chart.controls.touch": "Due dita: zoom e spostamento. Un dito: scorri la pagina."
 }

@@ -5,7 +5,7 @@ import { ErrorState, LoadingState } from '@/components/StateBlock'
 import { resolveLanguage, setLanguage } from '@/i18n'
 
 /**
- * Applies the workspace's language (or the browser's) before the workbench
+ * Applies the workspace's language (or English) before the workbench
  * renders. Apply once per app session; later settings responses must not undo
  * a newer local choice when saves arrive out of order or fail.
  */

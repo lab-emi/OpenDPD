@@ -22,7 +22,7 @@ and requested localization of generated explanations as well as the interface.
 | Catalogues | one flat JSON per language under `frontend/src/i18n`, exactly the keys of `en.json`, typed and tested for completeness and placeholders; non-English catalogues are lazy chunks | `t()` keeps its signature |
 | Selector | `LanguageMenu` in the top bar of every page and in Settings; flag (bundled SVG, decorative) plus native name | emoji flags rejected: Windows renders letters |
 | Persistence | `<workspace>/settings.json` through `GET/PUT /api/v1/settings` (`WorkspaceSettings`) | latest selection wins overlapping catalogue loads; settings mutations are serialized; startup reads the preference once |
-| First run | stored value → browser languages → English; nothing written until the user chooses | |
+| First run | stored value → English; nothing written until the user chooses (updated 2026-09-13) | |
 | Formatting | counts, sizes and dates follow the language; metric values keep the decimal point of CSV and reports | |
 | Generated explanations | `opendpd/studio/locales/*.json` is shared by the UI and report renderer; exact application phrases and named templates are translated only when displayed | covers diagnostics, live phases, registry help, plots and report prose; captured numbers and identifiers stay exact |
 | Downloads | report and package endpoints accept an optional allowlisted `language`; otherwise use the workspace preference, then English | localized HTML/Markdown and plot legends; CLI/Python report calls default to English |

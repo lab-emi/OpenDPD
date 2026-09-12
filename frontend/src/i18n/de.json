@@ -763,5 +763,6 @@
   "terminal.readOnly": "Nur Ausgabe. Mit „Experiment stoppen“ beenden Sie diesen Lauf.",
   "logs.refresh": "Ausgabe aktualisieren",
   "run.reconnect": "Experiment synchronisieren",
-  "run.gpuQueue": "Die gemeinsame GPU führt jeweils ein Experiment aus. Ihr Experiment wartet; Sie können diese Seite verlassen und später zurückkehren."
+  "run.gpuQueue": "Die gemeinsame GPU führt jeweils ein Experiment aus. Ihr Experiment wartet; Sie können diese Seite verlassen und später zurückkehren.",
+  "chart.controls.touch": "Zwei Finger: zoomen und verschieben. Ein Finger: Seite scrollen."
 }

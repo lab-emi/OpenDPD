@@ -11,6 +11,6 @@ UI_LANGUAGES: Tuple[str, ...] = ("en", "nl", "zh", "fr", "de", "it", "ja", "ko",
 
 
 class WorkspaceSettings(StrictModel):
-    """Stored as ``<workspace>/settings.json``; ``language`` None means "follow the browser or system language"."""
+    """Stored as ``<workspace>/settings.json``; ``language`` None uses the English UI default."""
 
     language: Optional[UILanguage] = None

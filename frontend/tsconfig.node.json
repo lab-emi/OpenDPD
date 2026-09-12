@@ -16,5 +16,5 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "e2e"]
+  "include": ["vite.config.ts", "playwright*.config.ts", "e2e", "web-e2e", "touch-e2e"]
 }

@@ -763,5 +763,6 @@
   "terminal.readOnly": "Sortie en lecture seule. Utilisez « Arrêter l’expérience » pour arrêter cette exécution.",
   "logs.refresh": "Actualiser la sortie",
   "run.reconnect": "Resynchroniser l’expérience",
-  "run.gpuQueue": "Le GPU partagé exécute une expérience à la fois. Votre expérience est en attente ; vous pouvez quitter cette page et y revenir."
+  "run.gpuQueue": "Le GPU partagé exécute une expérience à la fois. Votre expérience est en attente ; vous pouvez quitter cette page et y revenir.",
+  "chart.controls.touch": "Deux doigts : zoomer et déplacer. Un doigt : faire défiler la page."
 }

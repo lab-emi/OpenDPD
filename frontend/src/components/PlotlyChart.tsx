@@ -1,4 +1,7 @@
 import FullscreenIcon from '@mui/icons-material/Fullscreen'
+import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import CloseIcon from '@mui/icons-material/Close'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutlineOutlined'
 import Box from '@mui/material/Box'
@@ -14,6 +17,7 @@ import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { languageInfo, message, phaseLabel, t, useLanguage } from '@/i18n'
 import { plotLayoutFor, useStudioColors } from '@/theme'
@@ -92,6 +96,7 @@ export interface PlotlyChartProps {
 }
 
 interface ViewMemory { key: string | number; viewport?: PlotViewport; recovery?: PlotRecoveryState }
+const touchTarget = { '@media (pointer: coarse)': { minWidth: 44, minHeight: 44 } }
 
 const MODEBAR_TEXT = ['Download plot as a PNG', 'Zoom', 'Pan', 'Zoom in', 'Zoom out', 'Autoscale', 'Reset axes', 'Toggle Spike Lines', 'Show closest data on hover', 'Compare data on hover', 'Taking snapshot - this may take a few seconds', 'Snapshot succeeded', 'Snapshot failed', 'Double-click on legend to isolate one trace']
 function traceName(name: string | undefined) {
@@ -102,15 +107,20 @@ function traceName(name: string | undefined) {
   return component ? `${message(component[1])} ${component[2]}` : message(name)
 }
 
-function Plot({ traces, layout, height, title, onRendered, viewKey = 0, memory, active = true, descriptionId, recovery }: PlotlyChartProps & { memory: RefObject<ViewMemory>; active?: boolean; descriptionId: string; recovery: PlotRecoverySettings }) {
+function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, onRendered, viewKey = 0, memory, active = true, descriptionId, recovery }: PlotlyChartProps & { memory: RefObject<ViewMemory>; active?: boolean; descriptionId: string; recovery: PlotRecoverySettings }) {
   const language = useLanguage()
   const colors = useStudioColors()
+  const coarsePointer = useMediaQuery('(pointer: coarse)')
   const ref = useRef<PlotElement>(null)
   const revision = useRef(0)
   const rendering = useRef<Promise<unknown>>(Promise.resolve())
   const library = useRef<PlotlyModule | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
   const [useSVG, setUseSVG] = useState(false)
+  // A live snapshot must not replace the interaction controller mid-pinch.
+  // Apply the newest snapshot once all fingers lift, keeping the chosen ranges.
+  const [touchContent, setTouchContent] = useState<{ key: string | number; traces: PlotTrace[]; layout?: PlotLayout } | null>(null)
+  const { traces, layout } = (touchContent?.key === viewKey ? touchContent : null) ?? { traces: incomingTraces, layout: incomingLayout }
   // The callback is read through a ref so a new function identity never redraws the plot
   // (a redraw that reports back into parent state would otherwise loop).
   const onRenderedRef = useRef(onRendered)
@@ -144,6 +154,8 @@ function Plot({ traces, layout, height, title, onRendered, viewKey = 0, memory, 
         try {
           await Plotly.react(el, renderTraces, {
             ...plotLayoutBase, ...layout, height, autosize: true,
+            // Reserve separate rows for the mode bar and legend on a phone.
+            ...(coarsePointer ? { margin: { ...plotLayoutBase.margin, t: 64 }, legend: { ...plotLayoutBase.legend, y: 1 } } : {}),
             dragmode: view?.dragmode ?? 'pan',
             uirevision: String(viewKey),
             // Recompute bounds on layout-only updates too (for example a language
@@ -198,7 +210,7 @@ function Plot({ traces, layout, height, title, onRendered, viewKey = 0, memory, 
       const stopped = inputs?.dispose()
       if (stopped) rendering.current = Promise.all([rendering.current, stopped])
     }
-  }, [traces, layout, height, active, viewKey, memory, useSVG, recovery, language, colors])
+  }, [traces, layout, height, active, viewKey, memory, useSVG, recovery, language, colors, coarsePointer])
   useEffect(() => {
     const el = ref.current
     return () => {
@@ -208,7 +220,22 @@ function Plot({ traces, layout, height, title, onRendered, viewKey = 0, memory, 
   }, [])
   if (failed) return <Typography color="error">{message(failed)}</Typography>
   // "figure", not "img": Plotly's mode bar inside the plot is focusable, and an image role may not contain controls.
-  return <Box ref={ref} role="figure" aria-label={title} aria-describedby={descriptionId} tabIndex={active ? 0 : -1} sx={{ width: '100%', height: height ?? '100%', minHeight: height ?? 0, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: -2 } }} />
+  const adjust = (key: string) => ref.current?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+  return <Box sx={{ height: height === undefined ? '100%' : undefined, display: 'flex', flexDirection: 'column' }}>
+    <Stack direction="row" role="toolbar" aria-label={t('chart.controls')} data-testid="touch-plot-controls" sx={{ display: 'none', '@media (pointer: coarse)': { display: 'flex' }, alignItems: 'center', flexShrink: 0, px: 1 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>{t('chart.controls.touch')}</Typography>
+      <IconButton aria-label={message('Zoom in')} onClick={() => adjust('+')} sx={{ width: 44, height: 44 }}><AddIcon /></IconButton>
+      <IconButton aria-label={message('Zoom out')} onClick={() => adjust('-')} sx={{ width: 44, height: 44 }}><RemoveIcon /></IconButton>
+      <IconButton aria-label={message('Reset axes')} onClick={() => adjust('Home')} sx={{ width: 44, height: 44 }}><RestartAltIcon /></IconButton>
+    </Stack>
+    <Box ref={ref} role="figure" aria-label={title} aria-describedby={descriptionId} tabIndex={active ? 0 : -1}
+    onTouchStartCapture={() => setTouchContent((old) => old?.key === viewKey ? old : { key: viewKey, traces, layout })}
+    onTouchEndCapture={(event) => { if (!event.touches.length) setTouchContent(null) }}
+    onTouchCancelCapture={() => setTouchContent(null)}
+    sx={{ width: '100%', height: height ?? '100%', minHeight: height ?? 0, flex: 1,
+      '& .nsewdrag': { touchAction: 'pan-y pinch-zoom' },
+      '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: -2 } }} />
+  </Box>
 }
 
 /** Plotly wrapper: tokens-derived layout, lazy bundle, and an enlarge dialog (UX spec §6).
@@ -222,7 +249,7 @@ export function PlotlyChart(props: PlotlyChartProps) {
   const id = useId()
   const descriptionId = `${id}-controls`
   const close = () => { setHelpAnchor(null); setOpen(false) }
-  const help = <Tooltip title={t('chart.controls')}><IconButton size="small" aria-label={t('chart.controls')} onClick={(event) => setHelpAnchor(event.currentTarget)}><HelpOutlineIcon fontSize="small" /></IconButton></Tooltip>
+  const help = <Tooltip title={t('chart.controls')}><IconButton size="small" sx={touchTarget} aria-label={t('chart.controls')} onClick={(event) => setHelpAnchor(event.currentTarget)}><HelpOutlineIcon fontSize="small" /></IconButton></Tooltip>
   return (
     <Box data-testid={props['data-testid']}>
       <Stack direction="row" sx={{ alignItems: 'center', gap: .5, minHeight: 32 }}>
@@ -232,7 +259,7 @@ export function PlotlyChart(props: PlotlyChartProps) {
         {actions}
         {help}
         {enlargeable && (
-          <IconButton aria-label={`${t('chart.enlarge')}: ${title}`} size="small" onClick={() => setOpen(true)}>
+          <IconButton aria-label={`${t('chart.enlarge')}: ${title}`} size="small" sx={touchTarget} onClick={() => setOpen(true)}>
             <FullscreenIcon fontSize="small" />
           </IconButton>
         )}
@@ -240,14 +267,16 @@ export function PlotlyChart(props: PlotlyChartProps) {
       <Box id={descriptionId} sx={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}>{t('chart.controls.summary')}</Box>
       <Plot {...props} height={height} active={!open} memory={memory} descriptionId={descriptionId} recovery={recovery} />
       {open && (
-        <Dialog open fullWidth maxWidth={false} onClose={close} aria-labelledby={`${id}-title`} slotProps={{ paper: { sx: { width: 'calc(100vw - 48px)', height: 'calc(100dvh - 48px)', maxHeight: 'none', m: 3 } } }}>
-          <DialogTitle id={`${id}-title`} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1, flexShrink: 0 }}>
-            <Box component="span" sx={{ flex: 1, minWidth: 0 }}>{title}</Box>
+        <Dialog open fullWidth maxWidth={false} onClose={close} aria-labelledby={`${id}-title`}
+          sx={{ '& .MuiDialog-container': { width: '100vw', height: '100dvh' } }}
+          slotProps={{ paper: { sx: { width: { xs: '100vw', sm: 'calc(100vw - 48px)' }, height: { xs: '100dvh', sm: 'calc(100dvh - 48px)' }, maxWidth: 'none', maxHeight: 'none', m: { xs: 0, sm: 3 }, borderRadius: { xs: 0, sm: 1 }, pt: 'env(safe-area-inset-top)', pb: 'env(safe-area-inset-bottom)' } } }}>
+          <DialogTitle id={`${id}-title`} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 1, px: { xs: 1, sm: 3 }, flexShrink: 0 }}>
+            <Box component="span" sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</Box>
             {actions}{help}
-            <IconButton aria-label={t('chart.close')} onClick={close}><CloseIcon /></IconButton>
+            <IconButton aria-label={t('chart.close')} sx={touchTarget} onClick={close}><CloseIcon /></IconButton>
           </DialogTitle>
           <DialogContent sx={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', p: 1 }}>
-            <Typography id={`${id}-large-controls`} variant="caption" color="text.secondary" sx={{ px: 1, flexShrink: 0 }}>{t('chart.controls.summary')}</Typography>
+            <Typography id={`${id}-large-controls`} variant="caption" color="text.secondary" sx={{ px: 1, flexShrink: 0, '@media (pointer: coarse)': { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' } }}>{t('chart.controls.summary')}</Typography>
             <Box sx={{ flex: 1, minHeight: 0 }}><Plot {...props} height={undefined} memory={memory} descriptionId={`${id}-large-controls`} recovery={recovery} /></Box>
           </DialogContent>
         </Dialog>
@@ -255,7 +284,7 @@ export function PlotlyChart(props: PlotlyChartProps) {
       <Popover open={!!helpAnchor} anchorEl={helpAnchor} onClose={() => setHelpAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Box role="dialog" aria-label={t('chart.controls')} sx={{ p: 2, maxWidth: 380 }}>
           <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 1 }}><Typography variant="subtitle2">{t('chart.controls')}</Typography><IconButton size="small" aria-label={t('chart.controls.close')} onClick={() => setHelpAnchor(null)}><CloseIcon fontSize="small" /></IconButton></Stack>
-          <Stack spacing={1}>{(['chart.controls.pan', 'chart.controls.zoom', 'chart.controls.mouse', 'chart.controls.keyboard', 'chart.controls.page'] as const).map((key) => <Typography key={key} variant="body2">{t(key)}</Typography>)}</Stack>
+          <Stack spacing={1}>{(['chart.controls.touch', 'chart.controls.pan', 'chart.controls.zoom', 'chart.controls.mouse', 'chart.controls.keyboard', 'chart.controls.page'] as const).map((key) => <Typography key={key} variant="body2">{t(key)}</Typography>)}</Stack>
           <Stack spacing={1.5} sx={{ mt: 2, pt: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
             <FormControlLabel control={<Switch checked={recovery.enabled} onChange={(_event, enabled) => setRecovery((old) => ({ ...old, enabled }))} />} label={t('chart.recovery.enabled')} />
             <TextField select label={t('chart.recovery.threshold')} value={recovery.emptyThreshold * 100} disabled={!recovery.enabled} onChange={(event) => setRecovery((old) => ({ ...old, emptyThreshold: Number(event.target.value) / 100 }))}>
