@@ -2,6 +2,12 @@
 
 This directory contains example scripts demonstrating how to use the OpenDPD Python API.
 
+## Try it in Colab
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lab-emi/OpenDPD/blob/main/examples/OpenDPD_Tutorial.ipynb)
+
+The notebook walks through the original Python training pipeline; it does not launch Studio.
+
 ## Files
 
 - `api_usage_example.py` - Comprehensive examples of all API functions
@@ -97,7 +103,7 @@ opendpd.train_pa(dataset_path='my_data.csv', n_epochs=50)
 
 ## Interactive tutorial
 
-`OpenDPD_Tutorial.ipynb` is the notebook behind the "Open in Colab" badge of the README: it installs OpenDPD
+`OpenDPD_Tutorial.ipynb` is the notebook linked above: it installs OpenDPD
 from the `main` branch, inspects the measured DPA_200MHz data, trains a PA model and a DPD with the per-epoch
 plots and GIFs of V2.1, compares *without DPD* and *with DPD*, exports the predistorted signal, fine-tunes a
 W16A16 quantized DPD, tries TRes-DeltaGRU with temporal sparsity, and builds a dataset from a CSV. Open it in

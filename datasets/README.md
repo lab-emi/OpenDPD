@@ -7,7 +7,9 @@ This directory contains PA (Power Amplifier) measurement datasets for training a
 ```bash
 # Generate diagnostic plots for a dataset
 python datasets/DPA_200MHz/plot_dataset.py
+```
 
+```python
 # Load a dataset via the Python API
 import opendpd
 X_train, y_train, X_val, y_val, X_test, y_test = opendpd.load_dataset('DPA_200MHz')

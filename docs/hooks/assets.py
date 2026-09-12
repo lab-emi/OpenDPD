@@ -1,12 +1,12 @@
-"""MkDocs hook: publish repository assets that the single-source pages refer to.
+"""Publish shared repository assets and resolve their links from standalone guides.
 
-The site pages include sections of ``README.md`` and ``benchmark/benchmark_report.md`` verbatim, and those files
-reference images and evidence files that live outside ``docs/``. Adding them here keeps one copy in the repository:
-no duplicates under ``docs/`` and no symlinks (which Windows checkouts would break).
+README snippets use root-relative ``pics/`` paths. Guides under ``docs/`` use
+repository-relative paths so their Markdown also works directly on GitHub.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from mkdocs.structure.files import File, Files
@@ -19,6 +19,14 @@ ASSET_FILES = [
     "benchmark/reproduce_benchmark_report.sh",
     "benchmark/results/benchmark_report_results.json",
 ]
+
+
+def on_page_markdown(markdown, page, **kwargs):
+    """Drop only the extra hop out of docs/ in Markdown links to root pics/."""
+    depth = page.file.src_uri.count("/")
+    repo_prefix = "../" * (depth + 1) + "pics/"
+    site_prefix = "../" * depth + "pics/"
+    return re.sub(r"(?<=\]\()" + re.escape(repo_prefix), site_prefix, markdown)
 
 
 def on_files(files: Files, config) -> Files:

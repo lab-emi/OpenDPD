@@ -2,74 +2,59 @@
 title: Home
 ---
 
-# OpenDPD
+--8<-- "README.md:hero"
 
---8<-- "README.md:badges"
+# OpenDPD
 
 --8<-- "README.md:intro"
 
-## Where to start
+[Get started with Studio](install.md){ .md-button .md-button--primary }
+[Run from a terminal](tutorials/headless-cli.md){ .md-button }
+
+--8<-- "README.md:badges"
+
+## What's new
+
+--8<-- "README.md:studio-features"
+
+## Find your path
 
 <div class="grid cards" markdown>
 
--   :material-download:{ .lg .middle } __Install__
+-   :material-play-circle-outline:{ .lg .middle } __Your first experiment__
 
     ---
 
-    `pip install opendpd`, or set up the research codebase from source.
+    Install Studio, open a built-in dataset, and follow the PA → DPD workflow.
 
-    [:octicons-arrow-right-24: Installation](install.md)
+    [Installation](install.md) · [Studio walkthrough](tutorials/gui-quickstart.md)
 
--   :material-school:{ .lg .middle } __Learn the workflow__
-
-    ---
-
-    PA modeling, DPD learning, quantization-aware training and validation, step by step.
-
-    [:octicons-arrow-right-24: End-to-end training](training.md)
-
--   :material-database:{ .lg .middle } __Bring your data__
+-   :material-code-braces:{ .lg .middle } __Automate your work__
 
     ---
 
-    The built-in measured datasets, their format, and how to add a PA of your own.
+    Run recipes from a terminal, use the Python API, or explore a notebook.
 
-    [:octicons-arrow-right-24: Datasets](datasets.md)
+    [CLI](tutorials/headless-cli.md) · [Examples & Colab](examples.md) · [API](api.md)
 
--   :material-chart-line:{ .lg .middle } __Compare models__
-
-    ---
-
-    The PA modeling and DPD benchmark with its methodology, evidence and reproduction script.
-
-    [:octicons-arrow-right-24: Benchmark](benchmark/index.md)
-
--   :material-language-python:{ .lg .middle } __Script it__
+-   :material-chart-line:{ .lg .middle } __Understand the results__
 
     ---
 
-    `train_pa`, `train_dpd`, `run_dpd`, `plot_dpd` and the dataset helpers from Python.
+    Learn how data, PA modeling and DPD training connect, and inspect the plots.
 
-    [:octicons-arrow-right-24: API reference](api.md)
+    [Training](training.md) · [Datasets](datasets.md) · [Visualization](visualization.md)
 
--   :material-file-document-multiple:{ .lg .middle } __Cite the work__
+-   :material-flask-outline:{ .lg .middle } __Go further__
 
     ---
 
-    The papers behind OpenDPD, the measurement setup and the people who built it.
+    Compare models, reproduce a paper, or evaluate measured DPD and deployment.
 
-    [:octicons-arrow-right-24: About and citation](about.md)
+    [Benchmark](benchmark/index.md) · [Reproduction](reproducing.md) · [Advanced guides](advanced.md)
 
 </div>
 
-## Quick start
+## Project
 
---8<-- "README.md:quick-start"
-
-## Demo video
-
---8<-- "README.md:demo"
-
-## Versions
-
---8<-- "README.md:versions"
+[What's new](whats-new.md) · [FAQ](faq.md) · [Team & research](about.md) · [Citation](community/citation.md) · [Contributing](https://github.com/lab-emi/OpenDPD/blob/main/CONTRIBUTING.md)
