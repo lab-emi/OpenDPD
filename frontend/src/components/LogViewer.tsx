@@ -7,6 +7,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchLogPage } from '@/api/hooks'
+import { ApiError, WEB_MODE } from '@/api/client'
 import { message, t } from '@/i18n'
 import { tokens, useStudioColors } from '@/theme'
 
@@ -30,9 +31,11 @@ function LogContent({ runId, live, height = 420, tail = false }: { runId: string
   const [error, setError] = useState<string | null>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const loadingRef = useRef(false)
+  const finalLoadedRef = useRef(false)
+  const retryAtRef = useRef(0)
 
   const loadMore = useCallback(async () => {
-    if (loadingRef.current) return
+    if (loadingRef.current || Date.now() < retryAtRef.current) return
     loadingRef.current = true
     try {
       const page = await fetchLogPage(runId, offset, PAGE, tail && offset === 0)
@@ -40,12 +43,14 @@ function LogContent({ runId, live, height = 420, tail = false }: { runId: string
       setEof(page.eof)
       if (page.lines.length > 0) setLines((prev) => [...prev, ...page.lines].slice(-MAX_LINES))
       setError(null)
+      finalLoadedRef.current = !live && page.eof
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
+      if (err instanceof ApiError) retryAtRef.current = Date.now() + err.retryAfterMs
     } finally {
       loadingRef.current = false
     }
-  }, [runId, offset, tail])
+  }, [runId, offset, tail, live])
 
   /** Fetch every remaining page (2000 lines each) so a long log can be searched; the view keeps MAX_LINES. */
   const loadAll = useCallback(async () => {
@@ -80,9 +85,17 @@ function LogContent({ runId, live, height = 420, tail = false }: { runId: string
   }, [runId, live])
 
   useEffect(() => {
-    if (!live) return
-    const timer = window.setInterval(() => void loadMore(), 2000)
-    return () => window.clearInterval(timer)
+    const refresh = () => {
+      if (document.visibilityState !== 'hidden' && (live || !finalLoadedRef.current)) void loadMore()
+    }
+    const timer = window.setInterval(refresh, WEB_MODE ? 3000 : 2000)
+    window.addEventListener('online', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('online', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
   }, [live, loadMore])
 
   const visible = useMemo(() => (filter ? lines.filter((l) => l.toLowerCase().includes(filter.toLowerCase())) : lines), [lines, filter])
@@ -103,6 +116,7 @@ function LogContent({ runId, live, height = 420, tail = false }: { runId: string
         <Typography variant="caption" color="text.secondary">
           {t('logs.lines', { shown: visible.length, total: lines.length })}
         </Typography>
+        <Button size="small" onClick={() => void loadMore()}>{t('logs.refresh')}</Button>
         {!eof && (
           <Button size="small" onClick={() => void loadMore()}>
             {t('logs.loadMore')}

@@ -756,5 +756,12 @@
   "web.retention": "Tijdelijke werkruimte · download resultaten vóór {date}. Bestanden worden automatisch verwijderd.",
   "web.connection.title": "Geen verbinding met de rekenserver",
   "web.connection.body": "De browser kon {origin} niet bereiken.",
-  "web.connection.hint": "Controleer je netwerkverbinding en probeer het opnieuw. Als het domein onlangs is verhuisd, kan je netwerk nog oude DNS-records hebben; probeer een ander netwerk of een vertrouwde DNS-resolver."
+  "web.connection.hint": "Controleer je netwerkverbinding en probeer het opnieuw. Als het domein onlangs is verhuisd, kan je netwerk nog oude DNS-records hebben; probeer een ander netwerk of een vertrouwde DNS-resolver.",
+  "terminal.stop": "Experiment stoppen",
+  "terminal.stopping": "Wordt gestopt…",
+  "terminal.openRun": "Experiment en grafieken openen",
+  "terminal.readOnly": "Alleen uitvoer. Gebruik «Experiment stoppen» om deze uitvoering te beëindigen.",
+  "logs.refresh": "Uitvoer vernieuwen",
+  "run.reconnect": "Experiment synchroniseren",
+  "run.gpuQueue": "De gedeelde GPU voert één experiment tegelijk uit. Je experiment staat in de wachtrij; je kunt deze pagina verlaten en later terugkomen."
 }

@@ -756,5 +756,12 @@
   "web.retention": "Spazio temporaneo · scarica i risultati prima di {date}. I file vengono eliminati automaticamente.",
   "web.connection.title": "Impossibile connettersi al server di calcolo",
   "web.connection.body": "Il browser non riesce a raggiungere {origin}.",
-  "web.connection.hint": "Controlla la connessione di rete e riprova. Se il dominio è stato trasferito di recente, la rete potrebbe conservare vecchi record DNS; prova un’altra rete o un servizio DNS affidabile."
+  "web.connection.hint": "Controlla la connessione di rete e riprova. Se il dominio è stato trasferito di recente, la rete potrebbe conservare vecchi record DNS; prova un’altra rete o un servizio DNS affidabile.",
+  "terminal.stop": "Interrompi esperimento",
+  "terminal.stopping": "Interruzione…",
+  "terminal.openRun": "Apri esperimento e grafici",
+  "terminal.readOnly": "Output di sola lettura. Usa «Interrompi esperimento» per terminare questa esecuzione.",
+  "logs.refresh": "Aggiorna output",
+  "run.reconnect": "Sincronizza esperimento",
+  "run.gpuQueue": "La GPU condivisa esegue un esperimento alla volta. Il tuo esperimento è in coda; puoi lasciare questa pagina e tornare."
 }

@@ -8,7 +8,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { api } from '@/api/client'
+import { api, WEB_MODE } from '@/api/client'
 import type { StreamState } from '@/api/events'
 import type { RunView } from '@/api/types'
 import { isTerminal } from '@/api/types'
@@ -37,7 +37,7 @@ export const liveKey = (id: string) => ['run', id, 'live'] as const
 /** Latest worker snapshot only; structural sharing avoids redraws of unchanged arrays. */
 export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; stream: StreamState; metrics: StreamState['metrics'] }) {
   const active = !isTerminal(run.status)
-  const query = useQuery({ queryKey: liveKey(run.run_id), queryFn: () => api.get<LiveSnapshot>(`/runs/${encodeURIComponent(run.run_id)}/live`), refetchInterval: active ? 2000 : false, retry: false })
+  const query = useQuery({ queryKey: liveKey(run.run_id), queryFn: ({ signal }) => api.get<LiveSnapshot>(`/runs/${encodeURIComponent(run.run_id)}/live`, signal), refetchInterval: active ? (WEB_MODE ? 5000 : 2000) : false, retry: false })
   const snapshot = query.data, preview = snapshot?.preview, geometry = snapshot?.training_geometry ?? snapshot?.geometry
   const progress = stream.batchProgress
   const spec = preview?.plots.spectrum, time = preview?.plots.time

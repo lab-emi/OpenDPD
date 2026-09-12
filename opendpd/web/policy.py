@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -45,9 +45,11 @@ class WebConfig:
     # Host header rewritten by the host-local cloudflared connector. This is an
     # origin credential, NOT a frontend secret. Never trust arbitrary proxy headers.
     tunnel_host: str
+    gpu_token: str | None = field(default=None, repr=False)
     max_sessions: int = 16
     sessions_per_ip: int = 8
-    requests_per_minute: int = 120
+    requests_per_minute: int = 600
+    requests_per_session_minute: int = 120
     runs_per_ip: int = 12
     runs_per_session: int = 8
     runs_per_day: int = 60
@@ -63,6 +65,8 @@ class WebConfig:
     drain_seconds: int = 300
 
     def __post_init__(self):
+        if self.gpu_token is not None and len(self.gpu_token) < 48:
+            raise ValueError("GPU broker requires a private 48+ character token")
         url = urlsplit(self.origin)
         if (url.scheme != "https" or url.path or url.query or url.fragment or url.username
                 or url.password or url.port not in (None, 443) or not url.hostname):

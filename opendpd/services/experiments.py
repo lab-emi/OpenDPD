@@ -166,7 +166,7 @@ def submission_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[Con
     errors: List[ConfigIssue] = []
     warnings: List[ConfigIssue] = []
     device = config.execution.device
-    if not capabilities.device_available(device):
+    if not getattr(ws, "device_available", capabilities.device_available)(device):
         errors.append(ConfigIssue("execution.device", f"device '{device}' is not available on this machine",
                                   hint="choose cpu or a detected device; OpenDPD never switches devices silently"))
     manifest = ws.get_dataset(config.dataset.id)

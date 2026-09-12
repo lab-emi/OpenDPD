@@ -29,7 +29,8 @@ def main():
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     resource.setrlimit(resource.RLIMIT_FSIZE, (64 * 1024 * 1024, 64 * 1024 * 1024))
     config = WebConfig(root=root, origin=os.environ["OPENDPD_WEB_ORIGIN"], api_host=os.environ["OPENDPD_WEB_API_HOST"],
-                       tunnel_host=os.environ["OPENDPD_WEB_TUNNEL_HOST"])
+                       tunnel_host=os.environ["OPENDPD_WEB_TUNNEL_HOST"],
+                       gpu_token=os.environ.get("OPENDPD_GPU_TOKEN"))
     uvicorn.run(create_web_app(config), host=args.host, port=args.port, proxy_headers=False,
                 access_log=False, limit_concurrency=32, timeout_keep_alive=5)
 

@@ -5,7 +5,7 @@ import { getLanguage } from '@/i18n'
  * run status beyond what the server returned.
  */
 import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query'
-import { api } from './client'
+import { api, WEB_MODE } from './client'
 import type {
   AdaptationReport,
   DeployExportInfo,
@@ -96,7 +96,7 @@ export const useRuns = (status?: RunStatus, page: RunPage = {}) =>
   useQuery({
     queryKey: keys.runs(status, page),
     queryFn: () => api.get<RunView[]>(`/runs?${runParams(status, page)}`),
-    refetchInterval: 5_000,
+    refetchInterval: WEB_MODE ? 10_000 : 5_000,
     placeholderData: keepPreviousData,
   })
 
@@ -104,7 +104,7 @@ export const useRunCount = (status?: RunStatus, q?: string) =>
   useQuery({
     queryKey: keys.runCount(status, q),
     queryFn: () => api.get<{ count: number }>(`/runs/count?${runParams(status, { q, limit: 1 }).replace(/&?limit=1&offset=0/, '')}`),
-    refetchInterval: 5_000,
+    refetchInterval: WEB_MODE ? 10_000 : 5_000,
   })
 
 /** Snapshot of one run; polls slowly while active as a fallback to the event stream. */
@@ -112,7 +112,7 @@ export const useRun = (id: string, enabled = true) =>
   useQuery({
     queryKey: keys.run(id),
     enabled,
-    queryFn: () => api.get<RunView>(`/runs/${encodeURIComponent(id)}`),
+    queryFn: ({ signal }) => api.get<RunView>(`/runs/${encodeURIComponent(id)}`, signal),
     refetchInterval: (query) => (query.state.data && !isTerminal(query.state.data.status) ? 10_000 : false),
   })
 
@@ -149,8 +149,8 @@ export const useResult = (id: string, enabled = true, profile: string | null = n
 export const useResultProfiles = (id: string) => useQuery({ queryKey: keys.resultProfiles(id), queryFn: () => api.get<string[]>(`/results/${encodeURIComponent(id)}/profiles`) })
 export const useMetricProfiles = () => useQuery({ queryKey: keys.metricProfiles, queryFn: () => api.get<MetricProfile[]>('/metrics/profiles'), staleTime: Infinity })
 
-export const fetchLogPage = (id: string, offset: number, limit = 500, tail = false) =>
-  api.get<LogPage>(`/runs/${encodeURIComponent(id)}/logs?offset=${offset}&limit=${limit}${tail ? '&tail=true' : ''}`)
+export const fetchLogPage = (id: string, offset: number, limit = 500, tail = false, signal?: AbortSignal) =>
+  api.get<LogPage>(`/runs/${encodeURIComponent(id)}/logs?offset=${offset}&limit=${limit}${tail ? '&tail=true' : ''}`, signal)
 
 export const validateConfig = (config: unknown) => api.post<ValidationReport>('/experiments/validate', { config })
 

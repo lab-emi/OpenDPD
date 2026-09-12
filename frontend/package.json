@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "types:generate": "openapi-typescript ../docs/contracts/openapi.json -o src/api/schema.ts",
-    "types:check": "openapi-typescript ../docs/contracts/openapi.json -o /tmp/opendpd-schema-check.ts && diff -q /tmp/opendpd-schema-check.ts src/api/schema.ts"
+    "types:check": "openapi-typescript ../docs/contracts/openapi.json -o /tmp/opendpd-schema-check.ts && diff -q /tmp/opendpd-schema-check.ts src/api/schema.ts",
+    "e2e:web": "VITE_STUDIO_MODE=web VITE_API_ORIGIN=https://api.opendpd.com vite build --outDir /tmp/opendpd-web-e2e && playwright test --config playwright.web.config.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

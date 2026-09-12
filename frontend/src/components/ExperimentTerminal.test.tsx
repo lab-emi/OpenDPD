@@ -32,3 +32,19 @@ test('collapsed terminal follows steps; selecting a different log does not navig
   expect(screen.getByTestId('page-path')).toHaveTextContent('task=train_dpd')
   expect(calls.every((call) => call.method === 'GET')).toBe(true)
 })
+
+test('Stop cancels only the selected experiment and provides no command input', async () => {
+  const run = { ...runningMock.data, run_id: 'run-selected', task: 'train_pa', status: 'running' }
+  const { calls } = mockApi({
+    'GET /api/v1/runs': () => [run],
+    'GET /api/v1/runs/run-selected/logs': () => ({ lines: ['Training on CUDA'], next_offset: 20, eof: true, size: 20 }),
+    'POST /api/v1/runs/run-selected/cancel': () => ({ ...run, status: 'cancel_requested' }),
+  })
+  renderWithProviders(<ExperimentTerminal />, { route: '/experiments/new?task=train_pa' })
+  await userEvent.click(await screen.findByRole('button', { name: /Terminal.*Running/ }))
+  const terminal = screen.getByTestId('experiment-terminal')
+  expect(within(terminal).getAllByRole('textbox')).toHaveLength(1)
+  expect(within(terminal).getByRole('textbox')).toHaveAccessibleName('Filter lines')
+  await userEvent.click(within(terminal).getByRole('button', { name: 'Stop experiment' }))
+  await waitFor(() => expect(calls.filter((call) => call.method === 'POST').map((call) => call.path)).toEqual(['/api/v1/runs/run-selected/cancel']))
+})

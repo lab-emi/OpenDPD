@@ -1,0 +1,14 @@
+FROM docker.io/pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime@sha256:417bd75df6365104c283ea4c1651fb3530d9eb5a4c2fafa51943cff2a94e6385
+WORKDIR /opt/opendpd
+RUN pip install --no-cache-dir numpy scipy pandas matplotlib pillow tqdm rich 'pydantic>=2.5,<3' psutil
+COPY pyproject.toml README.md arguments.py project.py models.py main.py ./
+COPY opendpd ./opendpd
+COPY backbones ./backbones
+COPY modules ./modules
+COPY steps ./steps
+COPY utils ./utils
+COPY quant ./quant
+COPY datasets ./datasets
+RUN pip install --no-cache-dir --no-deps --no-build-isolation . && chmod -R a-w /opt/opendpd
+USER 65532:65532
+ENTRYPOINT ["python", "-m", "opendpd.web.gpu_container"]

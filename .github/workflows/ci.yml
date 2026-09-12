@@ -127,6 +127,9 @@ jobs:
           npx playwright install --with-deps chromium firefox webkit
           npx playwright test --ignore-snapshots
 
+      - name: Web transport recovery, plots and cancellation
+        run: npm run e2e:web
+
   build:
     name: Build & check distribution
     runs-on: ubuntu-latest

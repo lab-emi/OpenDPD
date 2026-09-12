@@ -3,7 +3,7 @@
  * and sends Last-Event-ID, which the server honours; the hook only tracks
  * the connection state and folds events into a compact view model.
  */
-import { useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { API, WEB_MODE, ApiError, api } from './client'
 import { keys } from './hooks'
@@ -105,48 +105,92 @@ function reducer(state: StreamState, action: Action): StreamState {
 const EVENT_TYPES = ['status', 'progress', 'metric', 'log', 'artifact', 'checkpoint', 'heartbeat', 'error'] as const
 
 /** Subscribes to /runs/{id}/events while `enabled`; replays from seq 0 on mount. */
-export function useRunStream(runId: string, enabled: boolean): StreamState {
+export function useRunStream(runId: string, enabled: boolean): StreamState & { reconnect: () => void } {
   const [state, dispatch] = useReducer(reducer, initial)
   const qc = useQueryClient()
   const sourceRef = useRef<EventSource | null>(null)
+  const cursorRef = useRef(0)
+  const [revision, setRevision] = useState(0)
+  const reconnect = useCallback(() => {
+    setRevision((value) => value + 1)
+    void qc.invalidateQueries({ queryKey: keys.run(runId) })
+    void qc.invalidateQueries({ queryKey: keys.runHistory(runId) })
+  }, [qc, runId])
 
   useEffect(() => {
     dispatch({ kind: 'reset' })
+    cursorRef.current = 0
+    // The run ID deliberately resets replay, even before a transport is enabled.
+    // eslint-disable-next-line react/exhaustive-effect-dependencies
+  }, [runId])
+
+  useEffect(() => {
     if (enabled && WEB_MODE) {
       // Short, authenticated polls work across github.io and the Tunnel without
       // third-party cookies or bearer tokens in EventSource query strings.
       let stopped = false
-      let cursor = 0
+      let polling = false
+      let ended = false
       let timer: number | undefined
+      let retryAt = 0
+      const controller = new AbortController()
       const poll = async () => {
+        if (stopped || polling || ended) return
+        window.clearTimeout(timer)
+        if (document.visibilityState === 'hidden' || Date.now() < retryAt) {
+          timer = window.setTimeout(() => void poll(), Math.max(3000, retryAt - Date.now()))
+          return
+        }
+        polling = true
+        let delay = 3000
         try {
-          const page = await api.get<{ events: RunEvent[]; last_seq: number; terminal: boolean }>(`/runs/${encodeURIComponent(runId)}/events/list?after=${cursor}&limit=500`)
+          const page = await api.get<{ events: RunEvent[]; last_seq: number; terminal: boolean }>(`/runs/${encodeURIComponent(runId)}/events/list?after=${cursorRef.current}&limit=500`, controller.signal)
           if (stopped) return
-          cursor = page.last_seq
+          cursorRef.current = page.last_seq
           dispatch({ kind: 'events', events: page.events })
           dispatch({ kind: 'connection', connection: 'live' })
-          if (page.events.length) {
-            void qc.invalidateQueries({ queryKey: keys.run(runId) })
-            void qc.invalidateQueries({ queryKey: ['run', runId, 'live'] })
+          // Replay quickly, without restarting the snapshot queries on every heartbeat.
+          if (page.events.length === 500) delay = 100
+          else if (page.events.some((event) => ['status', 'error', 'artifact'].includes(event.type))) {
+            void qc.invalidateQueries({ queryKey: keys.run(runId), exact: true })
           }
           if (page.terminal && page.events.length < 500) {
+            ended = true
             dispatch({ kind: 'connection', connection: 'ended' })
-            for (const key of [keys.run(runId), keys.result(runId), keys.runArtifacts(runId), ['runs']]) void qc.invalidateQueries({ queryKey: key })
-            return
+            for (const key of [keys.run(runId), keys.result(runId), ['runs']]) void qc.invalidateQueries({ queryKey: key })
           }
         } catch (error) {
           if (stopped) return
           dispatch({ kind: 'connection', connection: 'disconnected' })
-          if (error instanceof ApiError && error.status === 401) return
+          if (error instanceof ApiError) {
+            if (error.status === 401) ended = true
+            if (error.code === 'cursor_out_of_range') {
+              cursorRef.current = 0
+              dispatch({ kind: 'reset' })
+            }
+            delay = Math.max(delay, error.retryAfterMs)
+            retryAt = Date.now() + delay
+          }
+        } finally {
+          polling = false
+          if (!stopped && !ended) timer = window.setTimeout(() => void poll(), delay)
         }
-        if (!stopped) timer = window.setTimeout(() => void poll(), 3000)
       }
+      const resume = () => { if (document.visibilityState !== 'hidden') void poll() }
+      window.addEventListener('online', resume)
+      document.addEventListener('visibilitychange', resume)
       dispatch({ kind: 'connection', connection: 'connecting' })
       void poll()
-      return () => { stopped = true; window.clearTimeout(timer) }
+      return () => {
+        stopped = true
+        controller.abort()
+        window.clearTimeout(timer)
+        window.removeEventListener('online', resume)
+        document.removeEventListener('visibilitychange', resume)
+      }
     }
     if (!enabled || typeof EventSource === 'undefined') return
-    const source = new EventSource(`${API}/runs/${encodeURIComponent(runId)}/events?after=0`)
+    const source = new EventSource(`${API}/runs/${encodeURIComponent(runId)}/events?after=${cursorRef.current}`)
     sourceRef.current = source
     dispatch({ kind: 'connection', connection: 'connecting' })
     source.onopen = () => dispatch({ kind: 'connection', connection: 'live' })
@@ -156,7 +200,10 @@ export function useRunStream(runId: string, enabled: boolean): StreamState {
     const flush = () => {
       window.clearTimeout(timer)
       timer = undefined
-      if (pending.length) dispatch({ kind: 'events', events: pending })
+      if (pending.length) {
+        cursorRef.current = pending[pending.length - 1]!.seq
+        dispatch({ kind: 'events', events: pending })
+      }
       pending = []
     }
     const onEvent = (raw: MessageEvent<string>) => {
@@ -190,7 +237,9 @@ export function useRunStream(runId: string, enabled: boolean): StreamState {
       source.close()
       sourceRef.current = null
     }
-  }, [runId, enabled, qc])
+    // A manual reconnect deliberately replaces the transport, preserving its cursor.
+    // eslint-disable-next-line react/exhaustive-effect-dependencies
+  }, [runId, enabled, qc, revision])
 
-  return state
+  return { ...state, reconnect }
 }

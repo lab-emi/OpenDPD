@@ -1,4 +1,7 @@
 import TerminalIcon from '@mui/icons-material/Terminal'
+import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined'
+import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Box from '@mui/material/Box'
 import ButtonBase from '@mui/material/ButtonBase'
@@ -12,8 +15,8 @@ import Tabs from '@mui/material/Tabs'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
-import { useLocation } from 'react-router'
-import { useRun, useRuns } from '@/api/hooks'
+import { Link as RouterLink, useLocation } from 'react-router'
+import { useCancelRun, useRun, useRuns } from '@/api/hooks'
 import { isTerminal } from '@/api/types'
 import { message, t } from '@/i18n'
 import { useStudioColors } from '@/theme'
@@ -27,6 +30,7 @@ export function ExperimentTerminal() {
   const colors = useStudioColors()
   const { pathname, search } = useLocation()
   const runs = useRuns()
+  const cancel = useCancelRun()
   const id = pathname.startsWith('/runs/') ? decodeURIComponent(pathname.split('/')[2] ?? '') : ''
   const detail = useRun(id, !!id)
   const routeRun = detail.data ?? runs.data?.find((run) => run.run_id === id)
@@ -63,6 +67,12 @@ export function ExperimentTerminal() {
             <TextField select fullWidth size="small" label={t('terminal.run')} value={chosen.run_id} onChange={(event) => setSelection((old) => ({ ...old, [tab]: { id: event.target.value, context } }))}>
               {candidates.map((run) => <MenuItem key={run.run_id} value={run.run_id}>{run.name || run.run_id} · {message(run.status)} · {run.model_key}</MenuItem>)}
             </TextField>
+            <Stack direction="row" spacing={1}>
+              {!isTerminal(chosen.status) && <Button color="error" variant="outlined" startIcon={<StopCircleOutlinedIcon />} disabled={cancel.isPending || chosen.status === 'cancel_requested'} onClick={() => cancel.mutate(chosen.run_id)}>{t(chosen.status === 'cancel_requested' ? 'terminal.stopping' : 'terminal.stop')}</Button>}
+              <Button component={RouterLink} to={`/runs/${encodeURIComponent(chosen.run_id)}`}>{t('terminal.openRun')}</Button>
+            </Stack>
+            {cancel.isError && cancel.variables === chosen.run_id && <Alert severity="error">{message(cancel.error.message)}</Alert>}
+            <Typography variant="caption" color="text.secondary">{t('terminal.readOnly')}</Typography>
             <LogViewer key={chosen.run_id} runId={chosen.run_id} live={!isTerminal(chosen.status)} height={300} tail />
           </> : <Typography color="text.secondary" sx={{ py: 3 }}>{t('terminal.empty')}</Typography>}
         </Stack>

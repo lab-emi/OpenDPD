@@ -275,8 +275,7 @@ class Supervisor:
         creation = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
         try:
             process = subprocess.Popen(
-                [sys.executable, "-m", "opendpd.runtime.worker", "--workspace", str(self.ws.root),
-                 "--run-id", record.run_id],
+                self.worker_command(record),
                 cwd=str(run_dir), stdout=log_file, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=env,
                 **creation)
         except OSError as err:
@@ -294,6 +293,10 @@ class Supervisor:
         self._active[record.run_id] = _Active(run_id=record.run_id, process=process,
                                               device_key=self._device_key(record), log_file=log_file,
                                               events_path=run_dir / EVENTS_FILE)
+
+    def worker_command(self, record: RunRecord) -> List[str]:
+        return [sys.executable, "-m", "opendpd.runtime.worker", "--workspace", str(self.ws.root),
+                "--run-id", record.run_id]
 
     def _request_cancel_file(self, active: _Active) -> None:
         cancel = self.ws.run_dir(active.run_id) / CANCEL_FILE
@@ -396,6 +399,8 @@ class Supervisor:
             reason = "worker finished after cancellation was requested; artifacts and result were kept"
         if record.status == RunStatus.cancel_requested and target == RunStatus.failed and active.killed:
             target, reason, error = RunStatus.cancelled, "worker terminated after the cancel grace period", None
+        if record.status == RunStatus.cancel_requested and code == 3:
+            target, reason, error = RunStatus.cancelled, "worker stopped after cancellation was requested", None
 
         # Timestamps come from the executor's own clock when the worker recorded them: the same two
         # points `opendpd run` stamps in-process, so durations compare across paths. The supervisor's

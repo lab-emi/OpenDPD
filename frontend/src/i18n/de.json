@@ -756,5 +756,12 @@
   "web.retention": "Temporärer Arbeitsbereich · Ergebnisse vor {date} herunterladen. Dateien werden automatisch gelöscht.",
   "web.connection.title": "Keine Verbindung zum Rechenserver",
   "web.connection.body": "Der Browser konnte {origin} nicht erreichen.",
-  "web.connection.hint": "Prüfen Sie Ihre Netzwerkverbindung und versuchen Sie es erneut. Nach einem kürzlichen Domainumzug kann Ihr Netzwerk noch alte DNS-Einträge verwenden; versuchen Sie ein anderes Netzwerk oder einen vertrauenswürdigen DNS-Resolver."
+  "web.connection.hint": "Prüfen Sie Ihre Netzwerkverbindung und versuchen Sie es erneut. Nach einem kürzlichen Domainumzug kann Ihr Netzwerk noch alte DNS-Einträge verwenden; versuchen Sie ein anderes Netzwerk oder einen vertrauenswürdigen DNS-Resolver.",
+  "terminal.stop": "Experiment stoppen",
+  "terminal.stopping": "Wird gestoppt…",
+  "terminal.openRun": "Experiment und Diagramme öffnen",
+  "terminal.readOnly": "Nur Ausgabe. Mit „Experiment stoppen“ beenden Sie diesen Lauf.",
+  "logs.refresh": "Ausgabe aktualisieren",
+  "run.reconnect": "Experiment synchronisieren",
+  "run.gpuQueue": "Die gemeinsame GPU führt jeweils ein Experiment aus. Ihr Experiment wartet; Sie können diese Seite verlassen und später zurückkehren."
 }
