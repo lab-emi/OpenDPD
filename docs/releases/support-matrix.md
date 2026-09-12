@@ -5,7 +5,7 @@ designed for but no test evidence yet; **unsupported** = out of scope.
 A platform being able to open the page does not imply every model or
 accelerator path is supported, so three tables are kept separately.
 
-Last update: 2026-09-11 (native macOS fix verified in [the follow-up report](../baseline/native-window-macos-fix-2026-09-11.md); S13 baseline in `docs/baseline/baseline-report.md`, hardening in `docs/releases/hardening-report.md`).
+Last update: 2026-09-11 (native macOS fix verified in [the follow-up report](https://github.com/lab-emi/OpenDPD/blob/64d3e5e76b25d2d9dd59c91bf5c70c1d3ab2c698/docs/baseline/native-window-macos-fix-2026-09-11.md); S13 baseline in `docs/baseline/baseline-report.md`, hardening in `docs/releases/hardening-report.md`).
 
 ## Core library and CLI (CPU)
 
@@ -29,7 +29,7 @@ Last update: 2026-09-11 (native macOS fix verified in [the follow-up report](../
 
 | OS | Backend | Status | Evidence |
 |---|---|---|---|
-| macOS Apple Silicon (macOS 26.6.2, Python 3.13.12, pywebview 6.2.1, pyobjc 12.2.2) | cocoa / WKWebView | verified for launch, session, CPU run, configuration download, menus, Dock icon, idle exits and active-run Cancel/Quit | [Initial desktop checks](../baseline/native-window-macos-2026-09-11.md) and [exit fix verification](../baseline/native-window-macos-fix-2026-09-11.md), 2026-09-11: real native red close, Cmd+Q and terminal Ctrl+C each passed both Cancel (same worker continues) and Quit (launcher exit 0, run cancelled, no descendants, lock and port released). Quit cleanup took approximately 2.6–3.0 s. The Cocoa confirmation deadlock and HTTP-stream shutdown blocker are fixed; tested source hashes and screenshots are retained. Configuration Save/Cancel, English/Chinese menus and the Dock icon passed earlier; this does not claim every download format or an installed application bundle. |
+| macOS Apple Silicon (macOS 26.6.2, Python 3.13.12, pywebview 6.2.1, pyobjc 12.2.2) | cocoa / WKWebView | verified for launch, session, CPU run, configuration download, menus, Dock icon, idle exits and active-run Cancel/Quit | [Initial desktop checks](https://github.com/lab-emi/OpenDPD/blob/64d3e5e76b25d2d9dd59c91bf5c70c1d3ab2c698/docs/baseline/native-window-macos-2026-09-11.md) and [exit fix verification](https://github.com/lab-emi/OpenDPD/blob/64d3e5e76b25d2d9dd59c91bf5c70c1d3ab2c698/docs/baseline/native-window-macos-fix-2026-09-11.md), 2026-09-11: real native red close, Cmd+Q and terminal Ctrl+C each passed both Cancel (same worker continues) and Quit (launcher exit 0, run cancelled, no descendants, lock and port released). Quit cleanup took approximately 2.6–3.0 s. The Cocoa confirmation deadlock and HTTP-stream shutdown blocker are fixed; tested source hashes and screenshots are retained. Configuration Save/Cancel, English/Chinese menus and the Dock icon passed earlier; this does not claim every download format or an installed application bundle. |
 | Windows x86-64 | edgechromium / WebView2 | **unverified** | needs a person: WebView2 runtime, downloads, Ctrl+C in a console |
 | Linux x86-64 | gtk / WebKit2GTK or qt | **unverified** | needs a person with the distribution packages; CI only proves the headless fallback reason |
 

@@ -110,12 +110,15 @@ hooks:
 exclude_docs: |
   hooks/
   requirements.txt
+  # Local validation reports refer to raw captures deliberately excluded from Git.
+  # Keep them in the repository; they are not pages in the published user guide.
+  baseline/
+  superpowers/
 
 # Auxiliary references remain available through links from the Studio guides.
 # Keep the primary navigation focused on the user workflows above.
 not_in_nav: |
   architecture/**
-  baseline/**
   community/**
   design/**
   leaderboard/**
