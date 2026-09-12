@@ -318,14 +318,23 @@ def test_no_unrestricted_pickle_loading_in_the_tree():
     assert offenders == [], offenders
 
 
-def test_the_service_and_the_page_never_call_out():
-    """No telemetry, no CDN, no update checks: the only network client in the tree probes 127.0.0.1."""
+def test_network_clients_are_confined_to_local_api_and_public_project_activity():
+    """No telemetry/CDN; About may read the explicitly requested public GitHub activity.
+
+    test_about verifies the exact endpoints and absence of workspace/request payloads.
+    Keep this allowlist at the file and client-call level, not a blanket module exemption.
+    """
     root = Path(__file__).resolve().parents[2]
     offenders = []
+    allowed = {
+        "opendpd/studio/launcher.py": {"urlopen("},
+        "opendpd/services/about.py": {"urlopen("},
+    }
     for path in (root / "opendpd").rglob("*.py"):
         text = path.read_text(encoding="utf-8")
+        relative = path.relative_to(root).as_posix()
         for needle in ("urlopen(", "requests.get(", "requests.post(", "httpx.", "http.client.", "create_connection("):
-            if needle in text and path.name != "launcher.py":
+            if needle in text and needle not in allowed.get(relative, set()):
                 offenders.append(f"{path.relative_to(root)}: {needle}")
     launcher = (root / "opendpd" / "studio" / "launcher.py").read_text(encoding="utf-8")
     assert "loopback only" in launcher and 'HOST = "127.0.0.1"' in launcher

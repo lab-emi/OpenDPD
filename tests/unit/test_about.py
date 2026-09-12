@@ -1,4 +1,32 @@
+import io
+import json
+
 from opendpd.services import about
+
+
+def test_activity_reads_only_fixed_public_endpoints_without_user_data(monkeypatch):
+    requests = []
+
+    def urlopen(request, timeout):
+        requests.append(request)
+        assert timeout == 6
+        return io.BytesIO(json.dumps([]).encode())
+
+    monkeypatch.setattr(about, '_cache', None)
+    monkeypatch.setattr(about, '_checked', -float('inf'))
+    monkeypatch.setattr(about.urllib.request, 'urlopen', urlopen)
+    result = about.project_info()
+    assert result['status'] == 'current'
+    assert sorted(request.full_url for request in requests) == [
+        'https://api.github.com/repos/lab-emi/OpenDPD/commits?per_page=5',
+        'https://api.github.com/repos/lab-emi/OpenDPD/contributors?per_page=100',
+    ]
+    for request in requests:
+        assert request.get_method() == 'GET'
+        assert request.data is None
+        assert {name.lower(): value for name, value in request.header_items()} == {
+            'user-agent': 'OpenDPD-Studio', 'accept': 'application/vnd.github+json',
+        }
 
 
 def test_public_activity_cache_and_explicit_stale_fallback(monkeypatch):
