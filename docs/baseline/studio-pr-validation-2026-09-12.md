@@ -2,8 +2,10 @@
 
 PR: https://github.com/lab-emi/OpenDPD/pull/20
 
-Base: `OpenDPD-Studio`; head: `codex/studio-experience`. The protected-path diff
-against this base is empty. Environment: macOS 26.6.2, Apple Silicon, Python 3.13,
+Original base: `OpenDPD-Studio`; head: `codex/studio-experience`. The current
+integration is stacked on foundation PR #21 for an eventual merge into `main`.
+The protected-path diff against either foundation is empty.
+Environment: macOS 26.6.2, Apple Silicon, Python 3.13,
 CPU computation, Chromium. Raw logs and experiment captures remain local under
 the repository's ignore policy; this report records the reproducible commands
 and their outcomes.
@@ -32,12 +34,12 @@ and their outcomes.
 ## Initial blocker (resolved during the merge review)
 
 `tests/unit/test_offline_assets.py::test_built_assets_reference_no_external_hosts`
-still fails. The Plotly strict bundle includes map attribution hyperlinks and a
+failed in the initial run. The original Plotly strict bundle includes map attribution hyperlinks and a
 Mapbox icon loader using jsDelivr. Studio's current scatter journeys did not make
 external requests, but the static bundle check rejects those references. The
 offline assertion is unchanged; an exploratory filter for inert anchors was
-discarded after it still exposed the CDN loader. This PR remains draft with this
-failure reported rather than exempting the dependency or weakening the check.
+discarded after it still exposed the CDN loader. The PR was kept draft while the
+dependency was corrected without weakening the check, as recorded below.
 
 The first CI run on `a4a7904` is recorded at
 https://github.com/lab-emi/OpenDPD/actions/runs/34704488168. Lint and distribution
@@ -46,8 +48,8 @@ could not import `tests.fixtures`; CI now uses `python -m pytest`, with the affe
 16 tests successfully collected locally. The frontend job exceeded an existing
 five-second interaction-test timeout under default concurrency; CI now uses two
 workers, matching the passing local run. No timeout, scientific tolerance, seed or
-golden reference was changed. Full CI has not been rerun while the known offline
-bundle failure remains.
+golden reference was changed. Full CI was deferred until the offline bundle
+failure was resolved.
 
 ## Repository hygiene
 
@@ -95,3 +97,9 @@ main's quantization fix and documentation site. The foundation's 30 protected
 paths require explicit maintainer scientific approval. The root workspace is
 on `main`; fixes and verification use isolated worktrees. PR CI records the
 complete CPU/Python/browser matrix for the final branch revisions.
+
+The subsequent Linux matrix found a legacy metric precision discrepancy in all
+four Python versions, plus unresolved WebKit accessibility/performance failures
+in the UI matrix. The integration remains blocked; see
+[the main merge review](studio-main-merge-blockers-2026-09-12.md) for exact commits,
+commands, outcomes and the human scientific-review gate.
