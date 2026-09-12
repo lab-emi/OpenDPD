@@ -29,7 +29,7 @@ FRONTEND_SRC = Path(__file__).resolve().parents[2] / "frontend" / "src"
 
 @pytest.fixture(scope="module")
 def client(tmp_path_factory):
-    app = create_app(tmp_path_factory.mktemp("ws"), bootstrap_token=TOKEN,
+    app = create_app(tmp_path_factory.mktemp("ws"), bootstrap_token=TOKEN, allow_custom_datasets=True,
                      supervisor_kwargs={"poll_interval": 0.1, "cancel_grace": 20}, shutdown_timeout=3)
     with TestClient(app, base_url="http://127.0.0.1:8765") as c:
         r = c.post("/api/v1/session/bootstrap", json={"token": TOKEN})

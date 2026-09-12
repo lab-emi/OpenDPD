@@ -2,24 +2,26 @@ import { expect, test } from '@playwright/test'
 import { installFakeApi } from './mock-api'
 
 test.describe('J1 — reproduce the built-in example (mock API)', () => {
-  test('register example → new experiment → run detail → result, keyboard friendly', async ({ page }) => {
+  test('guided dataset setup → PA training → run detail → result, keyboard friendly', async ({ page }) => {
     const state = await installFakeApi(page)
     await page.goto('/')
     await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible()
-    await expect(page.getByText('built-in measured data', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Register example dataset' }).click()
-    await expect(page.getByText('Example dataset registered')).toBeVisible()
-
-    await page.getByRole('link', { name: 'New experiment' }).click()
-    await expect(page.getByRole('heading', { level: 1, name: 'New experiment' })).toBeVisible()
-    await expect(page.getByText(/Smoke recipe: a few epochs/)).toBeVisible()
+    await page.getByRole('link', { name: 'Get Started' }).click()
+    await page.getByRole('button', { name: 'Try a built-in dataset' }).click()
+    await page.getByRole('button', { name: 'Add & inspect DPA_200MHz' }).click()
+    await page.getByRole('button', { name: 'Inspect my dataset' }).click()
+    await page.getByRole('link', { name: 'Configure experiment' }).click()
+    await expect(page.getByRole('heading', { level: 1, name: 'PA Model Training' })).toBeVisible()
+    await expect(page.getByText(/Quick trial: a few epochs/)).toBeVisible()
     await expect(page.getByText('Configuration is valid')).toBeVisible()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await page.getByLabel('Name (optional)').fill('e2e smoke')
     // the metric profile is an explicit, registry-backed choice (S08); the default stays the frozen legacy one
     await page.getByRole('button', { name: 'Advanced settings' }).click()
     await page.getByLabel('Metric profile').click()
     await page.getByRole('option', { name: /general-spectral-v1/ }).click()
     await expect(page.getByText('Configuration is valid')).toBeVisible()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await page.getByRole('button', { name: 'Start run' }).click()
 
     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
@@ -54,13 +56,21 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
 
   test('the language selector is in the top bar; a choice applies at once and survives a reload', async ({ page }) => {
     await installFakeApi(page)
-    await page.goto('/')
+    await page.goto('/gallery')
+    const timePlot = page.getByTestId('iq-preview').locator('.js-plotly-plot')
+    await expect(timePlot.locator('svg.main-svg').first()).toBeVisible()
+    const range = () => timePlot.evaluate((el) => (el as HTMLElement & { layout: { xaxis: { range: number[] } } }).layout.xaxis.range)
+    const before = await range()
     await page.getByRole('button', { name: 'Language' }).click()
     const items = page.getByRole('menuitem')
-    await expect(items).toHaveText(['English', 'Français', 'Deutsch', 'Español', '中文', '日本語', '한국어'])
+    // Requested order: English, Dutch and Chinese first, then English-name alphabetical order.
+    await expect(items).toHaveText(['English', 'Nederlands', '中文', 'Français', 'Deutsch', 'Italiano', '日本語', '한국어', 'Español'])
     await items.filter({ hasText: '中文' }).click()
     await expect(page.getByRole('link', { name: '数据集' })).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
+    await expect(timePlot.locator('.xtitle')).toHaveText('样本')
+    // Translating the axes must not replace the data's sample range with Plotly's defaults.
+    expect(await range()).toEqual(before)
     await page.reload()
     await expect(page.getByRole('link', { name: '数据集' })).toBeVisible()
   })
@@ -87,7 +97,7 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
 
 test.describe('J3 — share and reproduce (mock API)', () => {
   test('export a share package from a result, then import a package and open the imported run', async ({ page }) => {
-    await installFakeApi(page)
+    await installFakeApi(page, { customDatasets: true })
     await page.goto('/results/run-pa-0001')
     const panel = page.getByRole('region', { name: 'Export and report' })
     await expect(panel.getByRole('link', { name: 'Report (HTML)' })).toHaveAttribute('href', '/api/v1/results/run-pa-0001/report?format=html')
@@ -112,9 +122,9 @@ test.describe('J3 — share and reproduce (mock API)', () => {
 
 test.describe('J2 — my own data (mock API)', () => {
   test('import CSV with odd headers → doctor → accept estimates → new version → experiment uses it', async ({ page }) => {
-    const state = await installFakeApi(page)
+    const state = await installFakeApi(page, { customDatasets: true })
     await page.goto('/datasets')
-    await page.getByRole('button', { name: 'Import my data' }).click()
+    await page.getByRole('button', { name: 'Advanced import' }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByText('capture.csv').click()
     await expect(dialog.getByRole('region', { name: 'Column mapping' })).toBeVisible()
@@ -127,8 +137,8 @@ test.describe('J2 — my own data (mock API)', () => {
     await dialog.getByRole('button', { name: 'Import', exact: true }).click()
 
     await expect(page).toHaveURL(/\/datasets\/capture$/)
-    await expect(page.getByText(/No report yet/)).toBeVisible()
-    await page.getByRole('button', { name: 'Run Dataset Doctor' }).click()
+    await page.getByRole('tab', { name: /Dataset Doctor/ }).click()
+    await page.getByRole('button', { name: 'Run again' }).click()
     await expect(page.getByRole('article', { name: 'Time misalignment' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Preprocess…' }).click()
@@ -140,6 +150,7 @@ test.describe('J2 — my own data (mock API)', () => {
     await pre.getByLabel('New version name').fill('aligned-v1')
     await pre.getByRole('button', { name: 'Create version' }).click()
     await expect(page.getByText('Version aligned-v1 created.')).toBeVisible()
+    await page.getByRole('tab', { name: 'Data versions' }).click()
     await expect(page.locator('[data-version="aligned-v1"]')).toBeVisible()
 
     // the version is a first-class choice when configuring an experiment and travels in the config
@@ -148,6 +159,8 @@ test.describe('J2 — my own data (mock API)', () => {
     await page.getByLabel('Data version').click()
     await page.getByRole('option', { name: 'aligned-v1' }).click()
     await expect(page.getByText('Configuration is valid')).toBeVisible()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await page.getByRole('button', { name: 'Start run' }).click()
     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
     const config = state.submitted[0]?.['config'] as { dataset: { id: string; preprocessing_version?: string } }

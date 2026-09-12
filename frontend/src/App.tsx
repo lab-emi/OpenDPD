@@ -1,7 +1,8 @@
 import CssBaseline from '@mui/material/CssBaseline'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { ThemeProvider } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router'
 import { useLanguage } from '@/i18n'
 import { LanguageGate } from '@/i18n/LanguageGate'
@@ -19,6 +20,7 @@ import { RunDetailPage } from '@/pages/RunDetailPage'
 import { SessionGate } from '@/pages/SessionGate'
 import { RobustnessPage } from '@/pages/RobustnessPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { AboutPage } from '@/pages/AboutPage'
 import { themeFor } from '@/theme'
 
 function createQueryClient(): QueryClient {
@@ -42,20 +44,24 @@ function AppRoutes() {
         <Route path="robustness/:planSha" element={<RobustnessPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="gallery" element={<GalleryPage />} />
+        <Route path="about" element={<AboutPage />} />
         <Route path="*" element={<HomePage />} />
       </Route>
     </Routes>
   )
 }
 
-export default function App({ queryClient = createQueryClient() }: { queryClient?: QueryClient }) {
+export default function App({ queryClient }: { queryClient?: QueryClient }) {
+  // Theme/locale changes must keep the query cache, subscriptions and active forms.
+  const [defaultClient] = useState(createQueryClient)
   // A language change re-renders from here: new route elements for every page (state kept) and the matching MUI locale.
   const language = useLanguage()
-  const muiTheme = useMemo(() => themeFor(language), [language])
+  const dark = useMediaQuery('(prefers-color-scheme: dark)')
+  const muiTheme = useMemo(() => themeFor(language, dark ? 'dark' : 'light'), [language, dark])
   return (
     <ThemeProvider theme={muiTheme}>
-      <CssBaseline />
-      <QueryClientProvider client={queryClient}>
+      <CssBaseline enableColorScheme />
+      <QueryClientProvider client={queryClient ?? defaultClient}>
         <BrowserRouter>
           <SessionGate>
             <LanguageGate>

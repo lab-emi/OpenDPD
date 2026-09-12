@@ -1,0 +1,43 @@
+{
+  "tolerant": {
+    "x": [
+      319.71871713195185,
+      1119.406217131952
+    ],
+    "autoX": false,
+    "autoY": false
+  },
+  "sensitive": {
+    "x": [
+      -400,
+      399.6875
+    ],
+    "autoX": true,
+    "autoY": true
+  },
+  "disabled": {
+    "x": [
+      2798.75,
+      3598.4375
+    ],
+    "autoX": false,
+    "autoY": false
+  },
+  "sharedDisabled": true,
+  "enlargedFit": {
+    "x": [
+      -400,
+      399.6875
+    ],
+    "autoX": true,
+    "autoY": true
+  },
+  "restoredInline": {
+    "x": [
+      -400,
+      399.6875
+    ],
+    "autoX": true,
+    "autoY": true
+  }
+}

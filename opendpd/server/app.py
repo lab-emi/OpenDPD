@@ -20,6 +20,7 @@ from opendpd.runtime.supervisor import Supervisor
 from opendpd.server.security import (
     SESSION_COOKIE,
     SESSION_MAX_AGE,
+    DatasetImportBoundary,
     LocalBoundaryMiddleware,
     SessionStore,
 )
@@ -54,7 +55,8 @@ def static_status(static_dir: Path = STATIC_DIR) -> dict:
 
 
 def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, static_dir: Path = STATIC_DIR,
-               supervisor_kwargs: Optional[dict] = None, shutdown_timeout: float = 10.0) -> FastAPI:
+               supervisor_kwargs: Optional[dict] = None, shutdown_timeout: float = 10.0,
+               allow_custom_datasets: bool = False) -> FastAPI:
     sessions = SessionStore(bootstrap_token)
 
     @asynccontextmanager
@@ -74,6 +76,8 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
                   docs_url=None, redoc_url=None, openapi_url=f"{API_PREFIX}/openapi.json")
     app.state.sessions = sessions
     app.state.static_dir = Path(static_dir)
+    app.state.allow_custom_datasets = allow_custom_datasets
+    app.add_middleware(DatasetImportBoundary, enabled=allow_custom_datasets)
     app.add_middleware(LocalBoundaryMiddleware)
 
     # -- uniform error shape --------------------------------------------------

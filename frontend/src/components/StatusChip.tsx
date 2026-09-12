@@ -10,7 +10,7 @@ import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined'
 import WifiOffIcon from '@mui/icons-material/WifiOff'
 import type { RunStatus } from '@/api/types'
 import { t } from '@/i18n'
-import { tokens, type StatusTone } from '@/theme'
+import { useStudioColors, type StatusTone } from '@/theme'
 
 /** Status label + icon + colour (UX spec §3): colour is never the only encoding. */
 const STATUS: Record<RunStatus, { tone: StatusTone; Icon: typeof CheckIcon }> = {
@@ -29,7 +29,8 @@ export function statusLabel(status: RunStatus): string {
 
 export function StatusChip({ status, stale = false, size = 'small' }: { status: RunStatus; stale?: boolean; size?: 'small' | 'medium' }) {
   const { tone, Icon } = STATUS[status]
-  const color = tokens.color.status[tone]
+  const colors = useStudioColors()
+  const color = colors.status[tone]
   const chip = (
     <Chip
       size={size}

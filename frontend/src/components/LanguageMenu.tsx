@@ -8,7 +8,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Snackbar from '@mui/material/Snackbar'
 import { useState, type MouseEvent } from 'react'
 import { useUpdateSettings } from '@/api/hooks'
-import { LANGUAGES, languageInfo, setLanguage, t, useLanguage, type LanguageCode } from '@/i18n'
+import { LANGUAGES, getLanguage, languageInfo, message, setLanguage, t, useLanguage, type LanguageCode } from '@/i18n'
 
 function Flag({ src }: { src: string }) {
   return <img src={src} alt="" width={20} height={15} style={{ display: 'block', borderRadius: 2, boxShadow: '0 0 0 1px rgba(0,0,0,0.15)' }} />
@@ -21,11 +21,15 @@ export function LanguageMenu({ variant = 'toolbar' }: { variant?: 'toolbar' | 's
   const update = useUpdateSettings()
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
 
   const choose = async (next: LanguageCode) => {
     setAnchor(null)
-    if (next === code) return
-    await setLanguage(next)
+    setFailure(null)
+    setLoadFailed(false)
+    try { await setLanguage(next) }
+    catch { setLoadFailed(true); return }
+    if (getLanguage() !== next) return
     try {
       await update.mutateAsync({ language: next })
     } catch (err) {
@@ -62,9 +66,10 @@ export function LanguageMenu({ variant = 'toolbar' }: { variant?: 'toolbar' | 's
       </Menu>
       <Snackbar open={failure !== null} autoHideDuration={8000} onClose={() => setFailure(null)}>
         <Alert severity="error" onClose={() => setFailure(null)}>
-          {t('language.saveFailed', { error: failure ?? '' })}
+          {t('language.saveFailed', { error: message(failure) })}
         </Alert>
       </Snackbar>
+      <Snackbar open={loadFailed} autoHideDuration={8000} onClose={() => setLoadFailed(false)}><Alert severity="error" onClose={() => setLoadFailed(false)}>{t('language.loadFailed')}</Alert></Snackbar>
     </>
   )
 }

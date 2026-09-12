@@ -1,7 +1,7 @@
 """Strings the desktop window shows outside the page: the quit question and pywebview's own dialogs and menus.
 
 The page translates itself (frontend/src/i18n). These host-side strings follow
-the same seven UI languages; the launcher picks them from the workspace setting.
+the same UI languages; the launcher picks them from the workspace setting.
 """
 
 from __future__ import annotations
@@ -101,7 +101,28 @@ KOREAN = ShellStrings(
         "파일 열기", "여러 파일 열기", "폴더 열기"),
 )
 
+DUTCH = ShellStrings(
+    quit_title="OpenDPD Studio afsluiten?",
+    quit_body="Er lopen nog {count} experimenten. OpenDPD Studio afsluiten en deze stoppen?",
+    localization=_localization(
+        "Weet u zeker dat u wilt afsluiten?", "OK", "Sluit af", "Annuleer", "Bewaar bestand",
+        "Over", "Voorzieningen", "Weergave", "Wijzig", "Verberg", "Verberg andere", "Toon alles",
+        "Sluit af", "Schakel schermvullende weergave in", "Knip", "Kopieer", "Plak", "Selecteer alles",
+        "Alle bestanden", "Andere bestandstypen", "Open bestand", "Open bestanden", "Open map"),
+)
+
+ITALIAN = ShellStrings(
+    quit_title="Uscire da OpenDPD Studio?",
+    quit_body="Ci sono {count} esperimenti in esecuzione. Uscire da OpenDPD Studio e interromperli?",
+    localization=_localization(
+        "Vuoi davvero uscire?", "OK", "Esci", "Annulla", "Salva file",
+        "Informazioni", "Servizi", "Vista", "Modifica", "Nascondi", "Nascondi altre", "Mostra tutte",
+        "Esci", "Attiva modalità a tutto schermo", "Taglia", "Copia", "Incolla", "Seleziona tutto",
+        "Tutti i file", "Altri tipi di file", "Apri file", "Apri file", "Apri cartella"),
+)
+
 STRINGS: Dict[str, ShellStrings] = {
+    "nl": DUTCH, "it": ITALIAN,
     "en": ENGLISH, "fr": FRENCH, "de": GERMAN, "es": SPANISH, "zh": CHINESE, "ja": JAPANESE, "ko": KOREAN,
 }
 

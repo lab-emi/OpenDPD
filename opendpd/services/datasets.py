@@ -35,6 +35,7 @@ from opendpd.schemas import (
 )
 from opendpd.services.workspace import Workspace, WorkspaceError, combined_sha256, read_json, sha256_file, slugify, \
     write_json_atomic
+from opendpd.schemas.importing import CsvOptions, DatasetImportDefaults
 
 LOGICAL = ("I_in", "Q_in", "I_out", "Q_out")
 SUPPORTED_SUFFIXES = (".csv", ".npy", ".npz")
@@ -271,13 +272,14 @@ def load_version_arrays(ws: Workspace, dataset_id: str, version: str = "raw-v1")
         x = np.load(directory / "input_iq.npy", mmap_mode="r", allow_pickle=False)
         y = np.load(directory / "output_iq.npy", mmap_mode="r", allow_pickle=False)
         return x, y, (v.split if v else manifest.split)
-    import pandas as pd
+    # The shared legacy loader also understands packaged single_csv datasets
+    # such as MyCustomPA. Reassembling its splits preserves capture time order.
+    from modules.data_collector import load_dataset
 
-    xs, ys = [], []
-    for split in ("train", "val", "test"):
-        xs.append(pd.read_csv(directory / f"{split}_input.csv").to_numpy(dtype=np.float32))
-        ys.append(pd.read_csv(directory / f"{split}_output.csv").to_numpy(dtype=np.float32))
-    return np.concatenate(xs), np.concatenate(ys), (v.split if v else manifest.split)
+    xt, yt, xv, yv, xe, ye = load_dataset(dataset_path=directory)
+    return (np.concatenate((xt, xv, xe)).astype(np.float32),
+            np.concatenate((yt, yv, ye)).astype(np.float32),
+            v.split if v else manifest.split)
 
 
 # --- writing versions ------------------------------------------------------------------
@@ -349,7 +351,9 @@ def _materialise(ws: Workspace, manifest: DatasetManifest, version: str, x: np.n
 def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = None, display_name: Optional[str] = None,
                    mapping: Optional[Dict[str, str]] = None, signal: Optional[SignalSpec] = None,
                    origin: DatasetOrigin = DatasetOrigin.unknown, guard_samples: int = DEFAULT_GUARD_SAMPLES,
-                   notes: Optional[str] = None, waveform: Optional[Path] = None) -> DatasetManifest:
+                   notes: Optional[str] = None, waveform: Optional[Path] = None,
+                   ratios: Optional[Dict[str, float]] = None, csv_options: Optional[CsvOptions] = None,
+                   expected_sha256: Optional[str] = None) -> DatasetManifest:
     """Copy the source into the workspace (hashed, untouched) and materialise raw-v1.
 
     ``waveform`` (a reference-waveform package, plan S15) binds the dataset to the waveform its input column
@@ -358,11 +362,15 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
     source = Path(source)
     if not source.exists():
         raise ImportError_(f"{source} does not exist")
-    info = inspect_source(source)
+    info = (SourceInfo(kind=DatasetSourceKind.csv_import, path=str(source))
+            if csv_options is not None else inspect_source(source))
     mapping = dict(info.suggested_mapping, **(mapping or {}))
     signal = signal or SignalSpec()
-    ratios = dict(DEFAULT_RATIOS)
+    ratios = dict(DEFAULT_RATIOS if ratios is None else ratios)
     dataset_id = dataset_id or slugify(source.stem if source.is_file() else source.name)
+    from pydantic import TypeAdapter
+    from opendpd.schemas.common import Slug
+    TypeAdapter(Slug).validate_python(dataset_id)
     display_name = display_name or (source.stem if source.is_file() else source.name)
     if origin == DatasetOrigin.synthetic and "synthetic" not in display_name.lower():
         display_name = f"{display_name} (synthetic)"
@@ -411,7 +419,18 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
         copied = raw / source.name
         shutil.copy2(source, copied)
         files.append(FileRef(path=f"raw/{source.name}", sha256=sha256_file(copied), size_bytes=copied.stat().st_size))
-        if info.kind == DatasetSourceKind.csv_import:
+        if csv_options is not None:
+            from opendpd.services.csv_import import inspect_csv
+            report, x, y = inspect_csv(copied, csv_options, DatasetImportDefaults(ratios=ratios, guard_samples=guard_samples), collect=True)
+            if expected_sha256 is not None and report.sha256 != expected_sha256:
+                raise ImportError_("The CSV changed since validation. Validate it again before creating the dataset.")
+            if not report.valid:
+                detail = report.issues[0]
+                where = f"line {detail.line}, " if detail.line else ""
+                where += f"column {detail.column}: " if detail.column else ""
+                raise ImportError_(f"{where}{detail.message} {detail.fix}")
+            mapping = {key: report.columns[index] for key, index in report.options.mapping.items()}
+        elif info.kind == DatasetSourceKind.csv_import:
             x, y = _read_csv_arrays(copied, mapping)
         else:
             x, y = _read_numpy_arrays(copied, mapping)
@@ -425,8 +444,11 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
             n_samples=int(len(x)), columns=mapping or None,
             split=SplitSpec(version=SPLIT_VERSION, ratios=ratios, guard_samples=guard_samples),
             raw_sha256=combined_sha256(f.sha256 for f in files), notes=notes)
+        record = {"code_version": None, "note": "raw samples, contiguous split with guard"}
+        if csv_options is not None:
+            record["csv_options"] = report.options.model_dump(mode="json")
         version = _materialise(ws, manifest, "raw-v1", x, y, base_version=None, params=None,
-                               record={"code_version": None, "note": "raw samples, contiguous split with guard"},
+                               record=record,
                                guard=guard_samples, ratios=ratios)
         manifest = manifest.model_copy(update={"split": version.split, "versions": [version]})
         ws.save_dataset(manifest)

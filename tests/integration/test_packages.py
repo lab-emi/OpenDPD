@@ -226,6 +226,59 @@ def test_reports_are_bound_to_the_stored_result(ws, dpd_run, tmp_path):
     assert "config_sha256" in md and result.models[0].weights_sha256 in md
 
 
+def test_all_nine_report_languages_through_api_preserve_scientific_records(ws, dpd_run, tmp_path):
+    import re
+    from fastapi.testclient import TestClient
+    from opendpd.schemas.settings import UI_LANGUAGES
+    from opendpd.server.app import create_app
+    from opendpd.server.security import CSRF_HEADER
+    from opendpd.studio.localization import language_tag, localize
+
+    result_path = ws.run_dir(dpd_run.run_id) / "result.json"
+    original = result_path.read_bytes()
+    result = load_result(ws, dpd_run.run_id)
+    token = "report-language-test"
+    app = create_app(ws.root, bootstrap_token=token)
+    with TestClient(app, base_url="http://127.0.0.1:8765") as client:
+        session = client.post("/api/v1/session/bootstrap", json={"token": token})
+        client.headers[CSRF_HEADER] = session.json()["csrf_token"]
+        for language in UI_LANGUAGES:
+            assert client.put("/api/v1/settings", json={"language": language}).status_code == 200
+            url = f"/api/v1/results/{dpd_run.run_id}/report"
+            html = client.get(url)
+            md = client.get(url + "?format=md")
+            assert html.status_code == md.status_code == 200
+            assert f"lang='{language_tag(language)}'" in html.text
+            assert "data:image/png;base64," in html.text
+            for body in (html.text, md.text):
+                assert localize("Facts", language) in body
+                assert dpd_run.run_id in body
+                assert f"{result.metric('NMSE').value:.4f}" in body
+                assert result.models[0].weights_sha256 in body
+                assert f"opendpd evaluate {dpd_run.run_id}" in body
+                if language != "en":
+                    # Source configuration deliberately retains its original text.
+                    prose = re.sub(r"<pre>.*?</pre>|```json.*?```", "", body, flags=re.S)
+                    assert "not a benchmark result" not in prose
+                    assert "no physical calibration, no absolute power derived" not in prose
+                    assert "target input: the PA output should equal" not in prose
+            if language == "nl":
+                assert "Feiten" in md.text and "Signaalketen" in md.text
+            if language == "it":
+                assert "Dati essenziali" in md.text and "Catena del segnale" in md.text
+        # An explicit download language wins over the workspace preference.
+        assert "Nothing is recomputed" in client.get(url + "?language=en").text
+        assert client.get(url + "?language=xx").status_code == 422
+        assert client.put("/api/v1/settings", json={"language": None}).status_code == 200
+    # Exported presentation follows its requested language; stored evidence stays identical.
+    out = tmp_path / "italian.zip"
+    export_run(ws, dpd_run.run_id, out, kind="share", language="it")
+    with zipfile.ZipFile(out) as package:
+        assert "Catena del segnale" in package.read("report.md").decode()
+        assert "lang='it'" in package.read("report.html").decode()
+    assert result_path.read_bytes() == original
+
+
 def test_export_import_and_report_through_the_cli(ws, pa_run, tmp_path, capsys):
     out = tmp_path / "cli.zip"
     capsys.readouterr()

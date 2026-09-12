@@ -6,14 +6,14 @@ import { resolveLanguage, setLanguage } from '@/i18n'
 
 /**
  * Applies the workspace's language (or the browser's) before the workbench
- * renders. Keyed by the stored value: a refetch returning the same value never
- * re-applies it, so a choice whose save failed is not silently reverted.
+ * renders. Apply once per app session; later settings responses must not undo
+ * a newer local choice when saves arrive out of order or fail.
  */
 export function LanguageGate({ children }: { children: ReactNode }) {
   const settings = useSettings()
   const stored = settings.data?.language ?? null
   const applied = useQuery({
-    queryKey: ['language', stored],
+    queryKey: ['language', 'initial'],
     queryFn: async () => {
       const code = resolveLanguage(stored)
       await setLanguage(code)

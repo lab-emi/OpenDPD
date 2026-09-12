@@ -22,6 +22,7 @@ export interface StreamState {
   lastSeq: number
   lastUpdate: Date | null
   progress: { epoch: number; total: number } | null
+  batchProgress?: { phase: string; batch?: number; total_batches?: number; sequences?: number; sequence_samples?: number; sample_rate_hz?: number | null; padded_samples?: number }
   metrics: MetricPoint[]
   statusEvents: RunEvent[]
   heartbeats: number
@@ -39,7 +40,7 @@ const initial: StreamState = {
   lastError: null,
 }
 
-type Action = { kind: 'connection'; connection: Connection } | { kind: 'event'; event: RunEvent } | { kind: 'reset' }
+type Action = { kind: 'connection'; connection: Connection } | { kind: 'events'; events: RunEvent[] } | { kind: 'reset' }
 
 const MAX_METRIC_POINTS = 20_000
 
@@ -55,7 +56,10 @@ export function reduceEvent(state: StreamState, event: RunEvent): StreamState {
     case 'progress': {
       const epoch = asNumber(p['epoch'])
       const total = asNumber(p['total_epochs'])
-      if (epoch !== null && total !== null) next.progress = { epoch, total }
+      if (epoch !== null && total !== null && p['scope'] !== 'live') next.progress = { epoch, total }
+      if (typeof p['phase'] === 'string' && p['phase'] !== 'epoch_end') {
+        next.batchProgress = { phase: p['phase'], ...Object.fromEntries(['batch', 'total_batches', 'sequences', 'sequence_samples', 'sample_rate_hz', 'padded_samples'].flatMap((key) => asNumber(p[key]) !== null ? [[key, p[key]]] : [])) }
+      }
       break
     }
     case 'metric': {
@@ -91,8 +95,8 @@ function reducer(state: StreamState, action: Action): StreamState {
   switch (action.kind) {
     case 'connection':
       return state.connection === action.connection ? state : { ...state, connection: action.connection }
-    case 'event':
-      return reduceEvent(state, action.event)
+    case 'events':
+      return action.events.reduce(reduceEvent, state)
     case 'reset':
       return initial
   }
@@ -114,6 +118,14 @@ export function useRunStream(runId: string, enabled: boolean): StreamState {
     dispatch({ kind: 'connection', connection: 'connecting' })
     source.onopen = () => dispatch({ kind: 'connection', connection: 'live' })
     source.onerror = () => dispatch({ kind: 'connection', connection: 'disconnected' })
+    let pending: RunEvent[] = []
+    let timer: number | undefined
+    const flush = () => {
+      window.clearTimeout(timer)
+      timer = undefined
+      if (pending.length) dispatch({ kind: 'events', events: pending })
+      pending = []
+    }
     const onEvent = (raw: MessageEvent<string>) => {
       let event: RunEvent
       try {
@@ -121,21 +133,27 @@ export function useRunStream(runId: string, enabled: boolean): StreamState {
       } catch {
         return
       }
-      dispatch({ kind: 'event', event })
+      pending.push(event)
+      if (timer === undefined) timer = window.setTimeout(flush, 500)
       if (event.type === 'status' || event.type === 'error' || event.type === 'artifact') {
+        flush()
         void qc.invalidateQueries({ queryKey: keys.run(runId) })
       }
+      if (event.type === 'progress' && event.payload?.['preview_revision']) void qc.invalidateQueries({ queryKey: ['run', runId, 'live'] })
     }
     for (const type of EVENT_TYPES) source.addEventListener(type, onEvent as EventListener)
     source.addEventListener('end', () => {
+      flush()
       dispatch({ kind: 'connection', connection: 'ended' })
       source.close()
       void qc.invalidateQueries({ queryKey: keys.run(runId) })
       void qc.invalidateQueries({ queryKey: keys.result(runId) })
       void qc.invalidateQueries({ queryKey: keys.runArtifacts(runId) })
+      void qc.invalidateQueries({ queryKey: ['run', runId, 'live'] })
       void qc.invalidateQueries({ queryKey: ['runs'] })
     })
     return () => {
+      window.clearTimeout(timer)
       source.close()
       sourceRef.current = null
     }

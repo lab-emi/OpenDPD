@@ -1,0 +1,62 @@
+{
+  "viewport": {
+    "width": 1366,
+    "height": 768
+  },
+  "document": {
+    "width": 1366,
+    "height": 768
+  },
+  "workbenchBottom": 721.390625,
+  "legend": {
+    "orientation": "h",
+    "x": 0,
+    "xanchor": "left",
+    "y": 1.04,
+    "yanchor": "bottom",
+    "font": {
+      "size": 12
+    }
+  },
+  "xRange": [
+    -1.9397659147167832,
+    1.9442455535816903
+  ],
+  "yRange": [
+    -1.5303012226585684,
+    1.5503666207792175
+  ],
+  "language": "zh-CN",
+  "traces": [
+    {
+      "name": "输入",
+      "points": 3200,
+      "matchBackend": true
+    },
+    {
+      "name": "PA 输出（已均衡）",
+      "points": 2900,
+      "matchBackend": true
+    }
+  ],
+  "demodulator": "datasets.DPA_200MHz.demod.Demodulator (IFFTFrameDemodulator)",
+  "sourceRange": [
+    0,
+    38400
+  ],
+  "symbols": [
+    {
+      "role": "input",
+      "n_symbols": 9600,
+      "stride": 3,
+      "equalized": false
+    },
+    {
+      "role": "primary",
+      "n_symbols": 8700,
+      "stride": 3,
+      "equalized": true
+    }
+  ],
+  "violations": []
+}

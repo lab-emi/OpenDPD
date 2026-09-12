@@ -1,0 +1,27 @@
+{
+  "run": {
+    "run_id": "run-20260911-215124-b99989",
+    "task": "train_pa",
+    "name": "Studio workbench CPU smoke",
+    "dataset_id": "dpa-200mhz",
+    "model_key": "gru",
+    "status": "succeeded",
+    "device": "cpu",
+    "exit_code": 0,
+    "created_at": "2026-09-11T21:51:24.154625Z",
+    "started_at": "2026-09-11T21:51:24.496119Z",
+    "finished_at": "2026-09-11T21:51:28.266419Z",
+    "progress_epoch": 3,
+    "progress_total_epochs": 3,
+    "config_sha256": "029e4b9ab5bf3b99453586706ea24378c6853b7bf396a5ad23cdbaa634796de1"
+  },
+  "software": {
+    "git_commit": "f43cd32d8385efc3bf44980e19689caa1ae66e64",
+    "git_dirty": true,
+    "opendpd_version": "2.2.0.dev0",
+    "platform": "Darwin-arm64",
+    "python_version": "3.13.12",
+    "torch_version": "2.14.0"
+  },
+  "dataset_raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4"
+}

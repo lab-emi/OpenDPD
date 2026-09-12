@@ -9,7 +9,7 @@ import { installFakeApi } from './mock-api'
  *  - the main journey needs no host other than the loopback one (no fonts, CDN or telemetry).
  */
 
-const PAGES = ['/', '/datasets', '/experiments', '/experiments/new', '/results', '/results/run-pa-0001', '/settings', '/gallery']
+const PAGES = ['/', '/datasets', '/datasets?guide=start', '/experiments', '/experiments/new', '/experiments/new?task=evaluate_pa', '/experiments/new?task=train_dpd', '/experiments/new?task=run_dpd', '/results', '/results/run-pa-0001', '/settings', '/gallery', '/about']
 
 async function scan(page: Page, path: string) {
   // audit the settled page: queries answered and MUI's colour transitions (~300 ms) finished
@@ -27,7 +27,7 @@ test.describe('accessibility (axe-core)', () => {
     await installFakeApi(page)
     for (const path of PAGES) {
       await page.goto(path)
-      await expect(page.getByRole('main')).toBeVisible()
+      await expect(page.getByRole(path.includes('guide=') ? 'dialog' : 'main')).toBeVisible()
       if (path === '/gallery') await expect(page.getByTestId('spectrum-plot').locator('svg.main-svg').first()).toBeVisible({ timeout: 20_000 })
       await scan(page, path)
     }
@@ -35,10 +35,13 @@ test.describe('accessibility (axe-core)', () => {
 
   test('run detail tabs are accessible while a run is live', async ({ page }) => {
     await installFakeApi(page)
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Register example dataset' }).click()
+    await page.goto('/datasets')
+    await page.getByRole('button', { name: 'Built-in datasets' }).click()
+    await page.getByRole('button', { name: 'Add & inspect DPA_200MHz' }).click()
     await page.goto('/experiments/new')
     await expect(page.getByText('Configuration is valid')).toBeVisible()
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await page.getByRole('button', { name: 'Start run' }).click()
     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
     await scan(page, '/runs/run-e2e-0001')
@@ -46,6 +49,14 @@ test.describe('accessibility (axe-core)', () => {
       await page.getByRole('tab', { name: tab }).click()
       await scan(page, `/runs/run-e2e-0001#${tab}`)
     }
+    await page.getByRole('tab', { name: 'Overview', exact: true }).click()
+    const terminal = page.getByRole('region', { name: 'Terminal', exact: true })
+    await terminal.getByRole('button', { name: /^Terminal/ }).click()
+    await expect(terminal.getByRole('log')).toContainText('Training Completed...')
+    await scan(page, '/runs/run-e2e-0001#terminal')
+    await terminal.getByRole('tab', { name: 'DPD Model Training', exact: true }).click()
+    await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
+    await expect(terminal.getByRole('tab', { name: 'DPD Model Training', exact: true })).toHaveAttribute('aria-selected', 'true')
   })
 })
 
@@ -64,18 +75,51 @@ async function tabTo(page: Page, name: RegExp, maxTabs = 80): Promise<void> {
 }
 
 test.describe('keyboard-only journey', () => {
-  test('register the example, open New experiment and start a run without a pointer', async ({ page }) => {
+  test('page reset returns focus and global reset keeps focus in the new guide', async ({ page }) => {
+    await installFakeApi(page)
+    await page.goto('/experiments')
+    await tabTo(page, /^Reset page$/)
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused()
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('button', { name: 'Reset page', exact: true })).toBeFocused()
+    await tabTo(page, /^Reset Studio$/)
+    await page.keyboard.press('Enter')
+    await tabTo(page, /^Reset$/)
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('heading', { name: 'Start the guided setup again?' })).toHaveCount(0)
+    const guide = page.getByRole('dialog')
+    await expect(guide).toContainText('Create your first dataset')
+    await expect.poll(() => guide.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+    await tabTo(page, /^Skip tutorial$/)
+    await page.keyboard.press('Enter')
+    await expect(guide).toHaveCount(0)
+  })
+
+  test('complete the dataset guide and start PA training without a pointer', async ({ page }) => {
     const state = await installFakeApi(page)
     await page.goto('/')
-    // the button exists once the (empty) dataset list has loaded; tabbing before that walks past 80 elements
-    await expect(page.getByRole('button', { name: 'Register example dataset' })).toBeVisible()
-    await tabTo(page, /^Register example dataset$/)
+    await expect(page.getByRole('link', { name: 'Get Started' })).toBeVisible()
+    await tabTo(page, /^Get Started$/)
     await page.keyboard.press('Enter')
-    await expect(page.getByText('Example dataset registered')).toBeVisible()
-    await tabTo(page, /^New experiment$/)
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await tabTo(page, /^Try a built-in dataset$/)
     await page.keyboard.press('Enter')
-    await expect(page.getByRole('heading', { level: 1, name: 'New experiment' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Add & inspect DPA_200MHz' })).toBeVisible()
+    await tabTo(page, /^Add & inspect DPA_200MHz$/)
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('button', { name: 'Inspect my dataset' })).toBeVisible()
+    await tabTo(page, /^Inspect my dataset$/)
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('link', { name: 'Configure experiment' })).toBeEnabled()
+    await tabTo(page, /^Configure experiment$/)
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('heading', { level: 1, name: 'PA Model Training' })).toBeVisible()
     await expect(page.getByText('Configuration is valid')).toBeVisible()
+    await tabTo(page, /^Continue$/)
+    await page.keyboard.press('Enter')
+    await tabTo(page, /^Continue$/)
+    await page.keyboard.press('Enter')
     await tabTo(page, /^Start run$/)
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
@@ -99,9 +143,12 @@ test.describe('offline', () => {
       return route.abort()
     })
     await installFakeApi(page)
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Register example dataset' }).click()
+    await page.goto('/datasets')
+    await page.getByRole('button', { name: 'Built-in datasets' }).click()
+    await page.getByRole('button', { name: 'Add & inspect DPA_200MHz' }).click()
     await page.goto('/experiments/new')
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await page.getByRole('button', { name: 'Start run' }).click()
     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
     await page.goto('/results/run-pa-0001')

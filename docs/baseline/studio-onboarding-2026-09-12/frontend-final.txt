@@ -1,0 +1,116 @@
+
+> opendpd-studio@2.2.0-dev0 test
+> vitest run --reporter=default --reporter=json --outputFile=/tmp/opendpd-onboarding-frontend-final.json
+
+
+ RUN  v5.0.0 /Users/gaochang/git/OpenDPD/frontend
+
+ ✓ src/pages/DatasetDetailPage.test.tsx (4 tests) 3744ms
+   ✓ run doctor → accept estimates → preview → create a traceable version 2615ms
+   ✓ metadata editor sends the whole signal spec, carrying over fields it does not show 816ms
+ ✓ src/pages/ResultDetailPage.test.tsx (9 tests) 3850ms
+   ✓ shows the profile behind every score, its definitions, and switches to another stored profile 1754ms
+   ✓ a DPD result shows the x/u/y chain, baselines under one reference, coverage and the uncalibrated note 464ms
+   ✓ a result without plot artifacts says so instead of drawing anything 351ms
+   ✓ a supported model exports a deployment package and the panel shows the verdict and the labelled numbers 445ms
+ ✓ src/pages/RunDetailPage.test.tsx (8 tests) 4086ms
+   ✓ running run: live stream updates progress; refresh never submits anything 600ms
+   ✓ a succeeded DPD run shows its lineage and can be applied through another surrogate 995ms
+   ✓ a succeeded run_dpd run offers the measured-capture import: files are uploaded, conditions declared, one evaluate_measured run submitted 1895ms
+stderr | src/pages/NewExperimentPage.test.tsx > keyboard-only: tab to the submit button, Enter submits once with an idempotency key
+No routes matched location "/runs/run-pa-0002" 
+
+ ✓ src/pages/ExperimentsPage.test.tsx (4 tests) 4817ms
+   ✓ lists runs with 1-based epoch progress 1151ms
+   ✓ pages through a long history on the server and searches it 3310ms
+ ✓ src/components/CreateDatasetDialog.test.tsx (4 tests) 5256ms
+   ✓ paired CSV → server defaults → custom split review → create; edits invalidate review 3809ms
+   ✓ a bad row past the preview is explained and blocks progression 325ms
+   ✓ mapping changes immediately clear file confirmation and require revalidation 436ms
+   ✓ reset discards the CSV draft only after confirmation and never creates a dataset 684ms
+stderr | src/components/LanguageMenu.test.tsx > lists seven languages with flags and names, switches at once and stores the choice
+An update to LanguageMenu inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/LanguageMenu.test.tsx > a failed save keeps the language on screen and says so
+An update to LanguageMenu inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/LanguageMenu.test.tsx (2 tests) 543ms
+   ✓ lists seven languages with flags and names, switches at once and stores the choice 411ms
+ ✓ src/pages/RobustnessPage.test.tsx (2 tests) 834ms
+   ✓ shows the condition matrix with every failure, the cost of adaptation and the evidence bar verdict 807ms
+ ✓ src/pages/ComparePage.test.tsx (3 tests) 473ms
+   ✓ incompatible results are shown side by side with the reasons and nothing is ranked 366ms
+ ✓ src/components/LogViewer.test.tsx (1 test) 325ms
+   ✓ pages logs by byte offset and filters loaded lines 324ms
+ ✓ src/components/ImportDatasetDialog.test.tsx (2 tests) 1251ms
+   ✓ browse → inspect → correct a column → import sends only (root, path), mapping and metadata 1036ms
+ ✓ src/pages/Onboarding.test.tsx (3 tests) 6246ms
+   ✓ Get Started opens an optional dataset guide without registering anything 1354ms
+   ✓ the guide opens the real CSV form and can be skipped without closing that form 888ms
+   ✓ page reset restores a pending experiment; global reset restarts the guide and preserves server records 4003ms
+stderr | src/pages/NewExperimentPage.test.tsx > an exported configuration can be imported and is submitted as is (resolution block dropped)
+No routes matched location "/runs/run-pa-0002" 
+
+ ✓ src/components/BuiltinDatasetDialog.test.tsx (1 test) 336ms
+   ✓ every server catalog entry is selectable, including the synthetic tutorial 334ms
+ ✓ src/components/MetricHistoryChart.test.tsx (1 test) 174ms
+ ✓ src/i18n/LanguageGate.test.tsx (3 tests) 245ms
+ ✓ src/components/SpectrumPlot.test.tsx (2 tests) 200ms
+ ✓ src/components/DiagnosticItem.test.tsx (1 test) 145ms
+ ✓ src/components/StatusChip.test.tsx (2 tests) 116ms
+ ✓ src/i18n/catalogues.test.ts (18 tests) 77ms
+ ✓ src/components/EvidenceBadge.test.tsx (2 tests) 127ms
+ ✓ src/components/ConfigDiff.test.tsx (2 tests) 38ms
+ ✓ src/i18n/index.test.ts (4 tests) 26ms
+ ✓ src/components/MetricCard.test.tsx (2 tests) 53ms
+ ✓ src/api/events.test.ts (3 tests) 3ms
+ ✓ src/api/client.test.ts (2 tests) 4ms
+stderr | src/pages/NewExperimentPage.test.tsx > import mode exposes only the configuration that will run and the optional name
+No routes matched location "/runs/run-pa-0002" 
+
+stderr | src/pages/NewExperimentPage.test.tsx > a linked preprocessing version reaches validation; choosing raw invalidates both completed steps and submits raw
+No routes matched location "/runs/run-pa-0002" 
+
+ ✓ src/pages/NewExperimentPage.test.tsx (15 tests) 18388ms
+   ✓ server validation errors are shown on the field and block submit 3192ms
+   ✓ keyboard-only: tab to the submit button, Enter submits once with an idempotency key 1556ms
+   ✓ model parameters come from the registry: fields are generated per spec and edits reach the configuration 1026ms
+   ✓ an exported configuration can be imported and is submitted as is (resolution block dropped) 1582ms
+   ✓ a profile pending cross-validation is computed by the service but never offered by the form 778ms
+   ✓ fractional integer parameters reach server validation without being rounded 1094ms
+   ✓ a validation request failure explains the problem and can be retried without changing the configuration 929ms
+   ✓ import mode exposes only the configuration that will run and the optional name 1376ms
+   ✓ steps highlight the active stage and clear completion after a relevant edit 977ms
+   ✓ a linked preprocessing version reaches validation; choosing raw invalidates both completed steps and submits raw 1081ms
+   ✓ JSON is hidden by default; invalid edits stay in the editor and a valid edit uses server validation 794ms
+   ✓ evaluate_pa submits a selected checkpoint and test options without editable training parameters 1394ms
+   ✓ run_dpd submits a selected checkpoint and test options without editable training parameters 1704ms
+   ✓ DPD training requires a PA model and only offers DPD starting settings 890ms
+
+ Test Files  25 passed (25)
+      Tests  100 passed (100)
+   Start at  11:43:42
+   Duration  22.07s (tests 55%, import 18%, environment 16%, transform 9%, setup 2%)
+
+    Isolate  25 workers spawned · ~708ms startup each (spawn + environment, per file)
+             at least ~1.82s faster with isolate: false — reuses workers across files instead of one per file
+
+JSON report written to /tmp/opendpd-onboarding-frontend-final.json

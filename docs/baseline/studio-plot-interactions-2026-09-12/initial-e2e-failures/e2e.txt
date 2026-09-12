@@ -1,0 +1,158 @@
+[WebServer] (node:87114) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:87141) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 60 tests using 4 workers
+
+(node:87145) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87143) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87144) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87142) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium-1366] › e2e/a11y.spec.ts:70:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (1.4s)
+  ✓   3 [chromium-1366] › e2e/a11y.spec.ts:91:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (2.6s)
+  ✓   5 [chromium-1366] › e2e/a11y.spec.ts:129:3 › offline › the main journey contacts no host but the loopback one (2.7s)
+  ✓   6 [chromium-1366] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (3.4s)
+  ✓   7 [chromium-1366] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (1.9s)
+  ✓   9 [chromium-1366] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (200ms)
+  ✓  10 [chromium-1366] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (725ms)
+  ✓   4 [chromium-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (7.4s)
+  ✓   8 [chromium-1366] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (3.0s)
+  -  13 [chromium-1366] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  14 [chromium-1366] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  15 [chromium-1366] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+(node:87277) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  12 [chromium-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (2.1s)
+(node:87289) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  11 [chromium-1366] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (3.0s)
+(node:87295) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  18 [chromium-1920] › e2e/a11y.spec.ts:70:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (886ms)
+  ✓  19 [chromium-1920] › e2e/a11y.spec.ts:91:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (1.6s)
+  ✓  20 [chromium-1920] › e2e/a11y.spec.ts:129:3 › offline › the main journey contacts no host but the loopback one (2.3s)
+  ✓  17 [chromium-1920] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (6.3s)
+  ✓  22 [chromium-1920] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (1.9s)
+  ✓  21 [chromium-1920] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (4.3s)
+  ✓  24 [chromium-1920] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (208ms)
+  ✓  25 [chromium-1920] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (795ms)
+  ✓   2 [chromium-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (21.5s)
+  ✓  23 [chromium-1920] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (3.7s)
+  -  27 [chromium-1920] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  28 [chromium-1920] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  29 [chromium-1920] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+(node:87366) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87367) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  26 [chromium-1920] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (2.8s)
+  ✓  30 [chromium-1920] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (1.7s)
+(node:87374) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  33 [firefox-1366] › e2e/a11y.spec.ts:70:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (2.8s)
+  ✓  16 [chromium-1920] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (21.4s)
+(node:87444) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  34 [firefox-1366] › e2e/a11y.spec.ts:91:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (2.6s)
+(node:87447) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  32 [firefox-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (10.0s)
+  ✓  35 [firefox-1366] › e2e/a11y.spec.ts:129:3 › offline › the main journey contacts no host but the loopback one (4.7s)
+  ✓  37 [firefox-1366] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (2.9s)
+  ✓  39 [firefox-1366] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (496ms)
+  ✓  36 [firefox-1366] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (6.4s)
+  ✓  40 [firefox-1366] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (1.5s)
+  ✘  42 [firefox-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (2.2s)
+  -  43 [firefox-1366] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  44 [firefox-1366] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  45 [firefox-1366] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+(node:87525) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  38 [firefox-1366] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (6.2s)
+(node:87533) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  41 [firefox-1366] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (4.6s)
+(node:87549) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  48 [webkit-1366] › e2e/a11y.spec.ts:70:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (1.2s)
+  ✓  49 [webkit-1366] › e2e/a11y.spec.ts:91:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (2.0s)
+  ✓  50 [webkit-1366] › e2e/a11y.spec.ts:129:3 › offline › the main journey contacts no host but the loopback one (2.5s)
+  ✓  47 [webkit-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (7.5s)
+  ✓  52 [webkit-1366] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (2.3s)
+  ✓  51 [webkit-1366] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (3.9s)
+  ✓  31 [firefox-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (30.9s)
+  ✓  54 [webkit-1366] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (398ms)
+(node:87619) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  56 [webkit-1366] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (1.7s)
+  ✓  53 [webkit-1366] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (4.8s)
+  -  58 [webkit-1366] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  59 [webkit-1366] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  60 [webkit-1366] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+  ✓  55 [webkit-1366] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (3.5s)
+  ✓  57 [webkit-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (1.4s)
+  ✓  46 [webkit-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (23.2s)
+
+
+  1) [firefox-1366] › e2e/a11y.spec.ts:91:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer 
+
+    Error: no focusable element named /^Continue$/ within 80 tabs
+
+      64 |     if (name.test(label)) return
+      65 |   }
+    > 66 |   throw new Error(`no focusable element named ${name} within ${maxTabs} tabs`)
+         |         ^
+      67 | }
+      68 |
+      69 | test.describe('keyboard-only journey', () => {
+        at tabTo (/Users/gaochang/git/OpenDPD/frontend/e2e/a11y.spec.ts:66:9)
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/a11y.spec.ts:113:5
+
+    Error Context: test-results/a11y-keyboard-only-journey-9ebc6--training-without-a-pointer-firefox-1366/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-keyboard-only-journey-9ebc6--training-without-a-pointer-firefox-1366/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/a11y-keyboard-only-journey-9ebc6--training-without-a-pointer-firefox-1366/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [firefox-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 2000
+    Received:   2114
+
+      177 |     const iqMs = Number(await probe.getAttribute('data-iq-ms'))
+      178 |     test.info().annotations.push({ type: 'perf', description: `spectrum ${spectrumMs} ms, iq ${iqMs} ms` })
+    > 179 |     expect(spectrumMs + iqMs).toBeLessThan(2000)
+          |                               ^
+      180 |     await expect(page.getByTestId('spectrum-plot').locator('svg.main-svg').first()).toBeVisible()
+      181 |     await page.getByRole('button', { name: /Enlarge chart: Power spectral density/ }).click()
+      182 |     await expect(page.getByRole('dialog')).toBeVisible()
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/journey.spec.ts:179:31
+
+    Error Context: test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-firefox-1366/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-firefox-1366/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-firefox-1366/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [firefox-1366] › e2e/a11y.spec.ts:91:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer 
+    [firefox-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline 
+  12 skipped
+  46 passed (1.1m)

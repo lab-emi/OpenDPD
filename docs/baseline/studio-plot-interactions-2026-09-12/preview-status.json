@@ -1,0 +1,17 @@
+{
+  "pid": 90683,
+  "server_pid": 77529,
+  "healthz": 200,
+  "windows": [
+    {
+      "pid": 90683,
+      "title": "OpenDPD Studio",
+      "bounds": {
+        "X": 52.0,
+        "Height": 860.0,
+        "Y": 46.0,
+        "Width": 1366.0
+      }
+    }
+  ]
+}

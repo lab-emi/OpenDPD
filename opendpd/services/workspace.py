@@ -48,6 +48,36 @@ BUILTIN_DATASETS_DIR = PACKAGE_ROOT / "datasets"
 MIN_FREE_MB = 500
 
 
+def list_builtin_datasets():
+    """Discover every shipped spec; no frontend-maintained dataset list."""
+    from opendpd.schemas.importing import BuiltinDatasetInfo
+
+    result = []
+    for path in sorted(BUILTIN_DATASETS_DIR.glob("*/spec.json")):
+        if not path.parent.name.isidentifier():
+            continue
+        spec = read_json(path)
+        signal = SignalSpec(
+            sample_rate_hz=spec.get("input_signal_fs"), bandwidth_hz=spec.get("bw_main_ch"),
+            sub_channel_bandwidth_hz=spec.get("bw_sub_ch"), n_sub_ch=spec.get("n_sub_ch"),
+            nperseg=spec.get("nperseg"), modulation=spec.get("modulation"), standard=spec.get("standard"),
+            amplitude_units="normalized",
+        )
+        try:
+            count, _ = _count_samples(path.parent, spec)
+            problem = None
+        except (OSError, ValueError, KeyError) as exc:
+            count, problem = None, f"Packaged dataset is incomplete: {exc}"
+        result.append(BuiltinDatasetInfo(
+            name=path.parent.name, description=spec.get("description", ""),
+            dataset_format=spec.get("dataset_format", "split_csv"), signal=signal,
+            n_samples=count, problem=problem, has_demodulator=(path.parent / "demod.py").is_file(),
+            origin=spec.get("origin", "measured" if path.parent.name.startswith(("DPA", "APA")) else "unknown"),
+            raw_sha256=combined_sha256(sha256_file(p) for p in [path, *sorted(path.parent.glob("*.csv"))]),
+        ))
+    return result
+
+
 class WorkspaceError(RuntimeError):
     pass
 
@@ -261,29 +291,49 @@ class Workspace:
 
     def register_builtin_dataset(self, name: str, dataset_id: Optional[str] = None) -> DatasetManifest:
         """Copy a packaged dataset (``datasets/<name>``) into the workspace."""
+        known = sorted(p.parent.name for p in BUILTIN_DATASETS_DIR.glob("*/spec.json") if p.parent.name.isidentifier())
+        if name not in known:
+            raise WorkspaceError(f"unknown built-in dataset '{name}'; available: {', '.join(known)}")
         src = BUILTIN_DATASETS_DIR / name
         spec_path = src / "spec.json"
         if not spec_path.is_file():
             known = sorted(p.parent.name for p in BUILTIN_DATASETS_DIR.glob("*/spec.json"))
             raise WorkspaceError(f"unknown built-in dataset '{name}'; available: {', '.join(known)}")
+        copied = ["spec.json"] + sorted(p.name for p in src.glob("*.csv"))
+        source_hash = combined_sha256(sha256_file(src / filename) for filename in copied)
+        explicit_id = dataset_id is not None
         dataset_id = dataset_id or slugify(name)
         target = self.dataset_dir(dataset_id)
         if (target / "manifest.json").exists():
-            return self.get_dataset(dataset_id)
+            previous = self.get_dataset(dataset_id)
+            if previous.source.name == name and previous.raw_sha256 == source_hash:
+                return previous
+            if explicit_id:
+                raise WorkspaceError(f"dataset id '{dataset_id}' already contains different data; choose another id")
+            # Preserve earlier tutorial captures and any user-owned data. A new
+            # packaged revision gets a stable, separate workspace identity.
+            dataset_id = f"{dataset_id}-{source_hash[:8]}"
+            target = self.dataset_dir(dataset_id)
+            if (target / "manifest.json").exists():
+                previous = self.get_dataset(dataset_id)
+                if previous.source.name == name and previous.raw_sha256 == source_hash:
+                    return previous
+                raise WorkspaceError(f"dataset id '{dataset_id}' already contains different data; choose another id")
         spec = read_json(spec_path)
         raw = target / "raw"
         raw.mkdir(parents=True, exist_ok=True)
         files: List[FileRef] = []
-        copied = ["spec.json"] + sorted(p.name for p in src.glob("*.csv"))
         for filename in copied:
             shutil.copy2(src / filename, raw / filename)
             files.append(FileRef(path=f"raw/{filename}", sha256=sha256_file(raw / filename),
                                  size_bytes=(raw / filename).stat().st_size))
         n_samples, boundaries = _count_samples(raw, spec)
+        origin = DatasetOrigin(spec.get("origin", "measured" if name.startswith(("DPA", "APA")) else "unknown"))
+        label = "synthetic; dummy dataset for tutorial purpose" if spec.get("tutorial") else origin.value
         manifest = DatasetManifest(
             dataset_id=dataset_id,
-            display_name=f"{name} (built-in, {'measured' if name.startswith(('DPA', 'APA')) else 'origin unknown'})",
-            origin=DatasetOrigin.measured if name.startswith(("DPA", "APA")) else DatasetOrigin.unknown,
+            display_name=f"{name} (built-in, {label})",
+            origin=origin,
             source=DatasetSource(kind=DatasetSourceKind.builtin, name=name),
             signal=SignalSpec(
                 sample_rate_hz=spec.get("input_signal_fs"), bandwidth_hz=spec.get("bw_main_ch"),

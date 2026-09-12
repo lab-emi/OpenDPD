@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "dataset_id": "onboarding-tutorial-csv",
+  "display_name": "Tutorial CSV · dummy dataset for tutorial purpose (synthetic)",
+  "origin": "synthetic",
+  "source": {
+    "kind": "csv_import",
+    "name": null,
+    "original_path": "/private/tmp/opendpd-onboarding-qa/imports/uploads/20260912-093433-data.csv",
+    "imported_at": "2026-09-12T09:36:21.510724Z"
+  },
+  "signal": {
+    "sample_rate_hz": 80000000.0,
+    "bandwidth_hz": 2000000.0,
+    "sub_channel_bandwidth_hz": 2000000.0,
+    "n_sub_ch": 1,
+    "nperseg": 2560,
+    "modulation": null,
+    "standard": null,
+    "amplitude_units": "unknown",
+    "waveform": null
+  },
+  "files": [
+    {
+      "path": "raw/20260912-093433-data.csv",
+      "sha256": "761676d8d72fa1557a5553394713a2e324a6094732fe9e3c9e8657afe5b4e27c",
+      "size_bytes": 5675424
+    }
+  ],
+  "n_samples": 102400,
+  "columns": {
+    "I_in": "I_in",
+    "Q_in": "Q_in",
+    "I_out": "I_out",
+    "Q_out": "Q_out"
+  },
+  "split": {
+    "version": "contiguous-v1",
+    "method": "contiguous",
+    "ratios": {
+      "train": 0.6,
+      "val": 0.2,
+      "test": 0.2
+    },
+    "guard_samples": 256,
+    "boundaries": {
+      "train": [
+        0,
+        61132
+      ],
+      "val": [
+        61388,
+        81765
+      ],
+      "test": [
+        82021,
+        102400
+      ]
+    }
+  },
+  "preprocessing_version": "raw-v1",
+  "raw_sha256": "5de7a06415bb411899bcb8eb29ba926b065f09e030d0ec9bf522af998bbbb476",
+  "versions": [
+    {
+      "version": "raw-v1",
+      "base_version": null,
+      "created_at": "2026-09-12T09:36:21.752246Z",
+      "params": null,
+      "code_version": null,
+      "fit_range": null,
+      "record": {
+        "code_version": null,
+        "note": "raw samples, contiguous split with guard",
+        "csv_options": {
+          "format": "iq_columns",
+          "header": "present",
+          "mapping": {
+            "I_in": 0,
+            "Q_in": 1,
+            "I_out": 2,
+            "Q_out": 3
+          }
+        }
+      },
+      "n_samples": 102400,
+      "split": {
+        "version": "contiguous-v1",
+        "method": "contiguous",
+        "ratios": {
+          "train": 0.6,
+          "val": 0.2,
+          "test": 0.2
+        },
+        "guard_samples": 256,
+        "boundaries": {
+          "train": [
+            0,
+            61132
+          ],
+          "val": [
+            61388,
+            81765
+          ],
+          "test": [
+            82021,
+            102400
+          ]
+        }
+      },
+      "files": [
+        {
+          "path": "train_input.csv",
+          "sha256": "5f6b7941f8e74822d24c99622d269a1b168296fed033b3f4f710362410d5f24e",
+          "size_bytes": 1462678
+        },
+        {
+          "path": "train_output.csv",
+          "sha256": "12706a4cb443a2a03657bdfb39f15605162b2766913670327623a0a2d21357cd",
+          "size_bytes": 1435200
+        },
+        {
+          "path": "val_input.csv",
+          "sha256": "e0af30f684e016c164168dc3fa0d4f571b93d5147c67c40e451385a901913c6f",
+          "size_bytes": 487582
+        },
+        {
+          "path": "val_output.csv",
+          "sha256": "d1e3ee1ff608307fd2c85aa1f923708202e514eebeae13e748d8e19f34633823",
+          "size_bytes": 478465
+        },
+        {
+          "path": "test_input.csv",
+          "sha256": "19384b65f373ea9fd726967528f04d5cc31df12dddef61907dd6a36b8783ad36",
+          "size_bytes": 488287
+        },
+        {
+          "path": "test_output.csv",
+          "sha256": "ffeb8f829164de72f8b5f53bc08bc45c382768f5bd3a7b19a4c060135c6fc978",
+          "size_bytes": 479342
+        },
+        {
+          "path": "spec.json",
+          "sha256": "ec4941db69f9bd487a080aa6c6d65593b48c94c538989ad9ef6c8617a3875924",
+          "size_bytes": 358
+        },
+        {
+          "path": "input_iq.npy",
+          "sha256": "c92c2a1da5ab7445dabe0d793942e3214c0b269745aafe5d666a60676d366c23",
+          "size_bytes": 819328
+        },
+        {
+          "path": "output_iq.npy",
+          "sha256": "20c7bc1e5fcc4b52156300b723ea9f0211423cdb5cbb2ddbfae056ccd36345df",
+          "size_bytes": 819328
+        }
+      ],
+      "sha256": "0e8763b34695af603d7e261b8a6250982d447827ea1ee7174ce0b4754eb9bcff"
+    }
+  ],
+  "notes": null
+}

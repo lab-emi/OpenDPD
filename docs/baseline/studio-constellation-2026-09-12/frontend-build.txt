@@ -1,0 +1,20 @@
+
+> opendpd-studio@2.2.0-dev0 build
+> tsc -b && vite build
+
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 967 modules transformed.
+rendering chunks...
+computing gzip size...
+../opendpd/studio/static/index.html                               0.43 kB │ gzip:   0.28 kB
+../opendpd/studio/static/assets/zh-BZJXXezo.js                   31.97 kB │ gzip:  12.07 kB
+../opendpd/studio/static/assets/de-CELAR1r1.js                   36.40 kB │ gzip:  12.09 kB
+../opendpd/studio/static/assets/es-DQwYbR-_.js                   36.75 kB │ gzip:  11.85 kB
+../opendpd/studio/static/assets/ko-CPYtqBxb.js                   37.02 kB │ gzip:  12.33 kB
+../opendpd/studio/static/assets/fr-DAFSee3Y.js                   38.03 kB │ gzip:  12.16 kB
+../opendpd/studio/static/assets/ja-BTPUa-Rn.js                   41.30 kB │ gzip:  12.98 kB
+../opendpd/studio/static/assets/index-CxsdgKpQ.js               847.91 kB │ gzip: 254.84 kB
+../opendpd/studio/static/assets/plotly-basic.min-YBaKlioI.js  1,135.66 kB │ gzip: 379.37 kB
+
+✓ built in 336ms

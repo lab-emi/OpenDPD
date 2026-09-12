@@ -5,7 +5,7 @@ designed for but no test evidence yet; **unsupported** = out of scope.
 A platform being able to open the page does not imply every model or
 accelerator path is supported, so three tables are kept separately.
 
-Last update: 2026-09-06 (S13; baseline in `docs/baseline/baseline-report.md`, hardening in `docs/releases/hardening-report.md`).
+Last update: 2026-09-11 (native macOS fix verified in [the follow-up report](../baseline/native-window-macos-fix-2026-09-11.md); S13 baseline in `docs/baseline/baseline-report.md`, hardening in `docs/releases/hardening-report.md`).
 
 ## Core library and CLI (CPU)
 
@@ -22,14 +22,14 @@ Last update: 2026-09-06 (S13; baseline in `docs/baseline/baseline-report.md`, ha
 |---|---|---|---|
 | Linux x86-64 (CachyOS) | 3.13.14 | verified (automated) | `tests/packaging/test_wheel_install.py::test_wheel_ships_gui_and_one_command_serves_it`: wheel installed in a fresh venv, `opendpd gui --no-browser` healthy/ready/serves the page, trains a smoke run, exports a share package and exits clean (S13); real-browser journeys in `frontend/e2e` (below); performance report `docs/releases/performance-report.md` |
 | Linux x86-64 (ubuntu-latest) | 3.10–3.13 | verified (CI) | `ci.yml` builds the frontend and runs the packaging layer; `weekly.yml` drives the real service with Chromium, Firefox and WebKit (`frontend/e2e/live.spec.ts`) |
-| macOS Apple Silicon | 3.11–3.13 | **unverified** | needs a person to run `opendpd gui` on a real desktop (browser opening, Ctrl+C cleanup); weekly CI covers only the headless service on macOS |
+| macOS Apple Silicon | 3.11–3.13 | native surface verified for the exercised paths on 3.13.12; **browser launch unverified** | native launch, real CPU training and idle cleanup were exercised on a desktop (see Native window below, including the repaired active-close flow); real default-browser opening still needs verification; weekly CI covers the headless service |
 | Windows x86-64 | 3.11–3.13 | **unverified** | needs a person: browser opening, process-group cleanup, paths with spaces/Unicode |
 
 ## Native window (`opendpd[desktop]`)
 
 | OS | Backend | Status | Evidence |
 |---|---|---|---|
-| macOS Apple Silicon (macOS 26.6.2, Python 3.13.12, pywebview 6.2.1, pyobjc 12.2.2) | cocoa / WKWebView | verified (desktop run, 2026-09-11) for launch, session, run, Ctrl+C; **pending human** for the close question, downloads, menu name and Dock icon | `opendpd gui --workspace … --port 8797` printed the URL and the stop hint and opened a 1366×860 window owned by the launcher; through the served app: bootstrap → session → capabilities → built-in dataset → `pa-gru-smoke-v1` succeeded with a result (NMSE, EVM, ACLR) and 13 artifacts; Ctrl+C with no active run: exit 0 in 0.8 s, window gone, lock released, no worker left, server stopped; Cmd+Q, Ctrl+C and SIGTERM return from the window loop in an in-process check (`opendpd/studio/window.py`). Not exercised here because it needs a person at the desk: the question shown when a run is active (unit-tested only), a download through the save dialog, the application menu name and the Dock icon |
+| macOS Apple Silicon (macOS 26.6.2, Python 3.13.12, pywebview 6.2.1, pyobjc 12.2.2) | cocoa / WKWebView | verified for launch, session, CPU run, configuration download, menus, Dock icon, idle exits and active-run Cancel/Quit | [Initial desktop checks](../baseline/native-window-macos-2026-09-11.md) and [exit fix verification](../baseline/native-window-macos-fix-2026-09-11.md), 2026-09-11: real native red close, Cmd+Q and terminal Ctrl+C each passed both Cancel (same worker continues) and Quit (launcher exit 0, run cancelled, no descendants, lock and port released). Quit cleanup took approximately 2.6–3.0 s. The Cocoa confirmation deadlock and HTTP-stream shutdown blocker are fixed; tested source hashes and screenshots are retained. Configuration Save/Cancel, English/Chinese menus and the Dock icon passed earlier; this does not claim every download format or an installed application bundle. |
 | Windows x86-64 | edgechromium / WebView2 | **unverified** | needs a person: WebView2 runtime, downloads, Ctrl+C in a console |
 | Linux x86-64 | gtk / WebKit2GTK or qt | **unverified** | needs a person with the distribution packages; CI only proves the headless fallback reason |
 

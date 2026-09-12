@@ -1,0 +1,7 @@
+{
+  "python": "3.13.12 (main, Mar 20 2026, 00:20:47) [Clang 22.1.1 ]",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "torch": "2.14.0",
+  "node": "v26.8.1",
+  "device_tested": "cpu"
+}

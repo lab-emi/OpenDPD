@@ -1,0 +1,277 @@
+
+> opendpd-studio@2.2.0-dev0 e2e
+> playwright test --project=chromium-1366 --project=chromium-1920 --project=webkit-1366 --ignore-snapshots --workers=3
+
+[WebServer] (node:1639) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:1669) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 45 tests using 3 workers
+
+(node:1683) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1681) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1682) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   3 [chromium-1366] › e2e/a11y.spec.ts:77:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (1.9s)
+  ✓   4 [chromium-1366] › e2e/a11y.spec.ts:98:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (3.6s)
+  ✓   5 [chromium-1366] › e2e/a11y.spec.ts:136:3 › offline › the main journey contacts no host but the loopback one (2.9s)
+  ✓   6 [chromium-1366] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (4.2s)
+  ✓   7 [chromium-1366] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (2.1s)
+  ✓   8 [chromium-1366] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (5.4s)
+  ✓   9 [chromium-1366] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (424ms)
+  ✓  10 [chromium-1366] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (1.3s)
+  ✘   2 [chromium-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (22.5s)
+  ✓  11 [chromium-1366] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (4.5s)
+  -  12 [chromium-1366] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  13 [chromium-1366] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  14 [chromium-1366] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+(node:1840) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1852) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (29.8s)
+  ✓  15 [chromium-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (2.1s)
+(node:1873) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1876) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  18 [chromium-1920] › e2e/a11y.spec.ts:77:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (4.0s)
+  ✓  19 [chromium-1920] › e2e/a11y.spec.ts:98:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (9.4s)
+  ✓  20 [chromium-1920] › e2e/a11y.spec.ts:136:3 › offline › the main journey contacts no host but the loopback one (6.3s)
+  ✓  21 [chromium-1920] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (5.7s)
+  ✓  22 [chromium-1920] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (2.7s)
+  ✘  17 [chromium-1920] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (28.4s)
+(node:2341) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  24 [chromium-1920] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (932ms)
+  ✓  25 [chromium-1920] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (2.4s)
+  ✓  23 [chromium-1920] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (7.7s)
+  ✓  16 [chromium-1920] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (42.4s)
+  -  28 [chromium-1920] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  29 [chromium-1920] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  30 [chromium-1920] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+  ✘  27 [chromium-1920] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (3.1s)
+(node:2387) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2390) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  26 [chromium-1920] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (5.6s)
+(node:2403) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  33 [webkit-1366] › e2e/a11y.spec.ts:77:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (3.5s)
+  ✓  34 [webkit-1366] › e2e/a11y.spec.ts:98:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (7.6s)
+  ✓  35 [webkit-1366] › e2e/a11y.spec.ts:136:3 › offline › the main journey contacts no host but the loopback one (7.0s)
+  ✓  36 [webkit-1366] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (13.8s)
+  ✓  37 [webkit-1366] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (5.7s)
+  ✘  32 [webkit-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (35.3s)
+(node:2731) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  31 [webkit-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (38.1s)
+(node:2740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  39 [webkit-1366] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (2.5s)
+  ✓  40 [webkit-1366] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (7.0s)
+  ✓  41 [webkit-1366] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (13.2s)
+  -  43 [webkit-1366] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  44 [webkit-1366] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  45 [webkit-1366] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+  ✘  42 [webkit-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (5.2s)
+  ✓  38 [webkit-1366] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (18.5s)
+
+
+  1) [chromium-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/runs\/run-e2e-0001$/
+    Received string:  "http://127.0.0.1:4173/runs/run-e2e-0001?tab=config"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 10000ms
+        23 × locator resolved to <html lang="en">…</html>
+           - unexpected value "http://127.0.0.1:4173/runs/run-e2e-0001?tab=config"
+
+
+      55 |     await scan(page, '/runs/run-e2e-0001#terminal')
+      56 |     await terminal.getByRole('tab', { name: 'DPD Model Training', exact: true }).click()
+    > 57 |     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
+         |                        ^
+      58 |     await expect(terminal.getByRole('tab', { name: 'DPD Model Training', exact: true })).toHaveAttribute('aria-selected', 'true')
+      59 |   })
+      60 | })
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/a11y.spec.ts:57:24
+
+    Error Context: test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-chromium-1366/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-chromium-1366/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-chromium-1366/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium-1920] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/runs\/run-e2e-0001$/
+    Received string:  "http://127.0.0.1:4173/runs/run-e2e-0001?tab=config"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 10000ms
+        23 × locator resolved to <html lang="en">…</html>
+           - unexpected value "http://127.0.0.1:4173/runs/run-e2e-0001?tab=config"
+
+
+      55 |     await scan(page, '/runs/run-e2e-0001#terminal')
+      56 |     await terminal.getByRole('tab', { name: 'DPD Model Training', exact: true }).click()
+    > 57 |     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
+         |                        ^
+      58 |     await expect(terminal.getByRole('tab', { name: 'DPD Model Training', exact: true })).toHaveAttribute('aria-selected', 'true')
+      59 |   })
+      60 | })
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/a11y.spec.ts:57:24
+
+    Error Context: test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-chromium-1920/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-chromium-1920/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-chromium-1920/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium-1920] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 2000
+    Received:   2514
+
+      177 |     const iqMs = Number(await probe.getAttribute('data-iq-ms'))
+      178 |     test.info().annotations.push({ type: 'perf', description: `spectrum ${spectrumMs} ms, iq ${iqMs} ms` })
+    > 179 |     expect(spectrumMs + iqMs).toBeLessThan(2000)
+          |                               ^
+      180 |     await expect(page.getByTestId('spectrum-plot').locator('svg.main-svg').first()).toBeVisible()
+      181 |     await page.getByRole('button', { name: /Enlarge chart: Power spectral density/ }).click()
+      182 |     await expect(page.getByRole('dialog')).toBeVisible()
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/journey.spec.ts:179:31
+
+    Error Context: test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-chromium-1920/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-chromium-1920/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-chromium-1920/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [webkit-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('main')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('main') with timeout 10000ms
+      - waiting for getByRole('main')
+
+
+      28 |     for (const path of PAGES) {
+      29 |       await page.goto(path)
+    > 30 |       await expect(page.getByRole(path.includes('guide=') ? 'dialog' : 'main')).toBeVisible()
+         |                                                                                 ^
+      31 |       if (path === '/gallery') await expect(page.getByTestId('spectrum-plot').locator('svg.main-svg').first()).toBeVisible({ timeout: 20_000 })
+      32 |       await scan(page, path)
+      33 |     }
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/a11y.spec.ts:30:81
+
+    Error Context: test-results/a11y-accessibility-axe-cor-4352d-ical-WCAG-2-1-AA-violations-webkit-1366/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-accessibility-axe-cor-4352d-ical-WCAG-2-1-AA-violations-webkit-1366/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/a11y-accessibility-axe-cor-4352d-ical-WCAG-2-1-AA-violations-webkit-1366/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [webkit-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live 
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /\/runs\/run-e2e-0001$/
+    Received string:  "http://127.0.0.1:4173/runs/run-e2e-0001?tab=config"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 10000ms
+        21 × locator resolved to <html lang="en">…</html>
+           - unexpected value "http://127.0.0.1:4173/runs/run-e2e-0001?tab=config"
+
+
+      55 |     await expect(terminal.getByRole('log')).toContainText('Training Completed...')
+      56 |     await scan(page, '/runs/run-e2e-0001#terminal')
+    > 57 |     await terminal.getByRole('tab', { name: 'DPD Model Training', exact: true }).click()
+         |                        ^
+      58 |     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
+      59 |     await expect(terminal.getByRole('tab', { name: 'DPD Model Training', exact: true })).toHaveAttribute('aria-selected', 'true')
+      60 |   })
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/a11y.spec.ts:57:24
+
+    Error Context: test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-webkit-1366/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-webkit-1366/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/a11y-accessibility-axe-cor-2ea41-essible-while-a-run-is-live-webkit-1366/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [webkit-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline 
+
+    Error: expect(received).toBeLessThan(expected)
+
+    Expected: < 2000
+    Received:   3186
+
+      177 |     const iqMs = Number(await probe.getAttribute('data-iq-ms'))
+      178 |     test.info().annotations.push({ type: 'perf', description: `spectrum ${spectrumMs} ms, iq ${iqMs} ms` })
+    > 179 |     expect(spectrumMs + iqMs).toBeLessThan(2000)
+          |                               ^
+      180 |     await expect(page.getByTestId('spectrum-plot').locator('svg.main-svg').first()).toBeVisible()
+      181 |     await page.getByRole('button', { name: /Enlarge chart: Power spectral density/ }).click()
+      182 |     await expect(page.getByRole('dialog')).toBeVisible()
+        at /Users/gaochang/git/OpenDPD/frontend/e2e/journey.spec.ts:179:31
+
+    Error Context: test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-webkit-1366/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-webkit-1366/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/journey-component-gallery--7bba2-matches-the-visual-baseline-webkit-1366/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6 failed
+    [chromium-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live 
+    [chromium-1920] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live 
+    [chromium-1920] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline 
+    [webkit-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations 
+    [webkit-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live 
+    [webkit-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline 
+  9 skipped
+  30 passed (2.2m)

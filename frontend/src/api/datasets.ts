@@ -12,6 +12,27 @@ export type ManifestUpdate = Schemas['ManifestUpdate']
 export type PreprocessRequest = Schemas['PreprocessRequest']
 export type PreprocessPreview = Schemas['PreprocessPreview']
 export type UploadResult = Schemas['UploadResult']
+export type DatasetAnalysis = Schemas['DatasetAnalysis']
+export type InspectionMeasurement = Schemas['InspectionMeasurement']
+export type InspectionReading = Schemas['InspectionReading']
+export type BuiltinDatasetInfo = Schemas['BuiltinDatasetInfo']
+export type DatasetImportDefaults = Required<Schemas['DatasetImportDefaults']>
+export type CsvInspection = Omit<Required<Schemas['CsvInspection']>, 'split'> & { split: DatasetImportDefaults }
+export type CsvOptions = Schemas['CsvOptions']
+export type CsvPreviewRequest = Schemas['CsvPreviewRequest']
+export type CsvCreateRequest = Schemas['CsvCreateRequest']
+
+export const useBuiltinDatasets = () => useQuery({ queryKey: ['builtin-datasets'], queryFn: () => api.get<BuiltinDatasetInfo[]>('/datasets/builtin') })
+export const useDatasetImportDefaults = () => useQuery({ queryKey: ['dataset-import-defaults'], queryFn: () => api.get<DatasetImportDefaults>('/datasets/import-defaults') })
+export const previewCsv = (body: CsvPreviewRequest) => api.post<CsvInspection>('/datasets/csv/preview', body)
+
+export function useCreateCsvDataset() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CsvCreateRequest) => api.post<DatasetManifest>('/datasets/csv', body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.datasets }),
+  })
+}
 
 /** Version names a config may reference: raw-v1 plus every preprocessing version. */
 export const versionNames = (d: DatasetManifest): string[] => Array.from(new Set(['raw-v1', ...(d.versions ?? []).map((v) => v.version)]))
@@ -20,7 +41,15 @@ export const datasetKeys = {
   roots: ['datasets', 'roots'] as const,
   files: (root: string, path: string) => ['datasets', 'roots', root, path] as const,
   diagnostics: (id: string) => ['datasets', id, 'diagnostics'] as const,
+  analysis: (id: string, version: string) => ['datasets', id, 'analysis', version] as const,
 }
+
+export const useDatasetAnalysis = (id: string, version: string, enabled = true) =>
+  useQuery({
+    queryKey: datasetKeys.analysis(id, version),
+    queryFn: () => api.get<DatasetAnalysis>(`/datasets/${encodeURIComponent(id)}/analysis?version=${encodeURIComponent(version)}`),
+    enabled, staleTime: 60_000,
+  })
 
 export const useImportRoots = () => useQuery({ queryKey: datasetKeys.roots, queryFn: () => api.get<ImportRootInfo[]>('/datasets/import-roots') })
 export const useRootFiles = (root: string, path: string, enabled = true) =>

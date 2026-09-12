@@ -1,0 +1,322 @@
+[
+  {
+    "run_id": "run-20260912-114532-b11de6",
+    "task": "train_pa",
+    "status": "succeeded",
+    "duration_seconds": 29.934,
+    "metrics": {
+      "ACLR_AVG": -33.084064424892034,
+      "ACLR_L": -32.71479211706597,
+      "ACLR_R": -33.45333673271811,
+      "EVM": -31.860512566300656,
+      "NMSE": -29.911835971393458
+    },
+    "units": {
+      "ACLR_AVG": "dBc",
+      "ACLR_L": "dBc",
+      "ACLR_R": "dBc",
+      "EVM": "dB",
+      "NMSE": "dB"
+    },
+    "geometry": {
+      "batch_size": 256,
+      "batches_per_epoch": 1,
+      "sample_rate_hz": 800000000.0,
+      "sequence_samples": 2560,
+      "train_sequences": 3
+    },
+    "training_geometry": null,
+    "last_batch": null,
+    "preview_error": null,
+    "probe_count": 8,
+    "probe_intervals_seconds": [
+      14.671,
+      2.03,
+      2.024,
+      2.074,
+      2.022,
+      2.022,
+      2.019
+    ],
+    "probe_step_gaps": [
+      1357,
+      215,
+      209,
+      220,
+      217,
+      251,
+      260
+    ],
+    "snapshot_bytes": 390036
+  },
+  {
+    "run_id": "run-20260912-115014-35f242",
+    "task": "evaluate_pa",
+    "status": "succeeded",
+    "duration_seconds": 2.424,
+    "metrics": {
+      "ACLR_AVG": -33.084064424892034,
+      "ACLR_L": -32.71479211706597,
+      "ACLR_R": -33.45333673271811,
+      "EVM": -31.860512566300656,
+      "NMSE": -29.911835971393458
+    },
+    "units": {
+      "ACLR_AVG": "dBc",
+      "ACLR_L": "dBc",
+      "ACLR_R": "dBc",
+      "EVM": "dB",
+      "NMSE": "dB"
+    },
+    "geometry": {
+      "batch_size": 256,
+      "batches_per_epoch": 1,
+      "sample_rate_hz": 800000000.0,
+      "sequence_samples": 2560,
+      "train_sequences": 3
+    },
+    "training_geometry": null,
+    "last_batch": {
+      "batch": 1,
+      "epoch": 0,
+      "global_step": 0,
+      "phase": "evaluate",
+      "sample_rate_hz": 800000000.0,
+      "scope": "live",
+      "sequence_samples": 2560,
+      "sequences": 3,
+      "total_batches": 1,
+      "total_epochs": 120
+    },
+    "preview_error": null,
+    "probe_count": 0,
+    "probe_intervals_seconds": [],
+    "probe_step_gaps": [],
+    "snapshot_bytes": 390291
+  },
+  {
+    "run_id": "run-20260912-115431-efe610",
+    "task": "train_dpd",
+    "status": "succeeded",
+    "duration_seconds": 47.017,
+    "metrics": {
+      "ACLR_AVG": -41.51357947013342,
+      "ACLR_L": -41.491823662152285,
+      "ACLR_R": -41.53533527811456,
+      "EVM": -35.543431830283325,
+      "NMSE": -32.69606498973251
+    },
+    "units": {
+      "ACLR_AVG": "dBc",
+      "ACLR_L": "dBc",
+      "ACLR_R": "dBc",
+      "EVM": "dB",
+      "NMSE": "dB"
+    },
+    "geometry": {
+      "batch_size": 256,
+      "batches_per_epoch": 1,
+      "sample_rate_hz": 800000000.0,
+      "sequence_samples": 2560,
+      "train_sequences": 3
+    },
+    "training_geometry": {
+      "batch_size": 64,
+      "batches_per_epoch": 23,
+      "eval_batch_size": 256,
+      "eval_sequence_samples": 2560,
+      "frame_stride": 16,
+      "sample_rate_hz": 800000000.0,
+      "sequence_samples": 50,
+      "train_sequences": 1437
+    },
+    "last_batch": {
+      "batch": 1,
+      "epoch": 119,
+      "global_step": 2760,
+      "padded_samples": 0,
+      "phase": "evaluate",
+      "sample_rate_hz": 800000000.0,
+      "scope": "live",
+      "sequence_samples": 2560,
+      "sequences": 3,
+      "total_batches": 1,
+      "total_epochs": 120,
+      "valid_samples": 7680
+    },
+    "preview_error": null,
+    "probe_count": 22,
+    "probe_intervals_seconds": [
+      2.053,
+      2.042,
+      2.042,
+      2.038,
+      2.042,
+      2.033,
+      2.034,
+      2.04,
+      2.036,
+      2.045,
+      2.04,
+      2.08,
+      2.078,
+      2.089,
+      2.066,
+      2.034,
+      2.033,
+      2.039,
+      2.039,
+      2.096,
+      2.122
+    ],
+    "probe_step_gaps": [
+      116,
+      119,
+      112,
+      130,
+      122,
+      122,
+      126,
+      134,
+      131,
+      130,
+      127,
+      126,
+      138,
+      138,
+      138,
+      130,
+      133,
+      136,
+      131,
+      137,
+      130
+    ],
+    "snapshot_bytes": 719489
+  },
+  {
+    "run_id": "run-20260912-115618-c6ce8c",
+    "task": "run_dpd",
+    "status": "succeeded",
+    "duration_seconds": 3.05,
+    "metrics": {
+      "ACLR_AVG": -41.51357947013342,
+      "ACLR_L": -41.491823662152285,
+      "ACLR_R": -41.53533527811456,
+      "EVM": -35.543431830283325,
+      "NMSE": -32.69606498973251
+    },
+    "units": {
+      "ACLR_AVG": "dBc",
+      "ACLR_L": "dBc",
+      "ACLR_R": "dBc",
+      "EVM": "dB",
+      "NMSE": "dB"
+    },
+    "geometry": {
+      "batch_size": 256,
+      "batches_per_epoch": 1,
+      "sample_rate_hz": 800000000.0,
+      "sequence_samples": 2560,
+      "train_sequences": 3
+    },
+    "training_geometry": null,
+    "last_batch": {
+      "batch": 1,
+      "epoch": 0,
+      "global_step": 0,
+      "padded_samples": 0,
+      "phase": "evaluate",
+      "sample_rate_hz": 800000000.0,
+      "scope": "live",
+      "sequence_samples": 2560,
+      "sequences": 3,
+      "total_batches": 1,
+      "total_epochs": 120,
+      "valid_samples": 7680
+    },
+    "preview_error": null,
+    "probe_count": 0,
+    "probe_intervals_seconds": [],
+    "probe_step_gaps": [],
+    "snapshot_bytes": 719224
+  },
+  {
+    "run_id": "run-20260912-120526-ea97e7",
+    "task": "train_pa",
+    "status": "succeeded",
+    "duration_seconds": 24.894,
+    "metrics": {
+      "ACLR_AVG": -33.084064424892034,
+      "ACLR_L": -32.71479211706597,
+      "ACLR_R": -33.45333673271811,
+      "EVM": -31.860512566300656,
+      "NMSE": -29.911835971393458
+    },
+    "units": {
+      "ACLR_AVG": "dBc",
+      "ACLR_L": "dBc",
+      "ACLR_R": "dBc",
+      "EVM": "dB",
+      "NMSE": "dB"
+    },
+    "geometry": {
+      "batch_size": 256,
+      "batches_per_epoch": 1,
+      "sample_rate_hz": 800000000.0,
+      "sequence_samples": 2560,
+      "train_sequences": 3
+    },
+    "training_geometry": {
+      "batch_size": 64,
+      "batches_per_epoch": 23,
+      "eval_batch_size": 256,
+      "eval_sequence_samples": 2560,
+      "frame_stride": 16,
+      "sample_rate_hz": 800000000.0,
+      "sequence_samples": 50,
+      "train_sequences": 1437
+    },
+    "last_batch": {
+      "batch": 1,
+      "epoch": 119,
+      "global_step": 2760,
+      "padded_samples": 0,
+      "phase": "evaluate",
+      "sample_rate_hz": 800000000.0,
+      "scope": "live",
+      "sequence_samples": 2560,
+      "sequences": 3,
+      "total_batches": 1,
+      "total_epochs": 120,
+      "valid_samples": 7680
+    },
+    "preview_error": null,
+    "probe_count": 11,
+    "probe_intervals_seconds": [
+      2.02,
+      2.025,
+      2.027,
+      2.077,
+      2.066,
+      2.024,
+      2.019,
+      2.026,
+      2.059,
+      2.024
+    ],
+    "probe_step_gaps": [
+      240,
+      254,
+      251,
+      239,
+      258,
+      264,
+      261,
+      257,
+      253,
+      259
+    ],
+    "snapshot_bytes": 390608
+  }
+]

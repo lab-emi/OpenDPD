@@ -1,0 +1,9 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.12",
+  "node": "v26.8.1",
+  "git_head": "f43cd32d8385efc3bf44980e19689caa1ae66e64",
+  "worktree": "pre-existing uncommitted changes preserved",
+  "gui_bundle": "index-CU2ZtboX.js",
+  "qa_port": 8766
+}

@@ -110,6 +110,35 @@ RECIPES += [
            "seconds on CPU"),
 ]
 
+def _backbone_starting_points() -> List[Recipe]:
+    """Expose the compute registry without copying model construction into the GUI.
+
+    Existing named recipes retain their exact parameters. Other trainable
+    backbones use the same shared training presets and their registry defaults.
+    Stateful execution variants are chosen when testing their trained base.
+    """
+    from opendpd.core.registry import list_models
+    points = []
+    existing = {(r.task, r.model.key, r.purpose) for r in RECIPES}
+    for model in list_models():
+        if model.weights_from or model.training_method != "gradient":
+            continue
+        for role, task in (("pa", TaskType.train_pa), ("dpd", TaskType.train_dpd)):
+            if role not in model.roles:
+                continue
+            for purpose, settings in (("smoke", _SMOKE), ("research", _RESEARCH)):
+                if (task, model.key, purpose) in existing:
+                    continue
+                points.append(Recipe(
+                    f"{role}-{model.key}-{purpose}-v1", f"{model.display_name} · {role.upper()} · {purpose}",
+                    purpose, task, ModelSpec(key=model.key, parameters=model.defaults()), TrainingConfig(**settings),
+                    "Shared training preset with model parameters from the OpenDPD registry.",
+                    "Exploratory starting point; model/device support and temporal context are described in the registry. "
+                    "DPD requires a compatible PA surrogate. No benchmark claim.", "depends on model, data and device"))
+    return points
+
+
+RECIPES += _backbone_starting_points()
 _BY_ID = {r.recipe_id: r for r in RECIPES}
 
 

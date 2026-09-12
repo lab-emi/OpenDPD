@@ -1,0 +1,9 @@
+{
+  "numTotalTestSuites": 28,
+  "numPassedTestSuites": 28,
+  "numTotalTests": 86,
+  "numPassedTests": 86,
+  "numFailedTests": 0,
+  "success": true,
+  "command": "npm --prefix frontend test -- --maxWorkers=2"
+}

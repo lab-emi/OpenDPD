@@ -1,0 +1,4 @@
+
+> opendpd-studio@2.2.0-dev0 lint
+> oxlint src e2e
+

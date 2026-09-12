@@ -21,7 +21,7 @@ SIGNAL = {"sample_rate_hz": 800e6, "bandwidth_hz": 200e6, "n_sub_ch": 10, "npers
 @pytest.fixture(scope="module")
 def env(tmp_path_factory):
     root = tmp_path_factory.mktemp("ws")
-    app = create_app(root, bootstrap_token=TOKEN, supervisor_kwargs={"poll_interval": 0.1}, shutdown_timeout=3)
+    app = create_app(root, bootstrap_token=TOKEN, allow_custom_datasets=True, supervisor_kwargs={"poll_interval": 0.1}, shutdown_timeout=3)
     with TestClient(app, base_url="http://127.0.0.1:8765") as client:
         r = client.post("/api/v1/session/bootstrap", json={"token": TOKEN})
         client.headers[CSRF_HEADER] = r.json()["csrf_token"]

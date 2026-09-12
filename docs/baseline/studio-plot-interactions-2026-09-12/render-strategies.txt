@@ -1,0 +1,6 @@
+### Result
+[{"kind":"relayout","timings":[86,92,83,78,77,72,72,75,76,79,79,77,76,77,74,78,73,83,83,78],"x":[0.6055630768775431,4.489574545176034],"y":[-2.540432917812399,0.5402349256253868]},{"kind":"animate","timings":[89,106,99,104,95,129,160,105,105,94,115,153,122,107,106,97,103,107,118,111],"x":[0.6255630768775431,4.509574545176041],"y":[-2.540432917812399,0.5402349256253868]}]
+### Ran Playwright code
+```js
+await (async (page) => { const p=page.getByRole("figure",{name:"64QAM · Constellation",exact:true}); await p.scrollIntoViewIfNeeded(); return await p.evaluate(async el=>{const results=[]; for (const kind of ["relayout","animate"]){const timings=[]; for(let i=0;i<20;i++){const x=el._fullLayout.xaxis.range.map(v=>v+.001);const y=[...el._fullLayout.yaxis.range];const start=performance.now(); if(kind==="relayout") await window.Plotly.relayout(el,{"xaxis.range":x,"yaxis.range":y,"xaxis.autorange":false,"yaxis.autorange":false});else await window.Plotly.animate(el,{layout:{xaxis:{range:x,autorange:false},yaxis:{range:y,autorange:false}}},{transition:{duration:0},frame:{duration:0,redraw:false},mode:"immediate"}); timings.push(performance.now()-start);} results.push({kind,timings,x:el._fullLayout.xaxis.range,y:el._fullLayout.yaxis.range});}return results;}); })(page);
+```

@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "task": "train_pa",
+  "recipe_id": "pa-gru-smoke-v1",
+  "name": "Onboarding PA training",
+  "dataset": {
+    "id": "dpa-200mhz",
+    "preprocessing_version": "raw-v1",
+    "split_version": "contiguous-v1"
+  },
+  "model": {
+    "key": "gru",
+    "parameters": {
+      "hidden_size": 23,
+      "num_layers": 1
+    }
+  },
+  "training": {
+    "epochs": 3,
+    "batch_size": 64,
+    "batch_size_eval": 256,
+    "learning_rate": 0.005,
+    "lr_end": 0.00005,
+    "lr_schedule": true,
+    "decay_factor": 0.5,
+    "patience": 5,
+    "optimizer": "adamw",
+    "loss": "l2",
+    "grad_clip": 200.0,
+    "frame_length": 50,
+    "frame_stride": 16,
+    "seed": 0,
+    "reproducibility": "soft",
+    "train_samples": null,
+    "eval_val": true,
+    "eval_test": true
+  },
+  "evaluation": {
+    "profile_id": "legacy-opendpd-v1",
+    "evidence_type": "pa_modeling",
+    "checkpoint_selection_metric": "NMSE",
+    "chunk_samples": null
+  },
+  "execution": {
+    "device": "cpu",
+    "device_index": 0,
+    "num_threads": null,
+    "cuda_graph_training": false
+  },
+  "pa_reference": null,
+  "dpd_reference": null,
+  "quantization": null,
+  "measurement": null,
+  "initialization": null,
+  "notes": null,
+  "resolution": {
+    "resolver_version": "config-resolver-v1",
+    "resolved_at": "2026-09-12T09:23:50.615690Z",
+    "defaults_source": "opendpd 2.2.0.dev0 / schema 1 / registry gru",
+    "config_sha256": "8b3f56d062bc012a74a9c5f8ce1a9b95d4914aa668adcb8c148b39a48e8c4cd6",
+    "warnings": [
+      "training.epochs: 3 epochs is a smoke/demo run, not a benchmark result"
+    ]
+  }
+}

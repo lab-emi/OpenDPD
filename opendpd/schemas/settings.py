@@ -6,8 +6,8 @@ from typing import Literal, Optional, Tuple
 
 from .common import StrictModel
 
-UILanguage = Literal["en", "fr", "de", "es", "zh", "ja", "ko"]
-UI_LANGUAGES: Tuple[str, ...] = ("en", "fr", "de", "es", "zh", "ja", "ko")
+UILanguage = Literal["en", "nl", "zh", "fr", "de", "it", "ja", "ko", "es"]
+UI_LANGUAGES: Tuple[str, ...] = ("en", "nl", "zh", "fr", "de", "it", "ja", "ko", "es")
 
 
 class WorkspaceSettings(StrictModel):

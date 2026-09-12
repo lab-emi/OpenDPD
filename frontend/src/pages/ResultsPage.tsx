@@ -3,6 +3,7 @@ import Checkbox from '@mui/material/Checkbox'
 import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
+import TableContainer from '@mui/material/TableContainer'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
@@ -35,7 +36,7 @@ export function ResultsPage() {
       {withResult.length === 0 ? (
         <EmptyState body={t('results.empty')} />
       ) : (
-        <Table size="small" aria-label={t('results.title')}>
+        <TableContainer tabIndex={0} role="region" aria-label={t('results.title')}><Table size="small" aria-label={t('results.title')}>
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox" />
@@ -68,7 +69,7 @@ export function ResultsPage() {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </Table></TableContainer>
       )}
     </Stack>
   )

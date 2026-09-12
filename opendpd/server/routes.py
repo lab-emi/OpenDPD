@@ -47,18 +47,23 @@ from opendpd.schemas import (
     utcnow,
     MetricProfile,
     WorkspaceSettings,
+    UILanguage,
 )
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE, SESSION_MAX_AGE, UPLOAD_MAX_BODY, Session
 from opendpd.services import adaptation as adaptation_service
 from opendpd.services import deploy as deploy_service
 from opendpd.services import capabilities as capabilities_service
 from opendpd.services import datasets as datasets_service
+from opendpd.services.dataset_analysis import analyze_dataset
+from opendpd.schemas.analysis import DatasetAnalysis
+from opendpd.schemas.importing import BuiltinDatasetInfo, CsvInspection, CsvOptions, DatasetImportDefaults
+from opendpd.schemas.common import Slug, Sha256
 from opendpd.services import experiments
 from opendpd.services import packages
 from opendpd.services.evaluation import available_profiles, compare_results, comparison_csv
 from opendpd.services.packages import PackageError
 from opendpd.services.reports import report_html, report_markdown
-from opendpd.services.workspace import WorkspaceError
+from opendpd.services.workspace import WorkspaceError, list_builtin_datasets
 from opendpd.services.recipes import list_recipes
 
 router = APIRouter()
@@ -118,6 +123,12 @@ def session_info(request: Request):
 
 # --- system -----------------------------------------------------------------------
 
+@router.get("/system/about", response_model=Dict[str, Any], tags=["system"],
+            dependencies=[Depends(require_session)])
+def system_about():
+    from opendpd.services.about import project_info
+    return project_info()
+
 # --- workbench settings -----------------------------------------------------------
 
 @router.get("/settings", response_model=WorkspaceSettings, tags=["settings"], dependencies=[Depends(require_session)])
@@ -143,6 +154,7 @@ class Capabilities(BaseModel):
     devices: List[DeviceInfo]
     workspace: str
     note: str
+    custom_dataset_imports: bool = False
 
 
 @router.get("/system/capabilities", response_model=Capabilities, tags=["system"],
@@ -158,6 +170,7 @@ def capabilities(request: Request):
                                   count=int(d.get("count", 1 if d.get("detected") else 0)),
                                   tested_models=[m.key for m in models if dev in m.devices_tested]))
     return Capabilities(version=__version__, devices=devices, workspace=str(request.app.state.ws.root),
+                        custom_dataset_imports=request.app.state.allow_custom_datasets,
                         note="'detected' means the driver reports the device; 'tested_models' lists models "
                              "with recorded evidence on it. One does not imply the other.")
 
@@ -264,6 +277,21 @@ class ImportRequest(BaseModel):
     notes: Optional[str] = Field(default=None, max_length=2000)
 
 
+class CsvPreviewRequest(BaseModel):
+    source: SourceRef
+    options: CsvOptions = Field(default_factory=CsvOptions)
+    split: DatasetImportDefaults = Field(default_factory=DatasetImportDefaults)
+    signal: SignalSpec = Field(default_factory=SignalSpec)
+
+
+class CsvCreateRequest(CsvPreviewRequest):
+    dataset_id: Slug
+    display_name: str = Field(min_length=1, max_length=200)
+    signal: SignalSpec = Field(default_factory=SignalSpec)
+    origin: DatasetOrigin = DatasetOrigin.unknown
+    expected_sha256: Sha256
+
+
 class ManifestUpdate(BaseModel):
     signal: Optional[SignalSpec] = None
     display_name: Optional[str] = Field(default=None, max_length=200)
@@ -304,6 +332,18 @@ def datasets_list(request: Request):
             dependencies=[Depends(require_session)])
 def import_roots(request: Request):
     return [ImportRootInfo(root_id=k, path=str(v), exists=v.exists()) for k, v in _ws(request).import_roots().items()]
+
+
+@router.get("/datasets/builtin", response_model=List[BuiltinDatasetInfo], tags=["datasets"],
+            dependencies=[Depends(require_session)])
+def datasets_builtin():
+    return list_builtin_datasets()
+
+
+@router.get("/datasets/import-defaults", response_model=DatasetImportDefaults, tags=["datasets"],
+            dependencies=[Depends(require_session)])
+def dataset_import_defaults():
+    return DatasetImportDefaults()
 
 
 @router.get("/datasets/import-roots/{root_id}/files", response_model=List[FileEntryInfo], tags=["datasets"],
@@ -353,10 +393,36 @@ async def dataset_upload(request: Request, file: UploadFile):
     return UploadResult(root_id="imports", path=path.relative_to(ws.imports_dir).as_posix(), size_bytes=path.stat().st_size)
 
 
+@router.post("/datasets/csv/preview", response_model=CsvInspection, tags=["datasets"],
+             dependencies=[Depends(require_session)])
+def dataset_csv_preview(body: CsvPreviewRequest, request: Request):
+    from opendpd.services.csv_import import inspect_csv
+    target = datasets_service.resolve_in_root(_ws(request), body.source.root_id, body.source.path)
+    return inspect_csv(target, body.options, body.split)[0]
+
+
+@router.post("/datasets/csv", response_model=DatasetManifest, status_code=201, tags=["datasets"],
+             dependencies=[Depends(require_csrf)])
+def dataset_csv_create(body: CsvCreateRequest, request: Request):
+    ws = _ws(request)
+    target = datasets_service.resolve_in_root(ws, body.source.root_id, body.source.path)
+    return datasets_service.import_dataset(
+        ws, target, dataset_id=body.dataset_id, display_name=body.display_name, signal=body.signal,
+        origin=body.origin, ratios=body.split.ratios, guard_samples=body.split.guard_samples,
+        csv_options=body.options, expected_sha256=body.expected_sha256,
+    )
+
+
 @router.get("/datasets/{dataset_id}", response_model=DatasetManifest, tags=["datasets"],
             dependencies=[Depends(require_session)])
 def dataset_get(dataset_id: str, request: Request):
     return _ws(request).get_dataset(dataset_id)
+
+
+@router.get("/datasets/{dataset_id}/analysis", response_model=DatasetAnalysis, tags=["datasets"],
+            dependencies=[Depends(require_session)])
+def dataset_analysis(dataset_id: str, request: Request, version: str = Query("raw-v1", max_length=64)):
+    return analyze_dataset(_ws(request), dataset_id, version)
 
 
 @router.post("/datasets/{dataset_id}/manifest", response_model=DatasetManifest, tags=["datasets"],
@@ -515,6 +581,15 @@ def runs_history(run_id: str, request: Request):
         raise _error(404, "history_not_available", str(err))
 
 
+@router.get("/runs/{run_id}/live", response_model=Dict[str, Any], tags=["runs"],
+            dependencies=[Depends(require_session)])
+def runs_live(run_id: str, request: Request):
+    """Latest bounded display snapshot; the worker alone computes the plots."""
+    from opendpd.services.live import load_live
+    _get_run(request, run_id)
+    return load_live(request.app.state.ws, run_id)
+
+
 @router.get("/runs/{run_id}/lineage", response_model=RunLineage, tags=["runs"],
             dependencies=[Depends(require_session)])
 def runs_lineage(run_id: str, request: Request):
@@ -609,15 +684,15 @@ def adaptation_report(plan_sha: str, request: Request, format: Literal["json", "
 # --- reports, packages ----------------------------------------------------------------------
 
 @router.get("/results/{run_id}/report", tags=["results"], dependencies=[Depends(require_session)])
-def results_report(run_id: str, request: Request, format: Literal["html", "md"] = Query("html")):
+def results_report(run_id: str, request: Request, format: Literal["html", "md"] = Query("html"), language: Optional[UILanguage] = Query(None)):
     """A report bound to the stored result and plot data (nothing recomputed), for download."""
     _get_run(request, run_id)
     ws = request.app.state.ws
     try:
         if format == "md":
-            body, media, ext = report_markdown(ws, run_id), "text/markdown", "md"
+            body, media, ext = report_markdown(ws, run_id, language=language or ws.settings().language or "en"), "text/markdown", "md"
         else:
-            body, media, ext = report_html(ws, run_id), "text/html", "html"
+            body, media, ext = report_html(ws, run_id, language=language or ws.settings().language or "en"), "text/html", "html"
     except (WorkspaceError, FileNotFoundError) as err:
         raise _error(404, "report_not_available", str(err))
     return Response(content=body, media_type=media,
@@ -646,7 +721,7 @@ def _package_error(err: PackageError) -> HTTPException:
 
 @router.post("/exports", response_model=ExportInfo, status_code=201, tags=["exports"],
              dependencies=[Depends(require_csrf)])
-def exports_create(body: ExportRequest, request: Request):
+def exports_create(body: ExportRequest, request: Request, language: Optional[UILanguage] = Query(None)):
     """Write an experiment package into <workspace>/exports. `share` leaves user data, logs and machine paths out."""
     record = _get_run(request, body.run_id)
     if record.status != RunStatus.succeeded:
@@ -655,7 +730,7 @@ def exports_create(body: ExportRequest, request: Request):
     stamp = utcnow().strftime("%Y%m%d-%H%M%S")
     filename = f"{body.run_id}-{body.kind}-{stamp}.zip"
     try:
-        manifest = packages.export_run(ws, body.run_id, ws.exports_dir / filename, kind=body.kind)
+        manifest = packages.export_run(ws, body.run_id, ws.exports_dir / filename, kind=body.kind, language=language or ws.settings().language or "en")
     except PackageError as err:
         raise _package_error(err)
     except (WorkspaceError, FileNotFoundError) as err:
@@ -804,7 +879,8 @@ class LogPage(BaseModel):
 
 
 @router.get("/runs/{run_id}/logs", response_model=LogPage, tags=["runs"], dependencies=[Depends(require_session)])
-def runs_logs(run_id: str, request: Request, offset: int = Query(0, ge=0), limit: int = Query(200, ge=1, le=2000)):
+def runs_logs(run_id: str, request: Request, offset: int = Query(0, ge=0), limit: int = Query(200, ge=1, le=2000),
+              tail: bool = False):
     """Page through logs/worker.log by byte offset (safe for very large logs).
 
     A trailing line without newline is returned only once the run has finished
@@ -819,6 +895,17 @@ def runs_logs(run_id: str, request: Request, offset: int = Query(0, ge=0), limit
     pos = min(offset, size)
     lines: List[str] = []
     with open(path, "rb") as f:
+        if tail and offset == 0:
+            # Read a bounded suffix, then keep its last `limit` complete lines.
+            f.seek(max(0, size - 262144))
+            if f.tell():
+                f.readline(size - f.tell())   # discard the possibly partial first line
+            start = f.tell()
+            raw_lines = f.read(max(0, size - start)).splitlines(keepends=True)
+            if raw_lines and not raw_lines[-1].endswith(b"\n") and not finished:
+                raw_lines.pop()
+            skip = max(0, len(raw_lines) - limit)
+            pos = start + sum(map(len, raw_lines[:skip]))
         f.seek(pos)
         while len(lines) < limit:
             raw = f.readline()

@@ -3,9 +3,9 @@ import { LANGUAGES, formatDateTime, formatNumber, getLanguage, resetLanguage, re
 
 afterEach(() => resetLanguage())
 
-test('seven languages with tags, native names and flags', () => {
-  expect(LANGUAGES.map((l) => l.code)).toEqual(['en', 'fr', 'de', 'es', 'zh', 'ja', 'ko'])
-  expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Français', 'Deutsch', 'Español', '中文', '日本語', '한국어'])
+test('nine languages with tags, native names and flags', () => {
+  expect(LANGUAGES.map((l) => l.code)).toEqual(['en', 'nl', 'zh', 'fr', 'de', 'it', 'ja', 'ko', 'es'])
+  expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Nederlands', '中文', 'Français', 'Deutsch', 'Italiano', '日本語', '한국어', 'Español'])
   expect(LANGUAGES.find((l) => l.code === 'zh')?.tag).toBe('zh-CN')
   for (const l of LANGUAGES) expect(l.flag, l.code).toMatch(/\.svg$|^data:image\/svg\+xml/)
 })

@@ -1,0 +1,31 @@
+
+> opendpd-studio@2.2.0-dev0 test
+> vitest run src/pages/Onboarding.test.tsx src/components/CreateDatasetDialog.test.tsx
+
+
+ RUN  v5.0.0 /Users/gaochang/git/OpenDPD/frontend
+
+ ❯ src/pages/Onboarding.test.tsx (3 tests | 1 failed) 7910ms
+   × page reset restores a pending experiment; global reset restarts the guide and preserves server records 5063ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/Onboarding.test.tsx > page reset restores a pending experiment; global reset restarts the guide and preserves server records
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/pages/Onboarding.test.tsx:53:1
+     51| })
+     52|
+     53| test('page reset restores a pending experiment; global reset restarts …
+       | ^
+     54|   const calls = setup('/experiments/new?task=train_pa')
+     55|   const user = userEvent.setup()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 6 passed (7)
+   Start at  11:42:11
+   Duration  9.88s (tests 80%, import 8%, environment 7%, transform 4%, setup 1%)
+

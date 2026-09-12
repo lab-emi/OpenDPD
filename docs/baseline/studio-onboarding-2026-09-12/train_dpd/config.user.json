@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "task": "train_dpd",
+  "recipe_id": "dpd-gru-smoke-v1",
+  "name": "Onboarding DPD training",
+  "dataset": {
+    "id": "dpa-200mhz",
+    "preprocessing_version": "raw-v1",
+    "split_version": "contiguous-v1"
+  },
+  "model": {
+    "key": "gru",
+    "parameters": {
+      "hidden_size": 15,
+      "num_layers": 1
+    }
+  },
+  "training": {
+    "epochs": 3,
+    "batch_size": 64,
+    "batch_size_eval": 256,
+    "learning_rate": 0.005,
+    "lr_end": 0.00005,
+    "lr_schedule": true,
+    "decay_factor": 0.5,
+    "patience": 5,
+    "optimizer": "adamw",
+    "loss": "l2",
+    "grad_clip": 200.0,
+    "frame_length": 50,
+    "frame_stride": 16,
+    "seed": 0,
+    "reproducibility": "soft",
+    "train_samples": null,
+    "eval_val": true,
+    "eval_test": true
+  },
+  "evaluation": {
+    "profile_id": "legacy-opendpd-v1",
+    "evidence_type": "dpd_surrogate",
+    "checkpoint_selection_metric": null,
+    "chunk_samples": null
+  },
+  "execution": {
+    "device": "cpu",
+    "device_index": 0,
+    "num_threads": null,
+    "cuda_graph_training": false
+  },
+  "pa_reference": {
+    "run_id": "run-20260912-092350-d2dcc8",
+    "checkpoint_artifact_id": null,
+    "checkpoint_sha256": null,
+    "model": null
+  },
+  "dpd_reference": null,
+  "quantization": null,
+  "measurement": null,
+  "initialization": null,
+  "notes": null
+}

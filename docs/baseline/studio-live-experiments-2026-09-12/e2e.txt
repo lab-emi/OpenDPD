@@ -1,0 +1,68 @@
+
+> opendpd-studio@2.2.0-dev0 e2e
+> playwright test --project=chromium-1366 --project=chromium-1920 --project=webkit-1366 --ignore-snapshots --workers=1
+
+[WebServer] (node:3758) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:3785) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 45 tests using 1 worker
+
+(node:3793) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (20.8s)
+  ✓   2 [chromium-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (6.6s)
+  ✓   3 [chromium-1366] › e2e/a11y.spec.ts:78:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (833ms)
+  ✓   4 [chromium-1366] › e2e/a11y.spec.ts:99:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (1.4s)
+  ✓   5 [chromium-1366] › e2e/a11y.spec.ts:137:3 › offline › the main journey contacts no host but the loopback one (1.5s)
+  ✓   6 [chromium-1366] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (3.5s)
+  ✓   7 [chromium-1366] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (1.2s)
+  ✓   8 [chromium-1366] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (2.8s)
+  ✓   9 [chromium-1366] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (199ms)
+  ✓  10 [chromium-1366] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (654ms)
+  ✓  11 [chromium-1366] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (3.1s)
+  ✓  12 [chromium-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (744ms)
+  -  13 [chromium-1366] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  14 [chromium-1366] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  15 [chromium-1366] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+(node:4270) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  16 [chromium-1920] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (20.5s)
+  ✓  17 [chromium-1920] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (6.7s)
+  ✓  18 [chromium-1920] › e2e/a11y.spec.ts:78:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (836ms)
+  ✓  19 [chromium-1920] › e2e/a11y.spec.ts:99:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (1.5s)
+  ✓  20 [chromium-1920] › e2e/a11y.spec.ts:137:3 › offline › the main journey contacts no host but the loopback one (1.5s)
+  ✓  21 [chromium-1920] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (3.5s)
+  ✓  22 [chromium-1920] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (1.1s)
+  ✓  23 [chromium-1920] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (2.4s)
+  ✓  24 [chromium-1920] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (172ms)
+  ✓  25 [chromium-1920] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (562ms)
+  ✓  26 [chromium-1920] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (3.2s)
+  ✓  27 [chromium-1920] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (928ms)
+  -  28 [chromium-1920] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  29 [chromium-1920] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  30 [chromium-1920] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+(node:4611) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  31 [webkit-1366] › e2e/a11y.spec.ts:26:3 › accessibility (axe-core) › main pages have no serious or critical WCAG 2.1 AA violations (23.1s)
+  ✓  32 [webkit-1366] › e2e/a11y.spec.ts:36:3 › accessibility (axe-core) › run detail tabs are accessible while a run is live (7.8s)
+  ✓  33 [webkit-1366] › e2e/a11y.spec.ts:78:3 › keyboard-only journey › page reset returns focus and global reset keeps focus in the new guide (1.2s)
+  ✓  34 [webkit-1366] › e2e/a11y.spec.ts:99:3 › keyboard-only journey › complete the dataset guide and start PA training without a pointer (1.7s)
+  ✓  35 [webkit-1366] › e2e/a11y.spec.ts:137:3 › offline › the main journey contacts no host but the loopback one (1.7s)
+  ✓  36 [webkit-1366] › e2e/journey.spec.ts:5:3 › J1 — reproduce the built-in example (mock API) › guided dataset setup → PA training → run detail → result, keyboard friendly (3.5s)
+  ✓  37 [webkit-1366] › e2e/journey.spec.ts:57:3 › J1 — reproduce the built-in example (mock API) › the language selector is in the top bar; a choice applies at once and survives a reload (1.4s)
+  ✓  38 [webkit-1366] › e2e/journey.spec.ts:77:3 › J1 — reproduce the built-in example (mock API) › main pages fit 1366×768 and 1920×1080 without horizontal scroll, also in the longest languages (2.7s)
+  ✓  39 [webkit-1366] › e2e/journey.spec.ts:89:3 › J1 — reproduce the built-in example (mock API) › unauthenticated session shows the bootstrap explanation, not a blank page (281ms)
+  ✓  40 [webkit-1366] › e2e/journey.spec.ts:98:3 › J3 — share and reproduce (mock API) › export a share package from a result, then import a package and open the imported run (757ms)
+  ✓  41 [webkit-1366] › e2e/journey.spec.ts:123:3 › J2 — my own data (mock API) › import CSV with odd headers → doctor → accept estimates → new version → experiment uses it (3.4s)
+[WebServer] 2:04:09 PM [vite] http proxy error: /api/v1/runs/run-e2e-0001/live
+[WebServer] Error: connect ECONNREFUSED 127.0.0.1:8765
+[WebServer]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2021:16)
+  ✓  42 [webkit-1366] › e2e/journey.spec.ts:171:3 › component gallery › renders real-size charts quickly and matches the visual baseline (999ms)
+  -  43 [webkit-1366] › e2e/live.spec.ts:42:1 › bootstrap, train the smoke recipe, read the result and export a share package
+  -  44 [webkit-1366] › e2e/live.spec.ts:77:1 › timings: page load, tab switching, chart re-render, DOM size, heap growth
+  -  45 [webkit-1366] › e2e/live.spec.ts:142:1 › a very long worker log stays windowed and searchable
+
+  9 skipped
+  36 passed (2.3m)

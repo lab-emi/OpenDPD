@@ -1,0 +1,16 @@
+{
+  "pid": 9314,
+  "port": 8765,
+  "workspace": "/Users/gaochang/opendpd-workspace",
+  "health": {
+    "status": "ok"
+  },
+  "process": [
+    "/Users/gaochang/git/OpenDPD/.venv/bin/python",
+    "/Users/gaochang/git/OpenDPD/.venv/bin/opendpd",
+    "gui",
+    "--window",
+    "--workspace",
+    "/Users/gaochang/opendpd-workspace"
+  ]
+}

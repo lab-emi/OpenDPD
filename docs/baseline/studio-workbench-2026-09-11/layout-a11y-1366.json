@@ -1,0 +1,31 @@
+{
+  "violations": [],
+  "url": "/datasets/dpa-200mhz",
+  "width": 1366,
+  "height": 768,
+  "documentWidth": 1366,
+  "documentHeight": 768,
+  "workbenchBottom": 721.390625,
+  "plots": [
+    {
+      "legendY": 1.04,
+      "legendOrientation": "h",
+      "yTitle": "PSD (dB/Hz)"
+    },
+    {
+      "legendY": 1.04,
+      "legendOrientation": "h",
+      "yTitle": "Amplitude"
+    },
+    {
+      "legendY": 1.04,
+      "legendOrientation": "h",
+      "yTitle": "Q"
+    },
+    {
+      "legendY": 1.04,
+      "legendOrientation": "h",
+      "yTitle": "|output|"
+    }
+  ]
+}

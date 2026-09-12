@@ -1,0 +1,191 @@
+
+> opendpd-studio@2.2.0-dev0 test
+> vitest run --maxWorkers=2
+
+
+ RUN  v5.0.0 /Users/gaochang/git/OpenDPD/frontend
+
+ ❯ src/pages/RunDetailPage.test.tsx (8 tests | 1 failed) 2659ms
+   × a succeeded DPD run shows its lineage and can be applied through another surrogate 517ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/RunDetailPage.test.tsx > a succeeded DPD run shows its lineage and can be applied through another surrogate
+TestingLibraryElementError: Unable to find an element with the text: /there is no training history/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m""[39m
+[36m>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"MuiStack-root css-1sazv7p-MuiStack-root"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiStack-root css-1pttel6-MuiStack-root"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"MuiTypography-root MuiTypography-h1 css-ppdo95-MuiTypography-root"[39m
+        [36m>[39m
+          [0mPA GRU smoke[0m
+        [36m</h1>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault css-ppav1q-MuiChip-root"[39m
+          [33mdata-status[39m=[32m"queued"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall MuiChip-icon css-120dh41-MuiSvgIcon-root"[39m
+            [33mdata-testid[39m=[32m"HourglassEmptyIcon"[39m
+            [33mfocusable[39m=[32m"false"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2zm10 14.5V20H8v-3.5l4-4zm-4-5-4-4V4h8v3.5z"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"MuiChip-label css-16cgrcw-MuiChip-label"[39m
+          [36m>[39m
+            [0mQueued[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault css-1f1cwd7-MuiChip-root"[39m
+          [33mdata-testid[39m=[32m"stream-state"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"MuiChip-label css-19m61dl-MuiChip-label"[39m
+          [36m>[39m
+            [0mconnecting[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiStack-root css-bmx8o5-MuiStack-root"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-sizeSmall MuiButton-colorError css-1oj4ens-MuiButtonBase-root-MuiButton-root"[39m
+            [33mtabindex[39m=[32m"0"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mCancel run[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"MuiTypography-root MuiTypography-body2 css-1ey0m1i-MuiTypography-root"[39m
+      [36m>[39m
+        [36m<code>[39m
+          [0mrun-apply-0003[0m
+        [36m</code>[39m
+        [0m · [0m
+        [0mDPD Model Testing[0m
+        [0m · [0m
+        [0mgru[0m
+        [0m · [0m
+        [0mdpa-200mhz[0m
+        [0m · [0m
+        [0mcpu[0m
+      [36m</p>[39m
+      [36m<nav[39m
+        [33maria-label[39m=[32m"Choose a task"[39m
+        [33mclass[39m=[32m"MuiBox-root css-1qcxbps"[39m
+      [36m>[39m
+        [36m<a[39m
+          [33mclass[39m=[32m"MuiButtonBase-root css-1oj4rhc-MuiButtonBase-root"[39m
+          [33mdata-discover[39m=[32m"true"[39m
+          [33mhref[39m=[32m"/experiments/new?task=train_pa&dataset=dpa-200mhz"[39m
+          [33mtabindex[39m=[32m"0"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-1kse77f-MuiStack-root"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-120dh41-MuiSvgIcon-root"[39m
+              [33mdata-testid[39m=[32m"ModelTrainingIcon"[39m
+              [33mfocusable[39m=[32m"false"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15.5 13.5c0 2-2.5 3.5-2.5 5h-2c0-1.5-2.5-3-2.5-5 0-1.93 1.57-3.5 3.5-3.5s3.5 1.57 3.5 3.5m-2.5 6h-2V21h2zm6-6.5c0 1.68-.59 3.21-1.58 4.42l1.42 1.42C20.18 17.27 21 15.23 21 13c0-2.74-1.23-5.19-3.16-6.84l-1.42 1.42C17.99 8.86 19 10.82 19 13m-3-8-4-4v3c-4.97 0-9 4.03-9 9 0 2.23.82 4.27 2.16 5.84l1.42-1.42C5.59 16.21 5 14.68 5 13c0-3.86 3.14-7 7-7v3z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"MuiTypography-root MuiTypography-caption css-14snwoz-MuiTypography-root"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m1[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiBox-root css-1rr4qq7"[39m
+            [36m/>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-6dq5bp-MuiSvgIcon-root"[39m
+              [33mdata-testid[39m=[32m"ArrowForwardIcon"[39m
+              [33mfocusable[39m=[32m"false"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m12 4-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</div>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-body1 css-101q7ub-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPA Model Training[0m
+          [36m</p>[39m
+        [36m</a>[39m
+        [36m<a[39m
+          [33mclass[39m=[32m"MuiButtonBase-root css-1oj4rhc-MuiButtonBase-root"[39m
+          [33mdata-discover[39m=[32m"true"[39m
+          [33mhref[39m=[32m"/experiments/new?task=evaluate_pa&dataset=dpa-200mhz"[39m
+          [33mtabindex[39m=[32m"0"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-1kse77f-MuiStack-root"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-120dh41-MuiSvgIcon-root"[39m
+              [33mdata-testid[39m=[32m"CheckCircleIcon"[39m
+              [33mfocusable[39m=[32m"false"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"MuiTypography-root MuiTypography-caption css-14snwoz-MuiTypography-root"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m2[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mcla...
+ ❯ Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/pages/RunDetailPage.test.tsx:116:17
+    114|   await screen.findByText('run-apply-0003')
+    115|   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    116|   expect(screen.getByText(/there is no training history/)).toBeInTheDo…
+       |                 ^
+    117| })
+    118|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 29 passed (30)
+      Tests  1 failed | 120 passed (121)
+   Start at  13:59:25
+   Duration  41.67s (tests 60%, environment 20%, import 14%, setup 3%, transform 2%)
+
+    Isolate  30 workers spawned · ~642ms startup each (spawn + environment, per file)
+             at least ~8.98s faster with isolate: false — reuses workers across files instead of one per file
+

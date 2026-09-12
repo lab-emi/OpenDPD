@@ -22,8 +22,17 @@ LINUX_HINT = ("install the WebKit2GTK bindings (Debian/Ubuntu: python3-gi gir1.2
               'or pip install "pywebview[qt]"')
 ICON_DIR = Path(__file__).resolve().parent
 DEFAULT_SIZE = (1366, 860)
-MIN_SIZE = (960, 600)
+MIN_SIZE = (640, 480)
 TITLE = "OpenDPD Studio"
+
+
+def window_geometry(screen=None):
+    """Use logical screen coordinates so Retina scaling is not applied twice."""
+    size = DEFAULT_SIZE
+    if screen is not None and screen.width > 0 and screen.height > 0:
+        size = (min(DEFAULT_SIZE[0], max(320, screen.width - 80)),
+                min(DEFAULT_SIZE[1], max(360, screen.height - 100)))
+    return size, (min(MIN_SIZE[0], size[0]), min(MIN_SIZE[1], size[1]))
 
 
 @dataclass(frozen=True)
@@ -100,6 +109,28 @@ def should_close(active: int, ask: Callable[[str, str], bool], strings: ShellStr
         print(f"warning: could not ask before closing ({err}); stopping the running experiments",
               file=out or sys.stderr)
         return True
+
+
+def _macos_confirm_quit(title: str, message: str, strings: ShellStrings) -> bool:
+    """Ask synchronously from Cocoa's main-thread windowShouldClose callback.
+
+    pywebview's create_confirmation_dialog queues its alert with callAfter and
+    then waits on a semaphore. Calling it here deadlocks the very thread needed
+    to show the alert. NSAlert's modal loop keeps Cocoa processing events while
+    the user decides; returning False vetoes the original close request.
+    """
+    import AppKit
+
+    AppKit.NSRunningApplication.currentApplication().activateWithOptions_(
+        AppKit.NSApplicationActivateIgnoringOtherApps)
+    alert = AppKit.NSAlert.alloc().init()
+    alert.setIcon_(AppKit.NSApplication.sharedApplication().applicationIconImage())
+    alert.setMessageText_(title)
+    alert.setInformativeText_(message)
+    alert.setAlertStyle_(AppKit.NSWarningAlertStyle)
+    alert.addButtonWithTitle_(strings.localization["global.quit"])
+    alert.addButtonWithTitle_(strings.localization["global.cancel"])
+    return alert.runModal() == AppKit.NSAlertFirstButtonReturn
 
 
 def _name_the_application(title: str) -> None:
@@ -196,11 +227,20 @@ def run_window(url: str, *, active_runs: Callable[[], int], strings: Callable[[]
     webview.settings["ALLOW_DOWNLOADS"] = True
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
     _name_the_application(title)
-    window = webview.create_window(title, url, width=DEFAULT_SIZE[0], height=DEFAULT_SIZE[1],
-                                   min_size=MIN_SIZE, text_select=True)
+    try:
+        screens = webview.screens
+        size, minimum = window_geometry(screens[0] if screens else None)
+    except Exception:  # noqa: BLE001 - a failed display query must not prevent startup
+        size, minimum = window_geometry()
+    window = webview.create_window(title, url, width=size[0], height=size[1],
+                                   min_size=minimum, text_select=True)
 
     def on_closing():
-        return should_close(active_runs(), window.create_confirmation_dialog, strings(), out)
+        current_strings = strings()
+        ask = window.create_confirmation_dialog
+        if sys.platform == "darwin":
+            ask = lambda title, message: _macos_confirm_quit(title, message, current_strings)
+        return should_close(active_runs(), ask, current_strings, out)
 
     window.events.closing += on_closing
 

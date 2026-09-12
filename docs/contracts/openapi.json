@@ -358,6 +358,41 @@
         "title": "AdaptationReportSummary",
         "type": "object"
       },
+      "AmTrace": {
+        "additionalProperties": false,
+        "properties": {
+          "amp_out": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Amp Out",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phase_deg": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Phase Deg",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "amp_out",
+          "phase_deg"
+        ],
+        "title": "AmTrace",
+        "type": "object"
+      },
       "Artifact": {
         "additionalProperties": false,
         "properties": {
@@ -535,8 +570,77 @@
         "title": "BootstrapRequest",
         "type": "object"
       },
+      "BuiltinDatasetInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_format": {
+            "title": "Dataset Format",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "has_demodulator": {
+            "title": "Has Demodulator",
+            "type": "boolean"
+          },
+          "n_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Samples"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/DatasetOrigin"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "raw_sha256": {
+            "title": "Raw Sha256",
+            "type": "string"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/SignalSpec"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "dataset_format",
+          "signal",
+          "has_demodulator",
+          "origin",
+          "raw_sha256"
+        ],
+        "title": "BuiltinDatasetInfo",
+        "type": "object"
+      },
       "Capabilities": {
         "properties": {
+          "custom_dataset_imports": {
+            "default": false,
+            "title": "Custom Dataset Imports",
+            "type": "boolean"
+          },
           "devices": {
             "items": {
               "$ref": "#/components/schemas/DeviceInfo"
@@ -1117,6 +1221,293 @@
         "title": "ConditionSet",
         "type": "object"
       },
+      "ConstellationTrace": {
+        "additionalProperties": false,
+        "properties": {
+          "equalized": {
+            "title": "Equalized",
+            "type": "boolean"
+          },
+          "i": {
+            "items": {
+              "type": "number"
+            },
+            "title": "I",
+            "type": "array"
+          },
+          "n_symbols": {
+            "title": "N Symbols",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "q": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Q",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "stride": {
+            "title": "Stride",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "i",
+          "q",
+          "n_symbols",
+          "stride",
+          "equalized"
+        ],
+        "title": "ConstellationTrace",
+        "type": "object"
+      },
+      "CsvCreateRequest": {
+        "properties": {
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "expected_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Expected Sha256",
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/CsvOptions"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/DatasetOrigin",
+            "default": "unknown"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/SignalSpec"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "split": {
+            "$ref": "#/components/schemas/DatasetImportDefaults"
+          }
+        },
+        "required": [
+          "source",
+          "dataset_id",
+          "display_name",
+          "expected_sha256"
+        ],
+        "title": "CsvCreateRequest",
+        "type": "object"
+      },
+      "CsvInspection": {
+        "additionalProperties": false,
+        "properties": {
+          "boundaries": {
+            "additionalProperties": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Boundaries",
+            "type": "object"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "data_valid": {
+            "default": false,
+            "title": "Data Valid",
+            "type": "boolean"
+          },
+          "issue_count": {
+            "default": 0,
+            "title": "Issue Count",
+            "type": "integer"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/CsvIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "n_samples": {
+            "default": 0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "options": {
+            "$ref": "#/components/schemas/CsvOptions"
+          },
+          "preview": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Preview",
+            "type": "array"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "split": {
+            "$ref": "#/components/schemas/DatasetImportDefaults"
+          },
+          "split_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Split Counts",
+            "type": "object"
+          },
+          "valid": {
+            "default": false,
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "title": "CsvInspection",
+        "type": "object"
+      },
+      "CsvIssue": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column"
+          },
+          "fix": {
+            "title": "Fix",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "fix"
+        ],
+        "title": "CsvIssue",
+        "type": "object"
+      },
+      "CsvOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "complex_pair",
+              "iq_columns"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "header": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "present",
+              "absent"
+            ],
+            "title": "Header",
+            "type": "string"
+          },
+          "mapping": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Mapping",
+            "type": "object"
+          }
+        },
+        "title": "CsvOptions",
+        "type": "object"
+      },
+      "CsvPreviewRequest": {
+        "properties": {
+          "options": {
+            "$ref": "#/components/schemas/CsvOptions"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/SignalSpec"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRef"
+          },
+          "split": {
+            "$ref": "#/components/schemas/DatasetImportDefaults"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "CsvPreviewRequest",
+        "type": "object"
+      },
       "DPDReference": {
         "additionalProperties": false,
         "properties": {
@@ -1169,6 +1560,130 @@
           "run_id"
         ],
         "title": "DPDReference",
+        "type": "object"
+      },
+      "DatasetAnalysis": {
+        "additionalProperties": false,
+        "properties": {
+          "am": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionAm"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "constellation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionConstellation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_version": {
+            "title": "Data Version",
+            "type": "string"
+          },
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "diagnostics": {
+            "$ref": "#/components/schemas/DiagnosticReport"
+          },
+          "inspection_ready": {
+            "title": "Inspection Ready",
+            "type": "boolean"
+          },
+          "iq": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionIQ"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "measurements": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionMeasurement"
+            },
+            "title": "Measurements",
+            "type": "array"
+          },
+          "metadata_complete": {
+            "title": "Metadata Complete",
+            "type": "boolean"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "sample_range": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Sample Range",
+            "type": "array"
+          },
+          "spectrum": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionSpectrum"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "time": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionTime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_samples": {
+            "title": "Total Samples",
+            "type": "integer"
+          },
+          "version": {
+            "const": "dataset-inspection-v1",
+            "default": "dataset-inspection-v1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "data_version",
+          "total_samples",
+          "sample_range",
+          "metadata_complete",
+          "inspection_ready",
+          "diagnostics",
+          "measurements"
+        ],
+        "title": "DatasetAnalysis",
         "type": "object"
       },
       "DatasetEvidence": {
@@ -1240,6 +1755,27 @@
           "split_version"
         ],
         "title": "DatasetEvidence",
+        "type": "object"
+      },
+      "DatasetImportDefaults": {
+        "additionalProperties": false,
+        "properties": {
+          "guard_samples": {
+            "default": 256,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Guard Samples",
+            "type": "integer"
+          },
+          "ratios": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Ratios",
+            "type": "object"
+          }
+        },
+        "title": "DatasetImportDefaults",
         "type": "object"
       },
       "DatasetManifest": {
@@ -2868,6 +3404,41 @@
         "title": "HistoryPoint",
         "type": "object"
       },
+      "IQTrace": {
+        "additionalProperties": false,
+        "properties": {
+          "i": {
+            "items": {
+              "type": "number"
+            },
+            "title": "I",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "q": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Q",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "i",
+          "q"
+        ],
+        "title": "IQTrace",
+        "type": "object"
+      },
       "ImportBuiltinRequest": {
         "properties": {
           "dataset_id": {
@@ -3098,6 +3669,468 @@
           "run_id"
         ],
         "title": "InitReference",
+        "type": "object"
+      },
+      "InspectionAm": {
+        "additionalProperties": false,
+        "properties": {
+          "amp_in": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Amp In",
+            "type": "array"
+          },
+          "kind": {
+            "const": "am",
+            "title": "Kind",
+            "type": "string"
+          },
+          "n_points": {
+            "title": "N Points",
+            "type": "integer"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "stride": {
+            "title": "Stride",
+            "type": "integer"
+          },
+          "traces": {
+            "items": {
+              "$ref": "#/components/schemas/AmTrace"
+            },
+            "title": "Traces",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "stride",
+          "n_points",
+          "n_samples",
+          "amp_in",
+          "traces",
+          "note"
+        ],
+        "title": "InspectionAm",
+        "type": "object"
+      },
+      "InspectionConstellation": {
+        "additionalProperties": false,
+        "properties": {
+          "active_subcarriers_per_carrier": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Subcarriers Per Carrier"
+          },
+          "dataset_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Name"
+          },
+          "demodulator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demodulator"
+          },
+          "fft_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fft Size"
+          },
+          "modulation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modulation"
+          },
+          "n_carriers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Carriers"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "sample_range": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Range"
+          },
+          "source_sample_range": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Sample Range"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "unavailable",
+              "invalid"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "traces": {
+            "items": {
+              "$ref": "#/components/schemas/ConstellationTrace"
+            },
+            "title": "Traces",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "note"
+        ],
+        "title": "InspectionConstellation",
+        "type": "object"
+      },
+      "InspectionIQ": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "iq",
+            "title": "Kind",
+            "type": "string"
+          },
+          "mode": {
+            "const": "samples",
+            "title": "Mode",
+            "type": "string"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "stride": {
+            "title": "Stride",
+            "type": "integer"
+          },
+          "traces": {
+            "items": {
+              "$ref": "#/components/schemas/IQTrace"
+            },
+            "title": "Traces",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "mode",
+          "stride",
+          "n_samples",
+          "traces"
+        ],
+        "title": "InspectionIQ",
+        "type": "object"
+      },
+      "InspectionMeasurement": {
+        "additionalProperties": false,
+        "properties": {
+          "input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionReading"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "output": {
+            "$ref": "#/components/schemas/InspectionReading"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "unit",
+          "method",
+          "output"
+        ],
+        "title": "InspectionMeasurement",
+        "type": "object"
+      },
+      "InspectionReading": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "invalid",
+              "not_applicable",
+              "missing_reference",
+              "review_required"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "InspectionReading",
+        "type": "object"
+      },
+      "InspectionSpectrum": {
+        "additionalProperties": false,
+        "properties": {
+          "axis": {
+            "enum": [
+              "hz",
+              "normalized"
+            ],
+            "title": "Axis",
+            "type": "string"
+          },
+          "bands": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SpectrumBands"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estimator": {
+            "title": "Estimator",
+            "type": "string"
+          },
+          "frequency": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Frequency",
+            "type": "array"
+          },
+          "kind": {
+            "const": "spectrum",
+            "title": "Kind",
+            "type": "string"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "nperseg": {
+            "title": "Nperseg",
+            "type": "integer"
+          },
+          "sample_rate_hz": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate Hz"
+          },
+          "traces": {
+            "items": {
+              "$ref": "#/components/schemas/SpectrumTrace"
+            },
+            "title": "Traces",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "axis",
+          "sample_rate_hz",
+          "nperseg",
+          "n_samples",
+          "frequency",
+          "traces",
+          "bands",
+          "estimator"
+        ],
+        "title": "InspectionSpectrum",
+        "type": "object"
+      },
+      "InspectionTime": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "time",
+            "title": "Kind",
+            "type": "string"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "traces": {
+            "items": {
+              "$ref": "#/components/schemas/IQTrace"
+            },
+            "title": "Traces",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "kind",
+          "start",
+          "n",
+          "n_samples",
+          "traces"
+        ],
+        "title": "InspectionTime",
         "type": "object"
       },
       "LineageLink": {
@@ -5726,6 +6759,75 @@
         "title": "SourceRef",
         "type": "object"
       },
+      "SpectrumBands": {
+        "additionalProperties": false,
+        "properties": {
+          "adjacent": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Adjacent",
+            "type": "array"
+          },
+          "main": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Main",
+            "type": "array"
+          }
+        },
+        "required": [
+          "main",
+          "adjacent"
+        ],
+        "title": "SpectrumBands",
+        "type": "object"
+      },
+      "SpectrumTrace": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "psd_db": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Psd Db",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "psd_db"
+        ],
+        "title": "SpectrumTrace",
+        "type": "object"
+      },
       "SplitSpec": {
         "additionalProperties": false,
         "description": "Contiguous train/val/test split performed *before* framing, with an\noptional guard band so overlapping frames never straddle a boundary.",
@@ -6500,12 +7602,14 @@
               {
                 "enum": [
                   "en",
+                  "nl",
+                  "zh",
                   "fr",
                   "de",
-                  "es",
-                  "zh",
+                  "it",
                   "ja",
-                  "ko"
+                  "ko",
+                  "es"
                 ],
                 "type": "string"
               },
@@ -6685,6 +7789,113 @@
         ]
       }
     },
+    "/api/v1/datasets/builtin": {
+      "get": {
+        "operationId": "datasets_builtin_api_v1_datasets_builtin_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BuiltinDatasetInfo"
+                  },
+                  "title": "Response Datasets Builtin Api V1 Datasets Builtin Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Datasets Builtin",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/csv": {
+      "post": {
+        "operationId": "dataset_csv_create_api_v1_datasets_csv_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetManifest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Csv Create",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/csv/preview": {
+      "post": {
+        "operationId": "dataset_csv_preview_api_v1_datasets_csv_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvPreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvInspection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Csv Preview",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
     "/api/v1/datasets/import": {
       "post": {
         "operationId": "dataset_import_api_v1_datasets_import_post",
@@ -6762,6 +7973,27 @@
           }
         },
         "summary": "Dataset Import Builtin",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/import-defaults": {
+      "get": {
+        "operationId": "dataset_import_defaults_api_v1_datasets_import_defaults_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetImportDefaults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Dataset Import Defaults",
         "tags": [
           "datasets"
         ]
@@ -6969,6 +8201,59 @@
           }
         },
         "summary": "Dataset Get",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_id}/analysis": {
+      "get": {
+        "operationId": "dataset_analysis_api_v1_datasets__dataset_id__analysis_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "default": "raw-v1",
+              "maxLength": 64,
+              "title": "Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetAnalysis"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Analysis",
         "tags": [
           "datasets"
         ]
@@ -7321,6 +8606,35 @@
       "post": {
         "description": "Write an experiment package into <workspace>/exports. `share` leaves user data, logs and machine paths out.",
         "operationId": "exports_create_api_v1_exports_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "en",
+                    "nl",
+                    "zh",
+                    "fr",
+                    "de",
+                    "it",
+                    "ja",
+                    "ko",
+                    "es"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -7770,6 +9084,33 @@
               ],
               "title": "Format",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "en",
+                    "nl",
+                    "zh",
+                    "fr",
+                    "de",
+                    "it",
+                    "ja",
+                    "ko",
+                    "es"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
             }
           }
         ],
@@ -8374,6 +9715,51 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/live": {
+      "get": {
+        "description": "Latest bounded display snapshot; the worker alone computes the plots.",
+        "operationId": "runs_live_api_v1_runs__run_id__live_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Runs Live Api V1 Runs  Run Id  Live Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Runs Live",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/logs": {
       "get": {
         "description": "Page through logs/worker.log by byte offset (safe for very large logs).\n\nA trailing line without newline is returned only once the run has finished\n(while running it may still be written).",
@@ -8409,6 +9795,16 @@
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tail",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Tail",
+              "type": "boolean"
             }
           }
         ],
@@ -8601,6 +9997,29 @@
         "summary": "Settings Put",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/api/v1/system/about": {
+      "get": {
+        "operationId": "system_about_api_v1_system_about_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response System About Api V1 System About Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "System About",
+        "tags": [
+          "system"
         ]
       }
     },

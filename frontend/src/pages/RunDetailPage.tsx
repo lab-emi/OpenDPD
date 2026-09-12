@@ -1,5 +1,6 @@
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Dialog from '@mui/material/Dialog'
@@ -27,12 +28,14 @@ import { useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router'
 import { artifactUrl } from '@/api/client'
 import { useRunStream } from '@/api/events'
-import { keys, useCancelRun, useModels, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
+import { keys, useCancelRun, useCustomDatasetImports, useModels, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
 import { isTerminal, type LineageLink, type LineageRelation, type RunView } from '@/api/types'
-import { t, type MessageKey } from '@/i18n'
+import { message, t, type MessageKey } from '@/i18n'
 import { LogViewer } from '@/components/LogViewer'
 import { MeasurementDialog } from '@/components/MeasurementDialog'
 import { MetricHistoryChart } from '@/components/MetricHistoryChart'
+import { LiveRunDashboard } from '@/components/LiveRunDashboard'
+import { ExperimentTasks, taskLabel } from '@/components/ExperimentTasks'
 import { RunTimeline } from '@/components/RunTimeline'
 import { StatusChip } from '@/components/StatusChip'
 import { DisconnectedState, EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
@@ -58,6 +61,7 @@ const NEXT_STEP: Partial<Record<RunView['status'], MessageKey>> = {
 }
 
 export function RunDetailPage() {
+  const customDatasets = useCustomDatasetImports()
   const { runId = '' } = useParams()
   const [params, setParams] = useSearchParams()
   const tab: TabKey = TABS.includes(params.get('tab') as TabKey) ? (params.get('tab') as TabKey) : 'overview'
@@ -119,8 +123,8 @@ export function RunDetailPage() {
             </Button>
           )}
           {r.status === 'succeeded' && r.task === 'run_dpd' && (
-            <Button variant="outlined" size="small" onClick={() => setMeasureOpen(true)}>
-              {t('run.measure')}
+            <Button variant="outlined" size="small" disabled={!customDatasets} onClick={() => setMeasureOpen(true)}>
+              {t('run.measure')}{!customDatasets && ` · ${t('common.comingSoon')}`}
             </Button>
           )}
           {r.status === 'succeeded' && (r.task === 'train_pa' || r.task === 'train_dpd') && <StreamButton run={r} />}
@@ -132,9 +136,9 @@ export function RunDetailPage() {
         </Stack>
       </Stack>
       {applyOpen && <ApplyDpdDialog run={r} onClose={() => setApplyOpen(false)} />}
-      {measureOpen && <MeasurementDialog run={r} onClose={() => setMeasureOpen(false)} />}
+      {customDatasets && measureOpen && <MeasurementDialog run={r} onClose={() => setMeasureOpen(false)} />}
       <Typography variant="body2" color="text.secondary">
-        <code>{r.run_id}</code> · {r.task} · {r.model_key} · {r.dataset_id} · {r.device}
+        <code>{r.run_id}</code> · {taskLabel(r.task)} · {r.model_key} · {r.dataset_id} · {r.device}
         {r.parent_run_id && (
           <>
             {' '}
@@ -145,6 +149,7 @@ export function RunDetailPage() {
           </>
         )}
       </Typography>
+      <ExperimentTasks active={r.task} dataset={r.dataset_id ?? undefined} compact />
       {retry.data && (
         <Alert severity="success">
           <Link component={RouterLink} to={`/runs/${encodeURIComponent(retry.data.run_id)}`}>
@@ -158,12 +163,12 @@ export function RunDetailPage() {
       {r.error && (
         <Alert severity="error" data-testid="run-error">
           <AlertTitle>
-            {t('run.error.stage', { stage: r.error.stage ?? '?' })}: {r.error.message}
+            {t('run.error.stage', { stage: message(r.error.stage ?? '?') })}: {message(r.error.message)}
           </AlertTitle>
           {r.error.hint && (
             <Typography variant="body2">
               <strong>{t('run.error.hint')}: </strong>
-              {r.error.hint}
+              {message(r.error.hint)}
             </Typography>
           )}
           {r.error.traceback_tail && (
@@ -175,20 +180,21 @@ export function RunDetailPage() {
         </Alert>
       )}
       {nextStep && !r.error && <Alert severity={r.status === 'succeeded' ? 'success' : 'info'}>{t(nextStep)}</Alert>}
-      {r.status_reason && r.status !== 'succeeded' && !r.error && <Typography color="text.secondary">{r.status_reason}</Typography>}
-      <Paper sx={{ p: 2 }}>
+      {r.status_reason && r.status !== 'succeeded' && !r.error && <Typography color="text.secondary">{message(r.status_reason)}</Typography>}
+      {(progress || (active && (r.task === 'train_pa' || r.task === 'train_dpd'))) && <Paper sx={{ p: 2 }}>
         <Typography variant="body2" gutterBottom>
           {progress ? t('run.progress', { epoch: progress.epoch + 1, total: progress.total }) : r.status === 'running' ? t('run.progress.none') : ''}
         </Typography>
         {progress && active && <LinearProgress variant="determinate" value={((progress.epoch + 1) / progress.total) * 100} aria-label={t('run.progress', { epoch: progress.epoch + 1, total: progress.total })} />}
-      </Paper>
-      <Tabs value={tab} onChange={(_, v: TabKey) => setParams(v === 'overview' ? {} : { tab: v })} aria-label={t('run.title')}>
+      </Paper>}
+      <Tabs variant="scrollable" scrollButtons="auto" value={tab} onChange={(_, v: TabKey) => setParams(v === 'overview' ? {} : { tab: v })} aria-label={t('run.title')}>
         <Tab value="overview" label={t('run.tabs.overview')} id="tab-overview" aria-controls="panel-overview" />
         <Tab value="logs" label={t('run.tabs.logs')} id="tab-logs" aria-controls="panel-logs" />
         <Tab value="artifacts" label={t('run.tabs.artifacts')} id="tab-artifacts" aria-controls="panel-artifacts" />
         <Tab value="config" label={t('run.tabs.config')} id="tab-config" aria-controls="panel-config" />
       </Tabs>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === 'overview' && <LiveRunDashboard key={r.run_id} run={r} stream={stream} metrics={stream.metrics.length > 0 ? stream.metrics : historyPoints} />}
         {tab === 'overview' && <OverviewTab run={r} metrics={stream.metrics.length > 0 ? stream.metrics : historyPoints} fromHistory={stream.metrics.length === 0 && historyPoints.length > 0} statusEvents={stream.statusEvents} heartbeats={stream.heartbeats} />}
         {tab === 'logs' && <LogViewer runId={runId} live={active} />}
         {tab === 'artifacts' && <ArtifactsTab runId={runId} />}
@@ -199,10 +205,12 @@ export function RunDetailPage() {
 }
 
 function OverviewTab({ run, metrics, fromHistory, statusEvents, heartbeats }: { run: RunView; metrics: ReturnType<typeof useRunStream>['metrics']; fromHistory: boolean; statusEvents: ReturnType<typeof useRunStream>['statusEvents']; heartbeats: number }) {
-  const names = [...new Set(metrics.flatMap((m) => Object.keys(m.values)))]
+  const training = run.task === 'train_pa' || run.task === 'train_dpd'
+  const primary = run.task === 'train_dpd' || run.task === 'run_dpd' ? 'ACLR_AVG' : 'NMSE'
+  const names = [...new Set(metrics.flatMap((m) => Object.keys(m.values)))].filter((name) => name !== primary)
   return (
-    <Grid container spacing={2}>
-      <Grid size={{ xs: 12, lg: 8 }}>
+    <Grid container spacing={2} sx={{ mt: 2 }}>
+      {training && <Grid size={{ xs: 12, lg: 8 }}>
         <Typography variant="h2" gutterBottom>
           {t('run.metrics.title')}
         </Typography>
@@ -216,14 +224,15 @@ function OverviewTab({ run, metrics, fromHistory, statusEvents, heartbeats }: { 
         ) : (
           <Grid container spacing={2}>
             {names.map((name) => (
-              <Grid key={name} size={{ xs: 12, md: 6 }}>
+              <Grid key={`${run.run_id}:${name}`} size={{ xs: 12, md: 6 }}>
                 <MetricHistoryChart points={metrics} metric={name} />
               </Grid>
             ))}
           </Grid>
         )}
-      </Grid>
-      <Grid size={{ xs: 12, lg: 4 }}>
+      </Grid>}
+      {!training && <Grid size={12}><Typography variant="body2" color="text.secondary">{t('run.metrics.apply')}</Typography></Grid>}
+      <Grid size={{ xs: 12, lg: training ? 4 : 12 }}>
         <Stack spacing={2}>
           <RunTimeline run={run} statusEvents={statusEvents} heartbeats={heartbeats} />
           <LineageCard runId={run.run_id} />
@@ -245,7 +254,7 @@ function LineageCard({ runId }: { runId: string }) {
       <Link component={RouterLink} to={`/runs/${encodeURIComponent(link.run_id)}`}>
         {link.run_id}
       </Link>
-      {link.status ? ` · ${link.status}` : ''}
+      {link.status ? ` · ${message(link.status)}` : ''}
       {link.checkpoint_sha256 ? ` · ${t('run.lineage.weights', { sha: link.checkpoint_sha256.slice(0, 12) })}` : ''}
     </Typography>
   )
@@ -381,10 +390,10 @@ function ArtifactsTab({ runId }: { runId: string }) {
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>id</TableCell>
-            <TableCell>kind</TableCell>
-            <TableCell>path</TableCell>
-            <TableCell align="right">bytes</TableCell>
+            <TableCell>{message('id')}</TableCell>
+            <TableCell>{message('kind')}</TableCell>
+            <TableCell>{message('path')}</TableCell>
+            <TableCell align="right">{message('bytes')}</TableCell>
             <TableCell />
           </TableRow>
         </TableHead>
@@ -394,7 +403,7 @@ function ArtifactsTab({ runId }: { runId: string }) {
               <TableCell>
                 <code>{a.artifact_id}</code>
               </TableCell>
-              <TableCell>{a.kind}</TableCell>
+              <TableCell>{message(a.kind)}</TableCell>
               <TableCell>
                 <code>{a.file.path}</code>
               </TableCell>
@@ -432,7 +441,7 @@ function ConfigTab({ runId, run }: { runId: string; run: RunView }) {
       <Typography variant="h3" component="h2">
         {t('run.config.resolved')}
       </Typography>
-      <pre style={{ margin: 0, padding: 12, background: '#F6F7F9', borderRadius: 8, overflow: 'auto', fontSize: 12 }}>{JSON.stringify(cfg.data, null, 2)}</pre>
+      <Box component="pre" sx={{ m: 0, p: 1.5, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'auto', fontSize: 12 }}>{JSON.stringify(cfg.data, null, 2)}</Box>
     </Stack>
   )
 }

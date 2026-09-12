@@ -8,7 +8,7 @@ import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import type { MetricDefinition, MetricValue } from '@/api/types'
-import { t } from '@/i18n'
+import { message, t } from '@/i18n'
 
 export function formatMetric(m: MetricValue): string {
   if (m.status === 'ok' && typeof m.value === 'number') return `${m.value.toFixed(2)} ${m.unit}`.trim()
@@ -29,29 +29,29 @@ export function MetricCard({ metric, definition }: { metric: MetricValue; defini
   const direction = metric.better === 'lower' ? t('metric.lowerBetter') : t('metric.higherBetter')
   const Arrow = metric.better === 'lower' ? ArrowDownwardIcon : ArrowUpwardIcon
   return (
-    <Card component="section" aria-label={metric.name} data-metric={metric.name} data-status={metric.status} sx={{ minWidth: 150 }}>
+    <Card component="section" aria-label={metric.name} data-metric={metric.name} data-status={metric.status} sx={{ minWidth: 0, height: '100%' }}>
       <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="overline" component="h3" sx={{ lineHeight: 1.4 }}>
-            {definition?.display_name ?? metric.name}
+          <Typography variant="overline" component="h3" sx={{ lineHeight: 1.4, minWidth: 0, overflowWrap: 'anywhere' }}>
+            {message(definition?.display_name ?? metric.name)}
           </Typography>
           {definition && (
             <Tooltip
               title={
                 <span>
-                  <strong>{t('metric.formula')}:</strong> {definition.formula}
+                  <strong>{t('metric.formula')}:</strong> {message(definition.formula)}
                   <br />
-                  <strong>{t('metric.aggregation')}:</strong> {definition.aggregation}
+                  <strong>{t('metric.aggregation')}:</strong> {message(definition.aggregation)}
                   {definition.notes ? (
                     <>
                       <br />
-                      {definition.notes}
+                      {message(definition.notes)}
                     </>
                   ) : null}
                 </span>
               }
             >
-              <IconButton size="small" aria-label={t('metric.definition', { name: metric.name })}>
+              <IconButton size="small" sx={{ flexShrink: 0 }} aria-label={t('metric.definition', { name: metric.name })}>
                 <InfoOutlinedIcon fontSize="inherit" />
               </IconButton>
             </Tooltip>
@@ -68,7 +68,7 @@ export function MetricCard({ metric, definition }: { metric: MetricValue; defini
         </Stack>
         {!ok && metric.reason && (
           <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
-            {metric.reason}
+            {message(metric.reason)}
           </Typography>
         )}
       </CardContent>

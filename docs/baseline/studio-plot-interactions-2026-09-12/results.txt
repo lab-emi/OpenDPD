@@ -1,0 +1,69 @@
+### Result
+[{"label":"Power spectral density inline diagonal fractional pan","pass":true,"detail":{"before":{"x":[-400,399.6875],"y":[-144.90333333333334,-73.03666666666666],"autoX":true,"autoY":true,"mode":"pan"},"panned":{"x":[-378.7111265730881,420.9763734269119],"y":[-140.91074074074075,-69.04407407407408],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"Power spectral density inline pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[-378.7111265730881,420.9763734269119],"y":[-140.91074074074075,-69.04407407407408],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[-287.5204834784189,207.31286015655434],"y":[-124.37469910265719,-79.90479934485586],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":589,"y":363,"dx":0,"dy":-120}}},{"label":"Power spectral density keeps viewport when enlarged","pass":true,"detail":{"x":[-287.5204834784189,207.31286015655434],"y":[-124.37469910265719,-79.90479934485586],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"Power spectral density enlarged diagonal fractional pan","pass":true,"detail":{"before":{"x":[-287.5204834784189,207.31286015655434],"y":[-124.37469910265719,-79.90479934485586],"autoX":false,"autoY":false,"mode":"pan"},"panned":{"x":[-276.2649690450345,218.56837458993874],"y":[-123.3199102089712,-78.85001045116987],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"Power spectral density enlarged pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[-276.2649690450345,218.56837458993874],"y":[-123.3199102089712,-78.85001045116987],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[-219.78258246505615,86.4120722881662],"y":[-113.12534146112522,-85.60810605571383],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":462,"y":373,"dx":0,"dy":-120}}},{"label":"Power spectral density keeps viewport on close","pass":true,"detail":{"x":[-219.78258246505615,86.4120722881662],"y":[-113.12534146112522,-85.60810605571383],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"Power spectral density keyboard fit","pass":true},{"label":"I/Q time window inline diagonal fractional pan","pass":true,"detail":{"before":{"x":[0,999],"y":[-2.848736722222222,2.507497722222222],"autoX":true,"autoY":true,"mode":"pan"},"panned":{"x":[26.517857142857142,1025.517857142857],"y":[-2.5511681419753085,2.8050663024691356],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"I/Q time window inline pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[26.517857142857142,1025.517857142857],"y":[-2.5511681419753085,2.8050663024691356],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[140.47439323509292,758.6390016494275],"y":[-1.3187342487006704,1.995614668141543],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":587,"y":587,"dx":0,"dy":-120}}},{"label":"I/Q time window keeps viewport when enlarged","pass":true,"detail":{"x":[140.47439323509292,758.6390016494275],"y":[-1.3187342487006704,1.995614668141543],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"I/Q time window enlarged diagonal fractional pan","pass":true,"detail":{"before":{"x":[140.47439323509292,758.6390016494275],"y":[-1.3187342487006704,1.995614668141543],"autoX":false,"autoY":false,"mode":"pan"},"panned":{"x":[154.5004053897086,772.6650138040433],"y":[-1.2401206595915097,2.0742282572507036],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"I/Q time window enlarged pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[154.5004053897086,772.6650138040433],"y":[-1.2401206595915097,2.0742282572507036],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[225.08012928661188,607.5901223757487],"y":[-0.4803177800905434,1.5705462843020905],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":460,"y":373,"dx":0,"dy":-120}}},{"label":"I/Q time window keeps viewport on close","pass":true,"detail":{"x":[225.08012928661188,607.5901223757487],"y":[-0.4803177800905434,1.5705462843020905],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"I/Q time window keyboard fit","pass":true},{"label":"AM-AM inline diagonal fractional pan","pass":true,"detail":{"before":{"x":[-0.058030809557774614,1.0542858095577747],"y":[-0.18871122900763357,2.9657292290076334],"autoX":true,"autoY":true,"mode":"pan"},"panned":{"x":[0.006502327627199239,1.1188189467427485],"y":[-0.01346453689567434,3.1409759211195927],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"AM-AM inline pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[0.006502327627199239,1.1188189467427485],"y":[-0.01346453689567434,3.1409759211195927],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[0.133533481142639,0.8218165314812979],"y":[0.7123512157749539,2.664266581636157],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":419,"y":363,"dx":0,"dy":-120}}},{"label":"AM-AM keeps viewport when enlarged","pass":true,"detail":{"x":[0.133533481142639,0.8218165314812979],"y":[0.7123512157749539,2.664266581636157],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"AM-AM enlarged diagonal fractional pan","pass":true,"detail":{"before":{"x":[0.133533481142639,0.8218165314812979],"y":[0.7123512157749539,2.664266581636157],"autoX":false,"autoY":false,"mode":"pan"},"panned":{"x":[0.14915046454553757,0.8374335148841965],"y":[0.7586490185705232,2.710564384431726],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"AM-AM enlarged pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[0.14915046454553757,0.8374335148841965],"y":[0.7586490185705232,2.710564384431726],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[0.22773604999409858,0.6536341704053308],"y":[1.2061187789168595,2.413931589522979],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":460,"y":373,"dx":0,"dy":-120}}},{"label":"AM-AM keeps viewport on close","pass":true,"detail":{"x":[0.22773604999409858,0.6536341704053308],"y":[1.2061187789168595,2.413931589522979],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"AM-AM keyboard fit","pass":true},{"label":"AM-PM inline diagonal fractional pan","pass":true,"detail":{"before":{"x":[-0.058081347810480986,1.054336347810481],"y":[-192.70032442748092,192.01532442748092],"autoX":true,"autoY":true,"mode":"pan"},"panned":{"x":[0.006868729959320419,1.1192864255802824],"y":[-171.32723282442748,213.38841603053436],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"AM-PM inline pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[0.006868729959320419,1.1192864255802824],"y":[-171.32723282442748,213.38841603053436],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[0.13382025058679964,0.8221658453883096],"y":[-82.8067227833146,155.24893129605897],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":983,"y":363,"dx":0,"dy":-120}}},{"label":"AM-PM keeps viewport when enlarged","pass":true,"detail":{"x":[0.13382025058679964,0.8221658453883096],"y":[-82.8067227833146,155.24893129605897],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"AM-PM enlarged diagonal fractional pan","pass":true,"detail":{"before":{"x":[0.13382025058679964,0.8221658453883096],"y":[-82.8067227833146,155.24893129605897],"autoX":false,"autoY":false,"mode":"pan"},"panned":{"x":[0.14943865310911114,0.8377842479106211],"y":[-77.16024142469568,160.8954126546779],"autoX":false,"autoY":false,"mode":"pan"}}},{"label":"AM-PM enlarged pinch/Ctrl-wheel cursor zoom","pass":true,"detail":{"panned":{"x":[0.14943865310911114,0.8377842479106211],"y":[-77.16024142469568,160.8954126546779],"autoX":false,"autoY":false,"mode":"pan"},"zoomed":{"x":[0.22803137965060957,0.6539682015367034],"y":[-22.58681660154059,124.71806846832357],"autoX":false,"autoY":false,"mode":"pan"},"wheel":{"x":460,"y":373,"dx":0,"dy":-120}}},{"label":"AM-PM keeps viewport on close","pass":true,"detail":{"x":[0.22803137965060957,0.6539682015367034],"y":[-22.58681660154059,124.71806846832357],"autoX":false,"autoY":false,"mode":"pan"}},{"label":"AM-PM keyboard fit","pass":true}]
+### Ran Playwright code
+```js
+await (async (page) => {
+  const results = [];
+  await page.evaluate(() => {
+    window.__gestureQaWheel = [];
+    document.addEventListener('wheel', event => window.__gestureQaWheel.push({ x: event.clientX, y: event.clientY, dx: event.deltaX, dy: event.deltaY }), { capture: true });
+  });
+  const check = (pass, label, detail) => { results.push({ label, pass, detail }); if (!pass) throw new Error(JSON.stringify(results)); };
+  const near = (a, b) => Math.abs(a - b) < Math.max(1, Math.abs(b)) * 1e-6;
+  const rangesEqual = (a, b) => a.x.every((v, i) => near(v, b.x[i])) && a.y.every((v, i) => near(v, b.y[i]));
+  const state = (plot) => plot.evaluate(el => ({ x: [...el._fullLayout.xaxis.range], y: [...el._fullLayout.yaxis.range], autoX: el._fullLayout.xaxis.autorange, autoY: el._fullLayout.yaxis.autorange, mode: el._fullLayout.dragmode }));
+  const settle = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const changed = async (plot, before) => {
+    await plot.evaluate((el, old) => new Promise((resolve, reject) => {
+      const started = performance.now();
+      const poll = () => {
+        const now = el._fullLayout;
+        if (now && (now.xaxis.range[0] !== old.x[0] || now.yaxis.range[0] !== old.y[0])) resolve();
+        else if (performance.now() - started > 8000) reject(new Error('viewport did not change'));
+        else requestAnimationFrame(poll);
+      }; poll();
+    }), before);
+    await settle();
+    return state(plot);
+  };
+  const exercise = async (plot, label) => {
+    await plot.scrollIntoViewIfNeeded();
+    const before = await state(plot);
+    let rect = await plot.locator('.nsewdrag').boundingBox();
+    await page.mouse.move(rect.x + rect.width * .3, rect.y + rect.height * .4);
+    await page.mouse.wheel(13.75, -6.25);
+    const panned = await changed(plot, before);
+    check(near(panned.x[1] - panned.x[0], before.x[1] - before.x[0]) && near(panned.y[1] - panned.y[0], before.y[1] - before.y[0]) && panned.x[0] > before.x[0] && panned.y[0] > before.y[0], label + ' diagonal fractional pan', { before, panned });
+    rect = await plot.locator('.nsewdrag').boundingBox();
+    await page.mouse.move(rect.x + rect.width * .3, rect.y + rect.height * .4);
+    await page.keyboard.down('Control');
+    await page.mouse.wheel(0, -60);
+    await page.keyboard.up('Control');
+    const zoomed = await changed(plot, panned);
+    const wheel = await page.evaluate(() => window.__gestureQaWheel.at(-1));
+    const ax = (wheel.x - rect.x) / rect.width, ay = 1 - (wheel.y - rect.y) / rect.height;
+    const anchor = (range, fraction) => range[0] + (range[1] - range[0]) * fraction;
+    check(zoomed.x[1] - zoomed.x[0] < panned.x[1] - panned.x[0] && near(anchor(zoomed.x, ax), anchor(panned.x, ax)) && near(anchor(zoomed.y, ay), anchor(panned.y, ay)), label + ' pinch/Ctrl-wheel cursor zoom', { panned, zoomed, wheel });
+    return zoomed;
+  };
+  await page.waitForFunction(() => document.querySelectorAll('.js-plotly-plot .nsewdrag').length === 4);
+  const titles = await page.locator('main .js-plotly-plot').evaluateAll(els => els.map(el => el.getAttribute('aria-label')));
+  for (const title of titles) {
+    const inline = page.getByRole('figure', { name: title, exact: true });
+    const inlineView = await exercise(inline, title + ' inline');
+    await page.getByRole('button', { name: 'Enlarge chart: ' + title, exact: true }).click();
+    const enlarged = page.getByRole('dialog').getByRole('figure', { name: title, exact: true });
+    await enlarged.locator('.nsewdrag').waitFor();
+    check(rangesEqual(inlineView, await state(enlarged)), title + ' keeps viewport when enlarged', await state(enlarged));
+    const largeView = await exercise(enlarged, title + ' enlarged');
+    await page.getByRole('button', { name: 'Close enlarged chart', exact: true }).click();
+    await inline.locator('.nsewdrag').waitFor(); await settle();
+    check(rangesEqual(largeView, await state(inline)), title + ' keeps viewport on close', await state(inline));
+    await inline.focus(); await inline.press('Home');
+    await inline.evaluate(el => new Promise(resolve => { const poll = () => el._fullLayout.xaxis.autorange && el._fullLayout.yaxis.autorange ? resolve() : requestAnimationFrame(poll); poll(); }));
+    check((await state(inline)).autoX === true && (await state(inline)).autoY === true, title + ' keyboard fit');
+  }
+  return results;
+}
+)(page);
+```

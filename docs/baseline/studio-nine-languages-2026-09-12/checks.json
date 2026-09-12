@@ -1,0 +1,1079 @@
+{
+  "desktop": [
+    {
+      "language": "en",
+      "path": "/",
+      "heading": "Home",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/datasets",
+      "heading": "Datasets",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/experiments",
+      "heading": "Experiments",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/experiments/new",
+      "heading": "PA Model Training",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/settings",
+      "heading": "Settings",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "en",
+      "path": "/about",
+      "heading": "About",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/",
+      "heading": "Startpagina",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/datasets",
+      "heading": "Datasets",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/experiments",
+      "heading": "Experimenten",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/experiments/new",
+      "heading": "PA-model trainen",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/settings",
+      "heading": "Instellingen",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/about",
+      "heading": "Over",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/",
+      "heading": "首页",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/datasets",
+      "heading": "数据集",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/experiments",
+      "heading": "实验",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/experiments/new",
+      "heading": "PA 模型训练",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/settings",
+      "heading": "设置",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/about",
+      "heading": "关于",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/",
+      "heading": "Accueil",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/datasets",
+      "heading": "Jeux de données",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/experiments",
+      "heading": "Expériences",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/experiments/new",
+      "heading": "Entraînement du modèle PA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/settings",
+      "heading": "Paramètres",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/about",
+      "heading": "À propos",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/",
+      "heading": "Start",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/datasets",
+      "heading": "Datensätze",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/experiments",
+      "heading": "Experimente",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/experiments/new",
+      "heading": "PA-Modell trainieren",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/settings",
+      "heading": "Einstellungen",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "de",
+      "path": "/about",
+      "heading": "Über OpenDPD",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/",
+      "heading": "Pagina iniziale",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/datasets",
+      "heading": "Dataset",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/experiments",
+      "heading": "Esperimenti",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/experiments/new",
+      "heading": "Addestramento del modello PA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/settings",
+      "heading": "Impostazioni",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "it",
+      "path": "/about",
+      "heading": "Informazioni",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/",
+      "heading": "ホーム",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/datasets",
+      "heading": "データセット",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/experiments",
+      "heading": "実験",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/experiments/new",
+      "heading": "PAモデルの学習",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/settings",
+      "heading": "設定",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/about",
+      "heading": "このアプリについて",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/",
+      "heading": "홈",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/datasets",
+      "heading": "데이터셋",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/experiments",
+      "heading": "실험",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/experiments/new",
+      "heading": "PA 모델 학습",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/settings",
+      "heading": "설정",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/about",
+      "heading": "정보",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/",
+      "heading": "Inicio",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/datasets",
+      "heading": "Conjuntos de datos",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/datasets/i18n-pa",
+      "heading": "MyCustomPA (built-in, synthetic; dummy dataset for tutorial purpose)",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/experiments",
+      "heading": "Experimentos",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/experiments/new",
+      "heading": "Entrenamiento del modelo PA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/runs/run-20260912-150745-f4eed9",
+      "heading": "PA language QA",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/results/run-20260912-150749-9109f8",
+      "heading": "res-20260912-150749-9109f8",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/settings",
+      "heading": "Ajustes",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    },
+    {
+      "language": "es",
+      "path": "/about",
+      "heading": "Acerca de",
+      "width": {
+        "window": 1366,
+        "document": 1366,
+        "body": 1366
+      }
+    }
+  ],
+  "javascript_errors": [],
+  "mobile": [
+    {
+      "language": "en",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "en",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "en",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "nl",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "zh",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "fr",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "de",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "de",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "de",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "it",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "it",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "it",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "ja",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "ko",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "es",
+      "path": "/",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "es",
+      "path": "/datasets/i18n-pa",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "language": "es",
+      "path": "/experiments/new",
+      "width": {
+        "viewport": 390,
+        "document": 390
+      }
+    }
+  ],
+  "reset_dialog_languages": [
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "ja",
+    "ko",
+    "nl",
+    "zh"
+  ],
+  "validation_languages": [
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "ja",
+    "ko",
+    "nl",
+    "zh"
+  ],
+  "real_runs": {
+    "pa": "run-20260912-150745-f4eed9",
+    "dpd": "run-20260912-150749-9109f8"
+  },
+  "live_run": "run-20260912-152710-be295d",
+  "completed_live_languages": [
+    "en",
+    "nl",
+    "zh",
+    "fr",
+    "de",
+    "it",
+    "ja",
+    "ko",
+    "es"
+  ],
+  "native_window": {
+    "pid": 51536,
+    "title": "OpenDPD Studio",
+    "width": 1366,
+    "height": 856,
+    "api_healthy": true,
+    "original_language": "en"
+  }
+}

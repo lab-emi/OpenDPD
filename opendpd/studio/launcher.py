@@ -34,7 +34,7 @@ LOCK_FILE = ".studio.lock"
 GUARD_FILE = ".studio.guard"
 HOST = "127.0.0.1"
 Mode = Literal["auto", "window", "browser", "none"]
-SHUTDOWN_GRACE_S = 15.0     # supervisor stop timeout (10 s) plus a margin for the server thread to exit
+SHUTDOWN_GRACE_S = 1.0     # HTTP connection drain; the supervisor has its own bounded shutdown budget
 
 
 class LaunchError(RuntimeError):
@@ -188,8 +188,14 @@ class BackgroundServer:
         self.thread.start()
 
     def stop(self, timeout: float) -> None:
+        # An open SSE response can outlive the window. Bound Uvicorn's HTTP
+        # drain so it reaches lifespan shutdown and stops the supervisor.
+        self.server.config.timeout_graceful_shutdown = timeout
         self.server.should_exit = True
-        self.thread.join(timeout)
+        # Keep workspace ownership until lifespan cleanup actually finishes.
+        # A timed join here used to let the daemon thread (and its workers) be
+        # abandoned when the launcher exited, before supervisor.stop ran.
+        self.thread.join()
 
 
 def _active_run_count(app) -> int:

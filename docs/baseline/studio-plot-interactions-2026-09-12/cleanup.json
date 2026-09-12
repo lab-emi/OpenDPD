@@ -1,0 +1,8 @@
+{
+  "qa_server_stopped": 79798,
+  "temporary_items_removed": 77,
+  "user_server_pid": 77529,
+  "user_preview_pid": 90683,
+  "user_server_healthz": 200,
+  "user_preview_alive": true
+}

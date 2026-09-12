@@ -22,9 +22,7 @@ import { EvidenceBadge } from '@/components/EvidenceBadge'
 import type { SpectrumData } from '@/components/ResultCharts'
 import { SpectrumPlot, type SpectrumTrace } from '@/components/SpectrumPlot'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
-
-/** One colour per compared result, used for the table swatches and the overlay alike. */
-export const PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f']
+import { useStudioColors } from '@/theme'
 
 const label = (r: EvaluationResult) => r.run_id ?? r.result_id
 const shown = (m: MetricValue | undefined) => (!m ? t('common.na') : m.status === 'ok' && typeof m.value === 'number' ? `${m.value.toFixed(2)} ${m.unit}` : (m.status ?? 'ok').replace('_', ' '))
@@ -46,6 +44,7 @@ export function bestIndex(results: EvaluationResult[], name: string): number {
 }
 
 export function ComparePage() {
+  const colors = useStudioColors()
   const [params] = useSearchParams()
   const ids = params.getAll('runs')
   const report = useCompare(ids)
@@ -62,12 +61,12 @@ export function ComparePage() {
     loaded.forEach((d, i) => {
       if (!d) return
       const primary = d.traces.find((tr) => tr.role === 'primary')
-      if (primary) traces.push({ name: `${ids[i]} — ${primary.name}`, psdDb: primary.psd_db, color: PALETTE[i % PALETTE.length] })
+      if (primary) traces.push({ name: `${ids[i]} — ${primary.name}`, psdDb: primary.psd_db, color: colors.chart[i % colors.chart.length] })
     })
     const reference = first.traces.find((tr) => tr.role === 'reference')
-    if (reference) traces.push({ name: t('compare.spectrum.reference', { run: ids[loaded.indexOf(first)] ?? '' }), psdDb: reference.psd_db, color: '#4B5563' })
+    if (reference) traces.push({ name: t('compare.spectrum.reference', { run: ids[loaded.indexOf(first)] ?? '' }), psdDb: reference.psd_db, color: colors.textSecondary })
     return { mismatch: false as const, frequency: first.frequency, axis: first.axis, bands: first.bands, traces }
-  }, [spectra, ids])
+  }, [spectra, ids, colors])
 
   if (ids.length < 2) {
     return (
@@ -115,7 +114,7 @@ export function ComparePage() {
             {results.map((r, i) => (
               <TableCell key={r.result_id} align="right">
                 <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: PALETTE[i % PALETTE.length], display: 'inline-block' }} />
+                  <span aria-hidden style={{ width: 10, height: 10, borderRadius: 2, background: colors.chart[i % colors.chart.length], display: 'inline-block' }} />
                   <Link component={RouterLink} to={`/results/${encodeURIComponent(label(r))}`}>
                     {label(r)}
                   </Link>
@@ -153,7 +152,7 @@ export function ComparePage() {
         </Typography>
         {overlay === null && (spectra.some((q) => q.isPending) ? <LoadingState /> : <Typography variant="body2">{t('results.charts.none')}</Typography>)}
         {overlay?.mismatch && <Alert severity="info">{t('compare.spectrum.mismatch')}</Alert>}
-        {overlay && !overlay.mismatch && <SpectrumPlot frequencyHz={overlay.frequency} axis={overlay.axis} traces={overlay.traces} bands={overlay.bands ?? undefined} />}
+        {overlay && !overlay.mismatch && <SpectrumPlot frequencyHz={overlay.frequency} axis={overlay.axis} traces={overlay.traces} bands={overlay.bands ?? undefined} viewKey={ids.join(':')} />}
       </Paper>
       {ids.length === 2 && cfgA.data && cfgB.data && (
         <Paper sx={{ p: 2 }} component="section" aria-label={t('diff.title')}>

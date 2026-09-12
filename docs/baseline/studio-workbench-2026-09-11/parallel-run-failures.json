@@ -1,0 +1,78 @@
+{
+  "note": "Vitest and four-worker Playwright were run concurrently on the shared host. No thresholds changed. Retest each suite separately.",
+  "unit_failures": [
+    {
+      "test": "browse \u2192 inspect \u2192 correct a column \u2192 import sends only (root, path), mapping and metadata",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "run doctor \u2192 accept estimates \u2192 preview \u2192 create a traceable version",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "pages through a long history on the server and searches it",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "server validation errors are shown on the field and block submit",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "keyboard-only: tab to the submit button, Enter submits once with an idempotency key",
+      "error": "Error: Unable to find an element with the text: Configuration is valid. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+    },
+    {
+      "test": "model parameters come from the registry: fields are generated per spec and edits reach the configuration",
+      "error": "Error: Unable to find an element with the text: Configuration is valid. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+    },
+    {
+      "test": "an exported configuration can be imported and is submitted as is (resolution block dropped)",
+      "error": "Error: Unable to find an element with the text: Configuration is valid. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+    },
+    {
+      "test": "a profile pending cross-validation is computed by the service but never offered by the form",
+      "error": "Error: Unable to find an element with the text: Configuration is valid. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+    },
+    {
+      "test": "fractional integer parameters reach server validation without being rounded",
+      "error": "Error: Unable to find an element with the text: Configuration is valid. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+    },
+    {
+      "test": "a validation request failure explains the problem and can be retried without changing the configuration",
+      "error": "Error: Unable to find an element with the text: /Validation service unavailable/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+    },
+    {
+      "test": "import mode exposes only the configuration that will run and the optional name",
+      "error": "Error: Unable to find an element with the text: Configuration is valid. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible."
+    },
+    {
+      "test": "steps highlight the active stage and clear completion after a relevant edit",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "a linked preprocessing version reaches validation; choosing raw invalidates both completed steps and submits raw",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "shows the profile behind every score, its definitions, and switches to another stored profile",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "a supported model exports a deployment package and the panel shows the verdict and the labelled numbers",
+      "error": "Error: Unable to find role=\"button\" and name \"Export deployment package (fixed-point-v1)\""
+    },
+    {
+      "test": "shows the condition matrix with every failure, the cost of adaptation and the evidence bar verdict",
+      "error": "Error: Test timed out in 5000ms."
+    },
+    {
+      "test": "a succeeded run_dpd run offers the measured-capture import: files are uploaded, conditions declared, one evaluate_measured run submitted",
+      "error": "Error: Test timed out in 5000ms."
+    }
+  ],
+  "browser_failures": [
+    "1920 main-page scan exceeded the 60 s test deadline",
+    "1920 smoke journey did not find its heading within 10 s after reload",
+    "1920 gallery render took 2326 ms against the unchanged <2000 ms threshold"
+  ]
+}

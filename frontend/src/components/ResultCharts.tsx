@@ -3,7 +3,7 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import { useMemo } from 'react'
 import { useArtifactJson } from '@/api/hooks'
-import { t } from '@/i18n'
+import { message, t } from '@/i18n'
 import { IQPreview } from './IQPreview'
 import { PlotlyChart, type PlotLayout, type PlotTrace , seriesSymbol } from './PlotlyChart'
 import { SpectrumPlot } from './SpectrumPlot'
@@ -43,8 +43,9 @@ const MARKER = { size: 3, opacity: 0.45 }
 function AmPlots({ data }: { data: AmData }) {
   const am = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.amp_out, name: tr.name, mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data])
   const pm = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.phase_deg, name: tr.name, mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data])
-  const amLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.am.x') } }, yaxis: { title: { text: t('chart.am.y') } }, showlegend: true }), [])
-  const pmLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: t('chart.am.x') } }, yaxis: { title: { text: t('chart.pm.y') } }, showlegend: true }), [])
+  const xTitle = t('chart.am.x'), amTitle = t('chart.am.y'), pmTitle = t('chart.pm.y')
+  const amLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: amTitle } }, showlegend: true }), [xTitle, amTitle])
+  const pmLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: pmTitle } }, showlegend: true }), [xTitle, pmTitle])
   return (
     <>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -67,7 +68,7 @@ export function ResultCharts({ runId }: { runId: string }) {
   const pending = spectrum.isPending || time.isPending || am.isPending
   const nothing = !pending && !spectrum.data && !time.data && !am.data
   return (
-    <Paper sx={{ p: 2 }} component="section" aria-label={t('results.charts')}>
+    <Paper key={runId} sx={{ p: 2 }} component="section" aria-label={t('results.charts')}>
       <Typography variant="h3" component="h2" gutterBottom>
         {t('results.charts')}
       </Typography>
@@ -81,7 +82,7 @@ export function ResultCharts({ runId }: { runId: string }) {
           <Grid size={{ xs: 12 }}>
             <SpectrumPlot frequencyHz={spectrum.data.frequency} axis={spectrum.data.axis} traces={spectrumTraces} bands={spectrum.data.bands ?? undefined} />
             <Typography variant="caption" color="text.secondary">
-              {spectrum.data.estimator}
+              {message(spectrum.data.estimator)}
             </Typography>
           </Grid>
         )}

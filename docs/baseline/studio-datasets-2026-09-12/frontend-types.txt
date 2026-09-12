@@ -1,0 +1,6 @@
+
+> opendpd-studio@2.2.0-dev0 types:check
+> openapi-typescript ../docs/contracts/openapi.json -o /tmp/opendpd-schema-check.ts && diff -q /tmp/opendpd-schema-check.ts src/api/schema.ts
+
+✨ openapi-typescript 7.13.0
+🚀 ../docs/contracts/openapi.json → /tmp/opendpd-schema-check.ts [162.8ms]

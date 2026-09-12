@@ -1,0 +1,30 @@
+{
+  "changed_since_request": [
+    "frontend/package-lock.json",
+    "frontend/package.json",
+    "frontend/src/components/IQPreview.tsx",
+    "frontend/src/components/MetricHistoryChart.tsx",
+    "frontend/src/components/PlotlyChart.tsx",
+    "frontend/src/components/ResultCharts.tsx",
+    "frontend/src/components/SignalInspection.tsx",
+    "frontend/src/components/SpectrumPlot.tsx",
+    "frontend/src/i18n/de.json",
+    "frontend/src/i18n/en.json",
+    "frontend/src/i18n/es.json",
+    "frontend/src/i18n/fr.json",
+    "frontend/src/i18n/ja.json",
+    "frontend/src/i18n/ko.json",
+    "frontend/src/i18n/zh.json",
+    "frontend/src/pages/ComparePage.tsx",
+    "frontend/src/pages/RunDetailPage.tsx",
+    "frontend/src/types/plotly.d.ts"
+  ],
+  "new_source_files": [
+    "frontend/src/components/PlotlyChart.test.tsx",
+    "frontend/src/components/plotInteractions.test.ts",
+    "frontend/src/components/plotInteractions.ts"
+  ],
+  "missing_preexisting_files": [],
+  "unchanged_preexisting_count": 658,
+  "unchanged_experiment_form_sha256": "258e402cd2a8c50143b1da4f89e870f1ed3776560d0761a17b03415e3724aa18"
+}

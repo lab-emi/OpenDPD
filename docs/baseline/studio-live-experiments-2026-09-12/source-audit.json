@@ -1,0 +1,83 @@
+{
+  "changes_to_preexisting_files": [
+    "opendpd/server/routes.py",
+    "frontend/src/i18n/es.json",
+    "frontend/src/i18n/ja.json",
+    "frontend/src/components/PlotlyChart.tsx",
+    "frontend/src/pages/RunDetailPage.tsx",
+    "frontend/src/api/hooks.ts",
+    "frontend/src/api/schema.ts",
+    "opendpd/runtime/supervisor.py",
+    "frontend/src/api/events.ts",
+    "frontend/src/i18n/de.json",
+    "opendpd/services/recipes.py",
+    "frontend/src/i18n/fr.json",
+    "opendpd/services/evaluation.py",
+    "frontend/src/i18n/en.json",
+    "frontend/src/layout/AppShell.tsx",
+    "frontend/src/i18n/ko.json",
+    "opendpd/services/experiments.py",
+    "frontend/src/components/MetricHistoryChart.tsx",
+    "frontend/e2e/a11y.spec.ts",
+    "opendpd/services/legacy_adapter.py",
+    "frontend/src/i18n/zh.json",
+    "docs/contracts/openapi.json",
+    "frontend/src/App.tsx",
+    "frontend/src/components/LogViewer.tsx",
+    "frontend/e2e/mock-api.ts"
+  ],
+  "original_pipeline_and_protected_audit": {
+    "models.py": {
+      "files": 1,
+      "changed": []
+    },
+    "project.py": {
+      "files": 1,
+      "changed": []
+    },
+    "backbones/": {
+      "files": 21,
+      "changed": []
+    },
+    "modules/": {
+      "files": 6,
+      "changed": []
+    },
+    "steps/": {
+      "files": 5,
+      "changed": []
+    },
+    "utils/": {
+      "files": 5,
+      "changed": []
+    },
+    "opendpd/core/metrics/": {
+      "files": 6,
+      "changed": []
+    },
+    "opendpd/core/splits.py": {
+      "files": 1,
+      "changed": []
+    },
+    "tests/golden/": {
+      "files": 7,
+      "changed": []
+    },
+    "benchmark/": {
+      "files": 11,
+      "changed": []
+    },
+    "docs/protocols/": {
+      "files": 10,
+      "changed": []
+    },
+    ".github/CODEOWNERS": {
+      "files": 1,
+      "changed": []
+    },
+    ".github/workflows/protected-paths.yml": {
+      "files": 1,
+      "changed": []
+    }
+  }
+}

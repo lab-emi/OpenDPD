@@ -1,0 +1,173 @@
+
+> opendpd-studio@2.2.0-dev0 test
+> vitest run --reporter=verbose
+
+
+ RUN  v5.0.0 /Users/gaochang/git/OpenDPD/frontend
+
+ ✓ src/api/events.test.ts > folds the contract example events into progress, metrics and status 2ms
+ ✓ src/api/events.test.ts > duplicate or older seq numbers are ignored (safe replay) 1ms
+ ✓ src/api/events.test.ts > non-finite metric values are dropped instead of plotted as zero 0ms
+ ✓ src/pages/ExperimentsPage.test.tsx > lists runs with 1-based epoch progress 438ms
+ ✓ src/pages/ExperimentsPage.test.tsx > importing a package uploads it as multipart, shows the report and links to the imported run 223ms
+ ✓ src/pages/RunDetailPage.test.tsx > running run: live stream updates progress; refresh never submits anything 488ms
+ ✓ src/pages/RunDetailPage.test.tsx > lost stream shows the disconnected state with a refresh action 157ms
+ ✓ src/pages/ExperimentsPage.test.tsx > a refused package shows the server reason 89ms
+ ✓ src/pages/RunDetailPage.test.tsx > failed run shows stage, hint and the retry action; cancel is not offered 168ms
+ ✓ src/pages/ResultDetailPage.test.tsx > shows the profile behind every score, its definitions, and switches to another stored profile 968ms
+ ✓ src/pages/RunDetailPage.test.tsx > cancel asks for confirmation and then posts once 245ms
+ ✓ src/pages/ResultDetailPage.test.tsx > a DPD result shows the x/u/y chain, baselines under one reference, coverage and the uncalibrated note 300ms
+ ✓ src/pages/ResultDetailPage.test.tsx > a result without plot artifacts says so instead of drawing anything 97ms
+ ✓ src/pages/Onboarding.test.tsx > Get Started opens an optional dataset guide without registering anything 979ms
+ ✓ src/pages/ResultDetailPage.test.tsx > exporting a share package shows what was left out and a download link; reports link to the server 202ms
+ ✓ src/pages/NewExperimentPage.test.tsx > server validation errors are shown on the field and block submit 1663ms
+ ✓ src/pages/ResultDetailPage.test.tsx > the export panel is not offered for a mock result 94ms
+ ✓ src/pages/ResultDetailPage.test.tsx > a measured result shows the attestation, the declared conditions, every capture with its hash and alignment, and the level difference 147ms
+ ✓ src/pages/ResultDetailPage.test.tsx > a streaming result shows how the signal was consumed: chunk consistency, look-ahead as samples and time, warm-up 90ms
+ ✓ src/pages/RunDetailPage.test.tsx > a succeeded DPD run shows its lineage and can be applied through another surrogate 726ms
+ ✓ src/pages/Onboarding.test.tsx > the guide opens the real CSV form and can be skipped without closing that form 422ms
+ ✓ src/pages/ResultDetailPage.test.tsx > a supported model exports a deployment package and the panel shows the verdict and the labelled numbers 247ms
+ ✓ src/pages/ResultDetailPage.test.tsx > a model without the format gets the reason instead of a button 99ms
+ ✓ src/components/CreateDatasetDialog.test.tsx > paired CSV → server defaults → custom split review → create; edits invalidate review 2216ms
+ ✓ src/components/CreateDatasetDialog.test.tsx > a bad row past the preview is explained and blocks progression 202ms
+ ✓ src/pages/ExperimentsPage.test.tsx > pages through a long history on the server and searches it 1911ms
+ ✓ src/pages/DatasetDetailPage.test.tsx > run doctor → accept estimates → preview → create a traceable version 1482ms
+stderr | src/pages/NewExperimentPage.test.tsx > keyboard-only: tab to the submit button, Enter submits once with an idempotency key
+No routes matched location "/runs/run-pa-0002" 
+
+ ✓ src/components/CreateDatasetDialog.test.tsx > mapping changes immediately clear file confirmation and require revalidation 308ms
+ ✓ src/pages/NewExperimentPage.test.tsx > keyboard-only: tab to the submit button, Enter submits once with an idempotency key 1059ms
+ ✓ src/pages/DatasetDetailPage.test.tsx > metadata editor sends the whole signal spec, carrying over fields it does not show 479ms
+ ✓ src/pages/DatasetDetailPage.test.tsx > known dataset defaults to demodulated symbols and can switch back to raw samples 164ms
+ ✓ src/pages/DatasetDetailPage.test.tsx > a QAM label without a bound demodulator stays a raw I/Q plot with a reason 108ms
+ ✓ src/pages/RunDetailPage.test.tsx > a succeeded run_dpd run offers the measured-capture import: files are uploaded, conditions declared, one evaluate_measured run submitted 1400ms
+ ✓ src/components/CreateDatasetDialog.test.tsx > reset discards the CSV draft only after confirmation and never creates a dataset 783ms
+ ✓ src/pages/RunDetailPage.test.tsx > a succeeded PA run whose model has a streaming variant can be scored under streaming semantics 152ms
+ ✓ src/pages/RunDetailPage.test.tsx > a run whose model has no streaming variant offers no streaming action 99ms
+ ✓ src/pages/NewExperimentPage.test.tsx > model parameters come from the registry: fields are generated per spec and edits reach the configuration 1134ms
+ ✓ src/components/PlotlyChart.test.tsx > new chart data waits for an in-flight gesture draw before React redraws 370ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > keeps the cursor anchor fixed during zoom and supports reversed axes 2ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > normalizes pixel, line, page and Shift-wheel input 0ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > pans diagonally without changing the scale 10ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > coalesces high-rate fractional input without losing displacement 7ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > bounds the redraw queue while an earlier draw is still in progress 4ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > zooms at the pointer for Ctrl, Cmd and the mouse zoom tool 2ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > leaves page scrolling and browser zoom available outside the axes and with Alt 1ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > handles WebKit relative-scale gestures once even if wheel events accompany them 1ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > supports keyboard pan, coarse pan, zoom, tool selection and fit 2ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > waits for an in-flight draw on disposal and cancels queued work and listeners 1ms
+ ✓ src/components/plotInteractions.test.ts > plot viewport input > serializes resizing with queued input and reports rendering failures 1ms
+ ✓ src/components/PlotlyChart.test.tsx > unmount waits for the gesture draw before purging its graph 218ms
+ ✓ src/components/PlotlyChart.test.tsx > live updates preserve the camera but a different signal starts at its own bounds 240ms
+ ✓ src/components/PlotlyChart.test.tsx > uses WebGL for dense scatter without dropping any data points 60ms
+ ✓ src/components/PlotlyChart.test.tsx > uses SVG when WebGL is unavailable 62ms
+ ✓ src/components/PlotlyChart.test.tsx > recovers from WebGL context loss with the same points and camera in SVG 170ms
+ ✓ src/components/PlotlyChart.test.tsx > retries a failed WebGL initialization using SVG 69ms
+ ✓ src/components/ImportDatasetDialog.test.tsx > browse → inspect → correct a column → import sends only (root, path), mapping and metadata 861ms
+ ✓ src/components/ImportDatasetDialog.test.tsx > problems found by the server block the import and are shown verbatim 158ms
+ ✓ src/pages/ComparePage.test.tsx > incompatible results are shown side by side with the reasons and nothing is ranked 304ms
+ ✓ src/pages/ComparePage.test.tsx > comparable results mark the best value per metric 103ms
+ ✓ src/pages/ComparePage.test.tsx > fewer than two runs asks the user to pick results 10ms
+ ✓ src/pages/RobustnessPage.test.tsx > shows the condition matrix with every failure, the cost of adaptation and the evidence bar verdict 770ms
+ ✓ src/pages/RobustnessPage.test.tsx > an empty workspace explains how a report is produced 29ms
+ ✓ src/pages/Onboarding.test.tsx > page reset restores a pending experiment; global reset restarts the guide and preserves server records 4066ms
+stderr | src/pages/NewExperimentPage.test.tsx > an exported configuration can be imported and is submitted as is (resolution block dropped)
+No routes matched location "/runs/run-pa-0002" 
+
+ ✓ src/components/ExperimentTerminal.test.tsx > collapsed terminal follows steps; selecting a different log does not navigate or submit 547ms
+ ✓ src/pages/NewExperimentPage.test.tsx > an exported configuration can be imported and is submitted as is (resolution block dropped) 2199ms
+stderr | src/components/LanguageMenu.test.tsx > lists seven languages with flags and names, switches at once and stores the choice
+An update to LanguageMenu inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/LanguageMenu.test.tsx > lists seven languages with flags and names, switches at once and stores the choice 357ms
+stderr | src/components/LanguageMenu.test.tsx > a failed save keeps the language on screen and says so
+An update to LanguageMenu inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/LanguageMenu.test.tsx > a failed save keeps the language on screen and says so 199ms
+ ✓ src/components/LogViewer.test.tsx > pages logs by byte offset and filters loaded lines 368ms
+ ✓ src/components/LiveRunDashboard.test.tsx > displays actual last-batch geometry and preserves the worker metric units 196ms
+ ✓ src/components/BuiltinDatasetDialog.test.tsx > every server catalog entry is selectable, including the synthetic tutorial 388ms
+ ✓ src/pages/NewExperimentPage.test.tsx > a profile pending cross-validation is computed by the service but never offered by the form 850ms
+ ✓ src/i18n/LanguageGate.test.tsx > applies the stored language before rendering the children 82ms
+ ✓ src/i18n/LanguageGate.test.tsx > without a stored language the browser language decides 30ms
+ ✓ src/i18n/LanguageGate.test.tsx > a settings failure shows the error state with retry, not a blank page 132ms
+ ✓ src/components/SpectrumPlot.test.tsx > re-rendering with an inline bands literal does not redraw the plot 184ms
+ ✓ src/components/SpectrumPlot.test.tsx > every trace differs in dash pattern, not only in colour 73ms
+ ✓ src/components/EvidenceBadge.test.tsx > mock results are visibly marked as MOCK 133ms
+ ✓ src/components/EvidenceBadge.test.tsx > real evidence has no mock marker 5ms
+ ✓ src/components/StatusChip.test.tsx > every status has a text label and an icon, not colour alone 120ms
+ ✓ src/components/StatusChip.test.tsx > stale heartbeat swaps the icon and is marked 13ms
+ ✓ src/components/DiagnosticItem.test.tsx > renders severity, evidence, suggestion and the blocking marker 155ms
+ ✓ src/pages/AboutPage.test.tsx > shows requested leadership, original logos, and linked GitHub activity 485ms
+ ✓ src/pages/NewExperimentPage.test.tsx > fractional integer parameters reach server validation without being rounded 1258ms
+ ✓ src/i18n/catalogues.test.ts > catalogue fr > has exactly the English keys 2ms
+ ✓ src/i18n/catalogues.test.ts > catalogue fr > keeps every placeholder and inline code, and has no empty string 22ms
+ ✓ src/i18n/catalogues.test.ts > catalogue fr > keeps the markers that must never be translated 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue de > has exactly the English keys 1ms
+ ✓ src/i18n/catalogues.test.ts > catalogue de > keeps every placeholder and inline code, and has no empty string 6ms
+ ✓ src/i18n/catalogues.test.ts > catalogue de > keeps the markers that must never be translated 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue es > has exactly the English keys 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue es > keeps every placeholder and inline code, and has no empty string 7ms
+ ✓ src/i18n/catalogues.test.ts > catalogue es > keeps the markers that must never be translated 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue zh > has exactly the English keys 4ms
+ ✓ src/i18n/catalogues.test.ts > catalogue zh > keeps every placeholder and inline code, and has no empty string 15ms
+ ✓ src/i18n/catalogues.test.ts > catalogue zh > keeps the markers that must never be translated 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue ja > has exactly the English keys 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue ja > keeps every placeholder and inline code, and has no empty string 6ms
+ ✓ src/i18n/catalogues.test.ts > catalogue ja > keeps the markers that must never be translated 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue ko > has exactly the English keys 0ms
+ ✓ src/i18n/catalogues.test.ts > catalogue ko > keeps every placeholder and inline code, and has no empty string 8ms
+ ✓ src/i18n/catalogues.test.ts > catalogue ko > keeps the markers that must never be translated 0ms
+ ✓ src/i18n/index.test.ts > seven languages with tags, native names and flags 3ms
+ ✓ src/i18n/index.test.ts > resolution: stored value, then the browser languages, then English 1ms
+ ✓ src/i18n/index.test.ts > switching the language translates t() and updates <html lang> 8ms
+ ✓ src/i18n/index.test.ts > numbers and dates follow the UI language; English is the default 27ms
+ ✓ src/components/MetricHistoryChart.test.tsx > one trace per split with distinct marker symbols and dashes 119ms
+ ✓ src/components/ConfigDiff.test.tsx > diff lists only changed leaf fields and ignores resolution metadata 1ms
+ ✓ src/components/ConfigDiff.test.tsx > identical configs render the "identical" message 27ms
+ ✓ src/components/MetricCard.test.tsx > shows value with unit and better-direction 45ms
+ ✓ src/components/MetricCard.test.tsx > not-applicable metric shows reason and never a number 6ms
+ ✓ src/api/client.test.ts > POST carries the CSRF header and GET does not 3ms
+ ✓ src/api/client.test.ts > error envelope becomes ApiError with code, details and hint 0ms
+ ✓ src/pages/NewExperimentPage.test.tsx > a validation request failure explains the problem and can be retried without changing the configuration 1040ms
+ ✓ src/pages/NewExperimentPage.test.tsx > an unavailable source run never falls back to submitting the default recipe 12ms
+stderr | src/pages/NewExperimentPage.test.tsx > import mode exposes only the configuration that will run and the optional name
+No routes matched location "/runs/run-pa-0002" 
+
+ ✓ src/pages/NewExperimentPage.test.tsx > import mode exposes only the configuration that will run and the optional name 1374ms
+ ✓ src/pages/NewExperimentPage.test.tsx > steps highlight the active stage and clear completion after a relevant edit 1047ms
+stderr | src/pages/NewExperimentPage.test.tsx > a linked preprocessing version reaches validation; choosing raw invalidates both completed steps and submits raw
+No routes matched location "/runs/run-pa-0002" 
+
+ ✓ src/pages/NewExperimentPage.test.tsx > a linked preprocessing version reaches validation; choosing raw invalidates both completed steps and submits raw 1212ms
+ ✓ src/pages/NewExperimentPage.test.tsx > JSON is hidden by default; invalid edits stay in the editor and a valid edit uses server validation 824ms
+ ✓ src/pages/NewExperimentPage.test.tsx > evaluate_pa submits a selected checkpoint and test options without editable training parameters 1454ms
+ ✓ src/pages/NewExperimentPage.test.tsx > run_dpd submits a selected checkpoint and test options without editable training parameters 1450ms
+ ✓ src/pages/NewExperimentPage.test.tsx > DPD training requires a PA model and only offers DPD starting settings 930ms
+
+ Test Files  30 passed (30)
+      Tests  121 passed (121)
+   Start at  13:42:52
+   Duration  19.61s (tests 55%, environment 21%, import 16%, transform 5%, setup 3%)
+
+    Isolate  30 workers spawned · ~665ms startup each (spawn + environment, per file)
+             at least ~2.19s faster with isolate: false — reuses workers across files instead of one per file
+

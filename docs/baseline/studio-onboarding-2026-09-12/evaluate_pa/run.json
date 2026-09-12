@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "run_id": "run-20260912-092900-5a4c4b",
+  "experiment_id": null,
+  "parent_run_id": null,
+  "idempotency_key": "99eadae9-04cb-4be0-9e19-fe710bd02a26",
+  "task": "evaluate_pa",
+  "name": "Onboarding PA test",
+  "dataset_id": "dpa-200mhz",
+  "model_key": "gru",
+  "status": "succeeded",
+  "status_reason": null,
+  "created_at": "2026-09-12T09:29:00.039319Z",
+  "started_at": "2026-09-12T09:29:00.315294Z",
+  "finished_at": "2026-09-12T09:29:04.895302Z",
+  "config_sha256": "85218aa8224f2388408699ac539a3bc7487b1d8f7ad5783b8acbe8b81593eb73",
+  "device": "cpu",
+  "worker": {
+    "pid": 69875,
+    "create_time": 1789205340.042356,
+    "host": "CG-MBA"
+  },
+  "exit_code": 0,
+  "error": null,
+  "last_event_seq": 4,
+  "last_heartbeat_at": "2026-09-12T09:29:05.118265Z",
+  "progress_epoch": null,
+  "progress_total_epochs": null,
+  "result_id": "res-20260912-092900-5a4c4b"
+}

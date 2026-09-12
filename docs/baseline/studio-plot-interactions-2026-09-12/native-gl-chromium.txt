@@ -1,0 +1,38 @@
+### Result
+[{"enlarged":false,"action":"native mouse pan","pass":true,"types":["scattergl","scattergl"]},{"enlarged":false,"action":"native mouse box zoom","pass":true,"types":["scattergl","scattergl"]},{"enlarged":true,"action":"native mouse pan","pass":true,"types":["scattergl","scattergl"]},{"enlarged":true,"action":"native mouse box zoom","pass":true,"types":["scattergl","scattergl"]}]
+### Ran Playwright code
+```js
+await (async (page) => {
+  const result = [];
+  for (const enlarged of [false, true]) {
+    const panel = page.getByTestId('constellation-plot');
+    if (enlarged) await panel.getByRole('button', { name: /放大图表|Enlarge chart/ }).click();
+    const p = enlarged ? page.getByRole('dialog').getByRole('figure') : panel.getByRole('figure');
+    await p.locator('.nsewdrag').waitFor(); await p.scrollIntoViewIfNeeded();
+    await p.getByRole('button', { name: 'Autoscale', exact: true }).click();
+    await p.getByRole('button', { name: 'Pan', exact: true }).click();
+    const state = () => p.evaluate(el => ({ x: [...el._fullLayout.xaxis.range], y: [...el._fullLayout.yaxis.range], types: el.data.map(t => t.type) }));
+    let before = await state(), r = await p.locator('.nsewdrag').boundingBox();
+    await page.mouse.move(r.x + r.width * .6, r.y + r.height * .4); await page.mouse.down();
+    await page.mouse.move(r.x + r.width * .45, r.y + r.height * .55, { steps: 8 }); await page.mouse.up();
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    let after = await state();
+    const pan = after.x[0] > before.x[0] && Math.abs((after.x[1] - after.x[0]) - (before.x[1] - before.x[0])) < 1e-6;
+    result.push({ enlarged, action: 'native mouse pan', pass: pan, types: after.types });
+    if (!pan) throw new Error(JSON.stringify(result));
+    await p.getByRole('button', { name: 'Zoom', exact: true }).click();
+    before = await state(); r = await p.locator('.nsewdrag').boundingBox();
+    await page.mouse.move(r.x + r.width * .2, r.y + r.height * .2); await page.mouse.down();
+    await page.mouse.move(r.x + r.width * .7, r.y + r.height * .7, { steps: 8 }); await page.mouse.up();
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    after = await state();
+    const zoom = after.x[1] - after.x[0] < before.x[1] - before.x[0] && after.y[1] - after.y[0] < before.y[1] - before.y[0];
+    result.push({ enlarged, action: 'native mouse box zoom', pass: zoom, types: after.types });
+    if (!zoom) throw new Error(JSON.stringify(result));
+    await p.focus(); await p.press('Home');
+    if (enlarged) await page.getByRole('button', { name: /关闭大屏图表|Close enlarged chart/ }).click();
+  }
+  return result;
+}
+)(page);
+```

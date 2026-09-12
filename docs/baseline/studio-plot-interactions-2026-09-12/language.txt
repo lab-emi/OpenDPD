@@ -1,0 +1,6 @@
+### Result
+{"before":{"x":[-333.359375,333.046875],"y":[-139.8375185185185,-81.47548148148148]},"after":{"x":[-333.359375,333.046875],"y":[-139.8375185185185,-81.47548148148148]},"language":"zh-CN","pass":true}
+### Ran Playwright code
+```js
+await (async (page) => { const p=page.getByRole("figure",{name:"Frequency domain",exact:true}); await p.focus();await p.press("+");await page.evaluate(()=>new Promise(r=>setTimeout(r,50)));const before=await p.evaluate(el=>({x:[...el._fullLayout.xaxis.range],y:[...el._fullLayout.yaxis.range]}));await page.getByRole("button",{name:"Language",exact:true}).click();await page.getByRole("menuitem",{name:"中文",exact:true}).click();const q=page.locator("[data-testid=spectrum-plot] .js-plotly-plot");await page.evaluate(()=>new Promise(r=>setTimeout(r,200)));const after=await q.evaluate(el=>({x:el._fullLayout.xaxis.range,y:el._fullLayout.yaxis.range}));return{before,after,language:await page.evaluate(()=>document.documentElement.lang),pass:JSON.stringify(before)===JSON.stringify(after)}; })(page);
+```

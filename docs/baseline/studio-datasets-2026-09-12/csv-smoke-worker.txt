@@ -1,0 +1,77 @@
+::: Are Deterministic Algorithms Enabled:  False
+--------------------------------------------------------------------
+::: Available GPUs: None
+--------------------------------------------------------------------
+Backbone Initialized...
+::: Number of PA Model Parameters:  1911
+::: Best Model Save Path:  ./save/tutorial-csv-iq/train_pa/PA_S_0_M_GRU_H_23_F_50_P_1911.pt
+::: Log-History     Path:  ./log/tutorial-csv-iq/train_pa/history/PA_S_0_M_GRU_H_23_F_50_P_1911.csv
+::: Log-Best        Path:  ./log/tutorial-csv-iq/train_pa/best/PA_S_0_M_GRU_H_23_F_50_P_1911.csv
+Starting training...
+     General Information              Training Metrics        
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓ ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Metric       ┃ Value      ┃ ┃ Metric        ┃ Value        ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩ ┡━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ BACKBONE     │ gru        │ │ TRAIN_LOSS    │ 0.01030148   │
+│ BATCH_SIZE   │ 64         │ │ VAL_ACLR_AVG  │ -22.32040675 │
+│ EPOCH        │ 0          │ │ VAL_ACLR_L    │ -26.94515358 │
+│ FRAME_LENGTH │ 50         │ │ VAL_ACLR_R    │ -17.69565991 │
+│ HIDDEN_SIZE  │ 23         │ │ VAL_EVM       │ -22.44357221 │
+│ LR           │ 0.00500000 │ │ VAL_LOSS      │ 0.00042565   │
+│ N_EPOCH      │ 3          │ │ VAL_NMSE      │ -20.830383   │
+│ N_PARAM      │ 1911       │ │ TEST_ACLR_AVG │ -22.19291138 │
+│ TIME:        │ 0.03278961 │ │ TEST_ACLR_L   │ -25.52793831 │
+└──────────────┴────────────┘ │ TEST_ACLR_R   │ -18.85788445 │
+                              │ TEST_EVM      │ -22.19428249 │
+                              │ TEST_LOSS     │ 0.00047866   │
+                              │ TEST_NMSE     │ -20.325829   │
+                              └───────────────┴──────────────┘
+>>> saving best model (-20.83038330078125 -> -20.83038330078125 NMSE) from epoch
+0 to ./save/tutorial-csv-iq/train_pa/PA_S_0_M_GRU_H_23_F_50_P_1911.pt
+     General Information              Training Metrics        
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓ ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Metric       ┃ Value      ┃ ┃ Metric        ┃ Value        ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩ ┡━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ BACKBONE     │ gru        │ │ TRAIN_LOSS    │ 0.00093784   │
+│ BATCH_SIZE   │ 64         │ │ VAL_ACLR_AVG  │ -22.21445856 │
+│ EPOCH        │ 1          │ │ VAL_ACLR_L    │ -26.63904657 │
+│ FRAME_LENGTH │ 50         │ │ VAL_ACLR_R    │ -17.78987056 │
+│ HIDDEN_SIZE  │ 23         │ │ VAL_EVM       │ -24.22779801 │
+│ LR           │ 0.00500000 │ │ VAL_LOSS      │ 0.00032481   │
+│ N_EPOCH      │ 3          │ │ VAL_NMSE      │ -22.067211   │
+│ N_PARAM      │ 1911       │ │ TEST_ACLR_AVG │ -22.08486354 │
+│ TIME:        │ 0.04235656 │ │ TEST_ACLR_L   │ -25.28340114 │
+└──────────────┴────────────┘ │ TEST_ACLR_R   │ -18.88632595 │
+                              │ TEST_EVM      │ -23.32467984 │
+                              │ TEST_LOSS     │ 0.00040929   │
+                              │ TEST_NMSE     │ -21.092926   │
+                              └───────────────┴──────────────┘
+>>> saving best model (-20.83038330078125 -> -22.067211151123047 NMSE) from 
+epoch 1 to ./save/tutorial-csv-iq/train_pa/PA_S_0_M_GRU_H_23_F_50_P_1911.pt
+     General Information              Training Metrics        
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓ ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Metric       ┃ Value      ┃ ┃ Metric        ┃ Value        ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩ ┡━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ BACKBONE     │ gru        │ │ TRAIN_LOSS    │ 0.00068806   │
+│ BATCH_SIZE   │ 64         │ │ VAL_ACLR_AVG  │ -22.20625713 │
+│ EPOCH        │ 2          │ │ VAL_ACLR_L    │ -26.58882820 │
+│ FRAME_LENGTH │ 50         │ │ VAL_ACLR_R    │ -17.82368606 │
+│ HIDDEN_SIZE  │ 23         │ │ VAL_EVM       │ -24.59568256 │
+│ LR           │ 0.00500000 │ │ VAL_LOSS      │ 0.00029736   │
+│ N_EPOCH      │ 3          │ │ VAL_NMSE      │ -22.445383   │
+│ N_PARAM      │ 1911       │ │ TEST_ACLR_AVG │ -22.06605365 │
+│ TIME:        │ 0.05156328 │ │ TEST_ACLR_L   │ -25.21142861 │
+└──────────────┴────────────┘ │ TEST_ACLR_R   │ -18.92067868 │
+                              │ TEST_EVM      │ -23.73610614 │
+                              │ TEST_LOSS     │ 0.00037921   │
+                              │ TEST_NMSE     │ -21.421066   │
+                              └───────────────┴──────────────┘
+>>> saving best model (-22.067211151123047 -> -22.445383071899414 NMSE) from 
+epoch 2 to ./save/tutorial-csv-iq/train_pa/PA_S_0_M_GRU_H_23_F_50_P_1911.pt
+Training Completed...
+ 
+::: Are Deterministic Algorithms Enabled:  False
+--------------------------------------------------------------------
+::: Available GPUs: None
+--------------------------------------------------------------------
+Backbone Initialized...

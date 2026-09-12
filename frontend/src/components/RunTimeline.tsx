@@ -3,7 +3,7 @@ import ListItem from '@mui/material/ListItem'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
 import type { RunEvent, RunStatus, RunView } from '@/api/types'
-import { formatTime, t } from '@/i18n'
+import { formatTime, message, t } from '@/i18n'
 import { StatusChip } from './StatusChip'
 
 const STATUSES: ReadonlySet<string> = new Set<RunStatus>(['queued', 'running', 'succeeded', 'failed', 'cancel_requested', 'cancelled', 'interrupted'])
@@ -26,14 +26,14 @@ export function RunTimeline({ run, statusEvents, heartbeats }: { run: RunView; s
               {formatTime(x.ts)}
             </Typography>
             <StatusChip status={x.to as RunStatus} />
-            {typeof x.reason === 'string' && x.reason && <ListItemText secondary={x.reason} sx={{ m: 0 }} />}
+            {typeof x.reason === 'string' && x.reason && <ListItemText secondary={message(x.reason)} sx={{ m: 0 }} />}
           </ListItem>
         ))}
         {heartbeats > 0 && (
           <ListItem disableGutters>
             <Typography variant="caption" color="text.secondary">
               {heartbeats} × {t('timeline.heartbeat')}
-              {run.last_heartbeat_at ? ` · last ${formatTime(run.last_heartbeat_at)}` : ''}
+              {run.last_heartbeat_at ? ` · ${t('timeline.last', { time: formatTime(run.last_heartbeat_at) })}` : ''}
             </Typography>
           </ListItem>
         )}

@@ -1,0 +1,112 @@
+[
+  {
+    "label": "home-default",
+    "window": [
+      1366.0,
+      856.0
+    ],
+    "content": [
+      1366.0,
+      828.0
+    ],
+    "minimum": [
+      640.0,
+      480.0
+    ],
+    "scale": 2.0,
+    "view": "WebKitHost",
+    "pixels": [
+      2732,
+      1656
+    ],
+    "screenshot": "output/playwright/brand-native-home-default.png"
+  },
+  {
+    "label": "home-640",
+    "window": [
+      640.0,
+      480.0
+    ],
+    "content": [
+      640.0,
+      452.0
+    ],
+    "minimum": [
+      640.0,
+      480.0
+    ],
+    "scale": 2.0,
+    "view": "WebKitHost",
+    "pixels": [
+      1280,
+      904
+    ],
+    "screenshot": "output/playwright/brand-native-home-640.png"
+  },
+  {
+    "label": "about-640",
+    "window": [
+      1470.0,
+      872.0
+    ],
+    "content": [
+      1470.0,
+      844.0
+    ],
+    "minimum": [
+      640.0,
+      480.0
+    ],
+    "scale": 2.0,
+    "view": "WebKitHost",
+    "pixels": [
+      2940,
+      1688
+    ],
+    "screenshot": "output/playwright/brand-native-about-640.png"
+  },
+  {
+    "label": "about-default",
+    "window": [
+      1366.0,
+      856.0
+    ],
+    "content": [
+      1366.0,
+      828.0
+    ],
+    "minimum": [
+      640.0,
+      480.0
+    ],
+    "scale": 2.0,
+    "view": "WebKitHost",
+    "pixels": [
+      2732,
+      1656
+    ],
+    "screenshot": "output/playwright/brand-native-about-default.png"
+  },
+  {
+    "label": "dataset-default",
+    "window": [
+      1366.0,
+      856.0
+    ],
+    "content": [
+      1366.0,
+      828.0
+    ],
+    "minimum": [
+      640.0,
+      480.0
+    ],
+    "scale": 2.0,
+    "view": "WebKitHost",
+    "pixels": [
+      2732,
+      1656
+    ],
+    "screenshot": "output/playwright/brand-native-dataset-default.png"
+  }
+]

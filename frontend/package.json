@@ -21,7 +21,8 @@
     "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.4.0",
     "@tanstack/react-query": "^5.102.8",
-    "plotly.js-basic-dist-min": "^4.0.0",
+    "plotly.js-basic-dist-min": "4.0.0",
+    "plotly.js-strict-dist-min": "4.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.3.1"

@@ -124,6 +124,7 @@ test('a succeeded run_dpd run offers the measured-capture import: files are uplo
     ...routes(applied),
     ...routes(created),
     'GET /api/v1/datasets/dpa-200mhz': () => datasetMock.data,
+    'GET /api/v1/system/capabilities': () => ({ custom_dataset_imports: true }),
     'POST /api/v1/datasets/upload': () => ({ status: 201, body: { root_id: 'imports', path: 'uploads/20260906-with.npy', size_bytes: 8 } }),
     'POST /api/v1/runs': () => ({ status: 201, body: created }),
   })

@@ -81,6 +81,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/builtin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Datasets Builtin */
+        get: operations["datasets_builtin_api_v1_datasets_builtin_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset Csv Create */
+        post: operations["dataset_csv_create_api_v1_datasets_csv_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/csv/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset Csv Preview */
+        post: operations["dataset_csv_preview_api_v1_datasets_csv_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/import": {
         parameters: {
             query?: never;
@@ -109,6 +160,23 @@ export interface paths {
         put?: never;
         /** Dataset Import Builtin */
         post: operations["dataset_import_builtin_api_v1_datasets_import_builtin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/import-defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dataset Import Defaults */
+        get: operations["dataset_import_defaults_api_v1_datasets_import_defaults_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -195,6 +263,23 @@ export interface paths {
         };
         /** Dataset Get */
         get: operations["dataset_get_api_v1_datasets__dataset_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/{dataset_id}/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dataset Analysis */
+        get: operations["dataset_analysis_api_v1_datasets__dataset_id__analysis_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -705,6 +790,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Runs Live
+         * @description Latest bounded display snapshot; the worker alone computes the plots.
+         */
+        get: operations["runs_live_api_v1_runs__run_id__live_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/logs": {
         parameters: {
             query?: never;
@@ -790,6 +895,23 @@ export interface paths {
         get: operations["settings_get_api_v1_settings_get"];
         /** Settings Put */
         put: operations["settings_put_api_v1_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/about": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** System About */
+        get: operations["system_about_api_v1_system_about_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -940,6 +1062,17 @@ export interface components {
             /** Set Id */
             set_id: string;
         };
+        /** AmTrace */
+        AmTrace: {
+            /** Amp Out */
+            amp_out: number[];
+            /** Name */
+            name: string;
+            /** Phase Deg */
+            phase_deg: number[];
+            /** Role */
+            role: string;
+        };
         /** Artifact */
         Artifact: {
             /** Artifact Id */
@@ -1020,8 +1153,32 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** BuiltinDatasetInfo */
+        BuiltinDatasetInfo: {
+            /** Dataset Format */
+            dataset_format: string;
+            /** Description */
+            description: string;
+            /** Has Demodulator */
+            has_demodulator: boolean;
+            /** N Samples */
+            n_samples?: number | null;
+            /** Name */
+            name: string;
+            origin: components["schemas"]["DatasetOrigin"];
+            /** Problem */
+            problem?: string | null;
+            /** Raw Sha256 */
+            raw_sha256: string;
+            signal: components["schemas"]["SignalSpec"];
+        };
         /** Capabilities */
         Capabilities: {
+            /**
+             * Custom Dataset Imports
+             * @default false
+             */
+            custom_dataset_imports: boolean;
             /** Devices */
             devices: components["schemas"]["DeviceInfo"][];
             /** Note */
@@ -1229,6 +1386,121 @@ export interface components {
             /** Set Id */
             set_id: string;
         };
+        /** ConstellationTrace */
+        ConstellationTrace: {
+            /** Equalized */
+            equalized: boolean;
+            /** I */
+            i: number[];
+            /** N Symbols */
+            n_symbols: number;
+            /** Name */
+            name: string;
+            /** Q */
+            q: number[];
+            /** Role */
+            role: string;
+            /** Stride */
+            stride: number;
+        };
+        /** CsvCreateRequest */
+        CsvCreateRequest: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Expected Sha256 */
+            expected_sha256: string;
+            options?: components["schemas"]["CsvOptions"];
+            /** @default unknown */
+            origin: components["schemas"]["DatasetOrigin"];
+            signal?: components["schemas"]["SignalSpec"];
+            source: components["schemas"]["SourceRef"];
+            split?: components["schemas"]["DatasetImportDefaults"];
+        };
+        /** CsvInspection */
+        CsvInspection: {
+            /** Boundaries */
+            boundaries?: {
+                [key: string]: [
+                    number,
+                    number
+                ];
+            };
+            /** Columns */
+            columns?: string[];
+            /**
+             * Data Valid
+             * @default false
+             */
+            data_valid: boolean;
+            /**
+             * Issue Count
+             * @default 0
+             */
+            issue_count: number;
+            /** Issues */
+            issues?: components["schemas"]["CsvIssue"][];
+            /**
+             * N Samples
+             * @default 0
+             */
+            n_samples: number;
+            options?: components["schemas"]["CsvOptions"];
+            /** Preview */
+            preview?: string[][];
+            /** Sha256 */
+            sha256?: string | null;
+            split?: components["schemas"]["DatasetImportDefaults"];
+            /** Split Counts */
+            split_counts?: {
+                [key: string]: number;
+            };
+            /**
+             * Valid
+             * @default false
+             */
+            valid: boolean;
+        };
+        /** CsvIssue */
+        CsvIssue: {
+            /** Code */
+            code: string;
+            /** Column */
+            column?: string | null;
+            /** Fix */
+            fix: string;
+            /** Line */
+            line?: number | null;
+            /** Message */
+            message: string;
+        };
+        /** CsvOptions */
+        CsvOptions: {
+            /**
+             * Format
+             * @default auto
+             * @enum {string}
+             */
+            format: "auto" | "complex_pair" | "iq_columns";
+            /**
+             * Header
+             * @default auto
+             * @enum {string}
+             */
+            header: "auto" | "present" | "absent";
+            /** Mapping */
+            mapping?: {
+                [key: string]: number;
+            };
+        };
+        /** CsvPreviewRequest */
+        CsvPreviewRequest: {
+            options?: components["schemas"]["CsvOptions"];
+            signal?: components["schemas"]["SignalSpec"];
+            source: components["schemas"]["SourceRef"];
+            split?: components["schemas"]["DatasetImportDefaults"];
+        };
         /** DPDReference */
         DPDReference: {
             /** Checkpoint Artifact Id */
@@ -1243,6 +1515,40 @@ export interface components {
              * @default false
              */
             transfer: boolean;
+        };
+        /** DatasetAnalysis */
+        DatasetAnalysis: {
+            am?: components["schemas"]["InspectionAm"] | null;
+            constellation?: components["schemas"]["InspectionConstellation"] | null;
+            /** Data Version */
+            data_version: string;
+            /** Dataset Id */
+            dataset_id: string;
+            diagnostics: components["schemas"]["DiagnosticReport"];
+            /** Inspection Ready */
+            inspection_ready: boolean;
+            iq?: components["schemas"]["InspectionIQ"] | null;
+            /** Measurements */
+            measurements: components["schemas"]["InspectionMeasurement"][];
+            /** Metadata Complete */
+            metadata_complete: boolean;
+            /** Notes */
+            notes?: string[];
+            /** Sample Range */
+            sample_range: [
+                number,
+                number
+            ];
+            spectrum?: components["schemas"]["InspectionSpectrum"] | null;
+            time?: components["schemas"]["InspectionTime"] | null;
+            /** Total Samples */
+            total_samples: number;
+            /**
+             * Version
+             * @default dataset-inspection-v1
+             * @constant
+             */
+            version: "dataset-inspection-v1";
         };
         /** DatasetEvidence */
         DatasetEvidence: {
@@ -1263,6 +1569,18 @@ export interface components {
             split: "train" | "val" | "test";
             /** Split Version */
             split_version: string;
+        };
+        /** DatasetImportDefaults */
+        DatasetImportDefaults: {
+            /**
+             * Guard Samples
+             * @default 256
+             */
+            guard_samples: number;
+            /** Ratios */
+            ratios?: {
+                [key: string]: number;
+            };
         };
         /** DatasetManifest */
         DatasetManifest: {
@@ -1897,6 +2215,17 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** IQTrace */
+        IQTrace: {
+            /** I */
+            i: number[];
+            /** Name */
+            name: string;
+            /** Q */
+            q: number[];
+            /** Role */
+            role: string;
+        };
         /** ImportBuiltinRequest */
         ImportBuiltinRequest: {
             /** Dataset Id */
@@ -1978,6 +2307,156 @@ export interface components {
             checkpoint_sha256?: string | null;
             /** Run Id */
             run_id: string;
+        };
+        /** InspectionAm */
+        InspectionAm: {
+            /** Amp In */
+            amp_in: number[];
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "am";
+            /** N Points */
+            n_points: number;
+            /** N Samples */
+            n_samples: number;
+            /** Note */
+            note: string;
+            /** Stride */
+            stride: number;
+            /** Traces */
+            traces: components["schemas"]["AmTrace"][];
+            /** Version */
+            version: string;
+        };
+        /** InspectionConstellation */
+        InspectionConstellation: {
+            /** Active Subcarriers Per Carrier */
+            active_subcarriers_per_carrier?: number | null;
+            /** Dataset Name */
+            dataset_name?: string | null;
+            /** Demodulator */
+            demodulator?: string | null;
+            /** Fft Size */
+            fft_size?: number | null;
+            /** Modulation */
+            modulation?: string | null;
+            /** N Carriers */
+            n_carriers?: number | null;
+            /** Note */
+            note: string;
+            /** Reason */
+            reason?: string | null;
+            /** Sample Range */
+            sample_range?: [
+                number,
+                number
+            ] | null;
+            /** Source Sample Range */
+            source_sample_range?: [
+                number,
+                number
+            ] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "unavailable" | "invalid";
+            /** Traces */
+            traces?: components["schemas"]["ConstellationTrace"][];
+        };
+        /** InspectionIQ */
+        InspectionIQ: {
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "iq";
+            /**
+             * Mode
+             * @constant
+             */
+            mode: "samples";
+            /** N Samples */
+            n_samples: number;
+            /** Stride */
+            stride: number;
+            /** Traces */
+            traces: components["schemas"]["IQTrace"][];
+            /** Version */
+            version: string;
+        };
+        /** InspectionMeasurement */
+        InspectionMeasurement: {
+            input?: components["schemas"]["InspectionReading"] | null;
+            /** Label */
+            label: string;
+            /** Method */
+            method: string;
+            /** Name */
+            name: string;
+            output: components["schemas"]["InspectionReading"];
+            /** Unit */
+            unit: string;
+        };
+        /** InspectionReading */
+        InspectionReading: {
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "invalid" | "not_applicable" | "missing_reference" | "review_required";
+            /** Value */
+            value?: number | null;
+        };
+        /** InspectionSpectrum */
+        InspectionSpectrum: {
+            /**
+             * Axis
+             * @enum {string}
+             */
+            axis: "hz" | "normalized";
+            bands: components["schemas"]["SpectrumBands"] | null;
+            /** Estimator */
+            estimator: string;
+            /** Frequency */
+            frequency: number[];
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "spectrum";
+            /** N Samples */
+            n_samples: number;
+            /** Nperseg */
+            nperseg: number;
+            /** Sample Rate Hz */
+            sample_rate_hz: number | null;
+            /** Traces */
+            traces: components["schemas"]["SpectrumTrace"][];
+            /** Version */
+            version: string;
+        };
+        /** InspectionTime */
+        InspectionTime: {
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "time";
+            /** N */
+            n: number;
+            /** N Samples */
+            n_samples: number;
+            /** Start */
+            start: number;
+            /** Traces */
+            traces: components["schemas"]["IQTrace"][];
+            /** Version */
+            version: string;
         };
         /** LineageLink */
         LineageLink: {
@@ -2891,6 +3370,28 @@ export interface components {
             /** Root Id */
             root_id: string;
         };
+        /** SpectrumBands */
+        SpectrumBands: {
+            /** Adjacent */
+            adjacent: [
+                number,
+                number
+            ][];
+            /** Main */
+            main: [
+                number,
+                number
+            ];
+        };
+        /** SpectrumTrace */
+        SpectrumTrace: {
+            /** Name */
+            name: string;
+            /** Psd Db */
+            psd_db: number[];
+            /** Role */
+            role: string;
+        };
         /**
          * SplitSpec
          * @description Contiguous train/val/test split performed *before* framing, with an
@@ -3278,7 +3779,7 @@ export interface components {
          */
         WorkspaceSettings: {
             /** Language */
-            language?: ("en" | "fr" | "de" | "es" | "zh" | "ja" | "ko") | null;
+            language?: ("en" | "nl" | "zh" | "fr" | "de" | "it" | "ja" | "ko" | "es") | null;
         };
     };
     responses: never;
@@ -3394,6 +3895,92 @@ export interface operations {
             };
         };
     };
+    datasets_builtin_api_v1_datasets_builtin_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuiltinDatasetInfo"][];
+                };
+            };
+        };
+    };
+    dataset_csv_create_api_v1_datasets_csv_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetManifest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_csv_preview_api_v1_datasets_csv_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvInspection"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dataset_import_api_v1_datasets_import_post: {
         parameters: {
             query?: never;
@@ -3456,6 +4043,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_import_defaults_api_v1_datasets_import_defaults_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetImportDefaults"];
                 };
             };
         };
@@ -3597,6 +4204,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetManifest"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_analysis_api_v1_datasets__dataset_id__analysis_get: {
+        parameters: {
+            query?: {
+                version?: string;
+            };
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetAnalysis"];
                 };
             };
             /** @description Validation Error */
@@ -3849,7 +4489,9 @@ export interface operations {
     };
     exports_create_api_v1_exports_post: {
         parameters: {
-            query?: never;
+            query?: {
+                language?: ("en" | "nl" | "zh" | "fr" | "de" | "it" | "ja" | "ko" | "es") | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4136,6 +4778,7 @@ export interface operations {
         parameters: {
             query?: {
                 format?: "html" | "md";
+                language?: ("en" | "nl" | "zh" | "fr" | "de" | "it" | "ja" | "ko" | "es") | null;
             };
             header?: never;
             path: {
@@ -4517,11 +5160,45 @@ export interface operations {
             };
         };
     };
+    runs_live_api_v1_runs__run_id__live_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     runs_logs_api_v1_runs__run_id__logs_get: {
         parameters: {
             query?: {
                 offset?: number;
                 limit?: number;
+                tail?: boolean;
             };
             header?: never;
             path: {
@@ -4684,6 +5361,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_about_api_v1_system_about_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

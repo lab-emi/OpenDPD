@@ -155,7 +155,7 @@ def _checkpoint_path(ws: Workspace, run_id: str, resolved: ResolvedExperimentCon
 
 
 def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
-                       manifest: ArtifactManifest) -> Predictions:
+                       manifest: ArtifactManifest, observer=None) -> Predictions:
     import torch
     from modules.data_collector import IQSegmentDataset, load_dataset
     from modules.train_funcs import net_eval
@@ -179,8 +179,15 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
         state = load_checkpoint(checkpoint)
         (net.dpd_model if dpd_task else net).load_state_dict(state)
         net = net.to(proj.device)
-        _, prediction, ground_truth = net_eval(log={}, net=net, dataloader=test_loader,
-                                               criterion=proj.build_criterion(), device=proj.device)
+        observed_loader, handle = observer.evaluation_loader(test_loader, net, proj) if observer else (test_loader, None)
+        try:
+            _, prediction, ground_truth = net_eval(log={}, net=net, dataloader=observed_loader,
+                                                   criterion=proj.build_criterion(), device=proj.device)
+        finally:
+            if handle is not None:
+                handle.remove()
+        if observer:
+            observer.stage("baselines")
         xs, us, y0s = [], [], []
         net.eval()
         with torch.inference_mode():
@@ -370,9 +377,11 @@ def write_plots(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, 
 
 
 def evaluate_all(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
-                 manifest: ArtifactManifest) -> Dict[str, EvaluationResult]:
+                 manifest: ArtifactManifest, observer=None) -> Dict[str, EvaluationResult]:
     """Score every registered profile from one prediction pass; the configured profile is the primary result."""
-    predictions = predict_test_split(ws, run_id, resolved, manifest)
+    predictions = predict_test_split(ws, run_id, resolved, manifest, observer=observer)
+    if observer:
+        observer.stage("score")
     results = {p.profile_id: result_for(ws, run_id, resolved, manifest, predictions, p.profile_id)
                for p in list_profiles()}
     store_results(ws.run_dir(run_id), results, resolved.evaluation.profile_id)

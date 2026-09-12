@@ -2,11 +2,12 @@ import Chip from '@mui/material/Chip'
 import Tooltip from '@mui/material/Tooltip'
 import type { EvidenceType } from '@/api/types'
 import { t } from '@/i18n'
-import { tokens } from '@/theme'
+import { useStudioColors } from '@/theme'
 
 /** Evidence type of a result, plus the MOCK stripe that disables export (UX spec §3). */
 export function EvidenceBadge({ evidence, mock = false }: { evidence: EvidenceType; mock?: boolean }) {
-  const color = mock ? tokens.color.evidence.mock : tokens.color.evidence[evidence]
+  const colors = useStudioColors()
+  const color = mock ? colors.evidence.mock : colors.evidence[evidence]
   const label = mock ? `${t('evidence.mock')} · ${t(`evidence.${evidence}`)}` : t(`evidence.${evidence}`)
   const hint = mock ? t('evidence.mock.hint') : t(`evidence.${evidence}.hint`)
   return (

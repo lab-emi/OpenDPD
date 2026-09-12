@@ -1,0 +1,16 @@
+{
+  "config_sha256": "4a7826edcfe1fa7a55be020e0a3508dedd695d1b81e0d2bf66b6edbc8b97b652",
+  "created_at": "2026-09-12T10:27:57.452293+00:00",
+  "dataset_raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+  "legacy_equivalent_command": "python main.py --dataset_name dpa-200mhz --dataset_path /private/tmp/opendpd-plot-gestures-qa/datasets/dpa-200mhz/raw --step train_pa --accelerator cpu --frame_length 50 --frame_stride 16 --batch_size_eval 256 --n_epochs 3",
+  "parent_run_id": null,
+  "run_id": "run-20260912-102757-83f03e",
+  "software": {
+    "git_commit": "f43cd32d8385efc3bf44980e19689caa1ae66e64",
+    "git_dirty": true,
+    "opendpd_version": "2.2.0.dev0",
+    "platform": "Darwin-arm64",
+    "python_version": "3.13.12",
+    "torch_version": "2.14.0"
+  }
+}

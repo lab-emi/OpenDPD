@@ -8,7 +8,7 @@ agent tasks bound by `AGENTS.md`.
 |---|---|---|---|
 | 1 | **human** External trial with three groups and the ≥ 5-user onboarding session (`docs/releases/external-trial-protocol.md`) | the only S14 evidence that is not the maintainers' own opinion | G2 |
 | 2 | **human** Real desktop checks on macOS and Windows (`opendpd gui`, default browser launch, Ctrl+C cleanup, paths with spaces/Unicode) and a real Safari pass | support matrix rows are "unverified" | G2 |
-| 2a | **human** Native window checks: on macOS the close question while a run is active, a download through the save dialog, the menu name and the Dock icon; on Windows and Linux everything (`opendpd gui` with the desktop extra: window, downloads, close-with-confirmation, Ctrl+C) | the support matrix rows say what was not exercised | G2 |
+| 2a | **human** Native window checks on Windows and Linux (`opendpd gui` with the desktop extra: window, downloads, close-with-confirmation, Ctrl+C) | these platforms remain unverified; the macOS exit fix passed all six native Cancel/Quit checks ([report](../baseline/native-window-macos-fix-2026-09-11.md)) but provides no evidence for these platforms | G2 |
 | 3 | **human** Maintainer approval of the draft regression baseline (`benchmark/regression/cpu-regression-dpa-200mhz/baseline.json`) and a `gpu_full` run on a named machine | regression checks stay advisory until then | G2 |
 | 4 | **human** Release approval, tag, PyPI publication and demo material from the same candidate | agents never publish | G2 |
 | 5 | Streaming CSV import (chunked split writing straight from the reader) and chunked preprocessing versions for Stress-size captures | `.npy` streams, CSV and preprocessing keep the capture in RAM | later |

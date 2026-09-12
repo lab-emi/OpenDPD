@@ -78,9 +78,20 @@ def cmd_datasets(args) -> int:
             from opendpd.services import datasets as ds
 
             mapping = dict(pair.split("=", 1) for pair in (args.map or []))
+            from opendpd.schemas.importing import CsvOptions, DatasetImportDefaults
+            csv_options = None
+            if args.csv_format or args.inspect_csv:
+                csv_options = CsvOptions(format=args.csv_format or "auto", header=args.csv_header,
+                                         mapping={k: int(v) for k, v in (pair.split("=", 1) for pair in (args.csv_map or []))})
+            split = DatasetImportDefaults(guard_samples=args.guard, **({"ratios": dict(zip(("train", "val", "test"), args.ratios))} if args.ratios else {}))
+            if args.inspect_csv:
+                from opendpd.services.csv_import import inspect_csv
+                report = inspect_csv(Path(args.path), csv_options, split)[0]
+                _print_json(report.model_dump(mode="json"))
+                return 0 if report.valid else 1
             manifest = ds.import_dataset(ws, Path(args.path), dataset_id=args.id, display_name=args.name, mapping=mapping,
                                          signal=_signal_from_args(args), origin=DatasetOrigin(args.origin),
-                                         guard_samples=args.guard,
+                                         guard_samples=args.guard, ratios=split.ratios, csv_options=csv_options,
                                          waveform=Path(args.waveform) if args.waveform else None)
             if args.json:
                 _print_json(manifest.model_dump(mode="json"))
@@ -93,6 +104,11 @@ def cmd_datasets(args) -> int:
                 missing = manifest.missing_metadata()
                 if missing:
                     print("metadata still missing for evaluation: " + ", ".join(missing))
+            return 0
+        if args.datasets_command == "analyze":
+            from opendpd.services.dataset_analysis import analyze_dataset
+
+            _print_json(analyze_dataset(ws, args.id, args.version).model_dump(mode="json"))
             return 0
         if args.datasets_command == "doctor":
             from opendpd.services import datasets as ds
@@ -971,8 +987,18 @@ def build_parser() -> argparse.ArgumentParser:
                    help="bind the input column to a reference-waveform package (waveform.json or its directory); "
                         "refused when the input does not correlate with the waveform")
     q.add_argument("--origin", choices=["measured", "synthetic", "unknown"], default="unknown")
-    q.add_argument("--guard", type=int, default=256, help="guard samples dropped between splits (>= frame length)")
+    from opendpd.core.splits import DEFAULT_GUARD_SAMPLES
+    q.add_argument("--guard", type=int, default=DEFAULT_GUARD_SAMPLES, help="guard samples dropped between splits (>= frame length)")
+    q.add_argument("--ratios", type=float, nargs=3, metavar=("TRAIN", "VAL", "TEST"), help="contiguous split ratios; defaults come from the shared split protocol")
+    q.add_argument("--csv-format", choices=["auto", "complex_pair", "iq_columns"], help="validate the whole paired CSV before importing")
+    q.add_argument("--csv-header", choices=["auto", "present", "absent"], default="auto")
+    q.add_argument("--csv-map", action="append", metavar="ROLE=INDEX", help="CSV role to zero-based column index (input/output or I_in/Q_in/I_out/Q_out)")
+    q.add_argument("--inspect-csv", action="store_true", help="validate the whole CSV and print guidance/split counts without importing")
     q.add_argument("--json", action="store_true")
+    q = ds.add_parser("analyze", help="inspect a dataset version: shared measurements and bounded plot data (JSON)")
+    q.add_argument("id")
+    q.add_argument("--workspace", required=True)
+    q.add_argument("--version", default="raw-v1")
     q = ds.add_parser("doctor", help="run Dataset Doctor and store the report")
     q.add_argument("id")
     q.add_argument("--workspace", required=True)

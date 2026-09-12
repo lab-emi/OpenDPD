@@ -1,4 +1,4 @@
-"""User-created custom PA dataset (single-channel).
+"""Synthetic 64QAM — dummy dataset for tutorial purpose.
 
 IFFT-frame demodulation (nperseg=2560, no cyclic prefix).
 """

@@ -1,0 +1,34 @@
+{
+  "samples": 8192,
+  "columns": {
+    "input": "input",
+    "output": "output"
+  },
+  "split": {
+    "version": "contiguous-v1",
+    "method": "contiguous",
+    "ratios": {
+      "train": 0.6,
+      "val": 0.2,
+      "test": 0.2
+    },
+    "guard_samples": 256,
+    "boundaries": {
+      "train": [
+        0,
+        4608
+      ],
+      "val": [
+        4864,
+        6400
+      ],
+      "test": [
+        6656,
+        8192
+      ]
+    }
+  },
+  "source_sha256": "7bad3a955c8f00dbdb1522481354237003b7205bd1c5a33d1e6cd4805bbb4ee6",
+  "raw_values_match": true,
+  "origin": "synthetic"
+}

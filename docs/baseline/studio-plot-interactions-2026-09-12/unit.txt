@@ -1,0 +1,13 @@
+
+> opendpd-studio@2.2.0-dev0 test
+> vitest run src/components/PlotlyChart.test.tsx src/components/plotInteractions.test.ts
+
+
+ RUN  v5.0.0 /Users/gaochang/git/OpenDPD/frontend
+
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  12:45:17
+   Duration  2.08s (tests 39%, environment 38%, import 11%, setup 7%, transform 4%)
+

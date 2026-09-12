@@ -1,0 +1,437 @@
+--- before/frontend/src/components/CreateDatasetDialog.test.tsx
++++ after/frontend/src/components/CreateDatasetDialog.test.tsx
+@@ -1,4 +1,4 @@
+-import { screen, waitFor } from '@testing-library/react'
++import { within, screen, waitFor } from '@testing-library/react'
+ import userEvent from '@testing-library/user-event'
+ import datasetMock from '@mocks/dataset_builtin.json'
+ import { mockApi, renderWithProviders } from '@/test/utils'
+@@ -80,7 +80,7 @@
+   await userEvent.type(screen.getByLabelText('train (%)'), '5')
+   await userEvent.click(screen.getByRole('button', { name: 'Reset page' }))
+   expect(screen.getByRole('dialog', { name: 'Reset this page?' })).toHaveTextContent('Saved datasets, results and running jobs are kept.')
+-  await userEvent.click(screen.getByRole('button', { name: 'Reset' }))
++  await userEvent.click(within(screen.getByRole('dialog', { name: 'Reset this page?' })).getByRole('button', { name: 'Continue' }))
+   expect(await screen.findByRole('tab', { name: /CSV & columns/ })).toHaveAttribute('aria-selected', 'true')
+   expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
+   expect(screen.queryByText('paired.csv')).not.toBeInTheDocument()
+--- before/frontend/src/components/ResetButton.test.tsx
++++ after/frontend/src/components/ResetButton.test.tsx
+@@ -0,0 +1,42 @@
++import { screen, waitFor, within } from '@testing-library/react'
++import userEvent from '@testing-library/user-event'
++import { renderWithProviders } from '@/test/utils'
++import { ResetButton } from './ResetButton'
++
++test('cancel and Escape keep progress; continue resets once and announces completion', async () => {
++  const onReset = vi.fn()
++  renderWithProviders(<ResetButton onReset={onReset} />)
++  const user = userEvent.setup()
++  const trigger = screen.getByRole('button', { name: 'Reset page' })
++  await user.click(trigger)
++  let dialog = screen.getByRole('dialog', { name: 'Reset this page?' })
++  expect(dialog).toHaveTextContent('This cannot be undone.')
++  expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus()
++  await user.keyboard('{Escape}')
++  await waitFor(() => expect(dialog).not.toBeInTheDocument())
++  expect(trigger).toHaveFocus()
++  expect(onReset).not.toHaveBeenCalled()
++  await user.click(trigger)
++  dialog = screen.getByRole('dialog', { name: 'Reset this page?' })
++  await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
++  await waitFor(() => expect(dialog).not.toBeInTheDocument())
++  expect(onReset).not.toHaveBeenCalled()
++  await user.click(trigger)
++  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Continue' }))
++  expect(onReset).toHaveBeenCalledTimes(1)
++  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
++  expect(screen.getByRole('alert')).toHaveTextContent('Reset complete.')
++})
++
++test('a pending save explains the delay instead of leaving an unresponsive reset button', async () => {
++  const onReset = vi.fn()
++  const { rerender } = renderWithProviders(<ResetButton disabled onReset={onReset} />)
++  await userEvent.click(screen.getByRole('button', { name: 'Reset page' }))
++  const dialog = screen.getByRole('dialog')
++  expect(dialog).toHaveTextContent('A save or submission is in progress.')
++  expect(within(dialog).getByRole('button', { name: 'Continue' })).toBeDisabled()
++  expect(onReset).not.toHaveBeenCalled()
++  rerender(<ResetButton onReset={onReset} />)
++  await userEvent.click(within(dialog).getByRole('button', { name: 'Continue' }))
++  expect(onReset).toHaveBeenCalledTimes(1)
++})
+--- before/frontend/src/components/ResetButton.tsx
++++ after/frontend/src/components/ResetButton.tsx
+@@ -1,16 +1,19 @@
+ import RestartAltIcon from '@mui/icons-material/RestartAlt'
++import Alert from '@mui/material/Alert'
+ import Button from '@mui/material/Button'
+ import Dialog from '@mui/material/Dialog'
+ import DialogActions from '@mui/material/DialogActions'
+ import DialogContent from '@mui/material/DialogContent'
+ import DialogContentText from '@mui/material/DialogContentText'
+ import DialogTitle from '@mui/material/DialogTitle'
++import Snackbar from '@mui/material/Snackbar'
+ import { useId, useRef, useState } from 'react'
+ import { t } from '@/i18n'
+ 
+-/** Reset is limited to unsaved UI state; the confirmation describes its scope. */
+-export function ResetButton({ onReset, disabled = false, scope = 'page' }: { onReset: () => void; disabled?: boolean; scope?: 'page' | 'studio' }) {
++/** The prompt stays available during a save, but confirmation waits for it to finish. */
++export function ResetButton({ onReset, disabled = false, scope = 'page', detail }: { onReset: () => void; disabled?: boolean; scope?: 'page' | 'studio'; detail?: string }) {
+   const [open, setOpen] = useState(false)
++  const [completed, setCompleted] = useState(false)
+   const trigger = useRef<HTMLButtonElement>(null)
+   const id = useId()
+   const restoreFocus = () => {
+@@ -18,14 +21,22 @@
+     if (trigger.current && !trigger.current.closest('[aria-hidden="true"]')) trigger.current.focus()
+   }
+   return <>
+-    <Button ref={trigger} size="small" color="inherit" startIcon={<RestartAltIcon />} disabled={disabled} onClick={(event) => { event.currentTarget.blur(); setOpen(true) }}>{t(scope === 'studio' ? 'reset.studio' : 'reset.page')}</Button>
++    <Button ref={trigger} size="small" color="inherit" startIcon={<RestartAltIcon />} onClick={(event) => { event.currentTarget.blur(); setCompleted(false); setOpen(true) }}>{t(scope === 'studio' ? 'reset.studio' : 'reset.page')}</Button>
+     <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth disableRestoreFocus slotProps={{ transition: { onExited: restoreFocus } }} aria-labelledby={`${id}-title`} aria-describedby={`${id}-body`}>
+       <DialogTitle id={`${id}-title`}>{t(scope === 'studio' ? 'reset.studio.title' : 'reset.page.title')}</DialogTitle>
+-      <DialogContent><DialogContentText id={`${id}-body`}>{t(scope === 'studio' ? 'reset.studio.body' : 'reset.page.body')}</DialogContentText></DialogContent>
++      <DialogContent id={`${id}-body`}>
++        <Alert severity="warning" sx={{ mb: 2 }}>{t('reset.warning')}</Alert>
++        <DialogContentText>{t(scope === 'studio' ? 'reset.studio.body' : 'reset.page.body')}</DialogContentText>
++        {detail && <DialogContentText sx={{ mt: 1 }}>{detail}</DialogContentText>}
++        {disabled && <Alert severity="info" sx={{ mt: 2 }}>{t('reset.busy')}</Alert>}
++      </DialogContent>
+       <DialogActions>
+         <Button onClick={() => setOpen(false)} autoFocus>{t('form.cancel')}</Button>
+-        <Button variant="contained" disabled={disabled} onClick={() => { setOpen(false); onReset() }}>{t('reset.confirm')}</Button>
++        <Button variant="contained" color="warning" disabled={disabled} onClick={() => { setOpen(false); onReset(); setCompleted(true) }}>{t(scope === 'page' ? 'workflow.next' : 'reset.confirm')}</Button>
+       </DialogActions>
+     </Dialog>
++    <Snackbar open={completed} autoHideDuration={4500} onClose={() => setCompleted(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
++      <Alert severity="success" onClose={() => setCompleted(false)}>{t('reset.done')}</Alert>
++    </Snackbar>
+   </>
+ }
+--- before/frontend/src/i18n/de.json
++++ after/frontend/src/i18n/de.json
+@@ -601,7 +601,7 @@
+   "reset.studio": "Studio zurücksetzen",
+   "reset.page.title": "Diese Seite zurücksetzen?",
+   "reset.studio.title": "Die Anleitung neu starten?",
+-  "reset.page.body": "Nicht gespeicherte Eingaben dieser Seite verwerfen und die ursprüngliche Ansicht wiederherstellen. Gespeicherte Datensätze, Ergebnisse und laufende Aufgaben bleiben erhalten.",
++  "reset.page.body": "Eingaben, Auswahl, abgeschlossene Einrichtungsschritte, Diagramm- und Terminalansichten zurücksetzen und neu beginnen. Gespeicherte Datensätze, Ergebnisse und laufende Aufgaben bleiben erhalten.",
+   "reset.studio.body": "Nicht gespeicherte Einstellungen verwerfen, Ansichten zurücksetzen und die Datensatzanleitung neu starten. Gespeicherte Daten, Ergebnisse, laufende Aufgaben und Sprache bleiben erhalten.",
+   "reset.confirm": "Zurücksetzen",
+   "tasks.choose": "Aufgabe wählen",
+@@ -724,5 +724,11 @@
+   "home.runs.empty": "Noch keine Experimente",
+   "chart.recovery.enabled": "Leere Ansichten automatisch einpassen",
+   "chart.recovery.threshold": "Schwelle für leere Fläche",
+-  "chart.recovery.note": "Wenn kein Punkt und keine Kurve sichtbar ist oder mehr als {threshold}% der Ansicht außerhalb der Datengrenzen liegt, nach {delay} s ohne Eingabe einpassen. Gilt nur für dieses Diagramm; zum Erkunden leerer Bereiche ausschalten."
++  "chart.recovery.note": "Wenn kein Punkt und keine Kurve sichtbar ist oder mehr als {threshold}% der Ansicht außerhalb der Datengrenzen liegt, nach {delay} s ohne Eingabe einpassen. Gilt nur für dieses Diagramm; zum Erkunden leerer Bereiche ausschalten.",
++  "reset.warning": "Alle Einrichtungsschritte auf dieser Seite werden verworfen. Dies lässt sich nicht rückgängig machen.",
++  "reset.busy": "Ein Speicher- oder Sendevorgang läuft. Danach können Sie fortfahren oder diesen Dialog jetzt abbrechen.",
++  "reset.done": "Zurückgesetzt. Sie können neu beginnen.",
++  "reset.page.dataset": "Sie kehren zu den Datensätzen zurück, um einen Datensatz erneut auszuwählen oder zu erstellen.",
++  "reset.page.experiment": "Sie kehren zum ersten Einrichtungsschritt dieses Experimenttyps zurück.",
++  "reset.page.results": "Sie kehren zu den Ergebnissen zurück. Die aktuelle Ergebnis- und Vergleichsauswahl wird geleert."
+ }
+--- before/frontend/src/i18n/en.json
++++ after/frontend/src/i18n/en.json
+@@ -601,7 +601,7 @@
+   "reset.studio": "Reset Studio",
+   "reset.page.title": "Reset this page?",
+   "reset.studio.title": "Start the guided setup again?",
+-  "reset.page.body": "Discard this page’s unsaved entries and restore its initial controls and view. Saved datasets, results and running jobs are kept.",
++  "reset.page.body": "Clear entries, selections, completed setup steps, chart views and the terminal view, then start over. Saved datasets, results and running jobs are kept.",
+   "reset.studio.body": "Discard unsaved settings, reset views and restart the dataset guide. Saved datasets, results, running jobs and your language choice are kept.",
+   "reset.confirm": "Reset",
+   "tasks.choose": "Choose a task",
+@@ -724,5 +724,11 @@
+   "home.runs.empty": "No experiments yet",
+   "chart.recovery.enabled": "Auto-fit empty views",
+   "chart.recovery.threshold": "Empty area threshold",
+-  "chart.recovery.note": "If no point or curve is visible, or more than {threshold}% of the view falls outside the data bounds, fit after {delay} s without input. Applies to this chart; turn off to explore empty areas."
++  "chart.recovery.note": "If no point or curve is visible, or more than {threshold}% of the view falls outside the data bounds, fit after {delay} s without input. Applies to this chart; turn off to explore empty areas.",
++  "reset.warning": "This will discard all setup progress on this page. This cannot be undone.",
++  "reset.busy": "A save or submission is in progress. You can continue when it finishes, or cancel this dialog.",
++  "reset.done": "Reset complete. You can start over.",
++  "reset.page.dataset": "You will return to Datasets to choose or create a dataset again.",
++  "reset.page.experiment": "You will return to the first setup step for this experiment type.",
++  "reset.page.results": "You will return to Results with the current result and comparison selections cleared."
+ }
+--- before/frontend/src/i18n/es.json
++++ after/frontend/src/i18n/es.json
+@@ -601,7 +601,7 @@
+   "reset.studio": "Restablecer Studio",
+   "reset.page.title": "¿Restablecer esta página?",
+   "reset.studio.title": "¿Volver a empezar la guía?",
+-  "reset.page.body": "Descarta los cambios sin guardar de esta página y restaura su vista inicial. Se conservan los datos, resultados y tareas en curso.",
++  "reset.page.body": "Borrar entradas, selecciones y pasos completados, y restablecer los gráficos y la vista del terminal para empezar de nuevo. Se conservan los datos guardados, los resultados y las tareas en curso.",
+   "reset.studio.body": "Descarta los ajustes sin guardar, restablece las vistas y reinicia la guía. Se conservan los datos, resultados, tareas en curso e idioma.",
+   "reset.confirm": "Restablecer",
+   "tasks.choose": "Elige una tarea",
+@@ -724,5 +724,11 @@
+   "home.runs.empty": "Aún no hay experimentos",
+   "chart.recovery.enabled": "Ajustar automáticamente las vistas vacías",
+   "chart.recovery.threshold": "Umbral de área vacía",
+-  "chart.recovery.note": "Si no se ve ningún punto ni curva, o más del {threshold}% de la vista queda fuera de los límites de los datos, ajustar tras {delay} s sin interacción. Solo este gráfico; desactívalo para explorar áreas vacías."
++  "chart.recovery.note": "Si no se ve ningún punto ni curva, o más del {threshold}% de la vista queda fuera de los límites de los datos, ajustar tras {delay} s sin interacción. Solo este gráfico; desactívalo para explorar áreas vacías.",
++  "reset.warning": "Se descartará todo el progreso de configuración de esta página. No se puede deshacer.",
++  "reset.busy": "Hay una operación guardando o enviando datos. Podrá continuar cuando termine o cancelar este diálogo.",
++  "reset.done": "Restablecido. Puede empezar de nuevo.",
++  "reset.page.dataset": "Volverá a Datos para seleccionar o crear un conjunto de datos de nuevo.",
++  "reset.page.experiment": "Volverá al primer paso de configuración de este tipo de experimento.",
++  "reset.page.results": "Volverá a Resultados y se borrará la selección actual de resultados y comparaciones."
+ }
+--- before/frontend/src/i18n/fr.json
++++ after/frontend/src/i18n/fr.json
+@@ -601,7 +601,7 @@
+   "reset.studio": "Réinitialiser Studio",
+   "reset.page.title": "Réinitialiser cette page ?",
+   "reset.studio.title": "Reprendre le guide depuis le début ?",
+-  "reset.page.body": "Abandonnez les saisies non enregistrées de cette page et restaurez sa vue initiale. Les données, résultats et tâches en cours sont conservés.",
++  "reset.page.body": "Effacez les saisies, les sélections et les étapes validées, puis réinitialisez les graphiques et le terminal pour recommencer. Les données enregistrées, les résultats et les tâches en cours sont conservés.",
+   "reset.studio.body": "Abandonnez les réglages non enregistrés, réinitialisez les vues et relancez le guide. Les données, résultats, tâches en cours et la langue sont conservés.",
+   "reset.confirm": "Réinitialiser",
+   "tasks.choose": "Choisir une tâche",
+@@ -724,5 +724,11 @@
+   "home.runs.empty": "Aucune expérience pour le moment",
+   "chart.recovery.enabled": "Recadrer les vues vides",
+   "chart.recovery.threshold": "Seuil de zone vide",
+-  "chart.recovery.note": "Si aucun point ni aucune courbe n’est visible, ou si plus de {threshold}% de la vue sort des limites des données, recadrer après {delay} s sans interaction. Ce graphique uniquement ; désactivez pour explorer les zones vides."
++  "chart.recovery.note": "Si aucun point ni aucune courbe n’est visible, ou si plus de {threshold}% de la vue sort des limites des données, recadrer après {delay} s sans interaction. Ce graphique uniquement ; désactivez pour explorer les zones vides.",
++  "reset.warning": "Toute la progression de configuration de cette page sera perdue. Cette action est irréversible.",
++  "reset.busy": "Un enregistrement ou un envoi est en cours. Vous pourrez continuer une fois terminé, ou annuler ce dialogue.",
++  "reset.done": "Réinitialisation terminée. Vous pouvez recommencer.",
++  "reset.page.dataset": "Vous reviendrez aux données pour sélectionner ou créer un jeu de données.",
++  "reset.page.experiment": "Vous reviendrez à la première étape de configuration de ce type d’expérience.",
++  "reset.page.results": "Vous reviendrez aux résultats, avec les sélections de résultats et de comparaison effacées."
+ }
+--- before/frontend/src/i18n/ja.json
++++ after/frontend/src/i18n/ja.json
+@@ -601,7 +601,7 @@
+   "reset.studio": "Studioをリセット",
+   "reset.page.title": "このページをリセットしますか？",
+   "reset.studio.title": "ガイドを最初からやり直しますか？",
+-  "reset.page.body": "このページの未送信の入力を破棄し、操作項目と表示を初期状態に戻します。保存済みデータセット、結果、実行中のジョブは保持されます。",
++  "reset.page.body": "入力内容、選択、完了した設定ステップ、グラフとターミナルの表示をリセットして最初から始めます。保存済みのデータセット、結果、実行中のジョブは保持されます。",
+   "reset.studio.body": "未送信の設定を破棄し、表示をリセットしてデータセットガイドを再開します。保存済みデータ、結果、実行中のジョブ、言語設定は保持されます。",
+   "reset.confirm": "リセット",
+   "tasks.choose": "タスクを選択",
+@@ -724,5 +724,11 @@
+   "home.runs.empty": "実験はまだありません",
+   "chart.recovery.enabled": "空白の表示を自動調整",
+   "chart.recovery.threshold": "空白領域のしきい値",
+-  "chart.recovery.note": "点や曲線が表示範囲から完全に外れるか、表示領域の {threshold}% 超がデータ範囲外になると、操作停止から {delay} 秒後に全体表示に戻ります。このグラフのみ適用。空白領域を調べる場合は無効にできます。"
++  "chart.recovery.note": "点や曲線が表示範囲から完全に外れるか、表示領域の {threshold}% 超がデータ範囲外になると、操作停止から {delay} 秒後に全体表示に戻ります。このグラフのみ適用。空白領域を調べる場合は無効にできます。",
++  "reset.warning": "このページの設定の進捗がすべて失われます。この操作は取り消せません。",
++  "reset.busy": "保存または送信中です。完了後に続行するか、このダイアログをキャンセルできます。",
++  "reset.done": "リセットしました。最初から始められます。",
++  "reset.page.dataset": "データセットの一覧に戻り、選択または作成し直します。",
++  "reset.page.experiment": "この実験の種類の最初の設定ステップに戻ります。",
++  "reset.page.results": "結果の一覧に戻り、現在の結果と比較の選択を解除します。"
+ }
+--- before/frontend/src/i18n/ko.json
++++ after/frontend/src/i18n/ko.json
+@@ -601,7 +601,7 @@
+   "reset.studio": "Studio 초기화",
+   "reset.page.title": "이 페이지를 초기화할까요?",
+   "reset.studio.title": "안내를 처음부터 다시 시작할까요?",
+-  "reset.page.body": "이 페이지의 미제출 입력을 버리고 화면을 초기 상태로 되돌립니다. 저장된 데이터셋, 결과, 실행 중인 작업은 유지됩니다.",
++  "reset.page.body": "입력 내용, 선택 항목, 완료한 설정 단계, 그래프와 터미널 보기를 초기화하고 처음부터 시작합니다. 저장된 데이터셋, 결과 및 실행 중인 작업은 유지됩니다.",
+   "reset.studio.body": "미제출 설정과 화면 상태를 초기화하고 데이터셋 안내를 다시 시작합니다. 저장된 데이터, 결과, 실행 중인 작업, 언어 설정은 유지됩니다.",
+   "reset.confirm": "초기화",
+   "tasks.choose": "작업 선택",
+@@ -724,5 +724,11 @@
+   "home.runs.empty": "아직 실험이 없습니다",
+   "chart.recovery.enabled": "빈 화면 자동 맞춤",
+   "chart.recovery.threshold": "빈 영역 임계값",
+-  "chart.recovery.note": "점이나 곡선이 보이지 않거나 화면의 {threshold}% 넘게 데이터 범위를 벗어나면, 입력이 멈춘 뒤 {delay}초 후 자동으로 맞춥니다. 이 그래프에만 적용되며, 빈 영역을 살펴보려면 끌 수 있습니다."
++  "chart.recovery.note": "점이나 곡선이 보이지 않거나 화면의 {threshold}% 넘게 데이터 범위를 벗어나면, 입력이 멈춘 뒤 {delay}초 후 자동으로 맞춥니다. 이 그래프에만 적용되며, 빈 영역을 살펴보려면 끌 수 있습니다.",
++  "reset.warning": "이 페이지의 모든 설정 진행 상황이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
++  "reset.busy": "저장 또는 제출 중입니다. 완료 후 계속하거나 이 창을 취소할 수 있습니다.",
++  "reset.done": "초기화되었습니다. 처음부터 시작할 수 있습니다.",
++  "reset.page.dataset": "데이터셋 목록으로 돌아가 데이터셋을 다시 선택하거나 생성합니다.",
++  "reset.page.experiment": "현재 실험 유형의 첫 번째 설정 단계로 돌아갑니다.",
++  "reset.page.results": "결과 목록으로 돌아가 현재 결과 및 비교 선택을 지웁니다."
+ }
+--- before/frontend/src/i18n/zh.json
++++ after/frontend/src/i18n/zh.json
+@@ -601,7 +601,7 @@
+   "reset.studio": "全局复原",
+   "reset.page.title": "复原当前页面？",
+   "reset.studio.title": "重新开始引导？",
+-  "reset.page.body": "放弃本页未提交的填写内容，将控件和视图恢复为初始状态。已保存的数据集、结果和正在运行的任务均保留。",
++  "reset.page.body": "清空填写内容、选择和步骤完成标记，复原图表及 Terminal 视图，从头开始。已保存的数据集、实验结果和正在运行的任务会保留。",
+   "reset.studio.body": "放弃未提交配置、复原页面状态，并重新开始数据集引导。保留已保存的数据集、结果、正在运行的任务和语言选择。",
+   "reset.confirm": "确认复原",
+   "tasks.choose": "选择任务",
+@@ -724,5 +724,11 @@
+   "home.runs.empty": "尚无实验记录",
+   "chart.recovery.enabled": "空白视图自动适配",
+   "chart.recovery.threshold": "空白区域阈值",
+-  "chart.recovery.note": "数据点和曲线完全移出视野，或超过 {threshold}% 的绘图区落在数据范围外时，停止操作 {delay} 秒后自动适配。仅作用于此图表；可关闭以自由查看空白区域。"
++  "chart.recovery.note": "数据点和曲线完全移出视野，或超过 {threshold}% 的绘图区落在数据范围外时，停止操作 {delay} 秒后自动适配。仅作用于此图表；可关闭以自由查看空白区域。",
++  "reset.warning": "继续将清除本页全部操作进度，此操作无法撤销。",
++  "reset.busy": "当前有操作正在保存或提交。完成后即可继续，也可以取消此弹窗。",
++  "reset.done": "已复原，可以从头开始。",
++  "reset.page.dataset": "将返回数据集首页，重新选择或创建数据集。",
++  "reset.page.experiment": "将返回当前实验类型的第一步，重新配置实验。",
++  "reset.page.results": "将返回结果首页，清空当前结果及对比选择。"
+ }
+--- before/frontend/src/layout/AppShell.test.tsx
++++ after/frontend/src/layout/AppShell.test.tsx
+@@ -0,0 +1,74 @@
++import { screen, waitFor, within } from '@testing-library/react'
++import userEvent from '@testing-library/user-event'
++import { useState } from 'react'
++import { Route, Routes, useLocation } from 'react-router'
++import runMock from '@mocks/run_running.json'
++import { mockApi, renderWithProviders } from '@/test/utils'
++import { AppShell } from './AppShell'
++
++function Page() {
++  const location = useLocation()
++  const [draft, setDraft] = useState('')
++  return <><output data-testid="location">{location.pathname}{location.search}{location.hash}</output><label>Draft<input value={draft} onChange={(event) => setDraft(event.target.value)} /></label></>
++}
++
++function setup(route: string, task = 'train_pa') {
++  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
++  const { calls } = mockApi({
++    'GET /api/v1/system/capabilities': () => ({ workspace: '/reset-test', version: 'test' }),
++    'GET /api/v1/runs': () => [{ ...runMock.data, task, run_id: 'selected-run' }],
++    'GET /api/v1/runs/selected-run': () => ({ ...runMock.data, task, run_id: 'selected-run' }),
++    'GET /api/v1/runs/selected-run/logs': () => ({ lines: ['Actual saved log'], next_offset: 16, eof: true, size: 16 }),
++  })
++  renderWithProviders(<Routes><Route element={<AppShell />}><Route path="*" element={<Page />} /></Route></Routes>, { route })
++  return calls
++}
++
++async function confirmReset() {
++  await userEvent.click(screen.getByRole('button', { name: 'Reset page' }))
++  await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Continue' }))
++  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
++}
++
++test.each([
++  ['/datasets/picked?tab=doctor&version=processed#chart', '/datasets'],
++  ['/results/selected-run?profile=custom', '/results'],
++  ['/results/compare?runs=one&runs=two', '/results'],
++  ['/experiments?status=failed&q=search&page=3&size=25', '/experiments'],
++  ['/experiments/new?task=train_dpd&dataset=picked&from=old#review', '/experiments/new?task=train_dpd'],
++  ['/?panel=recent#bottom', '/'],
++  ['/settings#devices', '/settings'],
++  ['/about#contributors', '/about'],
++])('reset returns %s to %s with draft and scroll position cleared', async (route, destination) => {
++  const calls = setup(route)
++  await userEvent.type(screen.getByLabelText('Draft'), 'Discard this progress')
++  await confirmReset()
++  expect(screen.getByTestId('location')).toHaveTextContent(destination)
++  expect(screen.getByTestId('location').textContent).toBe(destination)
++  expect(screen.getByLabelText('Draft')).toHaveValue('')
++  expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' })
++  expect(screen.getByRole('alert')).toHaveTextContent('Reset complete.')
++  expect(calls.every((call) => call.method === 'GET')).toBe(true)
++})
++
++test.each(['train_pa', 'evaluate_pa', 'train_dpd', 'run_dpd'])('a %s run restarts at setup without reusing the old progress URL', async (task) => {
++  const calls = setup('/runs/selected-run?tab=logs', task)
++  await waitFor(() => expect(calls.some((call) => call.path === '/api/v1/runs/selected-run')).toBe(true))
++  await userEvent.click(await screen.findByRole('button', { name: /Terminal.*Running/ }))
++  await screen.findByRole('log')
++  await confirmReset()
++  expect(screen.getByTestId('location').textContent).toBe(`/experiments/new?task=${task}`)
++  expect(screen.getByRole('button', { name: /Terminal.*Running/ })).toHaveAttribute('aria-expanded', 'false')
++  expect(calls.every((call) => call.method === 'GET')).toBe(true)
++})
++
++test('same-task reset clears the independent terminal tab and collapses it', async () => {
++  setup('/experiments/new?task=train_pa')
++  await userEvent.click(await screen.findByRole('button', { name: /Terminal.*Running/ }))
++  await userEvent.click(within(screen.getByRole('tablist', { name: 'Terminal steps' })).getByRole('tab', { name: 'DPD Model Training' }))
++  await confirmReset()
++  const terminal = screen.getByRole('button', { name: /Terminal.*Running/ })
++  expect(terminal).toHaveAttribute('aria-expanded', 'false')
++  await userEvent.click(terminal)
++  expect(within(screen.getByRole('tablist', { name: 'Terminal steps' })).getByRole('tab', { name: 'PA Model Training' })).toHaveAttribute('aria-selected', 'true')
++})
+--- before/frontend/src/layout/AppShell.tsx
++++ after/frontend/src/layout/AppShell.tsx
+@@ -17,9 +17,9 @@
+ import Tooltip from '@mui/material/Tooltip'
+ import Typography from '@mui/material/Typography'
+ import { useIsMutating, useQueryClient } from '@tanstack/react-query'
+-import { useState } from 'react'
++import { useEffect, useState } from 'react'
+ import { Link, Outlet, useLocation, useNavigate } from 'react-router'
+-import { useCapabilities, useRuns } from '@/api/hooks'
++import { useCapabilities, useRun, useRuns } from '@/api/hooks'
+ import { LanguageMenu } from '@/components/LanguageMenu'
+ import { ResetButton } from '@/components/ResetButton'
+ import { ExperimentTerminal } from '@/components/ExperimentTerminal'
+@@ -45,14 +45,24 @@
+   const queryClient = useQueryClient()
+   const mutating = useIsMutating() > 0
+   const [revision, setRevision] = useState(0)
++  const runId = pathname.startsWith('/runs/') ? decodeURIComponent(pathname.split('/')[2] ?? '') : ''
++  const run = useRun(runId, !!runId)
++  const requestedTask = runId ? run.data?.task ?? null : new URLSearchParams(search).get('task')
++  const task = isExperimentTask(requestedTask) ? requestedTask : null
++  const datasetDetail = pathname.startsWith('/datasets/')
++  const resultDetail = pathname.startsWith('/results/')
++  const resetDetail = datasetDetail ? t('reset.page.dataset') : runId ? t('reset.page.experiment') : resultDetail ? t('reset.page.results') : undefined
++  useEffect(() => {
++    if (revision > 0) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
++  }, [revision])
+   const reset = (global: boolean) => {
+-    // Forms and filters are transient component/URL state. Server records and
+-    // the language preference are deliberately outside this reset boundary.
++    // Drop selections encoded in detail URLs as well as drafts in React state.
++    // A run restarts at its task's setup, never at the old progress dashboard.
+     setRevision((value) => value + 1)
+     if (global) navigate('/datasets?guide=start', { replace: true })
+     else {
+-      const task = new URLSearchParams(search).get('task')
+-      navigate({ pathname, search: pathname === '/experiments/new' && isExperimentTask(task) ? `?task=${task}` : '' }, { replace: true })
++      const destination = datasetDetail ? '/datasets' : resultDetail ? '/results' : runId ? (task ? '/experiments/new' : '/experiments') : pathname.startsWith('/robustness/') ? '/robustness' : pathname
++      navigate({ pathname: destination, search: destination === '/experiments/new' && task ? `?task=${task}` : '', hash: '' }, { replace: true })
+     }
+     void queryClient.invalidateQueries()
+   }
+@@ -101,14 +111,14 @@
+             {caps.data?.workspace.split(/[\\/]/).filter(Boolean).at(-1) ?? '…'}
+           </Typography>
+           <Box sx={{ flex: 1 }} />
+-          <ResetButton disabled={mutating} onReset={() => reset(false)} />
++          <ResetButton disabled={mutating} detail={resetDetail} onReset={() => reset(false)} />
+           <ResetButton scope="studio" disabled={mutating} onReset={() => reset(true)} />
+           <Chip size="small" color={count > 0 ? 'info' : 'default'} variant="outlined" label={count > 0 ? t('topbar.nowRunning', { count }) : t('topbar.idle')} data-testid="now-running" />
+           <LanguageMenu />
+         </Toolbar>
+       </AppBar>
+-      <Box component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: '76px', minWidth: 0 }}>
+-        <Outlet key={revision} />
++      <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: '76px', minWidth: 0 }}>
++        <Outlet />
+         {(pathname.startsWith('/experiments') || pathname.startsWith('/runs/')) && <ExperimentTerminal />}
+       </Box>
+     </Box>
+--- before/frontend/src/pages/Onboarding.test.tsx
++++ after/frontend/src/pages/Onboarding.test.tsx
+@@ -11,6 +11,7 @@
+ import { NewExperimentPage } from './NewExperimentPage'
+ 
+ function setup(route: string) {
++  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+   const { calls } = mockApi({
+     'GET /api/v1/system/capabilities': () => ({ workspace: '/my-workspace', version: 'test', devices: [{ device: 'cpu', detected: true }] }),
+     'GET /api/v1/datasets': () => [datasetMock.data],
+@@ -62,7 +63,7 @@
+   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+   expect(screen.getByLabelText('Name (optional)')).toHaveValue('Discard this draft')
+   await user.click(screen.getByRole('button', { name: 'Reset page' }))
+-  await user.click(screen.getByRole('button', { name: 'Reset' }))
++  await user.click(within(screen.getByRole('dialog', { name: 'Reset this page?' })).getByRole('button', { name: 'Continue' }))
+   await waitFor(() => expect(screen.getByRole('tab', { name: /Data & model/ })).toHaveAttribute('aria-selected', 'true'))
+   await waitFor(() => expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled())
+   await user.click(screen.getByRole('button', { name: 'Continue' }))

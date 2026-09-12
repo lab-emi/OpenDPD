@@ -1,0 +1,30 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "macos": [
+    "26.6.2",
+    [
+      "",
+      "",
+      ""
+    ],
+    "arm64"
+  ],
+  "python": "3.13.12 (main, Mar 20 2026, 00:20:47) [Clang 22.1.1 ]",
+  "python_executable": "/Users/gaochang/git/OpenDPD/.venv/bin/python",
+  "node": "v26.8.1",
+  "head": "f43cd32d8385efc3bf44980e19689caa1ae66e64",
+  "branch": "OpenDPD-Studio",
+  "qa_url": "http://127.0.0.1:8880",
+  "dataset": "DPA_200MHz / dpa-200mhz / raw-v1",
+  "browser_probes": {
+    "chromium": "152.0.7977.83",
+    "webkit": "26.5 (Playwright build 2359)",
+    "firefox": "155.0 (Playwright build 1543)"
+  },
+  "plotly": {
+    "svg": "plotly.js-basic-dist-min 4.0.0",
+    "dense_scatter": "plotly.js-strict-dist-min 4.0.0"
+  },
+  "physical_trackpad_validation": "not verified",
+  "windows_hardware": "not verified"
+}

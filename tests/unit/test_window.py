@@ -1,5 +1,11 @@
 """Native window shell: availability probe and close policy, without pywebview (L0)."""
 
+import sys
+import threading
+from types import SimpleNamespace
+
+import pytest
+
 from opendpd.studio import window
 from opendpd.studio.strings import ENGLISH, shell_strings
 
@@ -87,3 +93,64 @@ def test_every_language_has_every_native_string():
         assert all(v.strip() for v in s.localization.values()), code
     assert shell_strings("xx") is ENGLISH and shell_strings(None) is ENGLISH
     assert shell_strings("ja").quit_title != ENGLISH.quit_title
+
+
+@pytest.mark.parametrize("platform", ["darwin", "linux", "win32"])
+def test_window_close_dispatch_respects_cancel_and_reads_current_language(monkeypatch, platform):
+    """Cocoa closing handlers run on the UI thread: never enter the toolkit's
+    queue-and-wait confirmation API there. Other backends keep their own API.
+    """
+    callbacks = []
+    asked = []
+    state = {"active": 2, "language": "en", "answer": False}
+
+    class ClosingEvent:
+        def __iadd__(self, callback):
+            callbacks.append(callback)
+            return self
+
+    def toolkit_ask(title, message):
+        if platform == "darwin":
+            pytest.fail("Cocoa would deadlock waiting for work queued to this same thread")
+        asked.append((title, message))
+        return state["answer"]
+
+    def native_ask(title, message, strings):
+        assert threading.current_thread() is threading.main_thread()
+        assert strings is shell_strings(state["language"])
+        asked.append((title, message))
+        return state["answer"]
+
+    def start(**kwargs):
+        close, = callbacks
+        assert close() is False                  # Cancel must veto the close.
+        state.update(language="zh", answer=True)
+        assert close() is True                   # A subsequent Quit is allowed.
+        state.update(active=0, answer=False)
+        assert close() is True                   # An idle close needs no dialog.
+
+    fake_window = SimpleNamespace(events=SimpleNamespace(closing=ClosingEvent()),
+                                  create_confirmation_dialog=toolkit_ask)
+    fake_webview = SimpleNamespace(settings={}, create_window=lambda *a, **k: fake_window, start=start)
+    monkeypatch.setitem(sys.modules, "webview", fake_webview)
+    monkeypatch.setattr(window.sys, "platform", platform)
+    monkeypatch.setattr(window, "_name_the_application", lambda title: None)
+    monkeypatch.setattr(window, "_install_macos_hooks", lambda *a: None)
+    monkeypatch.setattr(window, "_macos_confirm_quit", native_ask)
+
+    window.run_window("http://127.0.0.1:8797/", active_runs=lambda: state["active"],
+                      strings=lambda: shell_strings(state["language"]))
+
+    assert asked == [(shell_strings(code).quit_title, shell_strings(code).quit_body.format(count=2))
+                     for code in ("en", "zh")]
+
+
+@pytest.mark.parametrize('width,height,scale', [(1024, 768, 1), (1280, 800, 2), (1920, 1080, 1), (1920, 1080, 2), (3840, 2160, 1), (600, 480, 1)])
+def test_window_geometry_fits_logical_display_without_double_retina_scaling(width, height, scale):
+    from types import SimpleNamespace
+    screen = SimpleNamespace(width=width, height=height, scale=scale)
+    size, minimum = window.window_geometry(screen)
+    assert size[0] <= width - 80 and size[1] <= height - 100
+    assert minimum[0] <= size[0] and minimum[1] <= size[1]
+    assert size[0] <= window.DEFAULT_SIZE[0] and size[1] <= window.DEFAULT_SIZE[1]
+    assert window.window_geometry(SimpleNamespace(width=width, height=height, scale=1))[0] == size

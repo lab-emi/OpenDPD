@@ -1,0 +1,587 @@
+[
+  {
+    "name": "APA_200MHz",
+    "source": "http://127.0.0.1:8878/api/v1/datasets/apa-200mhz/analysis?version=raw-v1",
+    "samples": 98304,
+    "range": [
+      0,
+      98304
+    ],
+    "ui": {
+      "matches": true,
+      "traceNames": [
+        "Input",
+        "PA output (equalized)"
+      ],
+      "document": [
+        1366,
+        768
+      ],
+      "viewport": [
+        1366,
+        768
+      ],
+      "plots": [
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 4,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 1,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        }
+      ]
+    },
+    "constellation": {
+      "status": "ok",
+      "reason": null,
+      "dataset_name": "APA_200MHz",
+      "modulation": "256QAM",
+      "demodulator": "datasets.APA_200MHz.demod.Demodulator (OFDMCPDemodulator)",
+      "sample_range": [
+        0,
+        98304
+      ],
+      "source_sample_range": [
+        0,
+        98304
+      ],
+      "fft_size": 32768,
+      "active_subcarriers_per_carrier": 600,
+      "n_carriers": 5,
+      "traces": [
+        {
+          "name": "Input",
+          "role": "input",
+          "n_symbols": 3000,
+          "stride": 1,
+          "equalized": false,
+          "displayed_points": 3000,
+          "coordinates_sha256": "2084fc79ecb1003a36bda9d0844d4b6a756c3081b072077c546ea9dfdf67018c"
+        },
+        {
+          "name": "PA output (equalized)",
+          "role": "primary",
+          "n_symbols": 2985,
+          "stride": 1,
+          "equalized": true,
+          "displayed_points": 2985,
+          "coordinates_sha256": "cce863ac68b1d3073b9709d9086f187e2cf07f73a23d9649c05125662ee5a3c4"
+        }
+      ],
+      "note": "Dataset-specific demodulation; no hard decisions or ideal-point snapping. Input symbols are RMS-normalized per carrier/symbol. PA output uses the input for synchronization and the existing smoothed per-subcarrier equalizer. Equalization is fitted on the displayed capture, can remove linear distortion and does not establish a standard EVM or isolate nonlinear distortion from noise."
+    }
+  },
+  {
+    "name": "APA_200MHz_b",
+    "source": "http://127.0.0.1:8878/api/v1/datasets/apa-200mhz-b/analysis?version=raw-v1",
+    "samples": 98304,
+    "range": [
+      0,
+      98304
+    ],
+    "ui": {
+      "matches": true,
+      "traceNames": [
+        "Input",
+        "PA output (equalized)"
+      ],
+      "document": [
+        1366,
+        768
+      ],
+      "viewport": [
+        1366,
+        768
+      ],
+      "plots": [
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 4,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 1,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        }
+      ]
+    },
+    "constellation": {
+      "status": "ok",
+      "reason": null,
+      "dataset_name": "APA_200MHz_b",
+      "modulation": "256QAM",
+      "demodulator": "datasets.APA_200MHz_b.demod.Demodulator (OFDMCPDemodulator)",
+      "sample_range": [
+        0,
+        98304
+      ],
+      "source_sample_range": [
+        0,
+        98304
+      ],
+      "fft_size": 32768,
+      "active_subcarriers_per_carrier": 600,
+      "n_carriers": 5,
+      "traces": [
+        {
+          "name": "Input",
+          "role": "input",
+          "n_symbols": 3000,
+          "stride": 1,
+          "equalized": false,
+          "displayed_points": 3000,
+          "coordinates_sha256": "2084fc79ecb1003a36bda9d0844d4b6a756c3081b072077c546ea9dfdf67018c"
+        },
+        {
+          "name": "PA output (equalized)",
+          "role": "primary",
+          "n_symbols": 2985,
+          "stride": 1,
+          "equalized": true,
+          "displayed_points": 2985,
+          "coordinates_sha256": "a89526a62f85a7d226a8284ff8c3c2ebdf12f7db2b82e9ee59a730513ffbffda"
+        }
+      ],
+      "note": "Dataset-specific demodulation; no hard decisions or ideal-point snapping. Input symbols are RMS-normalized per carrier/symbol. PA output uses the input for synchronization and the existing smoothed per-subcarrier equalizer. Equalization is fitted on the displayed capture, can remove linear distortion and does not establish a standard EVM or isolate nonlinear distortion from noise."
+    }
+  },
+  {
+    "name": "DPA_160MHz",
+    "source": "http://127.0.0.1:8878/api/v1/datasets/dpa-160mhz/analysis?version=raw-v1",
+    "samples": 491520,
+    "range": [
+      180224,
+      311296
+    ],
+    "ui": {
+      "matches": true,
+      "traceNames": [
+        "Input",
+        "PA output (equalized)"
+      ],
+      "document": [
+        1366,
+        768
+      ],
+      "viewport": [
+        1366,
+        768
+      ],
+      "plots": [
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 4,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 1,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        }
+      ]
+    },
+    "constellation": {
+      "status": "ok",
+      "reason": null,
+      "dataset_name": "DPA_160MHz",
+      "modulation": "1024QAM",
+      "demodulator": "datasets.DPA_160MHz.demod.Demodulator (IFFTFrameDemodulator)",
+      "sample_range": [
+        180224,
+        311296
+      ],
+      "source_sample_range": [
+        180224,
+        311296
+      ],
+      "fft_size": 16384,
+      "active_subcarriers_per_carrier": 1024,
+      "n_carriers": 4,
+      "traces": [
+        {
+          "name": "Input",
+          "role": "input",
+          "n_symbols": 32768,
+          "stride": 9,
+          "equalized": false,
+          "displayed_points": 3641,
+          "coordinates_sha256": "8821ae04e6fc8c97c050b084158088c063516bc50ecc10fbcfc1c50e554e1bc9"
+        },
+        {
+          "name": "PA output (equalized)",
+          "role": "primary",
+          "n_symbols": 31424,
+          "stride": 8,
+          "equalized": true,
+          "displayed_points": 3928,
+          "coordinates_sha256": "d7acf14ddcf856c800a531b7105ec31ea6187baf2470f0e05afc9972a079c55c"
+        }
+      ],
+      "note": "Dataset-specific demodulation; no hard decisions or ideal-point snapping. Input symbols are RMS-normalized per carrier/symbol. PA output uses the input for synchronization and the existing smoothed per-subcarrier equalizer. Equalization is fitted on the displayed capture, can remove linear distortion and does not establish a standard EVM or isolate nonlinear distortion from noise."
+    }
+  },
+  {
+    "name": "DPA_200MHz",
+    "source": "http://127.0.0.1:8878/api/v1/datasets/dpa-200mhz/analysis?version=raw-v1",
+    "samples": 38400,
+    "range": [
+      0,
+      38400
+    ],
+    "ui": {
+      "matches": true,
+      "traceNames": [
+        "Input",
+        "PA output (equalized)"
+      ],
+      "document": [
+        1366,
+        768
+      ],
+      "viewport": [
+        1366,
+        768
+      ],
+      "plots": [
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 4,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 1,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        }
+      ]
+    },
+    "constellation": {
+      "status": "ok",
+      "reason": null,
+      "dataset_name": "DPA_200MHz",
+      "modulation": "64QAM",
+      "demodulator": "datasets.DPA_200MHz.demod.Demodulator (IFFTFrameDemodulator)",
+      "sample_range": [
+        0,
+        38400
+      ],
+      "source_sample_range": [
+        0,
+        38400
+      ],
+      "fft_size": 2560,
+      "active_subcarriers_per_carrier": 64,
+      "n_carriers": 10,
+      "traces": [
+        {
+          "name": "Input",
+          "role": "input",
+          "n_symbols": 9600,
+          "stride": 3,
+          "equalized": false,
+          "displayed_points": 3200,
+          "coordinates_sha256": "e02fcf7271c76d5f8a93d7dae8d1109764d268066a76a8abb7381e1637299ecc"
+        },
+        {
+          "name": "PA output (equalized)",
+          "role": "primary",
+          "n_symbols": 8700,
+          "stride": 3,
+          "equalized": true,
+          "displayed_points": 2900,
+          "coordinates_sha256": "adfa771fdd29a5339af54e6553d2710320eba531681b25421641a26bbb0b22e6"
+        }
+      ],
+      "note": "Dataset-specific demodulation; no hard decisions or ideal-point snapping. Input symbols are RMS-normalized per carrier/symbol. PA output uses the input for synchronization and the existing smoothed per-subcarrier equalizer. Equalization is fitted on the displayed capture, can remove linear distortion and does not establish a standard EVM or isolate nonlinear distortion from noise."
+    }
+  },
+  {
+    "name": "MyCustomPA",
+    "source": "http://127.0.0.1:8878/api/v1/datasets/mycustompa/analysis?version=raw-v1",
+    "samples": 102400,
+    "range": [
+      0,
+      102400
+    ],
+    "ui": {
+      "matches": true,
+      "traceNames": [
+        "Input",
+        "PA output (equalized)"
+      ],
+      "document": [
+        1366,
+        768
+      ],
+      "viewport": [
+        1366,
+        768
+      ],
+      "plots": [
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 4,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 2,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        },
+        {
+          "traces": 1,
+          "legend": {
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.04,
+            "yanchor": "bottom",
+            "font": {
+              "size": 12
+            }
+          }
+        }
+      ]
+    },
+    "constellation": {
+      "status": "ok",
+      "reason": null,
+      "dataset_name": "MyCustomPA",
+      "modulation": "64QAM",
+      "demodulator": "datasets.MyCustomPA.demod.Demodulator (IFFTFrameDemodulator)",
+      "sample_range": [
+        0,
+        102400
+      ],
+      "source_sample_range": [
+        0,
+        102400
+      ],
+      "fft_size": 2560,
+      "active_subcarriers_per_carrier": 64,
+      "n_carriers": 1,
+      "traces": [
+        {
+          "name": "Input",
+          "role": "input",
+          "n_symbols": 2560,
+          "stride": 1,
+          "equalized": false,
+          "displayed_points": 2560,
+          "coordinates_sha256": "d6e8b263e0032a00be7d07a90aab7b7c283dea2f6b7afffd7a6b5c77f0832a00"
+        },
+        {
+          "name": "PA output (equalized)",
+          "role": "primary",
+          "n_symbols": 2560,
+          "stride": 1,
+          "equalized": true,
+          "displayed_points": 2560,
+          "coordinates_sha256": "45e9da855b7690360a9410a0a2f5b9a5312989b1be99bdcfc5852ea6a665b2d6"
+        }
+      ],
+      "note": "Dataset-specific demodulation; no hard decisions or ideal-point snapping. Input symbols are RMS-normalized per carrier/symbol. PA output uses the input for synchronization and the existing smoothed per-subcarrier equalizer. Equalization is fitted on the displayed capture, can remove linear distortion and does not establish a standard EVM or isolate nonlinear distortion from noise."
+    }
+  }
+]

@@ -1,0 +1,210 @@
+{
+  "command": "opendpd datasets analyze dpa-200mhz --workspace /tmp/opendpd-constellation-audit/workspace",
+  "dataset_id": "dpa-200mhz",
+  "data_version": "raw-v1",
+  "constellation": {
+    "active_subcarriers_per_carrier": 64,
+    "dataset_name": "DPA_200MHz",
+    "demodulator": "datasets.DPA_200MHz.demod.Demodulator (IFFTFrameDemodulator)",
+    "fft_size": 2560,
+    "modulation": "64QAM",
+    "n_carriers": 10,
+    "note": "Dataset-specific demodulation; no hard decisions or ideal-point snapping. Input symbols are RMS-normalized per carrier/symbol. PA output uses the input for synchronization and the existing smoothed per-subcarrier equalizer. Equalization is fitted on the displayed capture, can remove linear distortion and does not establish a standard EVM or isolate nonlinear distortion from noise.",
+    "reason": null,
+    "sample_range": [
+      0,
+      38400
+    ],
+    "source_sample_range": [
+      0,
+      38400
+    ],
+    "status": "ok",
+    "traces": [
+      {
+        "equalized": false,
+        "n_symbols": 9600,
+        "name": "Input",
+        "role": "input",
+        "stride": 3,
+        "displayed_points": 3200,
+        "coordinates_sha256": "bf8aada4778565cc08477a7b0faee941584f75c0d187b2f45dd69700150e89fc"
+      },
+      {
+        "equalized": true,
+        "n_symbols": 8700,
+        "name": "PA output (equalized)",
+        "role": "primary",
+        "stride": 3,
+        "displayed_points": 2900,
+        "coordinates_sha256": "3f0b40ba2d61caea9133b9f1065740553a4251c53eb64190f7aba107159997bc"
+      }
+    ]
+  },
+  "measurements": [
+    {
+      "input": {
+        "reason": null,
+        "status": "ok",
+        "value": 9.084722247092214
+      },
+      "label": "PAPR",
+      "method": "dataset-doctor-v1; output statistics exclude isolated outliers identified by the doctor. Capture amplitude is not calibrated PA output power.",
+      "name": "PAPR",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": 7.108894018825405
+      },
+      "unit": "dB"
+    },
+    {
+      "input": {
+        "reason": null,
+        "status": "ok",
+        "value": 0.3513693630760764
+      },
+      "label": "RMS amplitude",
+      "method": "dataset-doctor-v1; output statistics exclude isolated outliers identified by the doctor. Capture amplitude is not calibrated PA output power.",
+      "name": "RMS",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": 1.1165234638987311
+      },
+      "unit": "normalized"
+    },
+    {
+      "input": {
+        "reason": null,
+        "status": "ok",
+        "value": 1.0000000086502485
+      },
+      "label": "Peak amplitude",
+      "method": "dataset-doctor-v1; output statistics exclude isolated outliers identified by the doctor. Capture amplitude is not calibrated PA output power.",
+      "name": "PEAK",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": 2.5311189493385666
+      },
+      "unit": "normalized"
+    },
+    {
+      "input": {
+        "reason": null,
+        "status": "ok",
+        "value": -40.29885175277272
+      },
+      "label": "ACPR left (leakage)",
+      "method": "general-spectral-v1: 10*log10( P_adjacent_left(y) / P_main(y) ). Leakage convention: adjacent-channel power relative to the main channel of the same signal, negative dBc, lower is better. The positive 'suppression' convention (main / adjacent, higher is better) equals -ACPR_L and is not reported.",
+      "name": "ACPR_L",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": -34.11356400797172
+      },
+      "unit": "dBc"
+    },
+    {
+      "input": {
+        "reason": null,
+        "status": "ok",
+        "value": -38.37758683867617
+      },
+      "label": "ACPR right (leakage)",
+      "method": "general-spectral-v1: 10*log10( P_adjacent_right(y) / P_main(y) ). Leakage convention: adjacent-channel power relative to the main channel of the same signal, negative dBc, lower is better. The positive 'suppression' convention (main / adjacent, higher is better) equals -ACPR_R and is not reported.",
+      "name": "ACPR_R",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": -32.05964870662007
+      },
+      "unit": "dBc"
+    },
+    {
+      "input": null,
+      "label": "Delay estimate",
+      "method": "dataset-doctor-v1: cross-correlation peaks at -0.01 samples (correlation 0.99)",
+      "name": "DELAY",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": -0.006506031526376227
+      },
+      "unit": "samples"
+    },
+    {
+      "input": null,
+      "label": "Capture gain (small signal)",
+      "method": "dataset-doctor-v1: small-signal complex gain is +10.27 dB at -1.2 degrees. Gain/phase fit uses the lowest 40% of input amplitudes after integer alignment; this includes the capture/attenuator scale, not calibrated PA gain.",
+      "name": "GAIN",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": 10.269773543592464
+      },
+      "unit": "dB"
+    },
+    {
+      "input": null,
+      "label": "Capture phase (small signal)",
+      "method": "dataset-doctor-v1: small-signal complex gain is +10.27 dB at -1.2 degrees. Gain/phase fit uses the lowest 40% of input amplitudes after integer alignment; this includes the capture/attenuator scale, not calibrated PA gain.",
+      "name": "PHASE",
+      "output": {
+        "reason": null,
+        "status": "ok",
+        "value": -1.1849243202357809
+      },
+      "unit": "deg"
+    },
+    {
+      "input": null,
+      "label": "BLA residual NMSE",
+      "method": "Residual relative to a best linear approximation; includes noise and unmodelled memory. No universal nonlinearity grade is assigned.",
+      "name": "BLA_NMSE",
+      "output": {
+        "reason": "A reviewed linear-reference profile is required (alignment, fit window, scalar/FIR reference and denominator). Raw input/output NMSE is not PA nonlinearity.",
+        "status": "review_required",
+        "value": null
+      },
+      "unit": "dB"
+    },
+    {
+      "input": null,
+      "label": "EVM (RMS)",
+      "method": "ofdm-lte20-evm-v1: 100 * sqrt( sum|S_eq - S_ref|^2 / sum|S_ref|^2 ) over occupied subcarriers and complete symbols. Not a conformance result.",
+      "name": "EVM_RMS",
+      "output": {
+        "reason": "Requires a waveform binding and a reviewed EVM receiver profile; a modulation label or quick-look constellation does not define an EVM protocol",
+        "status": "missing_reference",
+        "value": null
+      },
+      "unit": "%"
+    },
+    {
+      "input": null,
+      "label": "ACLR lower adjacent (leakage)",
+      "method": "ofdm-lte20-evm-v1: 10 * log10( P[-29, -11 MHz] / P[-9, +9 MHz] ) from the Welch PSD at the capture rate. Not a conformance result.",
+      "name": "ACLR_L",
+      "output": {
+        "reason": "Requires a waveform binding and a reviewed EVM receiver profile; a modulation label or quick-look constellation does not define an EVM protocol",
+        "status": "missing_reference",
+        "value": null
+      },
+      "unit": "dBc"
+    },
+    {
+      "input": null,
+      "label": "ACLR upper adjacent (leakage)",
+      "method": "ofdm-lte20-evm-v1: 10 * log10( P[+11, +29 MHz] / P[-9, +9 MHz] ) from the Welch PSD at the capture rate. Not a conformance result.",
+      "name": "ACLR_R",
+      "output": {
+        "reason": "Requires a waveform binding and a reviewed EVM receiver profile; a modulation label or quick-look constellation does not define an EVM protocol",
+        "status": "missing_reference",
+        "value": null
+      },
+      "unit": "dBc"
+    }
+  ]
+}

@@ -334,7 +334,7 @@ class Supervisor:
             # decides status transitions when the process is observed.
             return
         updates = {"last_heartbeat_at": _now()}
-        if type_ == RunEventType.progress:
+        if type_ == RunEventType.progress and payload.get("scope") != "live":
             updates["progress_epoch"] = int(payload.get("epoch", 0)) + 1
             updates["progress_total_epochs"] = int(payload.get("total_epochs") or 1)
         self.store.append_event(run_id, type_, payload, ts=ts, **updates)

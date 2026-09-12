@@ -1,0 +1,960 @@
+{
+  "visual-checks": {
+    "rows": [
+      {
+        "mode": "light",
+        "name": "home",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "light",
+        "name": "about",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          },
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "light",
+        "name": "datasets",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "light",
+        "name": "inspection",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 5120
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 4,
+            "points": 1024
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 5120
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 1,
+            "points": 3939
+          }
+        ]
+      },
+      {
+        "mode": "light",
+        "name": "experiments",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "light",
+        "name": "setup",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "light",
+        "name": "pa",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 6,
+            "points": 6000
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 3,
+            "points": 7680
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          }
+        ]
+      },
+      {
+        "mode": "light",
+        "name": "dpd",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 12,
+            "points": 12000
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 6,
+            "points": 15360
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6
+          }
+        ]
+      },
+      {
+        "mode": "light",
+        "name": "result",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 3,
+            "points": 7680
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 6,
+            "points": 6000
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6828
+          },
+          {
+            "paper": "#FFFFFF",
+            "ink": "#17243B",
+            "traces": 2,
+            "points": 6828
+          }
+        ]
+      },
+      {
+        "mode": "light",
+        "name": "settings",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(242, 245, 250)",
+        "scheme": "light",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "light",
+        "name": "home",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "light"
+      },
+      {
+        "mode": "light",
+        "name": "about",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "light"
+      },
+      {
+        "mode": "light",
+        "name": "inspection",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "light"
+      },
+      {
+        "mode": "light",
+        "name": "setup",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "light"
+      },
+      {
+        "mode": "light",
+        "name": "home",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "light"
+      },
+      {
+        "mode": "light",
+        "name": "about",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "light"
+      },
+      {
+        "mode": "light",
+        "name": "inspection",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "light"
+      },
+      {
+        "mode": "light",
+        "name": "setup",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "light"
+      },
+      {
+        "mode": "dark",
+        "name": "home",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "dark",
+        "name": "about",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          },
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "dark",
+        "name": "datasets",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "dark",
+        "name": "inspection",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 5120
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 4,
+            "points": 1024
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 5120
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 1,
+            "points": 3939
+          }
+        ]
+      },
+      {
+        "mode": "dark",
+        "name": "experiments",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "dark",
+        "name": "setup",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "dark",
+        "name": "pa",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 6,
+            "points": 6000
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 3,
+            "points": 7680
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          }
+        ]
+      },
+      {
+        "mode": "dark",
+        "name": "dpd",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 12,
+            "points": 12000
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 6,
+            "points": 15360
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6
+          }
+        ]
+      },
+      {
+        "mode": "dark",
+        "name": "result",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": [
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 3,
+            "points": 7680
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 6,
+            "points": 6000
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6828
+          },
+          {
+            "paper": "#162330",
+            "ink": "#E6EDF5",
+            "traces": 2,
+            "points": 6828
+          }
+        ]
+      },
+      {
+        "mode": "dark",
+        "name": "settings",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "background": "rgb(16, 25, 35)",
+        "scheme": "dark",
+        "logos": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ],
+        "plots": []
+      },
+      {
+        "mode": "dark",
+        "name": "home",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "dark"
+      },
+      {
+        "mode": "dark",
+        "name": "about",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "dark"
+      },
+      {
+        "mode": "dark",
+        "name": "inspection",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "dark"
+      },
+      {
+        "mode": "dark",
+        "name": "setup",
+        "width": 390,
+        "scrollWidth": 390,
+        "scheme": "dark"
+      },
+      {
+        "mode": "dark",
+        "name": "home",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "dark"
+      },
+      {
+        "mode": "dark",
+        "name": "about",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "dark"
+      },
+      {
+        "mode": "dark",
+        "name": "inspection",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "dark"
+      },
+      {
+        "mode": "dark",
+        "name": "setup",
+        "width": 1920,
+        "scrollWidth": 1920,
+        "scheme": "dark"
+      }
+    ],
+    "errors": []
+  },
+  "contrast": [
+    {
+      "mode": "light",
+      "route": "/",
+      "violations": [],
+      "incomplete": [],
+      "passes": 67
+    },
+    {
+      "mode": "light",
+      "route": "/about",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 2
+        }
+      ],
+      "passes": 30
+    },
+    {
+      "mode": "light",
+      "route": "/datasets/theme-pa",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 44
+        }
+      ],
+      "passes": 89
+    },
+    {
+      "mode": "light",
+      "route": "/experiments/new?task=train_pa&dataset=theme-pa",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 3
+        }
+      ],
+      "passes": 53
+    },
+    {
+      "mode": "light",
+      "route": "/results/run-20260912-154649-01cfd3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 76
+        }
+      ],
+      "passes": 63
+    },
+    {
+      "mode": "light",
+      "route": "/settings",
+      "violations": [],
+      "incomplete": [],
+      "passes": 35
+    },
+    {
+      "mode": "dark",
+      "route": "/",
+      "violations": [],
+      "incomplete": [],
+      "passes": 67
+    },
+    {
+      "mode": "dark",
+      "route": "/about",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 2
+        }
+      ],
+      "passes": 56
+    },
+    {
+      "mode": "dark",
+      "route": "/datasets/theme-pa",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 44
+        }
+      ],
+      "passes": 89
+    },
+    {
+      "mode": "dark",
+      "route": "/experiments/new?task=train_pa&dataset=theme-pa",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 3
+        }
+      ],
+      "passes": 53
+    },
+    {
+      "mode": "dark",
+      "route": "/results/run-20260912-154649-01cfd3",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "count": 76
+        }
+      ],
+      "passes": 63
+    },
+    {
+      "mode": "dark",
+      "route": "/settings",
+      "violations": [],
+      "incomplete": [],
+      "passes": 35
+    }
+  ],
+  "form-check": {
+    "results": [
+      {
+        "mode": "light",
+        "background": "rgb(255, 255, 255)",
+        "draft": "Theme transition QA"
+      },
+      {
+        "mode": "dark",
+        "background": "rgb(22, 35, 48)",
+        "draft": "Theme transition QA"
+      }
+    ],
+    "cacheRefetches": []
+  },
+  "live-check": {
+    "url": "http://127.0.0.1:8776/runs/run-20260912-155345-02c4eb",
+    "rows": [
+      {
+        "mode": "light",
+        "status": "running",
+        "epoch": null,
+        "plot": "#FFFFFF",
+        "range": [
+          -33.3359375,
+          33.3046875
+        ],
+        "log": "rgb(243, 246, 250)",
+        "logChars": 1053,
+        "bar": "rgb(220, 235, 251)",
+        "barText": "TerminalRunning \u00b7 1PA Model Training"
+      },
+      {
+        "mode": "dark",
+        "status": "running",
+        "epoch": 1,
+        "plot": "#162330",
+        "range": [
+          -33.3359375,
+          33.3046875
+        ],
+        "log": "rgb(11, 20, 31)",
+        "logChars": 1053,
+        "bar": "rgb(34, 61, 85)",
+        "barText": "TerminalRunning \u00b7 1PA Model Training"
+      }
+    ],
+    "terminalIndependent": true
+  },
+  "retina": [
+    {
+      "mode": "light",
+      "dpr": 2,
+      "width": 480,
+      "source": "/assets/opendpd-studio-logo-C7MBhSez.svg"
+    },
+    {
+      "mode": "dark",
+      "dpr": 2,
+      "width": 480,
+      "source": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg"
+    }
+  ],
+  "native-check": {
+    "rows": [
+      {
+        "mode": "light",
+        "scheme": "light",
+        "background": "rgb(242, 245, 250)",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "dpr": 2,
+        "logo": [
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          },
+          {
+            "src": "/assets/opendpd-studio-logo-C7MBhSez.svg",
+            "loaded": true
+          }
+        ]
+      },
+      {
+        "mode": "dark",
+        "scheme": "dark",
+        "background": "rgb(16, 25, 35)",
+        "width": 1366,
+        "scrollWidth": 1366,
+        "dpr": 2,
+        "logo": [
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          },
+          {
+            "src": "/assets/opendpd-studio-logo-inverse-DsCps6Co.svg",
+            "loaded": true
+          }
+        ]
+      }
+    ]
+  },
+  "compare-check": [
+    {
+      "mode": "light",
+      "width": 1470,
+      "scrollWidth": 1470,
+      "paper": "#FFFFFF",
+      "traces": [
+        "#0B5FA5",
+        "#B84F00",
+        "#53637A"
+      ],
+      "swatches": [
+        "rgb(11, 95, 165)",
+        "rgb(184, 79, 0)"
+      ]
+    },
+    {
+      "mode": "dark",
+      "width": 1470,
+      "scrollWidth": 1470,
+      "paper": "#162330",
+      "traces": [
+        "#7CC9FF",
+        "#FFAC73",
+        "#A8BACD"
+      ],
+      "swatches": [
+        "rgb(124, 201, 255)",
+        "rgb(255, 172, 115)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+
+> opendpd-studio@2.2.0-dev0 test
+> vitest run --maxWorkers=2
+
+
+ RUN  v5.0.0 /Users/gaochang/git/OpenDPD/frontend
+
+
+ Test Files  30 passed (30)
+      Tests  122 passed (122)
+   Start at  14:00:36
+   Duration  26.29s (tests 59%, environment 20%, import 15%, setup 3%, transform 2%)
+
+    Isolate  30 workers spawned · ~410ms startup each (spawn + environment, per file)
+             at least ~5.74s faster with isolate: false — reuses workers across files instead of one per file
+
