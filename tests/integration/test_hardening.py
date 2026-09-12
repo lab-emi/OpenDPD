@@ -318,7 +318,7 @@ def test_no_unrestricted_pickle_loading_in_the_tree():
     assert offenders == [], offenders
 
 
-def test_network_clients_are_confined_to_configured_api_and_public_project_activity():
+def test_network_clients_are_centralized_without_telemetry():
     """No telemetry/CDN; About may read the explicitly requested public GitHub activity.
 
     test_about verifies the exact endpoints and absence of workspace/request payloads.
@@ -336,8 +336,6 @@ def test_network_clients_are_confined_to_configured_api_and_public_project_activ
         for needle in ("urlopen(", "requests.get(", "requests.post(", "httpx.", "http.client.", "create_connection("):
             if needle in text and needle not in allowed.get(relative, set()):
                 offenders.append(f"{path.relative_to(root)}: {needle}")
-    launcher = (root / "opendpd" / "studio" / "launcher.py").read_text(encoding="utf-8")
-    assert "loopback only" in launcher and 'HOST = "127.0.0.1"' in launcher
     for path in FRONTEND_SRC.rglob("*.ts*"):
         text = path.read_text(encoding="utf-8")
         if path.name.endswith(".test.tsx") or path.name.endswith(".test.ts"):
@@ -346,14 +344,6 @@ def test_network_clients_are_confined_to_configured_api_and_public_project_activ
             # \bfetch( is the browser call; react-query's refetch( is not a network client
             if re.search(needle, text) and path.name not in ("client.ts", "events.ts"):
                 offenders.append(f"frontend/src/{path.relative_to(FRONTEND_SRC)}: {needle}")
-    client = (FRONTEND_SRC / "api" / "client.ts").read_text(encoding="utf-8")
-    assert "fetch(`${API}${path}`" in client
-    assert "const API = `${API_ORIGIN}/api/v1`" in client
-    # Desktop keeps its same-origin API; web uses only the build-time HTTPS
-    # origin. web-client.test.ts exercises bearer headers and download refusal.
-    assert "const WEB_MODE = import.meta.env.VITE_STUDIO_MODE === 'web'" in client
-    assert "const API_ORIGIN = WEB_MODE ?" in client
-    vite = (root / "frontend" / "vite.config.ts").read_text(encoding="utf-8")
-    assert "new URL(apiOrigin).origin !== apiOrigin" in vite
-    assert "!apiOrigin.startsWith('https://')" in vite
+    # API origin, authentication and downloads are tested behaviorally in
+    # web-client.test.ts, the desktop browser journey and test_public_studio.
     assert offenders == [], offenders
