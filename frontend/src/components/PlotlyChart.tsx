@@ -233,7 +233,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
     onTouchEndCapture={(event) => { if (!event.touches.length) setTouchContent(null) }}
     onTouchCancelCapture={() => setTouchContent(null)}
     sx={{ width: '100%', height: height ?? '100%', minHeight: height ?? 0, flex: 1,
-      '& .nsewdrag': { touchAction: 'pan-y' },
+      '& .nsewdrag': { touchAction: 'pan-y pinch-zoom' },
       '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: -2 } }} />
   </Box>
 }

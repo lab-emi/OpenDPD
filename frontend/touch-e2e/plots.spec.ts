@@ -78,6 +78,17 @@ test('two-finger zoom follows its midpoint; touch controls and full-screen fit a
     for (let i = 1; i <= 8; i++) await touch('touchMove', [[r.x + r.width / 2, r.y + r.height * .7 - i * 10]])
     await touch('touchEnd', [])
     await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(y + 20)
+    // A pinch straddling the axes belongs to browser page zoom. CSS must permit
+    // it as well as the controller declining ownership of the second finger.
+    await area.scrollIntoViewIfNeeded()
+    const edge = (await area.boundingBox())!, saved = await range()
+    const insideX = edge.x + edge.width * .45, outsideX = edge.x - 30, midY = edge.y + edge.height / 2
+    await touch('touchStart', [[insideX, midY]])
+    await touch('touchStart', [[insideX, midY], [outsideX, midY]])
+    for (let i = 1; i <= 10; i++) await touch('touchMove', [[insideX + i * 4, midY], [outsideX - i, midY]])
+    await touch('touchEnd', [])
+    await expect.poll(() => page.evaluate(() => visualViewport?.scale ?? 1)).toBeGreaterThan(1.05)
+    expect(await range()).toEqual(saved)
     await cdp.detach()
   }
 })
