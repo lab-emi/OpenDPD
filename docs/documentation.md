@@ -51,4 +51,4 @@ The existing **Docs** workflow builds PRs and publishes the site from `main`. No
 
 ## Refresh the Studio screenshot
 
-Use the current app with a separate clean workspace, English selected and no private paths, captures or user run names visible. Capture the real Home page after it has loaded, with **Get Started** visible, and replace `pics/studio-home.png`. Keep browser diagnostics and session files out of Git. The README and site will both pick up the same image.
+Use the current app with a separate clean workspace, English selected, the light theme active and no private paths, captures or user run names visible. Capture the real Home page after it has loaded, with **Get Started** visible, and replace `pics/studio-home.png`. Keep browser diagnostics and session files out of Git. The README and site will both pick up the same image.
