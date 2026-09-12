@@ -1,5 +1,0 @@
-{
-  "tensors_bitwise_equal": true,
-  "official_metrics_equal": true,
-  "comparison": "same 120-epoch PA configuration, initial vs final observer scheduling"
-}

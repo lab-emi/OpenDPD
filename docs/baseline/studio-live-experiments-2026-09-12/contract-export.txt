@@ -1,7 +1,0 @@
-wrote /Users/gaochang/git/OpenDPD/docs/contracts/openapi.json
-
-> opendpd-studio@2.2.0-dev0 types:generate
-> openapi-typescript ../docs/contracts/openapi.json -o src/api/schema.ts
-
-✨ openapi-typescript 7.13.0
-🚀 ../docs/contracts/openapi.json → src/api/schema.ts [97.8ms]
