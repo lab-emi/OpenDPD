@@ -54,6 +54,16 @@ nav:
       - Examples: examples.md
       - Reproducing published results: reproducing.md
   - Benchmark: benchmark/index.md
+  - Studio:
+      - Quick start: tutorials/gui-quickstart.md
+      - Headless CLI: tutorials/headless-cli.md
+      - Adding a model: tutorials/adding-a-model.md
+      - Waveform evaluation: tutorials/waveform-evaluation.md
+      - Measured DPD: tutorials/measured-dpd.md
+      - Adaptation experiments: tutorials/adaptation-benchmark.md
+      - Streaming: tutorials/streaming.md
+      - Deployment export: tutorials/deployment-export.md
+      - Leaderboard submission: tutorials/leaderboard-submission.md
   - API reference: api.md
   - Project:
       - Testing and CI: testing.md
@@ -100,6 +110,17 @@ hooks:
 exclude_docs: |
   hooks/
   requirements.txt
+
+# Auxiliary references remain available through links from the Studio guides.
+# Keep the primary navigation focused on the user workflows above.
+not_in_nav: |
+  architecture/**
+  baseline/**
+  community/**
+  design/**
+  leaderboard/**
+  protocols/**
+  releases/**
 
 extra:
   social:
