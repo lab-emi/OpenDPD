@@ -48,9 +48,9 @@ function setup(recovery?: Parameters<typeof attachPlotInteractions>[4]) {
     Object.assign(event, { scale, clientX: 200, clientY: 100 }); area.dispatchEvent(event)
   }
   const key = (value: string, options: KeyboardEventInit = {}) => element.dispatchEvent(new KeyboardEvent('keydown', { key: value, bubbles: true, cancelable: true, ...options }))
-  const touch = (type: string, points: Array<[number, number, number]>) => {
+  const touch = (type: string, points: Array<[number, number, number, Element?]>) => {
     const event = new Event(type, { bubbles: true, cancelable: true })
-    Object.assign(event, { touches: points.map(([identifier, clientX, clientY]) => ({ identifier, clientX, clientY })) })
+    Object.assign(event, { touches: points.map(([identifier, clientX, clientY, target = area]) => ({ identifier, clientX, clientY, target })) })
     area.dispatchEvent(event)
     return event
   }
@@ -177,6 +177,16 @@ describe('plot viewport input', () => {
     h.gesture('gesturestart', 1); h.gesture('gesturechange', 2); h.gesture('gestureend', 2)
     await h.frame()
     expect(readViewport(h.element)!.x[1] - readViewport(h.element)!.x[0]).toBeCloseTo(25)
+    await h.controls.dispose()
+  })
+
+  it('leaves page zoom available when the second finger starts outside this plot', async () => {
+    const h = setup()
+    h.touch('touchstart', [[1, 200, 150]])
+    expect(h.touch('touchmove', [[1, 200, 150], [2, 300, 150, document.body]]).defaultPrevented).toBe(false)
+    h.gesture('gesturestart', 1); h.gesture('gesturechange', 2)
+    await h.frame(); expect(h.api.relayout).not.toHaveBeenCalled()
+    h.touch('touchend', [])
     await h.controls.dispose()
   })
 

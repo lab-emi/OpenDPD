@@ -38,8 +38,10 @@ test('two-finger zoom follows its midpoint; touch controls and full-screen fit a
     else await area.evaluate((el, input) => {
       // WebKit's automation API has no multi-touch injection. Exercise its DOM
       // touch path; Chromium above additionally checks native browser arbitration.
-      const touches = input.points.map(([clientX, clientY], identifier) => new Touch({ identifier, target: el, clientX, clientY }))
-      el.dispatchEvent(new TouchEvent(input.type.toLowerCase(), { touches, targetTouches: touches, changedTouches: touches, bubbles: true, cancelable: true }))
+      const touches = input.points.map(([clientX, clientY], identifier) => ({ identifier, target: el, clientX, clientY }))
+      const event = new Event(input.type.toLowerCase(), { bubbles: true, cancelable: true })
+      Object.assign(event, { touches, targetTouches: touches, changedTouches: touches })
+      el.dispatchEvent(event)
     }, { type, points })
   }
   await touch('touchStart', [[cx - 30, cy], [cx + 30, cy]])

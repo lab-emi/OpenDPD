@@ -216,6 +216,10 @@ export function attachPlotInteractions(
       if (!points.length || event.type === 'touchcancel') { touchActive = false; interacted() }
       return
     }
+    // A second finger that started on another chart or outside the axes belongs
+    // to page zoom. Once claimed, fingers may move beyond the original bounds.
+    if (!touchPinch && !points.every((p) => p.target instanceof Element
+      && element.contains(p.target) && p.target.closest('.nsewdrag'))) return
     event.preventDefault()
     gestureScale = undefined; gesturePoint = undefined
     const [a, b] = points as [Touch, Touch]
@@ -239,7 +243,7 @@ export function attachPlotInteractions(
     interacted()
   }
   const gestureStart = (event: Event) => {
-    if (touchActive) { event.preventDefault(); event.stopPropagation(); return }
+    if (touchActive) { if (touchPinch) event.preventDefault(); event.stopPropagation(); return }
     const gesture = event as Gesture, rect = bounds()
     if (!rect) return
     // Safari's trackpad gesture coordinates may be absent; use the last pointer
@@ -253,7 +257,7 @@ export function attachPlotInteractions(
     cancelRecoveryTimer()
   }
   const gestureChange = (event: Event) => {
-    if (touchActive) { event.preventDefault(); event.stopPropagation(); return }
+    if (touchActive) { if (touchPinch) event.preventDefault(); event.stopPropagation(); return }
     if (gestureScale === undefined || !gesturePoint) return
     event.preventDefault(); event.stopPropagation()
     const scale = (event as Gesture).scale
