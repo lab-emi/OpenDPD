@@ -1,13 +1,16 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { vi } from 'vitest'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { renderWithProviders } from '@/test/utils'
 import { SpectrumPanels } from './SpectrumPanels'
 import type { SpectrumPlotProps } from './SpectrumPlot'
 import { spectrumGroups, spectrumLegend } from './spectrumNodes'
 
 vi.mock('./SpectrumPlot', () => ({ SpectrumPlot: function TestPlot(props: SpectrumPlotProps) {
-  useEffect(() => { props.onRendered?.(10) }, [props.traces])
+  const { traces, onRendered } = props
+  const callback = useRef(onRendered)
+  useEffect(() => { callback.current = onRendered }, [onRendered])
+  useEffect(() => { callback.current?.(traces.length ? 10 : 0) }, [traces])
   return <section aria-label={props.title}>
   {props.traces.map(tr => <span key={tr.name}>{tr.name}</span>)}
   <button onClick={() => props.onVisibilityChange?.(props.traces.map(() => false))}>Hide this position</button>

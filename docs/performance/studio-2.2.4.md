@@ -5,7 +5,8 @@ Validation date: 2026-09-13. Synthetic runs validate software behavior, not phys
 ## Local checks
 
 - Python unit and integration regression: **667 passed** with two numerical threads (355.46 s). The follow-up shadow-forward/RNG and figure replay checks passed **17 tests**.
-- Frontend: **53 files, 222 tests passed**. Strict types, lint, generated API types and production build checked.
+- Frontend: **53 files, 223 tests passed**. Strict types, lint, generated API types and production build checked.
+- Local Chromium browser journeys and accessibility checks: **24 passed**, including both desktop sizes and the gallery's existing two-second draw budget. Six optional live cases were skipped in this mocked suite; the separate actual-worker flow below completed all eight jobs.
 - Actual Chromium UI: generation → input CSV/JSON → explicit Virtual PA simulation → exact paired CSV → dataset → PA training → DPD training → PA testing → DPD testing, at **1366×768 and 1920×1080**. All **eight CPU runs succeeded**; 32,768 paired samples and 6,452 test samples per dataset. No JavaScript errors or dataset publication submissions.
 - PSD review at **1366×768, 1920×1080 and 390×844**: exactly one x trace, one u trace and four output references/baselines; all drawn PSD bins exactly match the saved artifact. Initial dB ranges match. Zoom and legend changes remain independent. Saved figures carry all three positions and export successfully.
 - Figure integration tests verify byte-identical standalone PNG replay, exact exported numerical values and refusal of changed sources.
