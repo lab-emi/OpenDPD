@@ -426,7 +426,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
             <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth type="number" label={t('tasks.threads')} value={form.numThreads} onChange={set('numThreads')} helperText={errorText('numThreads') || t('tasks.threads.help')} error={issuesFor('numThreads').length > 0} /></Grid>
             {!testing && !leastSquares && <>
               <Grid size={{ xs: 12, md: 6 }}>
-                <TextField select fullWidth label={t('form.preview')} value={form.previewMode} onChange={set('previewMode')} helperText={t('form.preview.epochHelp')}>
+                <TextField select fullWidth label={t('form.preview')} value={form.previewMode} onChange={set('previewMode')} sx={form.previewMode === 'batch' ? { '& .MuiSelect-select': { color: 'error.main' } } : undefined} helperText={form.previewMode === 'batch' ? t('live.cadence.batch', { batches: num(form.previewBatches, 100) }) : t('form.preview.epochHelp')}>
                   <MenuItem value="epoch">{t('form.preview.epoch')}</MenuItem>
                   <MenuItem value="batch" sx={{ color: 'error.main' }}>{t('form.preview.batch')}</MenuItem>
                 </TextField>
@@ -486,7 +486,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
         </Alert>
       )}
       {submit.isError && <ErrorState error={submit.error} />}
-      <Stack sx={{ alignItems: 'center' }} direction="row" spacing={1}>
+      <Stack sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, '& .MuiButton-root': { flexShrink: 0 } }} direction="row">
         {step > 0 && <Button startIcon={<ArrowBackIcon />} onClick={() => setStep(step - 1)}>{t('workflow.back')}</Button>}
         {step < 2 && <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={next} disabled={!canNext}>{t('workflow.next')}</Button>}
         <Button type="submit" variant="contained" disabled={!canSubmit} sx={{ display: step === 2 ? 'inline-flex' : 'none' }}>

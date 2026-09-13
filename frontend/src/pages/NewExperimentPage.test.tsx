@@ -88,6 +88,7 @@ test('defaults to epoch plots and requires an explicit warned batch cadence', as
   await userEvent.click(screen.getByRole('option', { name: 'Every N batches — slow' }))
   expect(screen.getByText(/Frequent batch previews may severely slow down training/).closest('[role="alert"]')).toHaveClass('MuiAlert-colorError')
   await userEvent.type(screen.getByLabelText('Batches between previews'), '250')
+  expect(screen.getByText('Plots update every 250 batches and at epoch end.')).toBeInTheDocument()
   await waitFor(() => expect(calls.filter(c => c.path.endsWith('/validate')).at(-1)?.body).toMatchObject({ config: { execution: { preview_every_batches: 250 } } }))
   await continueStep(); await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
   await waitFor(() => expect(calls.find(c => c.path === '/api/v1/runs' && c.method === 'POST')?.body).toMatchObject({ config: { execution: { preview_every_batches: 250 } } }))
