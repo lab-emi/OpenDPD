@@ -41,7 +41,7 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 
 - CUDA replay for supported native models reduces dispatch overhead while retaining the existing optimizer, precision, batches and scheduler.
 - Quick/full training defaults are 10/150 epochs; plots reuse validation predictions once per epoch.
-- See the [2.2.1 performance measurements](docs/performance/studio-2.2.1.md) and [release notes](docs/releases/release-notes-2.2.1.md).
+- See the [2.2.1 performance measurements](https://github.com/lab-emi/OpenDPD/blob/main/docs/performance/studio-2.2.1.md) and [release notes](https://github.com/lab-emi/OpenDPD/blob/main/docs/releases/release-notes-2.2.1.md).
 - **Guided experiments:** explore built-in I/Q data, train and test PA/DPD models, and choose from the original backbone registry.
 - **Live feedback:** separate epoch and batch progress bars, NMSE and other task metrics, live signal plots, reconnectable experiments and a Stop control.
 - **Download models while training:** save the best checkpoint so far; after training, download the selected final model. Compare compatible runs and export reports.
