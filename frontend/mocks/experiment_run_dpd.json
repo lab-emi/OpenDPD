@@ -24,7 +24,8 @@
       "cuda_graph_training": false,
       "device": "cpu",
       "device_index": 0,
-      "num_threads": null
+      "num_threads": null,
+      "preview_every_batches": null
     },
     "initialization": null,
     "measurement": null,
@@ -51,7 +52,7 @@
       "batch_size": 64,
       "batch_size_eval": 64,
       "decay_factor": 0.5,
-      "epochs": 300,
+      "epochs": 150,
       "eval_test": true,
       "eval_val": true,
       "frame_length": 200,

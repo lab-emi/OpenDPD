@@ -14,6 +14,23 @@ from modules.train_funcs import net_eval, net_train
 from project import Project
 
 
+@pytest.mark.parametrize("shuffle", [False, True])
+@pytest.mark.parametrize("batch_size", [1, 7, 64])
+def test_batched_loader_preserves_samples_tail_and_global_rng(shuffle, batch_size):
+    from modules.batched_loader import iq_loader
+    data = np.arange(240, dtype=np.float64).reshape(120, 2) / 100
+    dataset = IQFrameDataset(data, -data, 20, stride=3)
+    torch.manual_seed(42)
+    reference = list(DataLoader(dataset, batch_size=batch_size, shuffle=shuffle))
+    expected_rng = torch.get_rng_state()
+    torch.manual_seed(42)
+    optimized = list(iq_loader(dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=False))
+    assert torch.equal(torch.get_rng_state(), expected_rng)
+    assert len(reference) == len(optimized)
+    for expected, actual in zip(reference, optimized):
+        assert all(torch.equal(a, b) for a, b in zip(expected, actual))
+
+
 def _reference_frames(sequence, frame_length, stride):
     num_frames = (len(sequence) - frame_length) // stride + 1
     return np.stack([

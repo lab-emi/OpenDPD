@@ -1990,6 +1990,8 @@ export interface components {
             device_index: number;
             /** Num Threads */
             num_threads?: number | null;
+            /** Preview Every Batches */
+            preview_every_batches?: number | null;
         };
         /**
          * ExecutionEvidence
@@ -3280,7 +3282,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.0
+             * @default 2.2.1
              */
             version: string;
         };
@@ -3570,7 +3572,7 @@ export interface components {
         };
         /**
          * TrainingConfig
-         * @description Defaults mirror the OpenDPDv2 recipe (arguments.py); they are the
+         * @description Defaults mirror the Studio full-training preset (arguments.py); they are the
          *     single source of defaults for every entry point.
          */
         TrainingConfig: {
@@ -3591,7 +3593,7 @@ export interface components {
             decay_factor: number;
             /**
              * Epochs
-             * @default 300
+             * @default 150
              */
             epochs: number;
             /**

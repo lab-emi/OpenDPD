@@ -21,7 +21,7 @@ import { ModelDownloadButton } from './ModelDownloadButton'
 
 interface Geometry { batch_size: number; sequence_samples: number; sample_rate_hz: number | null; frame_stride?: number; train_sequences: number; batches_per_epoch: number }
 interface LiveSnapshot {
-  policy: { min_batches: number; min_seconds: number; overhead_target: number }
+  policy: { mode?: string; every_batches?: number | null; min_batches?: number; min_seconds?: number }
   geometry: Geometry | null
   training_geometry?: Geometry
   last_batch?: StreamState['batchProgress']
@@ -82,7 +82,7 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
         <LinearProgress variant={active && !progress?.total_batches ? 'indeterminate' : 'determinate'} value={run.status === 'succeeded' ? 100 : batchPercent} aria-label={t('live.batchProgress')} />
       </Box>}
       {training && <ModelDownloadButton run={run} />}
-      {training && snapshot?.policy && <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1.5 }}>{t('live.cadence', { batches: snapshot.policy.min_batches, seconds: (preview?.interval_seconds ?? snapshot.policy.min_seconds).toFixed(1) })}</Typography>}
+      {training && snapshot?.policy && <Typography variant="caption" color={snapshot.policy.mode === 'batch' ? 'error.main' : 'text.secondary'} component="p" sx={{ mt: 1.5 }}>{snapshot.policy.mode === 'epoch' ? t('live.cadence.epoch') : snapshot.policy.mode === 'batch' ? t('live.cadence.batch', { batches: snapshot.policy.every_batches ?? 100 }) : t('live.cadence', { batches: snapshot.policy.min_batches ?? 25, seconds: (preview?.interval_seconds ?? snapshot.policy.min_seconds ?? 2).toFixed(1) })}</Typography>}
     </Paper>
     {dpd && <Alert severity="info">{t('live.surrogate')}</Alert>}
     <Grid container spacing={2}>

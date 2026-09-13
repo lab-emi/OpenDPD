@@ -1,0 +1,40 @@
+{
+  "pa": {
+    "baseline_seconds": 39.53992543698405,
+    "candidate_seconds": 10.72630634001689,
+    "speedup": 3.6862573362716198,
+    "checkpoint_tensors_bitwise_equal": true,
+    "metrics_identical": true,
+    "baseline_preview_count": 19,
+    "candidate_preview_count": 4,
+    "baseline_epoch_intervals": [
+      10.004572703008307,
+      8.918968726997264,
+      9.014054128987482
+    ],
+    "candidate_epoch_intervals": [
+      2.4347364349814598,
+      2.0262844310200308,
+      2.033765809988836
+    ]
+  },
+  "dpd": {
+    "baseline_seconds": 35.441344586986816,
+    "candidate_seconds": 15.522104165022029,
+    "speedup": 2.2832822283754153,
+    "checkpoint_tensors_bitwise_equal": true,
+    "metrics_identical": true,
+    "baseline_preview_count": 16,
+    "candidate_preview_count": 4,
+    "baseline_epoch_intervals": [
+      8.387128205999034,
+      7.921002724004211,
+      8.109825152001576
+    ],
+    "candidate_epoch_intervals": [
+      3.5311351289856248,
+      3.2192620990099385,
+      3.0992066519975197
+    ]
+  }
+}

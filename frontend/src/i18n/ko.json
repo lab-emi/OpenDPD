@@ -776,5 +776,13 @@
   "model.download.checkpoint": "체크포인트 다운로드",
   "model.download.help": "현재까지 검증 점수가 가장 좋은 가중치입니다. 작업 공간 만료 전에 저장하세요.",
   "model.download.waiting": "첫 체크포인트를 저장한 후 다운로드할 수 있습니다.",
-  "model.download.error": "모델을 확인할 수 없습니다. 잠시 후 다시 시도하세요."
+  "model.download.error": "모델을 확인할 수 없습니다. 잠시 후 다시 시도하세요.",
+  "form.preview": "플롯 업데이트",
+  "form.preview.epoch": "에포크마다 한 번 (기본값)",
+  "form.preview.epochHelp": "각 에포크 후 검증 결과로 플롯을 업데이트합니다.",
+  "form.preview.batch": "N개 배치마다 — 느림",
+  "form.preview.batches": "미리보기 간 배치 수",
+  "form.preview.warning": "빈번한 배치 미리보기는 학습 속도를 크게 떨어뜨릴 수 있습니다. 매번 추가 추론과 플롯 계산이 수행됩니다.",
+  "live.cadence.epoch": "플롯은 에포크마다 한 번 업데이트됩니다.",
+  "live.cadence.batch": "{batches}개 배치마다 및 에포크 종료 시 플롯이 업데이트됩니다."
 }

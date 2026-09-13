@@ -48,7 +48,7 @@ def test_training_defaults_match_opendpdv2_recipe(monkeypatch):
 
     assert args.batch_size == 64
     assert args.batch_size_eval == 64
-    assert args.n_epochs == 300
+    assert args.n_epochs == 150
     assert args.frame_length == 200
     assert args.frame_stride == 1
     assert args.opt_type == "adamw"

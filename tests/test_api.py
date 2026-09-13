@@ -90,7 +90,7 @@ class TestApiTraining:
     def test_benchmark_recipe_defaults_are_public_api_defaults(self, function_name):
         signature = inspect.signature(getattr(opendpd, function_name))
 
-        assert signature.parameters["n_epochs"].default == 300
+        assert signature.parameters["n_epochs"].default == 150
         assert signature.parameters["batch_size"].default == 64
         assert signature.parameters["lr"].default == 5e-3
 

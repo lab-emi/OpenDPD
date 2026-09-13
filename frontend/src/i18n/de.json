@@ -776,5 +776,13 @@
   "model.download.checkpoint": "Checkpoint herunterladen",
   "model.download.help": "Gewichte mit dem bisher besten Validierungswert. Vor Ablauf des Arbeitsbereichs speichern.",
   "model.download.waiting": "Nach dem Speichern des ersten Checkpoints verfügbar.",
-  "model.download.error": "Modellverfügbarkeit konnte nicht geprüft werden. Gleich erneut versuchen."
+  "model.download.error": "Modellverfügbarkeit konnte nicht geprüft werden. Gleich erneut versuchen.",
+  "form.preview": "Diagrammaktualisierung",
+  "form.preview.epoch": "Einmal pro Epoche (Standard)",
+  "form.preview.epochHelp": "Diagramme nach jeder Epoche mit Validierungsergebnissen aktualisieren.",
+  "form.preview.batch": "Alle N Batches — langsam",
+  "form.preview.batches": "Batches zwischen Vorschauen",
+  "form.preview.warning": "Häufige Batch-Vorschauen können das Training stark verlangsamen. Jede Vorschau benötigt zusätzliche Inferenz und Diagrammberechnungen.",
+  "live.cadence.epoch": "Diagramme werden einmal pro Epoche aktualisiert.",
+  "live.cadence.batch": "Diagramme werden alle {batches} Batches und am Epochenende aktualisiert."
 }

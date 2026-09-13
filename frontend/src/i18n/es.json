@@ -776,5 +776,13 @@
   "model.download.checkpoint": "Descargar checkpoint",
   "model.download.help": "Pesos con la mejor puntuación de validación hasta ahora. Guárdalos antes de que caduquen.",
   "model.download.waiting": "Disponible al guardar el primer checkpoint.",
-  "model.download.error": "No se pudo comprobar el modelo. Reinténtalo en breve."
+  "model.download.error": "No se pudo comprobar el modelo. Reinténtalo en breve.",
+  "form.preview": "Actualización de gráficos",
+  "form.preview.epoch": "Una vez por época (predeterminado)",
+  "form.preview.epochHelp": "Actualizar los gráficos tras cada época con los resultados de validación.",
+  "form.preview.batch": "Cada N lotes — lento",
+  "form.preview.batches": "Lotes entre vistas previas",
+  "form.preview.warning": "Las vistas previas frecuentes pueden ralentizar mucho el entrenamiento. Cada una requiere inferencia y cálculos gráficos adicionales.",
+  "live.cadence.epoch": "Los gráficos se actualizan una vez por época.",
+  "live.cadence.batch": "Los gráficos se actualizan cada {batches} lotes y al final de la época."
 }

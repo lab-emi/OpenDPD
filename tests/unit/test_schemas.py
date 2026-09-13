@@ -104,7 +104,7 @@ def test_unknown_fields_are_rejected():
 def test_training_defaults_match_legacy_recipe():
     from opendpd.schemas import TrainingConfig
     t = TrainingConfig()
-    assert (t.epochs, t.batch_size, t.learning_rate, t.frame_length, t.frame_stride) == (300, 64, 5e-3, 200, 1)
+    assert (t.epochs, t.batch_size, t.learning_rate, t.frame_length, t.frame_stride) == (150, 64, 5e-3, 200, 1)
     assert (t.optimizer, t.loss, t.lr_end, t.decay_factor, t.patience) == ("adamw", "l2", 5e-5, 0.5, 5)
 
 

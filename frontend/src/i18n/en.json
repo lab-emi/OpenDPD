@@ -776,5 +776,13 @@
   "model.download.checkpoint": "Download checkpoint",
   "model.download.help": "Weights selected by the best validation score so far. Save them before the workspace expires.",
   "model.download.waiting": "Available after the first model checkpoint is saved.",
-  "model.download.error": "Could not check model availability. Retry shortly."
+  "model.download.error": "Could not check model availability. Retry shortly.",
+  "form.preview": "Plot updates",
+  "form.preview.epoch": "Once per epoch (default)",
+  "form.preview.epochHelp": "Update plots after each epoch using validation results.",
+  "form.preview.batch": "Every N batches — slow",
+  "form.preview.batches": "Batches between previews",
+  "form.preview.warning": "Frequent batch previews may severely slow down training. Each preview performs extra inference and plot calculations.",
+  "live.cadence.epoch": "Plots update once per epoch.",
+  "live.cadence.batch": "Plots update every {batches} batches and at epoch end."
 }

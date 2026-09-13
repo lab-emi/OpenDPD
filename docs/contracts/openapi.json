@@ -2802,6 +2802,19 @@
               }
             ],
             "title": "Num Threads"
+          },
+          "preview_every_batches": {
+            "anyOf": [
+              {
+                "maximum": 1000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Every Batches"
           }
         },
         "title": "ExecutionConfig",
@@ -6401,7 +6414,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.0",
+            "default": "2.2.1",
             "title": "Version",
             "type": "string"
           }
@@ -7191,7 +7204,7 @@
       },
       "TrainingConfig": {
         "additionalProperties": false,
-        "description": "Defaults mirror the OpenDPDv2 recipe (arguments.py); they are the\nsingle source of defaults for every entry point.",
+        "description": "Defaults mirror the Studio full-training preset (arguments.py); they are the\nsingle source of defaults for every entry point.",
         "properties": {
           "batch_size": {
             "default": 64,
@@ -7213,7 +7226,7 @@
             "type": "number"
           },
           "epochs": {
-            "default": 300,
+            "default": 150,
             "minimum": 1.0,
             "title": "Epochs",
             "type": "integer"
@@ -7724,7 +7737,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.0"
+    "version": "2.2.1"
   },
   "openapi": "3.1.0",
   "paths": {

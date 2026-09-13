@@ -776,5 +776,13 @@
   "model.download.checkpoint": "チェックポイントをダウンロード",
   "model.download.help": "現在までの検証スコアが最良の重みです。有効期限前に保存してください。",
   "model.download.waiting": "最初のチェックポイント保存後に利用できます。",
-  "model.download.error": "モデルを確認できませんでした。少し待って再試行してください。"
+  "model.download.error": "モデルを確認できませんでした。少し待って再試行してください。",
+  "form.preview": "プロット更新",
+  "form.preview.epoch": "エポックごと（既定）",
+  "form.preview.epochHelp": "各エポック後に検証結果を使ってプロットを更新します。",
+  "form.preview.batch": "N バッチごと — 低速",
+  "form.preview.batches": "プレビュー間のバッチ数",
+  "form.preview.warning": "バッチごとの頻繁なプレビューは学習を大幅に遅くする可能性があります。毎回、追加の推論とプロット計算を行います。",
+  "live.cadence.epoch": "プロットはエポックごとに更新されます。",
+  "live.cadence.batch": "{batches} バッチごととエポック終了時に更新されます。"
 }

@@ -1,6 +1,6 @@
 # Your first experiment in Studio
 
-First complete the [source installation](../install.md). Studio is part of the **2.2 development preview**; the PyPI 2.1.0 package does not include it.
+Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.1"`.
 
 ```bash
 opendpd gui
@@ -14,7 +14,7 @@ On **Home**, click **Get Started → Try a built-in dataset**. Choose **Add & in
 
 The dataset page shows input/output I/Q signals, sample rate, bandwidth and signal quality. Use the **Dataset Doctor** tab to inspect findings, then **Configure experiment** to continue. Built-in measured datasets keep their supplied splits; **MyCustomPA** is explicitly labeled synthetic tutorial data.
 
-Custom dataset creation and upload in the UI are disabled and labeled **Coming soon**. The local Python and CLI workflows remain available; see [import and preprocessing](headless-cli.md#use-your-own-data).
+Use **Get Started → Use my CSV file** to upload your own I/Q data. Studio validates the complete CSV in quarantine before preview. Invalid files are deleted; the hosted app removes all session files within 24 hours. Download your results before they expire. See [import and preprocessing](headless-cli.md#use-your-own-data) for local workflows.
 
 ## 2. Train and test a PA model
 
@@ -38,7 +38,7 @@ The **Terminal** bar at the bottom starts collapsed. It highlights with a **Runn
 
 Its tabs follow the experiment step when you move from PA to DPD. You can also select an earlier step's terminal or another run without navigating away from the current experiment. The run-detail **Logs** tab provides the saved log and filtering controls.
 
-Plots use throttled previews with bounded point counts. Their current cadence is shown in the UI; saved results and formal metrics remain independent of how frequently the browser draws. See [Visualization](../visualization.md) for live and saved plot behavior.
+Quick trial defaults to **10 epochs** and full training to **150 epochs**. Plots update **once per epoch**, reusing validation results. Under **Advanced settings → Plot updates**, you can choose a batch interval. This option and its warning are red: extra previews can severely slow training. The chosen cadence is saved with the run and shown above its plots. See [Visualization](../visualization.md) for live and saved plot behavior.
 
 ## 5. Keep and compare the results
 

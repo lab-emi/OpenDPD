@@ -8,7 +8,7 @@ Lab of Efficient Machine Intelligence @ Delft University of Technology
 Website: https://www.tudemi.com
 """
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 __author__ = "Yizhuo Wu, Ang Li, Chang Gao"
 __license__ = "Apache-2.0"
 __email__ = "chang.gao@tudelft.nl"

@@ -37,8 +37,11 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.0** brings OpenDPD Studio to the desktop and browser:
+**OpenDPD 2.2.1** accelerates CUDA training in OpenDPD Studio:
 
+- CUDA replay for supported native models reduces dispatch overhead while retaining the existing optimizer, precision, batches and scheduler.
+- Quick/full training defaults are 10/150 epochs; plots reuse validation predictions once per epoch.
+- See the [2.2.1 performance measurements](docs/performance/studio-2.2.1.md) and [release notes](docs/releases/release-notes-2.2.1.md).
 - **Guided experiments:** explore built-in I/Q data, train and test PA/DPD models, and choose from the original backbone registry.
 - **Live feedback:** separate epoch and batch progress bars, NMSE and other task metrics, live signal plots, reconnectable experiments and a Stop control.
 - **Download models while training:** save the best checkpoint so far; after training, download the selected final model. Compare compatible runs and export reports.
@@ -56,7 +59,7 @@ For a hosted installation, the [public Studio deployment guide](https://lab-emi.
 **[Open the hosted Studio now](https://opendpd.com/studio/)**, or install the packaged local app with **Python 3.10–3.13**:
 
 ```bash
-python -m pip install "opendpd[gui]==2.2.0"
+python -m pip install "opendpd[gui]==2.2.1"
 opendpd gui
 ```
 
@@ -77,7 +80,7 @@ opendpd gui
 
 This opens Studio locally in your browser. For Windows, a native desktop window, GPU setup, or a core-only installation, see [Installation](docs/install.md).
 
-Click **Get Started → Try a built-in dataset → DPA_200MHz**. Inspect the data and continue to your first experiment. Use **Starting settings → Quick trial** to check the pipeline, then choose **Full training** for a longer experiment.
+Click **Get Started → Try a built-in dataset → DPA_200MHz**. Inspect the data and continue to your first experiment. Use **Starting settings → Quick trial** to check the pipeline, then choose **Full training** for a longer experiment. Quick trial defaults to **10 epochs**; full training defaults to **150 epochs**. Plots update **once per epoch** using validation results. Advanced settings offer an optional batch preview interval with a red warning because extra previews can severely slow training.
 
 ## The PA → DPD workflow
 

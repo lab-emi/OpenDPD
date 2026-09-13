@@ -154,6 +154,9 @@ export function useRunStream(runId: string, enabled: boolean): StreamState & { r
           else if (page.events.some((event) => ['status', 'error', 'artifact'].includes(event.type))) {
             void qc.invalidateQueries({ queryKey: keys.run(runId), exact: true })
           }
+          if (page.events.length < 500 && page.events.some((event) => event.type === 'progress' && event.payload?.['preview_revision'])) {
+            void qc.invalidateQueries({ queryKey: ['run', runId, 'live'], exact: true })
+          }
           if (page.terminal && page.events.length < 500) {
             ended = true
             dispatch({ kind: 'connection', connection: 'ended' })

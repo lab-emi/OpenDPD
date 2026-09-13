@@ -3,6 +3,17 @@
 from opendpd.services.recipes import get_recipe, instantiate
 
 
+def test_every_training_recipe_uses_the_requested_epoch_budget():
+    from opendpd.services.recipes import list_recipes
+    from opendpd.schemas import ExecutionConfig
+    for recipe in list_recipes():
+        if recipe.purpose == 'smoke':
+            assert recipe.training.epochs == 10
+        elif recipe.purpose == 'research':
+            assert recipe.training.epochs == 150
+    assert ExecutionConfig().preview_every_batches is None
+
+
 def test_instantiated_recipes_do_not_share_mutable_training_or_model_parameters():
     recipe = get_recipe("pa-gru-smoke-v1")
     before = recipe.to_dict()

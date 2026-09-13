@@ -39,10 +39,10 @@ class ModelSpec(StrictModel):
 
 
 class TrainingConfig(StrictModel):
-    """Defaults mirror the OpenDPDv2 recipe (arguments.py); they are the
+    """Defaults mirror the Studio full-training preset (arguments.py); they are the
     single source of defaults for every entry point."""
 
-    epochs: int = Field(default=300, ge=1)
+    epochs: int = Field(default=150, ge=1)
     batch_size: int = Field(default=64, ge=1)
     batch_size_eval: int = Field(default=64, ge=1)
     learning_rate: float = Field(default=5e-3, gt=0)
@@ -86,6 +86,9 @@ class ExecutionConfig(StrictModel):
     device_index: int = Field(default=0, ge=0)
     num_threads: Optional[int] = Field(default=None, ge=1)
     cuda_graph_training: bool = False
+    # Display only: None reuses validation predictions once per epoch. A
+    # positive interval explicitly opts into extra inference during training.
+    preview_every_batches: Optional[int] = Field(default=None, ge=1, le=1_000_000)
 
 
 class QuantizationConfig(StrictModel):
