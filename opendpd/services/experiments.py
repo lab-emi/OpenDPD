@@ -261,7 +261,8 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
             updates["model"] = _executed_model(config.model, dpd_resolved.model)
         # The legacy run_dpd step derives checkpoint ids from seed / frame_length
         # (and quantisation) of the *current* arguments: inherit them from the DPD run.
-        updates["training"] = dpd_resolved.training
+        # A training sample budget is not a testing setting: score the full test split.
+        updates["training"] = dpd_resolved.training.model_copy(update={"train_samples": None})
         updates["quantization"] = dpd_resolved.quantization
     if config.task == TaskType.train_dpd:
         from opendpd.services.polynomial import is_least_squares

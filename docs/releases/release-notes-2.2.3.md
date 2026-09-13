@@ -32,3 +32,9 @@ Synthetic captures and software checks do not replace physical repeats, independ
 ## Validation
 
 Release validation covers the Python and frontend suites, API contract, package contents, browser journeys and the deployed web session. The [implementation ledger](../design/studio-next-implementation.md) records the detailed software evidence and outstanding physical validation. Existing experiment task identifiers and saved links remain compatible.
+
+## Web follow-up fix
+
+DPD Testing now accepts a checkpoint trained with a sample budget and evaluates the complete test split. It inherits the checkpoint settings while clearing the training-only sample limit, matching PA Testing. A regression trains a budgeted DPD, validates the testing configuration and compares every exported test sample with an independent checkpoint pass.
+
+This fix is deployed separately to the 2.2.3 web runtime. The original `v2.2.3` tag and PyPI distributions remain unchanged; source installations need the follow-up fix as well.

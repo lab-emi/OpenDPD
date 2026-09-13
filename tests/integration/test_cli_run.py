@@ -26,6 +26,7 @@ from opendpd.services.experiments import (
     load_resolved,
     load_result,
     load_run,
+    validate_experiment,
 )
 from opendpd.services.legacy_adapter import build_namespace, legacy_cli_tokens
 from opendpd.services.recipes import instantiate, run_dpd_config
@@ -237,6 +238,40 @@ def apply_run(workspace, dpd_run):
     record = execute_run(workspace, create_run(workspace, run_dpd_config("dpa-200mhz", dpd_run.run_id)).run_id)
     assert record.status == RunStatus.succeeded, record.error
     return record
+
+
+def test_budgeted_dpd_can_be_tested_on_the_full_test_split(workspace, pa_run):
+    """A training-only budget must not prevent validation or truncate DPD testing."""
+    import numpy as np
+    import pandas as pd
+
+    config = instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa_run.run_id)
+    config.training.epochs = 1
+    config.training.train_samples = 4096
+    trained = execute_run(workspace, create_run(workspace, config).run_id)
+    assert trained.status == RunStatus.succeeded, trained.error
+
+    testing = run_dpd_config("dpa-200mhz", trained.run_id)
+    # Testing must recover the checkpoint settings, even from different UI defaults.
+    testing.training.seed = 17
+    testing.training.frame_length = 10
+    report = validate_experiment(workspace, testing.model_dump(mode="json"))
+    assert report.ok, report.errors
+    applied = execute_run(workspace, create_run(workspace, testing).run_id)
+    assert applied.status == RunStatus.succeeded, applied.error
+    training_settings = load_resolved(workspace, trained.run_id).training
+    testing_settings = load_resolved(workspace, applied.run_id).training
+    assert training_settings.train_samples == 4096
+    assert testing_settings.train_samples is None
+    assert testing_settings.model_dump(exclude={"train_samples"}) == training_settings.model_dump(exclude={"train_samples"})
+
+    artifact = load_artifacts(workspace, applied.run_id).by_kind(ArtifactKind.dpd_output)[0]
+    frame = pd.read_csv(workspace.run_dir(applied.run_id) / artifact.file.path)
+    x_test, expected = _single_pass_u(workspace, trained)
+    assert len(frame) == len(x_test) > training_settings.train_samples
+    np.testing.assert_array_equal(frame[["I", "Q"]].to_numpy(dtype=np.float32), x_test.astype(np.float32))
+    np.testing.assert_allclose(frame[["I_dpd", "Q_dpd"]].to_numpy(dtype=np.float32), expected.astype(np.float32),
+                               rtol=0, atol=1e-6)
 
 
 def _single_pass_u(workspace, dpd_run):
