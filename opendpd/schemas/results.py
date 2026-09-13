@@ -20,6 +20,8 @@ from .common import (
 )
 from .experiment import ModelSpec, ParamValue
 from .measurement import MeasurementEvidence
+from .dataset import SignalSpec
+from .rf import RFConditions
 
 
 class SignalReference(StrictModel):
@@ -156,6 +158,8 @@ class EvaluationResult(StrictModel):
     scaling: Optional[ScalingInfo] = None
     measurement: Optional[MeasurementEvidence] = None   # dpd_measured only: conditions, captures, alignment
     execution: Optional[ExecutionEvidence] = None       # streaming variants only (S18)
+    evaluated_signal: Optional[SignalSpec] = None       # frozen evaluation metadata; absent on historical results
+    rf_conditions: Optional[RFConditions] = None        # declared physical conditions, separate from IQ scaling
     extra: Dict[str, ParamValue] = Field(default_factory=dict)
 
     def metric(self, name: str) -> MetricValue:

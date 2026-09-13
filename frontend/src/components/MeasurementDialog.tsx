@@ -42,6 +42,7 @@ interface Form {
   power_without: string
   notes: string
   playback: 'loop' | 'single'
+  processing_version: 'measurement-integer-v1' | 'measurement-fractional-v2'
 }
 
 const number = (s: string): number | null => (s.trim() === '' ? null : Number(s))
@@ -94,6 +95,7 @@ export function MeasurementDialog({ run, onClose }: { run: RunView; onClose: () 
     power_without: '',
     notes: '',
     playback: 'loop',
+    processing_version: 'measurement-integer-v1',
   })
   // the dataset rate is the default until the operator types a rate (derived during render, no effect needed)
   const datasetRate = dataset.data?.signal.sample_rate_hz
@@ -136,6 +138,7 @@ export function MeasurementDialog({ run, onClose }: { run: RunView; onClose: () 
           },
           source: 'manual',
           playback: form.playback,
+          processing_version: form.processing_version,
         },
       }
       submit.mutate(
@@ -164,6 +167,12 @@ export function MeasurementDialog({ run, onClose }: { run: RunView; onClose: () 
           <CaptureInput label={t('run.measure.with')} help={t('run.measure.with.help')} file={withFile} onFile={setWithFile} />
           <CaptureInput label={t('run.measure.without')} help={t('run.measure.without.help')} file={withoutFile} onFile={setWithoutFile} />
           <Grid container spacing={2}>
+            <Grid size={{ xs: 12 }}>
+              <TextField fullWidth select label={t('measurement.processing')} value={form.processing_version} onChange={set('processing_version')} helperText={t('measurement.processing.help')}>
+                <MenuItem value="measurement-integer-v1">{t('measurement.integer')}</MenuItem>
+                <MenuItem value="measurement-fractional-v2">{t('measurement.fractional')}</MenuItem>
+              </TextField>
+            </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField fullWidth required label={t('run.measure.pa')} value={form.pa} onChange={set('pa')} />
             </Grid>

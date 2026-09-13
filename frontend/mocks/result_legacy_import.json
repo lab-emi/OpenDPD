@@ -13,6 +13,7 @@
       "split_version": "contiguous-v1"
     },
     "device": "unknown",
+    "evaluated_signal": null,
     "evidence_type": "pa_modeling",
     "execution": null,
     "extra": {},
@@ -71,6 +72,7 @@
       "kind": "measured_pa_output"
     },
     "result_id": "res-legacy-0001",
+    "rf_conditions": null,
     "run_id": null,
     "scaling": null,
     "schema_version": 1,

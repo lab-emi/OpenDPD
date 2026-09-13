@@ -1,0 +1,70 @@
+[
+  {
+    "width": 1366,
+    "height": 768,
+    "run": "run-20260913-131049-843550",
+    "savedFigure": "fig-c5d90e7db06147ac9b26de4810b4660e",
+    "panels": [
+      "spectrum",
+      "error_distribution",
+      "amam",
+      "ampm"
+    ],
+    "viewport": {
+      "x": [
+        -33.34635416666667,
+        33.19010416666667
+      ],
+      "y": [
+        -133.5645925925926,
+        -83.1044074074074
+      ]
+    },
+    "metricsUnchanged": true,
+    "costEntry": "cost-c5446d47a8ebef763f61f5a0233849c94faf6a06c3d7053fc0e0d93b8b9a85a8",
+    "costSynthetic": true,
+    "precision": {
+      "enabled": true,
+      "n_bits_w": 8,
+      "n_bits_a": 12,
+      "pretrained_run_id": null,
+      "label": ""
+    },
+    "publicWrites": 0,
+    "errors": []
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "run": "run-20260913-131049-843550",
+    "savedFigure": "fig-b6150270c7304e99b7b2455982996ff6",
+    "panels": [
+      "spectrum",
+      "error_distribution",
+      "amam",
+      "ampm"
+    ],
+    "viewport": {
+      "x": [
+        -33.34635416666667,
+        33.19010416666667
+      ],
+      "y": [
+        -133.5645925925926,
+        -83.1044074074074
+      ]
+    },
+    "metricsUnchanged": true,
+    "costEntry": "cost-3adfae003fe13980546d1e23ed9209bd98b505bb0ba6e4aaa6966bc2d8f39d65",
+    "costSynthetic": true,
+    "precision": {
+      "enabled": true,
+      "n_bits_w": 8,
+      "n_bits_a": 12,
+      "pretrained_run_id": null,
+      "label": ""
+    },
+    "publicWrites": 0,
+    "errors": []
+  }
+]

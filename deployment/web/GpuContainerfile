@@ -9,6 +9,7 @@ COPY steps ./steps
 COPY utils ./utils
 COPY quant ./quant
 COPY datasets ./datasets
+COPY dataset ./dataset
 RUN pip install --no-cache-dir --no-deps --no-build-isolation . && chmod -R a-w /opt/opendpd
 USER 65532:65532
 ENTRYPOINT ["python", "-m", "opendpd.web.gpu_container"]

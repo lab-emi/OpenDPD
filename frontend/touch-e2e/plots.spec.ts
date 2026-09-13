@@ -11,7 +11,7 @@ test('English and CUDA defaults in a non-English mobile browser', async ({ page 
     version: 'x', workspace: 'test', devices: [{ device: 'cpu', detected: true }, { device: 'cuda', detected: true, name: 'GPU' }],
   } }))
   await page.goto('/experiments/new')
-  await expect(page.getByRole('heading', { name: 'PA Model Training', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'PA Model', exact: true })).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByText('Configuration is valid', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()

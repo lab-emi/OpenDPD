@@ -112,6 +112,7 @@ class DatasetImportBoundary:
     PATHS = {
         "/api/v1/datasets/upload", "/api/v1/datasets/inspect", "/api/v1/datasets/import",
         "/api/v1/datasets/csv", "/api/v1/datasets/csv/preview", "/api/v1/imports",
+        "/api/v1/datasets/synthetic",
     }
 
     def __init__(self, app, enabled: bool = False):
@@ -120,7 +121,8 @@ class DatasetImportBoundary:
 
     async def __call__(self, scope, receive, send):
         path = scope.get("path", "").rstrip("/")
-        blocked = path in self.PATHS or path == "/api/v1/datasets/import-roots" or path.startswith("/api/v1/datasets/import-roots/")
+        blocked = (path in self.PATHS or path == "/api/v1/datasets/import-roots" or path.startswith("/api/v1/datasets/import-roots/")
+                   or (path.startswith("/api/v1/signal-generator/signals/") and path.endswith("/dataset")))
         if scope["type"] == "http" and not self.enabled and blocked:
             await _reject(send, 403, "custom_datasets_coming_soon", "Custom dataset uploads and imports are coming soon. Use a built-in dataset.")
             return
@@ -147,6 +149,8 @@ class LocalBoundaryMiddleware:
         limit = UPLOAD_MAX_BODY if scope.get("path") in UPLOAD_PATHS else self.max_body
         if scope.get('path') == '/api/v1/datasets/upload':
             limit = 26 * 1024 * 1024  # 25 MiB CSV plus bounded multipart framing
+        if scope.get('path') == '/api/v1/hardware/reports/upload':
+            limit = 6 * 1024 * 1024
         if method not in SAFE_METHODS:
             origin = headers.get("origin") or headers.get("referer")
             if not origin_matches(origin, host):

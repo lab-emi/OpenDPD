@@ -42,7 +42,7 @@ test('Get Started opens an optional dataset guide without registering anything',
 
 test('the guide opens the real CSV form and can be skipped without closing that form', async () => {
   setup('/datasets?guide=start', true)
-  await userEvent.click(await screen.findByRole('button', { name: 'Use my CSV file' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Upload CSV' }))
   const dialog = screen.getByRole('dialog', { name: 'Create Your Own Dataset' })
   await within(dialog).findByText(/Step 1 · Upload a CSV/)
   await userEvent.click(within(dialog).getByRole('button', { name: 'Skip tutorial' }))

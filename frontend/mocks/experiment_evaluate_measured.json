@@ -44,6 +44,7 @@
       },
       "playback": "loop",
       "played_sha256": null,
+      "processing_version": "measurement-integer-v1",
       "source": "manual",
       "with_dpd": {
         "columns": null,

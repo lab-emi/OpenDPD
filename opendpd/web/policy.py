@@ -24,8 +24,9 @@ ROUTES = {
         r"/runs", r"/runs/count", rf"/runs/{SLUG}(/(config|artifacts|history|live|lineage|logs|events/list))?",
         rf"/runs/{SLUG}/checkpoint(/download)?",
         r"/metrics/profiles", rf"/metrics/profiles/{SLUG}", r"/results/compare",
-        rf"/results/{SLUG}(/(profiles|report))?", rf"/artifacts/{SLUG}/{FILE_ID}",
+        rf"/results/{SLUG}(/(profiles|report|review))?", rf"/artifacts/{SLUG}/{FILE_ID}",
         rf"/exports/{FILE_ID}", r"/adaptation/reports", rf"/adaptation/reports/{SLUG}",
+        r"/dataset-publications", r"/dataset-publications/capability", r"/dataset-publications/dspr-[a-f0-9]{64}(/download)?",
     ],
     "POST": [r"/datasets/import-builtin", r"/datasets/upload", r"/datasets/csv(/preview)?", rf"/datasets/{SLUG}/diagnostics",
              rf"/datasets/{SLUG}/manifest",
@@ -33,6 +34,9 @@ ROUTES = {
              r"/runs", rf"/runs/{SLUG}/(cancel|retry)", r"/exports"],
     "PUT": [r"/settings"],
 }
+ROUTES["POST"] += [r"/datasets/synthetic", r"/dataset-publications/prepare", r"/dataset-publications/dspr-[a-f0-9]{64}/submit"]
+ROUTES["GET"] += [r"/signal-generator/presets", r"/signal-generator/signals/sg-[a-f0-9]{64}(/download)?", rf"/datasets/{SLUG}/sample-counts"]
+ROUTES["POST"] += [r"/signal-generator/validate", r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/dataset"]
 
 
 def reject(status: int, code: str, message: str):
@@ -61,6 +65,11 @@ class WebConfig:
     max_workspace_bytes: int = 256 * 1024 * 1024
     max_body: int = 64 * 1024
     max_requests: int = 8
+    # Hosted publication uses the operator's dedicated GitHub CLI identity and
+    # must be explicitly enabled. Browser users never supply a GitHub token.
+    dataset_publications: bool = False
+    publications_per_ip: int = 2
+    publications_per_day: int = 20
     sweep_seconds: float = 15.0
     # Stop new requests five minutes before the daily reset. The independent
     # systemd reset kills the whole service cgroup and purges at 23:59 UTC.
@@ -93,7 +102,7 @@ def check_query(query):
     for name, value in query.multi_items():
         if len(name) > 64 or len(value) > 1024:
             reject(422, "invalid_query", "query is too large")
-        if name in {"version", "profile", "profile_id"}:
+        if name in {"version", "profile", "profile_id", "dataset_id"}:
             check_slug(value, name)
         if name == "runs":
             if len(value.split(",")) > 8:

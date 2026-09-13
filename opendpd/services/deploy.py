@@ -208,6 +208,8 @@ def export_deployment(ws: Workspace, run_id: str, out: Path, *, spec: Optional[F
     finally:
         shutil.rmtree(work, ignore_errors=True)
         shutil.rmtree(build, ignore_errors=True)
+    from opendpd.services.hardware_costs import record_deployment
+    record_deployment(ws, run_id, deployment, out)
     return deployment
 
 

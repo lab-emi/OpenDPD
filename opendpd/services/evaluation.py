@@ -123,6 +123,8 @@ def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
     from utils.util import count_net_params
     from opendpd.services.polynomial import is_least_squares, polynomial_module
 
+    proj.studio_strict_quantization = bool(resolved.quantization and resolved.quantization.enabled)
+
     def core(hidden: int, layers: int, backbone: str):
         return model.CoreModel(input_size=input_size, hidden_size=hidden, num_layers=layers, backbone_type=backbone,
                                window_size=proj.window_size, num_dvr_units=proj.num_dvr_units, thx=proj.thx, thh=proj.thh)
@@ -370,7 +372,15 @@ def write_plots(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, 
                                     bandwidth_hz=sig.bandwidth_hz, valid_samples=n)),
         ("time", plots.time_excerpt(signals, roles, valid_samples=n)),
         ("amam", plots.am_am_pm(predictions.x, outputs, roles, valid_samples=n)),
+        ("error_distribution", plots.error_distribution(predictions.ground_truth, outputs, roles, valid_samples=n)),
     ):
+        for trace in data["traces"]:
+            role = trace["role"]
+            trace["run_id"] = run_id
+            trace["source"] = (("synthetic dataset" if dataset.origin.value == 'synthetic' else "measured dataset") if trace["name"] in ("measured PA output", "measured PA without DPD", "PA input x", "target input x")
+                               else "linear target" if role == "reference" else "DPD model" if role == "predistorted"
+                               else "PA model" if resolved.task in (TaskType.train_pa, TaskType.evaluate_pa) else "PA surrogate")
+            trace["stage"] = "x" if role == "input" else "u" if role == "predistorted" else "reference" if role == "reference" else "y"
         write_json_atomic(out_dir / f"{name}.json", data)
         written.append(out_dir / f"{name}.json")
     return written
@@ -397,14 +407,15 @@ def store_results(run_dir: Path, results: Dict[str, EvaluationResult], primary_p
     write_json_atomic(run_dir / RESULT_FILE, results[primary_profile])
 
 
-def compare_results(ws: Workspace, run_ids: List[str], profile_id: Optional[str] = None) -> ComparisonReport:
+def compare_results(ws: Workspace, run_ids: List[str], profile_id: Optional[str] = None,
+                    profile_ids: Optional[Dict[str, str]] = None) -> ComparisonReport:
     """Stored results side by side. Every pair is checked with ``incompatibilities``; results under different
     protocols are shown with the reasons and never ranked."""
     from opendpd.core.metrics import incompatibilities
 
     results = []
     for run_id in run_ids:
-        result = load_result(ws, run_id, profile_id)
+        result = load_result(ws, run_id, profile_ids.get(run_id) if profile_ids else profile_id)
         if result is None:
             raise WorkspaceError(f"run '{run_id}' has no stored result" + (f" under profile '{profile_id}'" if profile_id else ""))
         results.append(result)
@@ -417,7 +428,7 @@ def compare_results(ws: Workspace, run_ids: List[str], profile_id: Optional[str]
     return ComparisonReport(results=results, pairs=pairs, comparable=comparable, note=note)
 
 
-def comparison_csv(report: ComparisonReport) -> str:
+def comparison_csv(report: ComparisonReport, reference_id: Optional[str] = None, mode: str = "same_condition") -> str:
     """Metric rows by result columns, preceded by the provenance every number is bound to. No recomputation."""
     import csv
     import io
@@ -425,13 +436,19 @@ def comparison_csv(report: ComparisonReport) -> str:
     buf = io.StringIO()
     w = csv.writer(buf)
     cols = report.results
+    reference = next((r for r in cols if (r.run_id or r.result_id) == reference_id), cols[0])
     w.writerow(["field"] + [r.run_id or r.result_id for r in cols])
     w.writerow(["result_id"] + [r.result_id for r in cols])
     w.writerow(["evidence_type"] + [r.evidence_type.value for r in cols])
     w.writerow(["metric_profile"] + [f"{r.metric_profile_id} v{r.metric_profile_version}" for r in cols])
     w.writerow(["dataset"] + [f"{r.dataset.dataset_id} {r.dataset.preprocessing_version} {r.dataset.split_version}" for r in cols])
     w.writerow(["reference"] + [r.reference.kind for r in cols])
-    w.writerow(["models"] + ["; ".join(f"{m.role}:{m.model.key}:{(m.weights_sha256 or '')[:12]}" for m in r.models) for r in cols])
+    w.writerow(["models"] + ["; ".join(f"{m.role}:{m.model.key}:{m.weights_sha256 or ''}" for m in r.models) for r in cols])
+    w.writerow(["reference_result"] + [reference.run_id or reference.result_id] * len(cols))
+    w.writerow(["review_mode"] + [mode] * len(cols))
+    from opendpd.core.metrics.compare import comparison_key, incompatibilities
+    for key in comparison_key(cols[0]):
+        w.writerow([key] + [comparison_key(r)[key] for r in cols])
     w.writerow(["comparable"] + [str(report.comparable).lower()] * len(cols))
     names = []
     for r in cols:
@@ -444,6 +461,13 @@ def comparison_csv(report: ComparisonReport) -> str:
             m = next((x for x in r.metrics if x.name == name), None)
             row.append("" if m is None else (f"{m.value}" if m.value is not None else f"{m.status.value}: {m.reason}"))
         w.writerow(row)
+        values = [next((x for x in r.metrics if x.name == name), None) for r in cols]
+        w.writerow([f"{name} unit"] + [m.unit if m else "" for m in values])
+        ref = next((m for m in reference.metrics if m.name == name), None)
+        w.writerow([f"{name} delta vs reference"] + [
+            str(m.value - ref.value) if m and ref and m.value is not None and ref.value is not None
+            and m.unit == ref.unit and not incompatibilities(r, reference) else "not comparable"
+            for r, m in zip(cols, values)])
     for pair in report.pairs:
         if pair.incompatibilities:
             w.writerow([f"incompatible {pair.a} vs {pair.b}", "; ".join(pair.incompatibilities)])

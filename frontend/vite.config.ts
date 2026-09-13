@@ -66,6 +66,8 @@ export default defineConfig(({ mode }) => {
   },
   test: {
     environment: 'jsdom',
+    // Bound concurrent jsdom/MUI startup on high-core hosts; keep UI timeout checks meaningful.
+    maxWorkers: 4,
     globals: true,
     setupFiles: ['src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],

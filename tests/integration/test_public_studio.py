@@ -49,6 +49,81 @@ def test_no_auth_and_no_origin_bypass(public):
     assert client.get("/api/v1/runs?access_token=" + auth["Authorization"][7:]).status_code == 401
 
 
+def test_public_synthetic_and_contribution_preview_are_private_and_tenant_scoped(public):
+    client, manager, _ = public
+    auth, other = new_session(client), new_session(client)
+    generated = client.post('/api/v1/datasets/synthetic', json={'prefix': 'synthetic-public', 'samples_per_capture': 8192, 'repeats': 1}, headers=auth)
+    assert generated.status_code == 201, generated.text
+    data = generated.json()
+    assert len(data['datasets']) == 3 and all(d['origin'] == 'synthetic' for d in data['datasets'])
+    draft = {'dataset_id': data['datasets'][0]['dataset_id'], 'description': 'Synthetic review fixture', 'attribution': 'Test contributor', 'license': 'CC0-1.0'}
+    assert client.post('/api/v1/dataset-publications/prepare', json=draft, headers=other).status_code == 404
+    prepared = client.post('/api/v1/dataset-publications/prepare', json=draft, headers=auth)
+    assert prepared.status_code == 201, prepared.text
+    record = prepared.json()
+    assert record['status'] == 'prepared'
+    assert client.get('/api/v1/dataset-publications', headers=other).json() == []
+    assert client.get(f"/api/v1/dataset-publications/{record['publication_id']}/download", headers=other).status_code != 200
+    capability = client.get('/api/v1/dataset-publications/capability', headers=auth).json()
+    assert not capability['available']
+    submitted = client.post(f"/api/v1/dataset-publications/{record['publication_id']}/submit", json={
+        'package_sha256': record['package_sha256'], 'publish_publicly': True, 'rights_confirmed': True}, headers=auth)
+    assert submitted.status_code == 403
+    assert not manager.publication_reservations
+    assert client.post('/api/v1/datasets/synthetic', json={'samples_per_capture': 2**40}, headers=auth).status_code == 422
+
+
+def test_public_signal_generator_is_private_and_bounded(public):
+    client, manager, _ = public
+    auth, other = new_session(client), new_session(client)
+    presets = client.get('/api/v1/signal-generator/presets', headers=auth).json()
+    config = {**presets[0]['config'], 'n_samples': 8192}
+    generated = client.post('/api/v1/signal-generator/signals', json=config, headers=auth)
+    assert generated.status_code == 201, generated.text
+    signal = generated.json()
+    assert client.get(signal['download_url'], headers=auth).status_code == 200
+    assert client.get(signal['download_url'], headers=other).status_code != 200
+    endpoint = f"/api/v1/signal-generator/signals/{signal['signal_id']}/dataset"
+    assert client.post(endpoint, json={'dataset_id': 'waveform'}, headers=other).status_code == 404
+    created = client.post(endpoint, json={'dataset_id': 'waveform'}, headers=auth)
+    assert created.status_code == 201, created.text
+    assert created.json()['dataset']['origin'] == 'synthetic'
+    assert client.get('/api/v1/datasets/waveform/sample-counts', headers=auth).json()['counts']['test'] > 0
+    assert client.get('/api/v1/datasets/waveform/sample-counts', headers=other).status_code != 200
+    assert not manager.publication_reservations
+    assert client.post('/api/v1/signal-generator/signals', json={**config, 'n_samples': 1000001}, headers=auth).status_code == 422
+
+
+def test_hosted_publication_consent_and_quota_preserve_retries(tmp_path):
+    config = WebConfig(root=tmp_path / 'web-publish', origin=ORIGIN, api_host='api.opendpd.com', tunnel_host=TUNNEL_HOST,
+                       dataset_publications=True, publications_per_ip=1)
+    app = create_web_app(config, now=lambda: DAY * 20000 + 3600)
+    with TestClient(app, base_url='http://' + TUNNEL_HOST, client=('127.0.0.1', 10000)) as client:
+        client.headers.update({'Origin': ORIGIN, 'X-Forwarded-Proto': 'https', 'CF-Connecting-IP': '203.0.113.10'})
+        auth = new_session(client)
+        tenant = next(iter(app.state.manager.tenants.values()))
+        class FakePublisher:
+            def publish(self, record, package, progress):
+                return {'url': 'https://github.com/lab-emi/OpenDPD/pull/123', 'state': 'OPEN'}
+        tenant.app.state.dataset_publications.publisher = FakePublisher()
+        generated = client.post('/api/v1/datasets/synthetic', json={'samples_per_capture': 8192, 'repeats': 1}, headers=auth).json()
+        def preview(dataset):
+            response = client.post('/api/v1/dataset-publications/prepare', json={'dataset_id': dataset['dataset_id'],
+                'description': 'Synthetic test', 'attribution': 'Test contributor', 'license': 'CC0-1.0'}, headers=auth)
+            assert response.status_code == 201, response.text
+            return response.json()
+        first, second = (preview(d) for d in generated['datasets'][:2])
+        endpoint = f"/api/v1/dataset-publications/{first['publication_id']}/submit"
+        permission = {'package_sha256': first['package_sha256'], 'publish_publicly': True, 'rights_confirmed': True}
+        assert client.post(endpoint, json={**permission, 'rights_confirmed': False}, headers=auth).status_code == 422
+        assert not app.state.manager.publication_reservations
+        assert client.post(endpoint, json=permission, headers=auth).status_code == 200
+        assert client.post(endpoint, json=permission, headers=auth).status_code == 200
+        response = client.post(f"/api/v1/dataset-publications/{second['publication_id']}/submit", json={**permission, 'package_sha256': second['package_sha256']}, headers=auth)
+        assert response.status_code == 429
+        assert len(app.state.manager.publication_reservations) == 1
+
+
 def test_preflight_and_body_limits(public):
     client, _, _ = public
     headers = {"Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "authorization,content-type"}

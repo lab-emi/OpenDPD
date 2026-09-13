@@ -1,10 +1,16 @@
 # What's new
 
-## 2.2 development preview: OpenDPD Studio
+## 2.2.3: Signal Generator and research workflows
 
-Studio adds a local desktop/browser workbench with guided PA and DPD experiments, live plots and step-specific terminals, reusable configurations, result comparisons and export packages. The interface supports nine languages and system light/dark themes. Custom dataset upload in the UI is marked **Coming soon**.
+Start with Signal Generator, an existing dataset or your own CSV. PA Model and DPD Model each bring training and testing together, with exact test-set I/Q counts. The generator combines twenty presets, advanced waveform controls, signal plots and metrics, exact I/Q export and synthetic PA datasets. The standards-based presets are uncoded engineering stimuli; Wi-Fi 8 remains experimental.
 
-Install this preview [from source](install.md); the published PyPI 2.1.0 package does not include Studio. Start with the [walkthrough](tutorials/gui-quickstart.md). Advanced evaluation and export workflows are indexed in [Advanced guides](advanced.md), and verification evidence is tracked in the [support matrix](releases/support-matrix.md).
+Local Studio adds research review, saved publication figures, full reproduction bundles, measurement sessions, condition sweeps, qualified hardware costs and optional dataset PRs that await human review. See the [2.2.3 release notes](releases/release-notes-2.2.3.md), [generator guide](guides/signal-generator.md) and [research review guide](guides/research-review.md).
+
+## 2.2: OpenDPD Studio
+
+Studio provides a packaged desktop/browser workbench with guided PA and DPD experiments, live plots and terminals, reusable configurations, result comparisons and export packages. CSV upload, shared hosted CUDA compute and checkpoint downloads are available. Version 2.2.1 improved training speed; 2.2.2 added bug reporting from Studio.
+
+[Install Studio](install.md) or start with the [walkthrough](tutorials/gui-quickstart.md). Verification evidence is tracked in the [support matrix](releases/support-matrix.md).
 
 ## 2.1: visualization
 

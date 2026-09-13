@@ -115,3 +115,68 @@ def test_a_dpd_run_exports_with_its_loss_through_the_surrogate(ws, pa, tmp_path)
     manifest = deploy.export_deployment(ws, dpd.run_id, tmp_path / "dpd.zip")
     assert manifest.hidden_size == 15 and manifest.run_id == dpd.run_id
     assert any(d.name == "ACLR_AVG" and d.delta is not None for d in manifest.report.quality_loss)
+
+
+def test_cost_ledger_keeps_float_shapes_fixed_resources_and_host_timing_distinct(ws, pa, package):
+    from opendpd.services import hardware_costs
+    from opendpd.services.experiments import load_result
+    manifest, _ = package
+    original = load_result(ws, pa.run_id, 'legacy-opendpd-v1')
+    report = hardware_costs.report(ws, [pa.run_id], 'legacy-opendpd-v1')
+    stored = next(e for e in report.entries if e.source_type == 'checkpoint_shapes')
+    # A one-layer PyTorch GRU has input/recurrent/out weights and two GRU biases.
+    h = 23
+    weight_elements = 3*h*2 + 3*h*h + 2*h
+    bias_elements = 6*h + 2
+    assert stored.values.constant_bytes == 4 * (weight_elements + bias_elements)
+    assert stored.values.mac_per_sample == weight_elements
+    assert stored.values.state_bytes == 4*h
+    assert stored.metrics == original.metrics
+    fixed = next(e for e in report.entries if e.source_type == 'studio_fixed_point_report' and e.source_kind == 'operation_count')
+    assert fixed.values.constant_bytes == manifest.report.resources.weight_bytes + manifest.report.resources.bias_bytes + manifest.report.resources.table_bytes
+    assert fixed.values.state_bytes == 2*h
+    assert {m.name: m.value for m in fixed.metrics} == {m.name: m.fixed_value for m in manifest.report.quality_loss if m.fixed_value is not None}
+    assert fixed.execution_semantics != stored.execution_semantics
+    assert fixed.weights_sha256 == stored.weights_sha256 == manifest.weights_sha256
+    assert any('different execution semantics' in note for note in report.comparison_notes)
+    assert all(e.values.power_w is None and e.values.energy_j_per_sample is None and e.synthetic and not e.stale for e in report.entries)
+    assert len([e for e in report.entries if e.source_kind == 'cpu_reference_timing']) >= int(manifest.verification.status == 'bit_exact')
+
+
+def test_cost_report_api_requires_source_and_csrf_and_marks_changed_sources(ws, pa):
+    from fastapi.testclient import TestClient
+    from opendpd.server.app import create_app
+    from opendpd.schemas.hardware import HardwareCostDraft
+    from pydantic import ValidationError
+    app = create_app(ws.root, bootstrap_token='cost-test-token')
+    with TestClient(app, base_url='http://127.0.0.1:8765') as client:
+        assert client.get(f'/api/v1/hardware/costs?runs={pa.run_id}').status_code == 401
+        token = client.post('/api/v1/session/bootstrap', json={'token': 'cost-test-token'}).json()['csrf_token']
+        assert client.post('/api/v1/hardware/reports/upload', files={'file': ('cost.txt', b'Example only')}).status_code == 403
+        client.headers['X-OpenDPD-CSRF'] = token
+        uploaded = client.post('/api/v1/hardware/reports/upload', files={'file': ('cost.txt', b'SYNTHETIC fixture: FPGA board, 0.5 W / 100 MS/s, total digital board rail.')})
+        assert uploaded.status_code == 200, uploaded.text
+        receipt = uploaded.json()
+        draft = dict(run_id=pa.run_id, profile_id='legacy-opendpd-v1', title='Synthetic report test', source_kind='fpga_board_measurement',
+            report_sha256=receipt['sha256'], target='Example FPGA board (synthetic)', clock_hz=100e6, batch_size=1,
+            activity='Example dense modulated IQ input', boundary='Entire digital board rail; excludes host and RF PA',
+            precision=[{'module':'all digital operators', 'format':'INT16 example'}], values={'power_w': .5, 'energy_j_per_sample': 5e-9}, synthetic=True)
+        for kind in ['operation_count', 'cpu_reference_timing', 'asic_synthesis']:
+            with pytest.raises(ValidationError):
+                HardwareCostDraft.model_validate({**draft, 'source_kind': kind})
+        assert client.post('/api/v1/hardware/costs', json={**draft, 'report_sha256': '0'*64}).status_code == 409
+        response = client.post('/api/v1/hardware/costs', json=draft)
+        assert response.status_code == 201, response.text
+        entry = response.json()
+        assert entry['source_type'] == 'user_report' and entry['values']['energy_j_per_sample'] == 5e-9
+        assert entry['synthetic'] and len(entry['result_sha256']) == 64
+        assert 'not independently verified' in entry['metric_basis']
+        assert client.get(f"/api/v1/hardware/reports/{receipt['sha256']}/download").content.startswith(b'SYNTHETIC fixture')
+        original = (ws.root / entry['source_file']['path']).read_bytes()
+        try:
+            (ws.root / entry['source_file']['path']).write_bytes(b'Changed report')
+            ledger = client.get(f'/api/v1/hardware/costs?runs={pa.run_id}&profile=legacy-opendpd-v1').json()
+            assert next(e for e in ledger['entries'] if e['entry_id'] == entry['entry_id'])['stale']
+            assert client.get(f"/api/v1/hardware/reports/{receipt['sha256']}/download").status_code == 409
+        finally:
+            (ws.root / entry['source_file']['path']).write_bytes(original)

@@ -13,6 +13,7 @@ import { DatasetsPage } from '@/pages/DatasetsPage'
 import { ExperimentsPage } from '@/pages/ExperimentsPage'
 import { GalleryPage } from '@/pages/GalleryPage'
 import { HomePage } from '@/pages/HomePage'
+import { SignalGeneratorPage } from '@/pages/SignalGeneratorPage'
 import { NewExperimentPage } from '@/pages/NewExperimentPage'
 import { ResultDetailPage } from '@/pages/ResultDetailPage'
 import { ComparePage } from '@/pages/ComparePage'
@@ -20,6 +21,8 @@ import { ResultsPage } from '@/pages/ResultsPage'
 import { RunDetailPage } from '@/pages/RunDetailPage'
 import { SessionGate } from '@/pages/SessionGate'
 import { RobustnessPage } from '@/pages/RobustnessPage'
+import { SweepBoardPage } from '@/pages/SweepBoardPage'
+import { HardwareCostsPage } from '@/pages/HardwareCostsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { AboutPage } from '@/pages/AboutPage'
 import { themeFor } from '@/theme'
@@ -33,6 +36,7 @@ function AppRoutes() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
+        <Route path="signal-generator" element={<SignalGeneratorPage />} />
         <Route path="datasets" element={<DatasetsPage />} />
         <Route path="datasets/:datasetId" element={<DatasetDetailPage />} />
         <Route path="experiments" element={<ExperimentsPage />} />
@@ -42,6 +46,9 @@ function AppRoutes() {
         <Route path="results/compare" element={<ComparePage />} />
         <Route path="results/:runId" element={<ResultDetailPage />} />
         <Route path="robustness" element={<RobustnessPage />} />
+        <Route path="sweeps" element={<SweepBoardPage />} />
+        <Route path="sweeps/:sweepId" element={<SweepBoardPage />} />
+        <Route path="hardware" element={<HardwareCostsPage />} />
         <Route path="robustness/:planSha" element={<RobustnessPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="gallery" element={<GalleryPage />} />

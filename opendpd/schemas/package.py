@@ -38,7 +38,7 @@ class PackageReference(StrictModel):
     """Another run this one depends on (PA surrogate, DPD model); it always travels under refs/ with its checkpoint."""
 
     run_id: Slug
-    role: Literal["pa_surrogate", "dpd_model"]
+    role: Literal["pa_surrogate", "dpd_model", "initial_weights", "qat_float_pretraining"]
     checkpoint_sha256: Sha256
 
 

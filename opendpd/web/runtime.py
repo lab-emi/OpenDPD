@@ -152,6 +152,8 @@ class TenantManager:
         self.ip_runs: dict[str, int] = {}
         self.rate: dict[str, tuple[int, int]] = {}
         self.total_runs = 0
+        self.publication_reservations: set[tuple[str, str]] = set()
+        self.ip_publications: dict[str, int] = {}
         self.day = int(now() // DAY)
         self.inflight = 0
         self.cleanup_healthy = True
@@ -216,7 +218,8 @@ class TenantManager:
             def factory(ws, store, **kwargs):
                 return WebSupervisor(ws, store, manager=self, ip_key=ip_key, expires_at=expires_at, **kwargs)
 
-            app = create_app(root / "workspace", supervisor_factory=factory, shutdown_timeout=0)
+            app = create_app(root / "workspace", supervisor_factory=factory, shutdown_timeout=0,
+                             allow_dataset_publications=self.config.dataset_publications)
             if self.config.gpu_token:
                 app.state.device_detector = self.gpu.devices
             app.state.workspace_label = "Temporary workspace (deleted within 24 hours)"

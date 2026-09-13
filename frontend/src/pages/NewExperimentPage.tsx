@@ -15,6 +15,8 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import Tabs from '@mui/material/Tabs'
+import Tab from '@mui/material/Tab'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { versionNames } from '@/api/datasets'
@@ -23,7 +25,8 @@ import { offeredProfiles } from '@/api/profiles'
 import type { ConfigIssue, Device, ExperimentConfigInput, ModelInfo, RecipeInfo, ValidationReport } from '@/api/types'
 import { datasetLabel, message, phaseLabel, t } from '@/i18n'
 import { WorkflowSteps } from '@/components/WorkflowSteps'
-import { ExperimentTasks, isExperimentTask, taskLabel, type ExperimentTask } from '@/components/ExperimentTasks'
+import { ExperimentTasks, isExperimentTask, taskGroup, taskLabel, type ExperimentTask } from '@/components/ExperimentTasks'
+import { TestingSampleSummary } from '@/components/TestingSampleSummary'
 import { JsonConfigDialog, importableConfig } from '@/components/JsonConfigDialog'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 
@@ -249,10 +252,20 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   return (
     <Stack component="form" spacing={2} onSubmit={onSubmit} noValidate aria-labelledby="form-title" sx={{ maxWidth: 1120, mx: 'auto' }}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h1" id="form-title">{taskLabel(config?.task ?? task)}</Typography>
+        <Typography variant="h1" id="form-title">{t(`modelWorkflow.${taskGroup(config?.task ?? task)}`)}</Typography>
         <Button variant="outlined" size="small" onClick={() => setJsonOpen(true)} disabled={submit.isPending}>{t('json.open')}</Button>
       </Stack>
       <ExperimentTasks active={config?.task ?? task} dataset={form.datasetId} version={form.dataVersion} compact />
+      <Tabs value={testing ? 'test' : 'train'} aria-label={t('modelWorkflow.mode')}>
+        {(['train', 'test'] as const).map((mode) => {
+          const nextTask = taskGroup(task) === 'pa' ? (mode === 'train' ? 'train_pa' : 'evaluate_pa') : (mode === 'train' ? 'train_dpd' : 'run_dpd')
+          const query = new URLSearchParams({ task: nextTask })
+          if (form.datasetId) query.set('dataset', form.datasetId)
+          if (form.dataVersion) query.set('version', form.dataVersion)
+          return <Tab key={mode} value={mode} label={t(`modelWorkflow.${mode}`)} component={RouterLink} to={`/experiments/new?${query}`} />
+        })}
+      </Tabs>
+      {(config?.task === 'evaluate_pa' || config?.task === 'run_dpd' || testing) && <TestingSampleSummary datasetId={config?.dataset.id ?? form.datasetId} version={config?.dataset.preprocessing_version ?? (form.dataVersion || 'raw-v1')} />}
       <WorkflowSteps active={step} labels={[t('workflow.data'), t(testing ? 'workflow.testConfigure' : 'workflow.configure'), t('workflow.review')]} completed={completed} onChange={setStep} canOpen={canOpen} />
       {recipe?.purpose === 'smoke' && !imported && <Alert severity="info">{t('form.smokeBanner')}</Alert>}
       {jsonOpen && <JsonConfigDialog config={config} onClose={() => setJsonOpen(false)} onApply={(edited, label) => { setImportedFile({ config: edited, source: label }); setJsonOpen(false); setStep(0); setConfirmed({}) }} />}

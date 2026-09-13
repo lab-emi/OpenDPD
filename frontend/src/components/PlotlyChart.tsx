@@ -42,12 +42,16 @@ export interface PlotTrace {
   line?: { width?: number; dash?: SeriesDash; color?: string }
   marker?: { size?: number; opacity?: number; color?: string; symbol?: SeriesSymbol }
   hoverinfo?: 'x+y+name' | 'skip'
+  visible?: boolean | 'legendonly'
+  hovertemplate?: string
 }
 export interface PlotLayout {
   title?: { text: string }
+  margin?: { l: number; r: number; t: number; b: number }
+  legend?: { orientation: 'h' | 'v'; x: number; y: number; yanchor?: 'top' | 'bottom'; font?: { size: number } }
   xaxis?: { title?: { text: string }; range?: [number, number]; constrain?: 'domain' }
   yaxis?: { title?: { text: string }; range?: [number, number]; scaleanchor?: string; scaleratio?: number }
-  shapes?: Array<{ type: 'rect'; x0: number; x1: number; y0: number; y1: number; yref: 'paper'; fillcolor: string; line: { width: number } }>
+  shapes?: Array<{ type: 'rect' | 'line'; x0: number; x1: number; y0: number; y1: number; yref: 'paper'; fillcolor?: string; line: { width: number; color?: string; dash?: SeriesDash } }>
   showlegend?: boolean
   height?: number
 }
@@ -88,6 +92,8 @@ export interface PlotlyChartProps {
   height?: number
   /** Called once the plot is drawn (used by the performance probe). */
   onRendered?: (ms: number) => void
+  onViewportChange?: (viewport: PlotViewport) => void
+  onVisibilityChange?: (visible: boolean[]) => void
   enlargeable?: boolean
   /** Change when switching to a different signal/coordinate system, not on live updates. */
   viewKey?: string | number
@@ -107,7 +113,7 @@ function traceName(name: string | undefined) {
   return component ? `${message(component[1])} ${component[2]}` : message(name)
 }
 
-function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, onRendered, viewKey = 0, memory, active = true, descriptionId, recovery }: PlotlyChartProps & { memory: RefObject<ViewMemory>; active?: boolean; descriptionId: string; recovery: PlotRecoverySettings }) {
+function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, onRendered, onViewportChange, onVisibilityChange, viewKey = 0, memory, active = true, descriptionId, recovery }: PlotlyChartProps & { memory: RefObject<ViewMemory>; active?: boolean; descriptionId: string; recovery: PlotRecoverySettings }) {
   const language = useLanguage()
   const colors = useStudioColors()
   const coarsePointer = useMediaQuery('(pointer: coarse)')
@@ -124,8 +130,12 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
   // The callback is read through a ref so a new function identity never redraws the plot
   // (a redraw that reports back into parent state would otherwise loop).
   const onRenderedRef = useRef(onRendered)
+  const viewportCallback = useRef(onViewportChange)
+  const visibilityCallback = useRef(onVisibilityChange)
   useEffect(() => {
     onRenderedRef.current = onRendered
+    viewportCallback.current = onViewportChange
+    visibilityCallback.current = onVisibilityChange
   })
   useEffect(() => {
     const el = ref.current
@@ -133,6 +143,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
     let cancelled = false
     let inputs: ReturnType<typeof attachPlotInteractions> | undefined
     let observer: ResizeObserver | undefined
+    const visibility = () => visibilityCallback.current?.((el.data ?? []).map((trace) => trace.visible !== false && trace.visible !== 'legendonly'))
     const contextLost = () => { if (!cancelled) setUseSVG(true) }
     el.addEventListener('webglcontextlost', contextLost, true)
     const started = performance.now()
@@ -187,9 +198,13 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
         const recoveryState = memory.current.recovery ??= {}
         inputs = attachPlotInteractions(el, Plotly, (viewport) => {
           memory.current = { ...memory.current, key: viewKey, viewport }
+          if (!cancelled) viewportCallback.current?.(viewport)
         }, (error) => setFailed(error instanceof Error ? error.message : String(error)), {
           settings: recovery, state: recoveryState, traces: () => el['_fullData'] ?? traces,
         })
+        el.on?.('plotly_restyle', visibility)
+        const initialViewport = readViewport(el)
+        if (initialViewport) viewportCallback.current?.(initialViewport)
         if (typeof ResizeObserver !== 'undefined') {
           let width = el.clientWidth, size = el.clientHeight
           observer = new ResizeObserver(() => {
@@ -206,6 +221,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
     return () => {
       cancelled = true
       el.removeEventListener('webglcontextlost', contextLost, true)
+      el.removeListener?.('plotly_restyle', visibility)
       observer?.disconnect()
       const stopped = inputs?.dispose()
       if (stopped) rendering.current = Promise.all([rendering.current, stopped])

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "set_id": "synthetic-research-conditions",
+  "device": "Synthetic memory PA (no physical DUT)",
+  "dimension": "mode",
+  "conditions": [
+    {
+      "condition_id": "drive-0",
+      "dataset_id": "synthetic-research-d0-r0",
+      "role": "source",
+      "capture_batch": "synthetic-20260913-d0-r0",
+      "values": {
+        "mode": "normalized-drive-0.18"
+      },
+      "notes": "Synthetic realization, not a physical capture. Remaining realizations are separate datasets."
+    },
+    {
+      "condition_id": "drive-1",
+      "dataset_id": "synthetic-research-d1-r0",
+      "role": "target",
+      "capture_batch": "synthetic-20260913-d1-r0",
+      "values": {
+        "mode": "normalized-drive-0.26"
+      },
+      "notes": "Synthetic realization, not a physical capture. Remaining realizations are separate datasets."
+    },
+    {
+      "condition_id": "drive-2",
+      "dataset_id": "synthetic-research-d2-r0",
+      "role": "target",
+      "capture_batch": "synthetic-20260913-d2-r0",
+      "values": {
+        "mode": "normalized-drive-0.34"
+      },
+      "notes": "Synthetic realization, not a physical capture. Remaining realizations are separate datasets."
+    }
+  ],
+  "held_out_policy": "roles are declared in the card before any run; target conditions are never used to select hyper-parameters, and every number is read from the target's test split after the run finished",
+  "created_at": "2026-09-13T12:13:33.300566Z",
+  "card_sha256": "3dae24577e1fe2e04691913bf68c22a0c33550858e8dc3865ab76a132c9d3558"
+}

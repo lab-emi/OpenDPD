@@ -1,0 +1,44 @@
+[
+  {
+    "width": 1366,
+    "height": 768,
+    "initialSignal": "sg-6363e98ff20dad7bc0c1994ed2c7b55fe50c3d2734589f85fdad28fdca90a18b",
+    "customSignal": "sg-a60ceef5a9a7d472ad21abacab43eecc79b6a3d31a6c3f565b0f8ab0e9d4ba72",
+    "wifi8Coverage": "experimental",
+    "samples": 32768,
+    "activeCarriers": 158,
+    "pilotCarriers": 2,
+    "referenceEvmPercent": 2.214019926290765,
+    "dataset": "qa-generator-1366-mtzx33nm",
+    "testSamples": 6452,
+    "runs": [
+      "run-20260913-143631-bce1e1",
+      "run-20260913-143636-eb7689",
+      "run-20260913-143647-cf007b",
+      "run-20260913-143651-81d4dc"
+    ],
+    "errors": [],
+    "publications": []
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "initialSignal": "sg-6363e98ff20dad7bc0c1994ed2c7b55fe50c3d2734589f85fdad28fdca90a18b",
+    "customSignal": "sg-a60ceef5a9a7d472ad21abacab43eecc79b6a3d31a6c3f565b0f8ab0e9d4ba72",
+    "wifi8Coverage": "experimental",
+    "samples": 32768,
+    "activeCarriers": 158,
+    "pilotCarriers": 2,
+    "referenceEvmPercent": 2.214019926290765,
+    "dataset": "qa-generator-1920-mtzx33nm",
+    "testSamples": 6452,
+    "runs": [
+      "run-20260913-143700-f51b2f",
+      "run-20260913-143704-c4f4af",
+      "run-20260913-143716-360f0f",
+      "run-20260913-143720-899a2e"
+    ],
+    "errors": [],
+    "publications": []
+  }
+]

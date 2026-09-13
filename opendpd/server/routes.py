@@ -65,6 +65,11 @@ from opendpd.services.packages import PackageError
 from opendpd.services.reports import report_html, report_markdown
 from opendpd.services.workspace import WorkspaceError, list_builtin_datasets
 from opendpd.services.recipes import list_recipes
+from opendpd.schemas.rf import RFConditions
+from opendpd.schemas.review import ReviewContext, FigureSpec, SavedFigure
+from opendpd.services import review as review_service, figures as figure_service
+from opendpd.schemas.measurement_session import MeasurementSessionSpec, MeasurementSession
+from opendpd.services import measurement_sessions
 
 router = APIRouter()
 HEARTBEAT_TIMEOUT = timedelta(seconds=60)
@@ -675,19 +680,28 @@ def metric_profile(profile_id: str):
 @router.get("/results/compare", tags=["results"], dependencies=[Depends(require_session)],
             responses={200: {"model": ComparisonReport}})
 def results_compare(request: Request, runs: List[str] = Query(..., min_length=2, max_length=8),
-                    profile: Optional[str] = Query(None, max_length=64),
+                    profile: Optional[Slug] = None,
+                    reference: Optional[Slug] = None,
+                    mode: Literal["same_condition", "cross_condition"] = "same_condition",
+                    profiles: List[Slug] = Query(default=[], max_length=8),
                     format: Literal["json", "csv"] = Query("json")):
     """Stored results side by side with the protocol differences that forbid ranking. `format=csv` returns the
     same numbers with their provenance rows; nothing is recomputed."""
+    if len(set(runs)) != len(runs):
+        raise _error(422, "duplicate_results", "select distinct results")
+    if profiles and (profile is not None or len(profiles) != len(runs)):
+        raise _error(422, "invalid_profiles", "provide one profile per selected run, or one shared profile")
     for run_id in runs:
         _get_run(request, run_id)
+    if reference is not None and reference not in runs:
+        raise _error(422, "invalid_reference", "reference must be one of the selected runs")
     try:
-        report = compare_results(request.app.state.ws, runs, profile)
+        report = compare_results(request.app.state.ws, runs, profile, dict(zip(runs, profiles)) if profiles else None)
     except WorkspaceError as err:
         raise _error(404, "result_not_available", str(err),
                      hint="results exist only for succeeded train_pa / train_dpd / run_dpd runs")
     if format == "csv":
-        return Response(content=comparison_csv(report), media_type="text/csv",
+        return Response(content=comparison_csv(report, reference, mode), media_type="text/csv",
                         headers={"Content-Disposition": "attachment; filename=\"comparison.csv\""})
     return report
 
@@ -702,7 +716,7 @@ def results_profiles(run_id: str, request: Request):
 
 @router.get("/results/{run_id}", response_model=EvaluationResult, tags=["results"],
             dependencies=[Depends(require_session)])
-def results_get(run_id: str, request: Request, profile: Optional[str] = Query(None, max_length=64)):
+def results_get(run_id: str, request: Request, profile: Optional[Slug] = None):
     record = _get_run(request, run_id)
     result = experiments.load_result(request.app.state.ws, run_id, profile)
     if result is None:
@@ -716,6 +730,83 @@ def results_get(run_id: str, request: Request, profile: Optional[str] = Query(No
 
 
 # --- adaptation reports (conditions-v1, plan S17) -------------------------------------------
+
+@router.get("/results/{run_id}/review", response_model=ReviewContext, tags=["results"],
+            dependencies=[Depends(require_session)])
+def result_review(run_id: str, request: Request, profile: Optional[Slug] = None):
+    _get_run(request, run_id)
+    try:
+        return review_service.review_result(request.app.state.ws, run_id, profile)
+    except WorkspaceError as err:
+        raise _error(404, "review_unavailable", str(err))
+
+
+@router.post("/results/{run_id}/rf-conditions", response_model=RFConditions, tags=["results"],
+             dependencies=[Depends(require_csrf)])
+def result_conditions(run_id: str, request: Request, conditions: RFConditions):
+    _get_run(request, run_id)
+    try:
+        return review_service.save_conditions(request.app.state.ws, run_id, conditions)
+    except WorkspaceError as err:
+        raise _error(422, "conditions_invalid", str(err))
+
+
+@router.get("/figures", response_model=List[SavedFigure], tags=["results"], dependencies=[Depends(require_session)])
+def figures_list(request: Request, runs: List[Slug] = Query(default=[], max_length=8)):
+    return figure_service.list_figures(request.app.state.ws, runs)
+
+
+@router.get("/measurement-sessions", response_model=List[MeasurementSession], tags=["measurements"], dependencies=[Depends(require_session)])
+def measurement_sessions_list(request: Request, run_id: Optional[Slug] = None):
+    return measurement_sessions.list_sessions(request.app.state.ws, run_id)
+
+
+@router.post("/measurement-sessions", response_model=MeasurementSession, tags=["measurements"], dependencies=[Depends(require_csrf)])
+def measurement_sessions_create(request: Request, spec: MeasurementSessionSpec):
+    for capture in spec.captures:
+        _get_run(request, capture.run_id)
+    try:
+        return measurement_sessions.create_session(request.app.state.ws, spec)
+    except WorkspaceError as err:
+        raise _error(422, "measurement_session_invalid", str(err))
+
+
+@router.get("/measurement-sessions/{session_id}", response_model=MeasurementSession, tags=["measurements"], dependencies=[Depends(require_session)])
+def measurement_session_get(request: Request, session_id: Slug):
+    try:
+        return measurement_sessions.load_session(request.app.state.ws, session_id)
+    except WorkspaceError as err:
+        raise _error(404, "measurement_session_unavailable", str(err))
+
+
+@router.post("/figures", response_model=SavedFigure, tags=["results"], dependencies=[Depends(require_csrf)])
+def figures_create(request: Request, spec: FigureSpec):
+    for run in spec.profiles:
+        _get_run(request, run)
+    try:
+        return figure_service.save_figure(request.app.state.ws, spec)
+    except WorkspaceError as err:
+        raise _error(422, "figure_invalid", str(err))
+
+
+@router.get("/figures/{figure_id}", response_model=SavedFigure, tags=["results"], dependencies=[Depends(require_session)])
+def figures_get(request: Request, figure_id: Slug):
+    try:
+        figure = figure_service.load_figure(request.app.state.ws, figure_id)
+        figure_service.validate_sources(request.app.state.ws, figure)
+        return figure
+    except WorkspaceError as err:
+        raise _error(409, "figure_unavailable", str(err))
+
+
+@router.get("/figures/{figure_id}/export", tags=["results"], dependencies=[Depends(require_session)])
+def figures_export(request: Request, figure_id: Slug):
+    try:
+        content = figure_service.export_figure(request.app.state.ws, figure_id)
+    except WorkspaceError as err:
+        raise _error(409, "figure_sources_changed", str(err))
+    return Response(content=content, media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="{figure_id}.zip"'})
 
 @router.get("/adaptation/reports", response_model=List[AdaptationReportSummary], tags=["adaptation"],
             dependencies=[Depends(require_session)])

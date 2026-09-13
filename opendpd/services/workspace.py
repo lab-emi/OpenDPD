@@ -75,7 +75,8 @@ def list_builtin_datasets():
             origin=spec.get("origin", "measured" if path.parent.name.startswith(("DPA", "APA")) else "unknown"),
             raw_sha256=combined_sha256(sha256_file(p) for p in [path, *sorted(path.parent.glob("*.csv"))]),
         ))
-    return result
+    from opendpd.services.dataset_catalog import list_catalog
+    return result + list_catalog()
 
 
 class WorkspaceError(RuntimeError):
@@ -291,6 +292,9 @@ class Workspace:
 
     def register_builtin_dataset(self, name: str, dataset_id: Optional[str] = None) -> DatasetManifest:
         """Copy a packaged dataset (``datasets/<name>``) into the workspace."""
+        if name.startswith("catalog-"):
+            from opendpd.services.dataset_catalog import register_catalog
+            return register_catalog(self, name, dataset_id)
         known = sorted(p.parent.name for p in BUILTIN_DATASETS_DIR.glob("*/spec.json") if p.parent.name.isidentifier())
         if name not in known:
             raise WorkspaceError(f"unknown built-in dataset '{name}'; available: {', '.join(known)}")

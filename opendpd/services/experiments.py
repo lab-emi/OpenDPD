@@ -124,7 +124,14 @@ def load_artifacts(ws: Workspace, run_id: str) -> Optional[ArtifactManifest]:
 def load_result(ws: Workspace, run_id: str, profile_id: Optional[str] = None) -> Optional[EvaluationResult]:
     """The primary result (configured profile) or the stored result under another profile."""
     path = ws.run_dir(run_id) / (RESULT_FILE if profile_id is None else f"{RESULTS_DIR}/{profile_id}.json")
-    return EvaluationResult.model_validate(read_json(path)) if path.exists() else None
+    if not path.exists():
+        return None
+    result = EvaluationResult.model_validate(read_json(path))
+    declaration = ws.run_dir(run_id) / "rf-conditions.json"
+    if declaration.exists():
+        from opendpd.schemas.rf import RFConditions
+        result.rf_conditions = RFConditions.model_validate(read_json(declaration))
+    return result
 
 
 def list_runs(ws: Workspace) -> List[RunRecord]:
@@ -192,7 +199,7 @@ def submission_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[Con
     return errors, warnings
 
 
-def _bind_pa(ws: Workspace, run_id: str, dataset_id: str, training: Optional[TrainingConfig]) -> PAReference:
+def _bind_pa(ws: Workspace, run_id: str, dataset_id: str, training: Optional[TrainingConfig], seed_policy: str = "match_legacy") -> PAReference:
     """Bind a PA run to its checkpoint. ``training`` (the DPD training block) enforces the legacy checkpoint
     convention for train_dpd; evaluation through a surrogate (run_dpd) only needs the same dataset."""
     pa_record, pa_resolved, pa_ckpt = _checkpoint_of(ws, run_id, TaskType.train_pa, "pa_reference.run_id")
@@ -209,7 +216,7 @@ def _bind_pa(ws: Workspace, run_id: str, dataset_id: str, training: Optional[Tra
                                        "simulate DPD through a gradient-trained PA run (for example recipe "
                                        "pa-gru-smoke-v1 or pa-gru-research-v1)")])
     if training is not None and (pa_resolved.training.frame_length != training.frame_length
-                                 or pa_resolved.training.seed != training.seed):
+                                 or (seed_policy == "match_legacy" and pa_resolved.training.seed != training.seed)):
         raise ConfigError([ConfigIssue("training",
                                        "the legacy checkpoint convention requires the DPD run to use the "
                                        "same seed and frame_length as its PA surrogate "
@@ -219,7 +226,7 @@ def _bind_pa(ws: Workspace, run_id: str, dataset_id: str, training: Optional[Tra
                                        f"training.frame_length={pa_resolved.training.frame_length}, or train a PA "
                                        "surrogate with this run's seed and frame_length")])
     return PAReference(run_id=pa_record.run_id, checkpoint_artifact_id=pa_ckpt.artifact_id,
-                       checkpoint_sha256=pa_ckpt.file.sha256, model=pa_resolved.model)
+                       checkpoint_sha256=pa_ckpt.file.sha256, model=pa_resolved.model, seed_policy=seed_policy)
 
 
 def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig:
@@ -263,7 +270,8 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
         # the legacy checkpoint convention (same seed / frame_length as the surrogate) binds the gradient trainer
         # only; a least-squares predistorter is fitted on the data and merely evaluated through the surrogate
         training = None if is_least_squares(config.model.key) else config.training
-        updates["pa_reference"] = _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=training)
+        updates["pa_reference"] = _bind_pa(ws, config.pa_reference.run_id, config.dataset.id, training=training,
+                                           seed_policy=config.pa_reference.seed_policy)
     if config.task == TaskType.evaluate_pa:
         # the weights and the architecture come from the PA run; this run only scores them on another dataset
         pa_record, pa_resolved, pa_ckpt = _checkpoint_of(ws, config.pa_reference.run_id, TaskType.train_pa,
@@ -288,7 +296,20 @@ def bind_references(ws: Workspace, config: ExperimentConfig) -> ExperimentConfig
             updates["quantization"] = init_resolved.quantization
         updates["initialization"] = InitReference(run_id=init_record.run_id, checkpoint_artifact_id=init_ckpt.artifact_id,
                                                   checkpoint_sha256=init_ckpt.file.sha256)
-    return config.model_copy(update=updates) if updates else config
+    bound = config.model_copy(update=updates) if updates else config
+    q = bound.quantization
+    if q and q.enabled and q.pretrained_run_id and bound.task == TaskType.train_dpd:
+        if bound.initialization is not None:
+            raise ConfigError([ConfigIssue("quantization.pretrained_run_id", "choose float pretraining or an initial quantized checkpoint, not both")])
+        _, pretrained, checkpoint = _checkpoint_of(ws, q.pretrained_run_id, TaskType.train_dpd, "quantization.pretrained_run_id")
+        if pretrained.quantization and pretrained.quantization.enabled:
+            raise ConfigError([ConfigIssue("quantization.pretrained_run_id", "QAT pretraining must reference a float DPD run; use initialization for a quantized warm start")])
+        if pretrained.dataset != bound.dataset or pretrained.model.key != bound.model.key or any(
+                pretrained.model.parameters.get(k) != value for k, value in bound.model.parameters.items()):
+            raise ConfigError([ConfigIssue("quantization.pretrained_run_id", "float pretraining must use the same model, parameters, dataset, split and preprocessing version")])
+        bound = bound.model_copy(update={"model": pretrained.model, "quantization": q.model_copy(update={
+            "pretrained_checkpoint_artifact_id": checkpoint.artifact_id, "pretrained_checkpoint_sha256": checkpoint.file.sha256})})
+    return bound
 
 
 # --- run creation ----------------------------------------------------------------
@@ -353,7 +374,8 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
     write_json_atomic(run_dir / USER_CONFIG_FILE, config)
     write_json_atomic(run_dir / RESOLVED_CONFIG_FILE, resolved)
     legacy_command = None
-    plain = resolved.initialization is None and resolved.training.train_samples is None
+    plain = (resolved.initialization is None and resolved.training.train_samples is None
+             and not (resolved.quantization and resolved.quantization.pretrained_run_id))
     if resolved.task in TRAINING_TASKS and plain and not _is_least_squares(resolved.model.key):
         ns = build_namespace(resolved, dataset_dir=ws.dataset_version_dir(resolved.dataset.id, resolved.dataset.preprocessing_version),
                              dataset_name=resolved.dataset.id)
@@ -422,7 +444,15 @@ def _prepare_inputs(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentCo
     # S17 budget and warm start are executor-only attributes (read by project.py / the steps with getattr);
     # they are not legacy CLI flags, so the adapter's namespace stays exactly what `main.py` parses
     ns.train_samples = resolved.training.train_samples
+    ns.studio_strict_quantization = bool(resolved.quantization and resolved.quantization.enabled)
     ns.init_weights = None
+    q = resolved.quantization
+    if q and q.enabled and q.pretrained_run_id and resolved.task == TaskType.train_dpd:
+        ref = InitReference(run_id=q.pretrained_run_id, checkpoint_artifact_id=q.pretrained_checkpoint_artifact_id,
+                            checkpoint_sha256=q.pretrained_checkpoint_sha256)
+        target = run_dir / "pretrained" / "weights.pt"
+        _copy_checkpoint(ref, target, "float QAT pretraining")
+        ns.pretrained_model = str(target)
     if resolved.initialization is not None:
         target = run_dir / "init" / "weights.pt"
         _copy_checkpoint(resolved.initialization, target, "initial weights")
@@ -767,6 +797,13 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
     if resolved.initialization is not None:
         limitations.append(f"warm start: initialised from run {resolved.initialization.run_id} weights "
                            f"{(resolved.initialization.checkpoint_sha256 or '')[:12]}, not trained from scratch")
+    if resolved.quantization and resolved.quantization.enabled:
+        q = resolved.quantization
+        limitations.append(f"QAT software fake quantization: weights {q.n_bits_w} bits, activations {q.n_bits_a} bits; "
+                           "FP32 feature extraction and simulation arithmetic remain. No integer accumulator width, hardware energy or timing is implied.")
+        if q.pretrained_run_id:
+            limitations.append(f"QAT starts from float DPD {q.pretrained_run_id}, checkpoint SHA256 {q.pretrained_checkpoint_sha256}; "
+                               "the float pretraining budget is additional to this run's epochs.")
     if resolved.training.train_samples is not None:
         limitations.append(f"adaptation budget: fitted on the first {resolved.training.train_samples} samples of the "
                            "train split only")
@@ -778,6 +815,10 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         source = load_resolved(ws, resolved.dpd_reference.run_id).dataset.id
         limitations.append(f"zero-update transfer: DPD trained on dataset {source} applied to dataset "
                            f"{dataset.dataset_id} without any update")
+    if resolved.task == TaskType.train_dpd and resolved.pa_reference.seed_policy == "fixed_surrogate":
+        pa_seed = load_resolved(ws, resolved.pa_reference.run_id).training.seed
+        limitations.append(f"fixed PA surrogate: PA training seed {pa_seed}, DPD training seed {resolved.training.seed}; "
+                           "the recorded PA checkpoint is copied verbatim into the run; the legacy command requires that checkpoint")
 
     if execution is not None:
         from opendpd.services.streaming import streaming_limitations
@@ -839,10 +880,14 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         run_id=run_id, source=source, is_mock=is_mock,
         evidence_type=evidence, metric_profile_id=profile.profile_id, metric_profile_version=profile.version,
         dataset=DatasetEvidence(dataset_id=dataset.dataset_id, split="test", raw_sha256=dataset.raw_sha256,
+                                processed_sha256=(dataset.version(resolved.dataset.preprocessing_version).sha256
+                                                  if dataset.version(resolved.dataset.preprocessing_version)
+                                                  else dataset.raw_sha256 if resolved.dataset.preprocessing_version == "raw-v1" else None),
                                 preprocessing_version=resolved.dataset.preprocessing_version,
                                 split_version=resolved.dataset.split_version, n_samples=n_valid),
-        models=models, reference=reference, execution=execution,
-        valid_sample_range=(0, n_valid), n_segments=n_segments, nperseg=nperseg,
+        models=models, reference=reference, execution=execution, evaluated_signal=dataset.signal,
+        valid_sample_range=(measurement.captures[0].valid_sample_range or (0, n_valid)) if measurement else (0, n_valid),
+        n_segments=n_segments, nperseg=nperseg,
         metrics=metrics, selected_epoch=selected_epoch, history=history,
         software=software_provenance(), device=resolved.execution.device, seed=resolved.training.seed,
         numeric_mode=f"float32 / reproducibility={resolved.training.reproducibility}",
@@ -892,6 +937,9 @@ def lineage(ws: Workspace, run_id: str) -> RunLineage:
         if resolved.initialization is not None:
             out.append(_link(records, resolved.initialization.run_id, LineageRelation.initialised_from,
                              resolved.initialization.checkpoint_sha256))
+        if resolved.quantization and resolved.quantization.enabled and resolved.quantization.pretrained_run_id:
+            out.append(_link(records, resolved.quantization.pretrained_run_id, LineageRelation.initialised_from,
+                             resolved.quantization.pretrained_checkpoint_sha256))
         if resolved.dpd_reference is not None:
             out.append(_link(records, resolved.dpd_reference.run_id, LineageRelation.dpd_model,
                              resolved.dpd_reference.checkpoint_sha256))

@@ -1,5 +1,6 @@
 import { DownloadLink } from '@/components/DownloadLink'
 import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Link from '@mui/material/Link'
@@ -17,7 +18,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
-import { API } from '@/api/client'
+import { API, WEB_MODE } from '@/api/client'
 import { useAdaptationReport, useAdaptationReports } from '@/api/hooks'
 import type { AdaptationReport, AdaptationReportSummary, CellAggregate } from '@/api/types'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
@@ -41,6 +42,7 @@ export function RobustnessPage() {
   return (
     <Stack spacing={2}>
       <Typography variant="h1">{t('robustness.title')}</Typography>
+      {!WEB_MODE && <Button component={RouterLink} to="/sweeps" sx={{ alignSelf: 'flex-start' }}>{t('sweep.create')}</Button>}
       <Typography variant="body2" color="text.secondary">
         {t('robustness.intro')}
       </Typography>

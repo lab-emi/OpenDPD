@@ -168,6 +168,7 @@ export function ExperimentsPage() {
         <Typography variant="h1">{t('experiments.title')}</Typography>
       </Stack>
       <ExperimentTasks />
+      {!WEB_MODE && <Button component={RouterLink} to="/sweeps" sx={{ alignSelf: 'flex-start' }}>{t('sweep.title')}</Button>}
       <ImportPackage />
       <Stack direction="row" spacing={2} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
         <ToggleButtonGroup

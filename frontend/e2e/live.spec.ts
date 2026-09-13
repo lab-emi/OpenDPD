@@ -45,7 +45,7 @@ test('bootstrap, train the smoke recipe, read the result and export a share pack
   await expect(page).toHaveURL(`${origin}/`)
   await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible()
   await page.getByRole('link', { name: 'Get Started' }).click()
-  await page.getByRole('button', { name: 'Try a built-in dataset' }).click()
+  await page.getByRole('button', { name: 'Use an existing dataset' }).click()
   await page.getByRole('button', { name: /^(Add & inspect|Open) DPA_200MHz$/ }).click()
   await page.getByRole('button', { name: 'Inspect my dataset' }).click()
   // Exercise the actual strict WebGL distribution under the server's CSP;

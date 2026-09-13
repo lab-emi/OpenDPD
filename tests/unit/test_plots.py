@@ -74,3 +74,17 @@ def test_budgets_bound_the_payload_regardless_of_capture_length():
     assert am["n_points"] <= plots.AM_POINTS
     tm = plots.time_excerpt({"z": iq(z)}, {})
     assert tm["n"] == plots.TIME_EXCERPT_SAMPLES
+
+
+def test_residual_cdf_counts_all_valid_samples_without_fitting_or_demodulation():
+    reference = iq(np.ones(5, dtype=complex))
+    output = iq(np.array([1, 1.5, 2, 3, 1000], dtype=complex))
+    data = plots.error_distribution(reference, {'output': output}, {'output': 'primary'}, valid_samples=4)
+    trace = data['traces'][0]
+    assert data['version'] == 'residual-cdf-v1' and data['n_samples'] == 4
+    assert data['reference_rms'] == 1 and data['x'][-1] == 2
+    assert sum(trace['counts']) == 4 and len(trace['counts']) == 64
+    assert trace['y'][15] == 50 and trace['y'][31] == 75 and trace['y'][-1] == 100
+    assert 'No additional' in data['note'] and 'Not demodulated EVM' in data['note']
+    empty = plots.error_distribution(iq(np.zeros(5, dtype=complex)), {'output': output}, {})
+    assert empty['traces'] == [] and 'Unavailable' in empty['note']

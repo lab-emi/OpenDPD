@@ -28,6 +28,7 @@ import { DiagnosticItem } from '@/components/DiagnosticItem'
 import { ManifestDialog } from '@/components/ManifestDialog'
 import { PreprocessDialog } from '@/components/PreprocessDialog'
 import { DatasetReadyGuide } from '@/components/DatasetGuide'
+import { DatasetPublicationPanel } from '@/components/DatasetPublicationPanel'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
 function KeyValues({ title, entries }: { title: string; entries: Array<[string, unknown]> }) {
@@ -135,6 +136,9 @@ export function DatasetDetailPage() {
         </Stack>
       </Stack>
       {missing.length > 0 && <Alert severity="warning">{t('datasets.detail.missing', { fields: missing.join(', ') })}</Alert>}
+      {d.origin === 'synthetic' && <Alert severity="warning">{t('datasetResearch.syntheticNotice')}</Alert>}
+      {d.simulation && <Box component="details"><Typography component="summary">{t('datasetResearch.generatorDetails')}</Typography><Box component="pre" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{JSON.stringify(d.simulation, null, 2)}</Box></Box>}
+      <DatasetPublicationPanel key={datasetId} dataset={d} />
       {created && (
         <Alert severity="success" onClose={() => setCreated(null)}>
           {t('datasets.preprocess.created', { version: created })}

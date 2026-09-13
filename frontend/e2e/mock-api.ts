@@ -90,6 +90,8 @@ export async function installFakeApi(page: Page, options: { language?: string | 
     if (path === '/models') return json(route, [{ key: 'gru', display_name: 'GRU', family: 'recurrent', legacy_backbone: 'gru', training_method: 'gradient', roles: ['pa', 'dpd'], params: [], status: 'supported', devices_tested: ['cpu', 'cuda'], lookahead_samples: 0, lookahead_note: '', execution_semantics: 'offline_segmented', export_formats: [] }])
     if (path === '/recipes') return json(route, recipes)
     if (path === '/datasets' && method === 'GET') return json(route, state.datasets)
+    if (path === '/figures' || path === '/dataset-publications') return json(route, [])
+    if (path === '/dataset-publications/capability') return json(route, { available: false, reason: 'GitHub submission is disabled in browser fixtures.' })
     if (path === '/datasets/builtin') return json(route, [{ name: 'DPA_200MHz', dataset_format: 'split_csv', description: '', origin: 'measured', signal: dataset['signal'], n_samples: dataset['n_samples'], raw_sha256: dataset['raw_sha256'], has_demodulator: true, problem: null }])
     if (path === '/datasets/import-builtin') {
       if (req.headers()['x-opendpd-csrf'] !== 'e2e-csrf') return json(route, { error: { code: 'csrf_required', message: 'missing', details: [], hint: null } }, 403)
@@ -112,6 +114,7 @@ export async function installFakeApi(page: Page, options: { language?: string | 
       const found = state.datasets.find((d) => d['dataset_id'] === id) ?? dataset
       const sub = dm[2] ?? ''
       if (sub === '') return json(route, found)
+      if (sub === 'sample-counts') return json(route, { dataset_id: id, version: url.searchParams.get('version') ?? 'raw-v1', total_samples: 20000, counts: { train: 12000, val: 4000, test: 4000 }, sample_rate_hz: 800e6, guard_samples: 0 })
       if (sub === 'analysis') return json(route, {
         version: 'dataset-inspection-v1', dataset_id: id, data_version: url.searchParams.get('version') ?? 'raw-v1',
         total_samples: 20000, sample_range: [0, 20000], metadata_complete: true, inspection_ready: true,
@@ -184,6 +187,11 @@ export async function installFakeApi(page: Page, options: { language?: string | 
     if (/^\/results\/[^/]+\/report$/.test(path)) return route.fulfill({ status: 200, contentType: 'text/markdown', body: '# OpenDPD Studio report' })
     if (path.startsWith('/artifacts/')) return json(route, { error: { code: 'artifact_not_found', message: 'no such artifact in the mock', details: [], hint: null } }, 404)
     if (path.endsWith('/profiles') && path.startsWith('/results/')) return json(route, ['legacy-opendpd-v1', 'general-spectral-v1'])
+    if (path.endsWith('/review') && path.startsWith('/results/')) return json(route, {
+      version: 'rf-review-v1', result, signal: dataset['signal'], signal_source: 'mock fixture',
+      profile: profiles.find(p => p['profile_id'] === url.searchParams.get('profile')) ?? profiles[0],
+      facts: [], bands: [], band_note: 'Mock review metadata; no physical measurement.', provenance: {},
+    })
     if (path.startsWith('/results/')) {
       const profile = url.searchParams.get('profile') ?? 'legacy-opendpd-v1'
       const general = { metric_profile_id: 'general-spectral-v1', result_id: 'res-e2e-general', metrics: [{ name: 'NMSE', value: -22.5, unit: 'dB', better: 'lower', status: 'ok', reason: null }, { name: 'IBE', value: -23.1, unit: 'dB', better: 'lower', status: 'ok', reason: null }, { name: 'ACPR_L', value: -30.2, unit: 'dBc', better: 'lower', status: 'ok', reason: null }, { name: 'ACPR_R', value: -31.0, unit: 'dBc', better: 'lower', status: 'ok', reason: null }] }

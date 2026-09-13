@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from opendpd.core.measurement import align, level_db, peak_abs, rate_ratio, resample, rms, to_iq
+from opendpd.core.measurement import align, align_fractional, level_db, peak_abs, rate_ratio, resample, rms, to_iq
 from opendpd.core.metrics import evaluate as score, get_profile, list_profiles
 from opendpd.schemas import (
     ATTESTATION,
@@ -195,7 +195,8 @@ def bind_measurement(ws: Workspace, config: ExperimentConfig) -> ExperimentConfi
 
 def measurement_config(ws: Workspace, apply_run_id: str, *, with_dpd: CaptureRef, without_dpd: Optional[CaptureRef],
                        conditions: MeasurementConditions, source: str = "manual", playback: str = "loop",
-                       profile_id: Optional[str] = None, name: Optional[str] = None) -> ExperimentConfig:
+                       profile_id: Optional[str] = None, name: Optional[str] = None,
+                       processing_version: str = "measurement-integer-v1") -> ExperimentConfig:
     """A submission for ``create_run``; dataset and model are placeholders that binding replaces."""
     from opendpd.schemas import DatasetRef, EvaluationConfig, EvidenceType, ModelSpec
     from opendpd.services.experiments import load_run
@@ -208,7 +209,8 @@ def measurement_config(ws: Workspace, apply_run_id: str, *, with_dpd: CaptureRef
         dataset=DatasetRef(id=record.dataset_id or "unbound"), model=ModelSpec(key=record.model_key or "gru"),
         evaluation=evaluation,
         measurement=MeasurementConfig(apply_run_id=apply_run_id, with_dpd=with_dpd, without_dpd=without_dpd,
-                                      conditions=conditions, source=source, playback=playback),
+                                      conditions=conditions, source=source, playback=playback,
+                                      processing_version=processing_version),
     )
 
 
@@ -267,7 +269,10 @@ def align_stored(run_dir: Path, resolved: ResolvedExperimentConfig, dataset: Dat
     """Deterministic: align the stored copies to the stored export and build the measurement record."""
     m = resolved.measurement
     assert m is not None
+    if sha256_file(run_dir / CAPTURES_DIR / PLAYED_FILE) != m.played_sha256:
+        raise MeasurementError("stored played signal hash mismatch")
     x, u = read_played(run_dir / CAPTURES_DIR / PLAYED_FILE)
+    valid_range = (0, int(x.size))
     fs_d = dataset.signal.sample_rate_hz
     fs_c = m.conditions.sample_rate_hz
     ratio = rate_ratio(fs_c, fs_d) if fs_d is not None else None
@@ -280,23 +285,39 @@ def align_stored(run_dir: Path, resolved: ResolvedExperimentConfig, dataset: Dat
         if ref is None:
             continue
         path = _stored_capture(run_dir, role)
+        if sha256_file(path) != ref.sha256:
+            raise MeasurementError(f"{role} stored raw capture hash mismatch")
         raw = read_capture(path, ref.columns)
         if raw.size == 0:
             raise MeasurementError(f"{role} capture is empty")
         z = resample(raw, fs_c, fs_d) if ratio is not None else raw
         played = u if role == "with_dpd" else x
+        processing = {}
         try:
-            window, al = align(z, played, x, loop=m.playback == "loop")
+            if m.processing_version == "measurement-fractional-v2":
+                window, fractional = align_fractional(z, played, x, loop=m.playback == "loop")
+                al = fractional.integer
+                valid_range = fractional.valid_sample_range
+                gain, correlation = fractional.gain, fractional.correlation
+                processing = dict(processing_version=m.processing_version,
+                                  fractional_delay_samples=fractional.fractional_delay_samples,
+                                  delay_ns=(al.delay_samples + fractional.fractional_delay_samples) * 1e9 / (fs_d or fs_c),
+                                  valid_sample_range=valid_range, boundary_method=fractional.boundary_method,
+                                  diagnostics=fractional.diagnostics)
+            else:
+                window, al = align(z, played, x, loop=m.playback == "loop")
+                gain, correlation = al.gain, al.correlation
         except ValueError as err:
             raise MeasurementError(f"{role} capture: {err}") from None
-        aligned[role], gains[role] = window, al.gain
+        aligned[role], gains[role] = window, gain
         captures.append(CaptureAlignment(
             role=role, artifact_id=_artifact_id(role), raw_sha256=ref.sha256, n_samples_raw=int(raw.size),
             sample_rate_hz=fs_c, resample_ratio=ratio, delay_samples=al.delay_samples, wrapped=al.wrapped,
-            correlation=al.correlation, gain_abs=abs(al.gain),
-            gain_db=float(20 * math.log10(abs(al.gain))) if abs(al.gain) > 0 else float("-inf"),
-            gain_phase_deg=float(np.degrees(np.angle(al.gain))), rms=rms(window), peak_abs=peak_abs(window),
-            declared_output_power_dbm=ref.declared_output_power_dbm))
+            correlation=correlation, gain_abs=abs(gain),
+            gain_db=float(20 * math.log10(abs(gain))) if abs(gain) > 0 else float("-inf"),
+            gain_phase_deg=float(np.degrees(np.angle(gain))), rms=rms(window), peak_abs=peak_abs(window),
+            declared_output_power_dbm=ref.declared_output_power_dbm, **processing))
+    x, u = x[slice(*valid_range)], u[slice(*valid_range)]
     without = aligned.get("without_dpd")
     with_ref, without_ref = m.with_dpd, m.without_dpd
     declared = None
@@ -342,7 +363,8 @@ def _limitations(signals: MeasuredSignals) -> List[str]:
     out = [ev.attestation,
            f"no physical calibration: output power is the operator's declaration ({declared}), not measured by OpenDPD; "
            "capture units are the analyser's",
-           "integer-sample alignment and one complex gain per capture: residual timing error and receiver impairments "
+           ("fractional-sample alignment (measurement-fractional-v2)" if with_ref.processing_version == "measurement-fractional-v2"
+            else "integer-sample alignment") + " and one complex gain per capture: residual timing error and receiver impairments "
            "(IQ imbalance, DC offset, phase noise) are scored as distortion",
            "one capture per condition: no repeatability statistics"]
     if ev.level_difference_db is not None and abs(ev.level_difference_db) > LEVEL_TOLERANCE_DB:
@@ -354,6 +376,12 @@ def _limitations(signals: MeasuredSignals) -> List[str]:
     if with_ref.resample_ratio is not None:
         up, down = with_ref.resample_ratio
         out.append(f"captures resampled by {up}/{down} to the dataset rate before scoring")
+    if with_ref.processing_version == "measurement-fractional-v2":
+        out.extend([with_ref.boundary_method,
+                    "fractional processing is an offline alignment protocol, not a causal real-time implementation; "
+                    "stage ablations are diagnostics on the same retained interval, not additional profile metrics",
+                    "delay fitting assumes a uniquely correlating waveform; sparse periodic tones can have ambiguous "
+                    "integer delays that the local fractional fit cannot resolve"])
     return out
 
 
@@ -388,7 +416,8 @@ def result_for_measured(ws: Workspace, run_id: str, resolved: ResolvedExperiment
                            f"exported by run_dpd {ev.apply_run_id} (sha256 {ev.played_sha256[:12]})",
                     n_samples=n, peak_abs=peak_abs(signals.u), rms=rms(signals.u), artifact_id="played-signal"),
         SignalStage(symbol="y", role="measured PA output while u was played, aligned (capture units)",
-                    source=f"capture {with_al.artifact_id} sha256 {with_al.raw_sha256[:12]}, delay {with_al.delay_samples} "
+                    source=f"capture {with_al.artifact_id} sha256 {with_al.raw_sha256[:12]}, delay "
+                           f"{with_al.delay_samples + with_al.fractional_delay_samples:g} "
                            f"samples, correlation {with_al.correlation:.3f}; {ev.attestation}",
                     simulated=False, n_samples=n, peak_abs=with_al.peak_abs, rms=with_al.rms,
                     artifact_id=with_al.artifact_id),
@@ -429,7 +458,19 @@ def write_measurement_plots(ws: Workspace, run_id: str, resolved: ResolvedExperi
                                     bandwidth_hz=sig.bandwidth_hz, valid_samples=n)),
         ("time", plots.time_excerpt(all_signals, roles, valid_samples=n)),
         ("amam", plots.am_am_pm(x, outputs, roles, valid_samples=n)),
+        ("error_distribution", plots.error_distribution(to_iq(g * signals.x), outputs, roles, valid_samples=n)),
     ):
+        for trace in data["traces"]:
+            trace["run_id"] = run_id
+            role = trace["role"]
+            trace["source"] = ("mock adapter" if signals.evidence.attestation == MOCK_ATTESTATION
+                               else "measured capture" if role in ("primary", "baseline")
+                               else "linear target" if role == "reference" else "played signal")
+            trace["stage"] = "x" if role == "input" else "u" if role == "predistorted" else "reference" if role == "reference" else "y"
+            if role in ("primary", "baseline"):
+                cap = next(c for c in signals.evidence.captures if c.role == ("with_dpd" if role == "primary" else "without_dpd"))
+                trace["capture_id"] = cap.artifact_id
+                trace["raw_sha256"] = cap.raw_sha256
         write_json_atomic(out_dir / f"{name}.json", data)
         written.append(out_dir / f"{name}.json")
     return written

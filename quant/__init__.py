@@ -22,8 +22,8 @@ def get_quant_model(proj: Any, model) -> Any:
     """Return a (possibly) quantized version of ``model``.
 
     If ``proj.quant`` is truthy we attempt to construct the quantization
-    environment defined in ``quant.quant_envs``. On failure we log a warning and
-    return ``model`` unchanged so callers do not crash in non-quant workflows.
+    environment defined in ``quant.quant_envs``. Studio fails on setup errors;
+    the historical warning/fallback is retained for legacy CLI callers only.
     """
     if not getattr(proj, "quant", False):
         return model
@@ -33,6 +33,8 @@ def get_quant_model(proj: Any, model) -> Any:
         env = Base_GRUQuantEnv(model, args=quant_args)
         setattr(proj, "quant_env", env)
         return env.q_model
-    except Exception as exc:  # pragma: no cover - protective fallback
+    except Exception as exc:
+        if getattr(proj, "studio_strict_quantization", False):
+            raise RuntimeError(f"requested quantization setup failed: {exc}; Studio will not substitute a float model") from exc
         print(f"[WARN] Quantization setup failed: {exc}. Using float model instead.")
         return model

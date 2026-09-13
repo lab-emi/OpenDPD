@@ -215,6 +215,22 @@ def test_dpd_rejects_incompatible_pa(workspace, pa_run):
     assert issue.field == "pa_reference.run_id" and "train a PA model" in issue.hint
 
 
+def test_fixed_surrogate_allows_dpd_seed_sweep_with_the_exact_same_pa_checkpoint(workspace, pa_run):
+    cfg = instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa_run.run_id, seed=1)
+    cfg.pa_reference.seed_policy = "fixed_surrogate"
+    cfg.training.epochs = 1
+    run = execute_run(workspace, create_run(workspace, cfg).run_id)
+    assert run.status == RunStatus.succeeded, run.error
+    resolved = load_resolved(workspace, run.run_id)
+    assert resolved.training.seed == 1 and load_resolved(workspace, pa_run.run_id).training.seed == 0
+    assert resolved.pa_reference.seed_policy == "fixed_surrogate"
+    pa_hash = load_artifacts(workspace, pa_run.run_id).by_kind(ArtifactKind.checkpoint)[0].file.sha256
+    assert resolved.pa_reference.checkpoint_sha256 == pa_hash
+    assert next(m for m in load_result(workspace, run.run_id).models if m.role == "pa").weights_sha256 == pa_hash
+    from opendpd.schemas.experiment import PAReference
+    assert "seed_policy" not in PAReference(run_id=pa_run.run_id).model_dump(mode="json")
+
+
 @pytest.fixture(scope="module")
 def apply_run(workspace, dpd_run):
     """run_dpd through the DPD's own training surrogate."""
@@ -347,7 +363,7 @@ def test_plots_history_and_comparison_are_bound_to_the_results(workspace, pa_run
 
     manifest = load_artifacts(workspace, dpd_run.run_id)
     plots = {a.artifact_id: a for a in manifest.by_kind(ArtifactKind.plot)}
-    assert set(plots) == {"plot-spectrum", "plot-time", "plot-amam"} and all(a.file.sha256 for a in plots.values())
+    assert set(plots) == {"plot-spectrum", "plot-time", "plot-amam", "plot-error_distribution"} and all(a.file.sha256 for a in plots.values())
     spectrum = json.loads((workspace.run_dir(dpd_run.run_id) / plots["plot-spectrum"].file.path).read_text())
     assert spectrum["version"] == "plots-v1" and spectrum["axis"] == "hz" and spectrum["nperseg"] == 2560
     roles = {t["name"]: t["role"] for t in spectrum["traces"]}
@@ -358,7 +374,7 @@ def test_plots_history_and_comparison_are_bound_to_the_results(workspace, pa_run
     assert am["n_points"] <= 4000 and {t["name"] for t in am["traces"]} >= {"with DPD: PA_surrogate(u)", "measured PA without DPD"}
     assert {a.artifact_id for a in manifest.by_kind(ArtifactKind.result)} >= {"result", "result-legacy-opendpd-v1"}
     pa_plots = {a.artifact_id for a in load_artifacts(workspace, pa_run.run_id).by_kind(ArtifactKind.plot)}
-    assert pa_plots == {"plot-spectrum", "plot-time", "plot-amam"}
+    assert pa_plots == {"plot-spectrum", "plot-time", "plot-amam", "plot-error_distribution"}
 
     history = training_history(workspace, pa_run.run_id)
     assert [(h.epoch, h.split) for h in history] == [(0, "val"), (0, "test"), (1, "val"), (1, "test"), (2, "val"), (2, "test")]
@@ -426,6 +442,47 @@ def test_cli_run_and_validate(workspace, tmp_path, capsys):
     assert studio_main(["run", "--config", str(tmp_path / "bad.json"), "--workspace", str(workspace.root)]) == 2
     err = capsys.readouterr().err
     assert "model.key" in err and "unknown model" in err
+
+
+def test_qat_binds_float_weights_runs_reconstructs_and_packages(workspace, pa_run, tmp_path):
+    import torch
+    from opendpd.schemas import ModelSpec
+    from opendpd.schemas.experiment import QuantizationConfig
+    from opendpd.services.evaluation import evaluate_run
+    from opendpd.services.packages import export_run, import_package
+    from opendpd.services.workspace import sha256_file
+
+    config = instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa_run.run_id)
+    config.model = ModelSpec(key="qgru", parameters={"hidden_size": 7, "num_layers": 1})
+    config.training.epochs = 1
+    config.training.train_samples = 512
+    floating = execute_run(workspace, create_run(workspace, config).run_id)
+    assert floating.status == RunStatus.succeeded, floating.error
+    source = load_artifacts(workspace, floating.run_id).by_kind(ArtifactKind.checkpoint)[0]
+    config.quantization = QuantizationConfig(enabled=True, n_bits_w=8, n_bits_a=12, pretrained_run_id=floating.run_id)
+    quantized = execute_run(workspace, create_run(workspace, config).run_id)
+    assert quantized.status == RunStatus.succeeded, quantized.error
+    resolved = load_resolved(workspace, quantized.run_id)
+    assert resolved.quantization.pretrained_checkpoint_sha256 == source.file.sha256
+    assert sha256_file(workspace.run_dir(quantized.run_id) / "pretrained" / "weights.pt") == source.file.sha256
+    weights = load_artifacts(workspace, quantized.run_id).by_kind(ArtifactKind.checkpoint)[0]
+    state = torch.load(workspace.run_dir(quantized.run_id) / weights.file.path, weights_only=True)
+    assert any("rnn_cell_list" in key for key in state), "QAT must execute the converted GRU, not fall back to nn.GRU"
+    assert any("quantizer" in key for key in state)
+    result = load_result(workspace, quantized.run_id)
+    assert any("FP32 feature extraction" in note for note in result.limitations)
+    expected = {value.name: value.value for value in result.metrics}
+    replayed = evaluate_run(workspace, quantized.run_id, result.metric_profile_id)
+    assert {value.name: value.value for value in replayed.metrics} == pytest.approx(expected)
+    assert any(parent.run_id == floating.run_id and parent.checkpoint_sha256 == source.file.sha256 for parent in lineage(workspace, quantized.run_id).parents)
+    package = tmp_path / "qat.zip"
+    exported = export_run(workspace, quantized.run_id, package, kind="full")
+    assert any(ref.run_id == floating.run_id and ref.role == "qat_float_pretraining" for ref in exported.references)
+    fresh = Workspace.create(tmp_path / "qat-imported")
+    imported = import_package(fresh, package)
+    assert floating.run_id in imported.imported_runs
+    restored = evaluate_run(fresh, quantized.run_id, result.metric_profile_id)
+    assert {value.name: value.value for value in restored.metrics} == pytest.approx(expected)
 
 
 def test_cli_lists_models_datasets_and_recipes(workspace, capsys):
@@ -690,3 +747,65 @@ def test_cli_dry_run_refuses_unarmed_then_captures_through_the_mock_and_imports_
     resolved = load_resolved(workspace, payload["run"]["run_id"])
     assert resolved.measurement.with_dpd.path.startswith("captures/") and not Path(resolved.measurement.with_dpd.path).is_absolute()
     assert (workspace.imports_dir / resolved.measurement.with_dpd.path).exists()
+
+
+def test_measurement_session_groups_mock_acquisitions_through_the_real_import_pipeline(workspace, apply_run):
+    """Two independently generated MOCK captures exercise storage/statistics, not physical repeatability."""
+    from datetime import timedelta
+    from opendpd.schemas.measurement_session import MeasurementSessionSpec, SessionCapture
+    from opendpd.services.measurement_sessions import create_session, load_session
+
+    (x, u), _ = _played(workspace, apply_run)
+    refs = []
+    for i in range(2):
+        capture_path = _write_capture(workspace, f"session-mock-{i}.npy", _synthetic_capture(u, seed=80 + i))
+        record = _measured(workspace, apply_run, with_name=capture_path, source="mock_adapter")
+        assert record.status == RunStatus.succeeded, record.error
+        refs.append(SessionCapture(capture_id=f"capture-{i}", acquisition_id=f"mock-acquisition-{i}",
+                                   run_id=record.run_id, role="with_dpd",
+                                   acquired_at=_conditions().measured_at + timedelta(minutes=i)))
+    spec = MeasurementSessionSpec(title="MOCK repeat import test", dut=_conditions().pa, source="mock",
+                                  profile_id="general-spectral-v1", power_tolerance_db=.1, captures=refs)
+    session = create_session(workspace, spec)
+    assert session.spec.source == "mock" and len(session.captures) == 2
+    assert session.captures[0].raw_sha256 != session.captures[1].raw_sha256
+    assert all(r.n_independent_captures == 2 and r.n_seeds == 1 and r.mean is not None for r in session.repeats)
+    assert all(c.played_sha256 and c.processing["version"] == "measurement-integer-v1" for c in session.captures)
+    assert load_session(workspace, session.session_id).repeats == session.repeats
+
+
+@pytest.mark.parametrize("playback", ["loop", "single"])
+def test_versioned_fractional_measurement_roundtrip_preserves_legacy_result(workspace, apply_run, playback):
+    import numpy as np
+    from opendpd.services.evaluation import evaluate_run, compare_results
+    from opendpd.services.measurements import MeasurementError
+
+    (x, u), _ = _played(workspace, apply_run)
+    delayed = np.fft.ifft(np.fft.fft(u) * np.exp(-2j * np.pi * np.fft.fftfreq(u.size) * 123.37))
+    path = _write_capture(workspace, f"fractional-{playback}.npy", 3 * np.exp(.4j) * np.tile(delayed, 2))
+    legacy = _measured(workspace, apply_run, with_name=path, source="mock_adapter", playback=playback)
+    assert legacy.status == RunStatus.succeeded, legacy.error
+    legacy_path = workspace.run_dir(legacy.run_id) / "result.json"
+    before = legacy_path.read_bytes()
+    fractional = _measured(workspace, apply_run, with_name=path, source="mock_adapter", playback=playback,
+                           processing_version="measurement-fractional-v2")
+    assert fractional.status == RunStatus.succeeded, fractional.error
+    result = load_result(workspace, fractional.run_id, "general-spectral-v1")
+    cap = result.measurement.captures[0]
+    assert result.is_mock and cap.processing_version == "measurement-fractional-v2"
+    assert cap.delay_samples + cap.fractional_delay_samples == pytest.approx(123.37, abs=2e-4)
+    assert cap.delay_ns == pytest.approx(123.37 * 1e9 / 800e6, abs=.001)
+    assert cap.valid_sample_range == result.valid_sample_range == ((0, u.size) if playback == "loop" else (64, u.size - 64))
+    assert result.dataset.n_samples == u.size - (0 if playback == "loop" else 128)
+    assert [d.stage for d in cap.diagnostics] == ["raw_start", "integer_aligned", "fractional_aligned"]
+    assert legacy_path.read_bytes() == before
+    comparison = compare_results(workspace, [legacy.run_id, fractional.run_id])
+    assert not comparison.comparable
+    assert any("measurement processing" in reason for reason in comparison.pairs[0].incompatibilities)
+    again = evaluate_run(workspace, fractional.run_id, "general-spectral-v1")
+    assert again.measurement == result.measurement and again.metrics == result.metrics
+    artifact = next(a for a in load_artifacts(workspace, fractional.run_id).artifacts if a.artifact_id == cap.artifact_id)
+    raw = workspace.run_dir(fractional.run_id) / artifact.file.path
+    raw.write_bytes(raw.read_bytes() + b"tampered")
+    with pytest.raises(MeasurementError, match="raw capture hash mismatch"):
+        evaluate_run(workspace, fractional.run_id, "general-spectral-v1")

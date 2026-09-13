@@ -24,7 +24,7 @@ export function BuiltinDatasetDialog({ onClose, onSelected, guided = false, onSk
       <Typography color="text.secondary" sx={{ mb: 2 }}>{t('datasets.builtin.help')}</Typography>
       {catalog.isPending ? <LoadingState /> : catalog.isError ? <ErrorState error={catalog.error} onRetry={() => void catalog.refetch()} /> : <Stack spacing={1.5}>
         {catalog.data.map((entry) => {
-          const registered = datasets.data?.find((d) => d.source.kind === 'builtin' && d.source.name === entry.name && d.raw_sha256 === entry.raw_sha256)
+          const registered = datasets.data?.find((d) => d.source.name === entry.name && (d.raw_sha256 === entry.raw_sha256 || d.files?.some(f => f.sha256 === entry.raw_sha256)))
           return <Stack key={entry.name} direction="row" spacing={2} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1.5, alignItems: 'center' }}>
             <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}><Typography sx={{ fontWeight: 700 }}>{entry.name}</Typography><Chip size="small" label={message(entry.origin)} color={entry.origin === 'synthetic' ? 'warning' : 'default'} /></Stack>

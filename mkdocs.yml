@@ -49,6 +49,7 @@ nav:
   - Get started:
       - Installation: install.md
       - First Studio experiment: tutorials/gui-quickstart.md
+      - Signal Generator: guides/signal-generator.md
       - Headless CLI: tutorials/headless-cli.md
       - Python examples & Colab: examples.md
   - Core workflow:
@@ -59,6 +60,7 @@ nav:
       - API reference: api.md
   - Research & deployment:
       - Choose a workflow: advanced.md
+      - Research review: guides/research-review.md
       - Benchmark: benchmark/index.md
       - Reproduce published results: reproducing.md
       - Add a model: tutorials/adding-a-model.md

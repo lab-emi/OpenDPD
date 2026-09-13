@@ -28,6 +28,22 @@ const general = {
   ],
 }
 
+test('result links preserve their released profile and refuse pending profiles in the GUI', async () => {
+  const requested: Array<string | null> = []
+  mockApi({
+    'GET /api/v1/results/run-pa-0001': url => { requested.push(url.searchParams.get('profile')); return general },
+    'GET /api/v1/results/run-pa-0001/profiles': () => ['legacy-opendpd-v1', 'general-spectral-v1'],
+    'GET /api/v1/metrics/profiles': () => [legacyProfile.data, generalProfile.data, ofdmProfile.data],
+  })
+  const view = renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001?profile=general-spectral-v1', path: '/results/:runId' })
+  await screen.findByRole('heading', { name: 'NMSE (pooled)', level: 3 })
+  expect(requested).toEqual(['general-spectral-v1'])
+  view.unmount()
+  renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001?profile=ofdm-lte20-evm-v1', path: '/results/:runId' })
+  expect(await screen.findByRole('alert')).toHaveTextContent('not available in the GUI')
+  expect(requested).toEqual(['general-spectral-v1'])
+})
+
 test('shows the profile behind every score, its definitions, and switches to another stored profile', async () => {
   const { calls } = mockApi({
     'GET /api/v1/results/run-pa-0001': (url) => (url.searchParams.get('profile') === 'general-spectral-v1' ? general : legacy),

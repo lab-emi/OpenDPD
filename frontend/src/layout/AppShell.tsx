@@ -1,4 +1,5 @@
 import DatasetIcon from '@mui/icons-material/Dataset'
+import GraphicEqIcon from '@mui/icons-material/GraphicEq'
 import HomeIcon from '@mui/icons-material/Home'
 import InsightsIcon from '@mui/icons-material/Insights'
 import ScienceIcon from '@mui/icons-material/Science'
@@ -33,6 +34,7 @@ import { tokens, useStudioColors } from '@/theme'
 
 const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
   { to: '/', key: 'nav.home', Icon: HomeIcon },
+  { to: '/signal-generator', key: 'generator.title', Icon: GraphicEqIcon },
   { to: '/datasets', key: 'nav.datasets', Icon: DatasetIcon },
   { to: '/experiments', key: 'nav.experiments', Icon: ScienceIcon },
   { to: '/results', key: 'nav.results', Icon: InsightsIcon },

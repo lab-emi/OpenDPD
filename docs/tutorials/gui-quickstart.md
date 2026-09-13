@@ -1,6 +1,8 @@
 # Your first experiment in Studio
 
-Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.2"`.
+Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.3"`.
+
+Get Started now offers **Signal Generator** first, then existing datasets and CSV upload. The [Signal Generator guide](../guides/signal-generator.md) walks through creating and inspecting a waveform and turning it into a synthetic PA dataset. Each PA Model and DPD Model workspace contains Training and Testing tabs; Testing displays the selected split's exact complex I/Q count.
 
 ```bash
 opendpd gui
