@@ -94,6 +94,36 @@ def test_public_signal_generator_is_private_and_bounded(public):
     assert client.post('/api/v1/signal-generator/signals', json={**config, 'n_samples': 1000001}, headers=auth).status_code == 422
 
 
+def test_public_virtual_pa_input_output_and_pairing_are_tenant_scoped(public):
+    client, manager, _ = public
+    auth, other = new_session(client), new_session(client)
+    preset = client.get('/api/v1/signal-generator/presets', headers=auth).json()[0]['config']
+    signal = client.post('/api/v1/signal-generator/signals', json={**preset, 'n_samples': 8192}, headers=auth).json()
+    inputs = client.get('/api/v1/signal-generator/signals', headers=auth).json()
+    assert inputs[0]['kind'] == 'pa_input'
+    assert client.get('/api/v1/signal-generator/signals', headers=other).json() == []
+    for url in [inputs[0]['csv_url'], inputs[0]['metadata_url']]:
+        assert client.get(url, headers=auth).status_code == 200
+        assert client.get(url, headers=other).status_code != 200
+    assert len(client.get('/api/v1/pa-library/models', headers=auth).json()) == 9
+    config = {'input_signal_id': signal['signal_id'], 'model_id': 'gan-trap-thermal'}
+    assert client.post('/api/v1/pa-library/simulations', json=config, headers=other).status_code == 404
+    result = client.post('/api/v1/pa-library/simulations', json=config, headers=auth)
+    assert result.status_code == 201, result.text
+    simulation = result.json()
+    assert client.get('/api/v1/datasets', headers=auth).json() == []
+    for url in [simulation['output_csv_url'], simulation['paired_csv_url'], simulation['metadata_url']]:
+        assert client.get(url, headers=auth).status_code == 200
+        assert client.get(url, headers=other).status_code != 200
+    endpoint = '/api/v1/pa-library/simulations/' + simulation['simulation_id'] + '/dataset'
+    assert client.post(endpoint, json={'dataset_id': 'virtual-pair'}, headers=other).status_code == 404
+    result = client.post(endpoint, json={'dataset_id': 'virtual-pair'}, headers=auth)
+    assert result.status_code == 201, result.text
+    assert result.json()['dataset']['origin'] == 'synthetic'
+    assert not manager.publication_reservations
+    assert client.post('/api/v1/pa-library/simulations', json={**config, 'parameters': {'capture_us': 'bad'}}, headers=auth).status_code == 422
+
+
 def test_hosted_publication_consent_and_quota_preserve_retries(tmp_path):
     config = WebConfig(root=tmp_path / 'web-publish', origin=ORIGIN, api_host='api.opendpd.com', tunnel_host=TUNNEL_HOST,
                        dataset_publications=True, publications_per_ip=1)

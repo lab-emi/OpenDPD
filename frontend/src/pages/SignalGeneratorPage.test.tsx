@@ -5,6 +5,7 @@ import { useLocation } from 'react-router'
 import fixture from '@mocks/generator_presets.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { SignalGeneratorPage } from './SignalGeneratorPage'
+import { StudioWorkflowProvider } from '@/workflow/StudioWorkflow'
 
 vi.mock('@/components/PlotlyChart', () => ({ PlotlyChart: ({ title }: { title: string }) => <div>{title}</div> }))
 
@@ -34,7 +35,7 @@ test('one initial preview, simple family selection, stale-export guard and durat
   await screen.findByTestId('signal-generator-results')
   expect(calls.filter(c => c.path === '/api/v1/signal-generator/signals')).toHaveLength(1)
   expect(screen.getByText('Time-domain I/Q')).toBeVisible()
-  expect(screen.getByText('Power spectral density')).toBeVisible()
+  expect(screen.getByText('PA Input · PSD')).toBeVisible()
   await userEvent.click(screen.getByRole('button', { name: /Wi-Fi 8/ }))
   expect(screen.getByText(/Wi-Fi 8 is an experimental/)).toBeVisible()
   expect(screen.getByRole('button', { name: 'Export I/Q + configuration' })).toBeDisabled()
@@ -63,16 +64,32 @@ test('advanced OFDMA channels and pilots reach the generator request', async () 
   expect(calls.filter(c => c.path === '/api/v1/signal-generator/signals').at(-1)?.body).toMatchObject({ channel_subcarriers: [612, 52], channel_modulations: [64, 64], channel_power_db: [0, 0], pilot_mode: 'explicit', pilot_indices: [-39, 39] })
 })
 
-test('generated PA dataset binds the preview and opens the merged PA workflow', async () => {
+test('generated signal is input-only, with separate exports and an explicit Virtual PA step', async () => {
   const { calls } = setup()
   renderWithProviders(<><SignalGeneratorPage /><Probe /></>)
   await screen.findByTestId('signal-generator-results')
-  await userEvent.click(screen.getByRole('button', { name: 'Create synthetic PA dataset' }))
-  expect(screen.getByRole('dialog')).toHaveTextContent('Both input and output are SYNTHETIC')
-  expect(screen.getByRole('dialog')).toHaveTextContent('emi.lab@outlook.com')
-  fireEvent.change(screen.getByLabelText('Dataset ID'), { target: { value: 'my-first-signal' } })
-  await userEvent.click(screen.getByRole('button', { name: 'Create dataset & open PA Model' }))
-  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/experiments/new?task=train_pa&dataset=my-first-signal'))
+  expect(screen.getByRole('heading', { name: 'PA Input Dataset' })).toBeVisible()
+  expect(screen.getAllByText(/complete training dataset needs matching PA input x and PA output y/).length).toBeGreaterThan(0)
+  expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Download input metadata JSON' })).toBeEnabled()
+  await userEvent.click(screen.getByRole('link', { name: 'Choose Virtual PA →' }))
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/pa-library?input=' + result.signal_id))
   expect(calls.some(c => c.path.includes('publication'))).toBe(false)
-  expect(calls.find(c => c.path.endsWith('/dataset'))?.body).toMatchObject({ dataset_id: 'my-first-signal', compression: .7, guard_samples: 256 })
+  expect(calls.some(c => c.path.endsWith('/dataset'))).toBe(false)
+})
+
+test('returning to Signal Generator restores the selected input without generating again', async () => {
+  const key = 'opendpd-workflow-v1:generator-restore-test'
+  localStorage.setItem(key, JSON.stringify({ version: 1, origin: 'generated', inputId: result.signal_id, inputName: 'Saved input', parameters: {} }))
+  try {
+    const { calls } = mockApi({
+      'GET /api/v1/system/capabilities': () => ({ workspace: 'generator-restore-test', custom_dataset_imports: true }),
+      'GET /api/v1/signal-generator/presets': () => fixturePresets,
+      ['GET /api/v1/signal-generator/signals/' + result.signal_id]: () => result,
+    })
+    renderWithProviders(<StudioWorkflowProvider><SignalGeneratorPage /></StudioWorkflowProvider>)
+    await screen.findByTestId('signal-generator-results')
+    expect(screen.getByRole('link', { name: 'Choose Virtual PA →' })).toHaveAttribute('href', '/pa-library?input=' + result.signal_id)
+    expect(calls.some(call => call.method === 'POST')).toBe(false)
+  } finally { localStorage.removeItem(key) }
 })

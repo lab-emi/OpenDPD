@@ -9,6 +9,11 @@ import json
 import textwrap
 from pathlib import Path
 
+if __package__:
+    from opendpd.core.spectrum_layout import TITLES, has_dpd, signal_node, spectrum_legend
+else:  # Standalone export bundle.
+    from spectrum_layout import TITLES, has_dpd, signal_node, spectrum_legend
+
 
 def plot_kind(kind):
     return 'amam' if kind in {'amam', 'ampm'} else kind
@@ -25,6 +30,24 @@ def coordinates(panel, plot, trace):
     return plot['x'], trace['y'], plot['x_unit'], trace.get('y_unit', plot.get('y_unit')), plot['x_label'], trace.get('y_label', plot.get('y_label'))
 
 
+def split_spectrum_panels(panels, plots):
+    """Normalize legacy mixed panels without changing their saved arrays/styles."""
+    result = []
+    for panel in panels:
+        if panel['kind'] != 'spectrum':
+            result.append(panel)
+            continue
+        groups = {node: [] for node in TITLES}
+        for trace in panel['traces']:
+            plot = plots[f"{trace['run_id']}/spectrum"]
+            raw = next(t for t in plot['traces'] if t['name'] == trace['trace_name'])
+            groups[signal_node(raw, has_dpd(plot['traces']))].append(trace)
+        for node, traces in groups.items():
+            if any(t.get('visible', True) for t in traces):
+                result.append({**panel, 'signal_node': node, 'traces': traces})
+    return result
+
+
 def render_figure(figure, plots, output):
     import matplotlib
     with matplotlib.rc_context(matplotlib.rcParamsDefault):
@@ -38,7 +61,7 @@ def _draw(figure, plots, output):
     from matplotlib.backends.backend_agg import FigureCanvasAgg
 
     spec = figure["spec"]
-    panels = spec["panels"]
+    panels = split_spectrum_panels(spec["panels"], plots)
     columns = 1 if spec["width"] == "single_column" else min(2, len(panels))
     rows = (len(panels) + columns - 1) // columns
     fig = Figure(figsize=(3.5 if spec["width"] == "single_column" else 7.2, rows * 3.2), layout="constrained")
@@ -63,7 +86,7 @@ def _draw(figure, plots, output):
             evidence = "MOCK" if result["is_mock"] else tr.get("source", result["evidence_type"] if tr["role"] == "primary" else tr["role"])
             if any(f['key'] == 'dataset_origin' and f['value'] == 'synthetic' for f in contexts[trace['run_id']]['facts']):
                 evidence = 'SYNTHETIC / ' + evidence
-            label = '\n'.join(textwrap.wrap(f'{aliases[trace["run_id"]]} · {tr["name"]} [{evidence}]', width=48))
+            label = '\n'.join(textwrap.wrap(f'{aliases[trace["run_id"]]} · {spectrum_legend(tr) if spectrum else tr["name"]}' + (f' [{evidence}]' if not spectrum else ' · MOCK' if result['is_mock'] else ''), width=36))
             connected = spectrum or panel['kind'] == 'error_distribution'
             cloud = panel['kind'] in {'amam', 'ampm'}
             ax.plot(x, y, color=trace["color"], linestyle=dash[trace["dash"]] if connected else "None",
@@ -83,10 +106,13 @@ def _draw(figure, plots, output):
         if panel.get("cursor_x") is not None:
             ax.axvline(panel["cursor_x"], color="#64748B", linestyle=":", linewidth=.8)
         titles = {'spectrum': 'PSD', 'amam': 'AM/AM', 'ampm': 'AM/PM', 'power_scan': 'Declared power scan', 'error_distribution': 'Residual CDF (not EVM)'}
-        ax.set_title(titles[panel['kind']], fontsize=9)
+        node_title = TITLES.get(panel.get('signal_node'), '')
+        if panel.get('signal_node') == 'pa_input' and any(has_dpd(p.get('traces', [])) for p in plots.values()):
+            node_title = 'DPD Output / PA Input'
+        ax.set_title(f'{node_title} · PSD' if spectrum else titles[panel['kind']], fontsize=9)
         ax.tick_params(labelsize=7)
         ax.grid(alpha=.2)
-        ax.legend(fontsize=5, loc="best", frameon=True, framealpha=.9, facecolor='white', edgecolor='none')
+        ax.legend(fontsize=6, loc="upper left", bbox_to_anchor=(0, -.26), ncol=1, frameon=False)
     for ax in axes[len(panels):]:
         ax.set_visible(False)
     fig.suptitle(spec["title"], fontsize=10)

@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useTheme } from '@mui/material/styles'
-import { useQueryClient } from '@tanstack/react-query'
+import { QueryClient, useQueryClient } from '@tanstack/react-query'
+import { keys } from '@/api/hooks'
 import { useState, type ReactNode } from 'react'
 import { Outlet } from 'react-router'
 import { expect, test, vi } from 'vitest'
@@ -32,7 +33,9 @@ test('live system appearance changes keep the form, query cache and route mounte
     addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events),
     addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: events.dispatchEvent.bind(events),
   }))
-  render(<App />)
+  const client = new QueryClient()
+  client.setQueryData(keys.capabilities, { workspace: 'appearance-test' })
+  render(<App queryClient={client} />)
   const input = screen.getByRole('textbox', { name: 'Experiment name' })
   fireEvent.change(input, { target: { value: 'PA draft' } })
   const images = screen.getAllByRole('img', { name: 'OpenDPD Studio' })

@@ -50,6 +50,7 @@ nav:
       - Installation: install.md
       - First Studio experiment: tutorials/gui-quickstart.md
       - Signal Generator: guides/signal-generator.md
+      - Virtual PA Library: guides/virtual-pa-library.md
       - Headless CLI: tutorials/headless-cli.md
       - Python examples & Colab: examples.md
   - Core workflow:
@@ -57,6 +58,7 @@ nav:
       - Studio CUDA performance: performance/studio-2.2.1.md
       - Datasets: datasets.md
       - Visualization: visualization.md
+      - Signal-chain PSD plots: guides/signal-chain-spectra.md
       - API reference: api.md
   - Research & deployment:
       - Choose a workflow: advanced.md
@@ -127,6 +129,7 @@ exclude_docs: |
 # Auxiliary references remain available through links from the Studio guides.
 # Keep the primary navigation focused on the user workflows above.
 not_in_nav: |
+  performance/studio-2.2.4.md
   architecture/**
   community/**
   design/**

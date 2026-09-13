@@ -62,7 +62,9 @@ def test_saved_figure_roundtrip_and_exported_replay(completed, tmp_path):
     spec = make_spec(ws, run)
     saved = figures.save_figure(ws, spec)
     restored = figures.load_figure(ws, saved.figure_id)
-    assert restored.spec == spec
+    assert restored.spec == saved.spec
+    assert restored.spec.panels[0].signal_node == "pa_output"
+    assert restored.spec.panels[0].traces == spec.panels[0].traces
     assert figures.list_figures(ws, [run])[0].figure_id == saved.figure_id
     assert len(restored.bindings[0].result_sha256) == 64
     bundle = figures.export_figure(ws, saved.figure_id)

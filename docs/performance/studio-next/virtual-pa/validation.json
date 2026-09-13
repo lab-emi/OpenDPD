@@ -1,0 +1,44 @@
+{
+  "scope": "local-preview",
+  "branch": "studio-next",
+  "base_commit": "a7ec4b953680b828343ea1c98429c1dc3a76eee0",
+  "backend": {
+    "tests_passed": 665,
+    "seconds": 455.89,
+    "selection": "tests/unit tests/integration -m \"not extended and not packaging\"",
+    "numerical_threads": 2
+  },
+  "frontend": {
+    "files_passed": 52,
+    "tests_passed": 220,
+    "final_control_and_locale_tests_passed": 30
+  },
+  "checks": [
+    "typecheck",
+    "production build",
+    "lint",
+    "generated API schema consistency",
+    "git diff --check"
+  ],
+  "browser": {
+    "viewports": [
+      [
+        1366,
+        768
+      ],
+      [
+        1920,
+        1080
+      ]
+    ],
+    "actual_cpu_training_and_testing_runs": 8,
+    "virtual_models_simulated": 9,
+    "paired_rows_verified": 32768,
+    "test_split_samples": 6452,
+    "chinese_formula_linkage_verified": true,
+    "expanded_diagram_wcag_a_aa_violations": 0,
+    "mobile_dark_horizontal_overflow": false,
+    "page_errors": []
+  },
+  "local_url": "http://127.0.0.1:8779/"
+}

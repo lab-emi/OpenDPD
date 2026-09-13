@@ -149,6 +149,7 @@ class GeneratorAnalysis(StrictModel):
 
 
 class GeneratedSignal(StrictModel):
+    kind: Literal["pa_input"] = "pa_input"
     signal_id: str = Field(pattern=r"^sg-[a-f0-9]{64}$")
     config: GeneratorConfig
     iq_sha256: Sha256

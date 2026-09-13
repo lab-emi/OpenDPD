@@ -1,0 +1,59 @@
+{
+  "models": [
+    {
+      "model": "linear-reference",
+      "samples": 32768,
+      "states": []
+    },
+    {
+      "model": "rapp-solid-state",
+      "samples": 32768,
+      "states": []
+    },
+    {
+      "model": "rapp-am-pm",
+      "samples": 32768,
+      "states": []
+    },
+    {
+      "model": "saleh-twta",
+      "samples": 32768,
+      "states": []
+    },
+    {
+      "model": "memory-polynomial",
+      "samples": 32768,
+      "states": []
+    },
+    {
+      "model": "generalized-memory",
+      "samples": 32768,
+      "states": [
+        "delayed_power"
+      ]
+    },
+    {
+      "model": "gan-trap-thermal",
+      "samples": 32768,
+      "states": [
+        "trap_occupancy",
+        "effective_temperature_c",
+        "supply_fraction"
+      ]
+    },
+    {
+      "model": "doherty-two-path",
+      "samples": 32768,
+      "states": []
+    },
+    {
+      "model": "envelope-tracking",
+      "samples": 32768,
+      "states": [
+        "supply_fraction",
+        "envelope_demand"
+      ]
+    }
+  ],
+  "errors": []
+}

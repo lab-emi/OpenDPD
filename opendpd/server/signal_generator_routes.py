@@ -8,8 +8,26 @@ from opendpd.schemas.signal_generator import (DatasetSampleCounts, GeneratedSign
     GeneratorDatasetRequest, GeneratorDatasetResponse, GeneratorPreset)
 from opendpd.server.routes import require_csrf, require_session, _error
 from opendpd.services import signal_generator as service
+from opendpd.schemas.virtual_pa import PAInputDataset
 
 router = APIRouter(tags=["signal generator"])
+
+
+@router.get("/signal-generator/signals", response_model=list[PAInputDataset], dependencies=[Depends(require_session)])
+def inputs(request: Request):
+    return service.list_inputs(request.app.state.ws)
+
+
+@router.get("/signal-generator/signals/{signal_id}/input.csv", dependencies=[Depends(require_session)])
+def input_csv(signal_id: str, request: Request):
+    return FileResponse(service.export_input(request.app.state.ws, signal_id, "csv"),
+        media_type="text/csv", filename=f"{signal_id[:19]}-pa-input.csv")
+
+
+@router.get("/signal-generator/signals/{signal_id}/metadata.json", dependencies=[Depends(require_session)])
+def metadata(signal_id: str, request: Request):
+    return FileResponse(service.export_input(request.app.state.ws, signal_id, "metadata"),
+        media_type="application/json", filename=f"{signal_id[:19]}-pa-input-metadata.json")
 
 
 @router.post("/signal-generator/validate", response_model=GeneratorConfig, dependencies=[Depends(require_csrf)])
@@ -42,7 +60,7 @@ def download(signal_id: str, request: Request):
     return FileResponse(service.export_signal(request.app.state.ws, signal_id), media_type="application/zip", filename=f"{signal_id[:19]}-waveform.zip")
 
 
-@router.post("/signal-generator/signals/{signal_id}/dataset", response_model=GeneratorDatasetResponse,
+@router.post("/signal-generator/signals/{signal_id}/dataset", response_model=GeneratorDatasetResponse, deprecated=True,
              status_code=201, dependencies=[Depends(require_csrf)])
 def dataset(signal_id: str, body: GeneratorDatasetRequest, request: Request):
     return service.create_dataset(request.app.state.ws, signal_id, body)

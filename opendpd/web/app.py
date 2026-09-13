@@ -208,6 +208,33 @@ class PublicBoundary:
                 used = await asyncio.to_thread(directory_bytes, tenant.root)
                 if used + generated_source.analysis.sample_count * 160 > self.config.max_workspace_bytes:
                     reject(413, 'workspace_limit', 'The PA dataset would exceed temporary storage. Generate fewer samples.')
+            if path == '/pa-library/simulations' and method == 'POST':
+                from opendpd.schemas.virtual_pa import VirtualPARequest
+                from opendpd.services.signal_generator import read_signal
+                from opendpd.services.workspace import WorkspaceError
+                try:
+                    pa_request = VirtualPARequest.model_validate(body)
+                except ValueError:
+                    reject(422, 'invalid_request', 'Choose a PA input, Virtual PA and valid numeric parameters.')
+                self.manager.rate_limit('virtual-pa:' + tenant.ip_key, 24)
+                try:
+                    pa_input = await asyncio.to_thread(read_signal, tenant.app.state.ws, pa_request.input_signal_id)
+                except WorkspaceError:
+                    reject(404, 'signal_not_found', 'Generate this PA input in the current session first.')
+                used = await asyncio.to_thread(directory_bytes, tenant.root)
+                if used + pa_input.analysis.sample_count * 100 + 2_000_000 > self.config.max_workspace_bytes:
+                    reject(413, 'workspace_limit', 'PA simulation and exports would exceed temporary storage. Use fewer samples.')
+            if path.startswith('/pa-library/simulations/') and path.endswith('/dataset') and method == 'POST':
+                from opendpd.services.virtual_pa import read_simulation
+                from opendpd.services.workspace import WorkspaceError
+                self.manager.rate_limit('virtual-pa-dataset:' + tenant.ip_key, 6)
+                try:
+                    pa_output = await asyncio.to_thread(read_simulation, tenant.app.state.ws, path.split('/')[3])
+                except WorkspaceError:
+                    reject(404, 'simulation_not_found', 'Simulate this Virtual PA in the current session first.')
+                used = await asyncio.to_thread(directory_bytes, tenant.root)
+                if used + pa_output.analysis.n_samples * 160 > self.config.max_workspace_bytes:
+                    reject(413, 'workspace_limit', 'The paired PA dataset would exceed temporary storage. Use fewer samples.')
             if path == '/datasets/synthetic' and method == 'POST':
                 from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest
                 try:

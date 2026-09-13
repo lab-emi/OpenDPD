@@ -8,7 +8,7 @@ import { useArtifactJson } from '@/api/hooks'
 import { message, t } from '@/i18n'
 import { IQPreview } from './IQPreview'
 import { PlotlyChart, type PlotLayout, type PlotTrace , seriesSymbol } from './PlotlyChart'
-import { SpectrumPlot } from './SpectrumPlot'
+import { SpectrumPanels } from './SpectrumPanels'
 import { LoadingState } from './StateBlock'
 
 /** plots-v1 payloads written by the worker (see opendpd/core/plots.py); the page only draws them. */
@@ -19,7 +19,7 @@ export interface SpectrumData {
   nperseg: number
   n_samples: number
   frequency: number[]
-  traces: Array<{ name: string; role: string; psd_db: number[]; source?: string; stage?: string; capture_id?: string }>
+  traces: Array<{ name: string; role: string; psd_db: number[]; source?: string; stage?: string; signal_node?: string; capture_id?: string }>
   bands: { main: [number, number]; adjacent: Array<[number, number]> } | null
   estimator: string
 }
@@ -65,12 +65,12 @@ export function ResultCharts({ runId, result, onProfile }: { runId: string; resu
   const spectrum = useArtifactJson<SpectrumData>(runId, 'plot-spectrum')
   const time = useArtifactJson<TimeData>(runId, 'plot-time')
   const am = useArtifactJson<AmData>(runId, 'plot-amam')
-  const spectrumTraces = useMemo(() => (spectrum.data?.traces ?? []).map((tr) => ({ name: tr.name, psdDb: tr.psd_db })), [spectrum.data])
+  const spectrumTraces = useMemo(() => (spectrum.data?.traces ?? []).map((tr) => ({ ...tr, psdDb: tr.psd_db })), [spectrum.data])
   const series = useMemo(() => (time.data?.traces ?? []).map((tr) => ({ name: tr.name, i: tr.i, q: tr.q })), [time.data])
   const pending = spectrum.isPending || time.isPending || am.isPending
   const nothing = !pending && !spectrum.data && !time.data && !am.data
   return (
-    <Paper key={runId} sx={{ p: 2 }} component="section" aria-label={t('results.charts')}>
+    <Paper key={runId} sx={{ p: { xs: 1, sm: 2 }, minWidth: 0 }} component="section" aria-label={t('results.charts')}>
       <Typography variant="h3" component="h2" gutterBottom>
         {t('results.charts')}
       </Typography>
@@ -82,7 +82,7 @@ export function ResultCharts({ runId, result, onProfile }: { runId: string; resu
       <Grid container spacing={2}>
         {spectrum.data && (
           <Grid size={{ xs: 12 }}>
-            {result ? <SpectrumReview key={runId} results={[result]} referenceRunId={runId} onRestore={figure => onProfile?.(figure.spec.profiles[runId]!)} /> : <SpectrumPlot frequencyHz={spectrum.data.frequency} axis={spectrum.data.axis} traces={spectrumTraces} bands={spectrum.data.bands ?? undefined} />}
+            {result ? <SpectrumReview key={runId} results={[result]} referenceRunId={runId} onRestore={figure => onProfile?.(figure.spec.profiles[runId]!)} /> : <SpectrumPanels frequencyHz={spectrum.data.frequency} axis={spectrum.data.axis} traces={spectrumTraces} bands={spectrum.data.bands ?? undefined} />}
             <Typography variant="caption" color="text.secondary">
               {message(spectrum.data.estimator)}
             </Typography>

@@ -28,7 +28,7 @@ title: Home
 
     ---
 
-    Install Studio, open a built-in dataset, and follow the PA → DPD workflow.
+    Generate a waveform, choose a Virtual PA and make paired data, or start with an existing dataset. Follow the PA → DPD workflow.
 
     [Installation](install.md) · [Studio walkthrough](tutorials/gui-quickstart.md)
 

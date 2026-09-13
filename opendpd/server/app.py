@@ -161,6 +161,8 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
     app.include_router(figure_router, prefix=API_PREFIX)
     from opendpd.server.signal_generator_routes import router as signal_generator_router
     app.include_router(signal_generator_router, prefix=API_PREFIX)
+    from opendpd.server.virtual_pa_routes import router as virtual_pa_router
+    app.include_router(virtual_pa_router, prefix=API_PREFIX)
 
     # -- static frontend with SPA fallback; API paths never fall back --------------
     assets = Path(static_dir) / "assets"

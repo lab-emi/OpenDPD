@@ -8,13 +8,15 @@ import { t, type MessageKey } from '@/i18n'
 import { DownloadLink } from './DownloadLink'
 import { ErrorState } from './StateBlock'
 import { PlotlyChart, seriesDash, seriesSymbol, type PlotTrace } from './PlotlyChart'
+import { SpectrumPanels } from './SpectrumPanels'
+import { hasDPD, nodeTitle, spectrumLegend } from './spectrumNodes'
 import type { PlotViewport } from './plotInteractions'
 
 type Sources = components['schemas']['FigureSources']
 type Preview = components['schemas']['FigurePreview']
 type Panel = FigureSpec['panels'][number]
 type Kind = NonNullable<Panel['kind']>
-type RawTrace = { name: string; role: string; source?: string; psd_db?: number[]; amp_out?: number[]; phase_deg?: number[]; y?: number[]; y_unit?: string; y_label?: string }
+type RawTrace = { name: string; role: string; source?: string; stage?: string; signal_node?: string; psd_db?: number[]; amp_out?: number[]; phase_deg?: number[]; y?: number[]; y_unit?: string; y_label?: string }
 type RawPlot = { axis?: string; frequency?: number[]; amp_in?: number[]; x?: number[]; x_label?: string; x_unit?: string; y_label?: string; y_unit?: string; traces: RawTrace[]; note?: string }
 const kinds: Kind[] = ['spectrum', 'amam', 'ampm', 'power_scan', 'error_distribution']
 const label = (key: string) => t(`publication.${key}` as MessageKey)
@@ -36,7 +38,7 @@ export function PublicationFigureDialog({ initial, onClose }: { initial: FigureS
   const updatePanel = (index: number, patch: Partial<Panel>) => change({ ...spec, panels: spec.panels.map((p, i) => i === index ? { ...p, ...patch } : p) })
   const inspect = useMutation({ mutationFn: () => api.post<Preview>('/figure-preview', spec), onSuccess: value => { setSpec(value.figure.spec); setPreview(value); viewports.current = {} } })
   const save = useMutation({ mutationFn: () => api.post<SavedFigure>('/figures', spec), onSuccess: async value => { setSaved(value); await qc.invalidateQueries({ queryKey: ['figures'] }) } })
-  const restore = useMutation({ mutationFn: (id: string) => api.get<SavedFigure>(`/figures/${id}`), onSuccess: async value => { setSpec(value.spec); setSaved(value); setPreview(await api.post<Preview>('/figure-preview', value.spec)); viewports.current = {} } })
+  const restore = useMutation({ mutationFn: (id: string) => api.get<SavedFigure>(`/figures/${id}`), onSuccess: async value => { const next = await api.post<Preview>('/figure-preview', value.spec); setSpec(next.figure.spec); setSaved(identity(next.figure.spec) === identity(value.spec) ? value : undefined); setPreview(next); viewports.current = {} } })
   const ready = preview && identity(preview.figure.spec) === identity(spec)
   const add = () => {
     let choices = source.data?.sources.filter(s => s.kind === nextKind && s.role === 'primary') ?? []
@@ -70,9 +72,9 @@ export function PublicationFigureDialog({ initial, onClose }: { initial: FigureS
     </Stack>
     <Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>{label('bound')}: {Object.entries(spec.profiles).map(([run, p]) => `${run} / ${p}`).join(' · ')} · {label('reference')}: {spec.reference_run_id} · {spec.mode}</Typography>
     {spec.panels.map((panel, index) => <Paper variant="outlined" key={index} sx={{ p: 1.5 }}><Stack spacing={1}>
-      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography variant="h3">{index + 1}. {label(panel.kind ?? 'spectrum')}</Typography><Button disabled={spec.panels.length === 1} onClick={() => change({ ...spec, panels: spec.panels.filter((_p, i) => i !== index) })}>{label('remove')}</Button></Stack>
+      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography variant="h3">{index + 1}. {panel.signal_node ? `${nodeTitle(panel.signal_node)} · PSD` : label(panel.kind ?? 'spectrum')}</Typography><Button disabled={spec.panels.length === 1} onClick={() => change({ ...spec, panels: spec.panels.filter((_p, i) => i !== index) })}>{label('remove')}</Button></Stack>
       <Box component="details"><Typography component="summary">{t('review.trace')}</Typography><Stack>
-        {source.data?.sources.filter(s => s.kind === panel.kind && (panel.kind !== 'power_scan' || s.trace_name === panel.traces[0]?.trace_name)).map((s, i) => {
+        {source.data?.sources.filter(s => s.kind === panel.kind && (!panel.signal_node || s.signal_node === panel.signal_node) && (panel.kind !== 'power_scan' || s.trace_name === panel.traces[0]?.trace_name)).map((s, i) => {
           const trace = panel.traces.find(tr => tr.run_id === s.run_id && tr.trace_name === s.trace_name)
           return <Stack direction="row" key={`${s.run_id}:${s.trace_name}`} spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
             <FormControlLabel sx={{ flex: 1, minWidth: 230 }} label={`${s.run_id} · ${s.trace_name} · ${s.source}`} control={<Checkbox checked={!!trace && trace.visible !== false} onChange={e => updatePanel(index, { traces: trace ? panel.traces.map(tr => tr === trace ? { ...tr, visible: e.target.checked } : tr) : [...panel.traces, { run_id: s.run_id, trace_name: s.trace_name, visible: true, color: palette[i % palette.length]!, dash: seriesDash(i) }] })} />} />
@@ -112,5 +114,23 @@ function PanelPreview({ index, value, onViewport, onVisibility }: { index: numbe
   const context = value.figure.bindings.find(b => b.run_id === value.figure.spec.reference_run_id)?.review
   const bands = kind === 'spectrum' && panel.show_bands ? context?.bands?.filter(b => b.role !== 'subchannel').map(b => ({ type: 'rect' as const, x0: b.edges_hz[0]! / 1e6, x1: b.edges_hz[1]! / 1e6, y0: 0, y1: 1, yref: 'paper' as const, fillcolor: b.role === 'main' ? '#2563EB11' : '#D9770611', line: { width: 0 } })) : []
   const cursor = panel.cursor_x == null ? [] : [{ type: 'line' as const, x0: panel.cursor_x, x1: panel.cursor_x, y0: 0, y1: 1, yref: 'paper' as const, line: { width: 1, color: '#64748B', dash: 'dot' as const } }]
+  if (kind === 'spectrum') {
+    const firstPlot = value.plots[`${panel.traces[0]!.run_id}/spectrum`] as unknown as RawPlot
+    const main = context?.bands?.find(b => b.role === 'main')
+    return <Box data-testid={`publication-panel-${index}`}><SpectrumPanels
+      frequencyHz={firstPlot.frequency!} axis={firstPlot.axis as 'hz' | 'normalized'}
+      dpd={hasDPD(firstPlot.traces)} height={340} viewKey={`${index}:${kind}`}
+      xRange={panel.x_range as [number, number] | undefined} yRange={panel.y_range as [number, number] | undefined}
+      cursorX={panel.cursor_x ?? undefined} onViewportChange={onViewport} onVisibilityChange={onVisibility}
+      bands={panel.show_bands && main ? { main: main.edges_hz as [number, number], adjacent: (context?.bands ?? []).filter(b => b.role === 'adjacent').map(b => b.edges_hz as [number, number]) } : undefined}
+      traces={panel.traces.map(tr => {
+        const plot = value.plots[`${tr.run_id}/spectrum`] as unknown as RawPlot
+        const raw = plot.traces.find(r => r.name === tr.trace_name)!
+        const binding = value.figure.bindings.find(b => b.run_id === tr.run_id)
+        const synthetic = binding?.review.facts.some(f => f.key === 'dataset_origin' && f.value === 'synthetic')
+        return { ...raw, signal_node: panel.signal_node ?? raw.signal_node, frequencyHz: plot.frequency, psdDb: raw.psd_db!, color: tr.color, dash: tr.dash, visible: tr.visible,
+          legendName: `R${value.figure.bindings.findIndex(b => b.run_id === tr.run_id) + 1} · ${spectrumLegend(raw)}${binding?.review.result.is_mock ? ' · MOCK' : synthetic && !raw.source?.includes('synthetic') ? ' · SYNTHETIC' : ''}` }
+      })} /></Box>
+  }
   return <PlotlyChart title={label(kind)} data-testid={`publication-panel-${index}`} traces={traces} viewKey={`${index}:${kind}`} onViewportChange={onViewport} onVisibilityChange={onVisibility} layout={{ xaxis: { title: { text: xlabel }, ...(panel.x_range ? { range: panel.x_range as [number, number] } : {}) }, yaxis: { title: { text: ylabel }, ...(panel.y_range ? { range: panel.y_range as [number, number] } : {}) }, shapes: [...(bands ?? []), ...cursor], height: 340 }} />
 }

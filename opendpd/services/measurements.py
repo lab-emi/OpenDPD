@@ -455,7 +455,7 @@ def write_measurement_plots(ws: Workspace, run_id: str, resolved: ResolvedExperi
     written = []
     for name, data in (
         ("spectrum", plots.spectrum(all_signals, roles, sample_rate_hz=sig.sample_rate_hz, nperseg=sig.nperseg,
-                                    bandwidth_hz=sig.bandwidth_hz, valid_samples=n)),
+                                    bandwidth_hz=sig.bandwidth_hz, valid_samples=n, input_node="dpd_input")),
         ("time", plots.time_excerpt(all_signals, roles, valid_samples=n)),
         ("amam", plots.am_am_pm(x, outputs, roles, valid_samples=n)),
         ("error_distribution", plots.error_distribution(to_iq(g * signals.x), outputs, roles, valid_samples=n)),

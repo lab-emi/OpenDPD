@@ -232,3 +232,7 @@ The script independently reconstructs predictions, compares primary/baseline
  recorded tolerances. Re-training is a separate experiment. Real RF repeats,
  hardware measurements, independent EVM validation and participant testing
  remain external acceptance items.
+
+## Signal positions in 2.2.4
+
+[PSD panels](signal-chain-spectra.md) separate x at DPD Input, u at DPD Output / PA Input, and y at PA Output. Output targets and all with/without-DPD baselines remain together. Multi-run legends use R1, R2, … with a full run-ID key; trace controls and exports retain full source identifiers. Save view keeps independent ranges per position. Mixed legacy PSD panels are split on preview/export without changing their stored numerical data. Publication figures and standalone replay use the same grouping.

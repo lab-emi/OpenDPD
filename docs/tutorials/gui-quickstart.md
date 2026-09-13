@@ -1,8 +1,8 @@
 # Your first experiment in Studio
 
-Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.3"`.
+Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.4"`.
 
-Get Started now offers **Signal Generator** first, then existing datasets and CSV upload. The [Signal Generator guide](../guides/signal-generator.md) walks through creating and inspecting a waveform and turning it into a synthetic PA dataset. Each PA Model and DPD Model workspace contains Training and Testing tabs; Testing displays the selected split's exact complex I/Q count.
+Get Started now offers **Signal Generator** first, then existing datasets and CSV upload. The [Signal Generator guide](../guides/signal-generator.md) walks through creating and inspecting a waveform and creating a PA Input Dataset, then explicitly simulating a Virtual PA output in the [PA Library](../guides/virtual-pa-library.md) to make paired synthetic data. Each PA Model and DPD Model workspace contains Training and Testing tabs; Testing displays the selected split's exact complex I/Q count.
 
 ```bash
 opendpd gui
@@ -12,11 +12,11 @@ Studio opens locally in your browser, or in a native window if you installed the
 
 ## 1. Open and inspect a dataset
 
-On **Home**, click **Get Started → Try a built-in dataset**. Choose **Add & inspect** beside **DPA_200MHz**, then **Inspect my dataset**.
+On **Home**, click **Get Started → Use an existing dataset** and choose **DPA_200MHz**. Studio opens PA Training with dataset making already complete in the workflow diagram. Use the Datasets sidebar to inspect the paired capture. Alternatively choose **Signal Generator**, generate x, then **Choose Virtual PA → Simulate PA output → Create paired dataset & train PA**.
 
 The dataset page shows input/output I/Q signals, sample rate, bandwidth and signal quality. Use the **Dataset Doctor** tab to inspect findings, then **Configure experiment** to continue. Built-in measured datasets keep their supplied splits; **MyCustomPA** is explicitly labeled synthetic tutorial data.
 
-Use **Get Started → Use my CSV file** to upload your own I/Q data. Studio validates the complete CSV in quarantine before preview. Invalid files are deleted; the hosted app removes all session files within 24 hours. Download your results before they expire. See [import and preprocessing](headless-cli.md#use-your-own-data) for local workflows.
+Use **Get Started → Upload CSV** to upload your own I/Q data. Studio validates the complete CSV in quarantine before preview. Invalid files are deleted; the hosted app removes all session files within 24 hours. Download your results before they expire. See [import and preprocessing](headless-cli.md#use-your-own-data) for local workflows.
 
 ## 2. Train and test a PA model
 
@@ -34,13 +34,15 @@ The chain is **x → u = DPD(x) → y = PA(u)**. The last stage uses the learned
 
 The DPD test/apply step exports **u**, the predistorted PA input, with metadata identifying the signals and checkpoints used. It can score the cascade through the selected surrogate. This is not a measured linearized PA output; follow the [measured DPD guide](measured-dpd.md) for physical captures.
 
+PSD plots are separated into DPD Input (x), DPD Output / PA Input (u), and PA Output (y and its output references/baselines). The initial dB scales match; each chart has its own legend and zoom. See [signal-chain spectra](../guides/signal-chain-spectra.md).
+
 ## 4. Follow progress in the terminal
 
 The **Terminal** bar at the bottom starts collapsed. It highlights with a **Running** status while an experiment is active. Expand it to read the worker's actual output.
 
 Its tabs follow the experiment step when you move from PA to DPD. You can also select an earlier step's terminal or another run without navigating away from the current experiment. The run-detail **Logs** tab provides the saved log and filtering controls.
 
-Quick trial defaults to **10 epochs** and full training to **150 epochs**. Plots update **once per epoch**, reusing validation results. Under **Advanced settings → Plot updates**, you can choose a batch interval. This option and its warning are red: extra previews can severely slow training. The chosen cadence is saved with the run and shown above its plots. See [Visualization](../visualization.md) for live and saved plot behavior.
+Quick trial defaults to **10 epochs** and full training to **150 epochs**. Plots update **once per epoch**. PA previews reuse evaluation output; DPD previews capture x, u and PA(u) in one bounded shadow-model validation pass. Under **Advanced settings → Plot updates**, you can choose a batch interval. This option and its warning are red: extra previews can severely slow training. The chosen cadence is saved with the run and shown above its plots. See [Visualization](../visualization.md) for live and saved plot behavior.
 
 ## 5. Keep and compare the results
 

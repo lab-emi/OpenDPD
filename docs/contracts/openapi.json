@@ -4158,6 +4158,23 @@
             "title": "Show Bands",
             "type": "boolean"
           },
+          "signal_node": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dpd_input",
+                  "pa_input",
+                  "pa_output",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Node"
+          },
           "traces": {
             "items": {
               "$ref": "#/components/schemas/FigureTrace"
@@ -4254,6 +4271,23 @@
             "title": "Run Id",
             "type": "string"
           },
+          "signal_node": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dpd_input",
+                  "pa_input",
+                  "pa_output",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Node"
+          },
           "source": {
             "title": "Source",
             "type": "string"
@@ -4336,7 +4370,7 @@
             "items": {
               "$ref": "#/components/schemas/FigurePanel"
             },
-            "maxItems": 4,
+            "maxItems": 16,
             "minItems": 1,
             "title": "Panels",
             "type": "array"
@@ -4692,6 +4726,12 @@
           "iq_sha256": {
             "pattern": "^[0-9a-f]{64}$",
             "title": "Iq Sha256",
+            "type": "string"
+          },
+          "kind": {
+            "const": "pa_input",
+            "default": "pa_input",
+            "title": "Kind",
             "type": "string"
           },
           "signal_id": {
@@ -7958,6 +7998,311 @@
         "title": "ModelSpec",
         "type": "object"
       },
+      "PAAnalysis": {
+        "additionalProperties": false,
+        "properties": {
+          "am_input": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Am Input",
+            "type": "array"
+          },
+          "am_output": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Am Output",
+            "type": "array"
+          },
+          "am_pm_deg": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Am Pm Deg",
+            "type": "array"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "frequency_mhz": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Frequency Mhz",
+            "type": "array"
+          },
+          "input_envelope": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Input Envelope",
+            "type": "array"
+          },
+          "input_papr_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Papr Db"
+          },
+          "input_psd": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Input Psd",
+            "type": "array"
+          },
+          "input_rms": {
+            "title": "Input Rms",
+            "type": "number"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "output_envelope": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Output Envelope",
+            "type": "array"
+          },
+          "output_papr_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Papr Db"
+          },
+          "output_psd": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Output Psd",
+            "type": "array"
+          },
+          "output_rms": {
+            "title": "Output Rms",
+            "type": "number"
+          },
+          "rms_gain_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rms Gain Db"
+          },
+          "states": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "States",
+            "type": "object"
+          },
+          "time_us": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time Us",
+            "type": "array"
+          }
+        },
+        "required": [
+          "n_samples",
+          "duration_ms",
+          "input_rms",
+          "output_rms",
+          "rms_gain_db",
+          "input_papr_db",
+          "output_papr_db",
+          "time_us",
+          "input_envelope",
+          "output_envelope",
+          "am_input",
+          "am_output",
+          "am_pm_deg",
+          "frequency_mhz",
+          "input_psd",
+          "output_psd",
+          "states",
+          "notes"
+        ],
+        "title": "PAAnalysis",
+        "type": "object"
+      },
+      "PAInputDataset": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidth_hz": {
+            "title": "Bandwidth Hz",
+            "type": "number"
+          },
+          "csv_url": {
+            "title": "Csv Url",
+            "type": "string"
+          },
+          "iq_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Iq Sha256",
+            "type": "string"
+          },
+          "kind": {
+            "const": "pa_input",
+            "default": "pa_input",
+            "title": "Kind",
+            "type": "string"
+          },
+          "metadata_url": {
+            "title": "Metadata Url",
+            "type": "string"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "signal_id": {
+            "pattern": "^sg-[a-f0-9]{64}$",
+            "title": "Signal Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "signal_id",
+          "name",
+          "n_samples",
+          "sample_rate_hz",
+          "bandwidth_hz",
+          "iq_sha256",
+          "csv_url",
+          "metadata_url"
+        ],
+        "title": "PAInputDataset",
+        "type": "object"
+      },
+      "PALocalizedText": {
+        "additionalProperties": false,
+        "properties": {
+          "en": {
+            "title": "En",
+            "type": "string"
+          },
+          "zh": {
+            "title": "Zh",
+            "type": "string"
+          }
+        },
+        "required": [
+          "en",
+          "zh"
+        ],
+        "title": "PALocalizedText",
+        "type": "object"
+      },
+      "PAParameter": {
+        "additionalProperties": false,
+        "properties": {
+          "default": {
+            "title": "Default",
+            "type": "number"
+          },
+          "description": {
+            "$ref": "#/components/schemas/PALocalizedText"
+          },
+          "group": {
+            "default": "gain",
+            "enum": [
+              "gain",
+              "memory",
+              "dynamics",
+              "architecture"
+            ],
+            "title": "Group",
+            "type": "string"
+          },
+          "integer": {
+            "default": false,
+            "title": "Integer",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "$ref": "#/components/schemas/PALocalizedText"
+          },
+          "logarithmic": {
+            "default": false,
+            "title": "Logarithmic",
+            "type": "boolean"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "number"
+          },
+          "minimum": {
+            "title": "Minimum",
+            "type": "number"
+          },
+          "step": {
+            "title": "Step",
+            "type": "number"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "unit": {
+            "default": "",
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "symbol",
+          "label",
+          "description",
+          "default",
+          "minimum",
+          "maximum",
+          "step"
+        ],
+        "title": "PAParameter",
+        "type": "object"
+      },
       "PAReference": {
         "additionalProperties": false,
         "description": "The frozen PA surrogate a DPD task trains or evaluates through.",
@@ -8271,6 +8616,49 @@
           "checkpoint_sha256"
         ],
         "title": "PackageReference",
+        "type": "object"
+      },
+      "PairedDatasetRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "display_name": {
+            "default": "Virtual PA \u00b7 paired input and output",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "guard_samples": {
+            "default": 256,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Guard Samples",
+            "type": "integer"
+          },
+          "train_ratio": {
+            "default": 0.6,
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Train Ratio",
+            "type": "number"
+          },
+          "val_ratio": {
+            "default": 0.2,
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Val Ratio",
+            "type": "number"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "title": "PairedDatasetRequest",
         "type": "object"
       },
       "ParamSpecInfo": {
@@ -9994,7 +10382,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.3",
+            "default": "2.2.4",
             "title": "Version",
             "type": "string"
           }
@@ -10474,6 +10862,23 @@
           "role": {
             "title": "Role",
             "type": "string"
+          },
+          "signal_node": {
+            "anyOf": [
+              {
+                "enum": [
+                  "dpd_input",
+                  "pa_input",
+                  "pa_output",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signal Node"
           }
         },
         "required": [
@@ -11785,6 +12190,174 @@
         "title": "Verification",
         "type": "object"
       },
+      "VirtualPAModel": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "reference",
+              "static",
+              "memory",
+              "dynamics",
+              "architecture"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "$ref": "#/components/schemas/PALocalizedText"
+          },
+          "equations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Equations",
+            "type": "array"
+          },
+          "limitations": {
+            "$ref": "#/components/schemas/PALocalizedText"
+          },
+          "model_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Model Id",
+            "type": "string"
+          },
+          "name": {
+            "$ref": "#/components/schemas/PALocalizedText"
+          },
+          "parameters": {
+            "items": {
+              "$ref": "#/components/schemas/PAParameter"
+            },
+            "title": "Parameters",
+            "type": "array"
+          },
+          "references": {
+            "items": {
+              "type": "string"
+            },
+            "title": "References",
+            "type": "array"
+          },
+          "technology": {
+            "title": "Technology",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_id",
+          "category",
+          "name",
+          "technology",
+          "description",
+          "limitations",
+          "parameters",
+          "equations",
+          "references"
+        ],
+        "title": "VirtualPAModel",
+        "type": "object"
+      },
+      "VirtualPARequest": {
+        "additionalProperties": false,
+        "properties": {
+          "input_signal_id": {
+            "pattern": "^sg-[a-f0-9]{64}$",
+            "title": "Input Signal Id",
+            "type": "string"
+          },
+          "model_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Model Id",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "maxProperties": 32,
+            "title": "Parameters",
+            "type": "object"
+          }
+        },
+        "required": [
+          "input_signal_id",
+          "model_id"
+        ],
+        "title": "VirtualPARequest",
+        "type": "object"
+      },
+      "VirtualPASimulation": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/PAAnalysis"
+          },
+          "config": {
+            "$ref": "#/components/schemas/VirtualPARequest"
+          },
+          "input_iq_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Input Iq Sha256",
+            "type": "string"
+          },
+          "kind": {
+            "const": "simulated_pa_output",
+            "default": "simulated_pa_output",
+            "title": "Kind",
+            "type": "string"
+          },
+          "metadata_url": {
+            "title": "Metadata Url",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/VirtualPAModel"
+          },
+          "output_csv_url": {
+            "title": "Output Csv Url",
+            "type": "string"
+          },
+          "output_iq_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Output Iq Sha256",
+            "type": "string"
+          },
+          "paired_csv_url": {
+            "title": "Paired Csv Url",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "simulation_id": {
+            "pattern": "^vpa-[a-f0-9]{64}$",
+            "title": "Simulation Id",
+            "type": "string"
+          },
+          "simulator_source_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Simulator Source Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "simulation_id",
+          "config",
+          "model",
+          "input_iq_sha256",
+          "output_iq_sha256",
+          "simulator_source_sha256",
+          "sample_rate_hz",
+          "analysis",
+          "output_csv_url",
+          "paired_csv_url",
+          "metadata_url"
+        ],
+        "title": "VirtualPASimulation",
+        "type": "object"
+      },
       "WaveformBinding": {
         "additionalProperties": false,
         "description": "A dataset's link to the waveform its input column was captured from.\n\n``input_offset_samples`` is the position of the dataset's first raw input sample inside one period of the\nwaveform (instruments play a waveform in a loop); ``correlation`` is the normalised cross-correlation peak\nthat established it. The binding never replaces the captured data: it only says which symbols were sent.",
@@ -11992,7 +12565,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.3"
+    "version": "2.2.4"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -14160,6 +14733,215 @@
         ]
       }
     },
+    "/api/v1/pa-library/models": {
+      "get": {
+        "operationId": "models_api_v1_pa_library_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VirtualPAModel"
+                  },
+                  "title": "Response Models Api V1 Pa Library Models Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Models",
+        "tags": [
+          "virtual PA library"
+        ]
+      }
+    },
+    "/api/v1/pa-library/simulations": {
+      "post": {
+        "operationId": "simulate_api_v1_pa_library_simulations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VirtualPARequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VirtualPASimulation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Simulate",
+        "tags": [
+          "virtual PA library"
+        ]
+      }
+    },
+    "/api/v1/pa-library/simulations/{simulation_id}": {
+      "get": {
+        "operationId": "simulation_api_v1_pa_library_simulations__simulation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "simulation_id",
+            "required": true,
+            "schema": {
+              "title": "Simulation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VirtualPASimulation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Simulation",
+        "tags": [
+          "virtual PA library"
+        ]
+      }
+    },
+    "/api/v1/pa-library/simulations/{simulation_id}/dataset": {
+      "post": {
+        "operationId": "dataset_api_v1_pa_library_simulations__simulation_id__dataset_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "simulation_id",
+            "required": true,
+            "schema": {
+              "title": "Simulation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairedDatasetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratorDatasetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset",
+        "tags": [
+          "virtual PA library"
+        ]
+      }
+    },
+    "/api/v1/pa-library/simulations/{simulation_id}/{filename}": {
+      "get": {
+        "operationId": "download_api_v1_pa_library_simulations__simulation_id___filename__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "simulation_id",
+            "required": true,
+            "schema": {
+              "title": "Simulation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "virtual PA library"
+        ]
+      }
+    },
     "/api/v1/recipes": {
       "get": {
         "operationId": "recipes_api_v1_recipes_get",
@@ -15577,6 +16359,29 @@
       }
     },
     "/api/v1/signal-generator/signals": {
+      "get": {
+        "operationId": "inputs_api_v1_signal_generator_signals_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PAInputDataset"
+                  },
+                  "title": "Response Inputs Api V1 Signal Generator Signals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Inputs",
+        "tags": [
+          "signal generator"
+        ]
+      },
       "post": {
         "operationId": "generate_api_v1_signal_generator_signals_post",
         "requestBody": {
@@ -15661,6 +16466,7 @@
     },
     "/api/v1/signal-generator/signals/{signal_id}/dataset": {
       "post": {
+        "deprecated": true,
         "operationId": "dataset_api_v1_signal_generator_signals__signal_id__dataset_post",
         "parameters": [
           {
@@ -15746,6 +16552,86 @@
           }
         },
         "summary": "Download",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/signals/{signal_id}/input.csv": {
+      "get": {
+        "operationId": "input_csv_api_v1_signal_generator_signals__signal_id__input_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signal_id",
+            "required": true,
+            "schema": {
+              "title": "Signal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Input Csv",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/signals/{signal_id}/metadata.json": {
+      "get": {
+        "operationId": "metadata_api_v1_signal_generator_signals__signal_id__metadata_json_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signal_id",
+            "required": true,
+            "schema": {
+              "title": "Signal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Metadata",
         "tags": [
           "signal generator"
         ]

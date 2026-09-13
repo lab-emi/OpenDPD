@@ -258,3 +258,7 @@ if __name__ == '__main__':
 ```
 
 6. Generate diagnostic plots to verify: `python datasets/YourDatasetName/plot_dataset.py`
+
+## Studio simulation inputs and paired datasets
+
+In Studio 2.2.4 the Signal Generator produces a **PA Input Dataset** with separate I/Q CSV and metadata JSON downloads. A training dataset requires matching PA input and output. The [Virtual PA Library](https://lab-emi.github.io/OpenDPD/guides/virtual-pa-library/) explicitly simulates that output from a chosen mathematical model, retaining the input/output hashes, formula and parameters and marking the resulting pair synthetic. Existing paired captures skip this construction step. Optional dataset contributions still require a PR and human merge review.

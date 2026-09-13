@@ -21,6 +21,7 @@ test('English and CUDA defaults in a non-English mobile browser', async ({ page 
 test('two-finger zoom follows its midpoint; touch controls and full-screen fit a phone', async ({ page, context, browserName }) => {
   await installFakeApi(page)
   await page.goto('/gallery')
+  await expect(page.getByTestId('perf-probe')).toBeVisible()
   const chart = page.getByTestId('spectrum-plot').first()
   const plot = chart.locator('.js-plotly-plot')
   const area = plot.locator('.nsewdrag')
@@ -31,6 +32,12 @@ test('two-finger zoom follows its midpoint; touch controls and full-screen fit a
     return { x: p['_fullLayout'].xaxis.range, y: p['_fullLayout'].yaxis.range }
   })
   const before = await range(), rect = (await area.boundingBox())!
+  const other = page.locator('[data-signal-node="pa_output"] .js-plotly-plot').first()
+  const otherRange = () => other.evaluate((element) => {
+    const p = element as HTMLElement & { _fullLayout: { xaxis: { range: number[] }; yaxis: { range: number[] } } }
+    return { x: p['_fullLayout'].xaxis.range, y: p['_fullLayout'].yaxis.range }
+  })
+  const otherBefore = await otherRange()
   const cx = rect.x + rect.width / 2, cy = rect.y + rect.height / 2
   const cdp = browserName === 'chromium' ? await context.newCDPSession(page) : null
   const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', points: number[][]) => {
@@ -57,11 +64,26 @@ test('two-finger zoom follows its midpoint; touch controls and full-screen fit a
   await expect(reset).toBeVisible()
   expect((await reset.boundingBox())!.width).toBeGreaterThanOrEqual(44)
   await reset.click()
-  await expect.poll(range).toEqual(before)
+  // Initial PSD scales are shared across positions. Reset fits this position's
+  // data, so its y range can differ from the initial comparison scale.
+  await expect.poll(() => plot.evaluate((element) => {
+    const p = element as HTMLElement & { _fullLayout: { xaxis: { autorange: boolean }; yaxis: { autorange: boolean } } }
+    return [p['_fullLayout'].xaxis.autorange, p['_fullLayout'].yaxis.autorange]
+  })).toEqual([true, true])
+  const fitted = await range()
+  expect(fitted.x).toEqual(before.x)
+  const extent = await plot.evaluate((element) => {
+    const p = element as HTMLElement & { _fullData: Array<{ y: ArrayLike<number> }> }
+    const values = p['_fullData'].flatMap(trace => Array.from(trace.y)).filter(Number.isFinite)
+    return [Math.min(...values), Math.max(...values)]
+  })
+  expect(fitted.y[0]).toBeLessThanOrEqual(extent[0]!)
+  expect(fitted.y[1]).toBeGreaterThanOrEqual(extent[1]!)
+  expect(await otherRange()).toEqual(otherBefore)
   await controls.getByRole('button', { name: 'Zoom in', exact: true }).click()
   await expect.poll(async () => { const r = await range(); return (r.x[1]! - r.x[0]!) / (before.x[1]! - before.x[0]!) }).toBeCloseTo(1 / 1.2, 3)
   await chart.getByRole('button', { name: /Enlarge chart/ }).click()
-  const dialog = page.getByRole('dialog', { name: 'Power spectral density' })
+  const dialog = page.getByRole('dialog', { name: 'DPD Input · PSD' })
   await expect(dialog).toBeVisible()
   expect((await dialog.boundingBox())!.width).toBe(page.viewportSize()!.width)
   await expect(dialog.getByTestId('touch-plot-controls').getByRole('button', { name: 'Reset axes', exact: true })).toBeVisible()

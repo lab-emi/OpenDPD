@@ -63,3 +63,7 @@ opendpd.plot_dpd(dataset_name="DPA_200MHz")
 ```
 
 See [training](training.md) for the stage dependencies and [API reference](api.md) for all parameters.
+
+## Studio 2.2.4 signal-chain plots
+
+Studio separates PSD charts at DPD Input (x), DPD Output / PA Input (u), and PA Output (y). PA-only datasets and Virtual PA simulation show input and output charts. Output references and no-DPD baselines share only the output chart. These layouts also apply to saved publication figures and generated reports. See [the illustrated PSD guide](guides/signal-chain-spectra.md). The numerical Welch arrays and all metric definitions remain unchanged.
