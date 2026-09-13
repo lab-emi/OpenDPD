@@ -197,10 +197,10 @@ test('a profile pending cross-validation is computed by the service but never of
   expect(ofdmProfile.data.validation).toBe('pending_cross_validation')
   await continueStep()
   await userEvent.click(screen.getByRole('button', { name: 'Advanced settings' }))
-  await userEvent.click(screen.getByLabelText('Metric profile'))
+  await userEvent.click(screen.getByLabelText('Metric calculation'))
   const options = screen.getAllByRole('option').map((o) => o.textContent)
-  expect(options.some((t) => t?.startsWith('legacy-opendpd-v1'))).toBe(true)
-  expect(options.some((t) => t?.startsWith('general-spectral-v1'))).toBe(true)
+  expect(options.some((t) => t?.startsWith('OpenDPD legacy'))).toBe(true)
+  expect(options.some((t) => t?.startsWith('General baseband'))).toBe(true)
   expect(options.some((t) => t?.startsWith('ofdm-lte20-evm-v1'))).toBe(false)
 })
 

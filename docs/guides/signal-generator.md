@@ -135,8 +135,16 @@ custom two-channel OFDMA with explicit pilots and noise, ZIP export, dataset cre
 and real CPU PA/DPD training and testing. These checks validate the software workflow;
 they do not constitute independent standards conformance or physical RF validation.
 
-## Studio 2.2.4 preview
+## Studio 2.2.5 preview
 
 ![PA input waveform and its independent PSD](../../pics/studio-signal-generator.png)
 
 The PSD here is labelled **PA Input**. It contains only the generated x signal; PA output appears after explicit simulation in PA Library. See [signal-chain spectra](signal-chain-spectra.md).
+
+## Explicit generation and shared channels (2.2.5)
+
+Opening the generator no longer creates a saved default waveform. Choose a preset and click **Generate & preview**. Generated sources remain PA Input Datasets until explicitly paired with an output.
+
+**Use the same settings for all channels** is checked by default for equal allocations. One set of subcarrier-count, modulation and power fields then controls every channel; a newly added channel inherits it. Uncheck to edit those parameters independently. Importing unequal channel settings keeps them independent. Re-enabling sharing applies channel 1's settings to every channel. The number of channels remains visible. FFT timing, cyclic prefix and the global pilot-bin allocation share the OFDM grid.
+
+Configuration JSON records the sharing choice together with every channel's resolved settings. Generated CSV/metadata downloads and the next-step PA Library button are above advanced parameters.

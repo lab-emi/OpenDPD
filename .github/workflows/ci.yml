@@ -88,6 +88,42 @@ jobs:
       - name: API contract is committed (docs/contracts/openapi.json)
         run: python scripts/export_openapi.py --check
 
+  desktop-install:
+    name: Default install (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build the bundled Studio page
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+      - name: Install defaults using automatic PyTorch backend selection
+        run: |
+          uv venv --python 3.12
+          uv pip install --python .venv -e ".[dev]" --torch-backend=auto
+      - name: Check default dependencies and available compute
+        run: uv run --no-project --python .venv python scripts/check_install.py
+      - name: Real browser fallback remains reachable
+        run: uv run --no-project --python .venv python -m pytest tests/integration/test_launcher_browser_fallback.py -q
+
   frontend:
     name: Frontend (types, lint, unit, build, browser journeys)
     runs-on: ubuntu-latest

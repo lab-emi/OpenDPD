@@ -1,3 +1,6 @@
+import { ILCResults } from '@/components/ILCResults'
+import { MetricFormula } from '@/components/MetricFormula'
+import { profileLabel } from '@/api/profiles'
 import { RFFactsPanel } from '@/components/RFFactsPanel'
 import { MeasurementSessions } from '@/components/MeasurementSessions'
 import { DownloadLink } from '@/components/DownloadLink'
@@ -98,6 +101,7 @@ function ExportPanel({ runId }: { runId: string }) {
 }
 
 const BASELINE: Record<BaselineScore['kind'], MessageKey> = {
+  ilc_ideal: 'ilc.ideal',
   surrogate_without_dpd: 'results.detail.baselines.surrogate_without_dpd',
   measured_without_dpd: 'results.detail.baselines.measured_without_dpd',
 }
@@ -451,22 +455,14 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
       <Stack sx={{ alignItems: 'center', flexWrap: 'wrap' }} direction="row" spacing={2} useFlexGap>
         <Typography variant="h1">{result.result_id}</Typography>
         <EvidenceBadge evidence={result.evidence_type} mock={result.is_mock} />
-        <Chip size="small" variant="outlined" label={`${result.metric_profile_id} v${result.metric_profile_version}${profile?.frozen ? ` · ${t('results.detail.frozen')}` : ''}`} data-profile={result.metric_profile_id} />
+        <Chip size="small" variant="outlined" label={profileLabel(result.metric_profile_id)} data-profile={result.metric_profile_id} />
         <Typography variant="body2" color="text.secondary">
           {t('results.columns.run')}:{' '}
           <Link component={RouterLink} to={`/runs/${encodeURIComponent(result.run_id ?? '')}`}>
             {result.run_id}
           </Link>
         </Typography>
-        {stored.length > 1 && onProfile && (
-          <TextField select size="small" label={t('results.detail.profile')} value={result.metric_profile_id} onChange={(e) => onProfile(e.target.value)} helperText={t('results.detail.profile.help')} sx={{ minWidth: 220, ml: 'auto' }}>
-            {stored.map((id) => (
-              <MenuItem key={id} value={id}>
-                {id}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
+
       </Stack>
       <Typography variant="body2" color="text.secondary">
         {t('results.detail.protocol')}:{' '}
@@ -495,6 +491,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
       {!WEB_MODE && result.run_id && <Button variant="outlined" component={RouterLink} to={`/hardware?runs=${result.run_id}&profile=${result.metric_profile_id}`}>{t('hardware.title')}</Button>}
       <MeasurementPanel result={result} />
       {result.measurement && !WEB_MODE && <MeasurementSessions result={result} />}
+      {result.ilc && <ILCResults evidence={result.ilc} />}
       <Baselines result={result} />
       {result.surrogate_coverage && (
         <Alert severity={result.surrogate_coverage.fraction_above_fitted_peak > 0 ? 'warning' : 'info'} data-testid="surrogate-coverage">
@@ -520,6 +517,16 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
             <Typography>{t('results.detail.definitions')}</Typography>
           </AccordionSummary>
           <AccordionDetails>
+            <Typography variant="body2" sx={{ mb: 2 }}>{t('profile.help')}</Typography>
+        {stored.length > 1 && onProfile && (
+          <TextField select size="small" label={t('results.detail.profile')} value={result.metric_profile_id} onChange={(e) => onProfile(e.target.value)} helperText={t('results.detail.profile.help')} sx={{ minWidth: 220, ml: 'auto' }}>
+            {stored.map((id) => (
+              <MenuItem key={id} value={id}>
+                {profileLabel(id)}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {t('results.detail.definitions.help', { profile: profile.profile_id, version: profile.version })} {message(profile.description)}
             </Typography>
@@ -540,7 +547,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
                         <code>{m.name}</code> {message(m.display_name)}
                       </TableCell>
                       <TableCell>
-                        {m.formula}
+                        <MetricFormula definition={m} />
                         {m.notes ? (
                           <Typography variant="caption" color="text.secondary" component="div">
                             {message(m.notes)}

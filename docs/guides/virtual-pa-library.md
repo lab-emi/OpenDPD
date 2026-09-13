@@ -50,7 +50,7 @@ calibrated transistor-physics simulation.
 
 The complete equations, parameter bounds, defaults, explanations and symbols
 come from `opendpd/core/virtual_pa.py` and are included in each frozen simulation.
-The UI renders parameter tokens as controls; it does not evaluate arbitrary code.
+Studio 2.2.5 renders the catalog equations as LaTeX using bundled KaTeX and fonts. Parameter coefficients remain keyboard/click controls with dynamic highlighting. Rendering allows only the fixed parameter classes, with external links/resources and arbitrary styles disabled; no formula code is evaluated.
 For example, the Rapp helper is
 
 ```
@@ -128,8 +128,10 @@ feature gating and public-session isolation. Frontend tests cover linked control
 invalidated previews, explicit pairing and existing-dataset bypass. The browser
 script `scripts/verify_signal_generator.mjs` exercises real downloads and workers.
 
-## Studio 2.2.4 preview
+## Studio 2.2.5 preview
 
 ![Virtual PA formula controls](../../pics/studio-pa-library.png)
 
 The output preview draws **PA Input** and **PA Output** PSDs separately on matching initial dB scales. Independent controls enlarge or zoom each location. The paired dataset remains synthetic when used to learn a PA surrogate or DPD model. See [signal-chain spectra](signal-chain-spectra.md).
+
+The input selector and **Simulate PA output** control sit above the mathematical parameters. After simulation, dataset creation appears above the output charts. **Remove PA Input Dataset** hides only the selected input from this workspace's picker; Undo restores it. Existing simulation sources and paired datasets remain intact. For linearization experiments after forward-model training, continue to [ILC and ILA DPD](ilc-dpd.md).

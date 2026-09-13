@@ -32,6 +32,7 @@ export function spectrumGroups<T extends SignalIdentity>(traces: T[], dpd = hasD
  * the review controls and exported data. Synthetic evidence remains explicit. */
 export function spectrumLegend(trace: SignalIdentity): string {
   const name = trace.name.toLowerCase(), synthetic = trace.source?.includes('synthetic')
+  if (name.startsWith('ilc ideal')) return t('ilc.ideal')
   if (trace.role === 'input') return t('spectrum.trace.input')
   if (trace.role === 'predistorted') return t('spectrum.trace.predistorted')
   if (name.includes('linear target')) return t('spectrum.trace.target')

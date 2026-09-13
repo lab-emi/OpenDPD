@@ -38,7 +38,7 @@ def list_inputs(ws):
     root = ws.root / "signals"
     paths = sorted(root.glob("sg-*/manifest.json"), key=lambda p: p.stat().st_mtime, reverse=True)
     return [input_summary(read_signal(ws, p.parent.name)) for p in paths[:100]
-            if not p.is_symlink() and not p.parent.is_symlink()]
+            if not p.is_symlink() and not p.parent.is_symlink() and not (p.parent / ".removed").exists()]
 
 
 def export_input(ws, identifier, kind):
@@ -97,6 +97,7 @@ def generate(ws: Workspace, config: GeneratorConfig) -> GeneratedSignal:
     with _LOCK:
         target = directory(ws, identifier)
         if (target / "manifest.json").is_file():
+            (target / ".removed").unlink(missing_ok=True)
             return read_signal(ws, identifier)
         try:
             iq, analysis = synthesize(config)
@@ -206,3 +207,17 @@ def sample_counts(ws, dataset_id, version):
     return DatasetSampleCounts(dataset_id=dataset_id, version=version, total_samples=total,
         counts={name: end-start for name, (start, end) in bounds.items()},
         sample_rate_hz=manifest.signal.sample_rate_hz, guard_samples=split.guard_samples)
+
+
+def archive_input(ws, identifier, *, restore=False):
+    """Hide an input from the picker; retain bytes so simulations and Undo remain valid."""
+    with _LOCK:
+        result = read_signal(ws, identifier)
+        marker = directory(ws, identifier) / '.removed'
+        if marker.is_symlink():
+            raise WorkspaceError('Invalid PA input removal marker.')
+        if restore:
+            marker.unlink(missing_ok=True)
+            return input_summary(result)
+        marker.touch()
+        return {'signal_id': identifier, 'removed': True}

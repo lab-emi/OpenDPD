@@ -1,3 +1,5 @@
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import Checkbox from '@mui/material/Checkbox'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import DownloadIcon from '@mui/icons-material/Download'
@@ -65,13 +67,9 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const [error, setError] = useState<unknown>(null)
   const [downloading, setDownloading] = useState(false)
   const [pilotText, setPilotText] = useState('')
-  const initialized = useRef(!!saved)
-  const initial = useRef(config)
-  useEffect(() => {
-    if (!initialized.current) { initialized.current = true; generate.mutate(initial.current) }
-  }, [generate]) // The ref limits this to one private preview; edits require Generate.
   const preset = presets.find(p => p.preset_id === config.preset_id)
   const family = preset?.family ?? 'custom'
+  const shared = config.shared_channel_settings ?? [config.channel_subcarriers, config.channel_modulations, config.channel_power_db].every(values => new Set(values).size === 1)
   const ofdm = config.waveform === 'ofdm'
   const result = generate.data ?? saved
   const stale = !!result && JSON.stringify(result.config) !== JSON.stringify(config)
@@ -114,6 +112,14 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
     <Typography variant="body2" color="text.secondary">{t(family === 'wifi8' ? 'generator.wifi8Scope' : 'generator.scopeHelp')}</Typography>
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '350px minmax(0, 1fr)' }, alignItems: 'start', gap: 2.5 }}>
       <Stack spacing={1.5} component="fieldset" disabled={generate.isPending} sx={{ m: 0, p: 0, border: 0, minWidth: 0 }}>
+        {result && <Paper sx={{ p: 2 }}><Stack spacing={1.5}><Typography variant="h3">{t('generator.next')}</Typography>
+          <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
+          <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(result.signal_id)}>{t('paInput.next')}</Button>
+          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.csv')}</Button>
+          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/metadata.json').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.metadata')}</Button>
+          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile(result.download_url).catch(setError).finally(() => setDownloading(false)) }}>{t('generator.exportIq')}</Button>
+          <Button component={RouterLink} to="/datasets?guide=start">{t('generator.useMeasured')}</Button>
+        </Stack></Paper>}
         <Paper sx={{ p: 2.25 }}><Stack spacing={2.25}>
           <Typography variant="h2">{t('generator.setup')}</Typography>
           <TextField select fullWidth label={t('generator.preset')} value={preset?.preset_id ?? ''} onChange={e => { const entry = presets.find(p => p.preset_id === e.target.value); if (entry) select(entry) }}>
@@ -145,13 +151,15 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
               <FormControlLabel label={t('generator.dcNull')} control={<Switch checked={config.dc_null} onChange={(_, value) => change('dc_null', value)} />} />
               <Typography variant="h3">{t('generator.channels')} · {config.channel_subcarriers.length}</Typography>
               <Typography variant="caption" color="text.secondary">{t('generator.channelsHelp')}</Typography>
-              {config.channel_subcarriers.map((carrierCount, index) => <Paper variant="outlined" key={index} sx={{ p: 1.5 }}><Stack spacing={1.75}>
-                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography variant="subtitle2">{t('generator.channel')} {index + 1}</Typography><IconButton size="small" disabled={config.channel_subcarriers.length === 1} aria-label={`${t('generator.removeChannel')} ${index + 1}`} onClick={() => setConfig(old => ({ ...old, channel_subcarriers: old.channel_subcarriers.filter((_, i) => i !== index), channel_modulations: old.channel_modulations.filter((_, i) => i !== index), channel_power_db: old.channel_power_db.filter((_, i) => i !== index) }))}><DeleteOutlineIcon fontSize="small" /></IconButton></Stack>
-                <NumberField label="generator.subcarriers" value={carrierCount} onChange={value => change('channel_subcarriers', config.channel_subcarriers.map((v, i) => i === index ? value : v))} />
-                <TextField select label={t('generator.modulation')} value={config.channel_modulations[index]} onChange={e => change('channel_modulations', config.channel_modulations.map((v, i) => i === index ? Number(e.target.value) : v))}>{ORDERS.map(m => <MenuItem key={m} value={m}>{modulation(m)}</MenuItem>)}</TextField>
-                <NumberField label="generator.channelPower" unit="dB" value={config.channel_power_db[index]!} onChange={value => change('channel_power_db', config.channel_power_db.map((v, i) => i === index ? value : v))} />
+              <FormControlLabel label={t('generator.sharedChannels')} control={<Checkbox checked={shared} onChange={(_, checked) => setConfig(old => ({ ...old, shared_channel_settings: checked,
+                ...(checked ? { channel_subcarriers: old.channel_subcarriers.map(() => old.channel_subcarriers[0]!), channel_modulations: old.channel_modulations.map(() => old.channel_modulations[0]!), channel_power_db: old.channel_power_db.map(() => old.channel_power_db[0]!) } : {}) }))} />} />
+              {(shared ? config.channel_subcarriers.slice(0, 1) : config.channel_subcarriers).map((carrierCount, index) => <Paper variant="outlined" key={index} sx={{ p: 1.5 }}><Stack spacing={1.75}>
+                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}><Typography variant="subtitle2">{shared ? t('generator.allChannels') : `${t('generator.channel')} ${index + 1}`}</Typography><IconButton size="small" disabled={config.channel_subcarriers.length === 1} aria-label={`${t('generator.removeChannel')} ${index + 1}`} onClick={() => setConfig(old => ({ ...old, channel_subcarriers: old.channel_subcarriers.filter((_, i) => i !== (shared ? old.channel_subcarriers.length - 1 : index)), channel_modulations: old.channel_modulations.filter((_, i) => i !== (shared ? old.channel_modulations.length - 1 : index)), channel_power_db: old.channel_power_db.filter((_, i) => i !== (shared ? old.channel_power_db.length - 1 : index)) }))}><DeleteOutlineIcon fontSize="small" /></IconButton></Stack>
+                <NumberField label="generator.subcarriers" value={carrierCount} onChange={value => change('channel_subcarriers', config.channel_subcarriers.map((v, i) => shared || i === index ? value : v))} />
+                <TextField select label={t('generator.modulation')} value={config.channel_modulations[index]} onChange={e => change('channel_modulations', config.channel_modulations.map((v, i) => shared || i === index ? Number(e.target.value) : v))}>{ORDERS.map(m => <MenuItem key={m} value={m}>{modulation(m)}</MenuItem>)}</TextField>
+                <NumberField label="generator.channelPower" unit="dB" value={config.channel_power_db[index]!} onChange={value => change('channel_power_db', config.channel_power_db.map((v, i) => shared || i === index ? value : v))} />
               </Stack></Paper>)}
-              <Button startIcon={<AddIcon />} variant="outlined" disabled={config.channel_subcarriers.length >= 16} onClick={() => setConfig(old => ({ ...old, channel_subcarriers: [...old.channel_subcarriers, 26], channel_modulations: [...old.channel_modulations, 64], channel_power_db: [...old.channel_power_db, 0] }))}>{t('generator.addChannel')}</Button>
+              <Button startIcon={<AddIcon />} variant="outlined" disabled={config.channel_subcarriers.length >= 16} onClick={() => setConfig(old => ({ ...old, shared_channel_settings: shared, channel_subcarriers: [...old.channel_subcarriers, shared ? old.channel_subcarriers[0]! : 26], channel_modulations: [...old.channel_modulations, shared ? old.channel_modulations[0]! : 64], channel_power_db: [...old.channel_power_db, shared ? old.channel_power_db[0]! : 0] }))}>{t('generator.addChannel')}</Button>
               {numeric('channel_gap_bins', 'generator.channelGap')}
               <TextField select label={t('generator.pilotMode')} value={config.pilot_mode} onChange={e => change('pilot_mode', e.target.value as GeneratorConfig['pilot_mode'])}>{(['comb', 'explicit', 'none'] as const).map(mode => <MenuItem key={mode} value={mode}>{t(`generator.pilot.${mode}`)}</MenuItem>)}</TextField>
               {config.pilot_mode === 'comb' && numeric('pilot_spacing', 'generator.pilotSpacing')}
@@ -175,14 +183,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
             <Button variant="contained" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validNumbers || count < 256 || count > 1_000_000} onClick={() => generate.mutate(config)}>{t('generator.applyGenerate')}</Button>
           </Stack></AccordionDetails>
         </Accordion>
-        {result && <Paper sx={{ p: 2 }}><Stack spacing={1.5}><Typography variant="h3">{t('generator.next')}</Typography>
-          <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
-          <Button variant="contained" disabled={stale} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(result.signal_id)}>{t('paInput.next')}</Button>
-          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.csv')}</Button>
-          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/metadata.json').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.metadata')}</Button>
-          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile(result.download_url).catch(setError).finally(() => setDownloading(false)) }}>{t('generator.exportIq')}</Button>
-          <Button component={RouterLink} to="/datasets?guide=start">{t('generator.useMeasured')}</Button>
-        </Stack></Paper>}
+
         {(generate.isError || !!error) && <ErrorState error={error || generate.error} />}
       </Stack>
       <Box sx={{ minWidth: 0 }}>{result ? <SignalGeneratorPlots result={result} stale={stale} /> : <Paper sx={{ p: 5, minHeight: 450, display: 'grid', placeContent: 'center', textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 60, color: 'primary.main', mx: 'auto', mb: 2 }} /><Typography variant="h2">{t(generate.isPending ? 'generator.generating' : 'generator.generate')}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{t(generate.isError ? 'generator.checkParameters' : 'generator.firstPreview')}</Typography></Paper>}</Box>

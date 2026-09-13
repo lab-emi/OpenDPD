@@ -39,7 +39,7 @@ def test_should_close_allows_the_close_when_the_dialog_fails(capsys):
 def test_availability_names_the_extra_when_pywebview_is_missing(monkeypatch):
     monkeypatch.setattr(window, "pywebview_version", lambda: None)
     a = window.availability()
-    assert not a.ok and 'pip install "opendpd[desktop]"' in a.reason
+    assert not a.ok and 'uv pip install --reinstall opendpd' in a.reason
 
 
 def test_availability_needs_a_display_on_linux(monkeypatch):

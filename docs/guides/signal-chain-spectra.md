@@ -59,3 +59,5 @@ Band shading follows the selected result's metric profile. Legacy and general
 spectral ACLR/ACPR retain their distinct definitions. Zooming does not recalculate
 metrics. See [research review](research-review.md) for protocol compatibility,
 saved provenance and frequency-cursor interpretation.
+
+ILC runs add a waveform-specific Ideal trace to the PA Input and PA Output panels. The legend preserves that identity alongside the fitted DPD. Ideal feedback uses the current test waveform; see [ILC and ILA](ilc-dpd.md) before comparing it with a transferable model.

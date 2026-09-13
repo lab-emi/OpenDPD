@@ -11,6 +11,9 @@
       "equations": [
         "y[n] = {{gain}}\u00b7x[n]\u00b7exp(j\u00b7{{phase_deg}}\u00b7\u03c0/180)"
       ],
+      "equations_latex": [
+        "y[n]={{gain}}x[n]e^{j{{phase_deg}}\\pi/180}"
+      ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
         "zh": "\u5f52\u4e00\u5316\u5e45\u5ea6\u7684\u590d\u57fa\u5e26\u793a\u610f\u6a21\u578b\u3002\u9ed8\u8ba4\u53c2\u6570\u672a\u4ece\u5177\u4f53\u5668\u4ef6\u63d0\u53d6\uff0c\u4e0d\u4ee3\u8868\u6821\u51c6\u5c04\u9891\u529f\u7387\u3001\u6548\u7387\u6216\u6676\u4f53\u7ba1\u7ea7\u9884\u6d4b\u3002"
@@ -39,6 +42,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -59,6 +63,7 @@
           "minimum": -180.0,
           "step": 1.0,
           "symbol": "\u03b8",
+          "symbol_latex": "\\theta",
           "unit": "\u00b0"
         }
       ],
@@ -74,6 +79,10 @@
       "equations": [
         "R(x) = {{gain}}\u00b7x / [1 + ({{gain}}\u00b7|x|/{{saturation}})^(2\u00b7{{smoothness}})]^(1/(2\u00b7{{smoothness}}))",
         "y[n] = R(x[n])"
+      ],
+      "equations_latex": [
+        "R(x)=\\frac{{{gain}}x}{[1+({{gain}}|x|/{{saturation}})^{2{{smoothness}}}]^{1/(2{{smoothness}})}}",
+        "y[n]=R(x[n])"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
@@ -103,6 +112,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -123,6 +133,7 @@
           "minimum": 0.05,
           "step": 0.01,
           "symbol": "s",
+          "symbol_latex": "s",
           "unit": "normalized"
         },
         {
@@ -143,6 +154,7 @@
           "minimum": 0.5,
           "step": 0.1,
           "symbol": "p",
+          "symbol_latex": "p",
           "unit": ""
         }
       ],
@@ -161,6 +173,11 @@
         "R(x) = {{gain}}\u00b7x / [1 + ({{gain}}\u00b7|x|/{{saturation}})^(2\u00b7{{smoothness}})]^(1/(2\u00b7{{smoothness}}))",
         "\u03a6(r) = {{phase}}\u00b7r\u00b2 / (r\u00b2 + {{phase_scale}}\u00b2)",
         "y[n] = R(x[n])\u00b7exp(j\u00b7\u03a6(|x[n]|))"
+      ],
+      "equations_latex": [
+        "R(x)=\\frac{{{gain}}x}{[1+({{gain}}|x|/{{saturation}})^{2{{smoothness}}}]^{1/(2{{smoothness}})}}",
+        "\\Phi(r)=\\frac{{{phase}}r^2}{r^2+{{phase_scale}}^2}",
+        "y[n]=R(x[n])e^{j\\Phi(|x[n]|)}"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
@@ -190,6 +207,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -210,6 +228,7 @@
           "minimum": 0.05,
           "step": 0.01,
           "symbol": "s",
+          "symbol_latex": "s",
           "unit": "normalized"
         },
         {
@@ -230,6 +249,7 @@
           "minimum": 0.5,
           "step": 0.1,
           "symbol": "p",
+          "symbol_latex": "p",
           "unit": ""
         },
         {
@@ -250,6 +270,7 @@
           "minimum": -1.5,
           "step": 0.01,
           "symbol": "\u03c6\u221e",
+          "symbol_latex": "\\phi_\\infty",
           "unit": "rad"
         },
         {
@@ -270,6 +291,7 @@
           "minimum": 0.03,
           "step": 0.01,
           "symbol": "b",
+          "symbol_latex": "b",
           "unit": "normalized"
         }
       ],
@@ -288,6 +310,11 @@
         "y[n] = A(r)\u00b7exp(j\u00b7(arg(x[n]) + \u03a6(r))),  r = |x[n]|",
         "A(r) = {{gain}}\u00b7r / (1 + {{compression}}\u00b7r\u00b2)",
         "\u03a6(r) = {{phase}}\u00b7r\u00b2 / (1 + {{phase_scale}}\u00b7r\u00b2)"
+      ],
+      "equations_latex": [
+        "y[n]=A(r)e^{j(\\arg x[n]+\\Phi(r))},\\quad r=|x[n]|",
+        "A(r)=\\frac{{{gain}}r}{1+{{compression}}r^2}",
+        "\\Phi(r)=\\frac{{{phase}}r^2}{1+{{phase_scale}}r^2}"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
@@ -317,6 +344,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -337,6 +365,7 @@
           "minimum": 0.05,
           "step": 0.05,
           "symbol": "\u03b2\u2090",
+          "symbol_latex": "\\beta_a",
           "unit": ""
         },
         {
@@ -357,6 +386,7 @@
           "minimum": -3.0,
           "step": 0.05,
           "symbol": "\u03b1\u03c6",
+          "symbol_latex": "\\alpha_\\phi",
           "unit": "rad"
         },
         {
@@ -377,6 +407,7 @@
           "minimum": 0.1,
           "step": 0.1,
           "symbol": "\u03b2\u03c6",
+          "symbol_latex": "\\beta_\\phi",
           "unit": ""
         }
       ],
@@ -396,6 +427,12 @@
         "w\u2098 = {{decay}}^(m\u22121)\u00b7exp(j\u00b7m\u00b7{{memory_phase}}\u00b7\u03c0/180) / \u03a3\u2096\u208c\u2081^{{depth}} {{decay}}^(k\u22121)",
         "z[n] = u[n] + {{memory}}\u00b7\u03a3\u2098\u208c\u2081^{{depth}} w\u2098\u00b7u[n\u2212m]",
         "y[n] = z[n]"
+      ],
+      "equations_latex": [
+        "u[n]={{gain}}x[n]+{{cubic}}x[n]|x[n]|^2+{{quintic}}x[n]|x[n]|^4",
+        "w_m=\\frac{{{decay}}^{m-1}e^{jm{{memory_phase}}\\pi/180}}{\\sum_{k=1}^{{{depth}}}{{decay}}^{k-1}}",
+        "z[n]=u[n]+{{memory}}\\sum_{m=1}^{{{depth}}} w_m u[n-m]",
+        "y[n]=z[n]"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
@@ -425,6 +462,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -445,6 +483,7 @@
           "minimum": -5.0,
           "step": 0.05,
           "symbol": "c\u2083",
+          "symbol_latex": "c_3",
           "unit": ""
         },
         {
@@ -465,6 +504,7 @@
           "minimum": -2.0,
           "step": 0.05,
           "symbol": "c\u2085",
+          "symbol_latex": "c_5",
           "unit": ""
         },
         {
@@ -485,6 +525,7 @@
           "minimum": 0.0,
           "step": 0.01,
           "symbol": "\u03bc",
+          "symbol_latex": "\\mu",
           "unit": ""
         },
         {
@@ -505,6 +546,7 @@
           "minimum": 1.0,
           "step": 1.0,
           "symbol": "M",
+          "symbol_latex": "M",
           "unit": "samples"
         },
         {
@@ -525,6 +567,7 @@
           "minimum": 0.05,
           "step": 0.01,
           "symbol": "d",
+          "symbol_latex": "d",
           "unit": ""
         },
         {
@@ -545,6 +588,7 @@
           "minimum": -90.0,
           "step": 1.0,
           "symbol": "\u03c8",
+          "symbol_latex": "\\psi",
           "unit": "\u00b0"
         }
       ],
@@ -566,6 +610,13 @@
         "z[n] = u[n] + {{memory}}\u00b7\u03a3\u2098\u208c\u2081^{{depth}} w\u2098\u00b7u[n\u2212m]",
         "q[n] = \u03a3\u2098\u208c\u2081^{{depth}} ({{decay}}^(m\u22121)/\u03a3\u2096\u208c\u2081^{{depth}} {{decay}}^(k\u22121))\u00b7|x[n\u2212m]|\u00b2",
         "y[n] = z[n] + {{cross_memory}}\u00b7x[n]\u00b7q[n]"
+      ],
+      "equations_latex": [
+        "u[n]={{gain}}x[n]+{{cubic}}x[n]|x[n]|^2+{{quintic}}x[n]|x[n]|^4",
+        "w_m=\\frac{{{decay}}^{m-1}e^{jm{{memory_phase}}\\pi/180}}{\\sum_{k=1}^{{{depth}}}{{decay}}^{k-1}}",
+        "z[n]=u[n]+{{memory}}\\sum_{m=1}^{{{depth}}} w_m u[n-m]",
+        "q[n]=\\sum_{m=1}^{{{depth}}}\\frac{{{decay}}^{m-1}}{\\sum_{k=1}^{{{depth}}}{{decay}}^{k-1}}|x[n-m]|^2",
+        "y[n]=z[n]+{{cross_memory}}x[n]q[n]"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
@@ -595,6 +646,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -615,6 +667,7 @@
           "minimum": -5.0,
           "step": 0.05,
           "symbol": "c\u2083",
+          "symbol_latex": "c_3",
           "unit": ""
         },
         {
@@ -635,6 +688,7 @@
           "minimum": -2.0,
           "step": 0.05,
           "symbol": "c\u2085",
+          "symbol_latex": "c_5",
           "unit": ""
         },
         {
@@ -655,6 +709,7 @@
           "minimum": 0.0,
           "step": 0.01,
           "symbol": "\u03bc",
+          "symbol_latex": "\\mu",
           "unit": ""
         },
         {
@@ -675,6 +730,7 @@
           "minimum": 1.0,
           "step": 1.0,
           "symbol": "M",
+          "symbol_latex": "M",
           "unit": "samples"
         },
         {
@@ -695,6 +751,7 @@
           "minimum": 0.05,
           "step": 0.01,
           "symbol": "d",
+          "symbol_latex": "d",
           "unit": ""
         },
         {
@@ -715,6 +772,7 @@
           "minimum": -90.0,
           "step": 1.0,
           "symbol": "\u03c8",
+          "symbol_latex": "\\psi",
           "unit": "\u00b0"
         },
         {
@@ -735,6 +793,7 @@
           "minimum": -3.0,
           "step": 0.05,
           "symbol": "c\u00d7",
+          "symbol_latex": "c_\\times",
           "unit": ""
         }
       ],
@@ -759,6 +818,18 @@
         "v[n] = 1 \u2212 {{ir_drop}}\u00b7LPF(P, {{bias_us}})",
         "y[n] = R(x[n])\u00b7(1\u2212{{trap_strength}}\u00b7q\u209c[n])\u00b7v[n]\u00b7exp(\u2212{{thermal_gain}}\u00b7(T[n]\u221225) + j\u00b7{{trap_phase}}\u00b7q\u209c[n])",
         "LPF(P,\u03c4)[n] = a\u00b7LPF[n\u22121] + (1\u2212a)\u00b7P[n]; a = exp(\u22121/(Fs\u00b7\u03c4\u00b710\u207b\u2076)); \u03c4 in \u00b5s; kB = 8.617333262\u00d710\u207b\u2075 eV/K"
+      ],
+      "equations_latex": [
+        "R(x)=\\frac{{{gain}}x}{[1+({{gain}}|x|/{{saturation}})^{2{{smoothness}}}]^{1/(2{{smoothness}})}}",
+        "P[n]=\\frac{|x[n]|^2}{|x[n]|^2+({{saturation}}/{{gain}})^2}",
+        "T[n]={{ambient_c}}+{{heating_c}}\\operatorname{LPF}(P,{{thermal_us}})",
+        "\\tau_e[n]={{release_us}}\\exp\\!\\left[\\frac{{{activation_ev}}}{k_B}\\left(\\frac{1}{T[n]+273.15}-\\frac{1}{298.15}\\right)\\right]",
+        "\\tau[n]=\\begin{cases}{{capture_us}}&P[n]\\ge q_t[n-1]\\\\\\tau_e[n]&\\text{otherwise}\\end{cases}",
+        "q_t[n]=a[n]q_t[n-1]+(1-a[n])P[n],\\quad a[n]=e^{-1/(F_s\\tau[n]10^{-6})}",
+        "v[n]=1-{{ir_drop}}\\operatorname{LPF}(P,{{bias_us}})",
+        "y[n]=R(x[n])(1-{{trap_strength}}q_t[n])v[n]e^{-{{thermal_gain}}(T[n]-25)+j{{trap_phase}}q_t[n]}",
+        "\\operatorname{LPF}(P,\\tau)[n]=a\\operatorname{LPF}[n-1]+(1-a)P[n],\\quad a=e^{-1/(F_s\\tau\\,10^{-6})},\\quad\\tau\\text{ in }\\mu\\mathrm{s}",
+        "k_B=8.617333262\\times 10^{-5}\\,\\mathrm{eV/K}"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
@@ -788,6 +859,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -808,6 +880,7 @@
           "minimum": 0.05,
           "step": 0.01,
           "symbol": "s",
+          "symbol_latex": "s",
           "unit": "normalized"
         },
         {
@@ -828,6 +901,7 @@
           "minimum": 0.5,
           "step": 0.1,
           "symbol": "p",
+          "symbol_latex": "p",
           "unit": ""
         },
         {
@@ -848,6 +922,7 @@
           "minimum": 0.0,
           "step": 0.01,
           "symbol": "\u03bat",
+          "symbol_latex": "\\kappa_t",
           "unit": ""
         },
         {
@@ -868,6 +943,7 @@
           "minimum": 0.01,
           "step": 0.01,
           "symbol": "\u03c4c",
+          "symbol_latex": "\\tau_c",
           "unit": "\u00b5s"
         },
         {
@@ -888,6 +964,7 @@
           "minimum": 0.01,
           "step": 0.01,
           "symbol": "\u03c4e,25",
+          "symbol_latex": "\\tau_{e,25}",
           "unit": "\u00b5s"
         },
         {
@@ -908,6 +985,7 @@
           "minimum": 0.0,
           "step": 0.01,
           "symbol": "Ea",
+          "symbol_latex": "E_a",
           "unit": "eV"
         },
         {
@@ -928,6 +1006,7 @@
           "minimum": -1.0,
           "step": 0.01,
           "symbol": "\u03c6t",
+          "symbol_latex": "\\phi_t",
           "unit": "rad"
         },
         {
@@ -948,6 +1027,7 @@
           "minimum": 0.1,
           "step": 0.1,
           "symbol": "\u03c4T",
+          "symbol_latex": "\\tau_T",
           "unit": "\u00b5s"
         },
         {
@@ -968,6 +1048,7 @@
           "minimum": -20.0,
           "step": 1.0,
           "symbol": "Ta",
+          "symbol_latex": "T_a",
           "unit": "\u00b0C"
         },
         {
@@ -988,6 +1069,7 @@
           "minimum": 0.0,
           "step": 1.0,
           "symbol": "\u0394T",
+          "symbol_latex": "\\Delta T",
           "unit": "K"
         },
         {
@@ -1008,6 +1090,7 @@
           "minimum": 0.0,
           "step": 0.0005,
           "symbol": "\u03baT",
+          "symbol_latex": "\\kappa_T",
           "unit": "1/K"
         },
         {
@@ -1028,6 +1111,7 @@
           "minimum": 0.0,
           "step": 0.01,
           "symbol": "\u03c1",
+          "symbol_latex": "\\rho",
           "unit": ""
         },
         {
@@ -1048,6 +1132,7 @@
           "minimum": 0.01,
           "step": 0.01,
           "symbol": "\u03c4b",
+          "symbol_latex": "\\tau_b",
           "unit": "\u00b5s"
         }
       ],
@@ -1068,6 +1153,11 @@
         "R(x) = {{gain}}\u00b7x / [1 + ({{gain}}\u00b7|x|/{{saturation}})^(2\u00b7{{smoothness}})]^(1/(2\u00b7{{smoothness}}))",
         "x\u209a[n] = max(|x[n]|\u2212{{knee}}, 0)\u00b7exp(j\u00b7arg(x[n]))",
         "y[n] = R(x[n]) + {{peaker}}\u00b7R(x\u209a[n])\u00b7exp(j\u00b7{{phase_deg}}\u00b7\u03c0/180)"
+      ],
+      "equations_latex": [
+        "R(x)=\\frac{{{gain}}x}{[1+({{gain}}|x|/{{saturation}})^{2{{smoothness}}}]^{1/(2{{smoothness}})}}",
+        "x_p[n]=\\max(|x[n]|-{{knee}},0)e^{j\\arg x[n]}",
+        "y[n]=R(x[n])+{{peaker}}R(x_p[n])e^{j{{phase_deg}}\\pi/180}"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction. This envelope construction does not solve an impedance inverter or predict load modulation/efficiency.",
@@ -1097,6 +1187,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -1117,6 +1208,7 @@
           "minimum": 0.05,
           "step": 0.01,
           "symbol": "s",
+          "symbol_latex": "s",
           "unit": "normalized"
         },
         {
@@ -1137,6 +1229,7 @@
           "minimum": 0.5,
           "step": 0.1,
           "symbol": "p",
+          "symbol_latex": "p",
           "unit": ""
         },
         {
@@ -1157,6 +1250,7 @@
           "minimum": 0.0,
           "step": 0.01,
           "symbol": "r\u2096",
+          "symbol_latex": "r_k",
           "unit": "normalized"
         },
         {
@@ -1177,6 +1271,7 @@
           "minimum": 0.0,
           "step": 0.05,
           "symbol": "\u03b2p",
+          "symbol_latex": "\\beta_p",
           "unit": ""
         },
         {
@@ -1197,6 +1292,7 @@
           "minimum": -180.0,
           "step": 1.0,
           "symbol": "\u03b8",
+          "symbol_latex": "\\theta",
           "unit": "\u00b0"
         }
       ],
@@ -1218,6 +1314,14 @@
         "v[n] = clip({{supply_floor}} + {{supply_span}}\u00b7LPF(D,{{tracking_us}}) \u2212 {{ir_drop}}\u00b7LPF(P,{{bias_us}}), {{supply_floor}}, 1.5)",
         "y[n] = R(x[n]; {{gain}}, {{saturation}}\u00b7v[n], {{smoothness}})\u00b7exp(j\u00b7{{phase}}\u00b7(v[n]\u22121))",
         "LPF(P,\u03c4)[n] = a\u00b7LPF[n\u22121] + (1\u2212a)\u00b7P[n]; a = exp(\u22121/(Fs\u00b7\u03c4\u00b710\u207b\u2076)); \u03c4 in \u00b5s"
+      ],
+      "equations_latex": [
+        "R(x;G,s,p)=\\frac{Gx}{[1+(G|x|/s)^{2p}]^{1/(2p)}}",
+        "D[n]=\\min({{gain}}|x[n]|/{{saturation}},1)",
+        "P[n]=\\frac{|x[n]|^2}{|x[n]|^2+({{saturation}}/{{gain}})^2}",
+        "v[n]=\\operatorname{clip}({{supply_floor}}+{{supply_span}}\\operatorname{LPF}(D,{{tracking_us}})-{{ir_drop}}\\operatorname{LPF}(P,{{bias_us}}),{{supply_floor}},1.5)",
+        "y[n]=R(x[n];{{gain}},{{saturation}}v[n],{{smoothness}})e^{j{{phase}}(v[n]-1)}",
+        "\\operatorname{LPF}(P,\\tau)[n]=a\\operatorname{LPF}[n-1]+(1-a)P[n],\\quad a=e^{-1/(F_s\\tau\\,10^{-6})},\\quad\\tau\\text{ in }\\mu\\mathrm{s}"
       ],
       "limitations": {
         "en": "Illustrative complex-baseband behavior, with normalized amplitudes. Defaults are not extracted from a specific device; no calibrated RF power, efficiency or transistor-level prediction.",
@@ -1247,6 +1351,7 @@
           "minimum": 0.1,
           "step": 0.05,
           "symbol": "G",
+          "symbol_latex": "G",
           "unit": "V/V"
         },
         {
@@ -1267,6 +1372,7 @@
           "minimum": 0.05,
           "step": 0.01,
           "symbol": "s",
+          "symbol_latex": "s",
           "unit": "normalized"
         },
         {
@@ -1287,6 +1393,7 @@
           "minimum": 0.5,
           "step": 0.1,
           "symbol": "p",
+          "symbol_latex": "p",
           "unit": ""
         },
         {
@@ -1307,6 +1414,7 @@
           "minimum": 0.1,
           "step": 0.01,
           "symbol": "vmin",
+          "symbol_latex": "v_{\\min}",
           "unit": ""
         },
         {
@@ -1327,6 +1435,7 @@
           "minimum": 0.1,
           "step": 0.01,
           "symbol": "hv",
+          "symbol_latex": "h_v",
           "unit": ""
         },
         {
@@ -1347,6 +1456,7 @@
           "minimum": 0.001,
           "step": 0.001,
           "symbol": "\u03c4v",
+          "symbol_latex": "\\tau_v",
           "unit": "\u00b5s"
         },
         {
@@ -1367,6 +1477,7 @@
           "minimum": 0.0,
           "step": 0.01,
           "symbol": "\u03c1",
+          "symbol_latex": "\\rho",
           "unit": ""
         },
         {
@@ -1387,6 +1498,7 @@
           "minimum": 0.01,
           "step": 0.01,
           "symbol": "\u03c4b",
+          "symbol_latex": "\\tau_b",
           "unit": "\u00b5s"
         },
         {
@@ -1407,6 +1519,7 @@
           "minimum": -1.5,
           "step": 0.01,
           "symbol": "\u03c6\u221e",
+          "symbol_latex": "\\phi_\\infty",
           "unit": "rad"
         }
       ],

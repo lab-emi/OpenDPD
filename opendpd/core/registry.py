@@ -50,6 +50,10 @@ class ParamSpec:
             value = py_type(value)
         except (TypeError, ValueError):
             raise RegistryError(self.name, f"{self.name} must be of type {self.type}") from None
+        if self.type == "float":
+            import math
+            if not math.isfinite(value):
+                raise RegistryError(self.name, f"{self.name} must be finite")
         if self.minimum is not None and value < self.minimum:
             raise RegistryError(self.name, f"{self.name} must be >= {self.minimum}")
         if self.maximum is not None and value > self.maximum:
@@ -160,6 +164,25 @@ MODELS: Tuple[ModelDescriptor, ...] = (
         lookahead_note="zero-padded past window of 11 samples; causal",
         constraints="memory length 11 and degree 5 are fixed in backbones/gmp.py (the --K / --gmp_memory_length "
                     "flags are not wired)", reference="OpenDPD (ISCAS 2024)", evidence=_CPU_WEEKLY,
+    ),
+    ModelDescriptor(
+        key="ilc_dpd", display_name="ILC-DPD (ILA) + Ideal waveform benchmark", family="polynomial",
+        legacy_backbone="mp", training_method="least_squares", roles=("dpd",),
+        params=(_poly("K", 7, 15, "MP envelope powers 0..K-1 for the transferable ILA fit"),
+                _poly("Q", 5, 50, "MP memory depth in samples"),
+                ParamSpec("rcond", "float", 1e-6, "Relative SVD cutoff for the ILA fit", minimum=0., maximum=.1),
+                _poly("iterations", 30, 200, "Maximum accepted ILC waveform updates"),
+                ParamSpec("learning_gain", "float", .5, "ILC correction step; backtracking halves an unhelpful step", minimum=.001, maximum=1.5),
+                ParamSpec("target_nmse_db", "float", -45., "Stop when pooled waveform tracking NMSE reaches this target (dB)", minimum=-100., maximum=-5.),
+                ParamSpec("peak_factor", "float", 1.5, "Input peak limit relative to the PA training-input peak; above 1 permits surrogate extrapolation", minimum=1., maximum=4.),
+                _poly("backtracking_steps", 6, 10, "Maximum step halvings per iteration", minimum=0),
+                ParamSpec("min_improvement_db", "float", .001, "Stop when accepted improvement is smaller than this (dB)", minimum=0., maximum=1.),
+                _poly("fit_samples", 32768, 131072, "Maximum leading training samples for waveform learning and ILA fit", minimum=256)),
+        status="experimental", devices_tested=("cpu", "cuda"), lookahead_samples=0,
+        lookahead_note="The fitted MP is causal with Q-1 past samples; the Ideal waveform is offline feedback optimization.",
+        constraints="Requires a trained PA surrogate. ILC optimizes training input waveforms; ILA fits normalized PA output to that input. Test feedback is a separate waveform-specific Ideal baseline, never used to fit the DPD. No hardware claim.",
+        reference="https://doi.org/10.1109/TMTT.2017.2694822",
+        evidence="tests/unit/test_ilc.py; tests/integration/test_ilc_runs.py; docs/performance/studio-2.2.5/ilc.json (CPU/CUDA)",
     ),
     ModelDescriptor(
         key="mp_ls", display_name="MP (least squares)", family="polynomial", legacy_backbone="mp",

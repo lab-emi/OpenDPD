@@ -37,6 +37,7 @@
       "sha256": null,
       "size_bytes": null
     },
+    "ilc": null,
     "is_mock": true,
     "limitations": [
       "MOCK DATA for UI development; not a computed result",

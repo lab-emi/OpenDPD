@@ -130,8 +130,12 @@ def session_info(request: Request):
 
 @router.get("/system/about", response_model=Dict[str, Any], tags=["system"],
             dependencies=[Depends(require_session)])
-def system_about():
+def system_about(activity: bool = True):
     from opendpd.services.about import project_info
+    if not activity:
+        from opendpd import __version__
+        from opendpd.services.about import local_commit
+        return {"version": __version__, "local_commit": local_commit()}
     return project_info()
 
 # --- workbench settings -----------------------------------------------------------

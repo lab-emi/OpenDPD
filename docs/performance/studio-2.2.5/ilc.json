@@ -1,0 +1,683 @@
+{
+  "runs": [
+    {
+      "id": "run-20260913-233145-b0dbaf",
+      "device": "cpu",
+      "nmse": -7.155760288238525,
+      "ilc": {
+        "fit_samples": 19353,
+        "inverse_gain": [
+          0.8494279459322799,
+          -0.03201008698744541
+        ],
+        "method": "ILC + ILA: optimize only the training waveform through the bound PA surrogate; fit Phi(y_ILC / G) w ~= u_ILC and copy that postdistorter to the predistorter. The test waveform is never used to fit coefficients. The separate Ideal baseline uses test-waveform feedback; it is not transferable, globally optimal, or measured hardware evidence.",
+        "peak_limit": 0.9769193530082703,
+        "plant_run_id": "run-20260913-231319-6a8293",
+        "plant_sha256": "ab8cdbc20c4fc541e4241c403be3df1ff5e67b7d5afda55622ffa65a1d35a79a",
+        "segment_length": 1024,
+        "settings": {
+          "K": 7,
+          "Q": 5,
+          "backtracking_steps": 6,
+          "fit_samples": 32768,
+          "iterations": 30,
+          "learning_gain": 0.5,
+          "min_improvement_db": 0.001,
+          "peak_factor": 1.5,
+          "rcond": 0.000001,
+          "target_nmse_db": -45
+        },
+        "target_gain": 1.0600225851920677,
+        "test_feedback_used_for_fit": false,
+        "training_history": [
+          {
+            "iteration": 0,
+            "learning_gain": 0,
+            "limited_fraction": 0,
+            "nmse_db": -3.4942437023942166,
+            "peak_abs": 0.6512795457805705
+          },
+          {
+            "iteration": 1,
+            "learning_gain": 0.5,
+            "limited_fraction": 0,
+            "nmse_db": -8.27927443409887,
+            "peak_abs": 0.646770236828989
+          },
+          {
+            "iteration": 2,
+            "learning_gain": 0.5,
+            "limited_fraction": 0,
+            "nmse_db": -11.654759437883556,
+            "peak_abs": 0.8964763173277374
+          },
+          {
+            "iteration": 3,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.00010334315093267194,
+            "nmse_db": -14.184108245643468,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 4,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.00010334315093267194,
+            "nmse_db": -16.145322004377736,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 5,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -17.62766050534396,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 6,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -18.676172320843037,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 7,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -19.34211716547877,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 8,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -19.69519348619471,
+            "peak_abs": 0.9769193530082705
+          },
+          {
+            "iteration": 9,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.00020668630186534387,
+            "nmse_db": -19.813205580903286,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 10,
+            "learning_gain": 0.25,
+            "limited_fraction": 0.00020668630186534387,
+            "nmse_db": -19.886016120112696,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 11,
+            "learning_gain": 0.25,
+            "limited_fraction": 0.00020668630186534387,
+            "nmse_db": -19.924738586366583,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 12,
+            "learning_gain": 0.25,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.935392534436428,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 13,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.951641027060305,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 14,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.9623569769544,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 15,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.968043878487126,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 16,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.969163096479235,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 17,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.972931389547323,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 18,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.975679745210385,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 19,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.977455466970923,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 20,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.97830421196644,
+            "peak_abs": 0.9769193530082703
+          }
+        ],
+        "training_plant_calls": 44,
+        "training_stop_reason": "improvement_below_tolerance",
+        "version": "ilc-ila-v1",
+        "test_history": [
+          {
+            "iteration": 0,
+            "nmse_db": -3.5227215299624133,
+            "learning_gain": 0,
+            "peak_abs": 0.5484617996283938,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 1,
+            "nmse_db": -8.320090233966598,
+            "learning_gain": 0.5,
+            "peak_abs": 0.6093995543679916,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 2,
+            "nmse_db": -11.644818240952205,
+            "learning_gain": 0.5,
+            "peak_abs": 0.666493304409383,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 3,
+            "nmse_db": -14.12674249095637,
+            "learning_gain": 0.5,
+            "peak_abs": 0.7018526034061539,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 4,
+            "nmse_db": -16.064878673206678,
+            "learning_gain": 0.5,
+            "peak_abs": 0.7250900146155623,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 5,
+            "nmse_db": -17.546025027179546,
+            "learning_gain": 0.5,
+            "peak_abs": 0.7395864648395971,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 6,
+            "nmse_db": -18.599203952634422,
+            "learning_gain": 0.5,
+            "peak_abs": 0.7544075937071119,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 7,
+            "nmse_db": -19.26574664368347,
+            "learning_gain": 0.5,
+            "peak_abs": 0.8154475833223841,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 8,
+            "nmse_db": -19.61351610911512,
+            "learning_gain": 0.5,
+            "peak_abs": 0.8708055502281201,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 9,
+            "nmse_db": -19.7208448894478,
+            "learning_gain": 0.5,
+            "peak_abs": 0.9209490802219078,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 10,
+            "nmse_db": -19.787095077806466,
+            "learning_gain": 0.25,
+            "peak_abs": 0.9436267020948125,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 11,
+            "nmse_db": -19.82030484493842,
+            "learning_gain": 0.25,
+            "peak_abs": 0.9652116076049032,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 12,
+            "nmse_db": -19.82633891344902,
+            "learning_gain": 0.25,
+            "peak_abs": 0.9769193530082703,
+            "limited_fraction": 0.00015499070055796651
+          },
+          {
+            "iteration": 13,
+            "nmse_db": -19.840663648618907,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082703,
+            "limited_fraction": 0.00015499070055796651
+          },
+          {
+            "iteration": 14,
+            "nmse_db": -19.849756279491228,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082702,
+            "limited_fraction": 0.00015499070055796651
+          },
+          {
+            "iteration": 15,
+            "nmse_db": -19.854128679160226,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082704,
+            "limited_fraction": 0.00030998140111593303
+          },
+          {
+            "iteration": 16,
+            "nmse_db": -19.85424795486487,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082704,
+            "limited_fraction": 0.00030998140111593303
+          }
+        ],
+        "test_stop_reason": "improvement_below_tolerance",
+        "test_plant_calls": 28,
+        "test_samples": 6452,
+        "test_inverse_gain": [
+          0.8494279459322799,
+          -0.03201008698744541
+        ],
+        "test_plant_run_id": "run-20260913-231319-6a8293",
+        "test_plant_sha256": "ab8cdbc20c4fc541e4241c403be3df1ff5e67b7d5afda55622ffa65a1d35a79a"
+      },
+      "positions": [
+        {
+          "node": "dpd_input",
+          "names": [
+            "Input x"
+          ]
+        },
+        {
+          "node": "pa_input",
+          "names": [
+            "Predistorted u",
+            "ILC Ideal DPD · waveform-specific"
+          ]
+        },
+        {
+          "node": "pa_output",
+          "names": [
+            "Linear target g·x",
+            "With DPD · surrogate",
+            "Without DPD · surrogate",
+            "Without DPD · synthetic data",
+            "ILC Ideal DPD · waveform-specific"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "run-20260913-233152-aaedf3",
+      "device": "cuda",
+      "nmse": -7.155779838562012,
+      "ilc": {
+        "fit_samples": 19353,
+        "inverse_gain": [
+          0.8494276800855682,
+          -0.03201018641669078
+        ],
+        "method": "ILC + ILA: optimize only the training waveform through the bound PA surrogate; fit Phi(y_ILC / G) w ~= u_ILC and copy that postdistorter to the predistorter. The test waveform is never used to fit coefficients. The separate Ideal baseline uses test-waveform feedback; it is not transferable, globally optimal, or measured hardware evidence.",
+        "peak_limit": 0.9769193530082703,
+        "plant_run_id": "run-20260913-231319-6a8293",
+        "plant_sha256": "ab8cdbc20c4fc541e4241c403be3df1ff5e67b7d5afda55622ffa65a1d35a79a",
+        "segment_length": 1024,
+        "settings": {
+          "K": 7,
+          "Q": 5,
+          "backtracking_steps": 6,
+          "fit_samples": 32768,
+          "iterations": 30,
+          "learning_gain": 0.5,
+          "min_improvement_db": 0.001,
+          "peak_factor": 1.5,
+          "rcond": 0.000001,
+          "target_nmse_db": -45
+        },
+        "target_gain": 1.0600225851920677,
+        "test_feedback_used_for_fit": false,
+        "training_history": [
+          {
+            "iteration": 0,
+            "learning_gain": 0,
+            "limited_fraction": 0,
+            "nmse_db": -3.494240263155196,
+            "peak_abs": 0.6512795457805705
+          },
+          {
+            "iteration": 1,
+            "learning_gain": 0.5,
+            "limited_fraction": 0,
+            "nmse_db": -8.279273611683356,
+            "peak_abs": 0.6467704043875584
+          },
+          {
+            "iteration": 2,
+            "learning_gain": 0.5,
+            "limited_fraction": 0,
+            "nmse_db": -11.65475761353437,
+            "peak_abs": 0.896476152845324
+          },
+          {
+            "iteration": 3,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.00010334315093267194,
+            "nmse_db": -14.184106907924082,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 4,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.00010334315093267194,
+            "nmse_db": -16.14532140981289,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 5,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -17.627660001528117,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 6,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -18.67617222100335,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 7,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -19.342116435076335,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 8,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.0001550147263990079,
+            "nmse_db": -19.695192745563595,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 9,
+            "learning_gain": 0.5,
+            "limited_fraction": 0.00020668630186534387,
+            "nmse_db": -19.813204732371485,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 10,
+            "learning_gain": 0.25,
+            "limited_fraction": 0.00020668630186534387,
+            "nmse_db": -19.886015536734796,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 11,
+            "learning_gain": 0.25,
+            "limited_fraction": 0.00020668630186534387,
+            "nmse_db": -19.924736831097594,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 12,
+            "learning_gain": 0.25,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.93539083331513,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 13,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.951639812516518,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 14,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.96235519909753,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 15,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.968041331115515,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 16,
+            "learning_gain": 0.125,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.969160029993656,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 17,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.972927920036877,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 18,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.97567658004469,
+            "peak_abs": 0.9769193530082704
+          },
+          {
+            "iteration": 19,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.97745249192264,
+            "peak_abs": 0.9769193530082703
+          },
+          {
+            "iteration": 20,
+            "learning_gain": 0.0625,
+            "limited_fraction": 0.0002583578773316798,
+            "nmse_db": -19.978300585731592,
+            "peak_abs": 0.9769193530082704
+          }
+        ],
+        "training_plant_calls": 44,
+        "training_stop_reason": "improvement_below_tolerance",
+        "version": "ilc-ila-v1",
+        "test_history": [
+          {
+            "iteration": 0,
+            "nmse_db": -3.5223755401969905,
+            "learning_gain": 0,
+            "peak_abs": 0.5484617996283938,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 1,
+            "nmse_db": -8.32027414537148,
+            "learning_gain": 0.5,
+            "peak_abs": 0.6093891486625578,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 2,
+            "nmse_db": -11.645328043887273,
+            "learning_gain": 0.5,
+            "peak_abs": 0.6665071422123694,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 3,
+            "nmse_db": -14.127733409483284,
+            "learning_gain": 0.5,
+            "peak_abs": 0.7018175123150482,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 4,
+            "nmse_db": -16.066391194342607,
+            "learning_gain": 0.5,
+            "peak_abs": 0.7250019325257651,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 5,
+            "nmse_db": -17.54747452838066,
+            "learning_gain": 0.5,
+            "peak_abs": 0.739513146027734,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 6,
+            "nmse_db": -18.600921558967208,
+            "learning_gain": 0.5,
+            "peak_abs": 0.7543795257888295,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 7,
+            "nmse_db": -19.267516521487323,
+            "learning_gain": 0.5,
+            "peak_abs": 0.8154157747326167,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 8,
+            "nmse_db": -19.61547823828799,
+            "learning_gain": 0.5,
+            "peak_abs": 0.8707671064835301,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 9,
+            "nmse_db": -19.72278872044499,
+            "learning_gain": 0.5,
+            "peak_abs": 0.9208942987149199,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 10,
+            "nmse_db": -19.789196189172046,
+            "learning_gain": 0.25,
+            "peak_abs": 0.9435797937805084,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 11,
+            "nmse_db": -19.822347747158652,
+            "learning_gain": 0.25,
+            "peak_abs": 0.9651553616764454,
+            "limited_fraction": 0
+          },
+          {
+            "iteration": 12,
+            "nmse_db": -19.828617066271267,
+            "learning_gain": 0.25,
+            "peak_abs": 0.9769193530082702,
+            "limited_fraction": 0.00015499070055796651
+          },
+          {
+            "iteration": 13,
+            "nmse_db": -19.842569432386096,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082703,
+            "limited_fraction": 0.00015499070055796651
+          },
+          {
+            "iteration": 14,
+            "nmse_db": -19.85156466211895,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082703,
+            "limited_fraction": 0.00015499070055796651
+          },
+          {
+            "iteration": 15,
+            "nmse_db": -19.856353512860096,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082703,
+            "limited_fraction": 0.00030998140111593303
+          },
+          {
+            "iteration": 16,
+            "nmse_db": -19.856769158297126,
+            "learning_gain": 0.125,
+            "peak_abs": 0.9769193530082704,
+            "limited_fraction": 0.00030998140111593303
+          }
+        ],
+        "test_stop_reason": "improvement_below_tolerance",
+        "test_plant_calls": 28,
+        "test_samples": 6452,
+        "test_inverse_gain": [
+          0.8494276800855682,
+          -0.03201018641669078
+        ],
+        "test_plant_run_id": "run-20260913-231319-6a8293",
+        "test_plant_sha256": "ab8cdbc20c4fc541e4241c403be3df1ff5e67b7d5afda55622ffa65a1d35a79a"
+      },
+      "positions": [
+        {
+          "node": "dpd_input",
+          "names": [
+            "Input x"
+          ]
+        },
+        {
+          "node": "pa_input",
+          "names": [
+            "Predistorted u",
+            "ILC Ideal DPD · waveform-specific"
+          ]
+        },
+        {
+          "node": "pa_output",
+          "names": [
+            "Linear target g·x",
+            "With DPD · surrogate",
+            "Without DPD · surrogate",
+            "Without DPD · synthetic data",
+            "ILC Ideal DPD · waveform-specific"
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "removalAndUndo": true,
+  "latexModels": 9
+}

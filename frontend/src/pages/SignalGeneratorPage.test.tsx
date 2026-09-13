@@ -29,9 +29,11 @@ function setup() {
 
 function Probe() { const location = useLocation(); return <output data-testid="location">{location.pathname}{location.search}</output> }
 
-test('one initial preview, simple family selection, stale-export guard and duration conversion', async () => {
+test('explicit preview only, simple family selection, stale-export guard and duration conversion', async () => {
   const { calls } = setup()
   renderWithProviders(<SignalGeneratorPage />)
+  expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
+  await userEvent.click(await screen.findByRole('button', { name: 'Generate & preview' }))
   await screen.findByTestId('signal-generator-results')
   expect(calls.filter(c => c.path === '/api/v1/signal-generator/signals')).toHaveLength(1)
   expect(screen.getByText('Time-domain I/Q')).toBeVisible()
@@ -51,8 +53,11 @@ test('one initial preview, simple family selection, stale-export guard and durat
 test('advanced OFDMA channels and pilots reach the generator request', async () => {
   const { calls } = setup()
   renderWithProviders(<SignalGeneratorPage />)
+  expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
+  await userEvent.click(await screen.findByRole('button', { name: 'Generate & preview' }))
   await screen.findByTestId('signal-generator-results')
   await userEvent.click(screen.getByRole('button', { name: 'Advanced parameters' }))
+  await userEvent.click(screen.getByRole('checkbox', { name: 'Use the same settings for all channels' }))
   await userEvent.click(screen.getByRole('button', { name: 'Add OFDMA channel' }))
   expect(screen.getAllByLabelText('Subcarriers including pilots')).toHaveLength(2)
   fireEvent.change(screen.getAllByLabelText('Subcarriers including pilots')[1]!, { target: { value: '52' } })
@@ -67,6 +72,7 @@ test('advanced OFDMA channels and pilots reach the generator request', async () 
 test('generated signal is input-only, with separate exports and an explicit Virtual PA step', async () => {
   const { calls } = setup()
   renderWithProviders(<><SignalGeneratorPage /><Probe /></>)
+  await userEvent.click(await screen.findByRole('button', { name: 'Generate & preview' }))
   await screen.findByTestId('signal-generator-results')
   expect(screen.getByRole('heading', { name: 'PA Input Dataset' })).toBeVisible()
   expect(screen.getAllByText(/complete training dataset needs matching PA input x and PA output y/).length).toBeGreaterThan(0)

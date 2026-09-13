@@ -105,3 +105,20 @@ def test_lookahead_is_the_leading_envelope_lead_only():
     assert lookahead_samples("mp_ls", {"K": 5, "Q": 50}) == 0
     assert lookahead_samples("gmp_ls", {"Kc": 4, "Mc": 2}) == 2
     assert lookahead_samples("gmp_ls", {"Kc": 0, "Mc": 2}) == 0
+
+
+def test_numpy_polynomial_keeps_full_precision_coefficients_when_cascade_moves():
+    import torch
+    from opendpd.core.polynomial import PolynomialModel
+    weights = np.array([1.234567890123 + .123456789012j, .03j])
+    model = PolynomialModel('ilc_dpd', {'K': 2, 'Q': 1}, weights)
+    model.to(dtype=torch.float32)
+    assert model.coefficients.dtype == torch.complex128
+    np.testing.assert_array_equal(model.state_dict()['coefficients'].numpy(), weights)
+    x = torch.tensor([[[.2, .1], [.3, -.1]]])
+    y = model(x)
+    assert y.dtype == x.dtype and y.device == x.device
+    if torch.cuda.is_available():
+        moved = model.to('cuda')
+        assert moved.coefficients.device.type == 'cpu'
+        torch.testing.assert_close(moved(x.to('cuda')).cpu(), y)

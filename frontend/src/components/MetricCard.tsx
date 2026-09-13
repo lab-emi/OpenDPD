@@ -1,3 +1,4 @@
+import { MetricFormula } from './MetricFormula'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
@@ -39,7 +40,7 @@ export function MetricCard({ metric, definition }: { metric: MetricValue; defini
             <Tooltip
               title={
                 <span>
-                  <strong>{t('metric.formula')}:</strong> {message(definition.formula)}
+                  <strong>{t('metric.formula')}:</strong> <MetricFormula definition={definition} />
                   <br />
                   <strong>{t('metric.aggregation')}:</strong> {message(definition.aggregation)}
                   {definition.notes ? (

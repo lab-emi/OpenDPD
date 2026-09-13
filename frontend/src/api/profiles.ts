@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import type { MetricProfile } from './types'
 
 /**
@@ -8,3 +9,6 @@ import type { MetricProfile } from './types'
 const isOffered = (profile: MetricProfile): boolean => profile.validation !== 'pending_cross_validation'
 
 export const offeredProfiles = (profiles: readonly MetricProfile[] | undefined): MetricProfile[] => (profiles ?? []).filter(isOffered)
+
+export const profileLabel = (id: string) => id === 'general-spectral-v1' ? t('profile.general')
+  : id === 'legacy-opendpd-v1' ? t('profile.legacy') : id === 'ofdm-lte20-evm-v1' ? t('profile.ofdm') : id

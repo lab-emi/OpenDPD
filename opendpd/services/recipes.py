@@ -111,6 +111,12 @@ RECIPES += [
            "seconds on CPU"),
 ]
 
+RECIPES.append(Recipe("dpd-ilc-ila-v1", "ILC-DPD / Ideal DPD benchmark", "baseline", TaskType.train_dpd,
+    ModelSpec(key="ilc_dpd", parameters={}), TrainingConfig(**_LS),
+    "Gain-inverse iterative learning with peak limiting and backtracking, followed by an ILA memory-polynomial fit. Includes a separate waveform-specific Ideal test baseline.",
+    "Simulation through a trained PA surrogate only. The Ideal baseline uses test-waveform feedback; the fitted DPD never does. Defaults are starting values, not a guaranteed optimum.",
+    "seconds to minutes, depending on waveform length, surrogate and iteration count"))
+
 def _backbone_starting_points() -> List[Recipe]:
     """Expose the compute registry without copying model construction into the GUI.
 

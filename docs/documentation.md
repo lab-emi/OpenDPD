@@ -7,7 +7,7 @@ The GitHub README is the short entry point; the documentation site is the place 
 | Content | Source of truth | Reuse |
 | --- | --- | --- |
 | Product introduction, current highlights, homepage screenshot | Root `README.md` sections `intro`, `studio-features`, `hero` | Included by the site home page. |
-| Minimal source-install command block | Root `README.md`, `source-install` section | Included by `docs/install.md`; edit once. |
+| Minimal source-install command block | Root `README.md`, `source-install` section | Shown in README; the installation guide adds platform and troubleshooting details. |
 | Setup options and troubleshooting | `docs/install.md` | Linked from README and tutorials. |
 | Task walkthroughs and explanations | `docs/tutorials/`, `training.md`, `visualization.md`, `advanced.md`, `faq.md` | Read directly on GitHub or through the site. |
 | Dataset format and Python examples | `datasets/README.md`, `examples/README.md` | Included by `docs/datasets.md` and `docs/examples.md`. |
@@ -19,7 +19,7 @@ The GitHub README is the short entry point; the documentation site is the place 
 | Shared images | `pics/` | Published by `docs/hooks/assets.py`; keep one copy. |
 | Studio and EMI logos | `frontend/src/assets/`; root `README.md`, `brand` section | The site includes the same brand section and publishes the original SVGs through the asset hook. |
 
-`docs/index.md`, `docs/datasets.md`, `docs/examples.md` and `docs/benchmark/index.md` are site entry pages. They compose canonical content with `pymdownx.snippets`; they are not a second place to edit that content. The installation page reuses only the short command block. When reading its Markdown on GitHub, that block is available in the root README.
+`docs/index.md`, `docs/datasets.md`, `docs/examples.md` and `docs/benchmark/index.md` are site entry pages. They compose canonical content with `pymdownx.snippets`; they are not a second place to edit that content. Keep the short uv commands in README and the installation guide consistent.
 
 ## Writing and linking
 
@@ -60,6 +60,6 @@ Reuse the transparent SVGs from `frontend/src/assets/`, including their light an
 
 The README's `brand` snippet uses GitHub-compatible `<picture class="brand-logo">` elements, each with a dark `source` and a light fallback `img`. Keep these child tags self-closing. During the site build, `docs/hooks/assets.py` converts them to Material's `#only-light` / `#only-dark` images, so the site's own theme toggle works independently of the system theme. Check both themes and a narrow viewport when changing this section.
 
-## Release 2.2.4 screenshot set
+## Release 2.2.5 screenshot set
 
-Refresh `pics/studio-home.png`, `studio-signal-generator.png`, `studio-pa-library.png`, and `studio-psd-chain.png` from the actual current GUI. Use a disposable synthetic workspace, record exact sample counts and real worker outcomes, and inspect chart legends at desktop and mobile sizes. Current guides link to these shared assets. Older release and performance directories remain historical evidence and are not overwritten as if they represented the new version.
+Refresh `pics/studio-home.png`, `studio-signal-generator.png`, `studio-pa-library.png`, `studio-psd-chain.png`, and `studio-ilc.png` from the actual current GUI. Use a disposable synthetic workspace, record exact sample counts and real worker outcomes, and inspect chart legends at desktop and mobile sizes. Current guides link to these shared assets. Older release and performance directories remain historical evidence and are not overwritten as if they represented the new version.

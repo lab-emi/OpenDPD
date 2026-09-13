@@ -5,7 +5,7 @@ designed for but no test evidence yet; **unsupported** = out of scope.
 A platform being able to open the page does not imply every model or
 accelerator path is supported, so three tables are kept separately.
 
-Latest feature validation: [Studio 2.2.4](../performance/studio-2.2.4.md), 2026-09-13. Linux local generation, Virtual PA simulation, PA/DPD training/testing, separated PSD views and figure replay are verified; this does not broaden native-platform support.
+Latest feature validation: [Studio 2.2.5](../performance/studio-2.2.5.md), 2026-09-14. Includes explicit generation, LaTeX interaction, ILC/ILA and installation checks. Default-install CI now covers Linux, macOS and Windows dependencies and the headless browser fallback; native-window and hardware-specific verification remain separate below.
 
 Native baseline update: 2026-09-11 (native macOS fix verified in [the follow-up report](https://github.com/lab-emi/OpenDPD/blob/64d3e5e76b25d2d9dd59c91bf5c70c1d3ab2c698/docs/baseline/native-window-macos-fix-2026-09-11.md); S13 baseline in `docs/baseline/baseline-report.md`, hardening in `docs/releases/hardening-report.md`).
 
@@ -27,7 +27,7 @@ Native baseline update: 2026-09-11 (native macOS fix verified in [the follow-up 
 | macOS Apple Silicon | 3.11–3.13 | native surface verified for the exercised paths on 3.13.12; **browser launch unverified** | native launch, real CPU training and idle cleanup were exercised on a desktop (see Native window below, including the repaired active-close flow); real default-browser opening still needs verification; weekly CI covers the headless service |
 | Windows x86-64 | 3.11–3.13 | **unverified** | needs a person: browser opening, process-group cleanup, paths with spaces/Unicode |
 
-## Native window (`opendpd[desktop]`)
+## Native window (included by default since 2.2.5)
 
 | OS | Backend | Status | Evidence |
 |---|---|---|---|

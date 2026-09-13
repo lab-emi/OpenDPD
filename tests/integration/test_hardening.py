@@ -91,12 +91,15 @@ def test_diagnostic_pages_escape_their_text():
     assert "<script>" not in page and "&lt;script&gt;" in page and "&amp; &lt;b&gt;" in page
 
 
-def test_frontend_sources_have_no_html_sinks():
+def test_frontend_html_sinks_are_confined_to_the_audited_math_renderer():
     sinks = ("dangerouslySetInnerHTML", ".innerHTML", "eval(", "new Function(", "document.write(")
     offenders = []
     for path in FRONTEND_SRC.rglob("*.ts*"):
         text = path.read_text(encoding="utf-8")
-        offenders += [f"{path.relative_to(FRONTEND_SRC)}: {s}" for s in sinks if s in text]
+        # KaTeX escapes source text and permits only known coefficient classes.
+        # MathFormula.test.tsx exercises malicious TeX/HTML and dynamic interaction.
+        allowed = {"dangerouslySetInnerHTML"} if path.relative_to(FRONTEND_SRC).as_posix() == "components/MathFormula.tsx" else set()
+        offenders += [f"{path.relative_to(FRONTEND_SRC)}: {s}" for s in sinks if s in text and s not in allowed]
     assert not offenders, offenders
 
 

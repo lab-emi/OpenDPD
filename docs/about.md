@@ -13,7 +13,7 @@ OpenDPD is developed by the [Lab of Efficient Machine Intelligence](https://www.
 | Ruishen Yang | Contributor |
 | Qian Wu | Contributor |
 
-See the [GitHub contributors](https://github.com/lab-emi/OpenDPD/graphs/contributors) for the evolving contribution history. Studio's About page also links to the team and repository activity.
+See the [GitHub contributors](https://github.com/lab-emi/OpenDPD/graphs/contributors) for the evolving contribution history. Studio's About page presents the team, lab, repository link and installed version; it no longer embeds GitHub activity.
 
 ## Research and citation
 

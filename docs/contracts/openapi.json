@@ -717,7 +717,8 @@
           "kind": {
             "enum": [
               "surrogate_without_dpd",
-              "measured_without_dpd"
+              "measured_without_dpd",
+              "ilc_ideal"
             ],
             "title": "Kind",
             "type": "string"
@@ -3502,6 +3503,18 @@
               }
             ]
           },
+          "ilc": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ilc"
+          },
           "is_mock": {
             "default": false,
             "title": "Is Mock",
@@ -5245,6 +5258,17 @@
             "minimum": 0.0,
             "title": "Seed",
             "type": "integer"
+          },
+          "shared_channel_settings": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shared Channel Settings"
           },
           "snr_db": {
             "anyOf": [
@@ -7797,7 +7821,8 @@
                   "gradient",
                   "gradient_dla",
                   "least_squares",
-                  "ila_least_squares"
+                  "ila_least_squares",
+                  "ilc_ila"
                 ],
                 "type": "string"
               },
@@ -8282,6 +8307,11 @@
           },
           "symbol": {
             "title": "Symbol",
+            "type": "string"
+          },
+          "symbol_latex": {
+            "default": "",
+            "title": "Symbol Latex",
             "type": "string"
           },
           "unit": {
@@ -10382,7 +10412,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.4",
+            "default": "2.2.5",
             "title": "Version",
             "type": "string"
           }
@@ -12214,6 +12244,13 @@
             "title": "Equations",
             "type": "array"
           },
+          "equations_latex": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Equations Latex",
+            "type": "array"
+          },
           "limitations": {
             "$ref": "#/components/schemas/PALocalizedText"
           },
@@ -12565,7 +12602,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.4"
+    "version": "2.2.5"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -16464,6 +16501,46 @@
         ]
       }
     },
+    "/api/v1/signal-generator/signals/{signal_id}/archive": {
+      "post": {
+        "operationId": "archive_api_v1_signal_generator_signals__signal_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signal_id",
+            "required": true,
+            "schema": {
+              "title": "Signal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
     "/api/v1/signal-generator/signals/{signal_id}/dataset": {
       "post": {
         "deprecated": true,
@@ -16632,6 +16709,48 @@
           }
         },
         "summary": "Metadata",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/signals/{signal_id}/restore": {
+      "post": {
+        "operationId": "restore_api_v1_signal_generator_signals__signal_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signal_id",
+            "required": true,
+            "schema": {
+              "title": "Signal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PAInputDataset"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Restore",
         "tags": [
           "signal generator"
         ]
@@ -17013,6 +17132,18 @@
     "/api/v1/system/about": {
       "get": {
         "operationId": "system_about_api_v1_system_about_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "activity",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Activity",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -17025,6 +17156,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "System About",

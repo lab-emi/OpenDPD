@@ -49,6 +49,7 @@ def polynomial_module(spec: ModelSpec):
 def model_id(role: str, resolved: ResolvedExperimentConfig) -> str:
     """Legacy-shaped id; ``_P_<n>`` carries the real parameter count like the trainer's checkpoints."""
     params = resolved.model.parameters
+    params = {k: v for k, v in params.items() if k in ("K", "Q", "Ka", "La", "Kb", "Lb", "Mb", "Kc", "Lc", "Mc")}
     tag = "_".join(f"{k.upper()}_{int(v)}" for k, v in params.items() if k != "rcond")
     n_real = 2 * coefficient_count(resolved.model.key, params)
     return f"{role.upper()}_S_{resolved.training.seed}_M_{resolved.model.key.upper()}_{tag}_F_{resolved.training.frame_length}_P_{n_real}"
@@ -90,6 +91,7 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
     from modules.data_collector import load_dataset
     from utils.util import set_target_gain
     from opendpd.core.metrics import evaluate
+    from opendpd.services.ilc import ILC_STATEMENT
 
     dataset = ws.get_dataset(resolved.dataset.id)
     nperseg = int(dataset.signal.nperseg)
@@ -99,6 +101,8 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
     gain = float(set_target_gain(x_tr, y_tr))
     if resolved.training.train_samples is not None:             # S17 budget: the first N samples of the train split
         x_tr, y_tr = x_tr[:resolved.training.train_samples], y_tr[:resolved.training.train_samples]
+    if key == "ilc_dpd":
+        x_tr, y_tr = x_tr[:int(params["fit_samples"])], y_tr[:int(params["fit_samples"])]
     need = basis_bytes(key, params, len(x_tr))
     if need > MEMORY_BUDGET_BYTES:
         raise MemoryError(f"the {key} basis for {len(x_tr)} training samples needs {need / 2 ** 30:.1f} GiB "
@@ -106,7 +110,11 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
                           "or use benchmark/benchmark_volterra.py on a GPU")
     role = "pa" if resolved.task == TaskType.train_pa else "dpd"
     xc, yc = to_complex(x_tr), to_complex(y_tr)
-    if role == "pa":
+    if key == "ilc_dpd":
+        from opendpd.services.ilc import training_waveform
+        post_input, target = training_waveform(ws, run_dir, resolved, x_tr, gain, nperseg, on_epoch)
+        phi = segmented_basis(key, params, post_input, nperseg)
+    elif role == "pa":
         phi, target = segmented_basis(key, params, xc, nperseg), yc
     else:
         phi, target = segmented_basis(key, params, yc / gain, nperseg), xc      # ILA: postdistorter on measured data
@@ -138,7 +146,7 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
     _write_logs(hist, best, row)
     write_json_atomic(run_dir / FIT_FILE, {
         "schema_version": 1, "model": resolved.model.model_dump(mode="json"), "role": role,
-        "method": "direct least squares on the train split" if role == "pa" else ILA_STATEMENT,
+        "method": "direct least squares on the train split" if role == "pa" else (ILC_STATEMENT if key == "ilc_dpd" else ILA_STATEMENT),
         "segment_length": nperseg, "reference_gain": gain if role == "dpd" else None,
         "n_real_parameters": 2 * int(w.size), "diagnostics": diag.to_dict(), "checkpoint": str(save),
     })
@@ -186,5 +194,5 @@ def fit_limitations(ws: Workspace, run_id: str, resolved: ResolvedExperimentConf
            f"(cutoff rcond={d['rcond']:g}), condition number {d['condition_number']:.3g}, "
            f"train residual {d['train_nmse_db']:.2f} dB; deterministic, no seed or epochs"]
     if fit["role"] == "dpd":
-        out.append(ILA_STATEMENT)
+        out.append(fit["method"])
     return out

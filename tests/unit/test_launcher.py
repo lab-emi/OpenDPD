@@ -289,3 +289,20 @@ def test_preferred_language_reads_the_workspace_then_the_os_locale(tmp_path, mon
     assert launcher.preferred_language(tmp_path / "missing") == "en"
     ws.settings_path.write_text("{broken")
     assert launcher.preferred_language(ws.root) == "en", "a broken file never blocks the window"
+
+
+def test_loopback_probe_bypasses_system_proxy(monkeypatch):
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200);self.end_headers();self.wfile.write(b'{"status":"ok"}')
+        def log_message(self,*args):
+            pass
+    server=HTTPServer(('127.0.0.1',0),Handler)
+    thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+    monkeypatch.setenv('http_proxy','http://127.0.0.1:1')
+    monkeypatch.setenv('no_proxy','')
+    try:
+        assert launcher.probe(f'http://127.0.0.1:{server.server_port}/healthz')=={'status':'ok'}
+    finally:
+        server.shutdown();server.server_close();thread.join()

@@ -1,6 +1,6 @@
 # Your first experiment in Studio
 
-Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.4"`.
+Open [Studio on the web](https://opendpd.com/studio/), or follow the [uv installation steps](../install.md) for the packaged local app. Studio, PyTorch and pywebview install together in 2.2.5.
 
 Get Started now offers **Signal Generator** first, then existing datasets and CSV upload. The [Signal Generator guide](../guides/signal-generator.md) walks through creating and inspecting a waveform and creating a PA Input Dataset, then explicitly simulating a Virtual PA output in the [PA Library](../guides/virtual-pa-library.md) to make paired synthetic data. Each PA Model and DPD Model workspace contains Training and Testing tabs; Testing displays the selected split's exact complex I/Q count.
 
@@ -73,6 +73,12 @@ Select a light, dark or system theme in **Settings**. The layout adapts to the w
 
 A second launch for the same active workspace opens the existing instance. Close Studio or press Ctrl+C to stop the launcher; active workers trigger a confirmation before shutdown.
 
-The native window uses the operating system's web view. Run `opendpd doctor` for backend diagnostics; on Linux a WebKit2GTK installation may need `python3-gi gir1.2-webkit2-4.1`, or install a Qt backend with `python -m pip install "pywebview[qt]"`. Consult the [support matrix](../releases/support-matrix.md) for verified platforms.
+The native window uses the operating system's web view. Run `opendpd doctor` for backend diagnostics; on Linux a WebKit2GTK installation may need `python3-gi gir1.2-webkit2-4.1`, or use the Qt backend installed by default on Linux. Consult the [support matrix](../releases/support-matrix.md) for verified platforms.
 
-For remote use, keep the server on loopback and use an SSH tunnel, for example `ssh -L 8765:127.0.0.1:8765 host`, with `--no-browser` on the host. If the session expires, reopen the current launcher's URL. Other setup problems are covered in [Installation](../install.md#troubleshooting).
+For remote use, keep the server on loopback and use an SSH tunnel, for example `ssh -L 8765:127.0.0.1:8765 host`, with `--no-browser` on the host. If the session expires, reopen the current launcher's URL. Other setup problems are covered in [Installation](../install.md#troubleshooting-connection-refused).
+
+## ILC and formulas (2.2.5)
+
+PA Training/Testing includes an ILC linearization tab; DPD Training/Testing includes an ILC-DPD / Ideal benchmark tab. Both use the same bounded, recorded controller and ILA fitting workflow described in the [ILC guide](../guides/ilc-dpd.md). Select a trained PA reference first. The main score is the fitted DPD on held-out input; the Ideal test-waveform feedback result is labelled separately.
+
+Virtual PA equations and result metric formulas use local LaTeX rendering. Click a formula coefficient or its parameter field to highlight the pair. Next-step buttons appear above configuration fields. The result's calculation-method chip uses a descriptive name; expand Metric definitions to change the method or inspect its recorded version.

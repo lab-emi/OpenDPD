@@ -52,15 +52,16 @@ test('shows the profile behind every score, its definitions, and switches to ano
     'GET /api/v1/metrics/profiles': () => [legacyProfile.data, generalProfile.data, ofdmProfile.data],
   })
   renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
-  await screen.findByText('legacy-opendpd-v1 v1 · frozen')
+  await screen.findAllByText('OpenDPD legacy · segment-averaged scores')
   expect(screen.getByRole('heading', { level: 3, name: 'NMSE (mean of segment dB)' })).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Definition of EVM' }))
   await screen.findByText(/Not a demodulated constellation EVM/)
   expect(screen.getByRole('button', { name: 'Metric definitions' })).toBeInTheDocument()
 
-  await userEvent.click(screen.getByLabelText('Metric profile'))
-  expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['legacy-opendpd-v1', 'general-spectral-v1'])   // pending one hidden
-  await userEvent.click(await screen.findByRole('option', { name: 'general-spectral-v1' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Metric definitions' }))
+  await userEvent.click(screen.getByLabelText('Metric calculation'))
+  expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['OpenDPD legacy · segment-averaged scores', 'General baseband · pooled error & leakage'])   // pending one hidden
+  await userEvent.click(await screen.findByRole('option', { name: 'General baseband · pooled error & leakage' }))
   await screen.findByRole('heading', { level: 3, name: 'NMSE (pooled)' })
   expect(screen.getByText('-22.50 dB')).toBeInTheDocument()
   const acprL = screen.getByRole('region', { name: 'ACPR_L' })
@@ -160,7 +161,7 @@ test('the export panel is not offered for a mock result', async () => {
     'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
   })
   renderWithProviders(<ResultDetailPage />, { route: '/results/run-pa-0001', path: '/results/:runId' })
-  await screen.findByText('legacy-opendpd-v1 v1 · frozen')
+  await screen.findAllByText('OpenDPD legacy · segment-averaged scores')
   expect(screen.queryByRole('region', { name: 'Export and report' })).not.toBeInTheDocument()
 })
 
@@ -172,7 +173,7 @@ test('a measured result shows the attestation, the declared conditions, every ca
     'GET /api/v1/metrics/profiles': () => [legacyProfile.data],
   })
   renderWithProviders(<ResultDetailPage />, { route: '/results/run-meas-0001', path: '/results/:runId' })
-  await screen.findByText('legacy-opendpd-v1 v1 · frozen')
+  await screen.findAllByText('OpenDPD legacy · segment-averaged scores')
   expect(screen.getByText('MOCK · DPD · measured')).toBeInTheDocument()
   const panel = screen.getByRole('region', { name: 'Measurement' })
   expect(within(panel).getByTestId('attestation')).toHaveTextContent('mock instrument adapter')
