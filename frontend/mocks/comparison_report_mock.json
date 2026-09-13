@@ -12,8 +12,10 @@
         "incompatibilities": [
           "evidence type: pa_modeling vs dpd_surrogate",
           "reference kind: measured_pa_output vs linear_gain_target",
+          "reference rule: none vs max|y_train| / max|x_train| (legacy set_target_gain)",
           "reference gain: none vs 1.0273",
-          "PA surrogate: n/a vs aaaaaaaaaaaa"
+          "PA surrogate: n/a vs aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "valid sample range: (0, 7680) vs None"
         ]
       }
     ],
