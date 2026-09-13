@@ -20,7 +20,7 @@ def _reference_gain(r: EvaluationResult) -> str:
     alignment of that capture (capture units), so measured results compare on their operating point instead."""
     if r.evidence_type == EvidenceType.dpd_measured:
         return "per-capture least-squares alignment"
-    return "none" if r.reference.gain_value is None else f"{r.reference.gain_value:.6g}"
+    return "none" if r.reference.gain_value is None else repr(r.reference.gain_value)
 
 
 def _operating_point(r: EvaluationResult) -> str:
@@ -40,20 +40,25 @@ def _surrogate(r: EvaluationResult) -> str:
     if r.evidence_type != EvidenceType.dpd_surrogate:
         return "n/a"
     pa = next((m for m in r.models if m.role == "pa"), None)
-    return (pa.weights_sha256 or pa.run_id or "unknown")[:12] if pa else "unknown"
+    return (pa.weights_sha256 or pa.run_id or "unknown") if pa else "unknown"
 
 
 _FIELDS = (
     ("metric profile", lambda r: f"{r.metric_profile_id} v{r.metric_profile_version}"),
     ("evidence type", lambda r: r.evidence_type.value),
     ("dataset", lambda r: r.dataset.dataset_id),
+    ("raw data hash", lambda r: r.dataset.raw_sha256 or "unknown"),
+    ("processed data hash", lambda r: r.dataset.processed_sha256 or "unknown"),
     ("preprocessing version", lambda r: r.dataset.preprocessing_version),
     ("split protocol", lambda r: r.dataset.split_version),
     ("evaluated split", lambda r: r.dataset.split),
     ("reference kind", lambda r: r.reference.kind),
+    ("reference rule", lambda r: r.reference.gain_rule or "none"),
     ("reference gain", _reference_gain),
     ("PA surrogate", _surrogate),
     ("operating point", _operating_point),
+    ("measurement processing", lambda r: getattr(r.measurement.captures[0], "processing_version", "measurement-integer-v1") if r.measurement else "n/a"),
+    ("valid sample range", lambda r: repr(r.valid_sample_range)),
     ("execution semantics", lambda r: ",".join(sorted({m.execution_semantics for m in r.models})) or "none"),
     ("mock", lambda r: "mock" if r.is_mock else "real"),
 )
@@ -61,10 +66,33 @@ _FIELDS = (
 
 def comparison_key(result: EvaluationResult) -> Dict[str, str]:
     """The protocol a result was produced under; equal keys may be ranked."""
-    return {name: str(get(result)) for name, get in _FIELDS}
+    key = {name: str(get(result)) for name, get in _FIELDS}
+    # Fields remain individually named so a reviewer can identify the actual difference.
+    for name in ("dut", "carrier_frequency_hz", "average_output_power_dbm", "input_power_dbm",
+                 "power_reference_plane", "temperature_c", "supply_v", "bias", "mode", "load", "vswr",
+                 "reflection_phase_deg", "calibration_id", "fixture", "deembedding"):
+        value = getattr(getattr(result, "rf_conditions", None), name, None)
+        key[name.replace("_", " ")] = str(value) if value is not None else "not provided"
+    for name in ("sample_rate_hz", "bandwidth_hz", "n_sub_ch", "nperseg", "modulation", "amplitude_units"):
+        value = getattr(getattr(result, "evaluated_signal", None), name, None)
+        key[name.replace("_", " ")] = str(value) if value is not None else "not recorded"
+    if result.measurement:
+        key["measurement temperature"] = str(result.measurement.conditions.temperature_c)
+        key["measurement calibration"] = result.measurement.conditions.calibration
+    else:
+        key["measurement temperature"] = key["measurement calibration"] = "n/a"
+    return key
 
 
 def incompatibilities(a: EvaluationResult, b: EvaluationResult) -> List[str]:
     """Human-readable reasons why ``a`` and ``b`` must not be ranked against each other (empty = comparable)."""
     ka, kb = comparison_key(a), comparison_key(b)
-    return [f"{name}: {ka[name]} vs {kb[name]}" for name in ka if ka[name] != kb[name]]
+    reasons = [f"{name}: {ka[name]} vs {kb[name]}" for name in ka if ka[name] != kb[name]]
+    for r in (a, b):
+        if r.evidence_type == EvidenceType.dpd_measured and not r.is_mock:
+            power = getattr(getattr(r, "rf_conditions", None), "average_output_power_dbm", None)
+            if power is None and r.measurement:
+                power = r.measurement.captures[0].declared_output_power_dbm
+            if power is None:
+                reasons.append(f"{r.run_id or r.result_id}: output power not declared; physical power matching is unverified")
+    return reasons
