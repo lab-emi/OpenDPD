@@ -20,7 +20,7 @@ import { ErrorState } from '@/components/StateBlock'
 
 type UploadResult = components['schemas']['UploadResult']
 
-const ACCEPT = '.csv,.npy,.npz'
+const ACCEPT = '.csv,text/csv'
 
 /** Local wall-clock time for a datetime-local input, computed once when the dialog opens. */
 const localNow = () => {
