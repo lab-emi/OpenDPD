@@ -313,10 +313,18 @@ class PreprocessPreview(BaseModel):
     report_after: DiagnosticReport
 
 
+class UploadValidation(BaseModel):
+    status: Literal['passed']
+    sha256: Sha256
+    n_samples: int
+    columns: int
+
+
 class UploadResult(BaseModel):
     root_id: str
     path: str
     size_bytes: int
+    validation: UploadValidation
 
 
 def _ws(request: Request):
@@ -377,7 +385,9 @@ def dataset_import(body: ImportRequest, request: Request):
 @router.post("/datasets/upload", response_model=UploadResult, status_code=201, tags=["datasets"],
              dependencies=[Depends(require_csrf)])
 async def dataset_upload(request: Request, file: UploadFile):
-    """Browser upload, streamed into <workspace>/imports/uploads (then imported like any root file)."""
+    """Validate the entire CSV in quarantine before publishing an import reference."""
+    import asyncio
+    from opendpd.services.csv_upload import CsvUploadRejected
     ws = _ws(request)
 
     def chunks():
@@ -388,10 +398,15 @@ async def dataset_upload(request: Request, file: UploadFile):
             yield chunk
 
     try:
-        path = datasets_service.receive_upload(ws, file.filename or "upload.csv", chunks(), UPLOAD_MAX_BODY)
+        path = await asyncio.to_thread(datasets_service.receive_upload, ws, file.filename or '', chunks(), UPLOAD_MAX_BODY)
     except datasets_service.UploadTooLarge as err:
         raise _error(413, "payload_too_large", str(err))
-    return UploadResult(root_id="imports", path=path.relative_to(ws.imports_dir).as_posix(), size_bytes=path.stat().st_size)
+    except CsvUploadRejected as err:
+        raise _error(422, 'csv_rejected', str(err))
+    finally:
+        await file.close()
+    return UploadResult(root_id="imports", path=path.relative_to(ws.imports_dir).as_posix(),
+                        size_bytes=path.stat().st_size, validation=json.loads(path.with_suffix('.json').read_text()))
 
 
 @router.post("/datasets/csv/preview", response_model=CsvInspection, tags=["datasets"],
@@ -539,6 +554,49 @@ def _get_run(request: Request, run_id: str) -> RunRecord:
 @router.get("/runs/{run_id}", response_model=RunView, tags=["runs"], dependencies=[Depends(require_session)])
 def runs_get(run_id: str, request: Request):
     return _view(_get_run(request, run_id))
+
+
+class ModelDownloadInfo(BaseModel):
+    available: bool
+    final: bool
+    epoch: Optional[int] = None
+    sha256: Optional[Sha256] = None
+    size_bytes: Optional[int] = None
+    download_url: Optional[str] = None
+
+
+@router.get('/runs/{run_id}/checkpoint', response_model=ModelDownloadInfo, tags=['runs'], dependencies=[Depends(require_session)])
+def run_checkpoint(run_id: str, request: Request):
+    from opendpd.services.model_download import read_model
+    record = _get_run(request, run_id)
+    snapshot = read_model(_ws(request).run_dir(run_id))
+    final = record.status == RunStatus.succeeded
+    if snapshot is None:
+        if final:
+            manifest = experiments.load_artifacts(_ws(request), run_id)
+            checkpoint = next((a for a in (manifest.artifacts if manifest else []) if a.kind.value == 'checkpoint'), None)
+            if checkpoint:
+                return ModelDownloadInfo(available=True, final=True, sha256=checkpoint.file.sha256,
+                                         size_bytes=checkpoint.file.size_bytes,
+                                         download_url=f'/api/v1/artifacts/{run_id}/{checkpoint.artifact_id}')
+        return ModelDownloadInfo(available=False, final=final)
+    info, _ = snapshot
+    return ModelDownloadInfo(available=True, final=final, **info, download_url=f'/api/v1/runs/{run_id}/checkpoint/download')
+
+
+@router.get('/runs/{run_id}/checkpoint/download', tags=['runs'], dependencies=[Depends(require_session)])
+def run_checkpoint_download(run_id: str, request: Request):
+    from opendpd.services.model_download import read_model
+    record = _get_run(request, run_id)
+    snapshot = read_model(_ws(request).run_dir(run_id))
+    if snapshot is None:
+        raise _error(404, 'checkpoint_unavailable', 'No completed model checkpoint is available yet.')
+    info, data = snapshot
+    kind = 'final-model' if record.status == RunStatus.succeeded else 'checkpoint'
+    return Response(data, media_type='application/octet-stream', headers={
+        'Content-Disposition': f'attachment; filename="{run_id}-{kind}.pt"',
+        'ETag': '"' + info['sha256'] + '"', 'Cache-Control': 'no-store',
+    })
 
 
 @router.post("/runs/{run_id}/cancel", response_model=RunView, tags=["runs"], dependencies=[Depends(require_csrf)])

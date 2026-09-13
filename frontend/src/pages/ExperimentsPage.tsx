@@ -17,6 +17,7 @@ import Typography from '@mui/material/Typography'
 import { useEffect, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router'
 import { useCustomDatasetImports, useImportPackage, useRunCount, useRuns } from '@/api/hooks'
+import { WEB_MODE } from '@/api/client'
 import type { RunStatus, RunView } from '@/api/types'
 import { formatDateTime, t } from '@/i18n'
 import { StatusChip, statusLabel } from '@/components/StatusChip'
@@ -84,7 +85,7 @@ export function RunTable({ runs }: { runs: RunView[] }) {
 
 /** Package import: a hidden file input behind a button; the report says what arrived and what is still missing. */
 function ImportPackage() {
-  const customDatasets = useCustomDatasetImports()
+  const customDatasets = useCustomDatasetImports() && !WEB_MODE
   const importPackage = useImportPackage()
   const report = importPackage.data
   const missing = report?.missing ?? []

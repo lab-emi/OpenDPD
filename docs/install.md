@@ -1,14 +1,19 @@
 # Installation
 
-Choose the **source preview** for Studio and workspace experiments, or the **PyPI release** for the stable core API and legacy CLI.
+Try **[OpenDPD Studio on the web](https://opendpd.com/studio/)** without installing anything, or install **2.2.0** locally.
 
 | Installation | Includes | Requirements |
 | --- | --- | --- |
-| Source, `.[gui]` | Studio in a browser, workspace CLI, Python API, research scripts | Python 3.10–3.13, Git, Node.js 22.22+ |
-| Source, `.[desktop]` | The same Studio in a native window | Above, plus a working system web view |
-| PyPI, `opendpd` | Released core API and `opendpd-cli` | Python 3.10–3.13; no Node.js |
+| PyPI, `opendpd[gui]` | Packaged Studio, workspace CLI and Python API | Python 3.10–3.13; no Node.js |
+| PyPI, `opendpd[desktop]` | Studio in a native window | Above, plus a working system web view |
+| Source, `.[gui]` | Editable Studio and research scripts | Python 3.10–3.13, Git, Node.js 22.22+ |
 
-As of the 2.2 development preview, PyPI is **2.1.0** and has no Studio extras. Installing `opendpd[gui]` or `opendpd[desktop]` from that release will not install Studio.
+```bash
+python -m pip install "opendpd[gui]==2.2.0"
+opendpd gui
+```
+
+Local workspaces stay on your computer. The hosted app uses temporary server workspaces and deletes their files within 24 hours.
 
 ## Install Studio from source
 

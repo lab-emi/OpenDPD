@@ -751,7 +751,7 @@
   "language.loadFailed": "Impossible de charger la langue choisie. Réessayez.",
   "web.welcome": "OpenDPD Studio sur le Web",
   "web.description": "Explorez les jeux de données intégrés et lancez des analyses, des entraînements neuronaux et des inférences sur notre serveur isolé.",
-  "web.temporary": "Cet espace est temporaire. Téléchargez vos résultats avant leur expiration, dans les 24 heures. Le téléversement de données et de code est indisponible.",
+  "web.temporary": "Espace temporaire : téléchargez données et modèles avant leur suppression sous 24 heures. Les CSV sont validés avant utilisation ; aucun envoi de code.",
   "web.start": "Démarrer une session temporaire",
   "web.retention": "Espace temporaire · téléchargez vos résultats avant {date}. Les fichiers sont supprimés automatiquement.",
   "web.connection.title": "Connexion au serveur de calcul impossible",
@@ -764,5 +764,17 @@
   "logs.refresh": "Actualiser la sortie",
   "run.reconnect": "Resynchroniser l’expérience",
   "run.gpuQueue": "Le GPU partagé exécute une expérience à la fois. Votre expérience est en attente ; vous pouvez quitter cette page et y revenir.",
-  "chart.controls.touch": "Deux doigts : zoomer et déplacer. Un doigt : faire défiler la page."
+  "chart.controls.touch": "Deux doigts : zoomer et déplacer. Un doigt : faire défiler la page.",
+  "datasets.upload.limit": "CSV UTF-8 uniquement : 25 MiB et 1 000 000 de paires maximum.",
+  "datasets.upload.checking": "Vérification du type de fichier et de chaque ligne CSV avant aperçu…",
+  "datasets.upload.passed": "Fichier validé : {samples} échantillons numériques.",
+  "live.epochs": "Époques terminées : {completed} / {total}",
+  "live.epochProgress": "Progression des époques",
+  "live.currentEpoch": "Époque {epoch}",
+  "live.batchProgress": "Progression du lot",
+  "model.download.final": "Télécharger le modèle final",
+  "model.download.checkpoint": "Télécharger le checkpoint",
+  "model.download.help": "Poids au meilleur score de validation actuel. Enregistrez-les avant expiration.",
+  "model.download.waiting": "Disponible après la sauvegarde du premier checkpoint.",
+  "model.download.error": "Impossible de vérifier le modèle. Réessayez bientôt."
 }

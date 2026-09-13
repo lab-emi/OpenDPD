@@ -751,7 +751,7 @@
   "language.loadFailed": "Could not load the selected language. Try again.",
   "web.welcome": "OpenDPD Studio on the web",
   "web.description": "Explore built-in datasets and run analysis, neural network training and inference. Computation runs on our isolated server.",
-  "web.temporary": "This is a temporary workspace. Download results before they expire, within 24 hours. Uploading datasets and code is not available.",
+  "web.temporary": "This is a temporary workspace. Download your data and models before they expire, within 24 hours. CSV datasets are validated before use; code uploads are not available.",
   "web.start": "Start a temporary session",
   "web.retention": "Temporary workspace · download your results before {date}. Files are deleted automatically.",
   "web.connection.title": "Cannot connect to the compute server",
@@ -764,5 +764,17 @@
   "logs.refresh": "Refresh output",
   "run.reconnect": "Resync experiment",
   "run.gpuQueue": "The shared GPU runs one experiment at a time. Your experiment is queued; you can leave this page and return to it.",
-  "chart.controls.touch": "Two fingers: zoom and pan. One finger: scroll the page."
+  "chart.controls.touch": "Two fingers: zoom and pan. One finger: scroll the page.",
+  "datasets.upload.limit": "CSV only: UTF-8, at most 25 MiB and 1,000,000 paired samples.",
+  "datasets.upload.checking": "Validating file type and every CSV row before preview…",
+  "datasets.upload.passed": "Upload validation passed: {samples} numeric samples.",
+  "live.epochs": "Completed epochs: {completed} / {total}",
+  "live.epochProgress": "Epoch progress",
+  "live.currentEpoch": "Epoch {epoch}",
+  "live.batchProgress": "Batch progress",
+  "model.download.final": "Download final model",
+  "model.download.checkpoint": "Download checkpoint",
+  "model.download.help": "Weights selected by the best validation score so far. Save them before the workspace expires.",
+  "model.download.waiting": "Available after the first model checkpoint is saved.",
+  "model.download.error": "Could not check model availability. Retry shortly."
 }

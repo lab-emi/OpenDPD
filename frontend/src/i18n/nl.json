@@ -751,7 +751,7 @@
   "language.loadFailed": "De gekozen taal kon niet worden geladen. Probeer opnieuw.",
   "web.welcome": "OpenDPD Studio op het web",
   "web.description": "Verken ingebouwde datasets en voer analyses, neurale training en inferentie uit op onze geïsoleerde server.",
-  "web.temporary": "Deze werkruimte is tijdelijk. Download resultaten vóór ze verlopen, binnen 24 uur. Uploads van datasets en code zijn niet beschikbaar.",
+  "web.temporary": "Tijdelijke werkruimte: download gegevens en modellen vóór verwijdering binnen 24 uur. CSV wordt vóór gebruik gecontroleerd; code uploaden is niet beschikbaar.",
   "web.start": "Tijdelijke sessie starten",
   "web.retention": "Tijdelijke werkruimte · download resultaten vóór {date}. Bestanden worden automatisch verwijderd.",
   "web.connection.title": "Geen verbinding met de rekenserver",
@@ -764,5 +764,17 @@
   "logs.refresh": "Uitvoer vernieuwen",
   "run.reconnect": "Experiment synchroniseren",
   "run.gpuQueue": "De gedeelde GPU voert één experiment tegelijk uit. Je experiment staat in de wachtrij; je kunt deze pagina verlaten en later terugkomen.",
-  "chart.controls.touch": "Twee vingers: zoomen en verschuiven. Eén vinger: de pagina scrollen."
+  "chart.controls.touch": "Twee vingers: zoomen en verschuiven. Eén vinger: de pagina scrollen.",
+  "datasets.upload.limit": "Alleen UTF-8-CSV: maximaal 25 MiB en 1.000.000 sampleparen.",
+  "datasets.upload.checking": "Bestandstype en alle CSV-rijen worden vóór de voorvertoning gecontroleerd…",
+  "datasets.upload.passed": "Upload goedgekeurd: {samples} numerieke samples.",
+  "live.epochs": "Voltooide epochs: {completed} / {total}",
+  "live.epochProgress": "Epochvoortgang",
+  "live.currentEpoch": "Epoch {epoch}",
+  "live.batchProgress": "Batchvoortgang",
+  "model.download.final": "Definitief model downloaden",
+  "model.download.checkpoint": "Checkpoint downloaden",
+  "model.download.help": "Gewichten met de beste validatiescore tot nu toe. Bewaar ze vóór de werkruimte verloopt.",
+  "model.download.waiting": "Beschikbaar zodra het eerste checkpoint is opgeslagen.",
+  "model.download.error": "Modelbeschikbaarheid kon niet worden gecontroleerd. Probeer het straks opnieuw."
 }

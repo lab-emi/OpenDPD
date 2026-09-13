@@ -751,7 +751,7 @@
   "language.loadFailed": "无法加载所选语言，请重试。",
   "web.welcome": "OpenDPD Studio 网页版",
   "web.description": "使用内置数据集进行分析、神经网络训练和推理。计算在隔离服务器上运行。",
-  "web.temporary": "这是临时工作区，文件将在 24 小时内删除，请及时下载结果。目前不支持上传数据集和代码。",
+  "web.temporary": "这是临时工作区，数据和模型将在 24 小时内删除，请及时下载。CSV 数据集通过校验后才能使用；暂不支持上传代码。",
   "web.start": "开始临时会话",
   "web.retention": "临时工作区 · 请在 {date} 前下载结果，文件将自动删除。",
   "web.connection.title": "无法连接计算服务器",
@@ -764,5 +764,17 @@
   "logs.refresh": "刷新输出",
   "run.reconnect": "重新同步实验",
   "run.gpuQueue": "共享 GPU 每次执行一个实验。你的实验正在排队，离开此页面后仍可返回查看。",
-  "chart.controls.touch": "双指缩放和平移图表，单指滚动页面。"
+  "chart.controls.touch": "双指缩放和平移图表，单指滚动页面。",
+  "datasets.upload.limit": "仅限 UTF-8 CSV，最大 25 MiB、1,000,000 对样本。",
+  "datasets.upload.checking": "正在校验文件类型和全部 CSV 行，通过后才能预览…",
+  "datasets.upload.passed": "上传校验通过：{samples} 个数值样本。",
+  "live.epochs": "已完成 epoch：{completed} / {total}",
+  "live.epochProgress": "Epoch 进度",
+  "live.currentEpoch": "第 {epoch} 个 epoch",
+  "live.batchProgress": "Batch 进度",
+  "model.download.final": "下载最终模型",
+  "model.download.checkpoint": "下载 checkpoint",
+  "model.download.help": "下载当前验证分数最优的模型权重，请在工作区过期前保存。",
+  "model.download.waiting": "首个模型 checkpoint 保存后即可下载。",
+  "model.download.error": "暂时无法检查模型，请稍后重试。"
 }

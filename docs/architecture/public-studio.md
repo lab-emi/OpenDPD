@@ -77,11 +77,9 @@ User-downloaded files and Cloudflare/GitHub platform logs are outside this
 server-side file deletion policy. Raw client IPs are not stored by the app;
 Cloudflare necessarily processes them at the edge.
 
-Uploads of datasets, checkpoints, packages and code, local-path imports, shell
-execution, RF control and executable deployment exports are unavailable. Only
-reviewed built-in datasets and supported neural models are published. Any
-future upload feature must write into the same session tree and add file-format,
-decompression, size and model-loading validation before its route is allowed.
+CSV dataset uploads use a dedicated authenticated, rate-limited endpoint. Files must have a `.csv` suffix and contain UTF-8 comma-separated paired numeric samples: two complex columns or four real I/Q columns, with an optional header. Limits are 25 MiB, 1,000,000 sample rows and four accepted uploads per session. The server scans every row in a private quarantine folder before exposing any preview or import reference. Binary/control bytes, invalid encoding, oversized lines, broken CSV, non-finite samples and formulas/code in data cells are rejected; failed and interrupted partial uploads are deleted immediately. Successful uploads receive a random identifier and SHA-256 proof bound to their session. Import and preview routes only accept those validated sources, and imports reserve workspace capacity before materialisation. This validates a restricted data format; it does not execute files or claim antivirus certification.
+
+Dataset/code/package/checkpoint path imports, shell execution, RF control and executable deployment exports remain unavailable publicly. Downloading a generated checkpoint is allowed: the GPU agent sends a size-bounded, checksum-verified snapshot through the authenticated private bridge; browser downloads require the owning session. Downloads read a stable snapshot while newer best weights are saved atomically. After success the same control downloads the final selected model (best validation score). All generated and uploaded copies remain under the existing expiry policy.
 
 ## Security and capacity
 
@@ -169,7 +167,7 @@ The 50% PyTorch allocator ceiling and a 4 GiB free-memory admission check leave
 headroom for the desktop; they are not hardware memory partitions. This GPU
 has no MIG isolation in this deployment. Containers share the host NVIDIA
 kernel driver, a weaker boundary than the CPU VM. Only reviewed application
-code and built-in datasets are accepted; enabling arbitrary uploaded code would
+code, built-in datasets and validated numeric CSV data are accepted; enabling arbitrary uploaded code would
 require a new isolation design.
 
 ## Deployment
@@ -310,7 +308,7 @@ also passed (zero reported dependency vulnerabilities at that check).
 
 The dedicated offline production VM completed real built-in analysis, PA
 training, DPD training and inference. A second session could not read the
-first session's dataset, run or events; upload requests were denied. The
+first session's dataset, run or events; upload requests were denied in that earlier rollout. CSV uploads were subsequently enabled with the 2.2.0 quarantine controls above. The
 daily-reset unit was invoked during an active training run to verify worker
 termination, token invalidation and replacement of the tmpfs with an empty
 session directory. Source is read-only to the worker, guest Internet egress

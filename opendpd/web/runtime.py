@@ -77,6 +77,7 @@ class Tenant:
     local_session: object
     inflight: int = 0
     closing: bool = False
+    uploading: bool = False
 
 
 class WebSupervisor(Supervisor):

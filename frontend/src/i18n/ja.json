@@ -751,7 +751,7 @@
   "language.loadFailed": "選択した言語を読み込めませんでした。再試行してください。",
   "web.welcome": "OpenDPD Studio ウェブ版",
   "web.description": "内蔵データセットの分析、ニューラルネットワークの学習と推論を、隔離されたサーバーで実行します。",
-  "web.temporary": "一時的なワークスペースです。ファイルは24時間以内に削除されるため、有効期限までに結果をダウンロードしてください。データとコードのアップロードには対応していません。",
+  "web.temporary": "一時ワークスペースです。データとモデルは24時間以内に削除されるため、その前にダウンロードしてください。CSV は使用前に検証されます。コードのアップロードはできません。",
   "web.start": "一時セッションを開始",
   "web.retention": "一時ワークスペース · {date} までに結果をダウンロードしてください。ファイルは自動削除されます。",
   "web.connection.title": "計算サーバーに接続できません",
@@ -764,5 +764,17 @@
   "logs.refresh": "出力を更新",
   "run.reconnect": "実験を再同期",
   "run.gpuQueue": "共有 GPU は一度に一つの実験を実行します。実験は待機中です。このページを離れても、後から戻れます。",
-  "chart.controls.touch": "2本指で拡大・縮小と移動、1本指でページをスクロール。"
+  "chart.controls.touch": "2本指で拡大・縮小と移動、1本指でページをスクロール。",
+  "datasets.upload.limit": "UTF-8 CSV のみ：最大 25 MiB、1,000,000 組のサンプル。",
+  "datasets.upload.checking": "プレビュー前にファイル形式と CSV 全行を検証しています…",
+  "datasets.upload.passed": "アップロード検証済み：{samples} 個の数値サンプル。",
+  "live.epochs": "完了エポック：{completed} / {total}",
+  "live.epochProgress": "エポックの進行状況",
+  "live.currentEpoch": "エポック {epoch}",
+  "live.batchProgress": "バッチの進行状況",
+  "model.download.final": "最終モデルをダウンロード",
+  "model.download.checkpoint": "チェックポイントをダウンロード",
+  "model.download.help": "現在までの検証スコアが最良の重みです。有効期限前に保存してください。",
+  "model.download.waiting": "最初のチェックポイント保存後に利用できます。",
+  "model.download.error": "モデルを確認できませんでした。少し待って再試行してください。"
 }

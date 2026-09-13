@@ -124,6 +124,19 @@ class GpuBroker:
             unpack(data, job.root)
             self.finish(job, exit_code)
 
+    def checkpoint(self, job, payload):
+        from opendpd.services.model_download import MAX_MODEL_BYTES, publish_model
+        with self.lock:
+            job.last_seen = self.last_seen = time.monotonic()
+            if job.cancelled():
+                return {'continue': False}
+            encoded = payload.get('data', '')
+            if not isinstance(encoded, str) or len(encoded) > (MAX_MODEL_BYTES + 2) // 3 * 4:
+                raise ValueError('model snapshot exceeds limit')
+            data = base64.b64decode(encoded, validate=True)
+            publish_model(job.root, data, epoch=payload['epoch'], sha256=payload['sha256'])
+            return {'continue': True}
+
     @staticmethod
     def finish(job, code, reason=None):
         if job.root.exists():

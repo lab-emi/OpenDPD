@@ -39,12 +39,28 @@ test('download requests cannot leak a capability to another origin or non-API pa
   expect(fetcher).not.toHaveBeenCalled()
 })
 
-test('web uploads are refused before reading or transmitting a file', async () => {
+test('public uploads reject non-CSV files and package imports before transmission', async () => {
   const fetcher = vi.fn()
   vi.stubGlobal('fetch', fetcher)
   const { api } = await import('./client')
-  await expect(api.upload('/datasets/upload', new FormData())).rejects.toMatchObject({ status: 403 })
+  await expect(api.upload('/datasets/upload', new FormData())).rejects.toMatchObject({ status: 415 })
+  const form = new FormData(); form.append('file', new File(['code'], 'capture.py'))
+  await expect(api.upload('/datasets/upload', form)).rejects.toMatchObject({ status: 415 })
+  form.set('file', new File(['1,2'], 'capture.csv'))
+  await expect(api.upload('/imports', form)).rejects.toMatchObject({ status: 415 })
   expect(fetcher).not.toHaveBeenCalled()
+})
+
+test('a CSV upload uses a bearer header, no cookie or token in the URL, and a raw bounded body', async () => {
+  sessionStorage.setItem('opendpd-web-session:https://api.opendpd.com', 'test-capability')
+  const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ validation: { status: 'passed' } }), { status: 201 }))
+  vi.stubGlobal('fetch', fetcher)
+  const { api } = await import('./client')
+  const file = new File(['input,output\n1,2\n'], 'capture.csv')
+  const form = new FormData(); form.append('file', file)
+  await expect(api.upload('/datasets/upload', form)).resolves.toMatchObject({ validation: { status: 'passed' } })
+  expect(fetcher.mock.calls[0]![0]).toBe('https://api.opendpd.com/api/v1/datasets/upload?filename=capture.csv')
+  expect(fetcher.mock.calls[0]![1]).toMatchObject({ credentials: 'omit', redirect: 'error', body: file, headers: { 'Content-Type': 'text/csv', Authorization: 'Bearer test-capability' } })
 })
 
 test('a DNS or transport failure is recoverable without creating a session or retrying a POST automatically', async () => {

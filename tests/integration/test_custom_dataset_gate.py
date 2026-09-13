@@ -1,4 +1,4 @@
-"""The initial Studio release cannot receive custom datasets through any web entry."""
+"""Administrators may explicitly disable all custom dataset entry points."""
 
 import asyncio
 
@@ -11,7 +11,7 @@ from opendpd.server.security import CSRF_HEADER, DatasetImportBoundary
 
 @pytest.fixture(scope="module")
 def client(tmp_path_factory):
-    app = create_app(tmp_path_factory.mktemp("closed-imports"), bootstrap_token="gate-test")
+    app = create_app(tmp_path_factory.mktemp("closed-imports"), bootstrap_token="gate-test", allow_custom_datasets=False)
     with TestClient(app, base_url="http://127.0.0.1:8765") as client:
         session = client.post("/api/v1/session/bootstrap", json={"token": "gate-test"}).json()
         client.headers[CSRF_HEADER] = session["csrf_token"]

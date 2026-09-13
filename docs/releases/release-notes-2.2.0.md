@@ -1,21 +1,22 @@
-# OpenDPD 2.2.0 — Studio alpha (release-candidate notes)
+# OpenDPD 2.2.0 — OpenDPD Studio
 
-Status: **release candidate**. Tagging, publishing to PyPI and any announcement
-are maintainer decisions (plan S14): nothing here is pushed to an external
-platform automatically. Version string in the candidate: `2.2.0.dev0`.
+Try the [hosted Studio](https://opendpd.com/studio/) or install `opendpd[gui]==2.2.0` from PyPI. The wheel contains the built frontend.
 
 ## What is new
 
+- **Hosted Studio**: GitHub Pages frontend, Cloudflare Tunnel and isolated compute with a shared CUDA queue. Session workspaces and their files expire within 24 hours.
+- **Validated CSV uploads**: UTF-8 CSV, two complex or four real I/Q columns, at most 25 MiB and 1,000,000 sample pairs. Quarantine validation rejects malformed, nonnumeric, binary and formula content before preview and deletes rejected uploads.
+- **Clear training progress and model downloads**: separate completed-epoch and current-batch bars; download the best checkpoint during training and the selected final model afterward. Checkpoints are synchronized from the isolated GPU worker without exposing its filesystem.
+- **Defaults and phone controls**: English initially, CUDA selected when detected, stable two-finger plot interaction and large touch controls.
 - **OpenDPD Studio**: `pip install "opendpd[gui]"` then `opendpd gui` starts a
   local, loopback-only workbench in your browser (no Node.js, no second
   terminal). Datasets, runs, results, comparison, packages and reports; live
-  progress from a worker subprocess; cancel that stops at the epoch boundary.
+  progress from a worker subprocess; Stop that terminates the experiment process, including its isolated GPU container.
 - **Native window**: `pip install "opendpd[desktop]"` makes `opendpd gui` open
   the workbench in an application window (WKWebView / WebView2 / WebKit2GTK)
   instead of a browser tab; the browser stays the fallback and `--browser` /
   `--window` / `--no-browser` choose explicitly.
-- **Seven UI languages**: English, French, German, Spanish, Chinese, Japanese
-  and Korean, chosen from the flag menu in the top bar and stored per
+- **Nine UI languages**: English, Dutch, Chinese, French, German, Italian, Japanese, Korean and Spanish, chosen from the flag menu in the top bar and stored per
   workspace; server text stays English.
 - **One compute core, three entry points**: the GUI, `opendpd …` commands and
   the Python API resolve the same configuration to the same hash and the same
@@ -141,12 +142,11 @@ opendpd gui
 Tutorials: `docs/tutorials/gui-quickstart.md`, `docs/tutorials/headless-cli.md`,
 `docs/tutorials/adding-a-model.md`.
 
-## Known gaps in this candidate
+## Known limitations
 
 - macOS and Windows desktop launches, real Safari and the system default
   browser are not verified by a person yet.
-- External trial and onboarding measurements (S14) have not happened; this is
-  an alpha for that purpose.
+- The hosted service is a temporary trial with shared compute quotas; it is not permanent storage.
 - No physical PA has been measured with the S16 path yet: the protocol is
   verified on synthetic and mock captures only, and no real instrument adapter
   exists (`docs/protocols/measured-dpd.md` §7).
@@ -171,6 +171,6 @@ Tutorials: `docs/tutorials/gui-quickstart.md`, `docs/tutorials/headless-cli.md`,
 
 ## Artifacts
 
-Wheel and sdist are built with `python -m build`; their SHA-256 checksums for
-the candidate commit are recorded in `docs/releases/studio-progress.md` (S13
-entry). Verify with `sha256sum -c` before installing a downloaded file.
+The GitHub release includes the wheel, source distribution and SHA-256 checksums.
+PyPI publishing uses GitHub OIDC Trusted Publishing. The wheel bundles Studio,
+so the installed app requires no Node.js build.

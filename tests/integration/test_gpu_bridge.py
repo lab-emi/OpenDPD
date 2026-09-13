@@ -1,5 +1,6 @@
 """Private GPU protocol and public isolation; GPU hardware is not needed in CI."""
 import base64
+import hashlib
 import io
 import json
 import time
@@ -66,9 +67,21 @@ def test_private_gpu_lease_stream_replay_and_cross_tenant_cancel(tmp_path):
         events = eventually(lambda: [e for e in client.get(f"/api/v1/runs/{rid}/events/list", headers=auth[0]).json()["events"] if e["type"] == "metric"])
         assert len(events) == 1
         assert client.get(f"/api/v1/runs/{rid}/live", headers=auth[0]).json()["preview"]["metrics"]["NMSE"] == -30
+        model = b'generated-checkpoint-test-bytes'
+        checkpoint = {'epoch': 1, 'sha256': hashlib.sha256(model).hexdigest(), 'data': base64.b64encode(model).decode()}
+        endpoint = f"/_gpu/jobs/{job['id']}/checkpoint"
+        assert client.post(endpoint, headers=private, json=checkpoint).status_code == 409
+        assert client.post(endpoint, headers=lease, json={**checkpoint, 'sha256': '0' * 64}).status_code == 409
+        assert client.get(f'/api/v1/runs/{rid}/checkpoint', headers=auth[0]).json()['available'] is False
+        assert client.post(endpoint, headers=lease, json=checkpoint).json()['continue']
+        info = client.get(f'/api/v1/runs/{rid}/checkpoint', headers=auth[0]).json()
+        assert info['available'] and not info['final'] and info['sha256'] == checkpoint['sha256']
+        assert client.get(info['download_url'], headers=auth[0]).content == model
+        assert client.get(info['download_url'], headers=auth[1]).status_code == 404
         assert client.post(f"/api/v1/runs/{rid}/cancel", json={}, headers=auth[1]).status_code == 404
         assert client.post(f"/api/v1/runs/{rid}/cancel", json={}, headers=auth[0]).status_code == 200
         assert not client.post(f"/_gpu/jobs/{job['id']}/update", headers=lease, json=payload).json()["continue"]
+        assert not client.post(endpoint, headers=lease, json=checkpoint).json()['continue']
         empty = tmp_path / "empty"
         empty.mkdir()
         assert client.post(f"/_gpu/jobs/{job['id']}/result", headers={**lease, "X-OpenDPD-Exit": "3"}, content=pack(empty, [])).status_code == 200

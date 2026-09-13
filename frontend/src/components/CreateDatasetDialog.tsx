@@ -99,7 +99,9 @@ export function CreateDatasetDialog({ onClose, onImported, guided = false, onSki
     setSource(null)
     setOptions(INITIAL_OPTIONS)
     setActive(0)
+    upload.reset(); scan.reset(); create.reset()
     if (!file.name.toLowerCase().endsWith('.csv')) { setFileError(t('datasets.create.csvOnly')); return }
+    if (file.size > 25 * 1024 * 1024) { setFileError(t('datasets.upload.limit')); return }
     const name = file.name.replace(/\.csv$/i, '')
     setFilename(file.name)
     setDatasetId(name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[^A-Za-z0-9]+/, '').slice(0, 64) || 'my-dataset')
@@ -134,7 +136,10 @@ export function CreateDatasetDialog({ onClose, onImported, guided = false, onSki
               <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>{filename}</Typography>
             </Stack>
             <Typography color="text.secondary" variant="caption">{t('datasets.create.formatHelp')}</Typography>
+            <Typography color="text.secondary" variant="caption">{t('datasets.upload.limit')}</Typography>
             {fileError && <Alert severity="error">{fileError}</Alert>}
+            {upload.isPending && <Alert severity="info" role="status">{t('datasets.upload.checking')}</Alert>}
+            {upload.data?.validation?.status === 'passed' && <Alert severity="success" role="status" data-testid="csv-upload-validated">{t('datasets.upload.passed', { samples: formatNumber(upload.data.validation.n_samples) })}</Alert>}
             {source && <>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}><TextField select fullWidth size="small" label={t('datasets.create.layout')} value={options.format} disabled={busy} onChange={(e) => setOptions({ ...options, format: e.target.value as CsvOptions['format'], mapping: {} })}>

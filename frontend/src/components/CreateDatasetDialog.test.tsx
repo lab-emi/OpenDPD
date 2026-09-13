@@ -13,7 +13,7 @@ const good = { valid: true, data_valid: true, sha256: 'a'.repeat(64), columns: [
 function setup(inspect: (body: Record<string, unknown>) => unknown = () => good) {
   return mockApi({
     'GET /api/v1/datasets/import-defaults': () => defaults,
-    'POST /api/v1/datasets/upload': () => ({ root_id: 'imports', path: 'uploads/paired.csv', size_bytes: 10000 }),
+    'POST /api/v1/datasets/upload': () => ({ root_id: 'imports', path: 'uploads/paired.csv', size_bytes: 10000, validation: { status: 'passed', n_samples: 4096, sha256: 'a'.repeat(64), columns: ['input', 'output'] } }),
     'POST /api/v1/datasets/csv/preview': (_url, init) => inspect(JSON.parse(init.body as string)),
     'POST /api/v1/datasets/csv': () => ({ status: 201, body: { ...datasetMock.data, dataset_id: 'paired' } }),
   })
@@ -26,6 +26,7 @@ test('paired CSV → server defaults → custom split review → create; edits i
   renderWithProviders(<CreateDatasetDialog onClose={() => {}} onImported={imported} />)
   await user.upload(await screen.findByLabelText('Choose CSV file'), new File(['input,output\n0.1+0.2j,0.3-0.4i'], 'paired.csv', { type: 'text/csv' }))
   await screen.findByText(/All 4,096 sample rows passed/)
+  expect(screen.getByTestId('csv-upload-validated')).toHaveTextContent('Upload validation passed')
   expect(screen.getByLabelText('input')).toHaveTextContent('input')
   await user.click(screen.getByRole('button', { name: 'Continue' }))
   expect(screen.getByLabelText('train (%)')).toHaveValue('60')
@@ -48,6 +49,20 @@ test('paired CSV → server defaults → custom split review → create; edits i
     source: { root_id: 'imports', path: 'uploads/paired.csv' }, options,
     split: { ratios: { train: .7, val: .2, test: .1 }, guard_samples: 256 }, expected_sha256: 'a'.repeat(64),
   })
+})
+
+test('rejected upload shows validation failure without requesting or rendering a preview', async () => {
+  const { calls } = mockApi({
+    'GET /api/v1/datasets/import-defaults': () => defaults,
+    'POST /api/v1/datasets/upload': () => ({ status: 422, body: { error: { code: 'csv_rejected', message: 'Invalid CSV. Upload deleted.', details: [] } } }),
+  })
+  renderWithProviders(<CreateDatasetDialog onClose={() => {}} onImported={() => {}} />)
+  await userEvent.upload(await screen.findByLabelText('Choose CSV file'), new File(['=HYPERLINK("x"),2'], 'bad.csv', { type: 'text/csv' }))
+  await screen.findByText(/Invalid CSV\. Upload deleted\./)
+  expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
+  expect(screen.queryByTestId('csv-upload-validated')).not.toBeInTheDocument()
+  expect(calls.some(c => c.path.includes('/csv/preview'))).toBe(false)
+  expect(screen.queryByText(/HYPERLINK/)).not.toBeInTheDocument()
 })
 
 test('a bad row past the preview is explained and blocks progression', async () => {

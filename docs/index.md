@@ -10,7 +10,8 @@ title: Home
 
 --8<-- "README.md:intro"
 
-[Get started with Studio](install.md){ .md-button .md-button--primary }
+[Try Studio now](https://opendpd.com/studio/){ .md-button .md-button--primary }
+[Install Studio](install.md){ .md-button }
 [Run from a terminal](tutorials/headless-cli.md){ .md-button }
 
 --8<-- "README.md:badges"

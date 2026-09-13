@@ -136,12 +136,16 @@ def test_import_roots_refuse_traversal_and_unknown_roots(ws, tmp_path):
 
 
 def test_upload_is_capped_and_confined(ws):
-    path = ds.receive_upload(ws, "../../x.csv", [b"I_in,Q_in,I_out,Q_out\n", b"0,0,0,0\n"], max_bytes=1000)
-    assert path.parent == ws.imports_dir / "uploads" and path.name.endswith("-x.csv")
+    from opendpd.services.csv_upload import CsvUploadRejected
+    with pytest.raises(CsvUploadRejected):
+        ds.receive_upload(ws, "../../x.csv", [b"1,2\n"], max_bytes=1000)
+    path = ds.receive_upload(ws, "x.csv", [b"I_in,Q_in,I_out,Q_out\n", b"0,0,0,0\n"], max_bytes=1000)
+    assert path.parent == ws.imports_dir / "uploads" and path.suffix == ".csv"
+    assert len(path.stem) == 32 and path.with_suffix('.json').is_file()
     with pytest.raises(ds.ImportError_, match="exceeds"):
         ds.receive_upload(ws, "big.csv", [b"x" * 600, b"y" * 600], max_bytes=1000)
-    assert not list((ws.imports_dir / "uploads").glob("*big.csv"))
-    with pytest.raises(ds.ImportError_, match="only"):
+    assert not list((ws.imports_dir / "quarantine").iterdir())
+    with pytest.raises(CsvUploadRejected, match="Only"):
         ds.receive_upload(ws, "script.py", [b"print(1)"], max_bytes=1000)
 
 

@@ -41,7 +41,7 @@ test('running run: live stream updates progress; refresh never submits anything'
     for (const e of events) source.emit(e.type, e)
   })
   await screen.findByText('live')
-  expect(screen.getByText(/Epoch \d+ of \d+/)).toBeInTheDocument()
+  expect(screen.getByText(/Completed epochs: \d+ \/ \d+/)).toBeInTheDocument()
   expect(calls.every((c) => c.method === 'GET')).toBe(true)
 })
 
@@ -95,7 +95,7 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   )
   renderWithProviders(<RunDetailPage />, { route: `/runs/${dpd.run_id}`, path: '/runs/:runId' })
   const lineage = await screen.findByRole('region', { name: 'Lineage' })
-  if (typeof dpd.progress_epoch === 'number' && dpd.progress_epoch > 0) expect(screen.getByText(`Epoch ${dpd.progress_epoch} of ${dpd.progress_total_epochs}`)).toBeInTheDocument()
+  if (typeof dpd.progress_epoch === 'number' && dpd.progress_epoch > 0) expect(screen.getByText(`Completed epochs: ${dpd.progress_epoch} / ${dpd.progress_total_epochs}`)).toBeInTheDocument()
   expect(within(lineage).getByRole('link', { name: 'run-pa-0001' })).toBeInTheDocument()
   expect(within(lineage).getAllByText(/DPD model:/)).toHaveLength(2)
   expect(within(lineage).getByText(new RegExp(`weights ${lineageMock.data.parents[0]!.checkpoint_sha256!.slice(0, 12)}`))).toBeInTheDocument()

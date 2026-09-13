@@ -27,6 +27,12 @@ def test_observer_preserves_checkpoint_and_scores_and_four_tasks_produce_live_sn
     ws.register_builtin_dataset("DPA_200MHz")
     config = instantiate("pa-gru-smoke-v1", "dpa-200mhz")
     pa, events = run(ws, config)
+    from opendpd.services.model_download import read_model
+    snapshot = read_model(ws.run_dir(pa.run_id))
+    assert snapshot is not None and any(kind == 'checkpoint' for kind, _ in events)
+    artifact = next(a for a in load_artifacts(ws, pa.run_id).artifacts if a.artifact_id == 'checkpoint-best')
+    assert snapshot[0]['sha256'] == artifact.file.sha256
+    assert snapshot[1] == (ws.run_dir(pa.run_id) / artifact.file.path).read_bytes()
     monitor = live.load_live(ws, pa.run_id)
     assert monitor["preview"]["source"] == "final_test"
     assert monitor["preview"]["metrics"] == {m.name: m.value for m in load_result(ws, pa.run_id).metrics if m.value is not None}

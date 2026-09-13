@@ -20,7 +20,19 @@ test('displays actual last-batch geometry and preserves the worker metric units'
   await screen.findByText('-24.00')
   expect(screen.getAllByText('dB')).toHaveLength(2)
   expect(screen.getByText(/400 complex I\/Q samples per batch @ 800 MSa\/s/)).toBeInTheDocument()
-  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25')
+  expect(screen.getByRole('progressbar', { name: 'Batch progress' })).toHaveAttribute('aria-valuenow', '25')
+  expect(screen.getByRole('progressbar', { name: 'Epoch progress' })).toBeInTheDocument()
+})
+
+test('epoch completion stays stable when validation starts a new batch counter', () => {
+  mockApi({})
+  const record = { ...run, progress_epoch: 2, progress_total_epochs: 10 }
+  const { rerender } = renderWithProviders(<LiveRunDashboard run={record} stream={{ ...stream, batchProgress: { phase: 'train', epoch: 2, batch: 100, total_batches: 100 } }} metrics={[]} />)
+  expect(screen.getByRole('progressbar', { name: 'Epoch progress' })).toHaveAttribute('aria-valuenow', '20')
+  expect(screen.getByRole('progressbar', { name: 'Batch progress' })).toHaveAttribute('aria-valuenow', '100')
+  rerender(<LiveRunDashboard run={record} stream={{ ...stream, batchProgress: { phase: 'val', epoch: 2, batch: 1, total_batches: 10 } }} metrics={[]} />)
+  expect(screen.getByRole('progressbar', { name: 'Epoch progress' })).toHaveAttribute('aria-valuenow', '20')
+  expect(screen.getByRole('progressbar', { name: 'Batch progress' })).toHaveAttribute('aria-valuenow', '10')
 })
 
 test('a spectral-profile DPD test shows its own metrics without an epoch curve', async () => {

@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { useCustomDatasetImports, useDatasets } from '@/api/hooks'
+import { WEB_MODE } from '@/api/client'
 import { datasetLabel, formatNumber, message, t } from '@/i18n'
 import { ImportDatasetDialog } from '@/components/ImportDatasetDialog'
 import { BuiltinDatasetDialog } from '@/components/BuiltinDatasetDialog'
@@ -38,7 +39,7 @@ export function DatasetsPage() {
       <Button variant="contained" onClick={() => { setGuided(false); setBuiltin(true) }}>
         {t('datasets.builtin.title')}
       </Button>
-      <Button disabled={!customDatasets} onClick={() => setImporting(true)}>{t('datasets.create.advancedImport')}{!customDatasets && ` · ${t('common.comingSoon')}`}</Button>
+      {!WEB_MODE && <Button disabled={!customDatasets} onClick={() => setImporting(true)}>{t('datasets.create.advancedImport')}{!customDatasets && ` · ${t('common.comingSoon')}`}</Button>}
     </Stack>
   )
   return (

@@ -751,7 +751,7 @@
   "language.loadFailed": "No se pudo cargar el idioma seleccionado. Inténtalo de nuevo.",
   "web.welcome": "OpenDPD Studio en la web",
   "web.description": "Explora los conjuntos de datos integrados y ejecuta análisis, entrenamiento neuronal e inferencia en nuestro servidor aislado.",
-  "web.temporary": "Este espacio es temporal. Descarga los resultados antes de que caduquen, en un máximo de 24 horas. No se pueden subir datos ni código.",
+  "web.temporary": "Espacio temporal: descarga datos y modelos antes de su eliminación en 24 horas. Los CSV se validan antes de usarse; no se admite código.",
   "web.start": "Iniciar sesión temporal",
   "web.retention": "Espacio temporal · descarga los resultados antes del {date}. Los archivos se eliminan automáticamente.",
   "web.connection.title": "No se puede conectar con el servidor de cálculo",
@@ -764,5 +764,17 @@
   "logs.refresh": "Actualizar salida",
   "run.reconnect": "Sincronizar experimento",
   "run.gpuQueue": "La GPU compartida ejecuta un experimento a la vez. Tu experimento está en cola; puedes salir de esta página y volver.",
-  "chart.controls.touch": "Dos dedos: ampliar y mover. Un dedo: desplazar la página."
+  "chart.controls.touch": "Dos dedos: ampliar y mover. Un dedo: desplazar la página.",
+  "datasets.upload.limit": "Solo CSV UTF-8: hasta 25 MiB y 1.000.000 de pares de muestras.",
+  "datasets.upload.checking": "Validando el tipo de archivo y todas las filas CSV antes de la vista previa…",
+  "datasets.upload.passed": "Archivo validado: {samples} muestras numéricas.",
+  "live.epochs": "Épocas completadas: {completed} / {total}",
+  "live.epochProgress": "Progreso de épocas",
+  "live.currentEpoch": "Época {epoch}",
+  "live.batchProgress": "Progreso del lote",
+  "model.download.final": "Descargar modelo final",
+  "model.download.checkpoint": "Descargar checkpoint",
+  "model.download.help": "Pesos con la mejor puntuación de validación hasta ahora. Guárdalos antes de que caduquen.",
+  "model.download.waiting": "Disponible al guardar el primer checkpoint.",
+  "model.download.error": "No se pudo comprobar el modelo. Reinténtalo en breve."
 }

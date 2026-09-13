@@ -751,7 +751,7 @@
   "language.loadFailed": "Die gewählte Sprache konnte nicht geladen werden. Bitte erneut versuchen.",
   "web.welcome": "OpenDPD Studio im Web",
   "web.description": "Analysieren Sie integrierte Datensätze und führen Sie neuronales Training und Inferenz auf unserem isolierten Server aus.",
-  "web.temporary": "Dieser Arbeitsbereich ist temporär. Laden Sie Ergebnisse vor Ablauf innerhalb von 24 Stunden herunter. Datensatz- und Code-Uploads sind nicht verfügbar.",
+  "web.temporary": "Temporärer Arbeitsbereich: Daten und Modelle innerhalb von 24 Stunden herunterladen. CSV-Daten werden vor der Verwendung geprüft; Code-Uploads sind nicht verfügbar.",
   "web.start": "Temporäre Sitzung starten",
   "web.retention": "Temporärer Arbeitsbereich · Ergebnisse vor {date} herunterladen. Dateien werden automatisch gelöscht.",
   "web.connection.title": "Keine Verbindung zum Rechenserver",
@@ -764,5 +764,17 @@
   "logs.refresh": "Ausgabe aktualisieren",
   "run.reconnect": "Experiment synchronisieren",
   "run.gpuQueue": "Die gemeinsame GPU führt jeweils ein Experiment aus. Ihr Experiment wartet; Sie können diese Seite verlassen und später zurückkehren.",
-  "chart.controls.touch": "Zwei Finger: zoomen und verschieben. Ein Finger: Seite scrollen."
+  "chart.controls.touch": "Zwei Finger: zoomen und verschieben. Ein Finger: Seite scrollen.",
+  "datasets.upload.limit": "Nur UTF-8-CSV: höchstens 25 MiB und 1.000.000 Probenpaare.",
+  "datasets.upload.checking": "Dateityp und alle CSV-Zeilen werden vor der Vorschau geprüft…",
+  "datasets.upload.passed": "Upload geprüft: {samples} numerische Proben.",
+  "live.epochs": "Abgeschlossene Epochen: {completed} / {total}",
+  "live.epochProgress": "Epochenfortschritt",
+  "live.currentEpoch": "Epoche {epoch}",
+  "live.batchProgress": "Batch-Fortschritt",
+  "model.download.final": "Endgültiges Modell herunterladen",
+  "model.download.checkpoint": "Checkpoint herunterladen",
+  "model.download.help": "Gewichte mit dem bisher besten Validierungswert. Vor Ablauf des Arbeitsbereichs speichern.",
+  "model.download.waiting": "Nach dem Speichern des ersten Checkpoints verfügbar.",
+  "model.download.error": "Modellverfügbarkeit konnte nicht geprüft werden. Gleich erneut versuchen."
 }

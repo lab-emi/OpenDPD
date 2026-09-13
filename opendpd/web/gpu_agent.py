@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import math
 import os
@@ -84,6 +85,18 @@ class Agent:
             payload["live"] = base64.b64encode(live).decode()
         result = self.request(f"/jobs/{job['id']}/update", payload, job)
         offsets.update({k: result[k] for k in ("log_offset", "events_offset") if k in result})
+        if result['continue']:
+            from opendpd.services.model_download import MAX_MODEL_BYTES, MODEL_FILE, MODEL_META
+            metadata = read_regular(root, MODEL_META, limit=4096)
+            if metadata:
+                info = json.loads(metadata)
+                if info['sha256'] != offsets.get('checkpoint_sha256'):
+                    model = read_regular(root, MODEL_FILE, limit=MAX_MODEL_BYTES + 1)
+                    if len(model) <= MAX_MODEL_BYTES and hashlib.sha256(model).hexdigest() == info['sha256']:
+                        result = self.request(f"/jobs/{job['id']}/checkpoint", {
+                            'sha256': info['sha256'], 'epoch': info['epoch'], 'data': base64.b64encode(model).decode(),
+                        }, job)
+                        offsets['checkpoint_sha256'] = info['sha256']
         return result["continue"]
 
     def run(self, job):

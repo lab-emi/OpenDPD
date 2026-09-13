@@ -124,7 +124,19 @@ async function request<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: u
 
 /** Multipart POST (file upload): same cookie/CSRF rules, no JSON body. */
 async function upload<T>(path: string, form: FormData): Promise<T> {
-  if (WEB_MODE) throw new ApiError(403, 'feature_unavailable', 'Uploads are unavailable in the public demo')
+  if (WEB_MODE) {
+    const file = form.get('file')
+    if (path !== '/datasets/upload' || !(file instanceof File) || !/\.csv$/i.test(file.name)) throw new ApiError(415, 'csv_required', 'Only CSV dataset uploads are accepted')
+    if (file.size > 25 * 1024 * 1024) throw new ApiError(413, 'payload_too_large', 'CSV files must be at most 25 MiB')
+    const session = bearerToken()
+    const response = await fetchApi(`${API}${path}?filename=${encodeURIComponent(file.name)}`, {
+      method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'text/csv', ...authorizationHeaders() },
+      credentials: 'omit', redirect: 'error', body: file, signal: AbortSignal.timeout(60_000),
+    })
+    if (bearerToken() !== session) throw new DOMException('Session changed', 'AbortError')
+    if (!response.ok) { expired(response); throw await parseError(response) }
+    return await response.json() as T
+  }
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (csrfToken) headers[CSRF_HEADER] = csrfToken
   const response = await fetch(`${API}${path}`, { method: 'POST', headers, credentials: 'same-origin', body: form })

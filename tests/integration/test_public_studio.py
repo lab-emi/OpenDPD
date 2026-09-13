@@ -55,7 +55,7 @@ def test_preflight_and_body_limits(public):
     response = client.options("/api/v1/runs", headers=headers)
     assert response.status_code == 204
     assert response.content == b""
-    assert client.options("/api/v1/datasets/upload", headers=headers).status_code == 403
+    assert client.options("/api/v1/datasets/upload", headers=headers).status_code == 204
     assert client.options("/api/v1/runs", headers={**headers, "Access-Control-Request-Headers": "x-forwarded-for"}).status_code == 403
     auth = new_session(client)
     assert client.post("/api/v1/runs", content="x" * 65537, headers={**auth, "Content-Type": "application/json"}).status_code == 413
@@ -88,7 +88,7 @@ def test_same_ip_sessions_have_independent_files_and_auth(public):
 def test_public_surface_blocks_upload_code_paths_and_huge_configs(public):
     client, _, _ = public
     auth = new_session(client)
-    for path in ["/datasets/upload", "/datasets/inspect", "/datasets/import", "/datasets/csv", "/imports",
+    for path in ["/datasets/inspect", "/datasets/import", "/imports",
                  "/session/bootstrap", "/deploy/exports", "/datasets/a/manifest"]:
         assert client.post("/api/v1" + path, json={}, headers=auth).status_code == 403
     for path in ["/datasets/a/analysis?version=../../other", "/results/a?profile=../../other"]:
@@ -98,6 +98,72 @@ def test_public_surface_blocks_upload_code_paths_and_huge_configs(public):
     config["model"]["parameters"]["hidden_size"] = 1000000
     assert client.post("/api/v1/runs", json={"config": config}, headers=auth).status_code == 422
     assert client.post("/api/v1/experiments/validate", json={"config": config}, headers=auth).status_code == 422
+
+
+@pytest.mark.parametrize('filename,data', [
+    ('capture.py', b'1,2\n'), ('capture.csv.exe', b'1,2\n'), ('../capture.csv', b'1,2\n'),
+    ('capture.csv', b'PK\x03\x04\x00\x00'), ('capture.csv', b'I_in,Q_in,I_out,Q_out\n1,2,3,=HYPERLINK("x")\n'),
+    ('capture.csv', b'import os\nos.system("echo malicious")\n'), ('capture.csv', b'<script>alert(1)</script>\n'),
+    ('capture.csv', b'input,output\n1,NaN\n'), ('capture.csv', b'input,output\n1,2,3\n'),
+    ('capture.csv', b'input,output\n"1,2\n'), ('capture.csv', b'input,output\n\xff,2\n'),
+    ('capture.csv', b'input,output\n1\x00,2\n'), ('capture.csv', b'input,output\n'+b'1'*4097+b',2\n'),
+])
+def test_rejected_csv_is_deleted_without_exposing_preview(public, filename, data):
+    client, manager, _ = public
+    auth = new_session(client)
+    response = client.post('/api/v1/datasets/upload', params={'filename': filename}, content=data,
+                           headers={**auth, 'Content-Type': 'text/csv'})
+    assert response.status_code == 422, response.text
+    assert response.json()['error']['code'] == 'csv_rejected'
+    root = next(iter(manager.tenants.values())).app.state.ws.imports_dir
+    assert not [p for p in root.rglob('*') if p.is_file()]
+    assert 'preview' not in response.json()
+
+
+@pytest.mark.parametrize('data', [b'I_in,Q_in,I_out,Q_out\n'+b'.1,.2,.3,.4\n'*4096,
+                                b'input,output\n'+b'.1+.2j,.3-.4i\n'*4096])
+def test_public_csv_validation_import_and_tenant_isolation(public, data):
+    client, manager, _ = public
+    auth, other = new_session(client), new_session(client)
+    response = client.post('/api/v1/datasets/upload?filename=capture.csv', content=data,
+                           headers={**auth, 'Content-Type': 'text/csv'})
+    assert response.status_code == 201, response.text
+    result = response.json()
+    assert result['validation']['status'] == 'passed' and result['validation']['n_samples'] == 4096
+    source = {k: result[k] for k in ('root_id', 'path')}
+    body = {'source': source}
+    assert client.post('/api/v1/datasets/csv/preview', json=body, headers=other).status_code == 422
+    assert client.post('/api/v1/datasets/csv/preview', json={'source': {'root_id': 'imports', 'path': '../lease.json'}}, headers=auth).status_code == 422
+    preview = client.post('/api/v1/datasets/csv/preview', json=body, headers=auth)
+    assert preview.status_code == 200 and preview.json()['valid'], preview.text
+    response = client.post('/api/v1/datasets/csv', json={**body, 'dataset_id': 'my-capture', 'display_name': 'My capture',
+                           'origin': 'synthetic', 'expected_sha256': result['validation']['sha256']}, headers=auth)
+    assert response.status_code == 201, response.text
+    assert client.get('/api/v1/datasets', headers=other).json() == []
+    assert client.get('/api/v1/system/capabilities', headers=auth).json()['custom_dataset_imports'] is True
+    root = next(iter(manager.tenants.values())).app.state.ws.imports_dir
+    assert not list((root / 'quarantine').iterdir())
+
+
+def test_public_upload_size_and_unvalidated_paths_fail_closed(public):
+    client, manager, _ = public
+    auth = new_session(client)
+    assert client.post('/api/v1/datasets/upload?filename=a.csv', content=b'1,2\n', headers={**auth, 'Content-Type': 'text/csv', 'Content-Length': str(26 * 1024 * 1024)}).status_code == 413
+    assert client.post('/api/v1/datasets/upload?filename=a.csv', json={}, headers=auth).status_code == 415
+    for source in ({'root_id': 'imports', 'path': None}, {'root_id': 'imports', 'path': 'uploads/'+'0'*32+'.csv'}):
+        assert client.post('/api/v1/datasets/csv/preview', json={'source': source}, headers=auth).status_code == 422
+    assert not [p for p in next(iter(manager.tenants.values())).app.state.ws.imports_dir.rglob('*') if p.is_file()]
+
+
+@pytest.mark.parametrize('signal', [{'nperseg': 2**40}, {'n_sub_ch': 2**40}, {'sample_rate_hz': 'Infinity'},
+                                    {'waveform': {}}, {'modulation': 'x' * 129}, None])
+def test_public_csv_metadata_cannot_allocate_unbounded_compute(public, signal):
+    client, _, _ = public
+    auth = new_session(client)
+    for path in ('/datasets/csv', '/datasets/csv/preview'):
+        response = client.post('/api/v1' + path, json={'signal': signal}, headers=auth)
+        assert response.status_code == 422
+        assert response.json()['error']['code'] in {'compute_limit', 'feature_unavailable', 'invalid_request'}
 
 
 def test_fixed_expiry_is_not_extended_and_purges_all_files(public):
