@@ -104,10 +104,31 @@ class LiveMonitor:
                   f"{features.shape[0]} I/Q sequences × {features.shape[1]} I/Q samples "
                   f"@ {self.dataset.signal.sample_rate_hz or 'unknown'} Hz", flush=True)
 
+    def observe_checkpoints(self, project):
+        from pathlib import Path
+        from opendpd.services.model_download import MAX_MODEL_BYTES, publish_model
+        save_best = project.logger.save_best_model
+        last_checkpoint = None
+
+        def save_checkpoint(*args, **kwargs):
+            nonlocal last_checkpoint
+            result = save_best(*args, **kwargs)
+            source = Path(project.path_save_file_best)
+            if source.is_file():
+                stamp = (source.stat().st_mtime_ns, source.stat().st_size)
+                if stamp != last_checkpoint and stamp[1] <= MAX_MODEL_BYTES:
+                    publish_model(self.ws.run_dir(self.run_id), source.read_bytes(), epoch=max(0, self.epoch) + 1)
+                    last_checkpoint = stamp
+                    self.emit(RunEventType.checkpoint, {'epoch': max(0, self.epoch), 'available': True})
+            return result
+
+        project.logger.save_best_model = save_checkpoint
+
     def attach(self, project):
         original = project.train
 
         def train(**kwargs):
+            self.observe_checkpoints(project)
             loader = kwargs["train_loader"]
             self.state["geometry"] = {
                 "batch_size": loader.batch_size, "sequence_samples": project.frame_length,

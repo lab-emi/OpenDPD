@@ -17,7 +17,7 @@ from starlette.responses import JSONResponse, Response
 from opendpd import __version__
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE
 from opendpd.web.policy import WebConfig, allowed, check_body, check_query, reject
-from opendpd.web.runtime import TenantManager
+from opendpd.web.runtime import TenantManager, directory_bytes
 from opendpd.web.gpu_archive import MAX_BYTES
 
 log = logging.getLogger(__name__)
@@ -140,12 +140,15 @@ class PublicBoundary:
         if tenant:
             tenant.inflight += 1
         try:
+            if path == '/datasets/upload' and method == 'POST':
+                await self.upload_csv(request, tenant, scope, receive, send)
+                return
             data = b""
             length = headers.get("content-length")
             if length is not None and (not length.isdecimal() or int(length) > self.config.max_body):
                 reject(413, "payload_too_large", "request body exceeds the public API limit")
             if method in {"POST", "PUT"} and headers.get("content-type", "").split(";")[0] != "application/json":
-                reject(415, "json_required", "only JSON requests are accepted; uploads are disabled")
+                reject(415, "json_required", "this endpoint accepts JSON requests only")
 
             async def read_body():
                 chunks = bytearray()
@@ -184,6 +187,19 @@ class PublicBoundary:
                 return
             if method in {"POST", "PUT"}:
                 check_body(path, body)
+            if path in {'/datasets/csv', '/datasets/csv/preview'}:
+                from opendpd.services.csv_upload import CsvUploadRejected, validated_source
+                self.manager.rate_limit('csv-scan:' + tenant.ip_key, 20)
+                try:
+                    _, validation = await asyncio.to_thread(validated_source, tenant.app.state.ws, body.get('source'))
+                except (CsvUploadRejected, ValueError, KeyError, OSError) as exc:
+                    reject(422, 'csv_rejected', str(exc) if isinstance(exc, CsvUploadRejected) else 'The validated CSV is unavailable. Upload it again.')
+                if path == '/datasets/csv':
+                    used = await asyncio.to_thread(directory_bytes, tenant.root)
+                    # Bound the source copy, arrays, split CSVs and preprocessing
+                    # metadata before materialising a newly uploaded dataset.
+                    if used + validation['n_samples'] * 160 > self.config.max_workspace_bytes:
+                        reject(413, 'workspace_limit', 'This CSV would exceed temporary workspace storage. Use fewer samples.')
             if tenant.closing or self.manager.now() >= tenant.expires_at:
                 reject(401, "session_expired", "the temporary workspace has expired")
             # Each nested app owns its own Workspace, RunStore, Supervisor and local
@@ -207,6 +223,63 @@ class PublicBoundary:
             if tenant:
                 tenant.inflight -= 1
 
+    async def upload_csv(self, request, tenant, scope, receive, send):
+        from opendpd.services.csv_upload import MAX_UPLOAD_BYTES, CsvUploadRejected, admit_upload, check_filename, quarantine_path
+        if tenant.uploading:
+            reject(429, 'upload_busy', 'Wait for the current CSV upload to finish.')
+        self.manager.rate_limit('csv-upload:' + tenant.ip_key, 6)
+        if request.headers.get('content-type', '').split(';')[0].strip().lower() != 'text/csv':
+            reject(415, 'csv_required', 'Only CSV file uploads are accepted.')
+        try:
+            check_filename(request.query_params.get('filename', ''))
+        except CsvUploadRejected as exc:
+            reject(422, 'csv_rejected', str(exc))
+        length = request.headers.get('content-length')
+        if length is not None and (not length.isdecimal() or int(length) > MAX_UPLOAD_BYTES):
+            reject(413, 'payload_too_large', 'CSV files must be at most 25 MiB.')
+        tenant.uploading = True
+        path = None
+        try:
+            used = await asyncio.to_thread(directory_bytes, tenant.root)
+            if used + MAX_UPLOAD_BYTES > self.config.max_workspace_bytes:
+                reject(413, 'workspace_limit', 'Temporary workspace storage is full.')
+            ws = tenant.app.state.ws
+            if len(list((ws.imports_dir / 'uploads').glob('*.csv'))) >= 4:
+                reject(429, 'upload_limit', 'This workspace already has four uploaded CSV files.')
+            path = quarantine_path(ws)
+
+            async def receive_csv():
+                size = 0
+                with path.open('xb') as output:
+                    async for chunk in request.stream():
+                        size += len(chunk)
+                        if size > MAX_UPLOAD_BYTES:
+                            reject(413, 'payload_too_large', 'CSV size limit exceeded. Upload deleted.')
+                        output.write(chunk)
+                if length is not None and size != int(length):
+                    reject(400, 'incomplete_upload', 'CSV upload was incomplete. Upload deleted.')
+
+            await asyncio.wait_for(receive_csv(), timeout=45)
+            if tenant.closing or self.manager.now() >= tenant.expires_at:
+                reject(401, 'session_expired', 'The temporary workspace expired. Upload deleted.')
+            # Shield validation from request cancellation: wait for the bounded
+            # scan before cleanup so no background thread can publish afterward.
+            scan = asyncio.create_task(asyncio.to_thread(admit_upload, ws, path))
+            try:
+                result = await asyncio.shield(scan)
+            except asyncio.CancelledError:
+                await scan
+                raise
+            await JSONResponse(result, status_code=201)(scope, receive, send)
+        except CsvUploadRejected as exc:
+            reject(422, 'csv_rejected', str(exc))
+        except asyncio.TimeoutError:
+            reject(408, 'request_timeout', 'CSV upload took too long. Upload deleted.')
+        finally:
+            if path is not None:
+                path.unlink(missing_ok=True)
+            tenant.uploading = False
+
     async def gpu_request(self, request, scope, receive, send):
         # This path is outside the Cloudflare Tunnel ingress. It also requires a
         # separate secret and the host-local Host header; browser requests fail closed.
@@ -220,7 +293,7 @@ class PublicBoundary:
         path = request.url.path.split("/")
         broker = self.manager.gpu
         if request.method == "POST":
-            limit = MAX_BYTES if path[-1] == "result" else 4 * 1024 * 1024
+            limit = MAX_BYTES if path[-1] == "result" else 24 * 1024 * 1024 if path[-1] == 'checkpoint' else 4 * 1024 * 1024
             async def read():
                 data = bytearray()
                 async for chunk in request.stream():
@@ -246,6 +319,8 @@ class PublicBoundary:
                     return
                 if path[4] == "update" and request.method == "POST":
                     result = broker.update(job, json.loads(raw))
+                elif path[4] == 'checkpoint' and request.method == 'POST':
+                    result = await asyncio.to_thread(broker.checkpoint, job, json.loads(raw))
                 elif path[4] == "result" and request.method == "POST":
                     code = int(headers.get("x-opendpd-exit", "1"))
                     if code not in {0, 1, 3}:

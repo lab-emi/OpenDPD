@@ -9,10 +9,8 @@ object arrays are refused (``allow_pickle=False``).
 from __future__ import annotations
 
 import csv
-import hashlib
 import shutil
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -588,22 +586,19 @@ def create_version(ws: Workspace, dataset_id: str, version: str, params: Preproc
 
 
 def receive_upload(ws: Workspace, filename: str, chunks: Iterable[bytes], max_bytes: int) -> Path:
-    """Stream a browser upload into imports/uploads/ (never into a user-chosen path)."""
-    safe = Path(filename).name
-    if not safe or Path(safe).suffix.lower() not in SUPPORTED_SUFFIXES:
-        raise ImportError_(f"only {', '.join(SUPPORTED_SUFFIXES)} uploads are accepted")
-    target_dir = ws.imports_dir / "uploads"
-    target_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    target = target_dir / f"{stamp}-{safe}"
-    digest, total = hashlib.sha256(), 0
-    with open(target, "wb") as f:
-        for chunk in chunks:
-            total += len(chunk)
-            if total > max_bytes:
-                f.close()
-                target.unlink(missing_ok=True)
-                raise UploadTooLarge(f"upload exceeds {max_bytes} bytes")
-            digest.update(chunk)
-            f.write(chunk)
-    return target
+    """Browser uploads are quarantined CSV; local path imports have separate policy."""
+    from opendpd.services.csv_upload import MAX_UPLOAD_BYTES, admit_upload, check_filename, quarantine_path
+    check_filename(filename)
+    target = quarantine_path(ws)
+    total = 0
+    try:
+        with target.open('xb') as output:
+            for chunk in chunks:
+                total += len(chunk)
+                if total > min(max_bytes, MAX_UPLOAD_BYTES):
+                    raise UploadTooLarge('CSV upload exceeds the size limit. Upload deleted.')
+                output.write(chunk)
+        result = admit_upload(ws, target)
+        return ws.imports_dir / result['path']
+    finally:
+        target.unlink(missing_ok=True)

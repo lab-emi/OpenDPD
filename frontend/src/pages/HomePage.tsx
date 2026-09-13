@@ -12,6 +12,7 @@ import { useCapabilities, useRuns } from '@/api/hooks'
 import { t } from '@/i18n'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 import { RunTable } from '@/pages/ExperimentsPage'
+import { StudioLogo } from '@/components/StudioLogo'
 import emi from '@/assets/emi-logo.svg'
 import signal from '@/assets/home-signal.svg'
 
@@ -51,9 +52,7 @@ export function HomePage() {
                 <Typography sx={{ color: '#AAC3D4', fontSize: 11, mt: .25 }}>Efficient Machine Intelligence Lab</Typography>
               </Box>
             </Stack>
-            <Typography variant="h2" id="home-introduction" sx={{ fontSize: { xs: 36, sm: 48, lg: 56 }, fontWeight: 750, letterSpacing: '-.045em', lineHeight: 1.12 }}>
-              OpenDPD <Box component="span" sx={{ color: '#93D5EA', fontWeight: 400 }}>Studio</Box>
-            </Typography>
+            <Box component="h2" id="home-introduction" sx={{ m: 0, width: '100%', maxWidth: 520, aspectRatio: '600 / 168' }}><StudioLogo inverse /></Box>
             <Typography sx={{ mt: 2, maxWidth: 475, fontSize: { xs: 14, sm: 15.5 }, lineHeight: 1.8, color: '#C2D4E0', textWrap: 'pretty' }}>
               {t('home.intro')}
             </Typography>

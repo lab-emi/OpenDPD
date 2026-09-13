@@ -145,6 +145,8 @@ class LocalBoundaryMiddleware:
             await _reject(send, 400, "host_not_allowed", "this server only answers loopback hosts")
             return
         limit = UPLOAD_MAX_BODY if scope.get("path") in UPLOAD_PATHS else self.max_body
+        if scope.get('path') == '/api/v1/datasets/upload':
+            limit = 26 * 1024 * 1024  # 25 MiB CSV plus bounded multipart framing
         if method not in SAFE_METHODS:
             origin = headers.get("origin") or headers.get("referer")
             if not origin_matches(origin, host):

@@ -4806,6 +4806,69 @@
         "title": "MetricValue",
         "type": "object"
       },
+      "ModelDownloadInfo": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "download_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Url"
+          },
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "final": {
+            "title": "Final",
+            "type": "boolean"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          }
+        },
+        "required": [
+          "available",
+          "final"
+        ],
+        "title": "ModelDownloadInfo",
+        "type": "object"
+      },
       "ModelEvidence": {
         "additionalProperties": false,
         "properties": {
@@ -6338,7 +6401,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.0.dev0",
+            "default": "2.2.0",
             "title": "Version",
             "type": "string"
           }
@@ -7270,14 +7333,48 @@
           "size_bytes": {
             "title": "Size Bytes",
             "type": "integer"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/UploadValidation"
           }
         },
         "required": [
           "root_id",
           "path",
-          "size_bytes"
+          "size_bytes",
+          "validation"
         ],
         "title": "UploadResult",
+        "type": "object"
+      },
+      "UploadValidation": {
+        "properties": {
+          "columns": {
+            "title": "Columns",
+            "type": "integer"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "status": {
+            "const": "passed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "sha256",
+          "n_samples",
+          "columns"
+        ],
+        "title": "UploadValidation",
         "type": "object"
       },
       "ValidateRequest": {
@@ -7627,7 +7724,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.0.dev0"
+    "version": "2.2.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -8124,7 +8221,7 @@
     },
     "/api/v1/datasets/upload": {
       "post": {
-        "description": "Browser upload, streamed into <workspace>/imports/uploads (then imported like any root file).",
+        "description": "Validate the entire CSV in quarantine before publishing an import reference.",
         "operationId": "dataset_upload_api_v1_datasets_upload_post",
         "requestBody": {
           "content": {
@@ -9461,6 +9558,88 @@
           }
         },
         "summary": "Runs Cancel",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/checkpoint": {
+      "get": {
+        "operationId": "run_checkpoint_api_v1_runs__run_id__checkpoint_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDownloadInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Checkpoint",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/checkpoint/download": {
+      "get": {
+        "operationId": "run_checkpoint_download_api_v1_runs__run_id__checkpoint_download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Checkpoint Download",
         "tags": [
           "runs"
         ]

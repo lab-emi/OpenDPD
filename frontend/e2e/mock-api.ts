@@ -82,10 +82,10 @@ export async function installFakeApi(page: Page, options: { language?: string | 
       state.language = (req.postDataJSON() as { language: string | null }).language
       return json(route, { language: state.language })
     }
-    if (path === '/session') return json(route, { authenticated: true, csrf_token: 'e2e-csrf', version: '2.2.0.dev0' })
-    if (path === '/system/about') return json(route, { version: '2.2.0.dev0', local_commit: null, status: 'unavailable', updated_at: null, contributors: [], commits: [] })
+    if (path === '/session') return json(route, { authenticated: true, csrf_token: 'e2e-csrf', version: '2.2.0' })
+    if (path === '/system/about') return json(route, { version: '2.2.0', local_commit: null, status: 'unavailable', updated_at: null, contributors: [], commits: [] })
     if (path === '/system/capabilities') {
-      return json(route, { version: '2.2.0.dev0', workspace: '/home/user/opendpd workspace', note: 'detected does not imply tested', custom_dataset_imports: options.customDatasets === true, devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru', 'tres_deltagru'] }, { device: 'mps', detected: false, count: 0, tested_models: [] }] })
+      return json(route, { version: '2.2.0', workspace: '/home/user/opendpd workspace', note: 'detected does not imply tested', custom_dataset_imports: options.customDatasets === true, devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru', 'tres_deltagru'] }, { device: 'mps', detected: false, count: 0, tested_models: [] }] })
     }
     if (path === '/models') return json(route, [{ key: 'gru', display_name: 'GRU', family: 'recurrent', legacy_backbone: 'gru', training_method: 'gradient', roles: ['pa', 'dpd'], params: [], status: 'supported', devices_tested: ['cpu', 'cuda'], lookahead_samples: 0, lookahead_note: '', execution_semantics: 'offline_segmented', export_formats: [] }])
     if (path === '/recipes') return json(route, recipes)
@@ -164,6 +164,7 @@ export async function installFakeApi(page: Page, options: { language?: string | 
         preview: { source: 'validation_probe', samples: 2560, metrics: { NMSE: -30 }, units: { NMSE: 'dB' }, plots: {}, updated_at: '2026-09-12T11:00:00Z' },
       })
       if (sub === 'artifacts') return json(route, mock<Json>('artifact_manifest_complete'))
+      if (sub === 'checkpoint') return json(route, { available: false, final: false })
       if (sub === 'lineage') return json(route, { run_id: run['run_id'], parents: [], children: [] })
       if (sub === 'history') return json(route, mock<Json[]>('history_points_mock'))
       if (sub === 'config') return json(route, resolved)
@@ -173,7 +174,7 @@ export async function installFakeApi(page: Page, options: { language?: string | 
     if (path === '/results/compare') return json(route, mock<Json>('comparison_report_mock'))
     if (path === '/exports' && method === 'POST') {
       const body = req.postDataJSON() as { run_id: string; kind: string }
-      return json(route, { export_id: `${body.run_id}-${body.kind}-20260906`, filename: `${body.run_id}-${body.kind}-20260906.zip`, size_bytes: 123456, download_url: `/api/v1/exports/${body.run_id}-${body.kind}-20260906`, manifest: { schema_version: 1, package_version: 1, kind: body.kind, created_at: '2026-09-06T08:00:00Z', opendpd_version: '2.2.0.dev0', software: { opendpd_version: '2.2.0.dev0', python_version: '3.13', platform: 'linux' }, run_id: body.run_id, task: 'train_pa', config_sha256: 'a'.repeat(64), seed: 0, dataset: { dataset_id: 'dpa-200mhz', preprocessing_version: 'raw-v1', split_version: 'contiguous-v1', source_kind: 'builtin', builtin_name: 'DPA_200MHz', included: false, how_to_obtain: 'built-in' }, references: [], files: [], reproduction: {}, redaction: body.kind === 'share' ? ['worker logs are not included'] : [], missing: [], retraining_note: 'Re-training is a new experiment.' } }, 201)
+      return json(route, { export_id: `${body.run_id}-${body.kind}-20260906`, filename: `${body.run_id}-${body.kind}-20260906.zip`, size_bytes: 123456, download_url: `/api/v1/exports/${body.run_id}-${body.kind}-20260906`, manifest: { schema_version: 1, package_version: 1, kind: body.kind, created_at: '2026-09-06T08:00:00Z', opendpd_version: '2.2.0', software: { opendpd_version: '2.2.0', python_version: '3.13', platform: 'linux' }, run_id: body.run_id, task: 'train_pa', config_sha256: 'a'.repeat(64), seed: 0, dataset: { dataset_id: 'dpa-200mhz', preprocessing_version: 'raw-v1', split_version: 'contiguous-v1', source_kind: 'builtin', builtin_name: 'DPA_200MHz', included: false, how_to_obtain: 'built-in' }, references: [], files: [], reproduction: {}, redaction: body.kind === 'share' ? ['worker logs are not included'] : [], missing: [], retraining_note: 'Re-training is a new experiment.' } }, 201)
     }
     if (path === '/imports' && method === 'POST') {
       // the imported run appears in the workspace like any finished run; its result is the stored one

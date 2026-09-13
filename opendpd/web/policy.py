@@ -16,17 +16,19 @@ from opendpd.schemas import ExperimentConfig
 SLUG = r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}"
 FILE_ID = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,200}"
 # New local routes are NOT automatically published. In particular: no path imports,
-# uploads, manifest/signal mutation, RF control, package imports, or executable exports.
+# arbitrary path imports, RF control, package imports, or executable exports.
 ROUTES = {
     "GET": [
         r"/system/(capabilities|about)", r"/settings", r"/models", r"/recipes",
-        r"/datasets", r"/datasets/builtin", rf"/datasets/{SLUG}(/(analysis|diagnostics))?",
+        r"/datasets", r"/datasets/builtin", r"/datasets/import-defaults", rf"/datasets/{SLUG}(/(analysis|diagnostics))?",
         r"/runs", r"/runs/count", rf"/runs/{SLUG}(/(config|artifacts|history|live|lineage|logs|events/list))?",
+        rf"/runs/{SLUG}/checkpoint(/download)?",
         r"/metrics/profiles", rf"/metrics/profiles/{SLUG}", r"/results/compare",
         rf"/results/{SLUG}(/(profiles|report))?", rf"/artifacts/{SLUG}/{FILE_ID}",
         rf"/exports/{FILE_ID}", r"/adaptation/reports", rf"/adaptation/reports/{SLUG}",
     ],
-    "POST": [r"/datasets/import-builtin", rf"/datasets/{SLUG}/diagnostics",
+    "POST": [r"/datasets/import-builtin", r"/datasets/upload", r"/datasets/csv(/preview)?", rf"/datasets/{SLUG}/diagnostics",
+             rf"/datasets/{SLUG}/manifest",
              rf"/datasets/{SLUG}/preprocess(/preview)?", r"/experiments/validate",
              r"/runs", rf"/runs/{SLUG}/(cancel|retry)", r"/exports"],
     "PUT": [r"/settings"],
@@ -138,6 +140,26 @@ def check_body(path: str, body: dict):
         # One canonical copy of each built-in per session, no duplicate disk filling.
         if body.get("dataset_id") is not None:
             reject(422, "invalid_request", "use the built-in dataset's default identifier")
+    if path in {"/datasets/csv", "/datasets/csv/preview"} or re.fullmatch(rf"/datasets/{SLUG}/manifest", path):
+        signal = body.get("signal", {})
+        if signal is None and path.endswith('/manifest'):
+            signal = {}
+        if not isinstance(signal, dict):
+            reject(422, "invalid_request", "expected signal metadata")
+        if signal.get("waveform") is not None:
+            reject(422, "feature_unavailable", "reference waveform binding is unavailable for public uploads")
+        # Uploaded metadata controls FFT allocations and channel loops downstream.
+        for name, limit in (("nperseg", 65536), ("n_sub_ch", 32),
+                            ("sample_rate_hz", 1e12), ("bandwidth_hz", 1e12),
+                            ("sub_channel_bandwidth_hz", 1e12)):
+            value = signal.get(name)
+            if value is not None and (isinstance(value, bool) or not isinstance(value, (int, float))
+                                      or not math.isfinite(value) or value <= 0 or value > limit):
+                reject(422, "compute_limit", f"signal.{name} must be positive, finite and at most {limit:g}")
+        for name in ("standard", "modulation"):
+            value = signal.get(name)
+            if value is not None and (not isinstance(value, str) or len(value) > 128):
+                reject(422, "invalid_request", f"signal.{name} must be at most 128 characters")
     if "/preprocess" in path:
         params = body.get("params", {})
         if not isinstance(params, dict):

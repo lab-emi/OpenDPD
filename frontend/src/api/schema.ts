@@ -245,7 +245,7 @@ export interface paths {
         put?: never;
         /**
          * Dataset Upload
-         * @description Browser upload, streamed into <workspace>/imports/uploads (then imported like any root file).
+         * @description Validate the entire CSV in quarantine before publishing an import reference.
          */
         post: operations["dataset_upload_api_v1_datasets_upload_post"];
         delete?: never;
@@ -690,6 +690,40 @@ export interface paths {
         put?: never;
         /** Runs Cancel */
         post: operations["runs_cancel_api_v1_runs__run_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/checkpoint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run Checkpoint */
+        get: operations["run_checkpoint_api_v1_runs__run_id__checkpoint_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/checkpoint/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Run Checkpoint Download */
+        get: operations["run_checkpoint_download_api_v1_runs__run_id__checkpoint_download_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2689,6 +2723,21 @@ export interface components {
             /** Value */
             value?: number | null;
         };
+        /** ModelDownloadInfo */
+        ModelDownloadInfo: {
+            /** Available */
+            available: boolean;
+            /** Download Url */
+            download_url?: string | null;
+            /** Epoch */
+            epoch?: number | null;
+            /** Final */
+            final: boolean;
+            /** Sha256 */
+            sha256?: string | null;
+            /** Size Bytes */
+            size_bytes?: number | null;
+        };
         /** ModelEvidence */
         ModelEvidence: {
             /**
@@ -3231,7 +3280,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.0.dev0
+             * @default 2.2.0
              */
             version: string;
         };
@@ -3624,6 +3673,21 @@ export interface components {
             root_id: string;
             /** Size Bytes */
             size_bytes: number;
+            validation: components["schemas"]["UploadValidation"];
+        };
+        /** UploadValidation */
+        UploadValidation: {
+            /** Columns */
+            columns: number;
+            /** N Samples */
+            n_samples: number;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "passed";
         };
         /** ValidateRequest */
         ValidateRequest: {
@@ -4987,6 +5051,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_checkpoint_api_v1_runs__run_id__checkpoint_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelDownloadInfo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_checkpoint_download_api_v1_runs__run_id__checkpoint_download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

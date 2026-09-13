@@ -408,9 +408,9 @@ def test_measured_captures_are_uploaded_bound_and_scored_as_dpd_measured(client,
     rng = np.random.default_rng(0)
     y = np.roll(np.tile(2.5 * (u - 0.1 * np.abs(u) ** 2 * u), 2), 77)
     y = y + 1e-4 * (rng.normal(size=y.size) + 1j * rng.normal(size=y.size))
-    buf = io.BytesIO()
-    np.save(buf, to_iq(y))
-    up = client.post("/api/v1/datasets/upload", files={"file": ("with_dpd.npy", buf.getvalue(), "application/octet-stream")})
+    buf = io.StringIO()
+    np.savetxt(buf, to_iq(y), delimiter=",", header="re,im", comments="")
+    up = client.post("/api/v1/datasets/upload", files={"file": ("with_dpd.csv", buf.getvalue().encode(), "text/csv")})
     assert up.status_code == 201, up.text
     conditions = {"pa": "API test PA", "capture_chain": "synthetic through the upload path", "sample_rate_hz": 800e6,
                   "drive": "digital full scale", "calibration": "none", "measured_at": "2026-09-06T12:00:00Z", "operator": "api"}

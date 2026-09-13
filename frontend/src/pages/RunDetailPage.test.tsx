@@ -41,7 +41,7 @@ test('running run: live stream updates progress; refresh never submits anything'
     for (const e of events) source.emit(e.type, e)
   })
   await screen.findByText('live')
-  expect(screen.getByText(/Epoch \d+ of \d+/)).toBeInTheDocument()
+  expect(screen.getByText(/Completed epochs: \d+ \/ \d+/)).toBeInTheDocument()
   expect(calls.every((c) => c.method === 'GET')).toBe(true)
 })
 
@@ -95,7 +95,7 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
   )
   renderWithProviders(<RunDetailPage />, { route: `/runs/${dpd.run_id}`, path: '/runs/:runId' })
   const lineage = await screen.findByRole('region', { name: 'Lineage' })
-  if (typeof dpd.progress_epoch === 'number' && dpd.progress_epoch > 0) expect(screen.getByText(`Epoch ${dpd.progress_epoch} of ${dpd.progress_total_epochs}`)).toBeInTheDocument()
+  if (typeof dpd.progress_epoch === 'number' && dpd.progress_epoch > 0) expect(screen.getByText(`Completed epochs: ${dpd.progress_epoch} / ${dpd.progress_total_epochs}`)).toBeInTheDocument()
   expect(within(lineage).getByRole('link', { name: 'run-pa-0001' })).toBeInTheDocument()
   expect(within(lineage).getAllByText(/DPD model:/)).toHaveLength(2)
   expect(within(lineage).getByText(new RegExp(`weights ${lineageMock.data.parents[0]!.checkpoint_sha256!.slice(0, 12)}`))).toBeInTheDocument()
@@ -125,7 +125,7 @@ test('a succeeded run_dpd run offers the measured-capture import: files are uplo
     ...routes(created),
     'GET /api/v1/datasets/dpa-200mhz': () => datasetMock.data,
     'GET /api/v1/system/capabilities': () => ({ custom_dataset_imports: true }),
-    'POST /api/v1/datasets/upload': () => ({ status: 201, body: { root_id: 'imports', path: 'uploads/20260906-with.npy', size_bytes: 8 } }),
+    'POST /api/v1/datasets/upload': () => ({ status: 201, body: { root_id: 'imports', path: 'uploads/20260906-with.csv', size_bytes: 8 } }),
     'POST /api/v1/runs': () => ({ status: 201, body: created }),
   })
   renderWithProviders(<RunDetailPage />, { route: `/runs/${applied.run_id}`, path: '/runs/:runId' })
@@ -135,8 +135,8 @@ test('a succeeded run_dpd run offers the measured-capture import: files are uplo
   expect(within(dialog).getByText(/not independently verified/)).toBeInTheDocument()
   const submitButton = within(dialog).getByRole('button', { name: 'Align and score' })
   expect(submitButton).toBeDisabled()
-  await userEvent.upload(within(dialog).getByLabelText('Capture with DPD'), new File(['iq-bytes'], 'with.npy'))
-  await within(dialog).findByText(/with\.npy/)
+  await userEvent.upload(within(dialog).getByLabelText('Capture with DPD'), new File(['iq-bytes'], 'with.csv'))
+  await within(dialog).findByText(/with\.csv/)
   // This test checks the submitted capture metadata. Paste the operator's
   // descriptions as complete edits; per-keystroke rendering is not its contract.
   const user = userEvent.setup()
@@ -160,7 +160,7 @@ test('a succeeded run_dpd run offers the measured-capture import: files are uplo
   expect(config.evaluation).toEqual({ evidence_type: 'dpd_measured' })
   const measurement = config.measurement as { apply_run_id: string; with_dpd: { path: string; declared_output_power_dbm: number | null }; without_dpd: unknown; conditions: Record<string, unknown>; source: string; playback: string }
   expect(measurement.apply_run_id).toBe('run-apply-0001')
-  expect(measurement.with_dpd).toEqual({ path: 'uploads/20260906-with.npy', declared_output_power_dbm: 30 })
+  expect(measurement.with_dpd).toEqual({ path: 'uploads/20260906-with.csv', declared_output_power_dbm: 30 })
   expect(measurement.without_dpd).toBeNull()
   expect(measurement.source).toBe('manual')
   expect(measurement.playback).toBe('loop')

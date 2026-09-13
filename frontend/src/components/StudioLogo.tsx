@@ -6,8 +6,9 @@ import mark from '@/assets/opendpd-studio-mark.svg'
 import lightMark from '@/assets/opendpd-studio-mark-light.svg'
 
 /** Transparent vector artwork follows its surface, including the compact rail. */
-export function StudioLogo({ compact = false }: { compact?: boolean }) {
-  const dark = useTheme().palette.mode === 'dark'
+export function StudioLogo({ compact = false, inverse }: { compact?: boolean; inverse?: boolean }) {
+  const theme = useTheme()
+  const dark = inverse ?? theme.palette.mode === 'dark'
   const wordmark = dark ? inverseLogo : logo
   const emblem = dark ? mark : lightMark
   return <Box component="img" src={compact ? emblem : wordmark} alt="OpenDPD Studio" width={compact ? 160 : 600} height={compact ? 160 : 168} sx={{

@@ -135,7 +135,7 @@ export function ImportDatasetDialog({ onClose, onImported }: { onClose: () => vo
                 <input
                   hidden
                   type="file"
-                  accept=".csv,.npy,.npz"
+                  accept=".csv,text/csv"
                   onChange={(e) => {
                     const f = e.target.files?.[0]
                     if (f) upload.mutate(f)
@@ -144,7 +144,7 @@ export function ImportDatasetDialog({ onClose, onImported }: { onClose: () => vo
                 />
               </Button>
               <Typography variant="caption" color="text.secondary">
-                {t('datasets.import.upload.help')}
+                {t('datasets.upload.limit')}
               </Typography>
               {upload.isError && <ErrorState error={upload.error} />}
               <Typography variant="h3" component="h3">

@@ -97,17 +97,18 @@ def test_inspect_import_doctor_preprocess_flow(env):
 def test_upload_is_streamed_into_the_uploads_root(env):
     client, ws = env
     x, y = synthesize(3000, 6)
-    buf = io.BytesIO()
-    np.savez(buf, input=x, output=y)
-    r = client.post("/api/v1/datasets/upload", files={"file": ("../evil.npz", buf.getvalue(), "application/octet-stream")})
+    buf = io.StringIO()
+    np.savetxt(buf, np.column_stack([x, y]), delimiter=',', header='I_in,Q_in,I_out,Q_out', comments='')
+    r = client.post("/api/v1/datasets/upload", files={"file": ("capture.csv", buf.getvalue().encode(), "text/csv")})
     assert r.status_code == 201, r.text
     body = r.json()
-    assert body["root_id"] == "imports" and body["path"].startswith("uploads/") and body["path"].endswith("-evil.npz")
+    assert body["root_id"] == "imports" and body["path"].startswith("uploads/") and body["path"].endswith(".csv")
+    assert body['validation']['status'] == 'passed' and body['validation']['n_samples'] == 3000
     assert (ws.imports_dir / body["path"]).exists()
-    r = client.post("/api/v1/datasets/import", json={"source": body | {}, "dataset_id": "uploaded", "signal": SIGNAL})
-    assert r.status_code == 201 and r.json()["n_samples"] == 3000
+    r = client.post("/api/v1/datasets/csv", json={"source": {k: body[k] for k in ('root_id', 'path')}, "dataset_id": "uploaded", "display_name": "Uploaded", "signal": SIGNAL, "expected_sha256": body['validation']['sha256']})
+    assert r.status_code == 201 and r.json()["n_samples"] == 3000, r.text
     r = client.post("/api/v1/datasets/upload", files={"file": ("x.py", b"print(1)", "text/plain")})
-    assert r.status_code == 409
+    assert r.status_code == 422
     # the general 2 MB cap still applies to JSON routes
     assert client.post("/api/v1/runs", json={"config": {}, "name": "x" * (3 * 1024 * 1024)}).status_code == 413
 

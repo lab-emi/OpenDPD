@@ -561,6 +561,13 @@ def execute_run(ws: Workspace, run_id: str, *, emit: Optional[Emitter] = None,
     record = state["record"]
     manifest = collect_artifacts(run_dir, run_id, resolved, project)
     write_json_atomic(run_dir / ARTIFACTS_FILE, manifest)
+    if resolved.task in (TaskType.train_pa, TaskType.train_dpd):
+        from opendpd.services.model_download import MAX_MODEL_BYTES, MODEL_FILE, publish_model
+        checkpoints = manifest.by_kind(ArtifactKind.checkpoint)
+        if checkpoints:
+            checkpoint = run_dir / checkpoints[0].file.path
+            if not (run_dir / MODEL_FILE).exists() and checkpoint.stat().st_size <= MAX_MODEL_BYTES:
+                publish_model(run_dir, checkpoint.read_bytes(), epoch=record.progress_epoch or 0)
     result_id = None
     if outcome == RunStatus.succeeded:
         if not manifest.complete:

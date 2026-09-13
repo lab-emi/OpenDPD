@@ -1,12 +1,16 @@
 <!-- --8<-- [start:hero] -->
-![OpenDPD Studio home in light mode: a guided workspace for PA modeling and digital predistortion](pics/studio-home.png)
+> **[Try OpenDPD Studio in your browser →](https://opendpd.com/studio/)**
+>
+> No installation. Explore example data or upload your own CSV, train PA/DPD models on shared CUDA compute, and download your checkpoints. Temporary data and results are deleted within 24 hours.
+
+[![OpenDPD Studio: click to try the web app](https://raw.githubusercontent.com/lab-emi/OpenDPD/main/pics/studio-home.png)](https://opendpd.com/studio/)
 <!-- --8<-- [end:hero] -->
 
 # OpenDPD
 
 <!-- --8<-- [start:brand] -->
 <p>
-  <a href="https://github.com/lab-emi/OpenDPD"><picture class="brand-logo"><source
+  <a href="https://opendpd.com/studio/"><picture class="brand-logo"><source
     media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/opendpd-studio-logo-inverse.svg" /><img
     src="frontend/src/assets/opendpd-studio-logo.svg" alt="OpenDPD Studio" width="300" align="middle" /></picture></a>
   &nbsp;
@@ -19,7 +23,7 @@
 <!-- --8<-- [start:intro] -->
 **Model a power amplifier. Train a digital predistorter. Understand the result.**
 
-OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital predistortion (DPD), developed by the [Efficient Machine Intelligence Lab](https://www.tudemi.com/) at TU Delft. Use **OpenDPD Studio** for a guided local workflow, or automate experiments with the CLI and Python API. All three use the original OpenDPD training core.
+OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital predistortion (DPD), developed by the [Efficient Machine Intelligence Lab](https://www.tudemi.com/) at TU Delft. Use **OpenDPD Studio** in the browser or locally for a guided workflow, or automate experiments with the CLI and Python API. All three use the original OpenDPD training core.
 <!-- --8<-- [end:intro] -->
 
 <!-- --8<-- [start:badges] -->
@@ -33,14 +37,14 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-The **2.2 development preview** brings OpenDPD Studio to the desktop and browser:
+**OpenDPD 2.2.0** brings OpenDPD Studio to the desktop and browser:
 
 - **Guided experiments:** explore built-in I/Q data, train and test PA/DPD models, and choose from the original backbone registry.
-- **Live feedback:** NMSE and other task metrics, time-domain and spectrum comparisons, batch/sequence/sample-rate context, and a terminal with separate tabs for each experiment step.
-- **Traceable results:** save configurations and checkpoints, compare compatible runs, and export reports or reproduction packages.
-- **A local workbench:** nine interface languages, system light/dark themes, and layouts that adapt to the window size.
+- **Live feedback:** separate epoch and batch progress bars, NMSE and other task metrics, live signal plots, reconnectable experiments and a Stop control.
+- **Download models while training:** save the best checkpoint so far; after training, download the selected final model. Compare compatible runs and export reports.
+- **Browser and local workbench:** nine interface languages, English by default, CUDA when available, touch-friendly plots and system light/dark themes.
 
-Studio currently requires a **source installation**. The PyPI **2.1.0** release provides the core Python API and legacy CLI; it does not include Studio. Custom dataset upload in Studio is marked **Coming soon**; start with the packaged examples.
+**Bring your own CSV:** upload UTF-8 CSV with two complex columns or four real I/Q columns, up to 25 MiB and 1,000,000 paired samples. Every row is validated in quarantine before preview; rejected uploads are deleted. Code, package and checkpoint uploads are unavailable in the public app.
 
 For a hosted installation, the [public Studio deployment guide](https://lab-emi.github.io/OpenDPD/architecture/public-studio/) covers GitHub Pages, a Cloudflare Tunnel and isolated local VM compute, with temporary sessions and automatic file deletion within 24 hours.
 <!-- --8<-- [end:studio-features] -->
@@ -49,7 +53,14 @@ For a hosted installation, the [public Studio deployment guide](https://lab-emi.
 
 ## Get started with Studio
 
-You need **Python 3.10–3.13**, **Git**, and **Node.js 22.22+** to build this source preview. In a terminal on macOS or Linux:
+**[Open the hosted Studio now](https://opendpd.com/studio/)**, or install the packaged local app with **Python 3.10–3.13**:
+
+```bash
+python -m pip install "opendpd[gui]==2.2.0"
+opendpd gui
+```
+
+The wheel includes the frontend; Node.js is not needed. For development from source, also install Git and Node.js 22.22+:
 
 <!-- --8<-- [start:source-install] -->
 ```bash

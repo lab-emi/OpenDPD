@@ -10,7 +10,6 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import Grid from '@mui/material/Grid'
 import Link from '@mui/material/Link'
-import LinearProgress from '@mui/material/LinearProgress'
 import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
@@ -26,7 +25,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams, useSearchParams } from 'react-router'
-import { artifactUrl } from '@/api/client'
+import { artifactUrl, WEB_MODE } from '@/api/client'
 import { useRunStream } from '@/api/events'
 import { useCancelRun, useCustomDatasetImports, useModels, useRetryRun, useRun, useRunArtifacts, useRunConfig, useRunHistory, useRunLineage, useRuns, useSubmitRun } from '@/api/hooks'
 import { isTerminal, type LineageLink, type LineageRelation, type RunView } from '@/api/types'
@@ -61,7 +60,7 @@ const NEXT_STEP: Partial<Record<RunView['status'], MessageKey>> = {
 }
 
 export function RunDetailPage() {
-  const customDatasets = useCustomDatasetImports()
+  const customDatasets = useCustomDatasetImports() && !WEB_MODE
   const { runId = '' } = useParams()
   const [params, setParams] = useSearchParams()
   const tab: TabKey = TABS.includes(params.get('tab') as TabKey) ? (params.get('tab') as TabKey) : 'overview'
@@ -79,8 +78,6 @@ export function RunDetailPage() {
   if (run.isPending) return <LoadingState />
   if (!run.data) return <ErrorState error={run.error} onRetry={() => void run.refetch()} />
   const r = run.data
-  // the record stores completed epochs (1-based); stream progress events carry the 0-based epoch index
-  const progress = stream.progress ?? (typeof r.progress_epoch === 'number' && r.progress_epoch > 0 && typeof r.progress_total_epochs === 'number' ? { epoch: r.progress_epoch - 1, total: r.progress_total_epochs } : null)
   const disconnected = run.isError || stream.connection === 'disconnected'
   const nextStep = NEXT_STEP[r.status]
 
@@ -182,12 +179,6 @@ export function RunDetailPage() {
       {nextStep && !r.error && <Alert severity={r.status === 'succeeded' ? 'success' : 'info'}>{t(nextStep)}</Alert>}
       {r.status === 'queued' && r.device === 'cuda' && <Alert severity="info">{t('run.gpuQueue')}</Alert>}
       {r.status_reason && r.status !== 'succeeded' && !r.error && <Typography color="text.secondary">{message(r.status_reason)}</Typography>}
-      {(progress || (active && (r.task === 'train_pa' || r.task === 'train_dpd'))) && <Paper sx={{ p: 2 }}>
-        <Typography variant="body2" gutterBottom>
-          {progress ? t('run.progress', { epoch: progress.epoch + 1, total: progress.total }) : r.status === 'running' ? t('run.progress.none') : ''}
-        </Typography>
-        {progress && active && <LinearProgress variant="determinate" value={((progress.epoch + 1) / progress.total) * 100} aria-label={t('run.progress', { epoch: progress.epoch + 1, total: progress.total })} />}
-      </Paper>}
       <Tabs variant="scrollable" scrollButtons="auto" value={tab} onChange={(_, v: TabKey) => setParams(v === 'overview' ? {} : { tab: v })} aria-label={t('run.title')}>
         <Tab value="overview" label={t('run.tabs.overview')} id="tab-overview" aria-controls="panel-overview" />
         <Tab value="logs" label={t('run.tabs.logs')} id="tab-logs" aria-controls="panel-logs" />

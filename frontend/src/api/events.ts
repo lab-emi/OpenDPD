@@ -22,7 +22,7 @@ export interface StreamState {
   lastSeq: number
   lastUpdate: Date | null
   progress: { epoch: number; total: number } | null
-  batchProgress?: { phase: string; batch?: number; total_batches?: number; sequences?: number; sequence_samples?: number; sample_rate_hz?: number | null; padded_samples?: number }
+  batchProgress?: { phase: string; epoch?: number; total_epochs?: number; batch?: number; total_batches?: number; sequences?: number; sequence_samples?: number; sample_rate_hz?: number | null; padded_samples?: number }
   metrics: MetricPoint[]
   statusEvents: RunEvent[]
   heartbeats: number
@@ -58,7 +58,7 @@ export function reduceEvent(state: StreamState, event: RunEvent): StreamState {
       const total = asNumber(p['total_epochs'])
       if (epoch !== null && total !== null && p['scope'] !== 'live') next.progress = { epoch, total }
       if (typeof p['phase'] === 'string' && p['phase'] !== 'epoch_end') {
-        next.batchProgress = { phase: p['phase'], ...Object.fromEntries(['batch', 'total_batches', 'sequences', 'sequence_samples', 'sample_rate_hz', 'padded_samples'].flatMap((key) => asNumber(p[key]) !== null ? [[key, p[key]]] : [])) }
+        next.batchProgress = { phase: p['phase'], ...Object.fromEntries(['epoch', 'total_epochs', 'batch', 'total_batches', 'sequences', 'sequence_samples', 'sample_rate_hz', 'padded_samples'].flatMap((key) => asNumber(p[key]) !== null ? [[key, p[key]]] : [])) }
       }
       break
     }

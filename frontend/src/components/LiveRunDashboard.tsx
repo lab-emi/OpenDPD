@@ -17,13 +17,14 @@ import { IQPreview } from './IQPreview'
 import { SpectrumPlot } from './SpectrumPlot'
 import type { SpectrumData } from './ResultCharts'
 import { MetricHistoryChart } from './MetricHistoryChart'
+import { ModelDownloadButton } from './ModelDownloadButton'
 
 interface Geometry { batch_size: number; sequence_samples: number; sample_rate_hz: number | null; frame_stride?: number; train_sequences: number; batches_per_epoch: number }
 interface LiveSnapshot {
   policy: { min_batches: number; min_seconds: number; overhead_target: number }
   geometry: Geometry | null
   training_geometry?: Geometry
-  last_batch?: { phase: string; sequences: number; sequence_samples: number; sample_rate_hz?: number; padded_samples?: number }
+  last_batch?: StreamState['batchProgress']
   preview_error?: string
   preview: {
     revision: number; updated_at: string; source: string; samples: number; metrics: Record<string, number>; interval_seconds?: number; metric_profile?: string
@@ -39,12 +40,16 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
   const active = !isTerminal(run.status)
   const query = useQuery({ queryKey: liveKey(run.run_id), queryFn: ({ signal }) => api.get<LiveSnapshot>(`/runs/${encodeURIComponent(run.run_id)}/live`, signal), refetchInterval: active ? (WEB_MODE ? 5000 : 2000) : false, retry: false })
   const snapshot = query.data, preview = snapshot?.preview, geometry = snapshot?.training_geometry ?? snapshot?.geometry
-  const progress = stream.batchProgress
+  const progress = stream.batchProgress ?? snapshot?.last_batch
   const spec = preview?.plots.spectrum, time = preview?.plots.time
   const spectra = useMemo(() => (spec?.traces ?? []).map((trace) => ({ name: trace.name, psdDb: trace.psd_db })), [spec])
   const series = useMemo(() => time?.traces ?? [], [time])
   const dpd = run.task === 'train_dpd' || run.task === 'run_dpd'
   const training = run.task === 'train_pa' || run.task === 'train_dpd'
+  const totalEpochs = run.progress_total_epochs ?? stream.progress?.total ?? progress?.total_epochs ?? 0
+  const completedEpochs = Math.min(totalEpochs, Math.max(run.progress_epoch ?? 0, stream.progress ? stream.progress.epoch + 1 : 0))
+  const epochPercent = totalEpochs ? completedEpochs / totalEpochs * 100 : 0
+  const batchPercent = progress?.total_batches ? Math.min(100, Math.max(0, (progress.batch ?? 0) / progress.total_batches * 100)) : 0
   const general = preview?.metric_profile === 'general-spectral-v1'
   const names = general ? (dpd ? ['ACPR_L', 'ACPR_R', 'NMSE', 'IBE'] : ['NMSE', 'IBE']) : dpd ? ['ACLR_AVG', 'NMSE', 'ACLR_L', 'ACLR_R'] : ['NMSE', 'EVM']
   const final = preview?.source === 'final_test'
@@ -66,10 +71,15 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
         <Typography color="text.secondary" variant="body2" sx={{ mt: .75 }}>{t('live.actual', { count: actualSize ?? '', length: actualLength ?? '' })} · {t('live.geometry', { samples: formatNumber((actualSize ?? 0) * (actualLength ?? 0)), rate })}{geometry?.frame_stride ? ` · ${t('live.stride', { stride: geometry.frame_stride })}` : ''}</Typography>
         {!!actual?.padded_samples && <Typography variant="caption" color="text.secondary">{t('live.padding', { count: actual.padded_samples })}</Typography>}
       </> : <Typography color="text.secondary" sx={{ mt: 1.5 }}>{t('live.waitingGeometry')}</Typography>}
-      {active && progress?.batch !== undefined && progress.total_batches && ['train', 'val', 'test', 'evaluate'].includes(progress.phase) ? <Box sx={{ mt: 2 }}>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', mb: .75 }}><Typography variant="body2">{phaseLabel(progress.phase)} · {t('live.batch', { batch: progress.batch, total: progress.total_batches })}</Typography><Typography variant="body2">{Math.round(progress.batch / progress.total_batches * 100)}%</Typography></Stack>
-        <LinearProgress variant="determinate" value={progress.batch / progress.total_batches * 100} aria-label={t('live.batch', { batch: progress.batch, total: progress.total_batches })} />
-      </Box> : active && <LinearProgress sx={{ mt: 2 }} aria-label={t('live.preparing')} />}
+      {training && <Box sx={{ mt: 2 }} data-testid="epoch-progress">
+        <Stack direction="row" sx={{ justifyContent: 'space-between', mb: .75 }}><Typography variant="body2">{t('live.epochs', { completed: completedEpochs, total: totalEpochs || '—' })}</Typography><Typography variant="body2">{Math.round(epochPercent)}%</Typography></Stack>
+        <LinearProgress variant="determinate" value={epochPercent} aria-label={t('live.epochProgress')} />
+      </Box>}
+      {(active || training) && <Box sx={{ mt: 2 }} data-testid="batch-progress">
+        <Stack direction="row" sx={{ justifyContent: 'space-between', mb: .75 }}><Typography variant="body2">{progress?.epoch !== undefined && active ? `${t('live.currentEpoch', { epoch: progress.epoch + 1 })} · ` : ''}{progress?.phase ? phaseLabel(progress.phase) : message(run.status)} · {t('live.batch', { batch: progress?.batch ?? 0, total: progress?.total_batches ?? '—' })}</Typography><Typography variant="body2">{Math.round(run.status === 'succeeded' ? 100 : batchPercent)}%</Typography></Stack>
+        <LinearProgress variant={active && !progress?.total_batches ? 'indeterminate' : 'determinate'} value={run.status === 'succeeded' ? 100 : batchPercent} aria-label={t('live.batchProgress')} />
+      </Box>}
+      {training && <ModelDownloadButton run={run} />}
       {training && snapshot?.policy && <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1.5 }}>{t('live.cadence', { batches: snapshot.policy.min_batches, seconds: (preview?.interval_seconds ?? snapshot.policy.min_seconds).toFixed(1) })}</Typography>}
     </Paper>
     {dpd && <Alert severity="info">{t('live.surrogate')}</Alert>}
