@@ -51,6 +51,12 @@ def net_train(log: Dict[str, Any],
         if parameter.requires_grad
     )
     non_blocking = device.type == 'cuda'
+    fast_step = None
+    if non_blocking and not cuda_graph_training:
+        from modules.cuda_fast_training import make_fast_step
+        if not hasattr(optimizer, '_opendpd_fast_step'):
+            optimizer._opendpd_fast_step = make_fast_step(net, criterion, trainable_params, grad_clip_val)
+        fast_step = optimizer._opendpd_fast_step
     if cuda_graph_training:
         from modules.cuda_graph_training import (
             force_clean_eager_tres,
@@ -61,6 +67,11 @@ def net_train(log: Dict[str, Any],
         # Move features and targets to the proper device
         features = features.to(device, non_blocking=non_blocking)
         targets = targets.to(device, non_blocking=non_blocking)
+        fast_loss = fast_step(features, targets) if fast_step is not None else None
+        if fast_loss is not None:
+            optimizer.step()
+            losses.append(fast_loss)
+            continue
         graph_result = None
         if cuda_graph_training:
             graph_result = try_cuda_graph_training_step(
@@ -75,7 +86,7 @@ def net_train(log: Dict[str, Any],
                 if cuda_graph_training else contextlib.nullcontext()
             )
             with context:
-                optimizer.zero_grad(set_to_none=True)
+                optimizer.zero_grad(set_to_none=fast_step is None)
                 out = net(features)
                 loss = criterion(out, targets)
                 loss.backward()

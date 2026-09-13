@@ -2,8 +2,8 @@
 
 The legacy Project, loaders and optimizer still do all scientific work. The
 observer wraps an instance's loader; it never samples its shuffled iterator in
-advance. A separate frozen network previews a fixed validation segment. Neither
-its output nor its metrics participates in checkpoint selection.
+advance. Epoch plots reuse evaluation predictions. Optional batch previews use
+a separate frozen network. Display metrics never select checkpoints.
 """
 from __future__ import annotations
 
@@ -18,8 +18,11 @@ from opendpd.schemas import RunEventType
 from opendpd.services.workspace import write_json_atomic
 
 LIVE_FILE = "live.json"
-POLICY = {"min_batches": 25, "min_seconds": 2.0, "progress_seconds": 0.5,
-          "overhead_target": 0.05, "max_preview_samples": 16384}
+POLICY = {"mode": "epoch", "every_batches": None, "progress_seconds": 0.5,
+          "max_preview_samples": 16384,
+          # Numeric compatibility fields for browsers still running 2.2.0
+          # during rollout. The mode/every_batches fields define the cadence.
+          "min_batches": 0, "min_seconds": 0.0, "overhead_target": 0.0}
 
 
 def load_live(ws, run_id):
@@ -56,15 +59,15 @@ class LiveMonitor:
         self.epoch = -1
         self.steps = 0
         self.last_progress = -math.inf
-        self.last_preview = -math.inf
         self.last_preview_step = 0
-        self.preview_seconds = POLICY["min_seconds"]
+        self.every_batches = getattr(getattr(resolved, "execution", None), "preview_every_batches", None)
         self.revision = 0
         self.shadow = None
         self.preview_error = None
         self.current = {}
         self.phase_samples = 0
         self.state = {"version": "live-v1", "policy": dict(POLICY), "geometry": None, "preview": None}
+        self.state["policy"].update(mode="batch" if self.every_batches else "epoch", every_batches=self.every_batches)
 
     def save(self):
         write_json_atomic(self.ws.run_dir(self.run_id) / LIVE_FILE, self.state)
@@ -141,14 +144,11 @@ class LiveMonitor:
             net = kwargs["net"]
             val_set = kwargs["val_loader"].dataset
 
-            def preview(*_):
-                now = self.clock()
-                if (self.steps - self.last_preview_step < POLICY["min_batches"] or
-                    now - self.last_preview < self.preview_seconds) and self.revision > 0:
+            def preview(*_, force=False):
+                if not force and (not self.every_batches or self.steps - self.last_preview_step < self.every_batches):
                     return
                 if self.preview_error or not len(val_set):
                     return
-                start = self.clock()
                 try:
                     import torch
                     # No DataLoader iterator: constructing one consumes the global torch RNG.
@@ -156,33 +156,57 @@ class LiveMonitor:
                     if len(x) > POLICY["max_preview_samples"]:
                         raise ValueError("validation segment exceeds the live preview sample budget")
                     devices = [project.device.index or 0] if project.device.type == "cuda" else []
+                    if self.shadow is None:
+                        self.shadow = copy.deepcopy(net).eval().requires_grad_(False)
+                        # deepcopy does not preserve cuDNN's packed weight
+                        # storage. Repack once, outside inference_mode.
+                        for module in self.shadow.modules():
+                            if isinstance(module, torch.nn.RNNBase):
+                                module.flatten_parameters()
                     with torch.random.fork_rng(devices=devices), torch.inference_mode():
-                        if self.shadow is None:
-                            self.shadow = copy.deepcopy(net).eval().requires_grad_(False)
                         self.shadow.load_state_dict(net.state_dict())
                         prediction = self.shadow(x.unsqueeze(0).to(project.device)).cpu().numpy()
                     self.publish(prediction, target.unsqueeze(0).numpy(), x.unsqueeze(0).numpy(),
                                  project.args, "validation_probe")
-                    self.last_preview = self.clock()
                     self.last_preview_step = self.steps
-                    # Adapt to slow models; display work targets <=5% of elapsed time.
-                    # The first sample includes one-time imports/copy/kernel warm-up.
-                    if self.revision > 1:
-                        self.preview_seconds = max(POLICY["min_seconds"],
-                                                   (self.clock() - start) / POLICY["overhead_target"])
                 except Exception as error:
                     self.preview_error = f"{type(error).__name__}: {error}"
                     self.state["preview_error"] = self.preview_error
                     self.save()
                     print(f"[OpenDPD] Live signal preview unavailable: {self.preview_error}", flush=True)
 
-            kwargs["train_loader"] = ObservedLoader(loader, self, "train", preview)
+            def epoch_preview(val_prediction, val_target, test_prediction, test_target):
+                # Explicit batch mode has its own cadence. Include an epoch's
+                # final weights when its last batch was not a preview boundary.
+                if self.last_preview_step == self.steps:
+                    return
+                prediction, target, source_loader = val_prediction, val_target, kwargs["val_loader"]
+                source = "validation_probe"
+                if prediction is None:
+                    prediction, target, source_loader = test_prediction, test_target, kwargs["test_loader"]
+                    source = "test_probe"
+                if prediction is None:
+                    preview(force=True)
+                    return
+                try:
+                    x, _ = source_loader.dataset[0]
+                    self.publish(prediction[:1], target[:1], x.unsqueeze(0).cpu().numpy(), project.args, source)
+                    self.last_preview_step = self.steps
+                except Exception as error:
+                    self.preview_error = f"{type(error).__name__}: {error}"
+                    self.state["preview_error"] = self.preview_error
+                    self.save()
+                    print(f"[OpenDPD] Live signal preview unavailable: {self.preview_error}", flush=True)
+
+            project.on_epoch_evaluation = epoch_preview
+            kwargs["train_loader"] = ObservedLoader(loader, self, "train", preview if self.every_batches else None)
             for phase in ("val", "test"):
                 kwargs[f"{phase}_loader"] = ObservedLoader(kwargs[f"{phase}_loader"], self, phase)
             try:
                 return original(**kwargs)
             finally:
                 self.shadow = None
+                project.on_epoch_evaluation = None
 
         project.train = train
 
@@ -240,7 +264,7 @@ class LiveMonitor:
                    "metrics": values, "units": units,
                    "metric_profile": "legacy-opendpd-v1",
                    "plots": plots, "samples": int(prediction.shape[1]),
-                   "interval_seconds": self.preview_seconds}
+                   "every_batches": self.every_batches}
         self.state["preview"] = preview
         self.save()
         position = max(0, self.epoch) + self.current.get("batch", 0) / max(1, self.current.get("total_batches", 1))

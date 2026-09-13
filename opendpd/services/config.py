@@ -163,7 +163,7 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
         issues.append(ConfigIssue("evaluation.chunk_samples", "chunk_samples applies to streaming variants only",
                                   "remove the field, or evaluate with a model whose execution_semantics is streaming_stateful"))
     least_squares = model is not None and model.training_method == "least_squares"
-    if config.training.epochs < SMOKE_EPOCH_LIMIT and config.task in (TaskType.train_pa, TaskType.train_dpd) and not least_squares:
+    if config.training.epochs <= SMOKE_EPOCH_LIMIT and config.task in (TaskType.train_pa, TaskType.train_dpd) and not least_squares:
         warn.append(ConfigIssue("training.epochs",
                                 f"{config.training.epochs} epochs is a smoke/demo run, not a benchmark result"))
     budget = config.training.train_samples

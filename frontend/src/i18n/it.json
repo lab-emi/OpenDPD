@@ -776,5 +776,13 @@
   "model.download.checkpoint": "Scarica il checkpoint",
   "model.download.help": "Pesi con il miglior punteggio di validazione finora. Salvali prima della scadenza.",
   "model.download.waiting": "Disponibile dopo il salvataggio del primo checkpoint.",
-  "model.download.error": "Impossibile verificare il modello. Riprova tra poco."
+  "model.download.error": "Impossibile verificare il modello. Riprova tra poco.",
+  "form.preview": "Aggiornamento grafici",
+  "form.preview.epoch": "Una volta per epoca (predefinito)",
+  "form.preview.epochHelp": "Aggiorna i grafici dopo ogni epoca con i risultati di validazione.",
+  "form.preview.batch": "Ogni N batch — lento",
+  "form.preview.batches": "Batch tra le anteprime",
+  "form.preview.warning": "Anteprime frequenti possono rallentare molto l’addestramento. Ogni anteprima richiede inferenza e calcoli grafici aggiuntivi.",
+  "live.cadence.epoch": "I grafici si aggiornano una volta per epoca.",
+  "live.cadence.batch": "I grafici si aggiornano ogni {batches} batch e alla fine dell’epoca."
 }

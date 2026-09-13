@@ -37,7 +37,7 @@ def build_parser():
     parser.add_argument('--opt_type', default='adamw', choices=['sgd', 'adam', 'adamw', 'adabound', 'rmsprop'], help='Type of optimizer.')
     parser.add_argument('--batch_size', default=64, type=int, help='Batch size for training.')
     parser.add_argument('--batch_size_eval', default=64, type=int, help='Batch size for evaluation.')
-    parser.add_argument('--n_epochs', default=300, type=int, help='Number of epochs to train for.')
+    parser.add_argument('--n_epochs', default=150, type=int, help='Number of epochs to train for.')
     parser.add_argument('--lr_schedule', default=1, type=int,
                         help='Whether to enable ReduceLROnPlateau learning-rate scheduling.')
     parser.add_argument('--lr', default=5e-3, type=float, help='Initial learning rate.')

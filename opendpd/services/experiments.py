@@ -755,7 +755,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         selected_epoch = None                       # a fit has no epochs to select from
         if not measured:
             limitations += fit_limitations(ws, run_id, resolved)
-    elif resolved.training.epochs < SMOKE_EPOCH_LIMIT:
+    elif resolved.training.epochs <= SMOKE_EPOCH_LIMIT:
         limitations.append(f"{resolved.training.epochs}-epoch smoke/demo training; not a benchmark result")
     if resolved.training.reproducibility == "soft" and not measured:
         limitations.append("soft reproducibility (non-deterministic algorithms allowed); repeated runs may differ")

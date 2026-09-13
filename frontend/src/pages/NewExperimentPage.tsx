@@ -48,6 +48,8 @@ interface FormState {
   chunkSamples: string
   optimizer: string
   loss: string
+  previewMode: string
+  previewBatches: string
 }
 
 function num(s: string, fallback: number): number {
@@ -93,7 +95,8 @@ function buildConfig(recipe: RecipeInfo, f: FormState, specs: ParamSpec[]): Expe
     dataset: f.dataVersion ? { id: f.datasetId, preprocessing_version: f.dataVersion } : { id: f.datasetId },
     model: { key: recipe.model.key, parameters },
     training,
-    execution: { device: f.device as Device, ...(f.numThreads.trim() ? { num_threads: num(f.numThreads, 0) } : {}) },
+    execution: { device: f.device as Device, ...(f.numThreads.trim() ? { num_threads: num(f.numThreads, 0) } : {}),
+      preview_every_batches: f.previewMode === 'batch' ? num(f.previewBatches, 100) : null },
   }
   if (recipe.task === 'train_dpd' && f.paRunId) config.pa_reference = { run_id: f.paRunId }
   if (f.profileId) config.evaluation = { profile_id: f.profileId }
@@ -118,6 +121,7 @@ const FIELD_MAP: Record<string, keyof FormState> = {
   'evaluation.chunk_samples': 'chunkSamples',
   'training.optimizer': 'optimizer',
   'training.loss': 'loss',
+  'execution.preview_every_batches': 'previewBatches',
 }
 
 export function NewExperimentPage() {
@@ -142,7 +146,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const [importedFile, setImportedFile] = useState<{ config: ExperimentConfigInput; source: string } | null>(null)
   const [jsonOpen, setJsonOpen] = useState(false)
   const idempotencyKey = useRef(crypto.randomUUID())
-  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: '', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', params: {}, profileId: '', sourceRunId: '', variantKey: '', numThreads: '', chunkSamples: '', optimizer: '', loss: '' })
+  const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: '', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', params: {}, profileId: '', sourceRunId: '', variantKey: '', numThreads: '', chunkSamples: '', optimizer: '', loss: '', previewMode: 'epoch', previewBatches: '' })
   // The report is stored with the config it validated, so "checking" is derived, not duplicated state.
   const [validated, setValidated] = useState<{ configJson: string; attempt: number; report: ValidationReport | null; error: unknown } | null>(null)
   const [validationAttempt, setValidationAttempt] = useState(0)
@@ -420,6 +424,18 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
               </TextField>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth type="number" label={t('tasks.threads')} value={form.numThreads} onChange={set('numThreads')} helperText={errorText('numThreads') || t('tasks.threads.help')} error={issuesFor('numThreads').length > 0} /></Grid>
+            {!testing && !leastSquares && <>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField select fullWidth label={t('form.preview')} value={form.previewMode} onChange={set('previewMode')} sx={form.previewMode === 'batch' ? { '& .MuiSelect-select': { color: 'error.main' } } : undefined} helperText={form.previewMode === 'batch' ? t('live.cadence.batch', { batches: num(form.previewBatches, 100) }) : t('form.preview.epochHelp')}>
+                  <MenuItem value="epoch">{t('form.preview.epoch')}</MenuItem>
+                  <MenuItem value="batch" sx={{ color: 'error.main' }}>{t('form.preview.batch')}</MenuItem>
+                </TextField>
+              </Grid>
+              {form.previewMode === 'batch' && <>
+                <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth type="number" color="error" label={t('form.preview.batches')} value={form.previewBatches} onChange={set('previewBatches')} placeholder="100" sx={{ '& .MuiInputLabel-root': { color: 'error.main' }, '& .MuiOutlinedInput-notchedOutline': { borderColor: 'error.main' } }} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: 1, max: 1000000, step: 1 } }} helperText={errorText('previewBatches') || ' '} error={issuesFor('previewBatches').length > 0} /></Grid>
+                <Grid size={{ xs: 12 }}><Alert severity="error">{t('form.preview.warning')}</Alert></Grid>
+              </>}
+            </>}
           </Grid>
         </AccordionDetails>
       </Accordion>}
@@ -435,6 +451,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
             <dt>{t('form.epochs')}</dt><dd>{config?.training?.epochs}</dd>
             <dt>{t('form.batchSize')}</dt><dd>{config?.training?.batch_size}</dd>
             <dt>{t('form.learningRate')}</dt><dd>{config?.training?.learning_rate}</dd>
+            <dt>{t('form.preview')}</dt><dd>{config?.execution?.preview_every_batches ? t('live.cadence.batch', { batches: config.execution.preview_every_batches }) : t('form.preview.epoch')}</dd>
           </>}
           {(config?.task === 'evaluate_pa' || config?.task === 'run_dpd') && <><dt>{t('testing.model')}</dt><dd>{config?.pa_reference && config.task === 'evaluate_pa' ? config.pa_reference.run_id : config?.dpd_reference?.run_id}</dd><dt>{t('testing.partition')}</dt><dd>{phaseLabel('test')}</dd></>}
         </Box>
@@ -469,7 +486,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
         </Alert>
       )}
       {submit.isError && <ErrorState error={submit.error} />}
-      <Stack sx={{ alignItems: 'center' }} direction="row" spacing={1}>
+      <Stack sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, '& .MuiButton-root': { flexShrink: 0 } }} direction="row">
         {step > 0 && <Button startIcon={<ArrowBackIcon />} onClick={() => setStep(step - 1)}>{t('workflow.back')}</Button>}
         {step < 2 && <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={next} disabled={!canNext}>{t('workflow.next')}</Button>}
         <Button type="submit" variant="contained" disabled={!canSubmit} sx={{ display: step === 2 ? 'inline-flex' : 'none' }}>

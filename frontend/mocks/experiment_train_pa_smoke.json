@@ -18,7 +18,8 @@
       "cuda_graph_training": false,
       "device": "cpu",
       "device_index": 0,
-      "num_threads": null
+      "num_threads": null,
+      "preview_every_batches": null
     },
     "initialization": null,
     "measurement": null,

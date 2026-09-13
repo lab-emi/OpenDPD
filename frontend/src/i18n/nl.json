@@ -776,5 +776,13 @@
   "model.download.checkpoint": "Checkpoint downloaden",
   "model.download.help": "Gewichten met de beste validatiescore tot nu toe. Bewaar ze vóór de werkruimte verloopt.",
   "model.download.waiting": "Beschikbaar zodra het eerste checkpoint is opgeslagen.",
-  "model.download.error": "Modelbeschikbaarheid kon niet worden gecontroleerd. Probeer het straks opnieuw."
+  "model.download.error": "Modelbeschikbaarheid kon niet worden gecontroleerd. Probeer het straks opnieuw.",
+  "form.preview": "Grafieken bijwerken",
+  "form.preview.epoch": "Eén keer per epoch (standaard)",
+  "form.preview.epochHelp": "Werk grafieken na elke epoch bij met validatieresultaten.",
+  "form.preview.batch": "Elke N batches — traag",
+  "form.preview.batches": "Batches tussen voorbeelden",
+  "form.preview.warning": "Frequente batchvoorbeelden kunnen de training ernstig vertragen. Elk voorbeeld vereist extra inferentie en grafiekberekeningen.",
+  "live.cadence.epoch": "Grafieken worden eenmaal per epoch bijgewerkt.",
+  "live.cadence.batch": "Grafieken worden elke {batches} batches en aan het einde van de epoch bijgewerkt."
 }

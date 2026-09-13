@@ -76,6 +76,24 @@ test('prefers detected CUDA for a new experiment and keeps an explicit CPU choic
   await waitFor(() => expect(calls.find((c) => c.path === '/api/v1/runs' && c.method === 'POST')?.body).toMatchObject({ config: { execution: { device: 'cpu' } } }))
 })
 
+test('defaults to epoch plots and requires an explicit warned batch cadence', async () => {
+  const { calls } = base(() => ({ ok: true, errors: [], warnings: [], resolved: null }))
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid'); await continueStep()
+  await userEvent.click(screen.getByRole('button', { name: 'Advanced settings' }))
+  const mode = screen.getByRole('combobox', { name: 'Plot updates' })
+  expect(mode).toHaveTextContent('Once per epoch (default)')
+  expect(calls.filter(c => c.path.endsWith('/validate')).at(-1)?.body).toMatchObject({ config: { execution: { preview_every_batches: null } } })
+  await userEvent.click(mode)
+  await userEvent.click(screen.getByRole('option', { name: 'Every N batches — slow' }))
+  expect(screen.getByText(/Frequent batch previews may severely slow down training/).closest('[role="alert"]')).toHaveClass('MuiAlert-colorError')
+  await userEvent.type(screen.getByLabelText('Batches between previews'), '250')
+  expect(screen.getByText('Plots update every 250 batches and at epoch end.')).toBeInTheDocument()
+  await waitFor(() => expect(calls.filter(c => c.path.endsWith('/validate')).at(-1)?.body).toMatchObject({ config: { execution: { preview_every_batches: 250 } } }))
+  await continueStep(); await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
+  await waitFor(() => expect(calls.find(c => c.path === '/api/v1/runs' && c.method === 'POST')?.body).toMatchObject({ config: { execution: { preview_every_batches: 250 } } }))
+})
+
 test('server validation errors are shown on the field and block submit', async () => {
   base((config) => {
     const epochs = (config['training'] as { epochs: number }).epochs

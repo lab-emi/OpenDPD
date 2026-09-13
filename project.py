@@ -206,6 +206,7 @@ class Project:
 
     def build_dataloaders(self):
         from modules.data_collector import IQSegmentDataset, IQFrameDataset, load_dataset
+        from modules.batched_loader import iq_loader
 
         # Load Dataset
         if hasattr(self, 'dataset_path') and self.dataset_path:
@@ -235,15 +236,15 @@ class Project:
 
         # Define PyTorch Dataloaders
         pin_memory = self.device.type == 'cuda'
-        train_loader = DataLoader(
+        train_loader = iq_loader(
             train_set, batch_size=self.batch_size, shuffle=True,
             pin_memory=pin_memory
         )
-        val_loader = DataLoader(
+        val_loader = iq_loader(
             val_set, batch_size=self.batch_size_eval, shuffle=False,
             pin_memory=pin_memory
         )
-        test_loader = DataLoader(
+        test_loader = iq_loader(
             test_set, batch_size=self.batch_size_eval, shuffle=False,
             pin_memory=pin_memory
         )
@@ -426,6 +427,12 @@ class Project:
                                                                  dataloader=test_loader,
                                                                  device=self.device)
                 self.log_test = calculate_metrics(self.args, self.log_test, test_prediction, test_ground_truth)
+
+            # Studio reuses the predictions already computed above. This hook
+            # never enters the optimizer or checkpoint-selection path.
+            observer = getattr(self, "on_epoch_evaluation", None)
+            if observer is not None:
+                observer(val_prediction, val_ground_truth, test_prediction, test_ground_truth)
 
             ###########################################################################################################
             # Logging & Saving

@@ -776,5 +776,13 @@
   "model.download.checkpoint": "下载 checkpoint",
   "model.download.help": "下载当前验证分数最优的模型权重，请在工作区过期前保存。",
   "model.download.waiting": "首个模型 checkpoint 保存后即可下载。",
-  "model.download.error": "暂时无法检查模型，请稍后重试。"
+  "model.download.error": "暂时无法检查模型，请稍后重试。",
+  "form.preview": "绘图更新",
+  "form.preview.epoch": "每个 epoch 一次（默认）",
+  "form.preview.epochHelp": "每个 epoch 结束后使用验证结果更新绘图。",
+  "form.preview.batch": "每 N 个 batch 一次 — 速度较慢",
+  "form.preview.batches": "预览间隔 batch 数",
+  "form.preview.warning": "频繁按 batch 预览可能严重影响训练速度。每次预览都会额外执行推理和绘图计算。",
+  "live.cadence.epoch": "绘图每个 epoch 更新一次。",
+  "live.cadence.batch": "绘图每 {batches} 个 batch 及 epoch 结束时更新。"
 }

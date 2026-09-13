@@ -776,5 +776,13 @@
   "model.download.checkpoint": "Télécharger le checkpoint",
   "model.download.help": "Poids au meilleur score de validation actuel. Enregistrez-les avant expiration.",
   "model.download.waiting": "Disponible après la sauvegarde du premier checkpoint.",
-  "model.download.error": "Impossible de vérifier le modèle. Réessayez bientôt."
+  "model.download.error": "Impossible de vérifier le modèle. Réessayez bientôt.",
+  "form.preview": "Mise à jour des graphiques",
+  "form.preview.epoch": "Une fois par époque (défaut)",
+  "form.preview.epochHelp": "Actualiser les graphiques après chaque époque avec les résultats de validation.",
+  "form.preview.batch": "Tous les N lots — lent",
+  "form.preview.batches": "Lots entre les aperçus",
+  "form.preview.warning": "Des aperçus fréquents peuvent fortement ralentir l’entraînement. Chaque aperçu nécessite une inférence et des calculs graphiques supplémentaires.",
+  "live.cadence.epoch": "Les graphiques sont actualisés une fois par époque.",
+  "live.cadence.batch": "Actualisation tous les {batches} lots et en fin d’époque."
 }

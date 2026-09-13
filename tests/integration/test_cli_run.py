@@ -47,7 +47,9 @@ def workspace(tmp_path_factory):
 @pytest.fixture(scope="module")
 def pa_run(workspace):
     argv_before = list(sys.argv)
-    record = create_run(workspace, instantiate("pa-gru-smoke-v1", "dpa-200mhz"), idempotency_key="pa-smoke")
+    config = instantiate("pa-gru-smoke-v1", "dpa-200mhz")
+    config.training.epochs = 3  # Fixed regression budget, independent of UI presets.
+    record = create_run(workspace, config, idempotency_key="pa-smoke")
     record = execute_run(workspace, record.run_id)
     assert sys.argv == argv_before, "the explicit-config path must not touch sys.argv"
     assert record.status == RunStatus.succeeded, record.error
@@ -180,6 +182,7 @@ def test_matches_legacy_cli_numerically(workspace, pa_run, tmp_path):
 @pytest.fixture(scope="module")
 def dpd_run(workspace, pa_run):
     cfg = instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa_run.run_id)
+    cfg.training.epochs = 3  # Keep the regression's original numerical fixture.
     record = execute_run(workspace, create_run(workspace, cfg).run_id)
     assert record.status == RunStatus.succeeded, record.error
     return record

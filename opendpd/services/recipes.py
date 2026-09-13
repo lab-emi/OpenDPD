@@ -2,7 +2,8 @@
 
 ``smoke`` recipes exist to prove the pipeline works in seconds; their numbers
 must never be presented as benchmark results. ``research`` recipes carry the
-full OpenDPDv2 optimisation budget.
+full Studio training budget. Published benchmark protocols keep their own
+explicit epoch counts.
 """
 
 from __future__ import annotations
@@ -44,35 +45,35 @@ class Recipe:
         return data
 
 
-_SMOKE = dict(epochs=3, frame_length=50, frame_stride=16, batch_size_eval=256)
-_RESEARCH = dict(epochs=300, frame_length=200, frame_stride=1)
+_SMOKE = dict(epochs=10, frame_length=50, frame_stride=16, batch_size_eval=256)
+_RESEARCH = dict(epochs=150, frame_length=200, frame_stride=1)
 
 RECIPES: List[Recipe] = [
     Recipe("pa-gru-smoke-v1", "PA model, GRU, smoke", "smoke", TaskType.train_pa,
            ModelSpec(key="gru", parameters={"hidden_size": 23, "num_layers": 1}), TrainingConfig(**_SMOKE),
            "Fast end-to-end check of PA modelling on CPU.",
-           "3 epochs, short frames, stride 16: numbers are far from converged and must not be compared.",
-           "about 5 s on a laptop CPU with DPA_200MHz"),
+           "10 epochs, short frames, stride 16: exploratory results, not a benchmark.",
+           "depends on model, data and device"),
     Recipe("dpd-gru-smoke-v1", "DPD, GRU, smoke", "smoke", TaskType.train_dpd,
            ModelSpec(key="gru", parameters={"hidden_size": 15, "num_layers": 1}), TrainingConfig(**_SMOKE),
            "Fast DPD learning through a PA surrogate trained with pa-gru-smoke-v1.",
            "Requires a PA run with the same seed and frame_length (50). Not a benchmark.",
-           "about 5 s on a laptop CPU with DPA_200MHz"),
+           "depends on model, data and device"),
     Recipe("dpd-tres-deltagru-smoke-v1", "DPD, TRes-DeltaGRU, smoke", "smoke", TaskType.train_dpd,
            ModelSpec(key="tres_deltagru", parameters={"hidden_size": 15, "num_layers": 1, "thx": 0.0, "thh": 0.0}),
            TrainingConfig(**_SMOKE),
            "Fast check of the OpenDPDv2 DPD architecture through a PA surrogate.",
            "Same constraints as dpd-gru-smoke-v1; TRes models read 16 future samples (see registry).",
-           "about 10 s on a laptop CPU with DPA_200MHz"),
-    Recipe("pa-gru-research-v1", "PA model, GRU, OpenDPDv2 recipe", "research", TaskType.train_pa,
+           "depends on model, data and device"),
+    Recipe("pa-gru-research-v1", "PA model, GRU, full training", "research", TaskType.train_pa,
            ModelSpec(key="gru", parameters={"hidden_size": 23, "num_layers": 1}), TrainingConfig(**_RESEARCH),
-           "Full 300-epoch PA modelling recipe (AdamW, ReduceLROnPlateau) as in the OpenDPDv2 defaults.",
+           "Full Studio PA training: 150 epochs with AdamW and ReduceLROnPlateau.",
            "Single seed. Benchmark-grade comparisons need the S12 protocol (3 pre-registered seeds).",
            "hours on CPU; minutes to tens of minutes on a GPU"),
-    Recipe("dpd-tres-deltagru-research-v1", "DPD, TRes-DeltaGRU, OpenDPDv2 recipe", "research", TaskType.train_dpd,
+    Recipe("dpd-tres-deltagru-research-v1", "DPD, TRes-DeltaGRU, full training", "research", TaskType.train_dpd,
            ModelSpec(key="tres_deltagru", parameters={"hidden_size": 15, "num_layers": 1, "thx": 0.0, "thh": 0.0}),
            TrainingConfig(**_RESEARCH),
-           "Full 300-epoch DPD learning through a research-grade PA surrogate.",
+           "Full Studio DPD training: 150 epochs through a compatible PA surrogate.",
            "Requires a research PA run (frame_length 200, seed 0). Surrogate evidence only.",
            "hours on CPU; tens of minutes on a GPU"),
 ]

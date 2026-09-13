@@ -7,7 +7,7 @@ The guided Experiment view shows progress for PA training/testing and DPD traini
 - **PA modeling:** inspect NMSE and the model output against the measured PA response.
 - **DPD:** inspect the available linearization metrics and the cascade response. A PA-surrogate result is labeled as simulated; it does not replace a physical measurement.
 - **Batch context:** the view reports I/Q sequences per batch, complex samples per sequence and sample rate, so framing is explicit.
-- **Refresh rate:** plots are throttled and previews have bounded point counts. The worker adapts its preview cadence to limit overhead; display refreshes do not change the stored formal metrics.
+- **Refresh rate:** plots update once per epoch by default, reusing validation predictions. **Advanced settings → Plot updates** offers a batch interval, marked red with a warning that extra inference and plotting can severely slow training. Browser delivery may coalesce updates on slow connections; stored formal metrics remain independent of display refreshes.
 - **Terminal:** expand the bar at the bottom for worker output. Its tabs let you inspect an earlier step's log without leaving the current experiment step.
 - **Pan and zoom:** plots support interaction and recover the fitted view when panning leaves too little data visible. Use the plot controls to reset the view manually.
 

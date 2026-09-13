@@ -53,6 +53,7 @@ nav:
       - Python examples & Colab: examples.md
   - Core workflow:
       - PA and DPD training: training.md
+      - Studio CUDA performance: performance/studio-2.2.1.md
       - Datasets: datasets.md
       - Visualization: visualization.md
       - API reference: api.md
