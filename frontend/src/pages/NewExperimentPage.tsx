@@ -29,6 +29,7 @@ import { ExperimentTasks, isExperimentTask, taskGroup, taskLabel, type Experimen
 import { TestingSampleSummary } from '@/components/TestingSampleSummary'
 import { JsonConfigDialog, importableConfig } from '@/components/JsonConfigDialog'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
+import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 
 interface FormState {
   recipeId: string
@@ -136,6 +137,7 @@ export function NewExperimentPage() {
 
 function ExperimentForm({ task }: { task: ExperimentTask }) {
   const navigate = useNavigate()
+  const { selectDataset, selectPAReference, trackRun } = useStudioWorkflow()
   const recipes = useRecipes()
   const datasets = useDatasets()
   const models = useModels()
@@ -172,7 +174,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   // Capability discovery is asynchronous. Derive the initial device until the
   // user chooses one; later refetches must never overwrite that explicit choice.
   const defaultDevice = caps.data?.devices.some((d) => d.device === 'cuda' && d.detected) ? 'cuda' : 'cpu'
-  const form: FormState = { ...edits, device: edits.device || defaultDevice, recipeId: edits.recipeId || taskRecipes[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(requestedVersion) ? requestedVersion : '' }
+  const form: FormState = { ...edits, paRunId: edits.paRunId || params.get('paRun') || '', device: edits.device || defaultDevice, recipeId: edits.recipeId || taskRecipes[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(requestedVersion) ? requestedVersion : '' }
   const recipe = taskRecipes.find((r) => r.recipe_id === form.recipeId) ?? null
 
   const paRuns = (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === datasetId)
@@ -193,6 +195,15 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   } : null
   const config = imported ? { ...imported.config, name: form.name.trim() || imported.config.name || null } : !fromRunId ? (testing ? testConfig : recipe && form.datasetId ? buildConfig(recipe, form, specs) : null) : null
   const configJson = config ? JSON.stringify(config) : ''
+  const workflowDataset = config?.dataset.id ?? dataset?.dataset_id
+  const workflowVersion = config?.dataset.preprocessing_version ?? (form.dataVersion || 'raw-v1')
+  const workflowPA = config?.pa_reference?.run_id
+  useEffect(() => {
+    if (workflowDataset && datasets.data?.some(d => d.dataset_id === workflowDataset)) {
+      selectDataset(workflowDataset, workflowVersion)
+      if (workflowPA) selectPAReference(workflowPA)
+    }
+  }, [workflowDataset, workflowVersion, workflowPA, datasets.data, selectDataset, selectPAReference])
   const currentValidation = validated?.configJson === configJson && validated.attempt === validationAttempt
   const report = currentValidation ? validated.report : null
   const validationError = currentValidation ? validated.error : null
@@ -246,7 +257,10 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!config || !canSubmit) return
-    submit.mutate({ config, name: form.name.trim() || undefined, idempotency_key: idempotencyKey.current }, { onSuccess: (run) => navigate(`/runs/${encodeURIComponent(run.run_id)}`) })
+    submit.mutate({ config, name: form.name.trim() || undefined, idempotency_key: idempotencyKey.current }, { onSuccess: (run) => {
+      trackRun(run, config.dataset.preprocessing_version ?? 'raw-v1', config.pa_reference?.run_id)
+      navigate(`/runs/${encodeURIComponent(run.run_id)}`)
+    } })
   }
 
   return (

@@ -28,9 +28,8 @@ import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import { api, downloadFile } from '@/api/client'
-import { useCustomDatasetImports } from '@/api/hooks'
-import { useGenerateSignal, useGeneratorPresets, type GeneratorConfig, type GeneratorPreset } from '@/api/signalGenerator'
-import { GeneratorDatasetDialog } from '@/components/GeneratorDatasetDialog'
+import { useGenerateSignal, useGeneratedSignal, useGeneratorPresets, type GeneratedSignal, type GeneratorConfig, type GeneratorPreset } from '@/api/signalGenerator'
+import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 import { SignalGeneratorPlots } from '@/components/SignalGeneratorPlots'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 import { formatNumber, t, type MessageKey } from '@/i18n'
@@ -48,22 +47,25 @@ function NumberField({ label, value, onChange, unit = '', help }: { label: Messa
 
 export function SignalGeneratorPage() {
   const presets = useGeneratorPresets()
-  if (presets.isPending) return <LoadingState />
+  const workflow = useStudioWorkflow()
+  // Returning to this tab restores x instead of silently generating a new source.
+  const [restoreId] = useState(workflow.state.origin === 'generated' ? workflow.state.inputId : null)
+  const saved = useGeneratedSignal(restoreId)
+  if (presets.isPending || (restoreId && saved.isPending)) return <LoadingState />
   if (presets.isError) return <ErrorState error={presets.error} onRetry={() => void presets.refetch()} />
-  return <Generator presets={presets.data} />
+  return <Generator presets={presets.data} saved={saved.data} />
 }
 
-function Generator({ presets }: { presets: GeneratorPreset[] }) {
+function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: GeneratedSignal }) {
   const colors = useStudioColors()
-  const imports = useCustomDatasetImports()
+  const { selectInput } = useStudioWorkflow()
   const generate = useGenerateSignal()
-  const [config, setConfig] = useState<GeneratorConfig>(() => presets[0]!.config as GeneratorConfig)
-  const [datasetOpen, setDatasetOpen] = useState(false)
+  const [config, setConfig] = useState<GeneratorConfig>(() => (saved?.config ?? presets[0]!.config) as GeneratorConfig)
   const [advanced, setAdvanced] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [downloading, setDownloading] = useState(false)
   const [pilotText, setPilotText] = useState('')
-  const initialized = useRef(false)
+  const initialized = useRef(!!saved)
   const initial = useRef(config)
   useEffect(() => {
     if (!initialized.current) { initialized.current = true; generate.mutate(initial.current) }
@@ -71,8 +73,11 @@ function Generator({ presets }: { presets: GeneratorPreset[] }) {
   const preset = presets.find(p => p.preset_id === config.preset_id)
   const family = preset?.family ?? 'custom'
   const ofdm = config.waveform === 'ofdm'
-  const result = generate.data
+  const result = generate.data ?? saved
   const stale = !!result && JSON.stringify(result.config) !== JSON.stringify(config)
+  useEffect(() => {
+    if (result && !stale) selectInput(result.signal_id, result.config.preset_id)
+  }, [result, stale, selectInput])
   const count = config.length_mode === 'samples' ? config.n_samples : Math.floor(config.sample_rate_hz * config.duration_ms / 1000 + .5)
   const duration = count / config.sample_rate_hz * 1000
   const spacing = config.sample_rate_hz / (config.fft_size * config.oversampling)
@@ -171,8 +176,10 @@ function Generator({ presets }: { presets: GeneratorPreset[] }) {
           </Stack></AccordionDetails>
         </Accordion>
         {result && <Paper sx={{ p: 2 }}><Stack spacing={1.5}><Typography variant="h3">{t('generator.next')}</Typography>
-          <Button variant="contained" disabled={stale || !imports || result.analysis.sample_count < 8192} onClick={() => setDatasetOpen(true)}>{t('generator.createDataset')}</Button>
-          <Typography variant="caption" color="text.secondary">{t('generator.createHint')}</Typography>
+          <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
+          <Button variant="contained" disabled={stale} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(result.signal_id)}>{t('paInput.next')}</Button>
+          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.csv')}</Button>
+          <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/metadata.json').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.metadata')}</Button>
           <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile(result.download_url).catch(setError).finally(() => setDownloading(false)) }}>{t('generator.exportIq')}</Button>
           <Button component={RouterLink} to="/datasets?guide=start">{t('generator.useMeasured')}</Button>
         </Stack></Paper>}
@@ -180,6 +187,5 @@ function Generator({ presets }: { presets: GeneratorPreset[] }) {
       </Stack>
       <Box sx={{ minWidth: 0 }}>{result ? <SignalGeneratorPlots result={result} stale={stale} /> : <Paper sx={{ p: 5, minHeight: 450, display: 'grid', placeContent: 'center', textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 60, color: 'primary.main', mx: 'auto', mb: 2 }} /><Typography variant="h2">{t(generate.isPending ? 'generator.generating' : 'generator.generate')}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{t(generate.isError ? 'generator.checkParameters' : 'generator.firstPreview')}</Typography></Paper>}</Box>
     </Box>
-    {datasetOpen && result && <GeneratorDatasetDialog result={result} onClose={() => setDatasetOpen(false)} />}
   </Stack>
 }

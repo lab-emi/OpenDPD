@@ -14,6 +14,8 @@ import { ExperimentsPage } from '@/pages/ExperimentsPage'
 import { GalleryPage } from '@/pages/GalleryPage'
 import { HomePage } from '@/pages/HomePage'
 import { SignalGeneratorPage } from '@/pages/SignalGeneratorPage'
+import { PALibraryPage } from '@/pages/PALibraryPage'
+import { StudioWorkflowProvider } from '@/workflow/StudioWorkflow'
 import { NewExperimentPage } from '@/pages/NewExperimentPage'
 import { ResultDetailPage } from '@/pages/ResultDetailPage'
 import { ComparePage } from '@/pages/ComparePage'
@@ -37,6 +39,7 @@ function AppRoutes() {
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
         <Route path="signal-generator" element={<SignalGeneratorPage />} />
+        <Route path="pa-library" element={<PALibraryPage />} />
         <Route path="datasets" element={<DatasetsPage />} />
         <Route path="datasets/:datasetId" element={<DatasetDetailPage />} />
         <Route path="experiments" element={<ExperimentsPage />} />
@@ -74,7 +77,7 @@ export default function App({ queryClient }: { queryClient?: QueryClient }) {
         <Router>
           <SessionGate>
             <LanguageGate>
-              <AppRoutes />
+              <StudioWorkflowProvider><AppRoutes /></StudioWorkflowProvider>
             </LanguageGate>
           </SessionGate>
         </Router>

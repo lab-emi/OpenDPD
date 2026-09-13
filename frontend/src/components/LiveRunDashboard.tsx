@@ -14,7 +14,7 @@ import type { RunView } from '@/api/types'
 import { isTerminal } from '@/api/types'
 import { formatNumber, formatTime, message, phaseLabel, t } from '@/i18n'
 import { IQPreview } from './IQPreview'
-import { SpectrumPlot } from './SpectrumPlot'
+import { SpectrumPanels } from './SpectrumPanels'
 import type { SpectrumData } from './ResultCharts'
 import { MetricHistoryChart } from './MetricHistoryChart'
 import { ModelDownloadButton } from './ModelDownloadButton'
@@ -44,7 +44,7 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
   // the persisted snapshot when replay ends with a completed-stage event.
   const progress = stream.batchProgress?.total_batches ? stream.batchProgress : snapshot?.last_batch ?? stream.batchProgress
   const spec = preview?.plots.spectrum, time = preview?.plots.time
-  const spectra = useMemo(() => (spec?.traces ?? []).map((trace) => ({ name: trace.name, psdDb: trace.psd_db })), [spec])
+  const spectra = useMemo(() => (spec?.traces ?? []).map((trace) => ({ ...trace, psdDb: trace.psd_db })), [spec])
   const series = useMemo(() => time?.traces ?? [], [time])
   const dpd = run.task === 'train_dpd' || run.task === 'run_dpd'
   const training = run.task === 'train_pa' || run.task === 'train_dpd'
@@ -99,7 +99,7 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
       {query.isError && <Alert severity="warning">{t('live.unavailable')}</Alert>}
       <Grid container spacing={2}>
         {time && <Grid size={{ xs: 12, xl: 6 }}><IQPreview series={series} start={time.start} viewKey={`${run.run_id}:${preview?.source}`} height={285} /></Grid>}
-        {spec && <Grid size={{ xs: 12, xl: 6 }}><SpectrumPlot frequencyHz={spec.frequency} axis={spec.axis} traces={spectra} bands={spec.bands ?? undefined} viewKey={`${run.run_id}:${preview?.source}`} height={285} /></Grid>}
+        {spec && <Grid size={{ xs: 12, xl: 6 }}><SpectrumPanels frequencyHz={spec.frequency} axis={spec.axis} traces={spectra} bands={spec.bands ?? undefined} viewKey={`${run.run_id}:${preview?.source}`} height={285} /></Grid>}
       </Grid>
     </Paper>
   </Stack>

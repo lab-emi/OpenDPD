@@ -46,3 +46,7 @@ npm run types:generate # regenerate src/api/schema.ts from ../docs/contracts/ope
 component gallery captured locally (`npx playwright test --update-snapshots`).
 CI runs the same journeys with `--ignore-snapshots` because font rendering
 differs between machines; compare visually before merging UI changes.
+
+## Signal-chain views (2.2.4)
+
+`SpectrumPanels` groups typed trace identities with `spectrumNodes.ts`; `SpectrumPlot` renders exactly one physical position. Keep raw names, roles, sources and `signal_node` when mapping API traces. Do not infer signal location from shortened legend aliases. Legacy x/u/y traces remain supported. Views store per-position ranges; full run IDs stay outside compact R1/R2 legends. Generator input and Virtual PA output use the same position labels. Backend report/publication grouping lives in `opendpd/core/spectrum_layout.py`, also shipped in replay bundles.

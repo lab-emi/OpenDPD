@@ -61,7 +61,7 @@ test('two-finger zoom follows its midpoint; touch controls and full-screen fit a
   await controls.getByRole('button', { name: 'Zoom in', exact: true }).click()
   await expect.poll(async () => { const r = await range(); return (r.x[1]! - r.x[0]!) / (before.x[1]! - before.x[0]!) }).toBeCloseTo(1 / 1.2, 3)
   await chart.getByRole('button', { name: /Enlarge chart/ }).click()
-  const dialog = page.getByRole('dialog', { name: 'Power spectral density' })
+  const dialog = page.getByRole('dialog', { name: 'DPD Input · PSD' })
   await expect(dialog).toBeVisible()
   expect((await dialog.boundingBox())!.width).toBe(page.viewportSize()!.width)
   await expect(dialog.getByTestId('touch-plot-controls').getByRole('button', { name: 'Reset axes', exact: true })).toBeVisible()

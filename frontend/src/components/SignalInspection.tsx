@@ -20,7 +20,7 @@ import { formatNumber, message, t, type MessageKey } from '@/i18n'
 import { tokens, useStudioColors } from '@/theme'
 import { IQPreview } from './IQPreview'
 import { PlotlyChart, seriesSymbol, type PlotLayout, type PlotTrace } from './PlotlyChart'
-import { SpectrumPlot } from './SpectrumPlot'
+import { SpectrumPanels } from './SpectrumPanels'
 
 const LABELS: Record<string, MessageKey> = {
   PAPR: 'inspection.metric.papr', RMS: 'inspection.metric.rms', PEAK: 'inspection.metric.peak',
@@ -74,7 +74,7 @@ export function SignalInspection({ data }: { data: DatasetAnalysis }) {
   const hasSymbols = data.constellation?.status === 'ok'
   const showSymbols = hasSymbols && iqMode === 'symbols'
   const tallViewport = useMediaQuery('(min-height: 1000px)')
-  const spectrumTraces = useMemo(() => (data.spectrum?.traces ?? []).map((tr) => ({ name: tr.name, psdDb: tr.psd_db })), [data.spectrum])
+  const spectrumTraces = useMemo(() => (data.spectrum?.traces ?? []).map((tr) => ({ ...tr, psdDb: tr.psd_db })), [data.spectrum])
   const inputLabel = t('inspection.input'), outputLabel = t('inspection.output'), equalizedLabel = t('inspection.outputEq')
   const iqTraces = useMemo<PlotTrace[]>(() => (showSymbols ? data.constellation?.traces ?? [] : data.iq?.traces ?? []).map((tr, i) => ({
     x: tr.i, y: tr.q, name: tr.role === 'input' ? inputLabel : showSymbols ? equalizedLabel : outputLabel, type: 'scatter', mode: 'markers',
@@ -98,8 +98,8 @@ export function SignalInspection({ data }: { data: DatasetAnalysis }) {
     <Box data-testid="signal-workbench" sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 330px', xl: 'minmax(0, 1fr) 360px' }, gap: 1.5 }}>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5, alignContent: 'start' }}>
         {!data.spectrum && <Alert severity="warning" sx={{ gridColumn: '1 / -1' }}>{t('inspection.noPlots')}</Alert>}
-        {data.spectrum && <Paper sx={panel}>
-          <SpectrumPlot frequencyHz={data.spectrum.frequency} axis={data.spectrum.axis} traces={spectrumTraces} bands={data.spectrum.bands ?? undefined} height={height} title={t('inspection.frequency')} viewKey={viewKey} />
+        {data.spectrum && <Paper sx={{ ...panel, gridColumn: '1 / -1' }}>
+          <SpectrumPanels frequencyHz={data.spectrum.frequency} axis={data.spectrum.axis} traces={spectrumTraces} bands={data.spectrum.bands ?? undefined} height={height + 45} title={t('inspection.frequency')} viewKey={viewKey} />
         </Paper>}
         {data.time && <Paper sx={panel}>
           <IQPreview start={data.time.start} series={data.time.traces} height={height} title={t('inspection.time')} viewKey={viewKey} />

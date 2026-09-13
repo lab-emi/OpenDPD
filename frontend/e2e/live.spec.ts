@@ -47,7 +47,7 @@ test('bootstrap, train the smoke recipe, read the result and export a share pack
   await page.getByRole('link', { name: 'Get Started' }).click()
   await page.getByRole('button', { name: 'Use an existing dataset' }).click()
   await page.getByRole('button', { name: /^(Add & inspect|Open) DPA_200MHz$/ }).click()
-  await page.getByRole('button', { name: 'Inspect my dataset' }).click()
+  await page.goto(`${origin}/datasets/dpa-200mhz`)
   // Exercise the actual strict WebGL distribution under the server's CSP;
   // the mock gallery contains SVG lines and cannot detect a broken GL bundle.
   const transfer = page.getByTestId('dataset-am-plot').locator('.js-plotly-plot')
@@ -123,7 +123,7 @@ test('timings: page load, tab switching, chart re-render, DOM size, heap growth'
   const charts: number[] = []
   for (let i = 0; i < SAMPLES; i++) {
     const t0 = performance.now()
-    await page.getByRole('button', { name: /Enlarge chart: Power spectral density/ }).click()
+    await page.getByRole('button', { name: /Enlarge chart: PA Output · PSD/ }).click()
     await expect(page.getByRole('dialog').locator('svg.main-svg').first()).toBeVisible()
     charts.push(performance.now() - t0)
     await page.keyboard.press('Escape')

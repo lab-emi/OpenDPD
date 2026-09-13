@@ -14,7 +14,7 @@ import { IQPreview } from '@/components/IQPreview'
 import { MetricCard } from '@/components/MetricCard'
 import { MetricHistoryChart } from '@/components/MetricHistoryChart'
 import { RunTimeline } from '@/components/RunTimeline'
-import { SpectrumPlot } from '@/components/SpectrumPlot'
+import { SpectrumPanels } from '@/components/SpectrumPanels'
 import { StatusChip } from '@/components/StatusChip'
 import { DisconnectedState, EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 import { ResultView } from '@/pages/ResultDetailPage'
@@ -123,7 +123,7 @@ export function GalleryPage() {
       <Section title="SpectrumPlot / IQPreview">
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, lg: 6 }}>
-            <SpectrumPlot frequencyHz={spectrum.f} traces={spectrum.traces} bands={{ main: [-100e6, 100e6], adjacent: [[-300e6, -100e6], [100e6, 300e6]] }} onRendered={onSpectrum} />
+            <SpectrumPanels frequencyHz={spectrum.f} traces={spectrum.traces} bands={{ main: [-100e6, 100e6], adjacent: [[-300e6, -100e6], [100e6, 300e6]] }} onRendered={onSpectrum} />
           </Grid>
           <Grid size={{ xs: 12, lg: 6 }}>
             <IQPreview start={0} series={iq} onRendered={onIQ} />

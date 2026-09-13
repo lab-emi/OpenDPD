@@ -71,3 +71,7 @@ python main.py --dataset_name DPA_200MHz --step train_pa --log_precision 4
 ```
 
 Python users can call `train_pa`, `train_dpd`, `run_dpd` and `plot_dpd`; see the [examples](examples.md) and [API reference](api.md).
+
+## Starting in Studio 2.2.4
+
+A [generated signal](guides/signal-generator.md) is a **PA Input Dataset**, not a training pair. Use the [Virtual PA Library](guides/virtual-pa-library.md) to explicitly synthesize y, or supply measured input/output pairs. The Virtual PA is the mathematical simulation device; PA Model Training subsequently learns a separate surrogate from its dataset. PA and DPD each combine Training and Testing tabs. Live DPD previews include x, u and PA(u) from the same bounded validation forward pass, with [separate PSD panels](guides/signal-chain-spectra.md).

@@ -1,0 +1,50 @@
+[
+  {
+    "width": 1366,
+    "height": 768,
+    "initialSignal": "sg-6363e98ff20dad7bc0c1994ed2c7b55fe50c3d2734589f85fdad28fdca90a18b",
+    "customSignal": "sg-a60ceef5a9a7d472ad21abacab43eecc79b6a3d31a6c3f565b0f8ab0e9d4ba72",
+    "simulation": "vpa-15aae2335f6bf7feb560161004a9e7e864d4a14f218839312132e01816b1e43b",
+    "inputOnly": true,
+    "exportsExactlyPaired": true,
+    "wifi8Coverage": "experimental",
+    "samples": 32768,
+    "activeCarriers": 158,
+    "pilotCarriers": 2,
+    "referenceEvmPercent": 2.214019926290765,
+    "dataset": "qa-generator-1366-mu07rqvz",
+    "testSamples": 6452,
+    "runs": [
+      "run-20260913-193544-247775",
+      "run-20260913-193555-efe6d7",
+      "run-20260913-193602-289e3e",
+      "run-20260913-193607-2d1c80"
+    ],
+    "errors": [],
+    "publications": []
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "initialSignal": "sg-6363e98ff20dad7bc0c1994ed2c7b55fe50c3d2734589f85fdad28fdca90a18b",
+    "customSignal": "sg-a60ceef5a9a7d472ad21abacab43eecc79b6a3d31a6c3f565b0f8ab0e9d4ba72",
+    "simulation": "vpa-15aae2335f6bf7feb560161004a9e7e864d4a14f218839312132e01816b1e43b",
+    "inputOnly": true,
+    "exportsExactlyPaired": true,
+    "wifi8Coverage": "experimental",
+    "samples": 32768,
+    "activeCarriers": 158,
+    "pilotCarriers": 2,
+    "referenceEvmPercent": 2.214019926290765,
+    "dataset": "qa-generator-1920-mu07rqvz",
+    "testSamples": 6452,
+    "runs": [
+      "run-20260913-193627-8586e8",
+      "run-20260913-193639-2e20c3",
+      "run-20260913-193646-983e33",
+      "run-20260913-193651-c25bc8"
+    ],
+    "errors": [],
+    "publications": []
+  }
+]

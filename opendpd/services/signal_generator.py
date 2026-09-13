@@ -25,15 +25,62 @@ from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha
 _LOCK = threading.RLock()
 
 
+def input_summary(result):
+    from opendpd.schemas.virtual_pa import PAInputDataset
+    base = f"/api/v1/signal-generator/signals/{result.signal_id}"
+    return PAInputDataset(signal_id=result.signal_id, name=result.config.preset_id,
+        n_samples=result.analysis.sample_count, sample_rate_hz=result.config.sample_rate_hz,
+        bandwidth_hz=result.config.bandwidth_hz, iq_sha256=result.iq_sha256,
+        csv_url=base + "/input.csv", metadata_url=base + "/metadata.json")
+
+
+def list_inputs(ws):
+    root = ws.root / "signals"
+    paths = sorted(root.glob("sg-*/manifest.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return [input_summary(read_signal(ws, p.parent.name)) for p in paths[:100]
+            if not p.is_symlink() and not p.parent.is_symlink()]
+
+
+def export_input(ws, identifier, kind):
+    """Two independent downloads, explicitly identifying an input-only dataset."""
+    if kind not in ("csv", "metadata"):
+        raise WorkspaceError("Unknown PA input export.")
+    with _LOCK:
+        result = read_signal(ws, identifier)
+        target = directory(ws, identifier)
+        csv_path = target / "pa-input.csv"
+        raw = np.load(target / "iq.npy", allow_pickle=False)
+        temporary = target / "pa-input.csv.tmp"
+        np.savetxt(temporary, raw, delimiter=",", fmt="%.9g", header="I,Q", comments="")
+        temporary.replace(csv_path)
+        metadata = {
+            "schema": "pa-input-dataset-v1", "dataset_kind": "pa_input", "signal_role": "pa_input",
+            "signal_id": identifier, "has_pa_output": False, "origin": "synthetic",
+            "n_samples": result.analysis.sample_count, "sample_rate_hz": result.config.sample_rate_hz,
+            "bandwidth_hz": result.config.bandwidth_hz, "carrier_frequency_hz": result.config.carrier_frequency_hz,
+            "amplitude_units": "normalized", "columns": ["I", "Q"], "sample_format": "float32 complex I/Q pairs",
+            "iq_npy_sha256": result.iq_sha256, "csv_sha256": sha256_file(csv_path),
+            "generator_config": result.config.model_dump(mode="json"),
+            "provenance": read_json(target / "provenance.json"),
+            "pairing": "A training dataset requires both PA input x and PA output y with matching sample rate, count and alignment. Obtain y from Virtual PA simulation or a real PA capture.",
+        }
+        metadata_path = target / "pa-input-metadata.json"
+        write_json_atomic(metadata_path, metadata)
+        return csv_path if kind == "csv" else metadata_path
+
+
 def directory(ws, identifier):
     if not re.fullmatch(r"sg-[a-f0-9]{64}", identifier):
         raise WorkspaceError("Unknown generated signal.")
-    return ws.root / "signals" / identifier
+    target = ws.root / "signals" / identifier
+    if target.is_symlink():
+        raise WorkspaceError("Generated signal directory cannot be a symbolic link.")
+    return target
 
 
 def read_signal(ws, identifier) -> GeneratedSignal:
     target = directory(ws, identifier)
-    if not (target / "manifest.json").is_file():
+    if not (target / "manifest.json").is_file() or (target / "manifest.json").is_symlink():
         raise WorkspaceError("Generated signal not found. Generate the waveform first.")
     result = GeneratedSignal.model_validate(read_json(target / "manifest.json"))
     source = target / "iq.npy"

@@ -31,9 +31,10 @@ def _round(values: np.ndarray, decimals: int) -> List[float]:
 
 
 def spectrum(signals: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *, sample_rate_hz: Optional[float],
-             nperseg: Optional[int], bandwidth_hz: Optional[float], valid_samples: Optional[int] = None) -> Dict:
+             nperseg: Optional[int], bandwidth_hz: Optional[float], valid_samples: Optional[int] = None, input_node: str = "pa_input") -> Dict:
     """Welch PSD (dB) of every signal on one frequency axis. Without a sample rate the axis is in
     cycles per sample and no channel bands are drawn; nothing is guessed."""
+    from opendpd.core.spectrum_layout import signal_node
     z = {name: to_complex(arr, valid_samples) for name, arr in signals.items()}
     n = min(len(v) for v in z.values())
     fs = float(sample_rate_hz) if sample_rate_hz else 1.0
@@ -47,7 +48,9 @@ def spectrum(signals: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *, sam
         freq = f
         with np.errstate(divide="ignore"):
             p_db = np.where(p > 0, 10.0 * np.log10(np.maximum(p, 1e-300)), FLOOR_DB)
-        traces.append({"name": name, "role": roles.get(name, "primary"), "psd_db": _round(np.maximum(p_db, FLOOR_DB), DB_DECIMALS)})
+        trace = {"name": name, "role": roles.get(name, "primary"), "psd_db": _round(np.maximum(p_db, FLOOR_DB), DB_DECIMALS)}
+        trace["signal_node"] = signal_node(trace, dpd=input_node == "dpd_input")
+        traces.append(trace)
     bands = None
     if sample_rate_hz and bandwidth_hz:
         bw = float(bandwidth_hz)

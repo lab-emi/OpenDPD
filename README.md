@@ -37,12 +37,14 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.3** adds an integrated **Signal Generator** with 20 presets, advanced OFDMA controls, I/Q export, PAPR and signal plots. Turn a generated waveform into a clearly labelled synthetic PA dataset, then train and test in the combined **PA Model** and **DPD Model** workspaces. Testing shows the exact dataset I/Q count.
+**OpenDPD 2.2.4** separates PSD plots by signal-chain position: **DPD Input**, **DPD Output / PA Input**, and **PA Output**. Output references and with/without-DPD comparisons share only the PA Output plot, with compact legends and independent chart controls.
 
-See the [2.2.3 release notes](https://github.com/lab-emi/OpenDPD/blob/main/docs/releases/release-notes-2.2.3.md) and [Signal Generator guide](https://lab-emi.github.io/OpenDPD/guides/signal-generator/). Standard presets are uncoded engineering stimuli; Wi-Fi 8 is experimental. Local Studio also adds research comparisons, publication figures and reproduction, measurement sessions, Sweep Board, hardware cost evidence and optional dataset contribution PRs for human review.
+**Signal Generator** creates a PA Input Dataset with separate CSV and metadata downloads. The new **PA Library** offers nine mathematical Virtual PAs with editable formulas and linked parameter controls. Explicitly simulate the output, create a paired synthetic dataset, and continue to PA/DPD training and testing. An expandable workflow diagram follows your progress.
+
+See the [2.2.4 release notes](https://github.com/lab-emi/OpenDPD/blob/main/docs/releases/release-notes-2.2.4.md) and [Signal Generator guide](https://lab-emi.github.io/OpenDPD/guides/signal-generator/). Standard presets are uncoded engineering stimuli; Wi-Fi 8 is experimental. Local Studio also adds research comparisons, publication figures and reproduction, measurement sessions, Sweep Board, hardware cost evidence and optional dataset contribution PRs for human review.
 
 - CUDA replay for supported native models reduces dispatch overhead while retaining the existing optimizer, precision, batches and scheduler.
-- Quick/full training defaults are 10/150 epochs; plots reuse validation predictions once per epoch.
+- Quick/full training defaults are 10/150 epochs; plots update once per epoch; DPD previews capture the intermediate signal in a bounded shadow-model forward pass.
 - See the [2.2.1 performance measurements](https://github.com/lab-emi/OpenDPD/blob/main/docs/performance/studio-2.2.1.md) and [release notes](https://github.com/lab-emi/OpenDPD/blob/main/docs/releases/release-notes-2.2.1.md).
 - **Guided experiments:** explore built-in I/Q data, train and test PA/DPD models, and choose from the original backbone registry.
 - **Live feedback:** separate epoch and batch progress bars, NMSE and other task metrics, live signal plots, reconnectable experiments and a Stop control.
@@ -61,7 +63,7 @@ For a hosted installation, the [public Studio deployment guide](https://lab-emi.
 **[Open the hosted Studio now](https://opendpd.com/studio/)**, or install the packaged local app with **Python 3.10–3.13**:
 
 ```bash
-python -m pip install "opendpd[gui]==2.2.3"
+python -m pip install "opendpd[gui]==2.2.4"
 opendpd gui
 ```
 
@@ -82,18 +84,22 @@ opendpd gui
 
 This opens Studio locally in your browser. For Windows, a native desktop window, GPU setup, or a core-only installation, see [Installation](docs/install.md).
 
-Click **Get Started → Try a built-in dataset → DPA_200MHz**. Inspect the data and continue to your first experiment. Use **Starting settings → Quick trial** to check the pipeline, then choose **Full training** for a longer experiment. Quick trial defaults to **10 epochs**; full training defaults to **150 epochs**. Plots update **once per epoch** using validation results. Advanced settings offer an optional batch preview interval with a red warning because extra previews can severely slow training.
+Click **Get Started → Signal Generator** to create a waveform, then **Choose Virtual PA** to simulate a paired dataset. Or choose **Use an existing dataset → DPA_200MHz** to go directly to PA Training. Use **Starting settings → Quick trial** to check the pipeline, then choose **Full training** for a longer experiment. Quick trial defaults to **10 epochs**; full training defaults to **150 epochs**. Plots update **once per epoch**; DPD previews show x, u and PA(u) from the same bounded validation probe. Advanced settings offer an optional batch preview interval with a red warning because extra previews can severely slow training.
 
 ## The PA → DPD workflow
 
 | Step | What you do | What you learn |
 | --- | --- | --- |
-| 1. Inspect data | Open paired PA input/output I/Q samples. | Sample rate, bandwidth, signal quality and data splits. |
-| 2. Model the PA | Train a behavioral model, then test it on held-out data. | How closely the model predicts the measured PA response. |
+| 1. Make or select data | Generate x → configure a Virtual PA → simulate y → create a paired dataset; or open existing x/y data. | Input/output provenance, signal quality and data splits. |
+| 2. Model the PA | Train a behavioral model, then test it on held-out data. | How closely it predicts the dataset response, measured or explicitly synthetic. |
 | 3. Train DPD | Place a predistorter before the trained PA model. | Whether the simulated cascade becomes more linear. |
 | 4. Test & export | Compare results and export the predistorted I/Q signal. | A PA input signal ready for a separate measurement experiment. |
 
 **A DPD result evaluated through a PA model is a simulation.** Exported `u = DPD(x)` is the PA input; a physical PA measurement is needed to establish measured linearization performance. See the [Studio walkthrough](docs/tutorials/gui-quickstart.md) and [measured DPD guide](docs/tutorials/measured-dpd.md).
+
+[PA Library guide](docs/guides/virtual-pa-library.md) · [Reading signal-chain PSD plots](docs/guides/signal-chain-spectra.md)
+
+![Studio 2.2.4: independent signal-chain PSD plots](pics/studio-psd-chain.png)
 
 ## Choose your next step
 

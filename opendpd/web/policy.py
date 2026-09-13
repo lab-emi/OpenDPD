@@ -37,6 +37,9 @@ ROUTES = {
 ROUTES["POST"] += [r"/datasets/synthetic", r"/dataset-publications/prepare", r"/dataset-publications/dspr-[a-f0-9]{64}/submit"]
 ROUTES["GET"] += [r"/signal-generator/presets", r"/signal-generator/signals/sg-[a-f0-9]{64}(/download)?", rf"/datasets/{SLUG}/sample-counts"]
 ROUTES["POST"] += [r"/signal-generator/validate", r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/dataset"]
+ROUTES["GET"] += [r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/(input\.csv|metadata\.json)",
+    r"/pa-library/models", r"/pa-library/simulations/vpa-[a-f0-9]{64}(/(output\.csv|paired\.csv|metadata\.json))?"]
+ROUTES["POST"] += [r"/pa-library/simulations", r"/pa-library/simulations/vpa-[a-f0-9]{64}/dataset"]
 
 
 def reject(status: int, code: str, message: str):

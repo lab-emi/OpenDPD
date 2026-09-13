@@ -122,7 +122,7 @@ class DatasetImportBoundary:
     async def __call__(self, scope, receive, send):
         path = scope.get("path", "").rstrip("/")
         blocked = (path in self.PATHS or path == "/api/v1/datasets/import-roots" or path.startswith("/api/v1/datasets/import-roots/")
-                   or (path.startswith("/api/v1/signal-generator/signals/") and path.endswith("/dataset")))
+                   or (path.startswith(("/api/v1/signal-generator/signals/", "/api/v1/pa-library/simulations/")) and path.endswith("/dataset")))
         if scope["type"] == "http" and not self.enabled and blocked:
             await _reject(send, 403, "custom_datasets_coming_soon", "Custom dataset uploads and imports are coming soon. Use a built-in dataset.")
             return

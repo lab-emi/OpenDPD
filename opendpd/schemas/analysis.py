@@ -31,6 +31,7 @@ class SpectrumTrace(StrictModel):
     name: str
     role: str
     psd_db: List[float]
+    signal_node: Optional[Literal["dpd_input", "pa_input", "pa_output", "unknown"]] = None
 
 
 class SpectrumBands(StrictModel):

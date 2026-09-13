@@ -1,5 +1,6 @@
 import DatasetIcon from '@mui/icons-material/Dataset'
 import GraphicEqIcon from '@mui/icons-material/GraphicEq'
+import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices'
 import HomeIcon from '@mui/icons-material/Home'
 import InsightsIcon from '@mui/icons-material/Insights'
 import ScienceIcon from '@mui/icons-material/Science'
@@ -28,6 +29,8 @@ import { ResetButton } from '@/components/ResetButton'
 import { ReportBugsButton } from '@/components/ReportBugsButton'
 import { StudioLogo } from '@/components/StudioLogo'
 import { ExperimentTerminal } from '@/components/ExperimentTerminal'
+import { WorkflowProgress } from '@/components/WorkflowProgress'
+import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 import { isExperimentTask } from '@/components/ExperimentTasks'
 import { formatDateTime, t, type MessageKey } from '@/i18n'
 import { tokens, useStudioColors } from '@/theme'
@@ -35,6 +38,7 @@ import { tokens, useStudioColors } from '@/theme'
 const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
   { to: '/', key: 'nav.home', Icon: HomeIcon },
   { to: '/signal-generator', key: 'generator.title', Icon: GraphicEqIcon },
+  { to: '/pa-library', key: 'paLibrary.title', Icon: ElectricalServicesIcon },
   { to: '/datasets', key: 'nav.datasets', Icon: DatasetIcon },
   { to: '/experiments', key: 'nav.experiments', Icon: ScienceIcon },
   { to: '/results', key: 'nav.results', Icon: InsightsIcon },
@@ -45,6 +49,7 @@ const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
 /** Route-derived selection also covers experiment run detail pages. */
 export function AppShell() {
   const colors = useStudioColors()
+  const workflow = useStudioWorkflow()
   const caps = useCapabilities()
   const running = useRuns('running')
   const { pathname, search } = useLocation()
@@ -67,8 +72,10 @@ export function AppShell() {
     // Drop selections encoded in detail URLs as well as drafts in React state.
     // A run restarts at its task's setup, never at the old progress dashboard.
     setRevision((value) => value + 1)
-    if (global) navigate('/datasets?guide=start', { replace: true })
+    if (global) { workflow.reset(); navigate('/datasets?guide=start', { replace: true }) }
     else {
+      if (pathname === '/signal-generator') workflow.reset()
+      if (pathname === '/pa-library') workflow.resetPA()
       const destination = datasetDetail ? '/datasets' : resultDetail ? '/results' : runId ? (task ? '/experiments/new' : '/experiments') : pathname.startsWith('/robustness/') ? '/robustness' : pathname
       navigate({ pathname: destination, search: destination === '/experiments/new' && task ? `?task=${task}` : '', hash: '' }, { replace: true })
     }
@@ -129,6 +136,7 @@ export function AppShell() {
       <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: '76px', minWidth: 0 }}>
         {WEB_MODE && session?.expires_at && <Alert severity="info" sx={{ mb: 2 }}>{t('web.retention', { date: formatDateTime(session.expires_at) })}</Alert>}
         <Box sx={{ maxWidth: tokens.layout.maxContent, mx: 'auto', minWidth: 0 }}>
+          <WorkflowProgress />
           <Outlet />
           {(pathname.startsWith('/experiments') || pathname.startsWith('/runs/')) && <ExperimentTerminal />}
         </Box>

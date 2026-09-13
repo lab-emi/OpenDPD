@@ -51,6 +51,7 @@ class FigurePanel(StrictModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True, allow_inf_nan=False)
     kind: Literal["spectrum", "amam", "ampm", "power_scan", "error_distribution"] = "spectrum"
     traces: List[FigureTrace] = Field(min_length=1, max_length=64)
+    signal_node: Optional[Literal["dpd_input", "pa_input", "pa_output", "unknown"]] = None
     # Spectrum ranges are MHz (Hz axis) or cycles/sample; AM axes use stored amplitude units.
     x_range: Optional[Tuple[float, float]] = None
     y_range: Optional[Tuple[float, float]] = None
@@ -79,7 +80,7 @@ class FigureSpec(StrictModel):
     mode: Literal["same_condition", "cross_condition"] = "same_condition"
     # Explicit profiles, including in comparisons: changing a view never changes evaluation.
     profiles: Dict[Slug, Slug]
-    panels: List[FigurePanel] = Field(min_length=1, max_length=4)
+    panels: List[FigurePanel] = Field(min_length=1, max_length=16)
     width: Literal["single_column", "double_column"] = "double_column"
 
     @model_validator(mode="after")
@@ -118,6 +119,7 @@ class FigureSource(StrictModel):
     trace_name: str
     role: str
     source: str
+    signal_node: Optional[Literal["dpd_input", "pa_input", "pa_output", "unknown"]] = None
 
 
 class FigureSources(StrictModel):

@@ -34,3 +34,7 @@ The original paper describes a TM3.1a, 5 × 40 MHz (200 MHz) 256-QAM test signal
 The legacy FFT-based metric calculation and the dataset-specific constellation demodulator serve different purposes. A constellation figure alone does not establish a standards-compliant EVM value. The original MATLAB reference `Matlab/calculate_200MHz_256QAM_evm.m` is specific to this signal.
 
 For the current signal and demodulator details, read [Datasets](datasets.md). For score definitions, limitations and reference-bound evaluation, read [Metric profiles](protocols/metric-profiles.md) and [Waveform evaluation](tutorials/waveform-evaluation.md). These guides document the conventions; they do not change the frozen legacy metric.
+
+## Where does the generated PA output come from?
+
+Signal Generator produces x only. In [PA Library](guides/virtual-pa-library.md), choose a mathematical Virtual PA and explicitly simulate y, then create the paired dataset. Both signals are synthetic. To assess a physical device, upload measured pairs or import actual captures through the measured-DPD workflow. PSD charts distinguish DPD output / PA input from PA output; see [signal positions](guides/signal-chain-spectra.md).

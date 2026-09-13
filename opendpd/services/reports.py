@@ -11,6 +11,7 @@ import re
 from typing import Dict, List, Optional
 
 from opendpd import __version__
+from opendpd.core.spectrum_layout import TITLES, has_dpd, spectrum_groups, spectrum_legend
 from opendpd.studio.localization import localize, language_tag
 from opendpd.schemas import ArtifactKind, EvaluationResult, MetricValue
 from opendpd.services import experiments
@@ -38,18 +39,25 @@ def _plot_png(spectrum: Optional[Dict], language: str = "en") -> Optional[str]:
     family = next((font for font in preferred if font in installed), "DejaVu Sans")
     freq = spectrum["frequency"]
     scale = 1e6 if spectrum.get("axis") == "hz" else 1.0
-    fig, ax = plt.subplots(figsize=(8, 4), dpi=110)
-    for trace in spectrum["traces"]:
-        ax.plot([f / scale for f in freq], trace["psd_db"], linewidth=0.9, label=localize(trace["name"], language))
-    bands = spectrum.get("bands")
-    if bands:
-        ax.axvspan(bands["main"][0] / scale, bands["main"][1] / scale, color="#2563EB", alpha=0.06)
-        for lo, hi in bands["adjacent"]:
-            ax.axvspan(lo / scale, hi / scale, color="#D97706", alpha=0.06)
-    ax.set_xlabel(localize("Frequency (MHz)" if scale != 1.0 else "Frequency (cycles per sample)", language))
-    ax.set_ylabel("PSD (dB)")
-    ax.legend(fontsize=7, loc="upper right")
-    ax.grid(True, alpha=0.3)
+    groups = spectrum_groups(spectrum['traces'])
+    if not groups:
+        return None
+    fig, axes = plt.subplots(len(groups), 1, figsize=(8, 3.5 * len(groups)), dpi=110, squeeze=False, sharex=True, sharey=True)
+    dpd = has_dpd(spectrum['traces'])
+    for (node, traces), ax in zip(groups, axes[:, 0]):
+        for i, trace in enumerate(traces):
+            ax.plot([f / scale for f in freq], trace['psd_db'], linewidth=0.9, linestyle=['-', '--', ':', '-.'][i % 4], label=localize(spectrum_legend(trace), language))
+        bands = spectrum.get('bands')
+        if bands:
+            ax.axvspan(bands['main'][0] / scale, bands['main'][1] / scale, color='#2563EB', alpha=0.06)
+            for lo, hi in bands['adjacent']:
+                ax.axvspan(lo / scale, hi / scale, color='#D97706', alpha=0.06)
+        title = 'DPD Output / PA Input' if node == 'pa_input' and dpd else TITLES[node]
+        ax.set_title(localize(title, language) + ' · PSD')
+        ax.set_xlabel(localize('Frequency (MHz)' if scale != 1.0 else 'Frequency (cycles per sample)', language))
+        ax.set_ylabel('PSD (dB re amplitude²/Hz)' if scale != 1.0 else 'PSD (dB re amplitude²/(cycles/sample))')
+        ax.legend(fontsize=7, loc='upper left', bbox_to_anchor=(0, -.22), ncol=2)
+        ax.grid(True, alpha=0.3)
     buf = io.BytesIO()
     for text in fig.findobj(matplotlib.text.Text):
         text.set_fontfamily(family)

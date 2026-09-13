@@ -59,3 +59,7 @@ Use the current app with a separate clean workspace, English selected, the light
 Reuse the transparent SVGs from `frontend/src/assets/`, including their light and dark variants. Keep the EMI inverse variant's geometry identical to `emi-logo.svg`; only the ink colors differ. The site header uses the Studio emblem; its favicon reuses `frontend/public/favicon.svg`. Do not rasterize the logos or copy them into `pics/`.
 
 The README's `brand` snippet uses GitHub-compatible `<picture class="brand-logo">` elements, each with a dark `source` and a light fallback `img`. Keep these child tags self-closing. During the site build, `docs/hooks/assets.py` converts them to Material's `#only-light` / `#only-dark` images, so the site's own theme toggle works independently of the system theme. Check both themes and a narrow viewport when changing this section.
+
+## Release 2.2.4 screenshot set
+
+Refresh `pics/studio-home.png`, `studio-signal-generator.png`, `studio-pa-library.png`, and `studio-psd-chain.png` from the actual current GUI. Use a disposable synthetic workspace, record exact sample counts and real worker outcomes, and inspect chart legends at desktop and mobile sizes. Current guides link to these shared assets. Older release and performance directories remain historical evidence and are not overwritten as if they represented the new version.

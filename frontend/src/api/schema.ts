@@ -835,6 +835,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pa-library/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Models */
+        get: operations["models_api_v1_pa_library_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pa-library/simulations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simulate */
+        post: operations["simulate_api_v1_pa_library_simulations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pa-library/simulations/{simulation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Simulation */
+        get: operations["simulation_api_v1_pa_library_simulations__simulation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pa-library/simulations/{simulation_id}/dataset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset */
+        post: operations["dataset_api_v1_pa_library_simulations__simulation_id__dataset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pa-library/simulations/{simulation_id}/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["download_api_v1_pa_library_simulations__simulation_id___filename__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/recipes": {
         parameters: {
             query?: never;
@@ -1320,7 +1405,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Inputs */
+        get: operations["inputs_api_v1_signal_generator_signals_get"];
         put?: never;
         /** Generate */
         post: operations["generate_api_v1_signal_generator_signals_post"];
@@ -1356,7 +1442,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Dataset */
+        /**
+         * Dataset
+         * @deprecated
+         */
         post: operations["dataset_api_v1_signal_generator_signals__signal_id__dataset_post"];
         delete?: never;
         options?: never;
@@ -1373,6 +1462,40 @@ export interface paths {
         };
         /** Download */
         get: operations["download_api_v1_signal_generator_signals__signal_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/signals/{signal_id}/input.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Input Csv */
+        get: operations["input_csv_api_v1_signal_generator_signals__signal_id__input_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/signals/{signal_id}/metadata.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Metadata */
+        get: operations["metadata_api_v1_signal_generator_signals__signal_id__metadata_json_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2999,6 +3122,8 @@ export interface components {
              * @default true
              */
             show_bands: boolean;
+            /** Signal Node */
+            signal_node?: ("dpd_input" | "pa_input" | "pa_output" | "unknown") | null;
             /** Traces */
             traces: components["schemas"]["FigureTrace"][];
             /** X Range */
@@ -3030,6 +3155,8 @@ export interface components {
             role: string;
             /** Run Id */
             run_id: string;
+            /** Signal Node */
+            signal_node?: ("dpd_input" | "pa_input" | "pa_output" | "unknown") | null;
             /** Source */
             source: string;
             /** Trace Name */
@@ -3255,6 +3382,12 @@ export interface components {
             download_url: string;
             /** Iq Sha256 */
             iq_sha256: string;
+            /**
+             * Kind
+             * @default pa_input
+             * @constant
+             */
+            kind: "pa_input";
             /** Signal Id */
             signal_id: string;
         };
@@ -4418,6 +4551,117 @@ export interface components {
                 [key: string]: number | string | boolean;
             };
         };
+        /** PAAnalysis */
+        PAAnalysis: {
+            /** Am Input */
+            am_input: number[];
+            /** Am Output */
+            am_output: number[];
+            /** Am Pm Deg */
+            am_pm_deg: number[];
+            /** Duration Ms */
+            duration_ms: number;
+            /** Frequency Mhz */
+            frequency_mhz: number[];
+            /** Input Envelope */
+            input_envelope: number[];
+            /** Input Papr Db */
+            input_papr_db: number | null;
+            /** Input Psd */
+            input_psd: number[];
+            /** Input Rms */
+            input_rms: number;
+            /** N Samples */
+            n_samples: number;
+            /** Notes */
+            notes: string[];
+            /** Output Envelope */
+            output_envelope: number[];
+            /** Output Papr Db */
+            output_papr_db: number | null;
+            /** Output Psd */
+            output_psd: number[];
+            /** Output Rms */
+            output_rms: number;
+            /** Rms Gain Db */
+            rms_gain_db: number | null;
+            /** States */
+            states: {
+                [key: string]: number[];
+            };
+            /** Time Us */
+            time_us: number[];
+        };
+        /** PAInputDataset */
+        PAInputDataset: {
+            /** Bandwidth Hz */
+            bandwidth_hz: number;
+            /** Csv Url */
+            csv_url: string;
+            /** Iq Sha256 */
+            iq_sha256: string;
+            /**
+             * Kind
+             * @default pa_input
+             * @constant
+             */
+            kind: "pa_input";
+            /** Metadata Url */
+            metadata_url: string;
+            /** N Samples */
+            n_samples: number;
+            /** Name */
+            name: string;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /** Signal Id */
+            signal_id: string;
+        };
+        /** PALocalizedText */
+        PALocalizedText: {
+            /** En */
+            en: string;
+            /** Zh */
+            zh: string;
+        };
+        /** PAParameter */
+        PAParameter: {
+            /** Default */
+            default: number;
+            description: components["schemas"]["PALocalizedText"];
+            /**
+             * Group
+             * @default gain
+             * @enum {string}
+             */
+            group: "gain" | "memory" | "dynamics" | "architecture";
+            /**
+             * Integer
+             * @default false
+             */
+            integer: boolean;
+            /** Key */
+            key: string;
+            label: components["schemas"]["PALocalizedText"];
+            /**
+             * Logarithmic
+             * @default false
+             */
+            logarithmic: boolean;
+            /** Maximum */
+            maximum: number;
+            /** Minimum */
+            minimum: number;
+            /** Step */
+            step: number;
+            /** Symbol */
+            symbol: string;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+        };
         /**
          * PAReference
          * @description The frozen PA surrogate a DPD task trains or evaluates through.
@@ -4533,6 +4777,31 @@ export interface components {
             role: "pa_surrogate" | "dpd_model" | "initial_weights" | "qat_float_pretraining";
             /** Run Id */
             run_id: string;
+        };
+        /** PairedDatasetRequest */
+        PairedDatasetRequest: {
+            /** Dataset Id */
+            dataset_id: string;
+            /**
+             * Display Name
+             * @default Virtual PA · paired input and output
+             */
+            display_name: string;
+            /**
+             * Guard Samples
+             * @default 256
+             */
+            guard_samples: number;
+            /**
+             * Train Ratio
+             * @default 0.6
+             */
+            train_ratio: number;
+            /**
+             * Val Ratio
+             * @default 0.2
+             */
+            val_ratio: number;
         };
         /** ParamSpecInfo */
         ParamSpecInfo: {
@@ -5120,7 +5389,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.3
+             * @default 2.2.4
              */
             version: string;
         };
@@ -5280,6 +5549,8 @@ export interface components {
             psd_db: number[];
             /** Role */
             role: string;
+            /** Signal Node */
+            signal_node?: ("dpd_input" | "pa_input" | "pa_output" | "unknown") | null;
         };
         /**
          * SplitSpec
@@ -5804,6 +6075,66 @@ export interface components {
              * @enum {string}
              */
             status: "bit_exact" | "mismatch" | "not_run";
+        };
+        /** VirtualPAModel */
+        VirtualPAModel: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "reference" | "static" | "memory" | "dynamics" | "architecture";
+            description: components["schemas"]["PALocalizedText"];
+            /** Equations */
+            equations: string[];
+            limitations: components["schemas"]["PALocalizedText"];
+            /** Model Id */
+            model_id: string;
+            name: components["schemas"]["PALocalizedText"];
+            /** Parameters */
+            parameters: components["schemas"]["PAParameter"][];
+            /** References */
+            references: string[];
+            /** Technology */
+            technology: string;
+        };
+        /** VirtualPARequest */
+        VirtualPARequest: {
+            /** Input Signal Id */
+            input_signal_id: string;
+            /** Model Id */
+            model_id: string;
+            /** Parameters */
+            parameters?: {
+                [key: string]: number;
+            };
+        };
+        /** VirtualPASimulation */
+        VirtualPASimulation: {
+            analysis: components["schemas"]["PAAnalysis"];
+            config: components["schemas"]["VirtualPARequest"];
+            /** Input Iq Sha256 */
+            input_iq_sha256: string;
+            /**
+             * Kind
+             * @default simulated_pa_output
+             * @constant
+             */
+            kind: "simulated_pa_output";
+            /** Metadata Url */
+            metadata_url: string;
+            model: components["schemas"]["VirtualPAModel"];
+            /** Output Csv Url */
+            output_csv_url: string;
+            /** Output Iq Sha256 */
+            output_iq_sha256: string;
+            /** Paired Csv Url */
+            paired_csv_url: string;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /** Simulation Id */
+            simulation_id: string;
+            /** Simulator Source Sha256 */
+            simulator_source_sha256: string;
         };
         /**
          * WaveformBinding
@@ -7486,6 +7817,157 @@ export interface operations {
             };
         };
     };
+    models_api_v1_pa_library_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VirtualPAModel"][];
+                };
+            };
+        };
+    };
+    simulate_api_v1_pa_library_simulations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VirtualPARequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VirtualPASimulation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulation_api_v1_pa_library_simulations__simulation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                simulation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VirtualPASimulation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_api_v1_pa_library_simulations__simulation_id__dataset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                simulation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairedDatasetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratorDatasetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_pa_library_simulations__simulation_id___filename__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                simulation_id: string;
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     recipes_api_v1_recipes_get: {
         parameters: {
             query?: never;
@@ -8347,6 +8829,26 @@ export interface operations {
             };
         };
     };
+    inputs_api_v1_signal_generator_signals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PAInputDataset"][];
+                };
+            };
+        };
+    };
     generate_api_v1_signal_generator_signals_post: {
         parameters: {
             query?: never;
@@ -8447,6 +8949,68 @@ export interface operations {
         };
     };
     download_api_v1_signal_generator_signals__signal_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    input_csv_api_v1_signal_generator_signals__signal_id__input_csv_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    metadata_api_v1_signal_generator_signals__signal_id__metadata_json_get: {
         parameters: {
             query?: never;
             header?: never;

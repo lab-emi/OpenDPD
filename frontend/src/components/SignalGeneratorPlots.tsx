@@ -54,11 +54,12 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
   ]
   return <Stack spacing={1.5} data-testid="signal-generator-results">
     <Stack direction="row" useFlexGap sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-      <Typography variant="h2" sx={{ flex: 1 }}>{t('generator.preview')}</Typography>
+      <Typography variant="h2" sx={{ flex: 1 }}>{t('paInput.title')}</Typography>
       <Chip size="small" variant="outlined" label="SYNTHETIC" color="warning" />
       <Chip size="small" label={t(`generator.coverage.${result.coverage}`)} />
     </Stack>
     {stale && <Alert severity="warning">{t('generator.stale')}</Alert>}
+    <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
     <Typography variant="caption" color="text.secondary">{result.config.preset_id} · {formatNumber(a.sample_count)} {t('generator.samplesUnit')} · {a.duration_ms.toPrecision(4)} ms</Typography>
     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
       {[
@@ -73,7 +74,7 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
       <Tab value="metrics" label={t('generator.metrics')} />
     </Tabs>
     {tab === 'overview' && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5 }}>
-      <Paper sx={{ p: 1.5, minWidth: 0 }}><PlotlyChart title={t('generator.spectrum')} height={270} viewKey={result.signal_id} traces={[{ x: a.frequency_mhz, y: a.psd_dbfs_hz, name: 'PSD', line: { color: PALETTE[0], width: 1.5 } }]} layout={{ xaxis: axis(t('generator.frequencyAxis')), yaxis: axis('dBFS / Hz'), showlegend: false }} />
+      <Paper sx={{ p: 1.5, minWidth: 0 }}><PlotlyChart title={`${t('spectrum.node.pa_input')} · PSD`} height={270} viewKey={result.signal_id} traces={[{ x: a.frequency_mhz, y: a.psd_dbfs_hz, name: 'PSD', line: { color: PALETTE[0], width: 1.5 } }]} layout={{ xaxis: axis(t('generator.frequencyAxis')), yaxis: axis('dBFS / Hz'), showlegend: false }} />
         <Typography variant="caption" color="text.secondary">{t('generator.psdHelp')}</Typography></Paper>
       <Paper sx={{ p: 1.5, minWidth: 0 }}><PlotlyChart title={t('generator.time')} height={270} viewKey={result.signal_id} traces={[
         { x: a.time_us, y: a.time_i, name: 'I', line: { color: PALETTE[0], width: 1 } },

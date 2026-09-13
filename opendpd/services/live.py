@@ -2,8 +2,8 @@
 
 The legacy Project, loaders and optimizer still do all scientific work. The
 observer wraps an instance's loader; it never samples its shuffled iterator in
-advance. Epoch plots reuse evaluation predictions. Optional batch previews use
-a separate frozen network. Display metrics never select checkpoints.
+advance. PA epoch plots reuse evaluation predictions. DPD and optional batch
+previews use a separate frozen network so x, u and PA(u) belong to one pass. Display metrics never select checkpoints.
 """
 from __future__ import annotations
 
@@ -165,9 +165,15 @@ class LiveMonitor:
                                 module.flatten_parameters()
                     with torch.random.fork_rng(devices=devices), torch.inference_mode():
                         self.shadow.load_state_dict(net.state_dict())
-                        prediction = self.shadow(x.unsqueeze(0).to(project.device)).cpu().numpy()
+                        captured = {}
+                        hook = self.shadow.pa_model.register_forward_pre_hook(lambda _module, inputs: captured.update(u=inputs[0].detach())) if hasattr(self.shadow, 'pa_model') else None
+                        try:
+                            prediction = self.shadow(x.unsqueeze(0).to(project.device)).cpu().numpy()
+                        finally:
+                            if hook:
+                                hook.remove()
                     self.publish(prediction, target.unsqueeze(0).numpy(), x.unsqueeze(0).numpy(),
-                                 project.args, "validation_probe")
+                                 project.args, "validation_probe", u=captured["u"].cpu().numpy() if "u" in captured else None)
                     self.last_preview_step = self.steps
                 except Exception as error:
                     self.preview_error = f"{type(error).__name__}: {error}"
@@ -179,6 +185,10 @@ class LiveMonitor:
                 # Explicit batch mode has its own cadence. Include an epoch's
                 # final weights when its last batch was not a preview boundary.
                 if self.last_preview_step == self.steps:
+                    return
+                if hasattr(net, 'dpd_model'):
+                    # Capture u and PA(u) in the same bounded shadow forward pass.
+                    preview(force=True)
                     return
                 prediction, target, source_loader = val_prediction, val_target, kwargs["val_loader"]
                 source = "validation_probe"
@@ -220,7 +230,15 @@ class LiveMonitor:
                                   "batches_per_epoch": len(loader), "train_sequences": len(loader.dataset)}
         self.save()
         captured = {}
-        handle = net.register_forward_hook(lambda _net, _args, output: captured.update(output=output.detach()))
+        handles = [net.register_forward_hook(lambda _net, _args, output: captured.update(output=output.detach()))]
+        if hasattr(net, 'pa_model'):
+            handles.append(net.pa_model.register_forward_pre_hook(lambda _module, inputs: captured.update(u=inputs[0].detach())))
+
+        class HookGroup:
+            def remove(self):
+                for hook in handles:
+                    hook.remove()
+        handle = HookGroup()
 
         def after(index, total, batch):
             if index != 1 or "output" not in captured:
@@ -234,13 +252,13 @@ class LiveMonitor:
                 target = project.target_gain * x
             try:
                 self.publish(captured.pop("output")[:1].cpu().numpy(), target[:1].numpy(), x[:1].numpy(),
-                             project.args, "test_probe")
+                             project.args, "test_probe", u=captured["u"][:1].cpu().numpy() if "u" in captured else None)
             except Exception as error:
                 print(f"[OpenDPD] Test preview unavailable: {error}", flush=True)
 
         return ObservedLoader(loader, self, "evaluate", after), handle
 
-    def publish(self, prediction, target, x, args, source):
+    def publish(self, prediction, target, x, args, source, u=None):
         from utils.metrics import NMSE, ACLR
         from opendpd.core.metrics import get_profile
         values = {"NMSE": float(NMSE(prediction, target))}
@@ -253,10 +271,15 @@ class LiveMonitor:
         signals = {"Input x": x, "Linear target" if dpd else "Measured PA output": target,
                    "DPD → PA surrogate" if dpd else "PA model output": prediction}
         roles = dict(zip(signals, ("input", "reference", "primary")))
+        if dpd and u is not None:
+            signals['u = DPD(x)'] = u
+            roles['u = DPD(x)'] = 'predistorted'
         spec = self.dataset.signal
         plots = {"time": time_excerpt(signals, roles),
                  "spectrum": spectrum(signals, roles, sample_rate_hz=spec.sample_rate_hz,
-                                      nperseg=spec.nperseg, bandwidth_hz=spec.bandwidth_hz)}
+                                      nperseg=spec.nperseg, bandwidth_hz=spec.bandwidth_hz, input_node="dpd_input" if dpd else "pa_input")}
+        for trace in plots['spectrum']['traces']:
+            trace['source'] = ('synthetic dataset' if self.dataset.origin.value == 'synthetic' else 'measured dataset') if trace['role'] == 'input' or (not dpd and trace['role'] == 'reference') else 'linear target' if trace['role'] == 'reference' else 'DPD model' if trace['role'] == 'predistorted' else 'PA surrogate' if dpd else 'PA model'
         self.revision += 1
         units = {key: get_profile("legacy-opendpd-v1").metric(key).unit for key in values}
         preview = {"revision": self.revision, "updated_at": datetime.now(timezone.utc).isoformat(),

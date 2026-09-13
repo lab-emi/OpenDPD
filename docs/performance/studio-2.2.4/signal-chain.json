@@ -1,0 +1,65 @@
+[
+  {
+    "width": 1366,
+    "height": 768,
+    "positions": [
+      [
+        "Input x"
+      ],
+      [
+        "Predistorted u"
+      ],
+      [
+        "Linear target g·x",
+        "With DPD · surrogate",
+        "Without DPD · surrogate",
+        "Without DPD · synthetic data"
+      ]
+    ],
+    "exactStoredBins": true,
+    "independentZoomAndLegend": true,
+    "errors": []
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "positions": [
+      [
+        "Input x"
+      ],
+      [
+        "Predistorted u"
+      ],
+      [
+        "Linear target g·x",
+        "With DPD · surrogate",
+        "Without DPD · surrogate",
+        "Without DPD · synthetic data"
+      ]
+    ],
+    "exactStoredBins": true,
+    "independentZoomAndLegend": true,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "positions": [
+      [
+        "Input x"
+      ],
+      [
+        "Predistorted u"
+      ],
+      [
+        "Linear target g·x",
+        "With DPD · surrogate",
+        "Without DPD · surrogate",
+        "Without DPD · synthetic data"
+      ]
+    ],
+    "exactStoredBins": true,
+    "independentZoomAndLegend": true,
+    "errors": []
+  }
+]

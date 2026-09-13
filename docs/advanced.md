@@ -14,3 +14,7 @@ Start with a successful [PA → DPD experiment](tutorials/gui-quickstart.md). Th
 | Share benchmark evidence | [Leaderboard submission](tutorials/leaderboard-submission.md) | Packages, recomputation, review and versioned boards. |
 
 For comparable results, read the [benchmark protocol](protocols/benchmark-protocol.md) and [metric profiles](protocols/metric-profiles.md). Current verification evidence is recorded in the [support matrix](releases/support-matrix.md), [performance report](releases/performance-report.md) and [hardening report](releases/hardening-report.md).
+
+## Synthetic simulation and PSD review
+
+Use the [Virtual PA Library](guides/virtual-pa-library.md) to create explicitly synthetic paired data from generated input, with formula parameters and hashes saved for replay. [Signal-chain PSD panels](guides/signal-chain-spectra.md) keep input, predistorted drive and output comparisons separate across review and publication workflows. Physical device claims still require the corresponding measured evidence.

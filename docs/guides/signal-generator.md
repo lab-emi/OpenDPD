@@ -3,8 +3,9 @@
 Open **Signal Generator** in the sidebar, or choose **Get Started → Signal Generator**.
 The first visit generates a private 5G NR numerology preview. Choose one of the five
 signal families, select a preset, and press **Generate & preview**. Parameter edits
-mark the current plots stale and disable waveform export and dataset creation until
-generation succeeds.
+mark the current plots stale and disable waveform export and the next step until
+generation succeeds. Returning to the tab restores the selected input. The result
+is explicitly a **PA Input Dataset (x)**, with no PA output.
 
 The onboarding dialog has exactly one highlighted action: Signal Generator. Existing
 datasets are the second choice, and CSV upload is third. PA and DPD each have one
@@ -93,12 +94,24 @@ regeneration requires the recorded configuration, generator implementation and
 numeric environment. Generated records live privately under `signals/sg-<sha>/`
 inside the workspace.
 
-The waveform alone has no measured PA output. **Create synthetic PA dataset** adds
-a tunable illustrative nonlinear memory PA response. It requires at least 8,192
-samples and at least 256 samples per split. Users can configure gain, compression,
-AM/PM, memory, output noise, split fractions and guards. The exact generated input
-is preserved, and both input and output are marked SYNTHETIC. The resulting dataset
-opens the PA Model workspace and can use the existing DPD workflow after PA training.
+**Download PA input CSV** and **Download input metadata JSON** are separate actions.
+The CSV has two columns, `I,Q`; metadata declares `signal_role: pa_input`,
+`has_pa_output: false`, the sample rate/count, carrier metadata, generator parameters
+and CSV/NPY hashes. The complete signal archive remains available as well.
+
+The waveform alone has **no PA output**. **Choose Virtual PA** opens the
+[PA Library](virtual-pa-library.md). Users select a mathematical Virtual PA,
+adjust its formula parameters, choose a saved input and explicitly simulate y.
+After reviewing the output, **Create paired dataset & train PA** pairs the exact
+input and frozen output, then opens PA Training. It requires at least 8,192 input
+samples and at least 256 samples per split after guards. Both x and y are marked
+synthetic. The deprecated implicit-PA API remains available to older clients;
+the Studio UI no longer uses it.
+
+Get Started → existing dataset opens a paired-data selector and proceeds straight
+to PA Training. The compact, expandable workflow diagram marks dataset making as
+complete and explains the bypass. Model-training checks require successful runs
+for the selected dataset/version and PA reference.
 
 Generated datasets are private by default. Optional publication uses the existing
 dataset contribution workflow: an explicit reviewed package, a separate branch,
@@ -121,3 +134,9 @@ and 1920×1080: onboarding order and highlight, generation, stale-result protect
 custom two-channel OFDMA with explicit pilots and noise, ZIP export, dataset creation,
 and real CPU PA/DPD training and testing. These checks validate the software workflow;
 they do not constitute independent standards conformance or physical RF validation.
+
+## Studio 2.2.4 preview
+
+![PA input waveform and its independent PSD](../../pics/studio-signal-generator.png)
+
+The PSD here is labelled **PA Input**. It contains only the generated x signal; PA output appears after explicit simulation in PA Library. See [signal-chain spectra](signal-chain-spectra.md).

@@ -173,7 +173,7 @@ require a new isolation design.
 ## Deployment
 
 Use the versioned units and scripts in
-[`deployment/web`](https://github.com/lab-emi/OpenDPD/tree/OpenDPD-Studio/deployment/web).
+[`deployment/web`](https://github.com/lab-emi/OpenDPD/tree/main/deployment/web).
 
 1. Preserve the existing DNS records before changing nameservers. For this
    domain the initial scan found four GitHub Pages A records, four AAAA records
@@ -348,3 +348,10 @@ since that operation expires all sessions. The CDI service regenerates the
 device specification on startup; rebuild or reprobe after driver/image changes.
 Validate real CUDA training, queueing, cancellation, restored plots, lost-lease
 termination and empty host temporary storage before publishing the frontend.
+
+
+### Studio 2.2.4 rollout
+
+Deploy the reviewed 2.2.4 source consistently to the isolated API, the private GPU agent and its pinned container image, and the `opendpd-site` Pages build. Drain queued/running experiments before replacing the API; retain prior source and image pins for rollback. Restarting the API expires existing temporary sessions. Verify reported versions before the public generation → Virtual PA → paired dataset → CUDA PA/DPD training/testing journey.
+
+Generator records contain input only. The `/pa-library/` routes perform bounded mathematical simulation inside the owning temporary workspace, preserve synthetic provenance and require explicit paired-dataset creation. New PSD `signal_node` fields are display metadata; tenant boundaries, quotas, expiry and numerical metric protocols remain unchanged. Publication-figure and optional GitHub dataset-contribution capabilities keep their existing operator policy.

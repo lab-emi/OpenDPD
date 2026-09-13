@@ -210,3 +210,46 @@ configuration and the explicit enable flag described above.
 See `docs/guides/signal-generator.md` for parameters, coverage and measurement
 definitions; `docs/performance/studio-next/signal-generator/` contains selected
 browser evidence. Full private QA exports remain in `/tmp/studio-next-generator-qa`.
+
+## Explicit PA input and Virtual PA Library (local preview, 2026-09-13)
+
+- Signal Generator now produces a **PA Input Dataset**, x only, with separate
+  CSV and metadata JSON downloads. Complete training data requires paired x/y.
+  Returning to the tab restores the selected input. The implicit-PA dialog has
+  been removed; its old API is retained as deprecated for existing clients.
+- **PA Library** separates the mathematical Virtual PA (simulated device) from
+  the learned PA surrogate. Nine models cover linear reference, static solid-state
+  saturation and AM/PM, Saleh TWTA, separable memory polynomial, causal GMP cross
+  memory, GaN trapping/thermal/supply dynamics, Doherty-inspired paths and envelope
+  tracking. Technology labels are illustrative; no calibrated-device claim.
+- Sliders and numeric fields share validated values and highlight the same formula
+  variables. Long formulas scroll to the selected coefficient. Logarithmic time
+  controls preserve physical units. Output generation and dataset pairing are
+  separate explicit actions; edits invalidate downstream selections.
+- Frozen simulations retain input/output hashes, the displayed mathematical model,
+  full parameters, simulator source hash, normalized units and cold-start scope.
+  Output and paired CSVs can be downloaded independently of dataset creation.
+- A compact sticky diagram separates dataset making from PA/DPD training and
+  expands for inspection. Existing paired data completes the making group and
+  opens PA Training. Training checks require actual successful runs for the
+  selected dataset/version and PA reference.
+- Frontend regression: **220 tests / 52 files passed**. Final control/translation
+  checks: **30 passed**. Numeric/API focus: **26 passed**, including actual CPU
+  PA/DPD training and testing. Full unit/integration backend regression:
+  **665 passed** with two numerical-library threads (455.89 s). TypeScript,
+  generated API schema consistency, production build, lint and diff checks pass.
+  Existing metric definitions, split rules and golden tolerances remain unchanged.
+- Real Chromium at **1366×768 and 1920×1080** completed generation, independent
+  input/output/paired downloads, explicit pairing and **8 CPU training/testing
+  runs**. All 32,768 CSV rows agree exactly; each test split has 6,452 I/Q samples.
+  All nine Virtual PAs also simulated through the real UI. Dark/mobile checks
+  found no horizontal overflow; Chinese linked-parameter and expanded-diagram
+  checks found no browser errors or WCAG A/AA violations in the diagram dialog.
+
+Full local QA artifacts: `/tmp/opendpd-virtual-pa-e2e/`. This entry describes a local
+preview, not a new deployed release. See `docs/guides/virtual-pa-library.md` for
+model scope, equations, provenance and primary modeling references.
+
+## Release 2.2.4
+
+The Virtual PA workflow above is included with signal-chain PSD separation across generation, simulation, inspection, live/result review and figure/report exports. The implementation retains exact PSD arrays and metric/split definitions. Current user documentation and shared GUI screenshots have been refreshed. See the [2.2.4 release notes](../releases/release-notes-2.2.4.md) and [validation record](../performance/studio-2.2.4.md). Earlier preview measurements in this document remain historical records.

@@ -1,5 +1,14 @@
 # What's new
 
+## 2.2.4: Virtual PA Library and signal-chain PSD views
+
+Signal Generator exports input-only I/Q. PA Library provides nine mathematical Virtual PAs, parameter-linked formulas, explicit output simulation and paired dataset creation. The expandable workflow diagram separates dataset making from PA/DPD model training and recognizes existing paired datasets.
+
+PSD views now separate DPD input, DPD output / PA input, and PA output throughout inspection, live previews, results, comparisons and exported figures/reports. Compact legends retain synthetic/measured provenance, output baselines remain together, and saved views preserve per-position zoom.
+
+[Release notes](releases/release-notes-2.2.4.md) · [PA Library](guides/virtual-pa-library.md) · [Signal-chain spectra](guides/signal-chain-spectra.md)
+
+
 ## 2.2.3: Signal Generator and research workflows
 
 Start with Signal Generator, an existing dataset or your own CSV. PA Model and DPD Model each bring training and testing together, with exact test-set I/Q counts. The generator combines twenty presets, advanced waveform controls, signal plots and metrics, exact I/Q export and synthetic PA datasets. The standards-based presets are uncoded engineering stimuli; Wi-Fi 8 remains experimental.

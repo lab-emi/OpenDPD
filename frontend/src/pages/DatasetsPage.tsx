@@ -1,4 +1,8 @@
 import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
 import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Table from '@mui/material/Table'
@@ -19,11 +23,15 @@ import { CreateDatasetDialog } from '@/components/CreateDatasetDialog'
 import { DatasetGuide } from '@/components/DatasetGuide'
 import { SyntheticDatasetDialog } from '@/components/SyntheticDatasetDialog'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
+import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 
 export function DatasetsPage() {
   const datasets = useDatasets()
   const customDatasets = useCustomDatasetImports()
   const navigate = useNavigate()
+  const workflow = useStudioWorkflow()
+  const [choosingExisting, setChoosingExisting] = useState(false)
+  const train = (id: string) => { setChoosingExisting(false); workflow.selectDataset(id, 'raw-v1', true); navigate('/experiments/new?task=train_pa&dataset=' + encodeURIComponent(id)) }
   const [importing, setImporting] = useState(false)
   const [builtin, setBuiltin] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -103,8 +111,16 @@ export function DatasetsPage() {
           }}
         />
       )}
-      {guide && <DatasetGuide customDatasets={customDatasets} onSkip={closeGuide} onGenerator={() => navigate('/signal-generator')} onCsv={() => { closeGuide(); setGuided(true); setCreating(true) }} onBuiltin={() => { closeGuide(); if (!datasets.data?.length) { setGuided(true); setBuiltin(true) } }} />}
-      {builtin && <BuiltinDatasetDialog guided={guided} onSkipGuide={() => setGuided(false)} onClose={() => setBuiltin(false)} onSelected={(id) => { setBuiltin(false); selected(id) }} />}
+      {guide && <DatasetGuide customDatasets={customDatasets} onSkip={closeGuide} onGenerator={() => navigate('/signal-generator')} onCsv={() => { closeGuide(); setGuided(true); setCreating(true) }} onBuiltin={() => { closeGuide(); setGuided(true); if (!datasets.data?.length) setBuiltin(true); else setChoosingExisting(true) }} />}
+      <Dialog open={choosingExisting} onClose={() => setChoosingExisting(false)} fullWidth maxWidth="sm" aria-labelledby="choose-paired-dataset">
+        <DialogTitle id="choose-paired-dataset">{t('paFlow.existingTitle')}</DialogTitle>
+        <DialogContent><Typography color="text.secondary" sx={{ mb: 2 }}>{t('paFlow.existingHelp')}</Typography><Stack spacing={1}>
+          {datasets.data?.map(d => <Button key={d.dataset_id} variant="outlined" sx={{ justifyContent: 'space-between', textAlign: 'left' }} onClick={() => train(d.dataset_id)}>
+            <span>{datasetLabel(d)}</span><span>{formatNumber(d.n_samples ?? 0)} I/Q</span></Button>)}
+        </Stack></DialogContent>
+        <DialogActions><Button onClick={() => setChoosingExisting(false)}>{t('common.close')}</Button><Button onClick={() => { setChoosingExisting(false); setBuiltin(true) }}>{t('datasets.builtin.title')}</Button></DialogActions>
+      </Dialog>
+      {builtin && <BuiltinDatasetDialog guided={guided} onSkipGuide={() => setGuided(false)} onClose={() => setBuiltin(false)} onSelected={(id) => { setBuiltin(false); if (guided) train(id); else selected(id) }} />}
       {customDatasets && creating && <CreateDatasetDialog guided={guided} onSkipGuide={() => setGuided(false)} onClose={() => setCreating(false)} onImported={(id, publish) => { setCreating(false); selected(id, publish) }} />}
       {synthetic && <SyntheticDatasetDialog onClose={() => setSynthetic(false)} />}
     </Stack>

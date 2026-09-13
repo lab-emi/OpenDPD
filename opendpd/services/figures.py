@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path
 
 from opendpd.core.metrics import incompatibilities
+from opendpd.core.spectrum_layout import signal_node, has_dpd
 from opendpd.schemas.review import FigureBinding, FigureSpec, SavedFigure, FigureSources, FigureSource, FigurePreview
 from opendpd.services import figure_render
 from opendpd.services.review import object_sha, plot_artifact, review_result
@@ -36,7 +37,7 @@ def sources(ws, profiles):
         for kind in ('spectrum', 'amam', 'ampm', 'error_distribution', 'power_scan'):
             try:
                 data = _power_plot(ws, run, profile) if kind == 'power_scan' else plot_artifact(ws, run, figure_render.plot_kind(kind))[0]
-                available.extend(FigureSource(run_id=run, kind=kind, trace_name=t['name'], role=t['role'], source=t.get('source', t['role'])) for t in data['traces'])
+                available.extend(FigureSource(run_id=run, kind=kind, trace_name=t['name'], role=t['role'], source=t.get('source', t['role']), signal_node=signal_node(t, has_dpd(data['traces'])) if kind == 'spectrum' else None) for t in data['traces'])
             except WorkspaceError as exc:
                 missing.append(str(exc))
     return FigureSources(sources=available, missing=list(dict.fromkeys(missing)))
@@ -78,6 +79,7 @@ def _plots(ws, spec):
 
 def preview_figure(ws, spec: FigureSpec):
     plots, files = _plots(ws, spec)
+    spec = FigureSpec.model_validate({**spec.model_dump(), "panels": figure_render.split_spectrum_panels([p.model_dump() for p in spec.panels], plots)})
     bindings = []
     for run, profile in spec.profiles.items():
         context = review_result(ws, run, profile)
@@ -131,6 +133,8 @@ def validate_sources(ws, figure):
 
 
 def _export(figure, plots):
+    figure = figure.model_copy(deep=True)
+    figure.spec = FigureSpec.model_validate({**figure.spec.model_dump(), "panels": figure_render.split_spectrum_panels([p.model_dump() for p in figure.spec.panels], plots)})
     members = {}
 
     def add_json(name, value):
@@ -145,6 +149,8 @@ def _export(figure, plots):
     import matplotlib
     add_json("rendering.json", {"matplotlib_version": matplotlib.__version__, "font": "DejaVu Sans",
                                 "renderer": "Matplotlib Figure / Agg, rcParamsDefault with explicit publication settings"})
+    from opendpd.core import spectrum_layout
+    members["spectrum_layout.py"] = Path(spectrum_layout.__file__).read_bytes()
     members["requirements.txt"] = f"matplotlib=={matplotlib.__version__}\n".encode()
     data = io.StringIO()
     writer = csv.writer(data)
