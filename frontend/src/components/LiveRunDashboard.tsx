@@ -40,7 +40,9 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
   const active = !isTerminal(run.status)
   const query = useQuery({ queryKey: liveKey(run.run_id), queryFn: ({ signal }) => api.get<LiveSnapshot>(`/runs/${encodeURIComponent(run.run_id)}/live`, signal), refetchInterval: active ? (WEB_MODE ? 5000 : 2000) : false, retry: false })
   const snapshot = query.data, preview = snapshot?.preview, geometry = snapshot?.training_geometry ?? snapshot?.geometry
-  const progress = stream.batchProgress ?? snapshot?.last_batch
+  // Stage transitions have no batch counters. Keep the last real batch from
+  // the persisted snapshot when replay ends with a completed-stage event.
+  const progress = stream.batchProgress?.total_batches ? stream.batchProgress : snapshot?.last_batch ?? stream.batchProgress
   const spec = preview?.plots.spectrum, time = preview?.plots.time
   const spectra = useMemo(() => (spec?.traces ?? []).map((trace) => ({ name: trace.name, psdDb: trace.psd_db })), [spec])
   const series = useMemo(() => time?.traces ?? [], [time])
@@ -76,7 +78,7 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
         <LinearProgress variant="determinate" value={epochPercent} aria-label={t('live.epochProgress')} />
       </Box>}
       {(active || training) && <Box sx={{ mt: 2 }} data-testid="batch-progress">
-        <Stack direction="row" sx={{ justifyContent: 'space-between', mb: .75 }}><Typography variant="body2">{progress?.epoch !== undefined && active ? `${t('live.currentEpoch', { epoch: progress.epoch + 1 })} · ` : ''}{progress?.phase ? phaseLabel(progress.phase) : message(run.status)} · {t('live.batch', { batch: progress?.batch ?? 0, total: progress?.total_batches ?? '—' })}</Typography><Typography variant="body2">{Math.round(run.status === 'succeeded' ? 100 : batchPercent)}%</Typography></Stack>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', mb: .75 }}><Typography variant="body2">{progress?.epoch !== undefined && active ? `${t('live.currentEpoch', { epoch: progress.epoch + 1 })} · ` : ''}{progress?.phase ? phaseLabel(progress.phase) : message(run.status)} · {progress?.total_batches ? t('live.batch', { batch: progress.batch ?? 0, total: progress.total_batches }) : t(active ? 'live.preparing' : 'live.batchProgress')}</Typography><Typography variant="body2">{Math.round(run.status === 'succeeded' ? 100 : batchPercent)}%</Typography></Stack>
         <LinearProgress variant={active && !progress?.total_batches ? 'indeterminate' : 'determinate'} value={run.status === 'succeeded' ? 100 : batchPercent} aria-label={t('live.batchProgress')} />
       </Box>}
       {training && <ModelDownloadButton run={run} />}
