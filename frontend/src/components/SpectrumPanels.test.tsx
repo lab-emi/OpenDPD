@@ -1,15 +1,18 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { vi } from 'vitest'
+import { useEffect, useState } from 'react'
 import { renderWithProviders } from '@/test/utils'
 import { SpectrumPanels } from './SpectrumPanels'
 import type { SpectrumPlotProps } from './SpectrumPlot'
 import { spectrumGroups, spectrumLegend } from './spectrumNodes'
 
-vi.mock('./SpectrumPlot', () => ({ SpectrumPlot: (props: SpectrumPlotProps) => <section aria-label={props.title}>
+vi.mock('./SpectrumPlot', () => ({ SpectrumPlot: function TestPlot(props: SpectrumPlotProps) {
+  useEffect(() => { props.onRendered?.(10) }, [props.traces])
+  return <section aria-label={props.title}>
   {props.traces.map(tr => <span key={tr.name}>{tr.name}</span>)}
   <button onClick={() => props.onVisibilityChange?.(props.traces.map(() => false))}>Hide this position</button>
   <button onClick={() => props.onViewportChange?.({ x: [-1, 1], y: [-90, -40], autoX: false, autoY: false, dragmode: 'pan' })}>Zoom this position</button>
-</section> }))
+</section> } }))
 
 const traces = [
   { name: 'target input x', role: 'input', stage: 'x' },
@@ -41,4 +44,14 @@ test('PA datasets remain PA-only and unlabelled legacy probes are not guessed', 
   expect(spectrumGroups([{ name: 'PA input x', role: 'input', stage: 'x' }, { name: 'measured PA output', role: 'reference' }]).map(g => g.node)).toEqual(['pa_input', 'pa_output'])
   expect(spectrumGroups([{ name: 'unknown probe' }])[0]?.node).toBe('unknown')
   expect(spectrumLegend({ name: 'measured PA output', source: 'synthetic dataset' })).toBe('Dataset output · synthetic')
+})
+
+
+test('reporting completed draws can update the parent without a render feedback loop', async () => {
+  function Parent() {
+    const [draws, setDraws] = useState(0)
+    return <><output data-testid="draws">{draws}</output><SpectrumPanels frequencyHz={[-1e6, 0, 1e6]} traces={traces} onRendered={() => setDraws(n => n + 1)} /></>
+  }
+  renderWithProviders(<Parent />)
+  expect(await screen.findByTestId('draws')).toHaveTextContent('1')
 })
