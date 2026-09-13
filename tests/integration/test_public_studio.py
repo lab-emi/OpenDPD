@@ -89,7 +89,7 @@ def test_public_surface_blocks_upload_code_paths_and_huge_configs(public):
     client, _, _ = public
     auth = new_session(client)
     for path in ["/datasets/inspect", "/datasets/import", "/imports",
-                 "/session/bootstrap", "/deploy/exports", "/datasets/a/manifest"]:
+                 "/session/bootstrap", "/deploy/exports"]:
         assert client.post("/api/v1" + path, json={}, headers=auth).status_code == 403
     for path in ["/datasets/a/analysis?version=../../other", "/results/a?profile=../../other"]:
         assert client.get("/api/v1" + path, headers=auth).status_code == 422
@@ -121,7 +121,7 @@ def test_rejected_csv_is_deleted_without_exposing_preview(public, filename, data
 
 
 @pytest.mark.parametrize('data', [b'I_in,Q_in,I_out,Q_out\n'+b'.1,.2,.3,.4\n'*4096,
-                                b'input,output\n'+b'.1+.2j,.3-.4i\n'*4096])
+                                b'input,output\n'+b'.1+.2j,.3-.4i\n'*4096], ids=['real-iq', 'complex-pairs'])
 def test_public_csv_validation_import_and_tenant_isolation(public, data):
     client, manager, _ = public
     auth, other = new_session(client), new_session(client)
@@ -140,6 +140,11 @@ def test_public_csv_validation_import_and_tenant_isolation(public, data):
                            'origin': 'synthetic', 'expected_sha256': result['validation']['sha256']}, headers=auth)
     assert response.status_code == 201, response.text
     assert client.get('/api/v1/datasets', headers=other).json() == []
+    signal = {'sample_rate_hz': 800e6, 'bandwidth_hz': 200e6, 'nperseg': 256, 'n_sub_ch': 3}
+    assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': signal}, headers=auth).status_code == 200
+    assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': signal}, headers=other).status_code == 409
+    assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': {'nperseg': 2**40}}, headers=auth).status_code == 422
+    assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': {'waveform': {}}}, headers=auth).status_code == 422
     assert client.get('/api/v1/system/capabilities', headers=auth).json()['custom_dataset_imports'] is True
     root = next(iter(manager.tenants.values())).app.state.ws.imports_dir
     assert not list((root / 'quarantine').iterdir())

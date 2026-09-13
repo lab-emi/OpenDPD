@@ -16,7 +16,7 @@ from opendpd.schemas import ExperimentConfig
 SLUG = r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}"
 FILE_ID = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,200}"
 # New local routes are NOT automatically published. In particular: no path imports,
-# arbitrary path imports, manifest mutation, RF control, package imports, or executable exports.
+# arbitrary path imports, RF control, package imports, or executable exports.
 ROUTES = {
     "GET": [
         r"/system/(capabilities|about)", r"/settings", r"/models", r"/recipes",
@@ -28,6 +28,7 @@ ROUTES = {
         rf"/exports/{FILE_ID}", r"/adaptation/reports", rf"/adaptation/reports/{SLUG}",
     ],
     "POST": [r"/datasets/import-builtin", r"/datasets/upload", r"/datasets/csv(/preview)?", rf"/datasets/{SLUG}/diagnostics",
+             rf"/datasets/{SLUG}/manifest",
              rf"/datasets/{SLUG}/preprocess(/preview)?", r"/experiments/validate",
              r"/runs", rf"/runs/{SLUG}/(cancel|retry)", r"/exports"],
     "PUT": [r"/settings"],
@@ -139,8 +140,10 @@ def check_body(path: str, body: dict):
         # One canonical copy of each built-in per session, no duplicate disk filling.
         if body.get("dataset_id") is not None:
             reject(422, "invalid_request", "use the built-in dataset's default identifier")
-    if path in {"/datasets/csv", "/datasets/csv/preview"}:
+    if path in {"/datasets/csv", "/datasets/csv/preview"} or re.fullmatch(rf"/datasets/{SLUG}/manifest", path):
         signal = body.get("signal", {})
+        if signal is None and path.endswith('/manifest'):
+            signal = {}
         if not isinstance(signal, dict):
             reject(422, "invalid_request", "expected signal metadata")
         if signal.get("waveform") is not None:
