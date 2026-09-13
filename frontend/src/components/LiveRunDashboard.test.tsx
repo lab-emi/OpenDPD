@@ -35,6 +35,16 @@ test('epoch completion stays stable when validation starts a new batch counter',
   expect(screen.getByRole('progressbar', { name: 'Batch progress' })).toHaveAttribute('aria-valuenow', '10')
 })
 
+test('completion events do not replace the last saved batch with an empty counter', async () => {
+  mockApi({ [`GET /api/v1/runs/${run.run_id}/live`]: () => ({
+    geometry: null, preview: null, last_batch: { phase: 'evaluate', batch: 6, total_batches: 6, sequences: 6, sequence_samples: 2560 },
+  }) })
+  renderWithProviders(<LiveRunDashboard run={{ ...run, status: 'succeeded' }} stream={{ ...stream, batchProgress: { phase: 'completed' } }} metrics={[]} />)
+  expect(await screen.findByText(/Batch 6 \/ 6/)).toBeInTheDocument()
+  expect(screen.queryByText(/Batch 0 \/ —/)).not.toBeInTheDocument()
+  expect(screen.getByRole('progressbar', { name: 'Batch progress' })).toHaveAttribute('aria-valuenow', '100')
+})
+
 test('a spectral-profile DPD test shows its own metrics without an epoch curve', async () => {
   mockApi({ [`GET /api/v1/runs/${run.run_id}/live`]: () => ({
     policy: { min_batches: 25, min_seconds: 2, overhead_target: .05 }, geometry: null,
