@@ -661,7 +661,9 @@ def workspace_settings_default() -> WorkspaceSettings:
 
 def all_examples() -> Dict[str, object]:
     """Name -> model instance; names double as mock fixture file names."""
+    from opendpd.core.waveforms.generator_presets import presets
     return {
+        "generator_presets": presets(),
         "metric_profile_legacy": legacy_metric_profile(),
         "metric_profile_general": general_metric_profile(),
         "metric_profile_ofdm_evm": ofdm_metric_profile(),

@@ -2,12 +2,13 @@ import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { useLocation } from 'react-router'
-import fixturePresets from '@mocks/generator_presets.json'
+import fixture from '@mocks/generator_presets.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { SignalGeneratorPage } from './SignalGeneratorPage'
 
 vi.mock('@/components/PlotlyChart', () => ({ PlotlyChart: ({ title }: { title: string }) => <div>{title}</div> }))
 
+const fixturePresets = fixture.data
 const config = fixturePresets[0]!.config
 const result = {
   signal_id: `sg-${'a'.repeat(64)}`, iq_sha256: 'b'.repeat(64), config, coverage: 'numerology',
