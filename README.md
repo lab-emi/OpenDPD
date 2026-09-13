@@ -37,7 +37,9 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.1** accelerates CUDA training in OpenDPD Studio:
+**OpenDPD 2.2.2** adds **Report bugs** to the top of Studio. The description box opens with the cursor ready; continue directly to a prefilled GitHub issue to review and submit your report. The same control is available when the compute server cannot be reached.
+
+See the [2.2.2 release notes](https://github.com/lab-emi/OpenDPD/blob/main/docs/releases/release-notes-2.2.2.md). CUDA training improvements from 2.2.1 remain available:
 
 - CUDA replay for supported native models reduces dispatch overhead while retaining the existing optimizer, precision, batches and scheduler.
 - Quick/full training defaults are 10/150 epochs; plots reuse validation predictions once per epoch.
@@ -59,7 +61,7 @@ For a hosted installation, the [public Studio deployment guide](https://lab-emi.
 **[Open the hosted Studio now](https://opendpd.com/studio/)**, or install the packaged local app with **Python 3.10–3.13**:
 
 ```bash
-python -m pip install "opendpd[gui]==2.2.1"
+python -m pip install "opendpd[gui]==2.2.2"
 opendpd gui
 ```
 

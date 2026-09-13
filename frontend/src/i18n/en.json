@@ -784,5 +784,11 @@
   "form.preview.batches": "Batches between previews",
   "form.preview.warning": "Frequent batch previews may severely slow down training. Each preview performs extra inference and plot calculations.",
   "live.cadence.epoch": "Plots update once per epoch.",
-  "live.cadence.batch": "Plots update every {batches} batches and at epoch end."
+  "live.cadence.batch": "Plots update every {batches} batches and at epoch end.",
+  "bugs.report": "Report bugs",
+  "bugs.help": "Describe the problem here, then continue on GitHub to review and submit your new issue. You can add screenshots there.",
+  "bugs.description": "Bug description",
+  "bugs.placeholder": "What happened? What did you expect? How can we reproduce it?",
+  "bugs.tooLong": "This description is too long to transfer. Shorten it, then add the remaining details on GitHub.",
+  "bugs.continue": "Continue on GitHub"
 }

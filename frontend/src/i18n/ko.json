@@ -784,5 +784,11 @@
   "form.preview.batches": "미리보기 간 배치 수",
   "form.preview.warning": "빈번한 배치 미리보기는 학습 속도를 크게 떨어뜨릴 수 있습니다. 매번 추가 추론과 플롯 계산이 수행됩니다.",
   "live.cadence.epoch": "플롯은 에포크마다 한 번 업데이트됩니다.",
-  "live.cadence.batch": "{batches}개 배치마다 및 에포크 종료 시 플롯이 업데이트됩니다."
+  "live.cadence.batch": "{batches}개 배치마다 및 에포크 종료 시 플롯이 업데이트됩니다.",
+  "bugs.report": "버그 신고",
+  "bugs.help": "여기에 문제를 설명한 다음 GitHub에서 새 이슈를 확인하고 제출하세요. 스크린샷도 추가할 수 있습니다.",
+  "bugs.description": "버그 설명",
+  "bugs.placeholder": "무슨 일이 발생했나요? 예상한 결과는 무엇인가요? 어떻게 재현할 수 있나요?",
+  "bugs.tooLong": "설명이 너무 길어 전달할 수 없습니다. 내용을 줄인 다음 GitHub에서 나머지 세부 사항을 추가하세요.",
+  "bugs.continue": "GitHub에서 계속"
 }

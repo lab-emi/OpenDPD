@@ -784,5 +784,11 @@
   "form.preview.batches": "Lots entre les aperçus",
   "form.preview.warning": "Des aperçus fréquents peuvent fortement ralentir l’entraînement. Chaque aperçu nécessite une inférence et des calculs graphiques supplémentaires.",
   "live.cadence.epoch": "Les graphiques sont actualisés une fois par époque.",
-  "live.cadence.batch": "Actualisation tous les {batches} lots et en fin d’époque."
+  "live.cadence.batch": "Actualisation tous les {batches} lots et en fin d’époque.",
+  "bugs.report": "Signaler un bug",
+  "bugs.help": "Décrivez le problème ici, puis continuez sur GitHub pour vérifier et envoyer votre nouvelle issue. Vous pourrez y ajouter des captures d’écran.",
+  "bugs.description": "Description du bug",
+  "bugs.placeholder": "Que s’est-il passé ? Quel résultat attendiez-vous ? Comment reproduire le problème ?",
+  "bugs.tooLong": "Cette description est trop longue à transférer. Raccourcissez-la, puis ajoutez les autres détails sur GitHub.",
+  "bugs.continue": "Continuer sur GitHub"
 }

@@ -1,6 +1,6 @@
 # Your first experiment in Studio
 
-Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.1"`.
+Open [Studio on the web](https://opendpd.com/studio/), or install the packaged local app with `pip install "opendpd[gui]==2.2.2"`.
 
 ```bash
 opendpd gui

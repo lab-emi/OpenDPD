@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use OpenDPD, its Studio or its benchmark, please cite the software and the paper below (docs/community/citation.md)."
 title: "OpenDPD"
 type: software
-version: 2.2.1
+version: 2.2.2
 license: Apache-2.0
 repository-code: "https://github.com/lab-emi/OpenDPD"
 authors:
