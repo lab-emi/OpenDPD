@@ -60,7 +60,8 @@ class Predictions:
     def __init__(self, prediction: np.ndarray, ground_truth: np.ndarray, n_valid: int, target_gain: Optional[float],
                  *, x: Optional[np.ndarray] = None, u: Optional[np.ndarray] = None,
                  surrogate_without_dpd: Optional[np.ndarray] = None, measured: Optional[np.ndarray] = None,
-                 fitted_peak_abs: Optional[float] = None, execution: Optional[ExecutionEvidence] = None):
+                 fitted_peak_abs: Optional[float] = None, execution: Optional[ExecutionEvidence] = None,
+                 ilc_output=None, ilc_input=None, ilc_evidence=None):
         self.prediction = prediction          # PA model output (train_pa) or y = PA_surrogate(u) (DPD tasks)
         self.ground_truth = ground_truth      # measured y (train_pa) or the linear target gain * x (DPD tasks)
         self.n_valid = n_valid
@@ -70,6 +71,9 @@ class Predictions:
         self.surrogate_without_dpd = surrogate_without_dpd   # DPD tasks: PA_surrogate(x)
         self.measured = measured              # measured PA output of the test split
         self.fitted_peak_abs = fitted_peak_abs   # DPD tasks: max |x| the surrogate was trained on
+        self.ilc_input = ilc_input
+        self.ilc_output = ilc_output
+        self.ilc_evidence = ilc_evidence
         self.execution = execution            # streaming variants: how the signal was consumed (S18)
 
 
@@ -223,6 +227,11 @@ def predict_test_split(ws: Workspace, run_id: str, resolved: ResolvedExperimentC
             extra.update(u=torch.cat(us).numpy(), surrogate_without_dpd=torch.cat(y0s).numpy(),
                          measured=IQSegmentDataset(x_test, y_test, nperseg=nperseg).targets.numpy(),
                          fitted_peak_abs=_fitted_peak(ws, resolved.pa_reference.run_id))
+        if dpd_task and resolved.model.key == "ilc_dpd":
+            from opendpd.services.ilc import ideal_test
+            ideal, ideal_input, evidence = ideal_test(ws, run_dir, resolved, net.pa_model, np.asarray(x_test),
+                                        float(proj.target_gain), nperseg, save=observer is not None)
+            extra.update(ilc_output=segments(ideal, nperseg), ilc_input=segments(ideal_input, nperseg), ilc_evidence=evidence)
     n_valid = _n_test_samples(ws, resolved) or int(prediction.shape[0] * prediction.shape[1])
     gain = getattr(proj, "target_gain", None)
     return Predictions(prediction, ground_truth, n_valid, float(gain) if gain is not None else None, **extra)
@@ -314,6 +323,11 @@ def _surrogate_evidence(ws: Workspace, run_id: str, resolved: ResolvedExperiment
                       description="measured PA output of the test split (no DPD), scored against the same linear target",
                       metrics=score(profile_id, predictions.measured, reference, dataset.signal, valid_samples=n)),
     ]
+    if predictions.ilc_output is not None:
+        baselines.append(BaselineScore(kind="ilc_ideal",
+            description="ILC Ideal: feedback-optimized on this test waveform through the selected PA surrogate; "
+                        "waveform-specific, not a transferable model, global optimum or hardware measurement.",
+            metrics=score(profile_id, predictions.ilc_output, reference, dataset.signal, valid_samples=n)))
     fitted = float(predictions.fitted_peak_abs or 0.0)
     above = float(np.mean(_amplitude(_valid(predictions.u, n)) > fitted)) if fitted > 0 and n else 0.0
     if above > 0:
@@ -326,7 +340,7 @@ def _surrogate_evidence(ws: Workspace, run_id: str, resolved: ResolvedExperiment
     coverage = SurrogateCoverage(fitted_peak_abs=fitted, u_peak_abs=u_peak, fraction_above_fitted_peak=above, note=note)
     scaling = ScalingInfo(amplitude_units=dataset.signal.amplitude_units, input_scaling=_input_scaling(dataset, version),
                           reference_gain=predictions.target_gain, physical_calibration=False)
-    return dict(signal_chain=chain, baselines=baselines, surrogate_coverage=coverage, scaling=scaling)
+    return dict(signal_chain=chain, baselines=baselines, surrogate_coverage=coverage, scaling=scaling, ilc=predictions.ilc_evidence)
 
 
 def result_for(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, manifest: ArtifactManifest,
@@ -363,6 +377,12 @@ def write_plots(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, 
                  "with DPD: PA_surrogate(u)": "primary", "surrogate without DPD": "baseline",
                  "measured PA without DPD": "baseline"}
         outputs = {k: signals[k] for k in ("with DPD: PA_surrogate(u)", "surrogate without DPD", "measured PA without DPD")}
+    if predictions.ilc_output is not None:
+        signals["ILC Ideal PA output"] = predictions.ilc_output
+        signals["ILC Ideal PA input"] = predictions.ilc_input
+        roles["ILC Ideal PA output"] = "baseline"
+        roles["ILC Ideal PA input"] = "predistorted"
+        outputs["ILC Ideal PA output"] = predictions.ilc_output
     sig = dataset.signal
     out_dir = ws.run_dir(run_id) / PLOTS_DIR
     out_dir.mkdir(parents=True, exist_ok=True)

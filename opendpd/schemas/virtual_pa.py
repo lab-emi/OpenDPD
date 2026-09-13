@@ -15,6 +15,7 @@ class PALocalizedText(StrictModel):
 class PAParameter(StrictModel):
     key: str
     symbol: str
+    symbol_latex: str = ""
     label: PALocalizedText
     description: PALocalizedText
     group: Literal["gain", "memory", "dynamics", "architecture"] = "gain"
@@ -36,6 +37,7 @@ class VirtualPAModel(StrictModel):
     limitations: PALocalizedText
     parameters: list[PAParameter]
     equations: list[str]
+    equations_latex: list[str] = Field(default_factory=list)
     references: list[str]
 
 

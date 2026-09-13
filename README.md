@@ -37,54 +37,63 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.4** separates PSD plots by signal-chain position: **DPD Input**, **DPD Output / PA Input**, and **PA Output**. Output references and with/without-DPD comparisons share only the PA Output plot, with compact legends and independent chart controls.
+**OpenDPD 2.2.5** adds LaTeX equations with interactive PA parameter highlighting, shared or per-channel OFDMA settings, and **ILC + ILA DPD** with a separate waveform-specific Ideal benchmark. Next-step controls sit above settings, and metric calculation methods have clearer names.
 
-**Signal Generator** creates a PA Input Dataset with separate CSV and metadata downloads. The new **PA Library** offers nine mathematical Virtual PAs with editable formulas and linked parameter controls. Explicitly simulate the output, create a paired synthetic dataset, and continue to PA/DPD training and testing. An expandable workflow diagram follows your progress.
+**Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input waveform, simulate its output with one of nine Virtual PAs, or upload existing input/output CSV data. Results label synthetic, surrogate and measured evidence and show separate PSD charts at each signal-chain position.
 
-See the [2.2.4 release notes](https://github.com/lab-emi/OpenDPD/blob/main/docs/releases/release-notes-2.2.4.md) and [Signal Generator guide](https://lab-emi.github.io/OpenDPD/guides/signal-generator/). Standard presets are uncoded engineering stimuli; Wi-Fi 8 is experimental. Local Studio also adds research comparisons, publication figures and reproduction, measurement sessions, Sweep Board, hardware cost evidence and optional dataset contribution PRs for human review.
-
-- CUDA replay for supported native models reduces dispatch overhead while retaining the existing optimizer, precision, batches and scheduler.
-- Quick/full training defaults are 10/150 epochs; plots update once per epoch; DPD previews capture the intermediate signal in a bounded shadow-model forward pass.
-- See the [2.2.1 performance measurements](https://github.com/lab-emi/OpenDPD/blob/main/docs/performance/studio-2.2.1.md) and [release notes](https://github.com/lab-emi/OpenDPD/blob/main/docs/releases/release-notes-2.2.1.md).
-- **Guided experiments:** explore built-in I/Q data, train and test PA/DPD models, and choose from the original backbone registry.
-- **Live feedback:** separate epoch and batch progress bars, NMSE and other task metrics, live signal plots, reconnectable experiments and a Stop control.
-- **Download models while training:** save the best checkpoint so far; after training, download the selected final model. Compare compatible runs and export reports.
-- **Browser and local workbench:** nine interface languages, English by default, CUDA when available, touch-friendly plots and system light/dark themes.
-
-**Bring your own CSV:** upload UTF-8 CSV with two complex columns or four real I/Q columns, up to 25 MiB and 1,000,000 paired samples. Every row is validated in quarantine before preview; rejected uploads are deleted. Code, package and checkpoint uploads are unavailable in the public app.
-
-For a hosted installation, the [public Studio deployment guide](https://lab-emi.github.io/OpenDPD/architecture/public-studio/) covers GitHub Pages, a Cloudflare Tunnel and isolated local VM compute, with temporary sessions and automatic file deletion within 24 hours.
+[2.2.5 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.5/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [ILC guide](https://lab-emi.github.io/OpenDPD/guides/ilc-dpd/). Standard presets are engineering stimuli, not conformance waveforms; Wi-Fi 8 is experimental.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)
 
 ## Get started with Studio
 
-**[Open the hosted Studio now](https://opendpd.com/studio/)**, or install the packaged local app with **Python 3.10–3.13**:
+Use **[Studio on the web](https://opendpd.com/studio/)**, or install locally:
 
-```bash
-python -m pip install "opendpd[gui]==2.2.4"
-opendpd gui
+**1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)** (then open a new terminal).
+
+macOS / Linux:
+
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-The wheel includes the frontend; Node.js is not needed. For development from source, also install Git and Node.js 22.22+:
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**2. Create an environment, install, and launch** (same commands on all three platforms):
+
+```sh
+mkdir opendpd-lab
+cd opendpd-lab
+uv venv --python 3.12
+uv pip install --python .venv "opendpd==2.2.5" --torch-backend=auto
+uv run --no-project --python .venv opendpd gui
+```
+
+PyTorch, Studio and pywebview install together; no Node.js is needed. uv selects a PyTorch backend for the detected platform/drivers. Studio prefers available CUDA or Apple MPS, then CPU. Keep the terminal running. **A `127.0.0.1` link opens on the computer running OpenDPD**; for SSH, use the [port-forwarding instructions](docs/install.md#ssh-or-another-computer).
+
+Click **Get Started → Signal Generator**, or **Use an existing dataset**. See [Installation](docs/install.md) for drivers, Linux system libraries, native-window troubleshooting and pip; [Studio walkthrough](docs/tutorials/gui-quickstart.md) for your first experiment.
+
+<details>
+<summary>Develop from source (Git and Node.js 22.22+ required)</summary>
 
 <!-- --8<-- [start:source-install] -->
-```bash
+```sh
 git clone https://github.com/lab-emi/OpenDPD.git
 cd OpenDPD
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e ".[gui]"
+uv venv --python 3.12
+uv pip install --python .venv -e ".[dev]" --torch-backend=auto
 npm --prefix frontend ci
 npm --prefix frontend run build
-opendpd gui
+uv run --no-project --python .venv opendpd gui
 ```
 <!-- --8<-- [end:source-install] -->
 
-This opens Studio locally in your browser. For Windows, a native desktop window, GPU setup, or a core-only installation, see [Installation](docs/install.md).
-
-Click **Get Started → Signal Generator** to create a waveform, then **Choose Virtual PA** to simulate a paired dataset. Or choose **Use an existing dataset → DPA_200MHz** to go directly to PA Training. Use **Starting settings → Quick trial** to check the pipeline, then choose **Full training** for a longer experiment. Quick trial defaults to **10 epochs**; full training defaults to **150 epochs**. Plots update **once per epoch**; DPD previews show x, u and PA(u) from the same bounded validation probe. Advanced settings offer an optional batch preview interval with a red warning because extra previews can severely slow training.
+</details>
 
 ## The PA → DPD workflow
 
@@ -99,7 +108,7 @@ Click **Get Started → Signal Generator** to create a waveform, then **Choose V
 
 [PA Library guide](docs/guides/virtual-pa-library.md) · [Reading signal-chain PSD plots](docs/guides/signal-chain-spectra.md)
 
-![Studio 2.2.4: independent signal-chain PSD plots](pics/studio-psd-chain.png)
+![Studio 2.2.5: independent signal-chain PSD plots](pics/studio-psd-chain.png)
 
 ## Choose your next step
 

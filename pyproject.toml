@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opendpd"
-version = "2.2.4"
+version = "2.2.5"
 description = "An end-to-end learning framework for modeling power amplifiers and digital pre-distortion"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,22 +43,20 @@ dependencies = [
     # Versioned data contracts (opendpd/schemas) shared by CLI, API and GUI.
     # See docs/architecture/adr/0001-studio-technical-stack.md.
     "pydantic>=2.5,<3",
-]
-
-[project.optional-dependencies]
-# OpenDPD Studio: local FastAPI server + prebuilt browser workbench (`opendpd gui`).
-gui = [
     "fastapi>=0.110",
     "uvicorn>=0.27",
     "psutil>=5.9",
     "python-multipart>=0.0.9",
+    # Native macOS/Windows bindings are selected by pywebview's platform markers.
+    "pywebview>=6.2,<7; sys_platform != 'linux'",
+    # Qt ships wheels in isolated environments; no system Python/GTK coupling.
+    "pywebview[qt]>=6.2,<7; sys_platform == 'linux'",
 ]
-# Native application window for `opendpd gui` (pywebview: WKWebView on macOS, WebView2 on
-# Windows, WebKit2GTK or Qt on Linux). Pure Python; the browser stays the fallback.
-desktop = [
-    "opendpd[gui]",
-    "pywebview>=6.2,<7",
-]
+
+[project.optional-dependencies]
+# Compatibility aliases: Studio and the native window now install by default.
+gui = []
+desktop = []
 dev = [
     "pytest>=6.0",
     "pytest-cov>=2.0",

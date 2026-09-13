@@ -17,7 +17,7 @@ from typing import Callable, Optional
 
 from opendpd.studio.strings import ShellStrings
 
-INSTALL_HINT = 'install the desktop extra: pip install "opendpd[desktop]"'
+INSTALL_HINT = 'repair the installation: uv pip install --reinstall opendpd --torch-backend=auto'
 LINUX_HINT = ("install the WebKit2GTK bindings (Debian/Ubuntu: python3-gi gir1.2-webkit2-4.1) "
               'or pip install "pywebview[qt]"')
 ICON_DIR = Path(__file__).resolve().parent

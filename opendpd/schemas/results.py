@@ -55,7 +55,7 @@ class BaselineScore(StrictModel):
     and least-squares gain, both recorded in the measurement) and the level
     difference between the captures is reported, never scaled away."""
 
-    kind: Literal["surrogate_without_dpd", "measured_without_dpd"]
+    kind: Literal["surrogate_without_dpd", "measured_without_dpd", "ilc_ideal"]
     description: str = Field(min_length=1)
     metrics: List[MetricValue] = Field(min_length=1)
 
@@ -125,7 +125,7 @@ class ModelEvidence(StrictModel):
     lookahead_samples: Optional[int] = Field(default=None, ge=0)
     # how the weights were obtained: gradient descent (PA), gradient descent through the surrogate (DPD, DLA),
     # direct least squares (PA) or indirect learning by least squares on measured data (DPD, ILA)
-    training_path: Optional[Literal["gradient", "gradient_dla", "least_squares", "ila_least_squares"]] = None
+    training_path: Optional[Literal["gradient", "gradient_dla", "least_squares", "ila_least_squares", "ilc_ila"]] = None
 
 
 class EvaluationResult(StrictModel):
@@ -153,6 +153,7 @@ class EvaluationResult(StrictModel):
     numeric_mode: str = "float32"
     limitations: List[str] = Field(default_factory=list)
     signal_chain: List[SignalStage] = Field(default_factory=list)
+    ilc: Optional[Dict[str, object]] = None
     baselines: List[BaselineScore] = Field(default_factory=list)
     surrogate_coverage: Optional[SurrogateCoverage] = None
     scaling: Optional[ScalingInfo] = None

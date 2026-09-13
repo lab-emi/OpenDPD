@@ -702,6 +702,9 @@ def collect_artifacts(run_dir: Path, run_id: str, resolved: ResolvedExperimentCo
             "conditions declared by the operator, capture hashes, alignment and level statistics")
     for name in ("worker.log", "stdout.log"):
         add(name.replace(".", "-"), ArtifactKind.worker_log, run_dir / "logs" / name, False)
+    for name in ("ilc.json", "ilc-training.npz", "ilc-benchmark.json", "ilc-ideal-test.csv"):
+        add(name.replace(".", "-"), ArtifactKind.other, run_dir / name, False,
+            "ILC waveform controller diagnostics/data; test feedback is a separate Ideal baseline, never fitted training data")
     add("fit-diagnostics", ArtifactKind.other, run_dir / "fit.json", False,
         "least-squares fit record: method, rank, condition number, cutoff, residual")
     add("init-weights", ArtifactKind.other, run_dir / "init" / "weights.pt", False,
@@ -749,7 +752,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                  target_gain: Optional[float], signal_chain: Optional[List[SignalStage]] = None,
                  baselines: Optional[List[BaselineScore]] = None, surrogate_coverage: Optional[SurrogateCoverage] = None,
                  scaling: Optional[ScalingInfo] = None, measurement: Optional[MeasurementEvidence] = None,
-                 execution: Optional[ExecutionEvidence] = None, limitations: Optional[List[str]] = None) -> EvaluationResult:
+                 execution: Optional[ExecutionEvidence] = None, ilc: Optional[dict] = None, limitations: Optional[List[str]] = None) -> EvaluationResult:
     """Assemble the evidence around metrics scored by ``opendpd.core.metrics``."""
     run_dir = ws.run_dir(run_id)
     dataset = ws.get_dataset(resolved.dataset.id)
@@ -841,7 +844,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
                                     n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
                                     execution_semantics=semantics,
-                                    training_path="ila_least_squares" if least_squares else "gradient_dla"))
+                                    training_path="ilc_ila" if resolved.model.key == "ilc_dpd" else "ila_least_squares" if least_squares else "gradient_dla"))
         if resolved.measurement is not None and resolved.measurement.source == "mock_adapter":
             source, is_mock = "mock", True
     elif resolved.task in (TaskType.train_pa, TaskType.evaluate_pa):
@@ -861,7 +864,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         models.append(ModelEvidence(role="dpd", model=resolved.model, run_id=dpd_run_id, weights_sha256=dpd_sha,
                                     n_parameters=dpd_params, lookahead_samples=_lookahead(resolved.model),
                                     execution_semantics=semantics,
-                                    training_path="ila_least_squares" if least_squares else "gradient_dla"))
+                                    training_path="ilc_ila" if resolved.model.key == "ilc_dpd" else "ila_least_squares" if least_squares else "gradient_dla"))
         pa_manifest = load_artifacts(ws, pa.run_id)
         pa_artifact = next((a for a in (pa_manifest.artifacts if pa_manifest else [])
                             if a.artifact_id == pa.checkpoint_artifact_id), None)
@@ -886,7 +889,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
                                                   else dataset.raw_sha256 if resolved.dataset.preprocessing_version == "raw-v1" else None),
                                 preprocessing_version=resolved.dataset.preprocessing_version,
                                 split_version=resolved.dataset.split_version, n_samples=n_valid),
-        models=models, reference=reference, execution=execution, evaluated_signal=dataset.signal,
+        models=models, reference=reference, execution=execution, ilc=ilc, evaluated_signal=dataset.signal,
         valid_sample_range=(measurement.captures[0].valid_sample_range or (0, n_valid)) if measurement else (0, n_valid),
         n_segments=n_segments, nperseg=nperseg,
         metrics=metrics, selected_epoch=selected_epoch, history=history,

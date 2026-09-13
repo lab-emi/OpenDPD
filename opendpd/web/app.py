@@ -180,7 +180,7 @@ class PublicBoundary:
             if path in {"/models", "/recipes"}:
                 from opendpd.core.registry import list_models
                 from opendpd.services.recipes import list_recipes
-                models = [m for m in list_models() if m.status == "supported" and m.training_method == "gradient"]
+                models = [m for m in list_models() if (m.status == "supported" and m.training_method == "gradient") or m.key == "ilc_dpd"]
                 keys = {m.key for m in models}
                 payload = [m.to_dict() for m in models] if path == "/models" else [r.to_dict() for r in list_recipes() if r.model.key in keys]
                 await JSONResponse(payload)(scope, receive, send)

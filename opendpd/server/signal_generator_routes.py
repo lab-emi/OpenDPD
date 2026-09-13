@@ -69,3 +69,13 @@ def dataset(signal_id: str, body: GeneratorDatasetRequest, request: Request):
 @router.get("/datasets/{dataset_id}/sample-counts", response_model=DatasetSampleCounts, dependencies=[Depends(require_session)])
 def counts(dataset_id: str, request: Request, version: str = "raw-v1"):
     return service.sample_counts(request.app.state.ws, dataset_id, version)
+
+
+@router.post('/signal-generator/signals/{signal_id}/archive', dependencies=[Depends(require_csrf)])
+def archive(signal_id: str, request: Request):
+    return service.archive_input(request.app.state.ws, signal_id)
+
+
+@router.post('/signal-generator/signals/{signal_id}/restore', response_model=PAInputDataset, dependencies=[Depends(require_csrf)])
+def restore(signal_id: str, request: Request):
+    return service.archive_input(request.app.state.ws, signal_id, restore=True)

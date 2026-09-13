@@ -214,7 +214,8 @@ def catalog():
             "y[n] = R(x[n]; {{gain}}, {{saturation}}·v[n], {{smoothness}})·exp(j·{{phase}}·(v[n]−1))",
             "LPF(P,τ)[n] = a·LPF[n−1] + (1−a)·P[n]; a = exp(−1/(Fs·τ·10⁻⁶)); τ in µs"],
         references=[ET_REF, MEMORY_REF]))
-    return models
+    from .pa_equations import attach_latex
+    return attach_latex(models)
 
 
 def resolve(model_id, supplied):

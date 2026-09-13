@@ -1,0 +1,34 @@
+{
+  "version": "2.2.5",
+  "source": "installed wheel in isolated Python 3.12 environment; clean synthetic workspace",
+  "records": [
+    {
+      "file": "pics/studio-home.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "34f8998d9aa04d36121332e7021d3c1d25ea9535c03baa9d2c62226fb26f4abe"
+    },
+    {
+      "file": "pics/studio-signal-generator.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "9a03eee6d6e546009b0e3175636cbaaae321a8ad33533e5f2df890a5218f8b4c"
+    },
+    {
+      "file": "pics/studio-pa-library.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "99fb7b8020f8241cc0d64802404c68c8ce54aa0aff637570f46ae757cde7b851"
+    },
+    {
+      "file": "pics/studio-ilc.png",
+      "source": "real CUDA ILC run in disposable synthetic workspace",
+      "sha256": "d2281673305458291d20398d8f4fb3a57d4c2c472af8e0519e94529fc4987152"
+    },
+    {
+      "file": "pics/studio-psd-chain.png",
+      "source": "real CUDA ILC run in disposable synthetic workspace",
+      "sha256": "215855b907301c10dfe10d17448646614a4aa2273d7f090354cc56ec118b5709"
+    }
+  ]
+}

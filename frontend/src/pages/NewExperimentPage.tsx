@@ -21,7 +21,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { versionNames } from '@/api/datasets'
 import { useCapabilities, useDatasets, useMetricProfiles, useModels, useRecipes, useRunConfig, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
-import { offeredProfiles } from '@/api/profiles'
+import { offeredProfiles, profileLabel } from '@/api/profiles'
 import type { ConfigIssue, Device, ExperimentConfigInput, ModelInfo, RecipeInfo, ValidationReport } from '@/api/types'
 import { datasetLabel, message, phaseLabel, t } from '@/i18n'
 import { WorkflowSteps } from '@/components/WorkflowSteps'
@@ -159,7 +159,9 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const [confirmed, setConfirmed] = useState<Record<number, string>>({})
 
   const testing = task === 'evaluate_pa' || task === 'run_dpd'
-  const taskRecipes = (recipes.data ?? []).filter((entry) => entry.task === task)
+  const ilcRequested = params.get('method') === 'ilc'
+  const displayGroup = ilcRequested && params.get('workspace') === 'pa' ? 'pa' : taskGroup(task)
+  const taskRecipes = (recipes.data ?? []).filter((entry) => entry.task === task && (!ilcRequested || entry.model.key === 'ilc_dpd'))
   const sourceRunId = edits.sourceRunId || params.get('modelRun') || ''
   const source = useRunConfig(sourceRunId, testing && !!sourceRunId)
   const sourceRuns = (succeeded.data ?? []).filter((run) => run.task === (task === 'evaluate_pa' ? 'train_pa' : 'train_dpd'))
@@ -173,7 +175,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const requestedVersion = edits.dataVersion || (datasetId === params.get('dataset') ? params.get('version') : '') || (testing && source.data?.dataset.id === datasetId ? source.data.dataset.preprocessing_version : '') || ''
   // Capability discovery is asynchronous. Derive the initial device until the
   // user chooses one; later refetches must never overwrite that explicit choice.
-  const defaultDevice = caps.data?.devices.some((d) => d.device === 'cuda' && d.detected) ? 'cuda' : 'cpu'
+  const defaultDevice = ['cuda', 'mps', 'cpu'].find(device => caps.data?.devices.some(d => d.device === device && d.detected)) ?? 'cpu'
   const form: FormState = { ...edits, paRunId: edits.paRunId || params.get('paRun') || '', device: edits.device || defaultDevice, recipeId: edits.recipeId || taskRecipes[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(requestedVersion) ? requestedVersion : '' }
   const recipe = taskRecipes.find((r) => r.recipe_id === form.recipeId) ?? null
 
@@ -266,21 +268,37 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   return (
     <Stack component="form" spacing={2} onSubmit={onSubmit} noValidate aria-labelledby="form-title" sx={{ maxWidth: 1120, mx: 'auto' }}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
-        <Typography variant="h1" id="form-title">{t(`modelWorkflow.${taskGroup(config?.task ?? task)}`)}</Typography>
+        <Typography variant="h1" id="form-title">{t(`modelWorkflow.${displayGroup}`)}</Typography>
         <Button variant="outlined" size="small" onClick={() => setJsonOpen(true)} disabled={submit.isPending}>{t('json.open')}</Button>
       </Stack>
-      <ExperimentTasks active={config?.task ?? task} dataset={form.datasetId} version={form.dataVersion} compact />
-      <Tabs value={testing ? 'test' : 'train'} aria-label={t('modelWorkflow.mode')}>
+      <ExperimentTasks active={ilcRequested && displayGroup === 'pa' ? 'train_pa' : config?.task ?? task} dataset={form.datasetId} version={form.dataVersion} compact />
+      <Tabs value={ilcRequested ? 'ilc' : testing ? 'test' : 'train'} aria-label={t('modelWorkflow.mode')}>
         {(['train', 'test'] as const).map((mode) => {
-          const nextTask = taskGroup(task) === 'pa' ? (mode === 'train' ? 'train_pa' : 'evaluate_pa') : (mode === 'train' ? 'train_dpd' : 'run_dpd')
+          const nextTask = displayGroup === 'pa' ? (mode === 'train' ? 'train_pa' : 'evaluate_pa') : (mode === 'train' ? 'train_dpd' : 'run_dpd')
           const query = new URLSearchParams({ task: nextTask })
           if (form.datasetId) query.set('dataset', form.datasetId)
           if (form.dataVersion) query.set('version', form.dataVersion)
           return <Tab key={mode} value={mode} label={t(`modelWorkflow.${mode}`)} component={RouterLink} to={`/experiments/new?${query}`} />
         })}
+        <Tab value="ilc" label={t(displayGroup === 'pa' ? 'ilc.title' : 'ilc.benchmark')} component={RouterLink}
+          to={`/experiments/new?task=train_dpd&method=ilc&workspace=${displayGroup}&dataset=${encodeURIComponent(form.datasetId)}${form.dataVersion ? `&version=${encodeURIComponent(form.dataVersion)}` : ''}`} />
       </Tabs>
       {(config?.task === 'evaluate_pa' || config?.task === 'run_dpd' || testing) && <TestingSampleSummary datasetId={config?.dataset.id ?? form.datasetId} version={config?.dataset.preprocessing_version ?? (form.dataVersion || 'raw-v1')} />}
       <WorkflowSteps active={step} labels={[t('workflow.data'), t(testing ? 'workflow.testConfigure' : 'workflow.configure'), t('workflow.review')]} completed={completed} onChange={setStep} canOpen={canOpen} />
+      <Stack sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, '& .MuiButton-root': { flexShrink: 0 } }} direction="row">
+        {step > 0 && <Button startIcon={<ArrowBackIcon />} onClick={() => setStep(step - 1)}>{t('workflow.back')}</Button>}
+        {step < 2 && <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={next} disabled={!canNext}>{t('workflow.next')}</Button>}
+        <Button endIcon={<ArrowForwardIcon />} type="submit" variant="contained" disabled={!canSubmit} sx={{ display: step === 2 ? 'inline-flex' : 'none' }}>
+          {submit.isPending ? t('form.submitting') : t('form.submit')}
+        </Button>
+        <Button component={RouterLink} to="/experiments" variant="text">
+          {t('form.cancel')}
+        </Button>
+        <Typography variant="body2" color="text.secondary" role="status">
+          {checking ? t('form.validating') : report?.ok ? t('form.valid') : ''}
+        </Typography>
+      </Stack>
+      {modelKey === 'ilc_dpd' && <Alert severity="info"><Typography>{t('ilc.help')}</Typography><Typography variant="body2" sx={{ mt: 1 }}>{t('ilc.defaults')}</Typography></Alert>}
       {recipe?.purpose === 'smoke' && !imported && <Alert severity="info">{t('form.smokeBanner')}</Alert>}
       {jsonOpen && <JsonConfigDialog config={config} onClose={() => setJsonOpen(false)} onApply={(edited, label) => { setImportedFile({ config: edited, source: label }); setJsonOpen(false); setStep(0); setConfirmed({}) }} />}
       {imported && (
@@ -444,7 +462,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
               <TextField select fullWidth label={t('form.profile')} value={form.profileId || offeredProfiles(metricProfiles.data)[0]?.profile_id || ''} onChange={set('profileId')} error={issuesFor('profileId').length > 0} helperText={errorText('profileId') || t('form.profile.help')}>
                 {offeredProfiles(metricProfiles.data).map((p) => (
                   <MenuItem key={p.profile_id} value={p.profile_id}>
-                    {p.profile_id} v{p.version}
+                    {profileLabel(p.profile_id)}
                     {p.frozen ? ` · ${t('results.detail.frozen')}` : ''}
                   </MenuItem>
                 ))}
@@ -513,19 +531,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
         </Alert>
       )}
       {submit.isError && <ErrorState error={submit.error} />}
-      <Stack sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, '& .MuiButton-root': { flexShrink: 0 } }} direction="row">
-        {step > 0 && <Button startIcon={<ArrowBackIcon />} onClick={() => setStep(step - 1)}>{t('workflow.back')}</Button>}
-        {step < 2 && <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={next} disabled={!canNext}>{t('workflow.next')}</Button>}
-        <Button type="submit" variant="contained" disabled={!canSubmit} sx={{ display: step === 2 ? 'inline-flex' : 'none' }}>
-          {submit.isPending ? t('form.submitting') : t('form.submit')}
-        </Button>
-        <Button component={RouterLink} to="/experiments" variant="text">
-          {t('form.cancel')}
-        </Button>
-        <Typography variant="body2" color="text.secondary" role="status">
-          {checking ? t('form.validating') : report?.ok ? t('form.valid') : ''}
-        </Typography>
-      </Stack>
+
     </Stack>
   )
 }

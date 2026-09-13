@@ -40,3 +40,7 @@ security, no silent scientific change.
 ## Verification
 
 `tests/unit/test_window.py`, `tests/unit/test_launcher.py` (window mode, fallback, refusal, reuse, CLI flags, doctor); the macOS evidence in `docs/releases/support-matrix.md`.
+
+## 2.2.5 installation update
+
+The default package now includes pywebview and the Studio server. Platform markers select Qt on Linux and native bindings on macOS/Windows. The old extras are compatibility aliases. OS libraries and GPU drivers remain host requirements; the recommended uv workflow selects a compatible PyTorch wheel with `--torch-backend=auto`. SSH sessions receive loopback/port-forward guidance. See [Installation](../../install.md).

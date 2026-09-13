@@ -132,3 +132,7 @@ candidate label: tagging a release is a maintainer decision (S14).
   browser launch.
 - External trial and onboarding measurements (S14).
 - GPU-tier performance and the full benchmark matrix (L4, human-approved).
+
+## 2.2.5 math-rendering boundary
+
+LaTeX uses bundled KaTeX and local fonts. `MathFormula.tsx` is the sole reviewed HTML sink: KaTeX escapes text, limits expansion and size, and trusts only known coefficient classes for interaction. URLs, resource inclusion and arbitrary HTML/style commands remain disabled. `MathFormula.test.tsx` covers malicious TeX/HTML and catalog interaction; the repository scanner continues to reject HTML sinks elsewhere. Existing CSP and tenant boundaries remain in force.

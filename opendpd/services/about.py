@@ -36,14 +36,9 @@ def project_info():
     with _lock:
         if _cache is not None and time.monotonic() - _checked < 300:
             return _cache
-        local_commit = None
-        try:
-            local_commit = subprocess.check_output(["git", "rev-parse", "HEAD"],
-                cwd=Path(__file__).resolve().parents[2], text=True, stderr=subprocess.DEVNULL, timeout=2).strip()
-        except (OSError, subprocess.SubprocessError):
-            pass
+        commit = local_commit()
         base = {"version": __version__, "repository": REPOSITORY, "lab_url": "https://www.tudemi.com/",
-                "local_commit": local_commit, "refresh_seconds": 300, "contributors": [], "commits": [],
+                "local_commit": commit, "refresh_seconds": 300, "contributors": [], "commits": [],
                 "updated_at": None, "status": "unavailable"}
         try:
             with ThreadPoolExecutor(max_workers=2) as pool:
@@ -64,3 +59,15 @@ def project_info():
                       "error": f"GitHub is unavailable ({type(error).__name__}); use the repository links or retry later."}
         _checked = time.monotonic()
         return _cache
+
+
+def local_commit():
+    root = Path(__file__).resolve().parents[2]
+    release = root / "release-commit"
+    if release.is_file():
+        return release.read_text().strip()
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root,
+            text=True, stderr=subprocess.DEVNULL, timeout=2).strip()
+    except (OSError, subprocess.SubprocessError):
+        return None

@@ -45,6 +45,8 @@ def spectrum_groups(traces):
 def spectrum_legend(trace):
     name = trace['name'].lower()
     synthetic = 'synthetic' in trace.get('source', '')
+    if name.startswith('ilc ideal'):
+        return 'ILC Ideal · waveform-specific'
     if trace.get('role') == 'input':
         return 'Input x'
     if trace.get('role') == 'predistorted':

@@ -122,6 +122,19 @@ def test_public_virtual_pa_input_output_and_pairing_are_tenant_scoped(public):
     assert result.json()['dataset']['origin'] == 'synthetic'
     assert not manager.publication_reservations
     assert client.post('/api/v1/pa-library/simulations', json={**config, 'parameters': {'capture_us': 'bad'}}, headers=auth).status_code == 422
+    remove = '/api/v1/signal-generator/signals/' + signal['signal_id']
+    assert client.post(remove + '/archive', json={}, headers=other).status_code in (404, 409)
+    assert client.post(remove + '/archive', json={}, headers=auth).status_code == 200
+    assert client.get('/api/v1/signal-generator/signals', headers=auth).json() == []
+    assert client.get(simulation['paired_csv_url'], headers=auth).status_code == 200
+    assert client.post(remove + '/restore', json={}, headers=other).status_code in (404, 409)
+    assert client.post(remove + '/restore', json={}, headers=auth).status_code == 200
+    assert len(client.get('/api/v1/signal-generator/signals', headers=auth).json()) == 1
+    models = client.get('/api/v1/models', headers=auth).json()
+    recipes = client.get('/api/v1/recipes', headers=auth).json()
+    assert any(model['key'] == 'ilc_dpd' for model in models)
+    assert any(recipe['model']['key'] == 'ilc_dpd' for recipe in recipes)
+
 
 
 def test_hosted_publication_consent_and_quota_preserve_retries(tmp_path):

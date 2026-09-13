@@ -27,6 +27,7 @@ class GeneratorConfig(StrictModel):
     channel_subcarriers: list[int] = Field(default_factory=lambda: [242], min_length=1, max_length=16)
     channel_modulations: list[int] = Field(default_factory=lambda: [64], min_length=1, max_length=16)
     channel_power_db: list[float] = Field(default_factory=lambda: [0.], min_length=1, max_length=16)
+    shared_channel_settings: bool | None = None
     channel_gap_bins: int = Field(default=0, ge=0, le=1024)
     dc_null: bool = True
     pilot_mode: Literal["comb", "explicit", "none"] = "comb"
@@ -70,6 +71,11 @@ class GeneratorConfig(StrictModel):
             raise ValueError("Use BPSK or square QAM orders 4, 16, 64, 256, 1024 or 4096.")
         if any(not math.isfinite(p) or abs(p) > 40 for p in self.channel_power_db):
             raise ValueError("Channel powers must be finite and within ±40 dB.")
+        same = all(len(set(values)) == 1 for values in (self.channel_subcarriers, self.channel_modulations, self.channel_power_db))
+        if self.shared_channel_settings is None:
+            self.shared_channel_settings = same
+        elif self.shared_channel_settings and not same:
+            raise ValueError("Shared OFDMA settings require identical subcarrier counts, modulation and power across channels.")
         if len(set(self.pilot_indices)) != len(self.pilot_indices):
             raise ValueError("Pilot carrier indices must be unique.")
         if self.waveform == "ofdm":

@@ -2,7 +2,7 @@
 
 ## Why did pip install not give me Studio?
 
-The PyPI 2.1.0 release provides the original core API and `opendpd-cli`. Studio is in the 2.2 development preview and currently requires a [source installation](install.md), including a frontend build. Installing an extra named `gui` or `desktop` from the older release does not add that code.
+Install the current package in a fresh Python environment using the [uv quick start](install.md). Version 2.2.5 includes the built Studio frontend, PyTorch and pywebview by default; no Node.js build or extra is needed. Older 2.1 packages do not contain Studio.
 
 ## Which command should I use?
 
@@ -15,7 +15,7 @@ Use the [workspace CLI guide](tutorials/headless-cli.md), [training guide](train
 
 ## Can I upload my own dataset?
 
-The current Studio preview disables dataset upload and displays **Coming soon**. You can use the local [CLI import workflow](tutorials/headless-cli.md#use-your-own-data) or [Python dataset API](api.md). Start the GUI walkthrough with a built-in dataset.
+Yes. Choose **Upload CSV** in Get Started or Datasets and supply paired PA input/output with signal metadata. Generated signals are input-only until PA Library creates a synthetic output. Contributions to the shared collection require explicit submission and human PR review; private datasets stay in the current workspace.
 
 ## Why is a DPD result labeled simulated?
 
@@ -38,3 +38,11 @@ For the current signal and demodulator details, read [Datasets](datasets.md). Fo
 ## Where does the generated PA output come from?
 
 Signal Generator produces x only. In [PA Library](guides/virtual-pa-library.md), choose a mathematical Virtual PA and explicitly simulate y, then create the paired dataset. Both signals are synthetic. To assess a physical device, upload measured pairs or import actual captures through the measured-DPD workflow. PSD charts distinguish DPD output / PA input from PA output; see [signal positions](guides/signal-chain-spectra.md).
+
+## Why does a localhost Studio link refuse the connection?
+
+The launcher must still be running, and `127.0.0.1` refers to the browser's own computer. When a Mac browser connects to Studio launched on a Linux server, use an SSH port forward. A failed automatic browser opener does not stop the service. See [installation troubleshooting](install.md#troubleshooting-connection-refused).
+
+## What did Metric profile mean?
+
+It is the versioned method used to calculate a score: averaging, spectral bands, normalization and reference conventions. The GUI now calls it **Metric calculation** and uses descriptive labels. It remains in Metric definitions because comparing results with different calculation methods is misleading; selecting it does not retrain the model or change the waveform.

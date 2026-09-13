@@ -51,6 +51,7 @@ nav:
       - First Studio experiment: tutorials/gui-quickstart.md
       - Signal Generator: guides/signal-generator.md
       - Virtual PA Library: guides/virtual-pa-library.md
+      - ILC and ILA DPD: guides/ilc-dpd.md
       - Headless CLI: tutorials/headless-cli.md
       - Python examples & Colab: examples.md
   - Core workflow:
@@ -130,6 +131,7 @@ exclude_docs: |
 # Keep the primary navigation focused on the user workflows above.
 not_in_nav: |
   performance/studio-2.2.4.md
+  performance/studio-2.2.5.md
   architecture/**
   community/**
   design/**

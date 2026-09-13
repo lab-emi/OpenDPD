@@ -1,5 +1,15 @@
 # What's new
 
+## 2.2.5: ILC, interactive LaTeX and simpler installation
+
+- ILC + ILA DPD with a separate waveform-specific Ideal test reference, configurable bounds and convergence evidence.
+- LaTeX Virtual PA equations with linked controls, and LaTeX metric definitions.
+- Shared/per-channel OFDMA controls, explicit-only input generation and reversible input removal.
+- Next-step controls above settings; clearer metric calculation labels; About without GitHub activity.
+- Default PyTorch/Studio/pywebview dependencies, uv environment instructions, MPS selection and clearer localhost/SSH diagnostics.
+
+[Release notes](releases/release-notes-2.2.5.md) · [Installation](install.md) · [ILC guide](guides/ilc-dpd.md)
+
 ## 2.2.4: Virtual PA Library and signal-chain PSD views
 
 Signal Generator exports input-only I/Q. PA Library provides nine mathematical Virtual PAs, parameter-linked formulas, explicit output simulation and paired dataset creation. The expandable workflow diagram separates dataset making from PA/DPD model training and recognizes existing paired datasets.

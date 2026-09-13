@@ -7,7 +7,8 @@ The [CI workflow](https://github.com/lab-emi/OpenDPD/actions/workflows/ci.yml) c
 From an activated development environment in the source checkout:
 
 ```bash
-python -m pip install -e ".[dev,gui,desktop]"
+uv venv --python 3.12
+uv pip install --python .venv -e ".[dev]" --torch-backend=auto
 npm --prefix frontend ci
 npm --prefix frontend run build
 python -m pytest tests/ -m "not extended"
@@ -64,3 +65,7 @@ The documentation integration test validates CLI flags and runs real CPU experim
 ├── main.py          # Legacy CLI entry mirrored by opendpd-cli
 └── project.py       # Core configuration & training orchestration
 ```
+
+## Default installation checks
+
+CI installs the default package on Linux, macOS and Windows with uv automatic PyTorch backend selection. `scripts/check_install.py` verifies platform bindings and tensor arithmetic on each available CPU/CUDA/MPS backend. A subprocess regression checks that a failed browser opener leaves the service reachable. This does not claim a native window was manually exercised on all three platforms.

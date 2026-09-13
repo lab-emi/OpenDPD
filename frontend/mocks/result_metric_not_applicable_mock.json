@@ -19,6 +19,7 @@
     "extra": {},
     "generated_at": "2026-09-06T08:00:00Z",
     "history": null,
+    "ilc": null,
     "is_mock": true,
     "limitations": [
       "MOCK DATA for UI development",

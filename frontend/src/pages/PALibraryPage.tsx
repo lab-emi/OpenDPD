@@ -1,3 +1,6 @@
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
+import { api } from '@/api/client'
+import { MathFormula } from '@/components/MathFormula'
 import DownloadIcon from '@mui/icons-material/Download'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -36,9 +39,8 @@ const CATEGORIES = ['reference', 'static', 'memory', 'dynamics', 'architecture']
 const GROUPS = ['gain', 'memory', 'dynamics', 'architecture'] as const
 const validParameter = (p: PAParameter, value: number) => Number.isFinite(value) && value >= p.minimum && value <= p.maximum && (!p.integer || Number.isInteger(value))
 
-/** No formula evaluation or injected markup: only catalog tokens become controls. */
+/** Display-only KaTeX: catalog coefficients become linked controls, never executable formulas. */
 export function PAEquations({ model, active, select }: { model: VirtualPA; active: string; select: (key: string) => void }) {
-  const colors = useStudioColors()
   const scroll = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const box = scroll.current
@@ -49,16 +51,9 @@ export function PAEquations({ model, active, select }: { model: VirtualPA; activ
     if (token.left < area.left || token.right > area.right) box.scrollLeft += token.left - area.left - box.clientWidth / 2 + token.width / 2
   }, [active])
   return <Box ref={scroll} sx={{ overflow: 'auto', py: 1, maxHeight: { md: '22vh' } }} role="region" tabIndex={0} aria-label={t('paLibrary.equations')}>
-    {model.equations.map((equation, index) => <Box key={index} sx={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: { xs: 16, md: 18 }, lineHeight: 2.15, whiteSpace: 'pre', minWidth: 'max-content' }}>
-      {equation.split(/(\{\{\w+\}\})/g).map((token, i) => {
-        const key = /^\{\{(\w+)\}\}$/.exec(token)?.[1]
-        const p = model.parameters.find(entry => entry.key === key)
-        return p ? <ButtonBase key={i} onClick={() => select(p.key)} aria-label={paText(p.label)} aria-pressed={active === p.key}
-          data-testid={'equation-' + p.key} sx={{ font: 'inherit', fontStyle: 'italic', fontWeight: 700, px: .4, mx: .1, borderRadius: .5,
-            color: active === p.key ? 'primary.main' : 'text.primary', bgcolor: active === p.key ? colors.selected : 'transparent',
-            outline: active === p.key ? '1px solid ' + colors.primary : 'none', '&:focus-visible': { outline: '2px solid ' + colors.primary } }}>{p.symbol}</ButtonBase> : <span key={i}>{token}</span>
-      })}
-    </Box>)}
+    {(model.equations_latex?.length ? model.equations_latex : model.equations).map((equation, index) =>
+      <MathFormula key={index} latex={equation} display active={active} onSelect={select}
+        variables={model.parameters.map(p => ({ key: p.key, symbol: p.symbol_latex || p.symbol, label: paText(p.label) }))} />)}
   </Box>
 }
 
@@ -110,6 +105,8 @@ function Library({ models }: { models: VirtualPA[] }) {
   const [inputId, setInputId] = useState(query.get('input') ?? (workflow.state.origin === 'generated' ? workflow.state.inputId ?? '' : ''))
   const [active, setActive] = useState(initialModel.parameters[0]!.key)
   const [error, setError] = useState<unknown>(null)
+  const [removed, setRemoved] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const simulate = useSimulatePA()
   const create = usePairedDataset()
@@ -138,6 +135,9 @@ function Library({ models }: { models: VirtualPA[] }) {
       <Box><Typography variant="overline" color="primary">{t('paLibrary.eyebrow')}</Typography><Typography variant="h1">{t('paLibrary.title')}</Typography></Box>
       <Chip label={t('paLibrary.synthetic')} color="info" variant="outlined" />
     </Stack>
+    {removed && <Alert severity="success" action={<Button disabled={removing} onClick={() => {
+      setRemoving(true); void api.post(`/signal-generator/signals/${removed}/restore`, {}).then(() => { setInputId(removed); setRemoved(null); return inputs.refetch() }).catch(setError).finally(() => setRemoving(false))
+    }}>{t('common.undo')}</Button>}>{t('paInput.removed')}</Alert>}
     <Typography color="text.secondary" sx={{ maxWidth: 980 }}>{t('paLibrary.intro')}</Typography>
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '270px minmax(0, 1fr)' }, gap: 2.5, alignItems: 'start' }}>
       <Paper variant="outlined" sx={{ p: 2 }}><Typography variant="h3" sx={{ mb: 2 }}>{t('paLibrary.chooseModel')}</Typography>
@@ -152,6 +152,31 @@ function Library({ models }: { models: VirtualPA[] }) {
         </Box>)}</Stack>
       </Paper>
       <Stack spacing={2} sx={{ minWidth: 0 }}>
+        <Paper sx={{ p: 2.5 }}><Stack spacing={2}>
+          <Typography variant="h2">{t('paLibrary.feed')}</Typography>
+          {inputs.isPending ? <LoadingState /> : inputs.isError ? <ErrorState error={inputs.error} onRetry={() => void inputs.refetch()} /> :
+            <TextField select fullWidth label={t('paLibrary.input')} value={input ? inputId : ''} disabled={create.isPending || simulate.isPending}
+              onChange={e => { setInputId(e.target.value); simulate.reset(); create.reset() }}>
+              <MenuItem value="" disabled>{t('paLibrary.chooseInput')}</MenuItem>
+              {inputs.data.map(entry => <MenuItem key={entry.signal_id} value={entry.signal_id}>{entry.name} · {formatNumber(entry.n_samples)} I/Q · {(entry.sample_rate_hz / 1e6).toFixed(2)} MHz · {entry.signal_id.slice(3, 11)}</MenuItem>)}
+            </TextField>}
+          {input ? <Typography variant="body2" color="text.secondary">{t('paLibrary.inputSummary', { count: formatNumber(input.n_samples), duration: (1000 * input.n_samples / input.sample_rate_hz).toPrecision(5) })}</Typography>
+            : <Alert severity="info">{t('paLibrary.noInput')}</Alert>}
+          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+            <Button variant="contained" startIcon={<PlayArrowIcon />} endIcon={<ArrowForwardIcon />} onClick={run} disabled={!input || !valid || simulate.isPending || create.isPending}>{t(simulate.isPending ? 'paLibrary.simulating' : 'paLibrary.simulate')}</Button>
+            <Button color="inherit" startIcon={<DeleteOutlineIcon />} disabled={!input || removing || simulate.isPending || create.isPending} onClick={() => {
+              if (!input) return
+              const id = input.signal_id; setRemoving(true)
+              void api.post(`/signal-generator/signals/${id}/archive`, {}).then(() => {
+                setRemoved(id); setInputId(''); simulate.reset(); create.reset(); workflow.reset(); return inputs.refetch()
+              }).catch(setError).finally(() => setRemoving(false))
+            }}>{t('paInput.remove')}</Button>
+            <Button component={RouterLink} to="/signal-generator">{t('paLibrary.generateInput')}</Button>
+          </Stack>
+          {simulate.isPending && <LinearProgress />}
+          {candidate && !preview && !simulate.isPending && <Alert severity="info">{t('paLibrary.stale')}</Alert>}
+          {(simulate.isError || saved.isError || !!error) && <ErrorState error={error || simulate.error || saved.error} />}
+        </Stack></Paper>
         <Paper sx={{ p: { xs: 2, md: 2.5 }, minWidth: 0 }}>
           <Typography variant="h2">{paText(model.name)}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{paText(model.description)}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{paText(model.limitations)}</Typography>
@@ -173,28 +198,10 @@ function Library({ models }: { models: VirtualPA[] }) {
               </Grid>)}</Grid></Box> : null
           })}
         </Paper>
-        <Paper sx={{ p: 2.5 }}><Stack spacing={2}>
-          <Typography variant="h2">{t('paLibrary.feed')}</Typography>
-          {inputs.isPending ? <LoadingState /> : inputs.isError ? <ErrorState error={inputs.error} onRetry={() => void inputs.refetch()} /> :
-            <TextField select fullWidth label={t('paLibrary.input')} value={input ? inputId : ''} disabled={create.isPending || simulate.isPending}
-              onChange={e => { setInputId(e.target.value); simulate.reset(); create.reset() }}>
-              <MenuItem value="" disabled>{t('paLibrary.chooseInput')}</MenuItem>
-              {inputs.data.map(entry => <MenuItem key={entry.signal_id} value={entry.signal_id}>{entry.name} · {formatNumber(entry.n_samples)} I/Q · {(entry.sample_rate_hz / 1e6).toFixed(2)} MHz · {entry.signal_id.slice(3, 11)}</MenuItem>)}
-            </TextField>}
-          {input ? <Typography variant="body2" color="text.secondary">{t('paLibrary.inputSummary', { count: formatNumber(input.n_samples), duration: (1000 * input.n_samples / input.sample_rate_hz).toPrecision(5) })}</Typography>
-            : <Alert severity="info">{t('paLibrary.noInput')}</Alert>}
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-            <Button variant="contained" startIcon={<PlayArrowIcon />} onClick={run} disabled={!input || !valid || simulate.isPending || create.isPending}>{t(simulate.isPending ? 'paLibrary.simulating' : 'paLibrary.simulate')}</Button>
-            <Button component={RouterLink} to="/signal-generator">{t('paLibrary.generateInput')}</Button>
-          </Stack>
-          {simulate.isPending && <LinearProgress />}
-          {candidate && !preview && !simulate.isPending && <Alert severity="info">{t('paLibrary.stale')}</Alert>}
-          {(simulate.isError || saved.isError || !!error) && <ErrorState error={error || simulate.error || saved.error} />}
-        </Stack></Paper>
+
       </Stack>
     </Box>
     {preview && <>
-      <PAOutputPlots result={preview} />
       <Paper sx={{ p: 2.5 }}><Stack spacing={2}>
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
           <Button startIcon={<DownloadIcon />} variant="outlined" disabled={downloading} onClick={() => download(preview.output_csv_url)}>{t('paLibrary.outputCsv')}</Button>
@@ -208,6 +215,7 @@ function Library({ models }: { models: VirtualPA[] }) {
           } })
         }} />
       </Stack></Paper>
+      <PAOutputPlots result={preview} />
     </>}
   </Stack>
 }
@@ -226,6 +234,7 @@ function PairedDatasetForm({ result, allowed, pending, error, onCreate }: { resu
     && Math.min(nTrain, nVal, nTest) >= 256 && n >= 8192
   return <Stack spacing={2} component="form" onSubmit={e => { e.preventDefault(); if (valid && allowed && !pending) onCreate({ dataset_id: id, display_name: name.trim(), guard_samples: g, train_ratio: tr, val_ratio: vr }) }}>
     <Typography variant="h2">{t('paLibrary.pairTitle')}</Typography><Typography color="text.secondary">{t('paLibrary.pairHelp')}</Typography>
+    <Button type="submit" variant="contained" endIcon={<ArrowForwardIcon />} disabled={!allowed || !valid || pending} sx={{ alignSelf: 'flex-start' }}>{t(pending ? 'paLibrary.creating' : 'paLibrary.create')}</Button>
     <Grid container spacing={2}><Grid size={{ xs: 12, md: 6 }}><TextField label={t('paLibrary.datasetId')} fullWidth value={id} disabled={pending} onChange={e => setId(e.target.value)} /></Grid>
       <Grid size={{ xs: 12, md: 6 }}><TextField label={t('paLibrary.datasetName')} fullWidth value={name} disabled={pending} onChange={e => setName(e.target.value)} /></Grid></Grid>
     <Accordion disableGutters variant="outlined"><AccordionSummary expandIcon={<ExpandMoreIcon />}>{t('paLibrary.splits')}</AccordionSummary>
@@ -236,7 +245,7 @@ function PairedDatasetForm({ result, allowed, pending, error, onCreate }: { resu
     <Typography variant="body2">{valid ? t('paLibrary.splitCounts', { train: formatNumber(nTrain), val: formatNumber(nVal), test: formatNumber(nTest) }) : t('paLibrary.splitInvalid')}</Typography>
     {!allowed && <Alert severity="info">{t('paLibrary.importDisabled')}</Alert>}
     {!!error && <ErrorState error={error} />}
-    <Button type="submit" variant="contained" endIcon={<ArrowForwardIcon />} disabled={!allowed || !valid || pending} sx={{ alignSelf: 'flex-start' }}>{t(pending ? 'paLibrary.creating' : 'paLibrary.create')}</Button>
+
   </Stack>
 }
 

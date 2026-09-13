@@ -39,7 +39,7 @@ ROUTES["GET"] += [r"/signal-generator/presets", r"/signal-generator/signals/sg-[
 ROUTES["POST"] += [r"/signal-generator/validate", r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/dataset"]
 ROUTES["GET"] += [r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/(input\.csv|metadata\.json)",
     r"/pa-library/models", r"/pa-library/simulations/vpa-[a-f0-9]{64}(/(output\.csv|paired\.csv|metadata\.json))?"]
-ROUTES["POST"] += [r"/pa-library/simulations", r"/pa-library/simulations/vpa-[a-f0-9]{64}/dataset"]
+ROUTES["POST"] += [r"/signal-generator/signals/sg-[a-f0-9]{64}/(archive|restore)", r"/pa-library/simulations", r"/pa-library/simulations/vpa-[a-f0-9]{64}/dataset"]
 
 
 def reject(status: int, code: str, message: str):
@@ -132,6 +132,13 @@ def check_config(config: ExperimentConfig):
     if config.evaluation.chunk_samples and config.evaluation.chunk_samples > 65536:
         reject(422, "compute_limit", "chunk_samples must be at most 65536")
     model = get_model(config.model.key)
+    if model.key == "ilc_dpd":
+        from opendpd.core.registry import validate_parameters
+        params = validate_parameters(model.key, config.model.parameters, "dpd")
+        for name, maximum in {"K": 9, "Q": 16, "iterations": 60, "fit_samples": 32768, "backtracking_steps": 6}.items():
+            if params[name] > maximum:
+                reject(422, "compute_limit", f"ILC {name} must be at most {maximum} in the public app")
+        return
     if model.status != "supported" or model.training_method != "gradient":
         reject(422, "compute_limit", "the public demo currently supports reviewed neural models only")
     params = {**model.defaults(), **config.model.parameters}

@@ -145,3 +145,24 @@ def test_test_counts_use_selected_version_boundaries(tmp_path):
     ws.save_dataset(ds.model_copy(update={"versions": [*ds.versions, DatasetVersion(version="cropped-v1", n_samples=12500, split=split)]}))
     assert sample_counts(ws, "counts", "cropped-v1").counts["test"] == 3244
     assert sample_counts(ws, "counts", "raw-v1").counts["test"] != 3244
+
+
+def test_shared_channel_settings_validate_and_preserve_individual_allocations():
+    c=GeneratorConfig(channel_subcarriers=[26,26],channel_modulations=[64,64],channel_power_db=[0,0])
+    assert c.shared_channel_settings is True
+    with pytest.raises(ValidationError,match='Shared OFDMA'):
+        GeneratorConfig(channel_subcarriers=[26,52],channel_modulations=[64,16],channel_power_db=[0,-3],shared_channel_settings=True)
+    c=GeneratorConfig(channel_subcarriers=[26,52],channel_modulations=[64,16],channel_power_db=[0,-3],shared_channel_settings=False)
+    _,a=synthesize(c)
+    assert [row['modulation_order'] for row in a.allocation]==[64,16]
+
+
+def test_archive_is_reversible_and_preserves_simulation_source(tmp_path):
+    from opendpd.services.signal_generator import archive_input,list_inputs
+    ws=Workspace.create(tmp_path/'ws')
+    signal=generate(ws,GeneratorConfig(n_samples=512))
+    archive_input(ws,signal.signal_id)
+    assert list_inputs(ws)==[]
+    assert read_signal(ws,signal.signal_id).iq_sha256==signal.iq_sha256
+    archive_input(ws,signal.signal_id,restore=True)
+    assert list_inputs(ws)[0].signal_id==signal.signal_id

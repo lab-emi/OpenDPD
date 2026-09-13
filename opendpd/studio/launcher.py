@@ -125,7 +125,7 @@ def choose_port(requested: Optional[int]) -> int:
 
 def probe(url: str, timeout: float = 1.0) -> Optional[dict]:
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:   # noqa: S310 - loopback only
+        with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(url, timeout=timeout) as resp:   # noqa: S310 - loopback only
             return json.loads(resp.read().decode("utf-8") or "{}")
     except Exception:  # noqa: BLE001 - not up yet / connection refused
         return None
@@ -346,7 +346,9 @@ def _launch_locked(workspace: Path, *, port: Optional[int], surface: str, out, s
             return
         _print_ready(chosen, url, out, stop_hint="Press Ctrl+C to stop.")
         if surface == "browser" and not open_browser(url, opener):
-            print("could not open a browser (no desktop session?); open the URL above yourself", file=out)
+            print("No browser could be opened here; Studio is still running. Open the URL on this computer, "
+                  "or use an SSH port forward from another computer.", file=out)
+            _flush(out)
 
     threading.Thread(target=after_ready, name="opendpd-launcher", daemon=True).start()
     _sigterm_as_keyboard_interrupt()
@@ -372,6 +374,11 @@ def _print_ready(port: int, url: str, out, stop_hint: str) -> None:
         print(f"warning: {problem}", file=out)
     print(f"OpenDPD Studio: {url}", file=out)
     print(stop_hint, file=out)
+    print("This address is local to the computer running OpenDPD. Keep this terminal running.", file=out)
+    if os.environ.get("SSH_CONNECTION") or os.environ.get("SSH_TTY"):
+        print(f"SSH session detected. On the computer with your browser, forward this port:\n"
+              f"  ssh -N -L {port}:127.0.0.1:{port} USER@SERVER\n"
+              "Replace USER@SERVER with this SSH destination, then open the printed URL there.", file=out)
     _flush(out)
 
 

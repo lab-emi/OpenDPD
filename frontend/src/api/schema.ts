@@ -1433,6 +1433,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signal-generator/signals/{signal_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive */
+        post: operations["archive_api_v1_signal_generator_signals__signal_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signal-generator/signals/{signal_id}/dataset": {
         parameters: {
             query?: never;
@@ -1498,6 +1515,23 @@ export interface paths {
         get: operations["metadata_api_v1_signal_generator_signals__signal_id__metadata_json_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/signals/{signal_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore */
+        post: operations["restore_api_v1_signal_generator_signals__signal_id__restore_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1952,7 +1986,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "surrogate_without_dpd" | "measured_without_dpd";
+            kind: "surrogate_without_dpd" | "measured_without_dpd" | "ilc_ideal";
             /** Metrics */
             metrics: components["schemas"]["MetricValue"][];
         };
@@ -2907,6 +2941,10 @@ export interface components {
              */
             generated_at?: string;
             history?: components["schemas"]["FileRef"] | null;
+            /** Ilc */
+            ilc?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Is Mock
              * @default false
@@ -3614,6 +3652,8 @@ export interface components {
              * @default 42
              */
             seed: number;
+            /** Shared Channel Settings */
+            shared_channel_settings?: boolean | null;
             /** Snr Db */
             snr_db?: number | null;
             /**
@@ -4498,7 +4538,7 @@ export interface components {
             /** Run Id */
             run_id?: string | null;
             /** Training Path */
-            training_path?: ("gradient" | "gradient_dla" | "least_squares" | "ila_least_squares") | null;
+            training_path?: ("gradient" | "gradient_dla" | "least_squares" | "ila_least_squares" | "ilc_ila") | null;
             /** Weights Sha256 */
             weights_sha256?: string | null;
         };
@@ -4656,6 +4696,11 @@ export interface components {
             step: number;
             /** Symbol */
             symbol: string;
+            /**
+             * Symbol Latex
+             * @default
+             */
+            symbol_latex: string;
             /**
              * Unit
              * @default
@@ -5389,7 +5434,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.4
+             * @default 2.2.5
              */
             version: string;
         };
@@ -6086,6 +6131,8 @@ export interface components {
             description: components["schemas"]["PALocalizedText"];
             /** Equations */
             equations: string[];
+            /** Equations Latex */
+            equations_latex?: string[];
             limitations: components["schemas"]["PALocalizedText"];
             /** Model Id */
             model_id: string;
@@ -8913,6 +8960,37 @@ export interface operations {
             };
         };
     };
+    archive_api_v1_signal_generator_signals__signal_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dataset_api_v1_signal_generator_signals__signal_id__dataset_post: {
         parameters: {
             query?: never;
@@ -9028,6 +9106,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_api_v1_signal_generator_signals__signal_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PAInputDataset"];
                 };
             };
             /** @description Validation Error */
@@ -9323,7 +9432,9 @@ export interface operations {
     };
     system_about_api_v1_system_about_get: {
         parameters: {
-            query?: never;
+            query?: {
+                activity?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9339,6 +9450,15 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

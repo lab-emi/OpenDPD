@@ -16,7 +16,7 @@ from typing import Dict, Mapping, Optional, Tuple
 
 import numpy as np
 
-POLYNOMIAL_KEYS = ("mp_ls", "gmp_ls")
+POLYNOMIAL_KEYS = ("mp_ls", "gmp_ls", "ilc_dpd")
 MEMORY_BUDGET_BYTES = 3 << 30        # the full basis is held in memory for the solve (complex128)
 
 
@@ -63,7 +63,7 @@ def gmp_basis(x: np.ndarray, Ka: int, La: int, Kb: int, Lb: int, Mb: int, Kc: in
 
 def coefficient_count(key: str, params: Mapping[str, object]) -> int:
     p = {k: int(v) for k, v in params.items() if k != "rcond"}
-    if key == "mp_ls":
+    if key in ("mp_ls", "ilc_dpd"):
         return p["K"] * p["Q"]
     if key == "gmp_ls":
         return p["Ka"] * p["La"] + p["Kb"] * p["Lb"] * p["Mb"] + p["Kc"] * p["Lc"] * p["Mc"]
@@ -78,7 +78,7 @@ def lookahead_samples(key: str, params: Mapping[str, object]) -> int:
 def context_samples(key: str, params: Mapping[str, object]) -> int:
     """Past samples a model reads (its memory): what a split guard must cover."""
     p = {k: int(v) for k, v in params.items() if k != "rcond"}
-    if key == "mp_ls":
+    if key in ("mp_ls", "ilc_dpd"):
         return p["Q"]
     if key == "gmp_ls":
         return max(p["La"], p["Lb"] + p["Mb"] if p["Kb"] > 0 else 0, p["Lc"])
@@ -87,7 +87,7 @@ def context_samples(key: str, params: Mapping[str, object]) -> int:
 
 def basis(key: str, params: Mapping[str, object], x: np.ndarray) -> np.ndarray:
     p = {k: int(v) for k, v in params.items() if k != "rcond"}
-    if key == "mp_ls":
+    if key in ("mp_ls", "ilc_dpd"):
         return mp_basis(x, p["K"], p["Q"])
     if key == "gmp_ls":
         return gmp_basis(x, **p)
@@ -174,7 +174,7 @@ class PolynomialModel:
             def __init__(self) -> None:
                 super().__init__()
                 self.key = key
-                self.params = {k: (float(v) if k == "rcond" else int(v)) for k, v in params.items()}
+                self.params = {k: (float(v) if k == "rcond" else int(v)) for k, v in params.items() if key != "ilc_dpd" or k in {"K", "Q", "rcond"}}
                 p = coefficient_count(key, self.params)
                 init = torch.zeros(p, dtype=torch.complex128) if coefficients is None \
                     else torch.as_tensor(np.asarray(coefficients, dtype=np.complex128))
@@ -186,9 +186,20 @@ class PolynomialModel:
             def n_real_parameters(self) -> int:
                 return 2 * int(self.coefficients.numel())
 
+            def _apply(self, fn, recurse=True):
+                # NumPy evaluates the polynomial in CPU complex128. Keep its
+                # checkpoint buffer there even when the surrounding PA cascade
+                # moves to CUDA/MPS (MPS does not support float64/complex128).
+                coefficients = self._buffers.pop("coefficients")
+                try:
+                    return super()._apply(fn, recurse=recurse)
+                finally:
+                    self._buffers["coefficients"] = coefficients
+
             def forward(self, x, h_0=None):
                 # x: (batch, frame, 2) float; every frame is one segment (delays reset), like the legacy loaders
-                xc = torch.complex(x[..., 0].to(torch.float64), x[..., 1].to(torch.float64)).cpu().numpy()
+                cpu = x.detach().to(device="cpu", dtype=torch.float64)
+                xc = torch.complex(cpu[..., 0], cpu[..., 1]).numpy()
                 out = np.empty_like(xc)
                 w = self.coefficients.cpu().numpy()
                 for i in range(xc.shape[0]):

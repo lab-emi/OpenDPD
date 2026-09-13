@@ -1,7 +1,7 @@
 {
   "name": "opendpd-studio",
   "private": true,
-  "version": "2.2.4",
+  "version": "2.2.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -22,6 +22,7 @@
     "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.4.0",
     "@tanstack/react-query": "^5.102.8",
+    "katex": "^0.18.7",
     "plotly.js-basic-dist-min": "4.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
