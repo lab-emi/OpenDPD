@@ -62,6 +62,14 @@ interface PlotlyModule extends PlotInteractionApi {
 
 let svgPromise: Promise<PlotlyModule> | null = null
 let webGLPromise: Promise<PlotlyModule> | null = null
+// Plotly shares text measurement/layout work across charts. Finish a chart and
+// attach its controls before starting the next, instead of making every chart
+// wait for a burst of sibling renders before it becomes interactive.
+let drawing: Promise<unknown> = Promise.resolve()
+function drawInTurn(draw: () => Promise<void>) {
+  drawing = drawing.catch(() => undefined).then(draw)
+  return drawing
+}
 /** Load the offline strict scatter build only for dense markers; preserve the app's CSP. */
 function loadPlotly(accelerated: boolean): Promise<PlotlyModule> {
   if (accelerated) {
@@ -151,7 +159,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
     const accelerated = denseMarkers && supportsWebGL()
     // Serialize source/layout changes with the previous draw of this instance.
     rendering.current = rendering.current.catch(() => undefined).then(() => loadPlotly(accelerated))
-      .then(async (Plotly) => {
+      .then((Plotly) => drawInTurn(async () => {
         if (cancelled) return
         if (library.current && library.current !== Plotly) library.current.purge(el)
         library.current = Plotly
@@ -216,7 +224,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
           observer.observe(el)
         }
         onRenderedRef.current?.(performance.now() - started)
-      })
+      }))
       .catch((err: unknown) => { if (!cancelled) setFailed(err instanceof Error ? err.message : String(err)) })
     return () => {
       cancelled = true

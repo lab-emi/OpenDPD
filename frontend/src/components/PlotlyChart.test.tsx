@@ -29,6 +29,20 @@ beforeEach(() => {
 
 const traces: PlotTrace[] = [{ x: [0, 1, 2], y: [2, 3, 4] }]
 
+test('a chart becomes interactive before the next sibling draws, and a failed draw does not block it', async () => {
+  let fail!: (error: Error) => void
+  api.react.mockImplementationOnce(() => new Promise<void>((_resolve, reject) => { fail = reject }))
+  const completed = vi.fn()
+  render(<><PlotlyChart title="first" traces={traces} /><PlotlyChart title="second" traces={traces} onRendered={completed} /></>)
+  await waitFor(() => expect(api.react).toHaveBeenCalledTimes(1))
+  expect(completed).not.toHaveBeenCalled()
+  await act(async () => fail(new Error('first draw failed')))
+  await waitFor(() => expect(completed).toHaveBeenCalledTimes(1))
+  expect(api.react).toHaveBeenCalledTimes(2)
+  fireEvent.keyDown(screen.getByRole('figure', { name: 'second' }), { key: '+' })
+  await waitFor(() => expect(api.relayout).toHaveBeenCalledTimes(1))
+})
+
 test('changing appearance repaints an existing chart without clearing its data or manual viewport', async () => {
   const { rerender } = render(<ThemeProvider theme={themeFor('en', 'light')}><PlotlyChart title="signal" traces={traces} viewKey="a" /></ThemeProvider>)
   await waitFor(() => expect(api.react).toHaveBeenCalledTimes(1))

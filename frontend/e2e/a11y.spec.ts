@@ -87,6 +87,7 @@ test.describe('keyboard-only journey', () => {
   test('page reset returns focus and global reset keeps focus in the new guide', async ({ page }) => {
     await installFakeApi(page)
     await page.goto('/experiments')
+    await expect(page.getByRole('button', { name: 'Reset page', exact: true })).toBeVisible()
     await tabTo(page, /^Reset page$/)
     await page.keyboard.press('Enter')
     await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused()
