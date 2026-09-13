@@ -784,5 +784,11 @@
   "form.preview.batches": "预览间隔 batch 数",
   "form.preview.warning": "频繁按 batch 预览可能严重影响训练速度。每次预览都会额外执行推理和绘图计算。",
   "live.cadence.epoch": "绘图每个 epoch 更新一次。",
-  "live.cadence.batch": "绘图每 {batches} 个 batch 及 epoch 结束时更新。"
+  "live.cadence.batch": "绘图每 {batches} 个 batch 及 epoch 结束时更新。",
+  "bugs.report": "报告问题",
+  "bugs.help": "在这里描述问题，然后前往 GitHub 检查并提交新 Issue。你可以在那里添加截图。",
+  "bugs.description": "问题描述",
+  "bugs.placeholder": "发生了什么？预期结果是什么？如何复现？",
+  "bugs.tooLong": "描述太长，无法完整传递。请缩短内容，再到 GitHub 补充其余细节。",
+  "bugs.continue": "前往 GitHub"
 }

@@ -24,6 +24,7 @@ import { useCapabilities, useRun, useRuns } from '@/api/hooks'
 import { WEB_MODE, type WebSessionInfo } from '@/api/client'
 import { LanguageMenu } from '@/components/LanguageMenu'
 import { ResetButton } from '@/components/ResetButton'
+import { ReportBugsButton } from '@/components/ReportBugsButton'
 import { StudioLogo } from '@/components/StudioLogo'
 import { ExperimentTerminal } from '@/components/ExperimentTerminal'
 import { isExperimentTask } from '@/components/ExperimentTasks'
@@ -73,7 +74,7 @@ export function AppShell() {
   }
   const count = running.data?.length ?? 0
   const wideNavigation = useMediaQuery('(min-width: 900px)')
-  const compactToolbar = useMediaQuery('(max-width: 899px)')
+  const compactToolbar = useMediaQuery('(max-width: 1099px)')
   const width = { xs: 64, md: tokens.layout.navWidth }
   const active = (to: string) => to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`) || (to === '/experiments' && pathname.startsWith('/runs/'))
   const current = NAV.find(({ to }) => active(to))
@@ -110,12 +111,13 @@ export function AppShell() {
       </Drawer>
       <AppBar position="fixed" color="default" elevation={0} sx={{ width: { xs: 'calc(100% - 64px)', md: `calc(100% - ${tokens.layout.navWidth}px)` }, border: 0, borderBottom: `1px solid ${colors.border}`, bgcolor: 'background.paper' }}>
         <Toolbar sx={{ minHeight: '56px !important', gap: { xs: .5, sm: 1, lg: 1.5 }, px: { xs: '8px !important', sm: '16px !important', lg: '20px !important' } }}>
-          <Typography variant="body2" noWrap sx={{ fontWeight: 600, minWidth: 0 }}>{current ? t(current.key) : t('app.title')}</Typography>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 600, minWidth: 0, display: { xs: 'none', sm: 'block' } }}>{current ? t(current.key) : t('app.title')}</Typography>
           <Box sx={{ height: 16, borderLeft: `1px solid ${colors.border}`, display: { xs: 'none', lg: 'block' } }} />
           <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 380, minWidth: 0, display: { xs: 'none', lg: 'block' } }} title={caps.data?.workspace}>
             {caps.data?.workspace.split(/[\\/]/).filter(Boolean).at(-1) ?? '…'}
           </Typography>
           <Box sx={{ flex: 1 }} />
+          <ReportBugsButton compact={compactToolbar} />
           <ResetButton compact={compactToolbar} disabled={mutating} detail={resetDetail} onReset={() => reset(false)} />
           <ResetButton compact={compactToolbar} scope="studio" disabled={mutating} onReset={() => reset(true)} />
           <Chip size="small" sx={{ display: { xs: 'none', sm: 'flex' }, flexShrink: 0 }} color={count > 0 ? 'info' : 'default'} variant="outlined" label={count > 0 ? t('topbar.nowRunning', { count }) : t('topbar.idle')} data-testid="now-running" />

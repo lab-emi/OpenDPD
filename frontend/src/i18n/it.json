@@ -784,5 +784,11 @@
   "form.preview.batches": "Batch tra le anteprime",
   "form.preview.warning": "Anteprime frequenti possono rallentare molto l’addestramento. Ogni anteprima richiede inferenza e calcoli grafici aggiuntivi.",
   "live.cadence.epoch": "I grafici si aggiornano una volta per epoca.",
-  "live.cadence.batch": "I grafici si aggiornano ogni {batches} batch e alla fine dell’epoca."
+  "live.cadence.batch": "I grafici si aggiornano ogni {batches} batch e alla fine dell’epoca.",
+  "bugs.report": "Segnala bug",
+  "bugs.help": "Descrivi qui il problema, poi continua su GitHub per controllare e inviare la nuova issue. Potrai aggiungere screenshot lì.",
+  "bugs.description": "Descrizione del bug",
+  "bugs.placeholder": "Che cosa è successo? Che cosa ti aspettavi? Come possiamo riprodurre il problema?",
+  "bugs.tooLong": "La descrizione è troppo lunga da trasferire. Accorciala, poi aggiungi gli altri dettagli su GitHub.",
+  "bugs.continue": "Continua su GitHub"
 }

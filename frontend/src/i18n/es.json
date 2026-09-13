@@ -784,5 +784,11 @@
   "form.preview.batches": "Lotes entre vistas previas",
   "form.preview.warning": "Las vistas previas frecuentes pueden ralentizar mucho el entrenamiento. Cada una requiere inferencia y cálculos gráficos adicionales.",
   "live.cadence.epoch": "Los gráficos se actualizan una vez por época.",
-  "live.cadence.batch": "Los gráficos se actualizan cada {batches} lotes y al final de la época."
+  "live.cadence.batch": "Los gráficos se actualizan cada {batches} lotes y al final de la época.",
+  "bugs.report": "Informar de errores",
+  "bugs.help": "Describe el problema aquí y continúa en GitHub para revisar y enviar tu nueva incidencia. Allí puedes añadir capturas de pantalla.",
+  "bugs.description": "Descripción del error",
+  "bugs.placeholder": "¿Qué ocurrió? ¿Qué esperabas? ¿Cómo podemos reproducirlo?",
+  "bugs.tooLong": "La descripción es demasiado larga para transferirla. Acórtala y añade los demás detalles en GitHub.",
+  "bugs.continue": "Continuar en GitHub"
 }

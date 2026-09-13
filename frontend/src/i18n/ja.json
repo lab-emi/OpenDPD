@@ -784,5 +784,11 @@
   "form.preview.batches": "プレビュー間のバッチ数",
   "form.preview.warning": "バッチごとの頻繁なプレビューは学習を大幅に遅くする可能性があります。毎回、追加の推論とプロット計算を行います。",
   "live.cadence.epoch": "プロットはエポックごとに更新されます。",
-  "live.cadence.batch": "{batches} バッチごととエポック終了時に更新されます。"
+  "live.cadence.batch": "{batches} バッチごととエポック終了時に更新されます。",
+  "bugs.report": "バグを報告",
+  "bugs.help": "ここで問題を説明し、GitHub で新しい Issue を確認して送信してください。スクリーンショットもそこで追加できます。",
+  "bugs.description": "バグの説明",
+  "bugs.placeholder": "何が起きましたか？期待した結果は何ですか？再現手順を教えてください。",
+  "bugs.tooLong": "説明が長すぎて転送できません。短くしてから、残りの詳細を GitHub で追加してください。",
+  "bugs.continue": "GitHub に進む"
 }

@@ -1,5 +1,6 @@
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
+import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
@@ -9,6 +10,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { WEB_MODE, bootstrapSession, clearWebSession, createWebSession, loadSession } from '@/api/client'
 import { t } from '@/i18n'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
+import { ReportBugsButton } from '@/components/ReportBugsButton'
 
 /** Renders children only with a valid local session; otherwise explains how to get one. */
 export function SessionGate({ children }: { children: ReactNode }) {
@@ -34,11 +36,13 @@ export function SessionGate({ children }: { children: ReactNode }) {
   }, [qc, expiresAt])
 
   if (session.isPending) return <LoadingState />
-  if (session.isError) return <ErrorState error={session.error} onRetry={() => void session.refetch()} />
+  const reportBugs = <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}><ReportBugsButton /></Box>
+  if (session.isError) return <Stack sx={{ maxWidth: 560, mx: 'auto', p: 3 }} spacing={2}>{reportBugs}<ErrorState error={session.error} onRetry={() => void session.refetch()} /></Stack>
   if (session.data.authenticated) return <>{children}</>
 
   if (WEB_MODE) return <Paper sx={{ maxWidth: 560, mx: 'auto', my: '10vh', p: 3 }}>
     <Stack spacing={2}>
+      {reportBugs}
       <Typography variant="h1">{t('web.welcome')}</Typography>
       <Typography>{t('web.description')}</Typography>
       <Alert severity="info">{t('web.temporary')}</Alert>
@@ -70,6 +74,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   return (
     <Paper component="form" onSubmit={(e) => void submit(e)} sx={{ maxWidth: 560, m: '10vh auto', p: 3 }}>
       <Stack spacing={2}>
+        {reportBugs}
         <Typography variant="h1">{t('session.required.title')}</Typography>
         <Typography>{t('session.required.body')}</Typography>
         {invalid && <Alert severity="error">{t('session.token.invalid')}</Alert>}

@@ -784,5 +784,11 @@
   "form.preview.batches": "Batches tussen voorbeelden",
   "form.preview.warning": "Frequente batchvoorbeelden kunnen de training ernstig vertragen. Elk voorbeeld vereist extra inferentie en grafiekberekeningen.",
   "live.cadence.epoch": "Grafieken worden eenmaal per epoch bijgewerkt.",
-  "live.cadence.batch": "Grafieken worden elke {batches} batches en aan het einde van de epoch bijgewerkt."
+  "live.cadence.batch": "Grafieken worden elke {batches} batches en aan het einde van de epoch bijgewerkt.",
+  "bugs.report": "Bugs melden",
+  "bugs.help": "Beschrijf het probleem hier en ga verder op GitHub om je nieuwe issue te controleren en in te dienen. Daar kun je screenshots toevoegen.",
+  "bugs.description": "Beschrijving van de bug",
+  "bugs.placeholder": "Wat gebeurde er? Wat verwachtte je? Hoe kunnen we dit reproduceren?",
+  "bugs.tooLong": "Deze beschrijving is te lang om over te nemen. Kort de tekst in en voeg de rest toe op GitHub.",
+  "bugs.continue": "Verder op GitHub"
 }
