@@ -129,6 +129,8 @@ class DatasetManifest(StrictModel):
     raw_sha256: Optional[Sha256] = None
     versions: List[DatasetVersion] = Field(default_factory=list)   # empty for built-ins: raw/ is the split dir
     notes: Optional[str] = None
+    # Exact generator inputs and assumptions. Never a physical acquisition.
+    simulation: Optional[Dict[str, object]] = Field(default=None, exclude_if=lambda value: value is None)
 
     def version(self, name: str) -> Optional[DatasetVersion]:
         return next((v for v in self.versions if v.version == name), None)
@@ -138,6 +140,8 @@ class DatasetManifest(StrictModel):
 
     @model_validator(mode="after")
     def _synthetic_must_say_so(self) -> "DatasetManifest":
+        if self.simulation is not None and self.origin != DatasetOrigin.synthetic:
+            raise ValueError("simulation provenance requires synthetic origin")
         if self.origin == DatasetOrigin.synthetic and "synthetic" not in self.display_name.lower():
             raise ValueError("synthetic datasets must carry 'synthetic' in their display name")
         return self

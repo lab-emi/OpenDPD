@@ -210,7 +210,7 @@ class Base_GRUQuantEnv(object):
         use_pretrained = bool(pretrained_model)
         
         if use_pretrained:
-            state_dict = torch.load(pretrained_model, map_location='cpu')
+            state_dict = torch.load(pretrained_model, map_location='cpu', weights_only=True)
             model.load_state_dict(convert_gru_state_dict(state_dict))
             print("Load pretrained model from {}".format(pretrained_model))
         else:

@@ -127,7 +127,7 @@ def _artifacts_in_package(path: Path, prefix: str, present: set) -> Tuple[bytes,
     return payload.encode("utf-8"), [a.artifact_id for a in dropped]
 
 
-def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", language: str = "en") -> PackageManifest:
+def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", language: str = "en", include_builtin_data: bool = False) -> PackageManifest:
     """Write ``out`` (a zip) for ``run_id``. ``kind`` is ``full`` (private, complete) or ``share`` (redacted)."""
     if kind not in ("full", "share"):
         raise PackageError("invalid_kind", f"package kind must be full or share, not '{kind}'")
@@ -169,6 +169,12 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", la
         ref_ids.append((resolved.pa_reference.run_id, "pa_surrogate"))
     if resolved.dpd_reference is not None:
         ref_ids.append((resolved.dpd_reference.run_id, "dpd_model"))
+    if resolved.initialization is not None:
+        ref_ids.append((resolved.initialization.run_id, "initial_weights"))
+    if resolved.quantization and resolved.quantization.enabled and resolved.quantization.pretrained_run_id:
+        ref_ids.append((resolved.quantization.pretrained_run_id, "qat_float_pretraining"))
+    # A checkpoint may serve more than one role; one physical reference copy is enough.
+    ref_ids = list({ref_id: (ref_id, role) for ref_id, role in ref_ids}.values())
     for ref_id, role in ref_ids:
         ref_manifest = experiments.load_artifacts(ws, ref_id)
         ckpt = ref_manifest.by_kind(ArtifactKind.checkpoint)[0] if ref_manifest else None
@@ -186,7 +192,7 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", la
         references.append(PackageReference(run_id=ref_id, role=role, checkpoint_sha256=ckpt.file.sha256))
 
     builtin = dataset.source.kind == DatasetSourceKind.builtin
-    include_data = not share and not builtin
+    include_data = not share and (not builtin or include_builtin_data)
     rewritten["dataset/manifest.json"] = _redacted_json(ws.dataset_dir(dataset.dataset_id) / "manifest.json", secrets,
                                                         drop_original_path=share)
     if share:
@@ -200,7 +206,7 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", la
         for base in wanted:
             for path in _walk(base):
                 members.append((f"dataset/{path.relative_to(data_dir).as_posix()}", path))
-    if builtin:
+    if builtin and not include_data:
         how = (f"built-in dataset '{dataset.source.name}' ships with every OpenDPD install; the importer registers it "
                f"and checks its raw sha256 {dataset.raw_sha256}")
     elif include_data:
@@ -405,7 +411,7 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
         missing: List[str] = list(manifest.missing)
         if existing is not None:
             dataset_status = "existing"
-        elif ds.source_kind == DatasetSourceKind.builtin and ds.builtin_name:
+        elif ds.source_kind == DatasetSourceKind.builtin and ds.builtin_name and not ds.included:
             registered = ws.register_builtin_dataset(ds.builtin_name, ds.dataset_id)
             if registered.raw_sha256 != ds.raw_sha256:
                 shutil.rmtree(ws.dataset_dir(ds.dataset_id), ignore_errors=True)

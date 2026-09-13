@@ -12,8 +12,10 @@
         "incompatibilities": [
           "evidence type: pa_modeling vs dpd_surrogate",
           "reference kind: measured_pa_output vs linear_gain_target",
+          "reference rule: none vs max|y_train| / max|x_train| (legacy set_target_gain)",
           "reference gain: none vs 1.0273",
-          "PA surrogate: n/a vs aaaaaaaaaaaa"
+          "PA surrogate: n/a vs aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "valid sample range: (0, 7680) vs None"
         ]
       }
     ],
@@ -30,6 +32,7 @@
           "split_version": "contiguous-v1"
         },
         "device": "cpu",
+        "evaluated_signal": null,
         "evidence_type": "pa_modeling",
         "execution": null,
         "extra": {},
@@ -117,6 +120,7 @@
           "kind": "measured_pa_output"
         },
         "result_id": "res-pa-0001",
+        "rf_conditions": null,
         "run_id": "run-pa-0001",
         "scaling": null,
         "schema_version": 1,
@@ -243,6 +247,7 @@
           "split_version": "contiguous-v1"
         },
         "device": "cpu",
+        "evaluated_signal": null,
         "evidence_type": "dpd_surrogate",
         "execution": null,
         "extra": {},
@@ -341,6 +346,7 @@
           "kind": "linear_gain_target"
         },
         "result_id": "res-dpd-0001",
+        "rf_conditions": null,
         "run_id": "run-dpd-0001",
         "scaling": {
           "amplitude_units": "normalized",

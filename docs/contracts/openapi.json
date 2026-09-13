@@ -148,6 +148,164 @@
         "title": "AdaptationCell",
         "type": "object"
       },
+      "AdaptationEntry": {
+        "additionalProperties": false,
+        "description": "A method: a PA model, or a DPD model that goes through the PA entry's model of the same condition and seed.",
+        "properties": {
+          "entry_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelSpec"
+          },
+          "pa_entry": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pa Entry"
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
+          },
+          "task": {
+            "enum": [
+              "train_pa",
+              "train_dpd"
+            ],
+            "title": "Task",
+            "type": "string"
+          },
+          "training": {
+            "$ref": "#/components/schemas/TrainingConfig"
+          }
+        },
+        "required": [
+          "entry_id",
+          "task",
+          "model",
+          "training"
+        ],
+        "title": "AdaptationEntry",
+        "type": "object"
+      },
+      "AdaptationPlan": {
+        "additionalProperties": false,
+        "description": "Pre-registered: ``plan_sha256`` covers everything but ``created_at`` and itself.",
+        "properties": {
+          "budgets": {
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1,
+            "title": "Budgets",
+            "type": "array"
+          },
+          "condition_set": {
+            "$ref": "#/components/schemas/ConditionSet"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "device": {
+            "default": "cpu",
+            "title": "Device",
+            "type": "string"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/AdaptationEntry"
+            },
+            "minItems": 1,
+            "title": "Entries",
+            "type": "array"
+          },
+          "metric_profile_id": {
+            "default": "legacy-opendpd-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Metric Profile Id",
+            "type": "string"
+          },
+          "plan_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Sha256"
+          },
+          "protocol_id": {
+            "const": "conditions-v1",
+            "default": "conditions-v1",
+            "title": "Protocol Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "seeds": {
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1,
+            "title": "Seeds",
+            "type": "array"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetRule"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tasks": {
+            "items": {
+              "enum": [
+                "zero_update",
+                "few_shot",
+                "full_retrain"
+              ],
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Tasks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "condition_set",
+          "entries"
+        ],
+        "title": "AdaptationPlan",
+        "type": "object"
+      },
       "AdaptationReport": {
         "additionalProperties": false,
         "properties": {
@@ -358,6 +516,66 @@
         "title": "AdaptationReportSummary",
         "type": "object"
       },
+      "AlignmentDiagnostic": {
+        "additionalProperties": false,
+        "description": "An ablation on the same retained samples; these are diagnostics, not profile metrics.",
+        "properties": {
+          "complex_fit_nmse_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complex Fit Nmse Db"
+          },
+          "correlation": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Correlation",
+            "type": "number"
+          },
+          "gain_abs": {
+            "minimum": 0.0,
+            "title": "Gain Abs",
+            "type": "number"
+          },
+          "gain_phase_deg": {
+            "title": "Gain Phase Deg",
+            "type": "number"
+          },
+          "magnitude_fit_nmse_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Magnitude Fit Nmse Db"
+          },
+          "stage": {
+            "enum": [
+              "raw_start",
+              "integer_aligned",
+              "fractional_aligned"
+            ],
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage",
+          "correlation",
+          "gain_abs",
+          "gain_phase_deg"
+        ],
+        "title": "AlignmentDiagnostic",
+        "type": "object"
+      },
       "AmTrace": {
         "additionalProperties": false,
         "properties": {
@@ -557,6 +775,20 @@
         "title": "Body_imports_create_api_v1_imports_post",
         "type": "object"
       },
+      "Body_upload_api_v1_hardware_reports_upload_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_api_v1_hardware_reports_upload_post",
+        "type": "object"
+      },
       "BootstrapRequest": {
         "properties": {
           "token": {
@@ -634,6 +866,84 @@
         "title": "BuiltinDatasetInfo",
         "type": "object"
       },
+      "CalibrationRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "calibration_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Calibration Id",
+            "type": "string"
+          },
+          "deembedding": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deembedding"
+          },
+          "evidence_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Sha256"
+          },
+          "fixture": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixture"
+          },
+          "method": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Method",
+            "type": "string"
+          },
+          "performed_at": {
+            "format": "date-time",
+            "title": "Performed At",
+            "type": "string"
+          },
+          "reference_plane": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reference Plane",
+            "type": "string"
+          },
+          "version": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "calibration_id",
+          "version",
+          "performed_at",
+          "method",
+          "reference_plane"
+        ],
+        "title": "CalibrationRecord",
+        "type": "object"
+      },
       "Capabilities": {
         "properties": {
           "custom_dataset_imports": {
@@ -679,6 +989,17 @@
             "title": "Artifact Id",
             "type": "string"
           },
+          "boundary_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Boundary Method"
+          },
           "correlation": {
             "maximum": 1.0,
             "minimum": 0.0,
@@ -696,10 +1017,35 @@
             ],
             "title": "Declared Output Power Dbm"
           },
+          "delay_ns": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Ns"
+          },
           "delay_samples": {
             "minimum": 0.0,
             "title": "Delay Samples",
             "type": "integer"
+          },
+          "diagnostics": {
+            "items": {
+              "$ref": "#/components/schemas/AlignmentDiagnostic"
+            },
+            "title": "Diagnostics",
+            "type": "array"
+          },
+          "fractional_delay_samples": {
+            "default": 0,
+            "maximum": 0.5,
+            "minimum": -0.5,
+            "title": "Fractional Delay Samples",
+            "type": "number"
           },
           "gain_abs": {
             "minimum": 0.0,
@@ -723,6 +1069,15 @@
             "minimum": 0.0,
             "title": "Peak Abs",
             "type": "number"
+          },
+          "processing_version": {
+            "default": "measurement-integer-v1",
+            "enum": [
+              "measurement-integer-v1",
+              "measurement-fractional-v2"
+            ],
+            "title": "Processing Version",
+            "type": "string"
           },
           "raw_sha256": {
             "pattern": "^[0-9a-f]{64}$",
@@ -767,6 +1122,27 @@
             "exclusiveMinimum": 0.0,
             "title": "Sample Rate Hz",
             "type": "number"
+          },
+          "valid_sample_range": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Sample Range"
           },
           "wrapped": {
             "default": false,
@@ -850,6 +1226,190 @@
           "path"
         ],
         "title": "CaptureRef",
+        "type": "object"
+      },
+      "CaptureReview": {
+        "additionalProperties": false,
+        "properties": {
+          "capture": {
+            "$ref": "#/components/schemas/SessionCapture"
+          },
+          "declared_output_power_dbm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Output Power Dbm"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricValue"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "played_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Played Sha256"
+          },
+          "processing": {
+            "additionalProperties": true,
+            "title": "Processing",
+            "type": "object"
+          },
+          "raw_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Sha256"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "status": {
+            "enum": [
+              "included",
+              "excluded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capture",
+          "status"
+        ],
+        "title": "CaptureReview",
+        "type": "object"
+      },
+      "CatalogDataset": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FileRef"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "format": {
+            "const": "opendpd-dataset-v1",
+            "default": "opendpd-dataset-v1",
+            "title": "Format",
+            "type": "string"
+          },
+          "license": {
+            "enum": [
+              "CC0-1.0",
+              "CC-BY-4.0"
+            ],
+            "title": "License",
+            "type": "string"
+          },
+          "n_samples": {
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/DatasetOrigin"
+          },
+          "signal": {
+            "$ref": "#/components/schemas/SignalSpec"
+          },
+          "simulation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation"
+          },
+          "source_raw_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Source Raw Sha256",
+            "type": "string"
+          },
+          "split": {
+            "$ref": "#/components/schemas/SplitSpec"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "display_name",
+          "origin",
+          "description",
+          "license",
+          "attribution",
+          "signal",
+          "split",
+          "n_samples",
+          "data",
+          "source_raw_sha256"
+        ],
+        "title": "CatalogDataset",
         "type": "object"
       },
       "CellAggregate": {
@@ -1269,6 +1829,196 @@
           "equalized"
         ],
         "title": "ConstellationTrace",
+        "type": "object"
+      },
+      "CostAttachment": {
+        "additionalProperties": false,
+        "properties": {
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "minimum": 0.0,
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sha256",
+          "size_bytes",
+          "filename"
+        ],
+        "title": "CostAttachment",
+        "type": "object"
+      },
+      "CostValues": {
+        "additionalProperties": false,
+        "properties": {
+          "area_mm2": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Mm2"
+          },
+          "constant_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Constant Bytes"
+          },
+          "dynamic_skip_fraction": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dynamic Skip Fraction"
+          },
+          "energy_j_per_sample": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy J Per Sample"
+          },
+          "input_buffer_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Buffer Bytes"
+          },
+          "latency_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency S"
+          },
+          "lut_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lut Count"
+          },
+          "mac_per_sample": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mac Per Sample"
+          },
+          "power_w": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power W"
+          },
+          "state_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Bytes"
+          },
+          "table_bytes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Bytes"
+          },
+          "table_lookups_per_sample": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Lookups Per Sample"
+          },
+          "throughput_samples_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Throughput Samples S"
+          }
+        },
+        "title": "CostValues",
         "type": "object"
       },
       "CsvCreateRequest": {
@@ -1866,6 +2616,18 @@
               "amplitude_units": "unknown"
             }
           },
+          "simulation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation"
+          },
           "source": {
             "$ref": "#/components/schemas/DatasetSource"
           },
@@ -1899,6 +2661,191 @@
         "title": "DatasetOrigin",
         "type": "string"
       },
+      "DatasetPublication": {
+        "additionalProperties": false,
+        "properties": {
+          "branch": {
+            "title": "Branch",
+            "type": "string"
+          },
+          "catalog": {
+            "$ref": "#/components/schemas/CatalogDataset"
+          },
+          "commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Sha"
+          },
+          "consent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent At"
+          },
+          "contact_email": {
+            "const": "emi.lab@outlook.com",
+            "default": "emi.lab@outlook.com",
+            "title": "Contact Email",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "directory": {
+            "title": "Directory",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/FileRef"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "package_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Package Sha256",
+            "type": "string"
+          },
+          "publication_id": {
+            "pattern": "^dspr-[a-f0-9]{64}$",
+            "title": "Publication Id",
+            "type": "string"
+          },
+          "pull_request_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pull Request State"
+          },
+          "pull_request_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pull Request Url"
+          },
+          "repository": {
+            "default": "lab-emi/OpenDPD",
+            "title": "Repository",
+            "type": "string"
+          },
+          "source_manifest_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Source Manifest Sha256",
+            "type": "string"
+          },
+          "status": {
+            "default": "prepared",
+            "enum": [
+              "prepared",
+              "queued",
+              "branch",
+              "push",
+              "pull_request",
+              "submitted",
+              "failed",
+              "interrupted"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "publication_id",
+          "dataset_id",
+          "package_sha256",
+          "source_manifest_sha256",
+          "branch",
+          "directory",
+          "files",
+          "catalog"
+        ],
+        "title": "DatasetPublication",
+        "type": "object"
+      },
+      "DatasetPublicationDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "attribution": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Attribution",
+            "type": "string"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "license": {
+            "enum": [
+              "CC0-1.0",
+              "CC-BY-4.0"
+            ],
+            "title": "License",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "description",
+          "license",
+          "attribution"
+        ],
+        "title": "DatasetPublicationDraft",
+        "type": "object"
+      },
       "DatasetRef": {
         "additionalProperties": false,
         "properties": {
@@ -1922,6 +2869,55 @@
           "id"
         ],
         "title": "DatasetRef",
+        "type": "object"
+      },
+      "DatasetSampleCounts": {
+        "additionalProperties": false,
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "dataset_id": {
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "guard_samples": {
+            "title": "Guard Samples",
+            "type": "integer"
+          },
+          "sample_rate_hz": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate Hz"
+          },
+          "total_samples": {
+            "title": "Total Samples",
+            "type": "integer"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "version",
+          "counts",
+          "sample_rate_hz",
+          "total_samples",
+          "guard_samples"
+        ],
+        "title": "DatasetSampleCounts",
         "type": "object"
       },
       "DatasetSource": {
@@ -2448,6 +3444,16 @@
             "title": "Device",
             "type": "string"
           },
+          "evaluated_signal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignalSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "evidence_type": {
             "$ref": "#/components/schemas/EvidenceType"
           },
@@ -2579,6 +3585,16 @@
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Result Id",
             "type": "string"
+          },
+          "rf_conditions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RFConditions"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "run_id": {
             "anyOf": [
@@ -3071,6 +4087,354 @@
         "title": "ExportRequest",
         "type": "object"
       },
+      "FigureBinding": {
+        "additionalProperties": false,
+        "properties": {
+          "files": {
+            "additionalProperties": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "object"
+          },
+          "result_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Result Id",
+            "type": "string"
+          },
+          "result_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "review": {
+            "$ref": "#/components/schemas/ReviewContext"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "result_id",
+          "result_sha256",
+          "files",
+          "review"
+        ],
+        "title": "FigureBinding",
+        "type": "object"
+      },
+      "FigurePanel": {
+        "additionalProperties": false,
+        "properties": {
+          "cursor_x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor X"
+          },
+          "kind": {
+            "default": "spectrum",
+            "enum": [
+              "spectrum",
+              "amam",
+              "ampm",
+              "power_scan",
+              "error_distribution"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "show_bands": {
+            "default": true,
+            "title": "Show Bands",
+            "type": "boolean"
+          },
+          "traces": {
+            "items": {
+              "$ref": "#/components/schemas/FigureTrace"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Traces",
+            "type": "array"
+          },
+          "x_range": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Range"
+          },
+          "y_range": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Y Range"
+          }
+        },
+        "required": [
+          "traces"
+        ],
+        "title": "FigurePanel",
+        "type": "object"
+      },
+      "FigurePreview": {
+        "additionalProperties": false,
+        "properties": {
+          "figure": {
+            "$ref": "#/components/schemas/SavedFigure"
+          },
+          "plots": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Plots",
+            "type": "object"
+          }
+        },
+        "required": [
+          "figure",
+          "plots"
+        ],
+        "title": "FigurePreview",
+        "type": "object"
+      },
+      "FigureSource": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "trace_name": {
+            "title": "Trace Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "kind",
+          "trace_name",
+          "role",
+          "source"
+        ],
+        "title": "FigureSource",
+        "type": "object"
+      },
+      "FigureSources": {
+        "additionalProperties": false,
+        "properties": {
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/FigureSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sources",
+          "missing"
+        ],
+        "title": "FigureSources",
+        "type": "object"
+      },
+      "FigureSourcesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "profiles": {
+            "maxProperties": 8,
+            "minProperties": 1,
+            "patternProperties": {
+              "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              }
+            },
+            "title": "Profiles",
+            "type": "object"
+          }
+        },
+        "required": [
+          "profiles"
+        ],
+        "title": "FigureSourcesRequest",
+        "type": "object"
+      },
+      "FigureSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "default": "same_condition",
+            "enum": [
+              "same_condition",
+              "cross_condition"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "panels": {
+            "items": {
+              "$ref": "#/components/schemas/FigurePanel"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Panels",
+            "type": "array"
+          },
+          "profiles": {
+            "patternProperties": {
+              "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              }
+            },
+            "title": "Profiles",
+            "type": "object"
+          },
+          "reference_run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Reference Run Id",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "default": "figure-v1",
+            "enum": [
+              "figure-v1",
+              "figure-v2"
+            ],
+            "title": "Version",
+            "type": "string"
+          },
+          "width": {
+            "default": "double_column",
+            "enum": [
+              "single_column",
+              "double_column"
+            ],
+            "title": "Width",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "reference_run_id",
+          "profiles",
+          "panels"
+        ],
+        "title": "FigureSpec",
+        "type": "object"
+      },
+      "FigureTrace": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "default": "#2563EB",
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Color",
+            "type": "string"
+          },
+          "dash": {
+            "default": "solid",
+            "enum": [
+              "solid",
+              "dash",
+              "dot",
+              "dashdot",
+              "longdash"
+            ],
+            "title": "Dash",
+            "type": "string"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "trace_name": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Trace Name",
+            "type": "string"
+          },
+          "visible": {
+            "default": true,
+            "title": "Visible",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_id",
+          "trace_name"
+        ],
+        "title": "FigureTrace",
+        "type": "object"
+      },
       "FileEntryInfo": {
         "properties": {
           "kind": {
@@ -3303,6 +4667,728 @@
         "title": "FixedPointSpec",
         "type": "object"
       },
+      "GeneratedSignal": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/GeneratorAnalysis"
+          },
+          "config": {
+            "$ref": "#/components/schemas/GeneratorConfig"
+          },
+          "coverage": {
+            "enum": [
+              "numerology",
+              "experimental",
+              "custom"
+            ],
+            "title": "Coverage",
+            "type": "string"
+          },
+          "download_url": {
+            "title": "Download Url",
+            "type": "string"
+          },
+          "iq_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Iq Sha256",
+            "type": "string"
+          },
+          "signal_id": {
+            "pattern": "^sg-[a-f0-9]{64}$",
+            "title": "Signal Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "signal_id",
+          "config",
+          "iq_sha256",
+          "coverage",
+          "analysis",
+          "download_url"
+        ],
+        "title": "GeneratedSignal",
+        "type": "object"
+      },
+      "GeneratorAnalysis": {
+        "additionalProperties": false,
+        "properties": {
+          "active_carriers": {
+            "title": "Active Carriers",
+            "type": "integer"
+          },
+          "allocation": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Allocation",
+            "type": "array"
+          },
+          "ccdf_db": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ccdf Db",
+            "type": "array"
+          },
+          "ccdf_probability": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ccdf Probability",
+            "type": "array"
+          },
+          "complete_symbols": {
+            "title": "Complete Symbols",
+            "type": "integer"
+          },
+          "constellation_i": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Constellation I",
+            "type": "array"
+          },
+          "constellation_q": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Constellation Q",
+            "type": "array"
+          },
+          "cp_lengths_samples": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Cp Lengths Samples",
+            "type": "array"
+          },
+          "data_carriers": {
+            "title": "Data Carriers",
+            "type": "integer"
+          },
+          "dc_magnitude": {
+            "title": "Dc Magnitude",
+            "type": "number"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "evm_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evm Percent"
+          },
+          "evm_symbols": {
+            "title": "Evm Symbols",
+            "type": "integer"
+          },
+          "frequency_mhz": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Frequency Mhz",
+            "type": "array"
+          },
+          "mean_power_dbfs": {
+            "title": "Mean Power Dbfs",
+            "type": "number"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "occupied_bandwidth_99_hz": {
+            "title": "Occupied Bandwidth 99 Hz",
+            "type": "number"
+          },
+          "papr_db": {
+            "title": "Papr Db",
+            "type": "number"
+          },
+          "peak": {
+            "title": "Peak",
+            "type": "number"
+          },
+          "pilot_carriers": {
+            "title": "Pilot Carriers",
+            "type": "integer"
+          },
+          "psd_dbfs_hz": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Psd Dbfs Hz",
+            "type": "array"
+          },
+          "reference_i": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Reference I",
+            "type": "array"
+          },
+          "reference_q": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Reference Q",
+            "type": "array"
+          },
+          "rms": {
+            "title": "Rms",
+            "type": "number"
+          },
+          "sample_count": {
+            "title": "Sample Count",
+            "type": "integer"
+          },
+          "sample_rate_hz": {
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "subcarrier_spacing_hz": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subcarrier Spacing Hz"
+          },
+          "time_envelope": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time Envelope",
+            "type": "array"
+          },
+          "time_i": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time I",
+            "type": "array"
+          },
+          "time_q": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time Q",
+            "type": "array"
+          },
+          "time_us": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time Us",
+            "type": "array"
+          },
+          "trailing_samples": {
+            "title": "Trailing Samples",
+            "type": "integer"
+          },
+          "useful_symbol_us": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useful Symbol Us"
+          }
+        },
+        "required": [
+          "sample_count",
+          "duration_ms",
+          "sample_rate_hz",
+          "subcarrier_spacing_hz",
+          "useful_symbol_us",
+          "cp_lengths_samples",
+          "complete_symbols",
+          "trailing_samples",
+          "active_carriers",
+          "data_carriers",
+          "pilot_carriers",
+          "rms",
+          "peak",
+          "papr_db",
+          "mean_power_dbfs",
+          "occupied_bandwidth_99_hz",
+          "dc_magnitude",
+          "evm_percent",
+          "evm_symbols",
+          "time_us",
+          "time_i",
+          "time_q",
+          "time_envelope",
+          "frequency_mhz",
+          "psd_dbfs_hz",
+          "constellation_i",
+          "constellation_q",
+          "reference_i",
+          "reference_q",
+          "ccdf_db",
+          "ccdf_probability",
+          "allocation",
+          "notes"
+        ],
+        "title": "GeneratorAnalysis",
+        "type": "object"
+      },
+      "GeneratorConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidth_hz": {
+            "default": 20000000.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000000000.0,
+            "title": "Bandwidth Hz",
+            "type": "number"
+          },
+          "carrier_frequency_hz": {
+            "default": 3500000000.0,
+            "maximum": 110000000000.0,
+            "minimum": 0.0,
+            "title": "Carrier Frequency Hz",
+            "type": "number"
+          },
+          "channel_gap_bins": {
+            "default": 0,
+            "maximum": 1024.0,
+            "minimum": 0.0,
+            "title": "Channel Gap Bins",
+            "type": "integer"
+          },
+          "channel_modulations": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Channel Modulations",
+            "type": "array"
+          },
+          "channel_power_db": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Channel Power Db",
+            "type": "array"
+          },
+          "channel_subcarriers": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Channel Subcarriers",
+            "type": "array"
+          },
+          "clip_db": {
+            "anyOf": [
+              {
+                "maximum": 30.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip Db"
+          },
+          "cp_mode": {
+            "default": "fixed",
+            "enum": [
+              "fixed",
+              "nr_normal",
+              "nr_extended"
+            ],
+            "title": "Cp Mode",
+            "type": "string"
+          },
+          "cp_samples": {
+            "default": 16,
+            "maximum": 16384.0,
+            "minimum": 0.0,
+            "title": "Cp Samples",
+            "type": "integer"
+          },
+          "dc_i": {
+            "default": 0,
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Dc I",
+            "type": "number"
+          },
+          "dc_null": {
+            "default": true,
+            "title": "Dc Null",
+            "type": "boolean"
+          },
+          "dc_q": {
+            "default": 0,
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Dc Q",
+            "type": "number"
+          },
+          "duration_ms": {
+            "default": 1,
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000.0,
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "fft_size": {
+            "default": 256,
+            "maximum": 16384.0,
+            "minimum": 64.0,
+            "title": "Fft Size",
+            "type": "integer"
+          },
+          "frequency_offset_hz": {
+            "default": 0,
+            "title": "Frequency Offset Hz",
+            "type": "number"
+          },
+          "iq_gain_db": {
+            "default": 0,
+            "maximum": 6.0,
+            "minimum": -6.0,
+            "title": "Iq Gain Db",
+            "type": "number"
+          },
+          "iq_phase_deg": {
+            "default": 0,
+            "maximum": 30.0,
+            "minimum": -30.0,
+            "title": "Iq Phase Deg",
+            "type": "number"
+          },
+          "length_mode": {
+            "default": "samples",
+            "enum": [
+              "samples",
+              "duration"
+            ],
+            "title": "Length Mode",
+            "type": "string"
+          },
+          "modulation_order": {
+            "default": 64,
+            "enum": [
+              2,
+              4,
+              16,
+              64,
+              256,
+              1024,
+              4096
+            ],
+            "title": "Modulation Order",
+            "type": "integer"
+          },
+          "n_samples": {
+            "default": 131072,
+            "maximum": 1000000.0,
+            "minimum": 256.0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "oversampling": {
+            "default": 4,
+            "enum": [
+              1,
+              2,
+              4,
+              8
+            ],
+            "title": "Oversampling",
+            "type": "integer"
+          },
+          "pilot_boost_db": {
+            "default": 0,
+            "maximum": 20.0,
+            "minimum": -20.0,
+            "title": "Pilot Boost Db",
+            "type": "number"
+          },
+          "pilot_indices": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 8192,
+            "title": "Pilot Indices",
+            "type": "array"
+          },
+          "pilot_mode": {
+            "default": "comb",
+            "enum": [
+              "comb",
+              "explicit",
+              "none"
+            ],
+            "title": "Pilot Mode",
+            "type": "string"
+          },
+          "pilot_spacing": {
+            "default": 16,
+            "maximum": 1024.0,
+            "minimum": 2.0,
+            "title": "Pilot Spacing",
+            "type": "integer"
+          },
+          "preset_id": {
+            "default": "custom-ofdm",
+            "maxLength": 64,
+            "title": "Preset Id",
+            "type": "string"
+          },
+          "rms": {
+            "default": 0.2,
+            "maximum": 1.0,
+            "minimum": 0.001,
+            "title": "Rms",
+            "type": "number"
+          },
+          "rrc_rolloff": {
+            "default": 0.25,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Rrc Rolloff",
+            "type": "number"
+          },
+          "rrc_span_symbols": {
+            "default": 10,
+            "maximum": 32.0,
+            "minimum": 4.0,
+            "title": "Rrc Span Symbols",
+            "type": "integer"
+          },
+          "sample_rate_hz": {
+            "default": 80000000.0,
+            "maximum": 2000000000.0,
+            "minimum": 1000.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "samples_per_symbol": {
+            "default": 8,
+            "maximum": 64.0,
+            "minimum": 2.0,
+            "title": "Samples Per Symbol",
+            "type": "integer"
+          },
+          "seed": {
+            "default": 42,
+            "maximum": 4294967295.0,
+            "minimum": 0.0,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "snr_db": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snr Db"
+          },
+          "tone_count": {
+            "default": 8,
+            "maximum": 64.0,
+            "minimum": 2.0,
+            "title": "Tone Count",
+            "type": "integer"
+          },
+          "tone_frequency_hz": {
+            "default": 1000000.0,
+            "title": "Tone Frequency Hz",
+            "type": "number"
+          },
+          "version": {
+            "const": "signal-generator-v1",
+            "default": "signal-generator-v1",
+            "title": "Version",
+            "type": "string"
+          },
+          "waveform": {
+            "default": "ofdm",
+            "enum": [
+              "ofdm",
+              "qam",
+              "tone",
+              "multitone",
+              "chirp"
+            ],
+            "title": "Waveform",
+            "type": "string"
+          }
+        },
+        "title": "GeneratorConfig",
+        "type": "object"
+      },
+      "GeneratorDatasetRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "am_pm": {
+            "default": 0.1,
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Am Pm",
+            "type": "number"
+          },
+          "compression": {
+            "default": 0.7,
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Compression",
+            "type": "number"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "display_name": {
+            "default": "Generated signal \u00b7 synthetic PA",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "guard_samples": {
+            "default": 256,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Guard Samples",
+            "type": "integer"
+          },
+          "memory": {
+            "default": 0.08,
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Memory",
+            "type": "number"
+          },
+          "noise_db": {
+            "default": -60,
+            "maximum": -10.0,
+            "minimum": -120.0,
+            "title": "Noise Db",
+            "type": "number"
+          },
+          "pa_gain": {
+            "default": 1.6,
+            "maximum": 10.0,
+            "minimum": 0.1,
+            "title": "Pa Gain",
+            "type": "number"
+          },
+          "train_ratio": {
+            "default": 0.6,
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Train Ratio",
+            "type": "number"
+          },
+          "val_ratio": {
+            "default": 0.2,
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Val Ratio",
+            "type": "number"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "title": "GeneratorDatasetRequest",
+        "type": "object"
+      },
+      "GeneratorDatasetResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset": {
+            "$ref": "#/components/schemas/DatasetManifest"
+          },
+          "test_samples": {
+            "title": "Test Samples",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset",
+          "test_samples"
+        ],
+        "title": "GeneratorDatasetResponse",
+        "type": "object"
+      },
+      "GeneratorPreset": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/GeneratorConfig"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "family": {
+            "enum": [
+              "nr",
+              "wifi6",
+              "wifi7",
+              "wifi8",
+              "custom"
+            ],
+            "title": "Family",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "preset_id": {
+            "title": "Preset Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preset_id",
+          "family",
+          "label",
+          "description",
+          "config"
+        ],
+        "title": "GeneratorPreset",
+        "type": "object"
+      },
       "GoldenCase": {
         "additionalProperties": false,
         "description": "One golden vector: inputs, expected outputs and final state, all in the spec's integer formats.",
@@ -3372,6 +5458,408 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HardwareCostDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "activity": {
+            "maxLength": 400,
+            "minLength": 1,
+            "title": "Activity",
+            "type": "string"
+          },
+          "batch_size": {
+            "minimum": 1.0,
+            "title": "Batch Size",
+            "type": "integer"
+          },
+          "boundary": {
+            "maxLength": 800,
+            "minLength": 1,
+            "title": "Boundary",
+            "type": "string"
+          },
+          "clock_hz": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock Hz"
+          },
+          "notes": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Notes",
+            "type": "string"
+          },
+          "precision": {
+            "items": {
+              "$ref": "#/components/schemas/PrecisionModule"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Precision",
+            "type": "array"
+          },
+          "process": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process"
+          },
+          "profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "report_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Report Sha256",
+            "type": "string"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source_kind": {
+            "enum": [
+              "operation_count",
+              "cpu_reference_timing",
+              "fpga_synthesis",
+              "fpga_board_measurement",
+              "asic_synthesis",
+              "post_layout_simulation",
+              "chip_measurement"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "synthetic": {
+            "default": false,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "target": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Target",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "values": {
+            "$ref": "#/components/schemas/CostValues"
+          }
+        },
+        "required": [
+          "run_id",
+          "profile_id",
+          "title",
+          "source_kind",
+          "report_sha256",
+          "target",
+          "batch_size",
+          "activity",
+          "boundary",
+          "precision",
+          "values"
+        ],
+        "title": "HardwareCostDraft",
+        "type": "object"
+      },
+      "HardwareCostEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "activity": {
+            "title": "Activity",
+            "type": "string"
+          },
+          "batch_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Size"
+          },
+          "boundary": {
+            "title": "Boundary",
+            "type": "string"
+          },
+          "clock_hz": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clock Hz"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entry_id": {
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "execution_semantics": {
+            "title": "Execution Semantics",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "lookahead_lower_bound_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookahead Lower Bound S"
+          },
+          "lookahead_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lookahead Samples"
+          },
+          "metric_basis": {
+            "title": "Metric Basis",
+            "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricValue"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "precision": {
+            "items": {
+              "$ref": "#/components/schemas/PrecisionModule"
+            },
+            "title": "Precision",
+            "type": "array"
+          },
+          "process": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process"
+          },
+          "profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "result_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Result Sha256",
+            "type": "string"
+          },
+          "rf_evidence_type": {
+            "title": "Rf Evidence Type",
+            "type": "string"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source_file": {
+            "$ref": "#/components/schemas/FileRef"
+          },
+          "source_kind": {
+            "enum": [
+              "operation_count",
+              "cpu_reference_timing",
+              "fpga_synthesis",
+              "fpga_board_measurement",
+              "asic_synthesis",
+              "post_layout_simulation",
+              "chip_measurement"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
+          "source_type": {
+            "enum": [
+              "checkpoint_shapes",
+              "studio_fixed_point_report",
+              "user_report"
+            ],
+            "title": "Source Type",
+            "type": "string"
+          },
+          "stale": {
+            "default": false,
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "stored_parameter_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stored Parameter Count"
+          },
+          "stored_tensor_elements": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stored Tensor Elements"
+          },
+          "synthetic": {
+            "default": false,
+            "title": "Synthetic",
+            "type": "boolean"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "values": {
+            "$ref": "#/components/schemas/CostValues"
+          },
+          "warmup_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warmup Samples"
+          },
+          "weights_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Weights Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "run_id",
+          "profile_id",
+          "title",
+          "source_kind",
+          "source_file",
+          "source_type",
+          "result_sha256",
+          "weights_sha256",
+          "values",
+          "precision",
+          "target",
+          "activity",
+          "boundary",
+          "metrics",
+          "metric_basis",
+          "rf_evidence_type",
+          "execution_semantics",
+          "limitations"
+        ],
+        "title": "HardwareCostEntry",
+        "type": "object"
+      },
+      "HardwareCostReport": {
+        "additionalProperties": false,
+        "properties": {
+          "comparison_notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Comparison Notes",
+            "type": "array"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/HardwareCostEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "missing": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "object"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "protocol_id": {
+            "const": "cost-ledger-v1",
+            "default": "cost-ledger-v1",
+            "title": "Protocol Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entries",
+          "missing",
+          "notes"
+        ],
+        "title": "HardwareCostReport",
         "type": "object"
       },
       "HistoryPoint": {
@@ -4146,6 +6634,109 @@
         "title": "InspectionTime",
         "type": "object"
       },
+      "InstrumentRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidth_hz": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bandwidth Hz"
+          },
+          "compression_input_dbm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compression Input Dbm"
+          },
+          "gain_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain Db"
+          },
+          "instrument_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Instrument Id",
+            "type": "string"
+          },
+          "model": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model",
+            "type": "string"
+          },
+          "noise_floor_dbm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noise Floor Dbm"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "role": {
+            "enum": [
+              "generator",
+              "receiver",
+              "attenuator",
+              "supply",
+              "other"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "serial": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "role",
+          "model"
+        ],
+        "title": "InstrumentRecord",
+        "type": "object"
+      },
       "LineageLink": {
         "additionalProperties": false,
         "properties": {
@@ -4454,6 +7045,15 @@
             ],
             "title": "Played Sha256"
           },
+          "processing_version": {
+            "default": "measurement-integer-v1",
+            "enum": [
+              "measurement-integer-v1",
+              "measurement-fractional-v2"
+            ],
+            "title": "Processing Version",
+            "type": "string"
+          },
           "source": {
             "default": "manual",
             "enum": [
@@ -4547,6 +7147,219 @@
           "captures"
         ],
         "title": "MeasurementEvidence",
+        "type": "object"
+      },
+      "MeasurementSession": {
+        "additionalProperties": false,
+        "properties": {
+          "captures": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureReview"
+            },
+            "title": "Captures",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "power_matching": {
+            "title": "Power Matching",
+            "type": "string"
+          },
+          "repeats": {
+            "items": {
+              "$ref": "#/components/schemas/RepeatStatistic"
+            },
+            "title": "Repeats",
+            "type": "array"
+          },
+          "result_hashes": {
+            "patternProperties": {
+              "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              }
+            },
+            "title": "Result Hashes",
+            "type": "object"
+          },
+          "session_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/MeasurementSessionSpec"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "session_id",
+          "spec",
+          "result_hashes",
+          "captures",
+          "repeats",
+          "power_matching"
+        ],
+        "title": "MeasurementSession",
+        "type": "object"
+      },
+      "MeasurementSessionSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "calibrations": {
+            "items": {
+              "$ref": "#/components/schemas/CalibrationRecord"
+            },
+            "maxItems": 64,
+            "title": "Calibrations",
+            "type": "array"
+          },
+          "captures": {
+            "items": {
+              "$ref": "#/components/schemas/SessionCapture"
+            },
+            "maxItems": 256,
+            "minItems": 1,
+            "title": "Captures",
+            "type": "array"
+          },
+          "conditions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RFConditions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dut": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Dut",
+            "type": "string"
+          },
+          "instruments": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentRecord"
+            },
+            "maxItems": 64,
+            "title": "Instruments",
+            "type": "array"
+          },
+          "interval": {
+            "default": "none",
+            "enum": [
+              "none",
+              "student_t_95"
+            ],
+            "title": "Interval",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
+          },
+          "power_tolerance_db": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Tolerance Db"
+          },
+          "profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "reference_plane": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Plane"
+          },
+          "source": {
+            "default": "measured",
+            "enum": [
+              "measured",
+              "mock"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "uncertainty_budget": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Budget"
+          },
+          "version": {
+            "const": "measurement-session-v1",
+            "default": "measurement-session-v1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "dut",
+          "profile_id",
+          "captures"
+        ],
+        "title": "MeasurementSessionSpec",
         "type": "object"
       },
       "MetricDefinition": {
@@ -5187,6 +8000,15 @@
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Run Id",
             "type": "string"
+          },
+          "seed_policy": {
+            "default": "match_legacy",
+            "enum": [
+              "match_legacy",
+              "fixed_surrogate"
+            ],
+            "title": "Seed Policy",
+            "type": "string"
           }
         },
         "required": [
@@ -5430,7 +8252,9 @@
           "role": {
             "enum": [
               "pa_surrogate",
-              "dpd_model"
+              "dpd_model",
+              "initial_weights",
+              "qat_float_pretraining"
             ],
             "title": "Role",
             "type": "string"
@@ -5515,6 +8339,29 @@
           "description"
         ],
         "title": "ParamSpecInfo",
+        "type": "object"
+      },
+      "PrecisionModule": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Format",
+            "type": "string"
+          },
+          "module": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Module",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module",
+          "format"
+        ],
+        "title": "PrecisionModule",
         "type": "object"
       },
       "PreprocessPreview": {
@@ -5629,6 +8476,68 @@
         "title": "ProfileValidation",
         "type": "string"
       },
+      "PublicationCapability": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "contact_email": {
+            "default": "emi.lab@outlook.com",
+            "title": "Contact Email",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "repository": {
+            "default": "lab-emi/OpenDPD",
+            "title": "Repository",
+            "type": "string"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "PublicationCapability",
+        "type": "object"
+      },
+      "PublicationConsent": {
+        "additionalProperties": false,
+        "properties": {
+          "package_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Package Sha256",
+            "type": "string"
+          },
+          "publish_publicly": {
+            "const": true,
+            "title": "Publish Publicly",
+            "type": "boolean"
+          },
+          "rights_confirmed": {
+            "const": true,
+            "title": "Rights Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "package_sha256",
+          "publish_publicly",
+          "rights_confirmed"
+        ],
+        "title": "PublicationConsent",
+        "type": "object"
+      },
       "QuantizationConfig": {
         "additionalProperties": false,
         "properties": {
@@ -5656,6 +8565,30 @@
             "title": "N Bits W",
             "type": "integer"
           },
+          "pretrained_checkpoint_artifact_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pretrained Checkpoint Artifact Id"
+          },
+          "pretrained_checkpoint_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pretrained Checkpoint Sha256"
+          },
           "pretrained_run_id": {
             "anyOf": [
               {
@@ -5670,6 +8603,262 @@
           }
         },
         "title": "QuantizationConfig",
+        "type": "object"
+      },
+      "RFConditions": {
+        "additionalProperties": false,
+        "properties": {
+          "average_output_power_dbm": {
+            "anyOf": [
+              {
+                "maximum": 300.0,
+                "minimum": -300.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Output Power Dbm"
+          },
+          "backoff_reference": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backoff Reference"
+          },
+          "bias": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bias"
+          },
+          "calibration_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibration Id"
+          },
+          "carrier_frequency_hz": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Carrier Frequency Hz"
+          },
+          "dc_rails_w": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Dc Rails W",
+            "type": "object"
+          },
+          "deembedding": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deembedding"
+          },
+          "dut": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dut"
+          },
+          "fixture": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixture"
+          },
+          "included_rails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Included Rails",
+            "type": "array"
+          },
+          "input_power_dbm": {
+            "anyOf": [
+              {
+                "maximum": 300.0,
+                "minimum": -300.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Power Dbm"
+          },
+          "load": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Load"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "note": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "pa_dc_power_w": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pa Dc Power W"
+          },
+          "power_reference_plane": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Reference Plane"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "reflection_phase_deg": {
+            "anyOf": [
+              {
+                "maximum": 180.0,
+                "minimum": -180.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflection Phase Deg"
+          },
+          "source": {
+            "default": "user_declared",
+            "enum": [
+              "user_declared",
+              "instrument_import"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "supply_v": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supply V"
+          },
+          "temperature_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature C"
+          },
+          "version": {
+            "const": "rf-conditions-v1",
+            "default": "rf-conditions-v1",
+            "title": "Version",
+            "type": "string"
+          },
+          "vswr": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vswr"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "RFConditions",
         "type": "object"
       },
       "RecipeInfo": {
@@ -5720,6 +8909,113 @@
           "expected_duration"
         ],
         "title": "RecipeInfo",
+        "type": "object"
+      },
+      "RepeatStatistic": {
+        "additionalProperties": false,
+        "properties": {
+          "ci95": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci95"
+          },
+          "first_to_last_drift": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First To Last Drift"
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "median": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Median"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "n_independent_captures": {
+            "title": "N Independent Captures",
+            "type": "integer"
+          },
+          "n_seeds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Seeds"
+          },
+          "role": {
+            "enum": [
+              "with_dpd",
+              "without_dpd"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "sample_std": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Std"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "metric",
+          "unit",
+          "n_independent_captures",
+          "method"
+        ],
+        "title": "RepeatStatistic",
         "type": "object"
       },
       "ResolutionInfo": {
@@ -5938,6 +9234,179 @@
           "table_bytes"
         ],
         "title": "ResourceEstimate",
+        "type": "object"
+      },
+      "ReviewBand": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "edges_hz": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Edges Hz",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "role": {
+            "enum": [
+              "main",
+              "adjacent",
+              "subchannel"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "role",
+          "edges_hz",
+          "available"
+        ],
+        "title": "ReviewBand",
+        "type": "object"
+      },
+      "ReviewContext": {
+        "additionalProperties": false,
+        "properties": {
+          "band_note": {
+            "title": "Band Note",
+            "type": "string"
+          },
+          "bands": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewBand"
+            },
+            "title": "Bands",
+            "type": "array"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewFact"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/MetricProfile"
+          },
+          "provenance": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Provenance",
+            "type": "object"
+          },
+          "result": {
+            "$ref": "#/components/schemas/EvaluationResult"
+          },
+          "signal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignalSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "signal_source": {
+            "title": "Signal Source",
+            "type": "string"
+          },
+          "version": {
+            "const": "rf-review-v1",
+            "default": "rf-review-v1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result",
+          "signal_source",
+          "profile",
+          "facts",
+          "band_note"
+        ],
+        "title": "ReviewContext",
+        "type": "object"
+      },
+      "ReviewFact": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "source"
+        ],
+        "title": "ReviewFact",
         "type": "object"
       },
       "RunCount": {
@@ -6354,6 +9823,38 @@
         "title": "RunView",
         "type": "object"
       },
+      "SavedFigure": {
+        "additionalProperties": false,
+        "properties": {
+          "bindings": {
+            "items": {
+              "$ref": "#/components/schemas/FigureBinding"
+            },
+            "title": "Bindings",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "figure_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Figure Id",
+            "type": "string"
+          },
+          "spec": {
+            "$ref": "#/components/schemas/FigureSpec"
+          }
+        },
+        "required": [
+          "figure_id",
+          "spec",
+          "bindings"
+        ],
+        "title": "SavedFigure",
+        "type": "object"
+      },
       "ScalingInfo": {
         "additionalProperties": false,
         "description": "What the amplitudes are relative to. Without a physical calibration no\nabsolute power (dBm) or efficiency is derived from them.",
@@ -6396,6 +9897,85 @@
         "title": "ScalingInfo",
         "type": "object"
       },
+      "SessionCapture": {
+        "additionalProperties": false,
+        "properties": {
+          "acquired_at": {
+            "format": "date-time",
+            "title": "Acquired At",
+            "type": "string"
+          },
+          "acquisition_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Acquisition Id",
+            "type": "string"
+          },
+          "calibration_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibration Id"
+          },
+          "capture_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Capture Id",
+            "type": "string"
+          },
+          "excluded_reason": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excluded Reason"
+          },
+          "raw_units": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Units"
+          },
+          "role": {
+            "enum": [
+              "with_dpd",
+              "without_dpd"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "run_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "capture_id",
+          "acquisition_id",
+          "run_id",
+          "role",
+          "acquired_at"
+        ],
+        "title": "SessionCapture",
+        "type": "object"
+      },
       "SessionInfo": {
         "properties": {
           "authenticated": {
@@ -6414,7 +9994,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.2",
+            "default": "2.2.3",
             "title": "Version",
             "type": "string"
           }
@@ -7080,6 +10660,681 @@
         "title": "SurrogateCoverage",
         "type": "object"
       },
+      "SweepAggregate": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Samples"
+          },
+          "condition_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "entry_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MetricStats"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "n_requested_seeds": {
+            "title": "N Requested Seeds",
+            "type": "integer"
+          },
+          "n_succeeded": {
+            "title": "N Succeeded",
+            "type": "integer"
+          },
+          "run_ids": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "condition_id",
+          "task",
+          "n_requested_seeds",
+          "n_succeeded",
+          "metrics",
+          "run_ids"
+        ],
+        "title": "SweepAggregate",
+        "type": "object"
+      },
+      "SweepCell": {
+        "additionalProperties": false,
+        "properties": {
+          "attempts": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
+          "budget_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Samples"
+          },
+          "cell_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Cell Id",
+            "type": "string"
+          },
+          "condition_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "config_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Sha256"
+          },
+          "entry_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "epochs": {
+            "minimum": 0.0,
+            "title": "Epochs",
+            "type": "integer"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "status": {
+            "default": "pending",
+            "enum": [
+              "pending",
+              "queued",
+              "running",
+              "cancel_requested",
+              "succeeded",
+              "failed",
+              "cancelled",
+              "interrupted",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          },
+          "train_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Train Samples"
+          }
+        },
+        "required": [
+          "cell_id",
+          "entry_id",
+          "condition_id",
+          "task",
+          "seed",
+          "epochs"
+        ],
+        "title": "SweepCell",
+        "type": "object"
+      },
+      "SweepDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "budgets": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Budgets",
+            "type": "array"
+          },
+          "condition_set": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConditionSet"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dataset": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DatasetRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "device": {
+            "default": "cpu",
+            "enum": [
+              "cpu",
+              "cuda",
+              "mps"
+            ],
+            "title": "Device",
+            "type": "string"
+          },
+          "fixed_pa_run_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixed Pa Run Id"
+          },
+          "max_runs": {
+            "default": 64,
+            "maximum": 256.0,
+            "minimum": 1.0,
+            "title": "Max Runs",
+            "type": "integer"
+          },
+          "max_wall_clock_seconds": {
+            "default": 3600,
+            "maximum": 604800.0,
+            "minimum": 1.0,
+            "title": "Max Wall Clock Seconds",
+            "type": "integer"
+          },
+          "methods": {
+            "items": {
+              "$ref": "#/components/schemas/SweepMethod"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Methods",
+            "type": "array"
+          },
+          "metric_profile_id": {
+            "default": "legacy-opendpd-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Metric Profile Id",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "same_condition",
+              "cross_condition"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "protocol_id": {
+            "const": "sweep-v1",
+            "default": "sweep-v1",
+            "title": "Protocol Id",
+            "type": "string"
+          },
+          "seeds": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Seeds",
+            "type": "array"
+          },
+          "tasks": {
+            "items": {
+              "enum": [
+                "zero_update",
+                "few_shot",
+                "full_retrain"
+              ],
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "mode",
+          "methods"
+        ],
+        "title": "SweepDraft",
+        "type": "object"
+      },
+      "SweepMethod": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExperimentConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entry_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "pa_entry": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pa Entry"
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
+          }
+        },
+        "required": [
+          "entry_id"
+        ],
+        "title": "SweepMethod",
+        "type": "object"
+      },
+      "SweepPreview": {
+        "additionalProperties": false,
+        "properties": {
+          "adaptation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdaptationPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/SweepCell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/SweepDraft"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "evaluation_runs": {
+            "title": "Evaluation Runs",
+            "type": "integer"
+          },
+          "plan_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Plan Sha256",
+            "type": "string"
+          },
+          "sample_epochs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Epochs"
+          },
+          "source_hashes": {
+            "additionalProperties": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "title": "Source Hashes",
+            "type": "object"
+          },
+          "templates": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ExperimentConfig"
+            },
+            "title": "Templates",
+            "type": "object"
+          },
+          "training_runs": {
+            "title": "Training Runs",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "draft",
+          "plan_sha256",
+          "templates",
+          "source_hashes",
+          "cells",
+          "training_runs",
+          "evaluation_runs"
+        ],
+        "title": "SweepPreview",
+        "type": "object"
+      },
+      "SweepRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/SweepCell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "elapsed_seconds": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Elapsed Seconds",
+            "type": "number"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/SweepPreview"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "default": "ready",
+            "enum": [
+              "ready",
+              "running",
+              "complete",
+              "needs_attention",
+              "cancelled",
+              "interrupted"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "sweep_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Sweep Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sweep_id",
+          "preview",
+          "cells"
+        ],
+        "title": "SweepRecord",
+        "type": "object"
+      },
+      "SweepReport": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregates": {
+            "items": {
+              "$ref": "#/components/schemas/SweepAggregate"
+            },
+            "title": "Aggregates",
+            "type": "array"
+          },
+          "plan_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Plan Sha256",
+            "type": "string"
+          },
+          "profile_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Profile Id",
+            "type": "string"
+          },
+          "result_hashes": {
+            "patternProperties": {
+              "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              }
+            },
+            "title": "Result Hashes",
+            "type": "object"
+          },
+          "sweep_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Sweep Id",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sweep_id",
+          "plan_sha256",
+          "profile_id",
+          "aggregates",
+          "result_hashes",
+          "warnings"
+        ],
+        "title": "SweepReport",
+        "type": "object"
+      },
+      "SweepStart": {
+        "additionalProperties": false,
+        "properties": {
+          "resume_failed": {
+            "default": false,
+            "title": "Resume Failed",
+            "type": "boolean"
+          }
+        },
+        "title": "SweepStart",
+        "type": "object"
+      },
+      "SyntheticSuite": {
+        "additionalProperties": false,
+        "properties": {
+          "condition_set": {
+            "$ref": "#/components/schemas/ConditionSet"
+          },
+          "datasets": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetManifest"
+            },
+            "title": "Datasets",
+            "type": "array"
+          },
+          "generator": {
+            "const": "synthetic-memory-pa-v1",
+            "default": "synthetic-memory-pa-v1",
+            "title": "Generator",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "request": {
+            "$ref": "#/components/schemas/SyntheticSuiteRequest"
+          }
+        },
+        "required": [
+          "request",
+          "datasets",
+          "condition_set",
+          "limitations"
+        ],
+        "title": "SyntheticSuite",
+        "type": "object"
+      },
+      "SyntheticSuiteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "prefix": {
+            "default": "synthetic-research",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,35}$",
+            "title": "Prefix",
+            "type": "string"
+          },
+          "repeats": {
+            "default": 2,
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Repeats",
+            "type": "integer"
+          },
+          "samples_per_capture": {
+            "default": 16384,
+            "maximum": 131072.0,
+            "minimum": 8192.0,
+            "multipleOf": 512.0,
+            "title": "Samples Per Capture",
+            "type": "integer"
+          },
+          "seed": {
+            "default": 20260913,
+            "maximum": 4294967295.0,
+            "minimum": 0.0,
+            "title": "Seed",
+            "type": "integer"
+          }
+        },
+        "title": "SyntheticSuiteRequest",
+        "type": "object"
+      },
       "TableSpec": {
         "additionalProperties": false,
         "description": "A non-linearity as a table: entries at every 2^-frac over [-range, range), values in ``value`` format.",
@@ -7737,7 +11992,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.2"
+    "version": "2.2.3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -7871,6 +12126,255 @@
         "summary": "Artifact Download",
         "tags": [
           "artifacts"
+        ]
+      }
+    },
+    "/api/v1/dataset-publications": {
+      "get": {
+        "operationId": "publications_api_v1_dataset_publications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dataset_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DatasetPublication"
+                  },
+                  "title": "Response Publications Api V1 Dataset Publications Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publications",
+        "tags": [
+          "dataset research"
+        ]
+      }
+    },
+    "/api/v1/dataset-publications/capability": {
+      "get": {
+        "operationId": "capability_api_v1_dataset_publications_capability_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationCapability"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capability",
+        "tags": [
+          "dataset research"
+        ]
+      }
+    },
+    "/api/v1/dataset-publications/prepare": {
+      "post": {
+        "operationId": "prepare_api_v1_dataset_publications_prepare_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetPublicationDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetPublication"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prepare",
+        "tags": [
+          "dataset research"
+        ]
+      }
+    },
+    "/api/v1/dataset-publications/{publication_id}": {
+      "get": {
+        "operationId": "publication_api_v1_dataset_publications__publication_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publication_id",
+            "required": true,
+            "schema": {
+              "title": "Publication Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetPublication"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publication",
+        "tags": [
+          "dataset research"
+        ]
+      }
+    },
+    "/api/v1/dataset-publications/{publication_id}/download": {
+      "get": {
+        "operationId": "download_api_v1_dataset_publications__publication_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publication_id",
+            "required": true,
+            "schema": {
+              "title": "Publication Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "dataset research"
+        ]
+      }
+    },
+    "/api/v1/dataset-publications/{publication_id}/submit": {
+      "post": {
+        "operationId": "submit_api_v1_dataset_publications__publication_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publication_id",
+            "required": true,
+            "schema": {
+              "title": "Publication Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetPublication"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit",
+        "tags": [
+          "dataset research"
         ]
       }
     },
@@ -8229,6 +12733,47 @@
         "summary": "Dataset Inspect",
         "tags": [
           "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/synthetic": {
+      "post": {
+        "operationId": "synthetic_api_v1_datasets_synthetic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyntheticSuiteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyntheticSuite"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Synthetic",
+        "tags": [
+          "dataset research"
         ]
       }
     },
@@ -8626,6 +13171,58 @@
         ]
       }
     },
+    "/api/v1/datasets/{dataset_id}/sample-counts": {
+      "get": {
+        "operationId": "counts_api_v1_datasets__dataset_id__sample_counts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "default": "raw-v1",
+              "title": "Version",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetSampleCounts"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Counts",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
     "/api/v1/deploy/exports": {
       "post": {
         "description": "Quantise a finished GRU run under fixed-point-v1, write golden vectors and the C99 reference, verify it bit for\nbit, and serve the package from <workspace>/exports. Unsupported models are refused with the reason.",
@@ -8823,6 +13420,475 @@
         ]
       }
     },
+    "/api/v1/figure-preview": {
+      "post": {
+        "operationId": "preview_api_v1_figure_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FigureSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FigurePreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview",
+        "tags": [
+          "publication figures"
+        ]
+      }
+    },
+    "/api/v1/figure-sources": {
+      "post": {
+        "operationId": "sources_api_v1_figure_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FigureSourcesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FigureSources"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sources",
+        "tags": [
+          "publication figures"
+        ]
+      }
+    },
+    "/api/v1/figures": {
+      "get": {
+        "operationId": "figures_list_api_v1_figures_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "runs",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              "maxItems": 8,
+              "title": "Runs",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SavedFigure"
+                  },
+                  "title": "Response Figures List Api V1 Figures Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Figures List",
+        "tags": [
+          "results"
+        ]
+      },
+      "post": {
+        "operationId": "figures_create_api_v1_figures_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FigureSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedFigure"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Figures Create",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/figures/{figure_id}": {
+      "get": {
+        "operationId": "figures_get_api_v1_figures__figure_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "figure_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Figure Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedFigure"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Figures Get",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/figures/{figure_id}/export": {
+      "get": {
+        "operationId": "figures_export_api_v1_figures__figure_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "figure_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Figure Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Figures Export",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/figures/{figure_id}/reproduction": {
+      "get": {
+        "operationId": "reproduction_api_v1_figures__figure_id__reproduction_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "figure_id",
+            "required": true,
+            "schema": {
+              "title": "Figure Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reproduction",
+        "tags": [
+          "publication figures"
+        ]
+      }
+    },
+    "/api/v1/hardware/costs": {
+      "get": {
+        "operationId": "costs_api_v1_hardware_costs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "runs",
+            "required": true,
+            "schema": {
+              "title": "Runs",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "default": "general-spectral-v1",
+              "title": "Profile",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareCostReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Costs",
+        "tags": [
+          "hardware costs"
+        ]
+      },
+      "post": {
+        "operationId": "record_api_v1_hardware_costs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HardwareCostDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareCostEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record",
+        "tags": [
+          "hardware costs"
+        ]
+      }
+    },
+    "/api/v1/hardware/reports/upload": {
+      "post": {
+        "operationId": "upload_api_v1_hardware_reports_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_api_v1_hardware_reports_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostAttachment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload",
+        "tags": [
+          "hardware costs"
+        ]
+      }
+    },
+    "/api/v1/hardware/reports/{digest}/download": {
+      "get": {
+        "operationId": "download_api_v1_hardware_reports__digest__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "digest",
+            "required": true,
+            "schema": {
+              "title": "Digest",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "hardware costs"
+        ]
+      }
+    },
     "/api/v1/imports": {
       "post": {
         "description": "Upload an experiment package and import it; every hash is verified before anything is written.",
@@ -8862,6 +13928,142 @@
         "summary": "Imports Create",
         "tags": [
           "exports"
+        ]
+      }
+    },
+    "/api/v1/measurement-sessions": {
+      "get": {
+        "operationId": "measurement_sessions_list_api_v1_measurement_sessions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MeasurementSession"
+                  },
+                  "title": "Response Measurement Sessions List Api V1 Measurement Sessions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Measurement Sessions List",
+        "tags": [
+          "measurements"
+        ]
+      },
+      "post": {
+        "operationId": "measurement_sessions_create_api_v1_measurement_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasurementSessionSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Measurement Sessions Create",
+        "tags": [
+          "measurements"
+        ]
+      }
+    },
+    "/api/v1/measurement-sessions/{session_id}": {
+      "get": {
+        "operationId": "measurement_session_get_api_v1_measurement_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementSession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Measurement Session Get",
+        "tags": [
+          "measurements"
         ]
       }
     },
@@ -9009,7 +14211,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 64,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
                   "type": "string"
                 },
                 {
@@ -9017,6 +14219,52 @@
                 }
               ],
               "title": "Profile"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "same_condition",
+              "enum": [
+                "same_condition",
+                "cross_condition"
+              ],
+              "title": "Mode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profiles",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              "maxItems": 8,
+              "title": "Profiles",
+              "type": "array"
             }
           },
           {
@@ -9082,7 +14330,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 64,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
                   "type": "string"
                 },
                 {
@@ -9245,6 +14493,117 @@
           }
         },
         "summary": "Results Report",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/results/{run_id}/review": {
+      "get": {
+        "operationId": "result_review_api_v1_results__run_id__review_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Profile"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewContext"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Result Review",
+        "tags": [
+          "results"
+        ]
+      }
+    },
+    "/api/v1/results/{run_id}/rf-conditions": {
+      "post": {
+        "operationId": "result_conditions_api_v1_results__run_id__rf_conditions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RFConditions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RFConditions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Result Conditions",
         "tags": [
           "results"
         ]
@@ -10189,6 +15548,579 @@
         "summary": "Settings Put",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/presets": {
+      "get": {
+        "operationId": "list_presets_api_v1_signal_generator_presets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GeneratorPreset"
+                  },
+                  "title": "Response List Presets Api V1 Signal Generator Presets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Presets",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/signals": {
+      "post": {
+        "operationId": "generate_api_v1_signal_generator_signals_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratorConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedSignal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/signals/{signal_id}": {
+      "get": {
+        "operationId": "get_api_v1_signal_generator_signals__signal_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signal_id",
+            "required": true,
+            "schema": {
+              "title": "Signal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedSignal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/signals/{signal_id}/dataset": {
+      "post": {
+        "operationId": "dataset_api_v1_signal_generator_signals__signal_id__dataset_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signal_id",
+            "required": true,
+            "schema": {
+              "title": "Signal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratorDatasetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratorDatasetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/signals/{signal_id}/download": {
+      "get": {
+        "operationId": "download_api_v1_signal_generator_signals__signal_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "signal_id",
+            "required": true,
+            "schema": {
+              "title": "Signal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/validate": {
+      "post": {
+        "operationId": "validate_api_v1_signal_generator_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratorConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratorConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/sweeps": {
+      "get": {
+        "operationId": "sweeps_list_api_v1_sweeps_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SweepRecord"
+                  },
+                  "title": "Response Sweeps List Api V1 Sweeps Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sweeps List",
+        "tags": [
+          "sweeps"
+        ]
+      },
+      "post": {
+        "operationId": "sweeps_create_api_v1_sweeps_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SweepDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sweeps Create",
+        "tags": [
+          "sweeps"
+        ]
+      }
+    },
+    "/api/v1/sweeps/conditions/validate": {
+      "post": {
+        "operationId": "conditions_validate_api_v1_sweeps_conditions_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConditionSet"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConditionAudit"
+                  },
+                  "title": "Response Conditions Validate Api V1 Sweeps Conditions Validate Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Conditions Validate",
+        "tags": [
+          "sweeps"
+        ]
+      }
+    },
+    "/api/v1/sweeps/preview": {
+      "post": {
+        "operationId": "sweep_preview_api_v1_sweeps_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SweepDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sweep Preview",
+        "tags": [
+          "sweeps"
+        ]
+      }
+    },
+    "/api/v1/sweeps/{sweep_id}": {
+      "get": {
+        "operationId": "sweeps_get_api_v1_sweeps__sweep_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sweep_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Sweep Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sweeps Get",
+        "tags": [
+          "sweeps"
+        ]
+      }
+    },
+    "/api/v1/sweeps/{sweep_id}/cancel": {
+      "post": {
+        "operationId": "sweeps_cancel_api_v1_sweeps__sweep_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sweep_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Sweep Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sweeps Cancel",
+        "tags": [
+          "sweeps"
+        ]
+      }
+    },
+    "/api/v1/sweeps/{sweep_id}/report": {
+      "get": {
+        "operationId": "sweeps_report_api_v1_sweeps__sweep_id__report_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sweep_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Sweep Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sweeps Report",
+        "tags": [
+          "sweeps"
+        ]
+      }
+    },
+    "/api/v1/sweeps/{sweep_id}/start": {
+      "post": {
+        "operationId": "sweeps_start_api_v1_sweeps__sweep_id__start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sweep_id",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+              "title": "Sweep Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SweepStart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sweeps Start",
+        "tags": [
+          "sweeps"
         ]
       }
     },

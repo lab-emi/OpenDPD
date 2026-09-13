@@ -154,13 +154,24 @@ def test_all_packaged_datasets_read_and_demodulate_through_real_http(env):
     listed = client.get("/api/v1/datasets/builtin")
     assert listed.status_code == 200, listed.text
     catalog = listed.json()
-    assert {entry["name"] for entry in catalog} == {p.parent.name for p in BUILTIN_DATASETS_DIR.glob("*/spec.json")}
-    assert {entry["name"] for entry in catalog} == {"APA_200MHz", "APA_200MHz_b", "DPA_200MHz", "DPA_160MHz", "MyCustomPA"}
+    legacy_names = {entry["name"] for entry in catalog if not entry["name"].startswith("catalog-")}
+    assert legacy_names == {p.parent.name for p in BUILTIN_DATASETS_DIR.glob("*/spec.json")}
+    assert legacy_names == {"APA_200MHz", "APA_200MHz_b", "DPA_200MHz", "DPA_160MHz", "MyCustomPA"}
     for entry in catalog:
         name = entry["name"]
         registered = client.post("/api/v1/datasets/import-builtin", json={"name": name})
         assert registered.status_code in (200, 201), registered.text
         manifest = registered.json()
+        if name.startswith("catalog-"):
+            assert manifest["n_samples"] == entry["n_samples"]
+            assert any(f["sha256"] == entry["raw_sha256"] for f in manifest["files"])
+            response = client.get(f'/api/v1/datasets/{manifest["dataset_id"]}/analysis')
+            assert response.status_code == 200, response.text
+            analysis = response.json()
+            assert analysis["constellation"]["status"] == "unavailable", "catalog IQ must not borrow a legacy demodulator"
+            assert all(analysis[key] for key in ("time", "spectrum", "iq", "am"))
+            assert manifest["origin"] == "synthetic" and manifest["simulation"]["physical_measurement"] is False
+            continue
         assert manifest["n_samples"] == entry["n_samples"] and manifest["raw_sha256"] == entry["raw_sha256"]
         xi, yi, split = load_version_arrays(ws, manifest["dataset_id"])
         xt, yt, xv, yv, xe, ye = load_dataset(dataset_name=name)

@@ -7,6 +7,15 @@ from opendpd.schemas.examples import experiment_train_dpd_smoke, experiment_trai
 from opendpd.services.config import ConfigError, canonical_json, config_sha256, resolve, validate
 
 
+def test_pa_quantization_and_unused_pretraining_are_refused():
+    from opendpd.schemas.experiment import QuantizationConfig
+    config = experiment_train_pa_smoke()
+    config.quantization = QuantizationConfig(enabled=True)
+    assert any("PA trainer does not implement QAT" in i.message for i in validate(config).errors)
+    config.quantization = QuantizationConfig(enabled=False, pretrained_run_id="unused")
+    assert any(i.field == "quantization.pretrained_run_id" for i in validate(config).errors)
+
+
 def test_resolve_fills_defaults_and_is_idempotent():
     cfg = experiment_train_pa_smoke()
     resolved = resolve(cfg)

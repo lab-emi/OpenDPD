@@ -29,6 +29,7 @@ import type {
   RunView,
   ValidationReport,
   WorkspaceSettings,
+  ReviewContext,
 } from './types'
 import { isTerminal } from './types'
 
@@ -132,11 +133,12 @@ export const artifactJsonQuery = <T,>(id: string, artifactId: string) => ({
   staleTime: Infinity,
 })
 export const useArtifactJson = <T,>(id: string, artifactId: string, enabled = true) => useQuery({ ...artifactJsonQuery<T>(id, artifactId), enabled })
-export const useCompare = (ids: string[], profile: string | null = null) =>
+export const useCompare = (ids: string[], profile: string | null = null, profiles: string[] = []) =>
   useQuery({
-    queryKey: keys.compare(ids, profile),
-    queryFn: () => api.get<ComparisonReport>(`/results/compare?${ids.map((i) => `runs=${encodeURIComponent(i)}`).join('&')}${profile ? `&profile=${encodeURIComponent(profile)}` : ''}`),
+    queryKey: [...keys.compare(ids, profile), ...profiles],
+    queryFn: () => api.get<ComparisonReport>(`/results/compare?${ids.map((i) => `runs=${encodeURIComponent(i)}`).join('&')}${profile ? `&profile=${encodeURIComponent(profile)}` : ''}${profiles.map(p => `&profiles=${encodeURIComponent(p)}`).join('')}`),
     enabled: ids.length >= 2,
+    placeholderData: keepPreviousData,
     retry: false,
   })
 export const useResult = (id: string, enabled = true, profile: string | null = null) =>
@@ -144,10 +146,16 @@ export const useResult = (id: string, enabled = true, profile: string | null = n
     queryKey: keys.result(id, profile),
     queryFn: () => api.get<EvaluationResult>(`/results/${encodeURIComponent(id)}${profile ? `?profile=${encodeURIComponent(profile)}` : ''}`),
     enabled,
+    placeholderData: (previous, query) => query?.queryKey[1] === id ? previous : undefined,
     retry: false,
   })
 export const useResultProfiles = (id: string) => useQuery({ queryKey: keys.resultProfiles(id), queryFn: () => api.get<string[]>(`/results/${encodeURIComponent(id)}/profiles`) })
 export const useMetricProfiles = () => useQuery({ queryKey: keys.metricProfiles, queryFn: () => api.get<MetricProfile[]>('/metrics/profiles'), staleTime: Infinity })
+export const reviewQuery = (runId: string, profileId?: string) => ({
+  queryKey: ['review', runId, profileId ?? 'primary'],
+  queryFn: () => api.get<ReviewContext>(`/results/${encodeURIComponent(runId)}/review${profileId ? `?profile=${encodeURIComponent(profileId)}` : ''}`),
+  staleTime: Infinity, retry: false,
+})
 
 export const fetchLogPage = (id: string, offset: number, limit = 500, tail = false, signal?: AbortSignal) =>
   api.get<LogPage>(`/runs/${encodeURIComponent(id)}/logs?offset=${offset}&limit=${limit}${tail ? '&tail=true' : ''}`, signal)

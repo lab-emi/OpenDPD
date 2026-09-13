@@ -1,0 +1,44 @@
+[
+  {
+    "width": 1366,
+    "height": 768,
+    "runs": 2,
+    "samplesPerRun": 7680,
+    "loadMs": 498.017457,
+    "referenceSwitchMs": 372.38348299999996,
+    "restoredReference": "run-20260913-103839-9ce690",
+    "viewport": {
+      "x": [
+        -333.359375,
+        333.046875
+      ],
+      "y": [
+        -139.49218518518518,
+        -81.8718148148148
+      ]
+    },
+    "unchangedMetrics": true,
+    "errors": []
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "runs": 2,
+    "samplesPerRun": 7680,
+    "loadMs": 318.2733499999995,
+    "referenceSwitchMs": 393.23143400000026,
+    "restoredReference": "run-20260913-103839-9ce690",
+    "viewport": {
+      "x": [
+        -333.359375,
+        333.046875
+      ],
+      "y": [
+        -139.49218518518518,
+        -81.8718148148148
+      ]
+    },
+    "unchangedMetrics": true,
+    "errors": []
+  }
+]

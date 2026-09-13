@@ -96,6 +96,8 @@ class QuantizationConfig(StrictModel):
     n_bits_w: int = Field(default=8, ge=2, le=32)
     n_bits_a: int = Field(default=8, ge=2, le=32)
     pretrained_run_id: Optional[Slug] = None
+    pretrained_checkpoint_artifact_id: Optional[Slug] = Field(default=None, exclude_if=lambda value: value is None)
+    pretrained_checkpoint_sha256: Optional[Sha256] = Field(default=None, exclude_if=lambda value: value is None)
     label: str = ""
 
 
@@ -106,6 +108,9 @@ class PAReference(StrictModel):
     checkpoint_artifact_id: Optional[Slug] = None
     checkpoint_sha256: Optional[Sha256] = None
     model: Optional[ModelSpec] = None
+    # sweep-v1 explicitly reuses one frozen PA while DPD training seeds vary.
+    # The legacy default is omitted from serialisation to preserve existing config identities.
+    seed_policy: Literal["match_legacy", "fixed_surrogate"] = Field(default="match_legacy", exclude_if=lambda v: v == "match_legacy")
 
 
 class DPDReference(StrictModel):

@@ -68,7 +68,7 @@ export function HomePage() {
                 '&:focus-visible': { outline: '3px solid #FFFFFF', outlineOffset: 5 },
               }}>OpenDPD GitHub</Button>
             </Stack>
-            <Typography sx={{ mt: 1.5, color: '#A9C3D3', fontSize: 12.5 }}>{t(caps.data?.custom_dataset_imports ? 'home.start.hint' : 'home.start.builtinHint')}</Typography>
+            <Typography sx={{ mt: 1.5, color: '#A9C3D3', fontSize: 12.5 }}>{t('generator.homeHint')}</Typography>
           </Box>
         </Box>
         <Box component="ol" aria-label={t('home.workflow.label')} sx={{
@@ -79,8 +79,8 @@ export function HomePage() {
             <Box component="li" key={step} sx={{ display: 'flex', gap: 1.5, minWidth: 0 }}>
               <Typography component="span" aria-hidden="true" sx={{ fontFamily: 'monospace', color: '#8ACAD9', fontSize: 12, pt: .3 }}>0{index + 1}</Typography>
               <Box>
-                <Typography sx={{ fontSize: 14, fontWeight: 650 }}>{t(`home.workflow.${step}`)}</Typography>
-                <Typography sx={{ fontSize: 12, lineHeight: 1.6, color: '#A9C3D3', mt: .5 }}>{t(step === 'data' && !caps.data?.custom_dataset_imports ? 'home.workflow.data.builtinHelp' : `home.workflow.${step}.help`)}</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 650 }}>{t(step === 'data' ? 'generator.dataStep' : `home.workflow.${step}`)}</Typography>
+                <Typography sx={{ fontSize: 12, lineHeight: 1.6, color: '#A9C3D3', mt: .5 }}>{t(step === 'data' ? 'generator.dataStepHelp' : `home.workflow.${step}.help`)}</Typography>
               </Box>
             </Box>
           ))}

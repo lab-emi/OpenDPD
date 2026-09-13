@@ -1,0 +1,81 @@
+{
+  "format": "opendpd-dataset-v1",
+  "dataset_id": "synthetic-research-d0-r1",
+  "display_name": "Synthetic PA · drive 0.18 · realization 2",
+  "origin": "synthetic",
+  "description": "SYNTHETIC Studio research fixture: three normalized drive settings and independent random realizations. No RF measurement, dBm, power efficiency, hardware cost or standard EVM evidence.",
+  "license": "CC0-1.0",
+  "attribution": "OpenDPD synthetic-memory-pa-v1 generator",
+  "signal": {
+    "sample_rate_hz": 80000000.0,
+    "bandwidth_hz": 20000000.0,
+    "sub_channel_bandwidth_hz": 20000000.0,
+    "n_sub_ch": 1,
+    "nperseg": 512,
+    "modulation": "64QAM OFDM-like (synthetic)",
+    "standard": null,
+    "amplitude_units": "normalized",
+    "waveform": null
+  },
+  "split": {
+    "version": "contiguous-v1",
+    "method": "contiguous",
+    "ratios": {
+      "train": 0.6,
+      "val": 0.2,
+      "test": 0.2
+    },
+    "guard_samples": 512,
+    "boundaries": {
+      "train": [
+        0,
+        9216
+      ],
+      "val": [
+        9728,
+        12800
+      ],
+      "test": [
+        13312,
+        16384
+      ]
+    }
+  },
+  "n_samples": 16384,
+  "data": {
+    "path": "data.csv",
+    "sha256": "5544f89b33ac67e0c9d68b0373e3c31cb5014c5dadfdd8b676274f894e9ef530",
+    "size_bytes": 845928
+  },
+  "source_raw_sha256": "c886ed05bbff6946d8f97b724dce20ea3e2d8cd0812fbcc20455a1de6df6cf4a",
+  "simulation": {
+    "generator": "synthetic-memory-pa-v1",
+    "seed": 20260913,
+    "condition_index": 0,
+    "repeat_index": 1,
+    "samples": 16384,
+    "normalized_rms_drive": 0.18,
+    "rng": "NumPy PCG64 / SeedSequence([seed, condition, repeat]).spawn(2)",
+    "nfft": 512,
+    "active_subcarriers": 128,
+    "delay_samples": 0,
+    "memory_taps": [
+      [
+        1.6,
+        0.02
+      ],
+      [
+        0.12,
+        -0.06
+      ],
+      [
+        -0.04,
+        0.02
+      ]
+    ],
+    "polynomial": "sum(c[k]*x[n-k]*(1-0.7*abs(x[n-k])**2+0.12*abs(x[n-k])**4), k=0..2)",
+    "complex_noise_rms": 0.001,
+    "initial_history": "zero",
+    "physical_measurement": false
+  }
+}

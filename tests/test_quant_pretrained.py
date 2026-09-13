@@ -9,10 +9,26 @@ import io
 
 import torch
 import torch.nn as nn
+import pytest
 
 from models import CoreModel
 from quant.modules.gru import GRU as CellGRU
 from quant.quant_envs import AttrDict, Base_GRUQuantEnv, convert_gru_state_dict
+
+
+def test_studio_quantization_refuses_float_fallback(monkeypatch):
+    import quant
+    from types import SimpleNamespace
+
+    def failed(*args, **kwargs):
+        raise ValueError("unsupported quantizer")
+
+    monkeypatch.setattr(quant, "Base_GRUQuantEnv", failed)
+    model = nn.Linear(2, 2)
+    with pytest.raises(RuntimeError, match="will not substitute a float model"):
+        quant.get_quant_model(SimpleNamespace(quant=True, studio_strict_quantization=True), model)
+    assert quant.get_quant_model(SimpleNamespace(quant=True), model) is model
+    assert quant.get_quant_model(SimpleNamespace(quant=False, studio_strict_quantization=True), model) is model
 
 
 def test_convert_gru_state_dict_reproduces_torch_gru():

@@ -13,6 +13,7 @@
       "split_version": "contiguous-v1"
     },
     "device": "cpu",
+    "evaluated_signal": null,
     "evidence_type": "pa_modeling",
     "execution": null,
     "extra": {},
@@ -95,6 +96,7 @@
       "kind": "measured_pa_output"
     },
     "result_id": "res-pa-0002",
+    "rf_conditions": null,
     "run_id": "run-pa-0003",
     "scaling": null,
     "schema_version": 1,

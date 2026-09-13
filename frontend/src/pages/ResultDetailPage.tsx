@@ -1,3 +1,5 @@
+import { RFFactsPanel } from '@/components/RFFactsPanel'
+import { MeasurementSessions } from '@/components/MeasurementSessions'
 import { DownloadLink } from '@/components/DownloadLink'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Accordion from '@mui/material/Accordion'
@@ -20,8 +22,7 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { useState } from 'react'
-import { Link as RouterLink, useParams } from 'react-router'
+import { Link as RouterLink, useParams, useSearchParams } from 'react-router'
 import { API, artifactUrl, WEB_MODE } from '@/api/client'
 import { useDeployExport, useExportRun, useMetricProfiles, useModels, useResult, useResultProfiles } from '@/api/hooks'
 import { offeredProfiles } from '@/api/profiles'
@@ -352,7 +353,10 @@ function MeasurementPanel({ result }: { result: EvaluationResult }) {
                 </TableCell>
                 <TableCell align="right">{formatNumber(cap.n_samples_raw)}</TableCell>
                 <TableCell align="right">
-                  {cap.delay_samples}
+                  {formatNumber(cap.delay_samples + (cap.fractional_delay_samples ?? 0), { maximumFractionDigits: 5 })} sample
+                  <Typography variant="caption" component="div">
+                    {formatNumber(cap.delay_ns ?? (cap.delay_samples * 1e9 / (cap.sample_rate_hz * (cap.resample_ratio ? cap.resample_ratio[0] / cap.resample_ratio[1] : 1))), { maximumFractionDigits: 3 })} ns
+                  </Typography>
                   {cap.wrapped ? ` (${t('results.detail.measurement.wrapped')})` : ''}
                 </TableCell>
                 <TableCell align="right">{cap.correlation.toFixed(4)}</TableCell>
@@ -367,6 +371,21 @@ function MeasurementPanel({ result }: { result: EvaluationResult }) {
           </TableBody>
         </Table>
       </TableContainer>
+      {m.captures.map(cap => <Box key={`processing-${cap.role}`} sx={{ mt: 2, overflowWrap: 'anywhere' }}>
+        <Typography variant="body2">{t(cap.role === 'with_dpd' ? 'results.detail.measurement.with' : 'results.detail.measurement.without')} · {cap.processing_version ?? 'measurement-integer-v1'}</Typography>
+        {cap.boundary_method && <Typography variant="caption" component="p">{cap.boundary_method} · {t('measurement.valid_range')}: [{cap.valid_sample_range?.join(', ')})</Typography>}
+        {!!cap.diagnostics?.length && <>
+          <Typography variant="body2" sx={{ my: 1 }}>{t('measurement.ablation.help')}</Typography>
+          <TableContainer tabIndex={0} role="group" aria-label={t('measurement.ablation')}>
+            <Table size="small" aria-label={t('measurement.ablation')}>
+              <TableHead><TableRow><TableCell>{t('measurement.ablation')}</TableCell><TableCell>{t('results.detail.measurement.correlation')}</TableCell><TableCell>{t('results.detail.measurement.fit')}</TableCell><TableCell>{t('measurement.magnitude_nmse')}</TableCell><TableCell>{t('measurement.complex_nmse')}</TableCell></TableRow></TableHead>
+              <TableBody>{cap.diagnostics.map(d => <TableRow key={d.stage}>
+                <TableCell>{t(`measurement.stage.${d.stage}`)}</TableCell><TableCell>{d.correlation.toFixed(6)}</TableCell><TableCell>{fmt(d.gain_abs, 4)} ∠ {d.gain_phase_deg.toFixed(3)}°</TableCell><TableCell>{fmt(d.magnitude_fit_nmse_db)} dB</TableCell><TableCell>{fmt(d.complex_fit_nmse_db)} dB</TableCell>
+              </TableRow>)}</TableBody>
+            </Table>
+          </TableContainer>
+        </>}
+      </Box>)}
       {typeof level === 'number' && (
         <Typography variant="body2" sx={{ mt: 1 }} color={Math.abs(level) > 0.5 ? 'warning.main' : 'text.secondary'} data-testid="level-difference">
           {t('results.detail.measurement.level', { db: `${level >= 0 ? '+' : ''}${level.toFixed(2)}` })}
@@ -461,6 +480,7 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
           numeric: result.numeric_mode ?? t('common.na'),
         })}
       </Typography>
+      <RFFactsPanel result={result} />
       <Grid container spacing={2}>
         {result.metrics.map((m) => (
           <Grid key={m.name} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
@@ -468,10 +488,13 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
           </Grid>
         ))}
       </Grid>
+      {result.run_id && <ResultCharts runId={result.run_id} result={result} onProfile={onProfile} />}
       <SignalChain result={result} />
       <ExecutionPanel result={result} />
       {!WEB_MODE && <DeploymentPanel result={result} />}
+      {!WEB_MODE && result.run_id && <Button variant="outlined" component={RouterLink} to={`/hardware?runs=${result.run_id}&profile=${result.metric_profile_id}`}>{t('hardware.title')}</Button>}
       <MeasurementPanel result={result} />
+      {result.measurement && !WEB_MODE && <MeasurementSessions result={result} />}
       <Baselines result={result} />
       {result.surrogate_coverage && (
         <Alert severity={result.surrogate_coverage.fraction_above_fitted_peak > 0 ? 'warning' : 'info'} data-testid="surrogate-coverage">
@@ -583,7 +606,6 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
           </ul>
         </Alert>
       )}
-      {result.run_id && <ResultCharts runId={result.run_id} />}
       {result.run_id && !result.is_mock && <ExportPanel runId={result.run_id} />}
     </Stack>
   )
@@ -591,15 +613,19 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
 
 export function ResultDetailPage() {
   const { runId = '' } = useParams()
-  const [profileId, setProfileId] = useState<string | null>(null)
-  const result = useResult(runId, true, profileId)
-  const stored = useResultProfiles(runId)
+  const [params, setParams] = useSearchParams()
   const profiles = useMetricProfiles()
+  const requested = params.get('profile')
+  const offered = new Set(offeredProfiles(profiles.data).map((p) => p.profile_id))
+  const profileId = requested && offered.has(requested) ? requested : null
+  const result = useResult(runId, !requested || (!profiles.isPending && !!profileId), profileId)
+  const stored = useResultProfiles(runId)
+  if (requested && !profiles.isPending && !profileId) return <Alert severity="warning">{t('results.detail.profile.unavailable')}</Alert>
   if (result.isPending) return <LoadingState />
   if (result.isError) return <ErrorState error={result.error} onRetry={() => void result.refetch()} />
   const profile = profiles.data?.find((p) => p.profile_id === result.data.metric_profile_id)
   // stored results under a profile the GUI does not offer yet stay reachable through the CLI and the API only
-  const offered = new Set(offeredProfiles(profiles.data).map((p) => p.profile_id))
-  const visible = (stored.data ?? []).filter((id) => offered.has(id) || id === result.data.metric_profile_id)
-  return <ResultView result={result.data} profile={profile} stored={visible} onProfile={setProfileId} />
+  if (profile?.validation === 'pending_cross_validation') return <Alert severity="warning">{t('results.detail.profile.unavailable')}</Alert>
+  const visible = (stored.data ?? []).filter((id) => offered.has(id))
+  return <ResultView result={result.data} profile={profile} stored={visible} onProfile={id => { const next = new URLSearchParams(params); next.set('profile', id); setParams(next) }} />
 }

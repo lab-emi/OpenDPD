@@ -478,6 +478,8 @@ def update_manifest(ws: Workspace, dataset_id: str, *, signal: Optional[SignalSp
     """Edit descriptive metadata; data files and hashes are untouched."""
     manifest = ws.get_dataset(dataset_id)
     updates = {}
+    if manifest.simulation is not None and origin not in (None, DatasetOrigin.synthetic):
+        raise ImportError_("Generated synthetic data cannot be relabelled as a physical measurement.")
     if signal is not None:
         updates["signal"] = signal
     if display_name:

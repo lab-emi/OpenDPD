@@ -6,6 +6,7 @@ include LICENSE
 
 # Include dataset specifications and CSV files
 recursive-include datasets *.json *.csv
+recursive-include dataset *.json *.csv *.md
 recursive-include backbones *
 
 # Include the built Studio frontend when present (release builds)
@@ -29,4 +30,3 @@ recursive-exclude save *
 recursive-exclude log *
 recursive-exclude dpd_out *
 exclude *.sh
-

@@ -1,0 +1,38 @@
+[
+  {
+    "width": 1366,
+    "height": 768,
+    "syntheticDatasets": [
+      "qa-synthetic-1366-d0-r0",
+      "qa-synthetic-1366-d0-r1",
+      "qa-synthetic-1366-d1-r0",
+      "qa-synthetic-1366-d1-r1",
+      "qa-synthetic-1366-d2-r0",
+      "qa-synthetic-1366-d2-r1"
+    ],
+    "conditionPreviewCells": 5,
+    "uploadedDataset": "browser-synthetic-1366-1789301994701",
+    "publication": "dspr-fab993a542ae6764bbec4ead04b4728d474a4792df1c2e75692dd012a441808e",
+    "status": "prepared",
+    "publicWrites": 0,
+    "errors": []
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "syntheticDatasets": [
+      "qa-synthetic-1920-d0-r0",
+      "qa-synthetic-1920-d0-r1",
+      "qa-synthetic-1920-d1-r0",
+      "qa-synthetic-1920-d1-r1",
+      "qa-synthetic-1920-d2-r0",
+      "qa-synthetic-1920-d2-r1"
+    ],
+    "conditionPreviewCells": 5,
+    "uploadedDataset": "browser-synthetic-1920-1789302001163",
+    "publication": "dspr-d5003a9b1d2d457f78cc567ac6260a01ec87c0a8137e0284e2472ea7cc094a11",
+    "status": "prepared",
+    "publicWrites": 0,
+    "errors": []
+  }
+]

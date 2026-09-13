@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opendpd"
-version = "2.2.2"
+version = "2.2.3"
 description = "An end-to-end learning framework for modeling power amplifiers and digital pre-distortion"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -100,11 +100,13 @@ include = [
     "backbones",
     "backbones.*",
     "datasets",
+    "dataset",
     "datasets.*"
 ]
 
 [tool.setuptools.package-data]
 datasets = ["*/spec.json", "*/*.csv"]
+dataset = ["**/*.json", "**/*.csv", "**/*.md", "README.md"]
 # Built frontend (frontend/ -> opendpd/studio/static via `npm run build`); the
 # release workflow builds it before `python -m build` so wheels are self-contained.
 "opendpd.studio" = ["static/*", "static/assets/*", "locales/*.json", "icon.png", "icon.ico"]

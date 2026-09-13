@@ -15,6 +15,8 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import Checkbox from '@mui/material/Checkbox'
+import FormControlLabel from '@mui/material/FormControlLabel'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '@/api/client'
@@ -39,7 +41,7 @@ const FIX_KEYS: Record<string, MessageKey> = {
 }
 
 /** Whole-file validation precedes split review; changing a setting invalidates its confirmation. */
-export function CreateDatasetDialog({ onClose, onImported, guided = false, onSkipGuide }: { onClose: () => void; onImported: (id: string) => void; guided?: boolean; onSkipGuide?: () => void }) {
+export function CreateDatasetDialog({ onClose, onImported, guided = false, onSkipGuide }: { onClose: () => void; onImported: (id: string, publish?: boolean) => void; guided?: boolean; onSkipGuide?: () => void }) {
   const defaults = useDatasetImportDefaults()
   const [active, setActive] = useState(0)
   const [source, setSource] = useState<CsvPreviewRequest['source'] | null>(null)
@@ -53,6 +55,7 @@ export function CreateDatasetDialog({ onClose, onImported, guided = false, onSki
   const [datasetId, setDatasetId] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [origin, setOrigin] = useState<DatasetOrigin>('unknown')
+  const [publicReview, setPublicReview] = useState(false)
   const [signal, setSignal] = useState(emptySignalForm)
   const [fileError, setFileError] = useState('')
   const create = useCreateCsvDataset()
@@ -112,6 +115,7 @@ export function CreateDatasetDialog({ onClose, onImported, guided = false, onSki
     setActive(0); setSource(null); setFilename(''); setOptions(INITIAL_OPTIONS)
     setReport(null); setCsvStamp(''); setReviewStamp(''); setRatios({}); setGuard(null)
     setDatasetId(''); setDisplayName(''); setOrigin('unknown'); setSignal(emptySignalForm); setFileError('')
+    setPublicReview(false)
     upload.reset(); scan.reset(); create.reset()
   }
   return <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="md" aria-labelledby="create-dataset-title" slotProps={{ backdrop: guided ? GUIDE_BACKDROP : undefined }}>
@@ -179,6 +183,8 @@ export function CreateDatasetDialog({ onClose, onImported, guided = false, onSki
             <Table size="small" aria-label={t('datasets.create.splitStep')}><TableHead><TableRow><TableCell>{t('datasets.create.partition')}</TableCell><TableCell align="right">%</TableCell><TableCell align="right">{t('datasets.columns.samples')}</TableCell><TableCell align="right">{t('datasets.create.range')}</TableCell></TableRow></TableHead><TableBody>{SPLITS.map((key) => <TableRow key={key}><TableCell>{key}</TableCell><TableCell align="right">{percentages[key]}</TableCell><TableCell align="right">{formatNumber(report.split_counts?.[key] ?? 0)}</TableCell><TableCell align="right">[{report.boundaries?.[key]?.join(', ')})</TableCell></TableRow>)}</TableBody></Table>
             <Typography variant="body2" color="text.secondary">{t('datasets.create.guardReview', { count: report.split.guard_samples, total: report.split.guard_samples * 2 })}</Typography>
             <Typography variant="body2" color="text.secondary">{t('datasets.create.afterCreate')}</Typography>
+            <Typography variant="body2">{t('datasetResearch.privateNotice')}</Typography>
+            <FormControlLabel control={<Checkbox checked={publicReview} onChange={e => setPublicReview(e.target.checked)} />} label={t('datasetResearch.choosePublic')} />
           </Stack>}
         </Box>
         {!!report?.issues.length && active !== 2 && <Alert severity="error"><Typography sx={{ fontWeight: 700 }}>{t('datasets.create.problems', { count: report.issue_count })}</Typography><Stack spacing={1} sx={{ mt: 1 }}>{report.issues.map((problem, i) => <Box key={i}><Typography variant="body2" sx={{ fontWeight: 600 }}>{problem.line ? `${t('datasets.create.line')} ${problem.line}` : ''}{problem.column ? ` · ${problem.column}` : ''}{problem.line || problem.column ? ': ' : ''}{message(problem.message)}</Typography><Typography variant="body2">{t('datasets.create.fix')}: {getLanguage() !== 'en' && FIX_KEYS[problem.code] ? t(FIX_KEYS[problem.code]!) : message(problem.fix)}</Typography></Box>)}</Stack></Alert>}
@@ -194,7 +200,7 @@ export function CreateDatasetDialog({ onClose, onImported, guided = false, onSki
       {active > 0 && <Button disabled={busy} onClick={() => setActive(active - 1)}>{t('workflow.back')}</Button>}
       {active === 0 && <Button variant="contained" disabled={!csvConfirmed || busy} onClick={() => setActive(1)}>{t('workflow.next')}</Button>}
       {active === 1 && <Button variant="contained" disabled={!csvConfirmed || !numbersValid || !signalValid || !identityValid || busy} onClick={() => validate(true)}>{t('datasets.create.reviewStep')}</Button>}
-      {active === 2 && <Button variant="contained" disabled={!reviewed || busy} onClick={() => { if (source && report?.sha256) create.mutate({ source, options, split, dataset_id: datasetId, display_name: displayName, origin, signal: signalSpecFrom(signal), expected_sha256: report.sha256 }, { onSuccess: (result) => onImported(result.dataset_id) }) }}>{create.isPending ? t('datasets.import.importing') : t('datasets.create.submit')}</Button>}
+      {active === 2 && <Button variant="contained" disabled={!reviewed || busy} onClick={() => { if (source && report?.sha256) create.mutate({ source, options, split, dataset_id: datasetId, display_name: displayName, origin, signal: signalSpecFrom(signal), expected_sha256: report.sha256 }, { onSuccess: (result) => publicReview ? onImported(result.dataset_id, true) : onImported(result.dataset_id) }) }}>{create.isPending ? t('datasets.import.importing') : t('datasets.create.submit')}</Button>}
     </DialogActions>
   </Dialog>
 }

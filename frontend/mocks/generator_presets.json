@@ -1,0 +1,308 @@
+[
+  {
+    "preset_id": "nr-20",
+    "family": "nr",
+    "label": "FR1 \u00b7 20 MHz",
+    "description": "30 kHz SCS \u00b7 normal CP \u00b7 64-QAM",
+    "config": {
+      "version": "signal-generator-v1",
+      "preset_id": "nr-20",
+      "waveform": "ofdm",
+      "sample_rate_hz": 122880000.0,
+      "bandwidth_hz": 20000000.0,
+      "carrier_frequency_hz": 3500000000.0,
+      "length_mode": "samples",
+      "n_samples": 131072,
+      "duration_ms": 1.0,
+      "seed": 42,
+      "rms": 0.2,
+      "fft_size": 1024,
+      "oversampling": 4,
+      "channel_subcarriers": [
+        612
+      ],
+      "channel_modulations": [
+        64
+      ],
+      "channel_power_db": [
+        0.0
+      ],
+      "channel_gap_bins": 0,
+      "dc_null": true,
+      "pilot_mode": "comb",
+      "pilot_spacing": 12,
+      "pilot_indices": [],
+      "pilot_boost_db": 0.0,
+      "cp_mode": "nr_normal",
+      "cp_samples": 16,
+      "modulation_order": 64,
+      "samples_per_symbol": 8,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "tone_frequency_hz": 1000000.0,
+      "tone_count": 8,
+      "frequency_offset_hz": 0.0,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "dc_i": 0.0,
+      "dc_q": 0.0,
+      "snr_db": null,
+      "clip_db": null
+    }
+  },
+  {
+    "preset_id": "wifi6-20",
+    "family": "wifi6",
+    "label": "20 MHz \u00b7 1024-QAM",
+    "description": "78.125 kHz SCS \u00b7 0.8 \u00b5s guard interval \u00b7 continuous OFDM payload",
+    "config": {
+      "version": "signal-generator-v1",
+      "preset_id": "wifi6-20",
+      "waveform": "ofdm",
+      "sample_rate_hz": 80000000.0,
+      "bandwidth_hz": 20000000.0,
+      "carrier_frequency_hz": 5800000000.0,
+      "length_mode": "samples",
+      "n_samples": 131072,
+      "duration_ms": 1.0,
+      "seed": 42,
+      "rms": 0.2,
+      "fft_size": 256,
+      "oversampling": 4,
+      "channel_subcarriers": [
+        242
+      ],
+      "channel_modulations": [
+        1024
+      ],
+      "channel_power_db": [
+        0.0
+      ],
+      "channel_gap_bins": 0,
+      "dc_null": true,
+      "pilot_mode": "comb",
+      "pilot_spacing": 16,
+      "pilot_indices": [],
+      "pilot_boost_db": 0.0,
+      "cp_mode": "fixed",
+      "cp_samples": 16,
+      "modulation_order": 64,
+      "samples_per_symbol": 8,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "tone_frequency_hz": 1000000.0,
+      "tone_count": 8,
+      "frequency_offset_hz": 0.0,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "dc_i": 0.0,
+      "dc_q": 0.0,
+      "snr_db": null,
+      "clip_db": null
+    }
+  },
+  {
+    "preset_id": "wifi7-20",
+    "family": "wifi7",
+    "label": "20 MHz \u00b7 4096-QAM",
+    "description": "78.125 kHz SCS \u00b7 0.8 \u00b5s guard interval \u00b7 continuous OFDM payload",
+    "config": {
+      "version": "signal-generator-v1",
+      "preset_id": "wifi7-20",
+      "waveform": "ofdm",
+      "sample_rate_hz": 80000000.0,
+      "bandwidth_hz": 20000000.0,
+      "carrier_frequency_hz": 6100000000.0,
+      "length_mode": "samples",
+      "n_samples": 131072,
+      "duration_ms": 1.0,
+      "seed": 42,
+      "rms": 0.2,
+      "fft_size": 256,
+      "oversampling": 4,
+      "channel_subcarriers": [
+        242
+      ],
+      "channel_modulations": [
+        4096
+      ],
+      "channel_power_db": [
+        0.0
+      ],
+      "channel_gap_bins": 0,
+      "dc_null": true,
+      "pilot_mode": "comb",
+      "pilot_spacing": 16,
+      "pilot_indices": [],
+      "pilot_boost_db": 0.0,
+      "cp_mode": "fixed",
+      "cp_samples": 16,
+      "modulation_order": 64,
+      "samples_per_symbol": 8,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "tone_frequency_hz": 1000000.0,
+      "tone_count": 8,
+      "frequency_offset_hz": 0.0,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "dc_i": 0.0,
+      "dc_q": 0.0,
+      "snr_db": null,
+      "clip_db": null
+    }
+  },
+  {
+    "preset_id": "wifi8-80",
+    "family": "wifi8",
+    "label": "80 MHz \u00b7 4096-QAM",
+    "description": "78.125 kHz SCS \u00b7 0.8 \u00b5s guard interval \u00b7 continuous OFDM payload",
+    "config": {
+      "version": "signal-generator-v1",
+      "preset_id": "wifi8-80",
+      "waveform": "ofdm",
+      "sample_rate_hz": 320000000.0,
+      "bandwidth_hz": 80000000.0,
+      "carrier_frequency_hz": 6100000000.0,
+      "length_mode": "samples",
+      "n_samples": 131072,
+      "duration_ms": 1.0,
+      "seed": 42,
+      "rms": 0.2,
+      "fft_size": 1024,
+      "oversampling": 4,
+      "channel_subcarriers": [
+        996
+      ],
+      "channel_modulations": [
+        4096
+      ],
+      "channel_power_db": [
+        0.0
+      ],
+      "channel_gap_bins": 0,
+      "dc_null": true,
+      "pilot_mode": "comb",
+      "pilot_spacing": 16,
+      "pilot_indices": [],
+      "pilot_boost_db": 0.0,
+      "cp_mode": "fixed",
+      "cp_samples": 64,
+      "modulation_order": 64,
+      "samples_per_symbol": 8,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "tone_frequency_hz": 1000000.0,
+      "tone_count": 8,
+      "frequency_offset_hz": 0.0,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "dc_i": 0.0,
+      "dc_q": 0.0,
+      "snr_db": null,
+      "clip_db": null
+    }
+  },
+  {
+    "preset_id": "custom-ofdm",
+    "family": "custom",
+    "label": "Custom OFDM / OFDMA",
+    "description": "Independent channel allocations, pilots and modulation",
+    "config": {
+      "version": "signal-generator-v1",
+      "preset_id": "custom-ofdm",
+      "waveform": "ofdm",
+      "sample_rate_hz": 80000000.0,
+      "bandwidth_hz": 20000000.0,
+      "carrier_frequency_hz": 3500000000.0,
+      "length_mode": "samples",
+      "n_samples": 131072,
+      "duration_ms": 1.0,
+      "seed": 42,
+      "rms": 0.2,
+      "fft_size": 256,
+      "oversampling": 4,
+      "channel_subcarriers": [
+        242
+      ],
+      "channel_modulations": [
+        64
+      ],
+      "channel_power_db": [
+        0.0
+      ],
+      "channel_gap_bins": 0,
+      "dc_null": true,
+      "pilot_mode": "comb",
+      "pilot_spacing": 16,
+      "pilot_indices": [],
+      "pilot_boost_db": 0.0,
+      "cp_mode": "fixed",
+      "cp_samples": 16,
+      "modulation_order": 64,
+      "samples_per_symbol": 8,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "tone_frequency_hz": 1000000.0,
+      "tone_count": 8,
+      "frequency_offset_hz": 0.0,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "dc_i": 0.0,
+      "dc_q": 0.0,
+      "snr_db": null,
+      "clip_db": null
+    }
+  },
+  {
+    "preset_id": "custom-tone",
+    "family": "custom",
+    "label": "Single tone",
+    "description": "Complex sinusoid for gain and phase checks",
+    "config": {
+      "version": "signal-generator-v1",
+      "preset_id": "custom-tone",
+      "waveform": "tone",
+      "sample_rate_hz": 80000000.0,
+      "bandwidth_hz": 20000000.0,
+      "carrier_frequency_hz": 3500000000.0,
+      "length_mode": "samples",
+      "n_samples": 131072,
+      "duration_ms": 1.0,
+      "seed": 42,
+      "rms": 0.2,
+      "fft_size": 256,
+      "oversampling": 4,
+      "channel_subcarriers": [
+        242
+      ],
+      "channel_modulations": [
+        64
+      ],
+      "channel_power_db": [
+        0.0
+      ],
+      "channel_gap_bins": 0,
+      "dc_null": true,
+      "pilot_mode": "comb",
+      "pilot_spacing": 16,
+      "pilot_indices": [],
+      "pilot_boost_db": 0.0,
+      "cp_mode": "fixed",
+      "cp_samples": 16,
+      "modulation_order": 64,
+      "samples_per_symbol": 8,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "tone_frequency_hz": 1000000.0,
+      "tone_count": 8,
+      "frequency_offset_hz": 0.0,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "dc_i": 0.0,
+      "dc_q": 0.0,
+      "snr_db": null,
+      "clip_db": null
+    }
+  }
+]

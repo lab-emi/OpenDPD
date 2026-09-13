@@ -54,6 +54,18 @@ class MeasurementConfig(StrictModel):
     conditions: MeasurementConditions
     source: Literal["manual", "mock_adapter"] = "manual"
     playback: Literal["loop", "single"] = "loop"              # loop: the file repeated, so a wrapped window is valid
+    processing_version: Literal["measurement-integer-v1", "measurement-fractional-v2"] = "measurement-integer-v1"
+
+
+class AlignmentDiagnostic(StrictModel):
+    """An ablation on the same retained samples; these are diagnostics, not profile metrics."""
+
+    stage: Literal["raw_start", "integer_aligned", "fractional_aligned"]
+    correlation: float = Field(ge=0, le=1)
+    gain_abs: float = Field(ge=0)
+    gain_phase_deg: float
+    magnitude_fit_nmse_db: Optional[float] = None
+    complex_fit_nmse_db: Optional[float] = None
 
 
 class CaptureAlignment(StrictModel):
@@ -74,6 +86,12 @@ class CaptureAlignment(StrictModel):
     rms: float = Field(ge=0)
     peak_abs: float = Field(ge=0)
     declared_output_power_dbm: Optional[float] = None
+    processing_version: Literal["measurement-integer-v1", "measurement-fractional-v2"] = "measurement-integer-v1"
+    fractional_delay_samples: float = Field(default=0, ge=-0.5, le=0.5, allow_inf_nan=False)
+    delay_ns: Optional[float] = None                         # evaluated sample rate, after resampling
+    valid_sample_range: Optional[Tuple[int, int]] = None     # half-open, relative to the played period
+    boundary_method: Optional[str] = None
+    diagnostics: List[AlignmentDiagnostic] = Field(default_factory=list)
 
 
 class MeasurementEvidence(StrictModel):

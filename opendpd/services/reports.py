@@ -63,6 +63,7 @@ class _Report:
     """Everything a report shows, gathered once from the run directory."""
 
     def __init__(self, ws: Workspace, run_id: str, language: str = "en"):
+        self.ws = ws
         self.language = language
         self.text = lambda value: localize(str(value), language) if language != "en" else str(value)
         self.run_id = run_id
@@ -111,6 +112,10 @@ class _Report:
                  ("Seed / reproducibility", f"{self.resolved.training.seed} / {self.resolved.training.reproducibility}"),
                  ("Device", self.resolved.execution.device)]
         if r is not None:
+            from opendpd.services.review import review_result
+            context = review_result(self.ws, self.run_id)
+            facts += [(f.label, f"{f.value if f.value is not None else 'not provided'} {f.unit or ''} ({f.source})")
+                      for f in context.facts]
             facts += [("Evidence", r.evidence_type.value),
                       ("Metric profile", f"{r.metric_profile_id} v{r.metric_profile_version} (stored: {', '.join(self.profiles)})"),
                       ("Reference", f"{self.text(r.reference.kind)}: {self.text(r.reference.description)}"

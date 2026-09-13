@@ -17,6 +17,7 @@ import { ImportDatasetDialog } from '@/components/ImportDatasetDialog'
 import { BuiltinDatasetDialog } from '@/components/BuiltinDatasetDialog'
 import { CreateDatasetDialog } from '@/components/CreateDatasetDialog'
 import { DatasetGuide } from '@/components/DatasetGuide'
+import { SyntheticDatasetDialog } from '@/components/SyntheticDatasetDialog'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
 export function DatasetsPage() {
@@ -26,11 +27,17 @@ export function DatasetsPage() {
   const [importing, setImporting] = useState(false)
   const [builtin, setBuiltin] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [synthetic, setSynthetic] = useState(false)
   const [guided, setGuided] = useState(false)
   const [params, setParams] = useSearchParams()
   const guide = params.get('guide') === 'start'
   const closeGuide = () => setParams((old) => { const next = new URLSearchParams(old); next.delete('guide'); return next }, { replace: true })
-  const selected = (id: string) => navigate(`/datasets/${encodeURIComponent(id)}${guided ? '?guide=ready' : ''}`)
+  const selected = (id: string, publish = false) => {
+    const query = new URLSearchParams()
+    if (guided) query.set('guide', 'ready')
+    if (publish) query.set('publish', '1')
+    navigate(`/datasets/${encodeURIComponent(id)}${query.size ? `?${query}` : ''}`)
+  }
   const actions = (
     <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
       <Button variant="outlined" disabled={!customDatasets} onClick={() => { setGuided(false); setCreating(true) }}>
@@ -40,6 +47,7 @@ export function DatasetsPage() {
         {t('datasets.builtin.title')}
       </Button>
       {!WEB_MODE && <Button disabled={!customDatasets} onClick={() => setImporting(true)}>{t('datasets.create.advancedImport')}{!customDatasets && ` · ${t('common.comingSoon')}`}</Button>}
+      <Button disabled={!customDatasets} onClick={() => setSynthetic(true)}>{t('datasetResearch.syntheticTitle')}</Button>
     </Stack>
   )
   return (
@@ -95,9 +103,10 @@ export function DatasetsPage() {
           }}
         />
       )}
-      {guide && <DatasetGuide customDatasets={customDatasets} onSkip={closeGuide} onCsv={() => { closeGuide(); setGuided(true); setCreating(true) }} onBuiltin={() => { closeGuide(); setGuided(true); setBuiltin(true) }} />}
+      {guide && <DatasetGuide customDatasets={customDatasets} onSkip={closeGuide} onGenerator={() => navigate('/signal-generator')} onCsv={() => { closeGuide(); setGuided(true); setCreating(true) }} onBuiltin={() => { closeGuide(); if (!datasets.data?.length) { setGuided(true); setBuiltin(true) } }} />}
       {builtin && <BuiltinDatasetDialog guided={guided} onSkipGuide={() => setGuided(false)} onClose={() => setBuiltin(false)} onSelected={(id) => { setBuiltin(false); selected(id) }} />}
-      {customDatasets && creating && <CreateDatasetDialog guided={guided} onSkipGuide={() => setGuided(false)} onClose={() => setCreating(false)} onImported={(id) => { setCreating(false); selected(id) }} />}
+      {customDatasets && creating && <CreateDatasetDialog guided={guided} onSkipGuide={() => setGuided(false)} onClose={() => setCreating(false)} onImported={(id, publish) => { setCreating(false); selected(id, publish) }} />}
+      {synthetic && <SyntheticDatasetDialog onClose={() => setSynthetic(false)} />}
     </Stack>
   )
 }

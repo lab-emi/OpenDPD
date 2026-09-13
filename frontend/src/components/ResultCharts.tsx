@@ -1,3 +1,5 @@
+import { SpectrumReview } from './SpectrumReview'
+import type { EvaluationResult } from '@/api/types'
 import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
@@ -17,7 +19,7 @@ export interface SpectrumData {
   nperseg: number
   n_samples: number
   frequency: number[]
-  traces: Array<{ name: string; role: string; psd_db: number[] }>
+  traces: Array<{ name: string; role: string; psd_db: number[]; source?: string; stage?: string; capture_id?: string }>
   bands: { main: [number, number]; adjacent: Array<[number, number]> } | null
   estimator: string
 }
@@ -59,7 +61,7 @@ function AmPlots({ data }: { data: AmData }) {
 }
 
 /** Spectrum, time window and AM-AM / AM-PM of one result, from its registered plot artifacts. */
-export function ResultCharts({ runId }: { runId: string }) {
+export function ResultCharts({ runId, result, onProfile }: { runId: string; result?: EvaluationResult; onProfile?: (id: string) => void }) {
   const spectrum = useArtifactJson<SpectrumData>(runId, 'plot-spectrum')
   const time = useArtifactJson<TimeData>(runId, 'plot-time')
   const am = useArtifactJson<AmData>(runId, 'plot-amam')
@@ -80,7 +82,7 @@ export function ResultCharts({ runId }: { runId: string }) {
       <Grid container spacing={2}>
         {spectrum.data && (
           <Grid size={{ xs: 12 }}>
-            <SpectrumPlot frequencyHz={spectrum.data.frequency} axis={spectrum.data.axis} traces={spectrumTraces} bands={spectrum.data.bands ?? undefined} />
+            {result ? <SpectrumReview key={runId} results={[result]} referenceRunId={runId} onRestore={figure => onProfile?.(figure.spec.profiles[runId]!)} /> : <SpectrumPlot frequencyHz={spectrum.data.frequency} axis={spectrum.data.axis} traces={spectrumTraces} bands={spectrum.data.bands ?? undefined} />}
             <Typography variant="caption" color="text.secondary">
               {message(spectrum.data.estimator)}
             </Typography>

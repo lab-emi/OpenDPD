@@ -64,6 +64,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dataset-publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Publications */
+        get: operations["publications_api_v1_dataset_publications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dataset-publications/capability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capability */
+        get: operations["capability_api_v1_dataset_publications_capability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dataset-publications/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare */
+        post: operations["prepare_api_v1_dataset_publications_prepare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dataset-publications/{publication_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Publication */
+        get: operations["publication_api_v1_dataset_publications__publication_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dataset-publications/{publication_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["download_api_v1_dataset_publications__publication_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dataset-publications/{publication_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit */
+        post: operations["submit_api_v1_dataset_publications__publication_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets": {
         parameters: {
             query?: never;
@@ -234,6 +336,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/synthetic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Synthetic */
+        post: operations["synthetic_api_v1_datasets_synthetic_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/upload": {
         parameters: {
             query?: never;
@@ -357,6 +476,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/{dataset_id}/sample-counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts */
+        get: operations["counts_api_v1_datasets__dataset_id__sample_counts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/deploy/exports": {
         parameters: {
             query?: never;
@@ -435,6 +571,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/figure-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview */
+        post: operations["preview_api_v1_figure_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/figure-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sources */
+        post: operations["sources_api_v1_figure_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/figures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Figures List */
+        get: operations["figures_list_api_v1_figures_get"];
+        put?: never;
+        /** Figures Create */
+        post: operations["figures_create_api_v1_figures_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/figures/{figure_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Figures Get */
+        get: operations["figures_get_api_v1_figures__figure_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/figures/{figure_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Figures Export */
+        get: operations["figures_export_api_v1_figures__figure_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/figures/{figure_id}/reproduction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reproduction */
+        get: operations["reproduction_api_v1_figures__figure_id__reproduction_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hardware/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Costs */
+        get: operations["costs_api_v1_hardware_costs_get"];
+        put?: never;
+        /** Record */
+        post: operations["record_api_v1_hardware_costs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hardware/reports/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload */
+        post: operations["upload_api_v1_hardware_reports_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/hardware/reports/{digest}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["download_api_v1_hardware_reports__digest__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/imports": {
         parameters: {
             query?: never;
@@ -449,6 +740,41 @@ export interface paths {
          * @description Upload an experiment package and import it; every hash is verified before anything is written.
          */
         post: operations["imports_create_api_v1_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/measurement-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Measurement Sessions List */
+        get: operations["measurement_sessions_list_api_v1_measurement_sessions_get"];
+        put?: never;
+        /** Measurement Sessions Create */
+        post: operations["measurement_sessions_create_api_v1_measurement_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/measurement-sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Measurement Session Get */
+        get: operations["measurement_session_get_api_v1_measurement_sessions__session_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -598,6 +924,40 @@ export interface paths {
         get: operations["results_report_api_v1_results__run_id__report_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/results/{run_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Result Review */
+        get: operations["result_review_api_v1_results__run_id__review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/results/{run_id}/rf-conditions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Result Conditions */
+        post: operations["result_conditions_api_v1_results__run_id__rf_conditions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -936,6 +1296,228 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signal-generator/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Presets */
+        get: operations["list_presets_api_v1_signal_generator_presets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate */
+        post: operations["generate_api_v1_signal_generator_signals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/signals/{signal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["get_api_v1_signal_generator_signals__signal_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/signals/{signal_id}/dataset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dataset */
+        post: operations["dataset_api_v1_signal_generator_signals__signal_id__dataset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/signals/{signal_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: operations["download_api_v1_signal_generator_signals__signal_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate */
+        post: operations["validate_api_v1_signal_generator_validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sweeps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sweeps List */
+        get: operations["sweeps_list_api_v1_sweeps_get"];
+        put?: never;
+        /** Sweeps Create */
+        post: operations["sweeps_create_api_v1_sweeps_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sweeps/conditions/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Conditions Validate */
+        post: operations["conditions_validate_api_v1_sweeps_conditions_validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sweeps/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sweep Preview */
+        post: operations["sweep_preview_api_v1_sweeps_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sweeps/{sweep_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sweeps Get */
+        get: operations["sweeps_get_api_v1_sweeps__sweep_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sweeps/{sweep_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sweeps Cancel */
+        post: operations["sweeps_cancel_api_v1_sweeps__sweep_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sweeps/{sweep_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sweeps Report */
+        get: operations["sweeps_report_api_v1_sweeps__sweep_id__report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sweeps/{sweep_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sweeps Start */
+        post: operations["sweeps_start_api_v1_sweeps__sweep_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/about": {
         parameters: {
             query?: never;
@@ -1016,6 +1598,69 @@ export interface components {
             /** Wall Clock S */
             wall_clock_s?: number | null;
         };
+        /**
+         * AdaptationEntry
+         * @description A method: a PA model, or a DPD model that goes through the PA entry's model of the same condition and seed.
+         */
+        AdaptationEntry: {
+            /** Entry Id */
+            entry_id: string;
+            model: components["schemas"]["ModelSpec"];
+            /** Pa Entry */
+            pa_entry?: string | null;
+            /** Recipe Id */
+            recipe_id?: string | null;
+            /**
+             * Task
+             * @enum {string}
+             */
+            task: "train_pa" | "train_dpd";
+            training: components["schemas"]["TrainingConfig"];
+        };
+        /**
+         * AdaptationPlan
+         * @description Pre-registered: ``plan_sha256`` covers everything but ``created_at`` and itself.
+         */
+        AdaptationPlan: {
+            /** Budgets */
+            budgets?: number[];
+            condition_set: components["schemas"]["ConditionSet"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * Device
+             * @default cpu
+             */
+            device: string;
+            /** Entries */
+            entries: components["schemas"]["AdaptationEntry"][];
+            /**
+             * Metric Profile Id
+             * @default legacy-opendpd-v1
+             */
+            metric_profile_id: string;
+            /** Plan Sha256 */
+            plan_sha256?: string | null;
+            /**
+             * Protocol Id
+             * @default conditions-v1
+             * @constant
+             */
+            protocol_id: "conditions-v1";
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** Seeds */
+            seeds?: number[];
+            target?: components["schemas"]["TargetRule"] | null;
+            /** Tasks */
+            tasks?: ("zero_update" | "few_shot" | "full_retrain")[];
+        };
         /** AdaptationReport */
         AdaptationReport: {
             /** Aggregates */
@@ -1095,6 +1740,27 @@ export interface components {
             report_sha256?: string | null;
             /** Set Id */
             set_id: string;
+        };
+        /**
+         * AlignmentDiagnostic
+         * @description An ablation on the same retained samples; these are diagnostics, not profile metrics.
+         */
+        AlignmentDiagnostic: {
+            /** Complex Fit Nmse Db */
+            complex_fit_nmse_db?: number | null;
+            /** Correlation */
+            correlation: number;
+            /** Gain Abs */
+            gain_abs: number;
+            /** Gain Phase Deg */
+            gain_phase_deg: number;
+            /** Magnitude Fit Nmse Db */
+            magnitude_fit_nmse_db?: number | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "raw_start" | "integer_aligned" | "fractional_aligned";
         };
         /** AmTrace */
         AmTrace: {
@@ -1182,6 +1848,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_api_v1_hardware_reports_upload_post */
+        Body_upload_api_v1_hardware_reports_upload_post: {
+            /** File */
+            file: string;
+        };
         /** BootstrapRequest */
         BootstrapRequest: {
             /** Token */
@@ -1206,6 +1877,28 @@ export interface components {
             raw_sha256: string;
             signal: components["schemas"]["SignalSpec"];
         };
+        /** CalibrationRecord */
+        CalibrationRecord: {
+            /** Calibration Id */
+            calibration_id: string;
+            /** Deembedding */
+            deembedding?: string | null;
+            /** Evidence Sha256 */
+            evidence_sha256?: string | null;
+            /** Fixture */
+            fixture?: string | null;
+            /** Method */
+            method: string;
+            /**
+             * Performed At
+             * Format: date-time
+             */
+            performed_at: string;
+            /** Reference Plane */
+            reference_plane: string;
+            /** Version */
+            version: string;
+        };
         /** Capabilities */
         Capabilities: {
             /**
@@ -1229,12 +1922,23 @@ export interface components {
         CaptureAlignment: {
             /** Artifact Id */
             artifact_id: string;
+            /** Boundary Method */
+            boundary_method?: string | null;
             /** Correlation */
             correlation: number;
             /** Declared Output Power Dbm */
             declared_output_power_dbm?: number | null;
+            /** Delay Ns */
+            delay_ns?: number | null;
             /** Delay Samples */
             delay_samples: number;
+            /** Diagnostics */
+            diagnostics?: components["schemas"]["AlignmentDiagnostic"][];
+            /**
+             * Fractional Delay Samples
+             * @default 0
+             */
+            fractional_delay_samples: number;
             /** Gain Abs */
             gain_abs: number;
             /** Gain Db */
@@ -1245,6 +1949,12 @@ export interface components {
             n_samples_raw: number;
             /** Peak Abs */
             peak_abs: number;
+            /**
+             * Processing Version
+             * @default measurement-integer-v1
+             * @enum {string}
+             */
+            processing_version: "measurement-integer-v1" | "measurement-fractional-v2";
             /** Raw Sha256 */
             raw_sha256: string;
             /** Resample Ratio */
@@ -1261,6 +1971,11 @@ export interface components {
             role: "with_dpd" | "without_dpd";
             /** Sample Rate Hz */
             sample_rate_hz: number;
+            /** Valid Sample Range */
+            valid_sample_range?: [
+                number,
+                number
+            ] | null;
             /**
              * Wrapped
              * @default false
@@ -1283,6 +1998,65 @@ export interface components {
             path: string;
             /** Sha256 */
             sha256?: string | null;
+        };
+        /** CaptureReview */
+        CaptureReview: {
+            capture: components["schemas"]["SessionCapture"];
+            /** Declared Output Power Dbm */
+            declared_output_power_dbm?: number | null;
+            /** Metrics */
+            metrics?: components["schemas"]["MetricValue"][];
+            /** Played Sha256 */
+            played_sha256?: string | null;
+            /** Processing */
+            processing?: {
+                [key: string]: unknown;
+            };
+            /** Raw Sha256 */
+            raw_sha256?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Seed */
+            seed?: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "included" | "excluded" | "failed";
+        };
+        /** CatalogDataset */
+        CatalogDataset: {
+            /** Attribution */
+            attribution: string;
+            data: components["schemas"]["FileRef"];
+            /** Dataset Id */
+            dataset_id: string;
+            /** Description */
+            description: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Format
+             * @default opendpd-dataset-v1
+             * @constant
+             */
+            format: "opendpd-dataset-v1";
+            /**
+             * License
+             * @enum {string}
+             */
+            license: "CC0-1.0" | "CC-BY-4.0";
+            /** N Samples */
+            n_samples: number;
+            origin: components["schemas"]["DatasetOrigin"];
+            signal: components["schemas"]["SignalSpec"];
+            /** Simulation */
+            simulation?: {
+                [key: string]: unknown;
+            } | null;
+            /** Source Raw Sha256 */
+            source_raw_sha256: string;
+            split: components["schemas"]["SplitSpec"];
         };
         /** CellAggregate */
         CellAggregate: {
@@ -1436,6 +2210,44 @@ export interface components {
             role: string;
             /** Stride */
             stride: number;
+        };
+        /** CostAttachment */
+        CostAttachment: {
+            /** Filename */
+            filename: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** CostValues */
+        CostValues: {
+            /** Area Mm2 */
+            area_mm2?: number | null;
+            /** Constant Bytes */
+            constant_bytes?: number | null;
+            /** Dynamic Skip Fraction */
+            dynamic_skip_fraction?: number | null;
+            /** Energy J Per Sample */
+            energy_j_per_sample?: number | null;
+            /** Input Buffer Bytes */
+            input_buffer_bytes?: number | null;
+            /** Latency S */
+            latency_s?: number | null;
+            /** Lut Count */
+            lut_count?: number | null;
+            /** Mac Per Sample */
+            mac_per_sample?: number | null;
+            /** Power W */
+            power_w?: number | null;
+            /** State Bytes */
+            state_bytes?: number | null;
+            /** Table Bytes */
+            table_bytes?: number | null;
+            /** Table Lookups Per Sample */
+            table_lookups_per_sample?: number | null;
+            /** Throughput Samples S */
+            throughput_samples_s?: number | null;
         };
         /** CsvCreateRequest */
         CsvCreateRequest: {
@@ -1651,6 +2463,10 @@ export interface components {
              *     }
              */
             signal: components["schemas"]["SignalSpec"];
+            /** Simulation */
+            simulation?: {
+                [key: string]: unknown;
+            } | null;
             source: components["schemas"]["DatasetSource"];
             split: components["schemas"]["SplitSpec"];
             /** Versions */
@@ -1661,6 +2477,75 @@ export interface components {
          * @enum {string}
          */
         DatasetOrigin: "measured" | "synthetic" | "unknown";
+        /** DatasetPublication */
+        DatasetPublication: {
+            /** Branch */
+            branch: string;
+            catalog: components["schemas"]["CatalogDataset"];
+            /** Commit Sha */
+            commit_sha?: string | null;
+            /** Consent At */
+            consent_at?: string | null;
+            /**
+             * Contact Email
+             * @default emi.lab@outlook.com
+             * @constant
+             */
+            contact_email: "emi.lab@outlook.com";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Directory */
+            directory: string;
+            /** Error */
+            error?: string | null;
+            /** Files */
+            files: components["schemas"]["FileRef"][];
+            /** Package Sha256 */
+            package_sha256: string;
+            /** Publication Id */
+            publication_id: string;
+            /** Pull Request State */
+            pull_request_state?: string | null;
+            /** Pull Request Url */
+            pull_request_url?: string | null;
+            /**
+             * Repository
+             * @default lab-emi/OpenDPD
+             */
+            repository: string;
+            /** Source Manifest Sha256 */
+            source_manifest_sha256: string;
+            /**
+             * Status
+             * @default prepared
+             * @enum {string}
+             */
+            status: "prepared" | "queued" | "branch" | "push" | "pull_request" | "submitted" | "failed" | "interrupted";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+        };
+        /** DatasetPublicationDraft */
+        DatasetPublicationDraft: {
+            /** Attribution */
+            attribution: string;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Description */
+            description: string;
+            /**
+             * License
+             * @enum {string}
+             */
+            license: "CC0-1.0" | "CC-BY-4.0";
+        };
         /** DatasetRef */
         DatasetRef: {
             /** Id */
@@ -1675,6 +2560,23 @@ export interface components {
              * @default contiguous-v1
              */
             split_version: string;
+        };
+        /** DatasetSampleCounts */
+        DatasetSampleCounts: {
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Dataset Id */
+            dataset_id: string;
+            /** Guard Samples */
+            guard_samples: number;
+            /** Sample Rate Hz */
+            sample_rate_hz: number | null;
+            /** Total Samples */
+            total_samples: number;
+            /** Version */
+            version: string;
         };
         /** DatasetSource */
         DatasetSource: {
@@ -1869,6 +2771,7 @@ export interface components {
             dataset: components["schemas"]["DatasetEvidence"];
             /** Device */
             device: string;
+            evaluated_signal?: components["schemas"]["SignalSpec"] | null;
             evidence_type: components["schemas"]["EvidenceType"];
             execution?: components["schemas"]["ExecutionEvidence"] | null;
             /** Extra */
@@ -1909,6 +2812,7 @@ export interface components {
             reference: components["schemas"]["SignalReference"];
             /** Result Id */
             result_id: string;
+            rf_conditions?: components["schemas"]["RFConditions"] | null;
             /** Run Id */
             run_id?: string | null;
             scaling?: components["schemas"]["ScalingInfo"] | null;
@@ -2066,6 +2970,139 @@ export interface components {
             /** Run Id */
             run_id: string;
         };
+        /** FigureBinding */
+        FigureBinding: {
+            /** Files */
+            files: {
+                [key: string]: string;
+            };
+            /** Result Id */
+            result_id: string;
+            /** Result Sha256 */
+            result_sha256: string;
+            review: components["schemas"]["ReviewContext"];
+            /** Run Id */
+            run_id: string;
+        };
+        /** FigurePanel */
+        FigurePanel: {
+            /** Cursor X */
+            cursor_x?: number | null;
+            /**
+             * Kind
+             * @default spectrum
+             * @enum {string}
+             */
+            kind: "spectrum" | "amam" | "ampm" | "power_scan" | "error_distribution";
+            /**
+             * Show Bands
+             * @default true
+             */
+            show_bands: boolean;
+            /** Traces */
+            traces: components["schemas"]["FigureTrace"][];
+            /** X Range */
+            x_range?: [
+                number,
+                number
+            ] | null;
+            /** Y Range */
+            y_range?: [
+                number,
+                number
+            ] | null;
+        };
+        /** FigurePreview */
+        FigurePreview: {
+            figure: components["schemas"]["SavedFigure"];
+            /** Plots */
+            plots: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        /** FigureSource */
+        FigureSource: {
+            /** Kind */
+            kind: string;
+            /** Role */
+            role: string;
+            /** Run Id */
+            run_id: string;
+            /** Source */
+            source: string;
+            /** Trace Name */
+            trace_name: string;
+        };
+        /** FigureSources */
+        FigureSources: {
+            /** Missing */
+            missing: string[];
+            /** Sources */
+            sources: components["schemas"]["FigureSource"][];
+        };
+        /** FigureSourcesRequest */
+        FigureSourcesRequest: {
+            /** Profiles */
+            profiles: {
+                [key: string]: string;
+            };
+        };
+        /** FigureSpec */
+        FigureSpec: {
+            /**
+             * Mode
+             * @default same_condition
+             * @enum {string}
+             */
+            mode: "same_condition" | "cross_condition";
+            /** Panels */
+            panels: components["schemas"]["FigurePanel"][];
+            /** Profiles */
+            profiles: {
+                [key: string]: string;
+            };
+            /** Reference Run Id */
+            reference_run_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Version
+             * @default figure-v1
+             * @enum {string}
+             */
+            version: "figure-v1" | "figure-v2";
+            /**
+             * Width
+             * @default double_column
+             * @enum {string}
+             */
+            width: "single_column" | "double_column";
+        };
+        /** FigureTrace */
+        FigureTrace: {
+            /**
+             * Color
+             * @default #2563EB
+             */
+            color: string;
+            /**
+             * Dash
+             * @default solid
+             * @enum {string}
+             */
+            dash: "solid" | "dash" | "dot" | "dashdot" | "longdash";
+            /** Run Id */
+            run_id: string;
+            /** Trace Name */
+            trace_name: string;
+            /**
+             * Visible
+             * @default true
+             */
+            visible: boolean;
+        };
         /** FileEntryInfo */
         FileEntryInfo: {
             /** Kind */
@@ -2205,6 +3242,341 @@ export interface components {
              */
             y: components["schemas"]["WordFormat"];
         };
+        /** GeneratedSignal */
+        GeneratedSignal: {
+            analysis: components["schemas"]["GeneratorAnalysis"];
+            config: components["schemas"]["GeneratorConfig"];
+            /**
+             * Coverage
+             * @enum {string}
+             */
+            coverage: "numerology" | "experimental" | "custom";
+            /** Download Url */
+            download_url: string;
+            /** Iq Sha256 */
+            iq_sha256: string;
+            /** Signal Id */
+            signal_id: string;
+        };
+        /** GeneratorAnalysis */
+        GeneratorAnalysis: {
+            /** Active Carriers */
+            active_carriers: number;
+            /** Allocation */
+            allocation: {
+                [key: string]: unknown;
+            }[];
+            /** Ccdf Db */
+            ccdf_db: number[];
+            /** Ccdf Probability */
+            ccdf_probability: number[];
+            /** Complete Symbols */
+            complete_symbols: number;
+            /** Constellation I */
+            constellation_i: number[];
+            /** Constellation Q */
+            constellation_q: number[];
+            /** Cp Lengths Samples */
+            cp_lengths_samples: number[];
+            /** Data Carriers */
+            data_carriers: number;
+            /** Dc Magnitude */
+            dc_magnitude: number;
+            /** Duration Ms */
+            duration_ms: number;
+            /** Evm Percent */
+            evm_percent: number | null;
+            /** Evm Symbols */
+            evm_symbols: number;
+            /** Frequency Mhz */
+            frequency_mhz: number[];
+            /** Mean Power Dbfs */
+            mean_power_dbfs: number;
+            /** Notes */
+            notes: string[];
+            /** Occupied Bandwidth 99 Hz */
+            occupied_bandwidth_99_hz: number;
+            /** Papr Db */
+            papr_db: number;
+            /** Peak */
+            peak: number;
+            /** Pilot Carriers */
+            pilot_carriers: number;
+            /** Psd Dbfs Hz */
+            psd_dbfs_hz: number[];
+            /** Reference I */
+            reference_i: number[];
+            /** Reference Q */
+            reference_q: number[];
+            /** Rms */
+            rms: number;
+            /** Sample Count */
+            sample_count: number;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /** Subcarrier Spacing Hz */
+            subcarrier_spacing_hz: number | null;
+            /** Time Envelope */
+            time_envelope: number[];
+            /** Time I */
+            time_i: number[];
+            /** Time Q */
+            time_q: number[];
+            /** Time Us */
+            time_us: number[];
+            /** Trailing Samples */
+            trailing_samples: number;
+            /** Useful Symbol Us */
+            useful_symbol_us: number | null;
+        };
+        /** GeneratorConfig */
+        GeneratorConfig: {
+            /**
+             * Bandwidth Hz
+             * @default 20000000
+             */
+            bandwidth_hz: number;
+            /**
+             * Carrier Frequency Hz
+             * @default 3500000000
+             */
+            carrier_frequency_hz: number;
+            /**
+             * Channel Gap Bins
+             * @default 0
+             */
+            channel_gap_bins: number;
+            /** Channel Modulations */
+            channel_modulations?: number[];
+            /** Channel Power Db */
+            channel_power_db?: number[];
+            /** Channel Subcarriers */
+            channel_subcarriers?: number[];
+            /** Clip Db */
+            clip_db?: number | null;
+            /**
+             * Cp Mode
+             * @default fixed
+             * @enum {string}
+             */
+            cp_mode: "fixed" | "nr_normal" | "nr_extended";
+            /**
+             * Cp Samples
+             * @default 16
+             */
+            cp_samples: number;
+            /**
+             * Dc I
+             * @default 0
+             */
+            dc_i: number;
+            /**
+             * Dc Null
+             * @default true
+             */
+            dc_null: boolean;
+            /**
+             * Dc Q
+             * @default 0
+             */
+            dc_q: number;
+            /**
+             * Duration Ms
+             * @default 1
+             */
+            duration_ms: number;
+            /**
+             * Fft Size
+             * @default 256
+             */
+            fft_size: number;
+            /**
+             * Frequency Offset Hz
+             * @default 0
+             */
+            frequency_offset_hz: number;
+            /**
+             * Iq Gain Db
+             * @default 0
+             */
+            iq_gain_db: number;
+            /**
+             * Iq Phase Deg
+             * @default 0
+             */
+            iq_phase_deg: number;
+            /**
+             * Length Mode
+             * @default samples
+             * @enum {string}
+             */
+            length_mode: "samples" | "duration";
+            /**
+             * Modulation Order
+             * @default 64
+             * @enum {integer}
+             */
+            modulation_order: 2 | 4 | 16 | 64 | 256 | 1024 | 4096;
+            /**
+             * N Samples
+             * @default 131072
+             */
+            n_samples: number;
+            /**
+             * Oversampling
+             * @default 4
+             * @enum {integer}
+             */
+            oversampling: 1 | 2 | 4 | 8;
+            /**
+             * Pilot Boost Db
+             * @default 0
+             */
+            pilot_boost_db: number;
+            /** Pilot Indices */
+            pilot_indices?: number[];
+            /**
+             * Pilot Mode
+             * @default comb
+             * @enum {string}
+             */
+            pilot_mode: "comb" | "explicit" | "none";
+            /**
+             * Pilot Spacing
+             * @default 16
+             */
+            pilot_spacing: number;
+            /**
+             * Preset Id
+             * @default custom-ofdm
+             */
+            preset_id: string;
+            /**
+             * Rms
+             * @default 0.2
+             */
+            rms: number;
+            /**
+             * Rrc Rolloff
+             * @default 0.25
+             */
+            rrc_rolloff: number;
+            /**
+             * Rrc Span Symbols
+             * @default 10
+             */
+            rrc_span_symbols: number;
+            /**
+             * Sample Rate Hz
+             * @default 80000000
+             */
+            sample_rate_hz: number;
+            /**
+             * Samples Per Symbol
+             * @default 8
+             */
+            samples_per_symbol: number;
+            /**
+             * Seed
+             * @default 42
+             */
+            seed: number;
+            /** Snr Db */
+            snr_db?: number | null;
+            /**
+             * Tone Count
+             * @default 8
+             */
+            tone_count: number;
+            /**
+             * Tone Frequency Hz
+             * @default 1000000
+             */
+            tone_frequency_hz: number;
+            /**
+             * Version
+             * @default signal-generator-v1
+             * @constant
+             */
+            version: "signal-generator-v1";
+            /**
+             * Waveform
+             * @default ofdm
+             * @enum {string}
+             */
+            waveform: "ofdm" | "qam" | "tone" | "multitone" | "chirp";
+        };
+        /** GeneratorDatasetRequest */
+        GeneratorDatasetRequest: {
+            /**
+             * Am Pm
+             * @default 0.1
+             */
+            am_pm: number;
+            /**
+             * Compression
+             * @default 0.7
+             */
+            compression: number;
+            /** Dataset Id */
+            dataset_id: string;
+            /**
+             * Display Name
+             * @default Generated signal · synthetic PA
+             */
+            display_name: string;
+            /**
+             * Guard Samples
+             * @default 256
+             */
+            guard_samples: number;
+            /**
+             * Memory
+             * @default 0.08
+             */
+            memory: number;
+            /**
+             * Noise Db
+             * @default -60
+             */
+            noise_db: number;
+            /**
+             * Pa Gain
+             * @default 1.6
+             */
+            pa_gain: number;
+            /**
+             * Train Ratio
+             * @default 0.6
+             */
+            train_ratio: number;
+            /**
+             * Val Ratio
+             * @default 0.2
+             */
+            val_ratio: number;
+        };
+        /** GeneratorDatasetResponse */
+        GeneratorDatasetResponse: {
+            dataset: components["schemas"]["DatasetManifest"];
+            /** Test Samples */
+            test_samples: number;
+        };
+        /** GeneratorPreset */
+        GeneratorPreset: {
+            config: components["schemas"]["GeneratorConfig"];
+            /** Description */
+            description: string;
+            /**
+             * Family
+             * @enum {string}
+             */
+            family: "nr" | "wifi6" | "wifi7" | "wifi8" | "custom";
+            /** Label */
+            label: string;
+            /** Preset Id */
+            preset_id: string;
+        };
         /**
          * GoldenCase
          * @description One golden vector: inputs, expected outputs and final state, all in the spec's integer formats.
@@ -2231,6 +3603,142 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HardwareCostDraft */
+        HardwareCostDraft: {
+            /** Activity */
+            activity: string;
+            /** Batch Size */
+            batch_size: number;
+            /** Boundary */
+            boundary: string;
+            /** Clock Hz */
+            clock_hz?: number | null;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Precision */
+            precision: components["schemas"]["PrecisionModule"][];
+            /** Process */
+            process?: string | null;
+            /** Profile Id */
+            profile_id: string;
+            /** Report Sha256 */
+            report_sha256: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Source Kind
+             * @enum {string}
+             */
+            source_kind: "operation_count" | "cpu_reference_timing" | "fpga_synthesis" | "fpga_board_measurement" | "asic_synthesis" | "post_layout_simulation" | "chip_measurement";
+            /**
+             * Synthetic
+             * @default false
+             */
+            synthetic: boolean;
+            /** Target */
+            target: string;
+            /** Title */
+            title: string;
+            values: components["schemas"]["CostValues"];
+        };
+        /** HardwareCostEntry */
+        HardwareCostEntry: {
+            /** Activity */
+            activity: string;
+            /** Batch Size */
+            batch_size?: number | null;
+            /** Boundary */
+            boundary: string;
+            /** Clock Hz */
+            clock_hz?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Entry Id */
+            entry_id: string;
+            /** Execution Semantics */
+            execution_semantics: string;
+            /** Limitations */
+            limitations: string[];
+            /** Lookahead Lower Bound S */
+            lookahead_lower_bound_s?: number | null;
+            /** Lookahead Samples */
+            lookahead_samples?: number | null;
+            /** Metric Basis */
+            metric_basis: string;
+            /** Metrics */
+            metrics: components["schemas"]["MetricValue"][];
+            /** Precision */
+            precision: components["schemas"]["PrecisionModule"][];
+            /** Process */
+            process?: string | null;
+            /** Profile Id */
+            profile_id: string;
+            /** Result Sha256 */
+            result_sha256: string;
+            /** Rf Evidence Type */
+            rf_evidence_type: string;
+            /** Run Id */
+            run_id: string;
+            source_file: components["schemas"]["FileRef"];
+            /**
+             * Source Kind
+             * @enum {string}
+             */
+            source_kind: "operation_count" | "cpu_reference_timing" | "fpga_synthesis" | "fpga_board_measurement" | "asic_synthesis" | "post_layout_simulation" | "chip_measurement";
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "checkpoint_shapes" | "studio_fixed_point_report" | "user_report";
+            /**
+             * Stale
+             * @default false
+             */
+            stale: boolean;
+            /** Stored Parameter Count */
+            stored_parameter_count?: number | null;
+            /** Stored Tensor Elements */
+            stored_tensor_elements?: number | null;
+            /**
+             * Synthetic
+             * @default false
+             */
+            synthetic: boolean;
+            /** Target */
+            target: string;
+            /** Title */
+            title: string;
+            values: components["schemas"]["CostValues"];
+            /** Warmup Samples */
+            warmup_samples?: number | null;
+            /** Weights Sha256 */
+            weights_sha256: string;
+        };
+        /** HardwareCostReport */
+        HardwareCostReport: {
+            /** Comparison Notes */
+            comparison_notes?: string[];
+            /** Entries */
+            entries: components["schemas"]["HardwareCostEntry"][];
+            /** Missing */
+            missing: {
+                [key: string]: string;
+            };
+            /** Notes */
+            notes: string[];
+            /**
+             * Protocol Id
+             * @default cost-ledger-v1
+             * @constant
+             */
+            protocol_id: "cost-ledger-v1";
         };
         /**
          * HistoryPoint
@@ -2494,6 +4002,30 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** InstrumentRecord */
+        InstrumentRecord: {
+            /** Bandwidth Hz */
+            bandwidth_hz?: number | null;
+            /** Compression Input Dbm */
+            compression_input_dbm?: number | null;
+            /** Gain Db */
+            gain_db?: number | null;
+            /** Instrument Id */
+            instrument_id: string;
+            /** Model */
+            model: string;
+            /** Noise Floor Dbm */
+            noise_floor_dbm?: number | null;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "generator" | "receiver" | "attenuator" | "supply" | "other";
+            /** Serial */
+            serial?: string | null;
+        };
         /** LineageLink */
         LineageLink: {
             /** Checkpoint Sha256 */
@@ -2599,6 +4131,12 @@ export interface components {
             /** Played Sha256 */
             played_sha256?: string | null;
             /**
+             * Processing Version
+             * @default measurement-integer-v1
+             * @enum {string}
+             */
+            processing_version: "measurement-integer-v1" | "measurement-fractional-v2";
+            /**
              * Source
              * @default manual
              * @enum {string}
@@ -2625,6 +4163,73 @@ export interface components {
             level_difference_db?: number | null;
             /** Played Sha256 */
             played_sha256: string;
+        };
+        /** MeasurementSession */
+        MeasurementSession: {
+            /** Captures */
+            captures: components["schemas"]["CaptureReview"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Power Matching */
+            power_matching: string;
+            /** Repeats */
+            repeats: components["schemas"]["RepeatStatistic"][];
+            /** Result Hashes */
+            result_hashes: {
+                [key: string]: string;
+            };
+            /** Session Id */
+            session_id: string;
+            spec: components["schemas"]["MeasurementSessionSpec"];
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** MeasurementSessionSpec */
+        MeasurementSessionSpec: {
+            /** Calibrations */
+            calibrations?: components["schemas"]["CalibrationRecord"][];
+            /** Captures */
+            captures: components["schemas"]["SessionCapture"][];
+            conditions?: components["schemas"]["RFConditions"] | null;
+            /** Dut */
+            dut: string;
+            /** Instruments */
+            instruments?: components["schemas"]["InstrumentRecord"][];
+            /**
+             * Interval
+             * @default none
+             * @enum {string}
+             */
+            interval: "none" | "student_t_95";
+            /** Notes */
+            notes?: string | null;
+            /** Operator */
+            operator?: string | null;
+            /** Power Tolerance Db */
+            power_tolerance_db?: number | null;
+            /** Profile Id */
+            profile_id: string;
+            /** Reference Plane */
+            reference_plane?: string | null;
+            /**
+             * Source
+             * @default measured
+             * @enum {string}
+             */
+            source: "measured" | "mock";
+            /** Title */
+            title: string;
+            /** Uncertainty Budget */
+            uncertainty_budget?: string | null;
+            /**
+             * Version
+             * @default measurement-session-v1
+             * @constant
+             */
+            version: "measurement-session-v1";
         };
         /** MetricDefinition */
         MetricDefinition: {
@@ -2825,6 +4430,12 @@ export interface components {
             model?: components["schemas"]["ModelSpec"] | null;
             /** Run Id */
             run_id: string;
+            /**
+             * Seed Policy
+             * @default match_legacy
+             * @enum {string}
+             */
+            seed_policy: "match_legacy" | "fixed_surrogate";
         };
         /** PackageDataset */
         PackageDataset: {
@@ -2919,7 +4530,7 @@ export interface components {
              * Role
              * @enum {string}
              */
-            role: "pa_surrogate" | "dpd_model";
+            role: "pa_surrogate" | "dpd_model" | "initial_weights" | "qat_float_pretraining";
             /** Run Id */
             run_id: string;
         };
@@ -2943,6 +4554,13 @@ export interface components {
             name: string;
             /** Type */
             type: string;
+        };
+        /** PrecisionModule */
+        PrecisionModule: {
+            /** Format */
+            format: string;
+            /** Module */
+            module: string;
         };
         /** PreprocessPreview */
         PreprocessPreview: {
@@ -3011,6 +4629,38 @@ export interface components {
          * @enum {string}
          */
         ProfileValidation: "golden" | "analytic" | "pending_cross_validation" | "cross_validated";
+        /** PublicationCapability */
+        PublicationCapability: {
+            /** Available */
+            available: boolean;
+            /**
+             * Contact Email
+             * @default emi.lab@outlook.com
+             */
+            contact_email: string;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Repository
+             * @default lab-emi/OpenDPD
+             */
+            repository: string;
+        };
+        /** PublicationConsent */
+        PublicationConsent: {
+            /** Package Sha256 */
+            package_sha256: string;
+            /**
+             * Publish Publicly
+             * @constant
+             */
+            publish_publicly: true;
+            /**
+             * Rights Confirmed
+             * @constant
+             */
+            rights_confirmed: true;
+        };
         /** QuantizationConfig */
         QuantizationConfig: {
             /**
@@ -3033,8 +4683,74 @@ export interface components {
              * @default 8
              */
             n_bits_w: number;
+            /** Pretrained Checkpoint Artifact Id */
+            pretrained_checkpoint_artifact_id?: string | null;
+            /** Pretrained Checkpoint Sha256 */
+            pretrained_checkpoint_sha256?: string | null;
             /** Pretrained Run Id */
             pretrained_run_id?: string | null;
+        };
+        /** RFConditions */
+        RFConditions: {
+            /** Average Output Power Dbm */
+            average_output_power_dbm?: number | null;
+            /** Backoff Reference */
+            backoff_reference?: string | null;
+            /** Bias */
+            bias?: string | null;
+            /** Calibration Id */
+            calibration_id?: string | null;
+            /** Carrier Frequency Hz */
+            carrier_frequency_hz?: number | null;
+            /** Dc Rails W */
+            dc_rails_w?: {
+                [key: string]: number;
+            };
+            /** Deembedding */
+            deembedding?: string | null;
+            /** Dut */
+            dut?: string | null;
+            /** Fixture */
+            fixture?: string | null;
+            /** Included Rails */
+            included_rails?: string[];
+            /** Input Power Dbm */
+            input_power_dbm?: number | null;
+            /** Load */
+            load?: string | null;
+            /** Mode */
+            mode?: string | null;
+            /** Note */
+            note: string;
+            /** Pa Dc Power W */
+            pa_dc_power_w?: number | null;
+            /** Power Reference Plane */
+            power_reference_plane?: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at?: string;
+            /** Reflection Phase Deg */
+            reflection_phase_deg?: number | null;
+            /**
+             * Source
+             * @default user_declared
+             * @enum {string}
+             */
+            source: "user_declared" | "instrument_import";
+            /** Supply V */
+            supply_v?: number | null;
+            /** Temperature C */
+            temperature_c?: number | null;
+            /**
+             * Version
+             * @default rf-conditions-v1
+             * @constant
+             */
+            version: "rf-conditions-v1";
+            /** Vswr */
+            vswr?: number | null;
         };
         /** RecipeInfo */
         RecipeInfo: {
@@ -3053,6 +4769,34 @@ export interface components {
             /** Title */
             title: string;
             training: components["schemas"]["TrainingConfig"];
+        };
+        /** RepeatStatistic */
+        RepeatStatistic: {
+            /** Ci95 */
+            ci95?: number[] | null;
+            /** First To Last Drift */
+            first_to_last_drift?: number | null;
+            /** Mean */
+            mean?: number | null;
+            /** Median */
+            median?: number | null;
+            /** Method */
+            method: string;
+            /** Metric */
+            metric: string;
+            /** N Independent Captures */
+            n_independent_captures: number;
+            /** N Seeds */
+            n_seeds?: number | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "with_dpd" | "without_dpd";
+            /** Sample Std */
+            sample_std?: number | null;
+            /** Unit */
+            unit: string;
         };
         /** ResolutionInfo */
         ResolutionInfo: {
@@ -3129,6 +4873,62 @@ export interface components {
             table_lookups_per_sample: number;
             /** Weight Bytes */
             weight_bytes: number;
+        };
+        /** ReviewBand */
+        ReviewBand: {
+            /** Available */
+            available: boolean;
+            /** Edges Hz */
+            edges_hz: [
+                number,
+                number
+            ];
+            /** Label */
+            label: string;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "main" | "adjacent" | "subchannel";
+        };
+        /** ReviewContext */
+        ReviewContext: {
+            /** Band Note */
+            band_note: string;
+            /** Bands */
+            bands?: components["schemas"]["ReviewBand"][];
+            /** Facts */
+            facts: components["schemas"]["ReviewFact"][];
+            profile: components["schemas"]["MetricProfile"];
+            /** Provenance */
+            provenance?: {
+                [key: string]: string | null;
+            };
+            result: components["schemas"]["EvaluationResult"];
+            signal?: components["schemas"]["SignalSpec"] | null;
+            /** Signal Source */
+            signal_source: string;
+            /**
+             * Version
+             * @default rf-review-v1
+             * @constant
+             */
+            version: "rf-review-v1";
+        };
+        /** ReviewFact */
+        ReviewFact: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Source */
+            source: string;
+            /** Unit */
+            unit?: string | null;
+            /** Value */
+            value?: string | null;
         };
         /** RunCount */
         RunCount: {
@@ -3253,6 +5053,19 @@ export interface components {
             task: components["schemas"]["TaskType"];
             worker?: components["schemas"]["WorkerInfo"] | null;
         };
+        /** SavedFigure */
+        SavedFigure: {
+            /** Bindings */
+            bindings: components["schemas"]["FigureBinding"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Figure Id */
+            figure_id: string;
+            spec: components["schemas"]["FigureSpec"];
+        };
         /**
          * ScalingInfo
          * @description What the amplitudes are relative to. Without a physical calibration no
@@ -3274,6 +5087,31 @@ export interface components {
             /** Reference Gain */
             reference_gain?: number | null;
         };
+        /** SessionCapture */
+        SessionCapture: {
+            /**
+             * Acquired At
+             * Format: date-time
+             */
+            acquired_at: string;
+            /** Acquisition Id */
+            acquisition_id: string;
+            /** Calibration Id */
+            calibration_id?: string | null;
+            /** Capture Id */
+            capture_id: string;
+            /** Excluded Reason */
+            excluded_reason?: string | null;
+            /** Raw Units */
+            raw_units?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "with_dpd" | "without_dpd";
+            /** Run Id */
+            run_id: string;
+        };
         /** SessionInfo */
         SessionInfo: {
             /** Authenticated */
@@ -3282,7 +5120,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.2
+             * @default 2.2.3
              */
             version: string;
         };
@@ -3514,6 +5352,237 @@ export interface components {
             note: string;
             /** U Peak Abs */
             u_peak_abs: number;
+        };
+        /** SweepAggregate */
+        SweepAggregate: {
+            /** Budget Samples */
+            budget_samples?: number | null;
+            /** Condition Id */
+            condition_id: string;
+            /** Entry Id */
+            entry_id: string;
+            /** Metrics */
+            metrics: {
+                [key: string]: components["schemas"]["MetricStats"];
+            };
+            /** N Requested Seeds */
+            n_requested_seeds: number;
+            /** N Succeeded */
+            n_succeeded: number;
+            /** Run Ids */
+            run_ids: string[];
+            /** Task */
+            task: string;
+        };
+        /** SweepCell */
+        SweepCell: {
+            /** Attempts */
+            attempts?: string[];
+            /** Budget Samples */
+            budget_samples?: number | null;
+            /** Cell Id */
+            cell_id: string;
+            /** Condition Id */
+            condition_id: string;
+            /** Config Sha256 */
+            config_sha256?: string | null;
+            /** Entry Id */
+            entry_id: string;
+            /** Epochs */
+            epochs: number;
+            /** Reason */
+            reason?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Seed */
+            seed: number;
+            /**
+             * Status
+             * @default pending
+             * @enum {string}
+             */
+            status: "pending" | "queued" | "running" | "cancel_requested" | "succeeded" | "failed" | "cancelled" | "interrupted" | "blocked";
+            /** Task */
+            task: string;
+            /** Train Samples */
+            train_samples?: number | null;
+        };
+        /** SweepDraft */
+        SweepDraft: {
+            /** Budgets */
+            budgets?: number[];
+            condition_set?: components["schemas"]["ConditionSet"] | null;
+            dataset?: components["schemas"]["DatasetRef"] | null;
+            /**
+             * Device
+             * @default cpu
+             * @enum {string}
+             */
+            device: "cpu" | "cuda" | "mps";
+            /** Fixed Pa Run Id */
+            fixed_pa_run_id?: string | null;
+            /**
+             * Max Runs
+             * @default 64
+             */
+            max_runs: number;
+            /**
+             * Max Wall Clock Seconds
+             * @default 3600
+             */
+            max_wall_clock_seconds: number;
+            /** Methods */
+            methods: components["schemas"]["SweepMethod"][];
+            /**
+             * Metric Profile Id
+             * @default legacy-opendpd-v1
+             */
+            metric_profile_id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "same_condition" | "cross_condition";
+            /**
+             * Protocol Id
+             * @default sweep-v1
+             * @constant
+             */
+            protocol_id: "sweep-v1";
+            /** Seeds */
+            seeds?: number[];
+            /** Tasks */
+            tasks?: ("zero_update" | "few_shot" | "full_retrain")[];
+            /** Title */
+            title: string;
+        };
+        /** SweepMethod */
+        SweepMethod: {
+            config?: components["schemas"]["ExperimentConfig"] | null;
+            /** Entry Id */
+            entry_id: string;
+            /** Pa Entry */
+            pa_entry?: string | null;
+            /** Recipe Id */
+            recipe_id?: string | null;
+        };
+        /** SweepPreview */
+        SweepPreview: {
+            adaptation?: components["schemas"]["AdaptationPlan"] | null;
+            /** Cells */
+            cells: components["schemas"]["SweepCell"][];
+            draft: components["schemas"]["SweepDraft"];
+            /** Errors */
+            errors?: string[];
+            /** Evaluation Runs */
+            evaluation_runs: number;
+            /** Plan Sha256 */
+            plan_sha256: string;
+            /** Sample Epochs */
+            sample_epochs?: number | null;
+            /** Source Hashes */
+            source_hashes: {
+                [key: string]: string;
+            };
+            /** Templates */
+            templates: {
+                [key: string]: components["schemas"]["ExperimentConfig"];
+            };
+            /** Training Runs */
+            training_runs: number;
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** SweepRecord */
+        SweepRecord: {
+            /** Cells */
+            cells: components["schemas"]["SweepCell"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * Elapsed Seconds
+             * @default 0
+             */
+            elapsed_seconds: number;
+            preview: components["schemas"]["SweepPreview"];
+            /** Reason */
+            reason?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /**
+             * Status
+             * @default ready
+             * @enum {string}
+             */
+            status: "ready" | "running" | "complete" | "needs_attention" | "cancelled" | "interrupted";
+            /** Sweep Id */
+            sweep_id: string;
+        };
+        /** SweepReport */
+        SweepReport: {
+            /** Aggregates */
+            aggregates: components["schemas"]["SweepAggregate"][];
+            /** Plan Sha256 */
+            plan_sha256: string;
+            /** Profile Id */
+            profile_id: string;
+            /** Result Hashes */
+            result_hashes: {
+                [key: string]: string;
+            };
+            /** Sweep Id */
+            sweep_id: string;
+            /** Warnings */
+            warnings: string[];
+        };
+        /** SweepStart */
+        SweepStart: {
+            /**
+             * Resume Failed
+             * @default false
+             */
+            resume_failed: boolean;
+        };
+        /** SyntheticSuite */
+        SyntheticSuite: {
+            condition_set: components["schemas"]["ConditionSet"];
+            /** Datasets */
+            datasets: components["schemas"]["DatasetManifest"][];
+            /**
+             * Generator
+             * @default synthetic-memory-pa-v1
+             * @constant
+             */
+            generator: "synthetic-memory-pa-v1";
+            /** Limitations */
+            limitations: string[];
+            request: components["schemas"]["SyntheticSuiteRequest"];
+        };
+        /** SyntheticSuiteRequest */
+        SyntheticSuiteRequest: {
+            /**
+             * Prefix
+             * @default synthetic-research
+             */
+            prefix: string;
+            /**
+             * Repeats
+             * @default 2
+             */
+            repeats: number;
+            /**
+             * Samples Per Capture
+             * @default 16384
+             */
+            samples_per_capture: number;
+            /**
+             * Seed
+             * @default 20260913
+             */
+            seed: number;
         };
         /**
          * TableSpec
@@ -3941,6 +6010,187 @@ export interface operations {
             };
         };
     };
+    publications_api_v1_dataset_publications_get: {
+        parameters: {
+            query?: {
+                dataset_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetPublication"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capability_api_v1_dataset_publications_capability_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicationCapability"];
+                };
+            };
+        };
+    };
+    prepare_api_v1_dataset_publications_prepare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatasetPublicationDraft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetPublication"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publication_api_v1_dataset_publications__publication_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publication_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetPublication"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_dataset_publications__publication_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publication_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_api_v1_dataset_publications__publication_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publication_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationConsent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetPublication"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     datasets_list_api_v1_datasets_get: {
         parameters: {
             query?: never;
@@ -4206,6 +6456,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceInfoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    synthetic_api_v1_datasets_synthetic_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyntheticSuiteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyntheticSuite"];
                 };
             };
             /** @description Validation Error */
@@ -4485,6 +6768,39 @@ export interface operations {
             };
         };
     };
+    counts_api_v1_datasets__dataset_id__sample_counts_get: {
+        parameters: {
+            query?: {
+                version?: string;
+            };
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetSampleCounts"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     deploy_export_api_v1_deploy_exports_post: {
         parameters: {
             query?: never;
@@ -4619,6 +6935,358 @@ export interface operations {
             };
         };
     };
+    preview_api_v1_figure_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FigureSpec"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FigurePreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sources_api_v1_figure_sources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FigureSourcesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FigureSources"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    figures_list_api_v1_figures_get: {
+        parameters: {
+            query?: {
+                runs?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedFigure"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    figures_create_api_v1_figures_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FigureSpec"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedFigure"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    figures_get_api_v1_figures__figure_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                figure_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedFigure"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    figures_export_api_v1_figures__figure_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                figure_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reproduction_api_v1_figures__figure_id__reproduction_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                figure_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    costs_api_v1_hardware_costs_get: {
+        parameters: {
+            query: {
+                runs: string;
+                profile?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareCostReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_api_v1_hardware_costs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HardwareCostDraft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareCostEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_api_v1_hardware_reports_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_api_v1_hardware_reports_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostAttachment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_hardware_reports__digest__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                digest: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     imports_create_api_v1_imports_post: {
         parameters: {
             query?: never;
@@ -4639,6 +7307,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    measurement_sessions_list_api_v1_measurement_sessions_get: {
+        parameters: {
+            query?: {
+                run_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementSession"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    measurement_sessions_create_api_v1_measurement_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeasurementSessionSpec"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementSession"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    measurement_session_get_api_v1_measurement_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeasurementSession"];
                 };
             };
             /** @description Validation Error */
@@ -4748,6 +7511,9 @@ export interface operations {
             query: {
                 runs: string[];
                 profile?: string | null;
+                reference?: string | null;
+                mode?: "same_condition" | "cross_condition";
+                profiles?: string[];
                 format?: "json" | "csv";
             };
             header?: never;
@@ -4861,6 +7627,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    result_review_api_v1_results__run_id__review_get: {
+        parameters: {
+            query?: {
+                profile?: string | null;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewContext"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    result_conditions_api_v1_results__run_id__rf_conditions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RFConditions"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RFConditions"];
                 };
             };
             /** @description Validation Error */
@@ -5480,6 +8314,436 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_presets_api_v1_signal_generator_presets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratorPreset"][];
+                };
+            };
+        };
+    };
+    generate_api_v1_signal_generator_signals_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratorConfig"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratedSignal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_v1_signal_generator_signals__signal_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratedSignal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dataset_api_v1_signal_generator_signals__signal_id__dataset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratorDatasetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratorDatasetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_api_v1_signal_generator_signals__signal_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                signal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_api_v1_signal_generator_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratorConfig"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratorConfig"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sweeps_list_api_v1_sweeps_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepRecord"][];
+                };
+            };
+        };
+    };
+    sweeps_create_api_v1_sweeps_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SweepDraft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conditions_validate_api_v1_sweeps_conditions_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConditionSet"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConditionAudit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sweep_preview_api_v1_sweeps_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SweepDraft"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sweeps_get_api_v1_sweeps__sweep_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sweep_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sweeps_cancel_api_v1_sweeps__sweep_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sweep_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sweeps_report_api_v1_sweeps__sweep_id__report_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sweep_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sweeps_start_api_v1_sweeps__sweep_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sweep_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SweepStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SweepRecord"];
                 };
             };
             /** @description Validation Error */

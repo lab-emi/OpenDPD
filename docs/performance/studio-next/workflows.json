@@ -1,0 +1,22 @@
+[
+  {
+    "width": 1366,
+    "height": 768,
+    "sweep": "sweep-c2a9ce63940b63f5946a3c4fbe97d89af55cebc1ba5d750b4e3fd6dca2c3a869",
+    "run": "run-20260913-114359-511564",
+    "status": "complete",
+    "measurement": "run-20260913-114217-03d318",
+    "mockOnly": true,
+    "errors": []
+  },
+  {
+    "width": 1920,
+    "height": 1080,
+    "sweep": "sweep-e0d3094e88751bfb0244c0aba32f964209700b9aea6a8667978fdb5150c1930e",
+    "run": "run-20260913-114405-61f6cd",
+    "status": "complete",
+    "measurement": "run-20260913-114217-03d318",
+    "mockOnly": true,
+    "errors": []
+  }
+]

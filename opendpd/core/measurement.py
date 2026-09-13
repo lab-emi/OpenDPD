@@ -119,3 +119,106 @@ def align(capture: np.ndarray, played: np.ndarray, target: np.ndarray, *, loop: 
     energy = float(np.vdot(t, t).real)
     gain = complex(np.vdot(t, window) / energy) if energy > 0 else 0j
     return window, Alignment(delay_samples=delay, wrapped=wrapped, correlation=rho, gain=gain)
+
+
+FRACTIONAL_HALF_TAPS = 64
+
+
+@dataclass(frozen=True)
+class FractionalAlignment:
+    integer: Alignment
+    fractional_delay_samples: float
+    valid_sample_range: Tuple[int, int]
+    boundary_method: str
+    diagnostics: list
+    correlation: float
+    gain: complex
+
+
+def _correlation(a: np.ndarray, b: np.ndarray) -> float:
+    denom = float(np.linalg.norm(a) * np.linalg.norm(b))
+    return min(1.0, float(abs(np.vdot(a, b)) / denom)) if denom else 0.0
+
+
+def _diagnostic(stage: str, played: np.ndarray, target: np.ndarray, window: np.ndarray) -> dict:
+    energy = float(np.vdot(target, target).real)
+    gain = complex(np.vdot(target, window) / energy) if energy else 0j
+
+    def nmse(g):
+        reference = g * target
+        power = float(np.vdot(reference, reference).real)
+        error = window - reference
+        ratio = float(np.vdot(error, error).real) / power if power else 0
+        # Exact zero or an undefined reference is represented as unavailable, not JSON infinity.
+        return float(10 * np.log10(ratio)) if ratio > 0 else None
+
+    return dict(stage=stage, correlation=_correlation(played, window), gain_abs=abs(gain),
+                gain_phase_deg=float(np.degrees(np.angle(gain))), magnitude_fit_nmse_db=nmse(abs(gain)),
+                complex_fit_nmse_db=nmse(gain))
+
+
+def align_fractional(capture: np.ndarray, played: np.ndarray, target: np.ndarray, *, loop: bool = True):
+    """Version 2: retain the legacy integer search, then fit a residual in [-0.5, 0.5].
+
+    Loop playback uses the existing preprocessing FFT phase ramp on exactly one
+    declared period. Single-shot playback uses a 129-tap Kaiser-windowed sinc
+    (beta=8.6) and trims 64 samples on each edge: none of the retained samples
+    depends on circular wrapping or padding. This finite filter approximates an
+    ideal delay; near-Nyquist signals need separate validation.
+
+    Delay maximises correlation with the *played* waveform; the reported complex
+    gain fits the target x. Captured amplitudes are never normalised. Raw, integer
+    and fractional diagnostics use the identical retained target interval.
+    """
+    from scipy.optimize import minimize_scalar
+    from opendpd.core.preprocess import _fractional_shift
+
+    integer_window, coarse = align(capture, played, target, loop=loop)
+    p, t = to_complex(played), to_complex(target)
+    n = p.size
+    edge = 0 if loop else FRACTIONAL_HALF_TAPS
+    if n <= 2 * edge + 16:
+        raise ValueError("fractional single-shot alignment needs more than 144 played samples for its valid interval")
+    start, stop = edge, n - edge
+    p_valid, t_valid = p[start:stop], t[start:stop]
+    if loop:
+        iq = np.column_stack([integer_window.real, integer_window.imag])
+        spectrum = np.fft.fft(integer_window) * np.conj(np.fft.fft(p))
+        freqs = np.fft.fftfreq(n)
+
+        def objective(delay):
+            return -float(abs(np.sum(spectrum * np.exp(2j * np.pi * freqs * delay))))
+
+        def shift(delay):
+            return to_complex(_fractional_shift(iq, delay))
+
+        boundary = "periodic FFT phase ramp; full declared playback period; no edge trimming"
+    else:
+        indices = np.arange(-edge, edge + 1)
+        taper = np.kaiser(2 * edge + 1, 8.6)
+
+        def shift(delay):
+            kernel = np.sinc(indices + delay) * taper
+            kernel /= np.sum(kernel)
+            return np.convolve(integer_window, kernel, mode="same")[start:stop]
+
+        def objective(delay):
+            return -_correlation(p_valid, shift(delay))
+
+        boundary = "129-tap Kaiser sinc beta=8.6; 64 samples trimmed at each edge; no circular wrapping"
+    fit = minimize_scalar(objective, bounds=(-.5, .5), method="bounded", options={"xatol": 1e-8})
+    if not fit.success:
+        raise ValueError("fractional delay fit did not converge")
+    # Include the exact integer and endpoints; zero delay must not acquire numerical motion.
+    candidates = [0., -.5, .5, float(fit.x)]
+    delay = min(candidates, key=objective)
+    window = shift(delay)
+    rho = _correlation(p_valid, window)
+    if rho < MIN_CORRELATION:
+        raise ValueError(f"fractional aligned correlation {rho:.3f} is below {MIN_CORRELATION}")
+    energy = float(np.vdot(t_valid, t_valid).real)
+    gain = complex(np.vdot(t_valid, window) / energy) if energy else 0j
+    diagnostics = [_diagnostic(stage, p_valid, t_valid, samples) for stage, samples in (
+        ("raw_start", to_complex(capture)[start:stop]), ("integer_aligned", integer_window[start:stop]),
+        ("fractional_aligned", window))]
+    return window, FractionalAlignment(coarse, delay, (start, stop), boundary, diagnostics, rho, gain)

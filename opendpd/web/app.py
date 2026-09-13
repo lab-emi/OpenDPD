@@ -187,6 +187,75 @@ class PublicBoundary:
                 return
             if method in {"POST", "PUT"}:
                 check_body(path, body)
+            if path == '/signal-generator/signals' and method == 'POST':
+                from opendpd.schemas.signal_generator import GeneratorConfig
+                try:
+                    generated_config = GeneratorConfig.model_validate(body)
+                except ValueError:
+                    reject(422, 'invalid_request', 'Invalid signal parameters. Check duration, bandwidth, FFT size and channel allocations.')
+                self.manager.rate_limit('signal-generator:' + tenant.ip_key, 24)
+                used = await asyncio.to_thread(directory_bytes, tenant.root)
+                if used + generated_config.sample_count * 100 + 2_000_000 > self.config.max_workspace_bytes:
+                    reject(413, 'workspace_limit', 'Generated waveform and exports would exceed temporary storage. Use fewer samples.')
+            if path.startswith('/signal-generator/signals/') and path.endswith('/dataset') and method == 'POST':
+                from opendpd.services.signal_generator import read_signal
+                from opendpd.services.workspace import WorkspaceError
+                self.manager.rate_limit('signal-dataset:' + tenant.ip_key, 6)
+                try:
+                    generated_source = await asyncio.to_thread(read_signal, tenant.app.state.ws, path.split('/')[3])
+                except WorkspaceError:
+                    reject(404, 'signal_not_found', 'Generate this waveform in the current session first.')
+                used = await asyncio.to_thread(directory_bytes, tenant.root)
+                if used + generated_source.analysis.sample_count * 160 > self.config.max_workspace_bytes:
+                    reject(413, 'workspace_limit', 'The PA dataset would exceed temporary storage. Generate fewer samples.')
+            if path == '/datasets/synthetic' and method == 'POST':
+                from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest
+                try:
+                    synthetic = SyntheticSuiteRequest.model_validate(body)
+                except ValueError:
+                    reject(422, 'invalid_request', 'Invalid synthetic dataset size, prefix, seed or repeat count.')
+                self.manager.rate_limit('synthetic:' + tenant.ip_key, 3)
+                used = await asyncio.to_thread(directory_bytes, tenant.root)
+                if used + synthetic.samples_per_capture * synthetic.repeats * 3 * 160 > self.config.max_workspace_bytes:
+                    reject(413, 'workspace_limit', 'Synthetic datasets would exceed temporary workspace storage. Use fewer samples or realizations.')
+            if path == '/dataset-publications/prepare' and method == 'POST':
+                from opendpd.schemas.dataset_catalog import DatasetPublicationDraft
+                from opendpd.services.workspace import WorkspaceError
+                try:
+                    publication_draft = DatasetPublicationDraft.model_validate(body)
+                except ValueError:
+                    reject(422, 'invalid_request', 'Choose a dataset, public description, attribution and license.')
+                self.manager.rate_limit('publication-preview:' + tenant.ip_key, 6)
+                used = await asyncio.to_thread(directory_bytes, tenant.root)
+                try:
+                    dataset = tenant.app.state.ws.get_dataset(publication_draft.dataset_id)
+                except WorkspaceError:
+                    reject(404, 'dataset_not_found', 'Dataset is unavailable in this temporary workspace.')
+                if used + (dataset.n_samples or 0) * 100 > self.config.max_workspace_bytes:
+                    reject(413, 'workspace_limit', 'The contribution preview would exceed temporary workspace storage.')
+            if path.startswith('/dataset-publications/') and path.endswith('/submit') and method == 'POST':
+                if not self.config.dataset_publications:
+                    reject(403, 'publication_unavailable', 'Public dataset submissions are disabled on this Studio host.')
+                from opendpd.schemas.dataset_catalog import PublicationConsent
+                try:
+                    permission = PublicationConsent.model_validate(body)
+                except ValueError:
+                    reject(422, 'publication_consent', 'Confirm public disclosure and rights for the reviewed package.')
+                from opendpd.services.workspace import WorkspaceError
+                try:
+                    publication = tenant.app.state.dataset_publications.get(path.split('/')[-2])
+                except WorkspaceError:
+                    reject(404, 'publication_not_found', 'Publication is unavailable in this temporary workspace.')
+                if permission.package_sha256 != publication.package_sha256:
+                    reject(409, 'publication_changed', 'Consent does not match the reviewed package.')
+                with self.manager.budget_lock:
+                    key = (tenant.identifier, publication.publication_id)
+                    if key not in self.manager.publication_reservations:
+                        count = self.manager.ip_publications.get(tenant.ip_key, 0)
+                        if count >= self.config.publications_per_ip or len(self.manager.publication_reservations) >= self.config.publications_per_day:
+                            reject(429, 'publication_quota', 'The daily dataset submission quota has been reached. Existing submissions can still be retried.')
+                        self.manager.publication_reservations.add(key)
+                        self.manager.ip_publications[tenant.ip_key] = count + 1
             if path in {'/datasets/csv', '/datasets/csv/preview'}:
                 from opendpd.services.csv_upload import CsvUploadRejected, validated_source
                 self.manager.rate_limit('csv-scan:' + tenant.ip_key, 20)

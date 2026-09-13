@@ -176,6 +176,15 @@ def resolve(config: ExperimentConfig, warnings: Optional[List[ConfigIssue]] = No
     if least_squares and config.quantization is not None and config.quantization.enabled:
         issues.append(ConfigIssue("quantization.enabled", f"model '{config.model.key}' is fitted by least squares; "
                                   "quantisation-aware training does not apply", "disable quantization"))
+    quant = config.quantization
+    if quant and quant.enabled:
+        if config.task in (TaskType.train_pa, TaskType.evaluate_pa):
+            issues.append(ConfigIssue("quantization.enabled", "Studio's PA trainer does not implement QAT", "use float PA training"))
+        elif config.model.key not in {"qgru", "qgru_amp1"}:
+            issues.append(ConfigIssue("quantization.enabled", "Studio QAT currently supports qgru and qgru_amp1 only", "choose an explicit QGRU model"))
+        warn.append(ConfigIssue("quantization", "software fake quantization: FP32 feature extraction and simulation arithmetic remain; this is not a fully integer hardware implementation"))
+    if quant and quant.pretrained_run_id and not quant.enabled:
+        issues.append(ConfigIssue("quantization.pretrained_run_id", "pretrained_run_id requires enabled QAT", "remove the unused reference or enable QAT"))
     if model is not None and config.execution.device not in model.devices_tested:
         warn.append(ConfigIssue("execution.device",
                                 f"model '{config.model.key}' has no recorded test evidence on "

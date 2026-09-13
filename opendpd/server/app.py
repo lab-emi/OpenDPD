@@ -56,7 +56,7 @@ def static_status(static_dir: Path = STATIC_DIR) -> dict:
 
 def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, static_dir: Path = STATIC_DIR,
                supervisor_kwargs: Optional[dict] = None, shutdown_timeout: float = 10.0,
-               allow_custom_datasets: bool = True, supervisor_factory=Supervisor) -> FastAPI:
+               allow_custom_datasets: bool = True, allow_dataset_publications: bool = True, supervisor_factory=Supervisor) -> FastAPI:
     sessions = SessionStore(bootstrap_token)
 
     @asynccontextmanager
@@ -66,9 +66,17 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         supervisor = supervisor_factory(ws, store, **(supervisor_kwargs or {}))
         supervisor.start()
         app.state.ws, app.state.store, app.state.supervisor = ws, store, supervisor
+        from opendpd.services.sweeps import SweepController
+        sweeps = SweepController(ws, supervisor)
+        sweeps.start()
+        app.state.sweeps = sweeps
+        from opendpd.services.dataset_publication import PublicationController
+        app.state.dataset_publications = PublicationController(ws)
         try:
             yield
         finally:
+            sweeps.stop()
+            app.state.dataset_publications.stop()
             supervisor.stop(timeout=shutdown_timeout)
             store.close()
 
@@ -77,6 +85,7 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
     app.state.sessions = sessions
     app.state.static_dir = Path(static_dir)
     app.state.allow_custom_datasets = allow_custom_datasets
+    app.state.allow_dataset_publications = allow_dataset_publications
     app.add_middleware(DatasetImportBoundary, enabled=allow_custom_datasets)
     app.add_middleware(LocalBoundaryMiddleware)
 
@@ -142,6 +151,16 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
 
     from opendpd.server.routes import router
     app.include_router(router, prefix=API_PREFIX)
+    from opendpd.server.sweep_routes import router as sweep_router
+    app.include_router(sweep_router, prefix=API_PREFIX)
+    from opendpd.server.dataset_research_routes import router as dataset_research_router
+    app.include_router(dataset_research_router, prefix=API_PREFIX)
+    from opendpd.server.hardware_routes import router as hardware_router
+    app.include_router(hardware_router, prefix=API_PREFIX)
+    from opendpd.server.figure_routes import router as figure_router
+    app.include_router(figure_router, prefix=API_PREFIX)
+    from opendpd.server.signal_generator_routes import router as signal_generator_router
+    app.include_router(signal_generator_router, prefix=API_PREFIX)
 
     # -- static frontend with SPA fallback; API paths never fall back --------------
     assets = Path(static_dir) / "assets"

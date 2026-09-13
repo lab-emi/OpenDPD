@@ -1,0 +1,92 @@
+{
+  "protocol": "metric-and-figure-reproduction-v1",
+  "passed": true,
+  "retrained": false,
+  "implementation": "bundled",
+  "relative_tolerance": 0.0001,
+  "absolute_tolerance": 1e-05,
+  "tolerance_status": "proposed CPU checkpoint tolerance, pending maintainer approval; also applied to display coordinates",
+  "environment": {
+    "opendpd_version": "2.2.2",
+    "python_version": "3.13.14",
+    "platform": "Linux-x86_64",
+    "torch_version": null,
+    "git_commit": null,
+    "git_dirty": null
+  },
+  "runs": [
+    {
+      "run_id": "run-20260913-131049-843550",
+      "metrics": [
+        {
+          "group": "primary",
+          "name": "NMSE",
+          "expected": -1.1458804102532518,
+          "actual": -1.1458804102532518,
+          "passed": true
+        },
+        {
+          "group": "primary",
+          "name": "IBE",
+          "expected": -1.1710471195182428,
+          "actual": -1.1710471195182428,
+          "passed": true
+        },
+        {
+          "group": "primary",
+          "name": "ACPR_L",
+          "expected": -34.93092681309367,
+          "actual": -34.93092681309367,
+          "passed": true
+        },
+        {
+          "group": "primary",
+          "name": "ACPR_R",
+          "expected": -19.69956615767037,
+          "actual": -19.69956615767037,
+          "passed": true
+        }
+      ],
+      "plots": [
+        {
+          "kind": "spectrum",
+          "trace": "PA input x",
+          "coordinates_exact": true,
+          "passed": true
+        },
+        {
+          "kind": "spectrum",
+          "trace": "measured PA output",
+          "coordinates_exact": true,
+          "passed": true
+        },
+        {
+          "kind": "spectrum",
+          "trace": "PA model output",
+          "coordinates_exact": true,
+          "passed": true
+        },
+        {
+          "kind": "error_distribution",
+          "trace": "PA model output",
+          "coordinates_exact": true,
+          "passed": true
+        },
+        {
+          "kind": "amam",
+          "trace": "PA model output",
+          "coordinates_exact": true,
+          "passed": true
+        },
+        {
+          "kind": "ampm",
+          "trace": "PA model output",
+          "coordinates_exact": true,
+          "passed": true
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "png_exact": true
+}

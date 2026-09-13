@@ -16,6 +16,7 @@ interface Axis {
 }
 
 export interface PlotElement extends HTMLDivElement {
+  data?: Array<{ visible?: boolean | 'legendonly' }>
   // Plotly's resolved axes include autoranges and scale-anchor adjustments.
   _fullLayout?: { xaxis?: Axis; yaxis?: Axis; dragmode?: string }
   _fullData?: RecoveryTrace[]

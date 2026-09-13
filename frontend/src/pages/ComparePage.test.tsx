@@ -5,7 +5,7 @@ import paResult from '@mocks/result_pa_modeling_mock.json'
 import resolvedMock from '@mocks/resolved_train_pa_smoke.json'
 import type { EvaluationResult } from '@/api/types'
 import { mockApi, renderWithProviders } from '@/test/utils'
-import { bestIndex, ComparePage } from './ComparePage'
+import { bestIndex, metricDelta, ComparePage } from './ComparePage'
 
 vi.mock('plotly.js-basic-dist-min', () => ({ default: { react: vi.fn(() => Promise.resolve()), purge: vi.fn() } }))
 
@@ -69,4 +69,14 @@ test('fewer than two runs asks the user to pick results', () => {
   mockApi({})
   renderWithProviders(<ComparePage />, { route: '/results/compare?runs=run-pa-0001', path: '/results/compare' })
   expect(screen.getByText('Pick at least two results on the Results page to compare them.')).toBeInTheDocument()
+})
+
+test('deltas use candidate minus reference and never subtract incompatible protocols or units', () => {
+  const a = paResult.data as unknown as EvaluationResult
+  const b: EvaluationResult = { ...a, metrics: a.metrics.map(m => ({ ...m, value: (m.value ?? 0) - 3 })) }
+  expect(metricDelta(b, a, 'NMSE', true)).toBe('-3.00 dB')
+  expect(metricDelta(a, b, 'NMSE', true)).toBe('+3.00 dB')
+  expect(metricDelta(b, a, 'NMSE', false)).not.toContain('3.00')
+  const differentUnit = { ...b, metrics: b.metrics.map(m => ({ ...m, unit: '%' })) }
+  expect(metricDelta(differentUnit, a, 'NMSE', true)).not.toContain('3.00')
 })

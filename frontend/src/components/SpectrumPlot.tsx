@@ -1,11 +1,16 @@
 import { useMemo } from 'react'
 import { t } from '@/i18n'
 import { useStudioColors } from '@/theme'
-import { PlotlyChart, seriesDash, type PlotLayout, type PlotTrace } from './PlotlyChart'
+import { PlotlyChart, seriesDash, type PlotLayout, type PlotTrace, type SeriesDash } from './PlotlyChart'
+import type { PlotViewport } from './plotInteractions'
 
 export interface SpectrumTrace {
   name: string
   color?: string
+  frequencyHz?: ArrayLike<number>
+  dash?: SeriesDash
+  width?: number
+  visible?: boolean
   /** PSD in dB, one value per frequency bin (already decimated by the server). */
   psdDb: ArrayLike<number>
 }
@@ -27,15 +32,20 @@ export interface SpectrumPlotProps {
   height?: number
   onRendered?: (ms: number) => void
   viewKey?: string
+  xRange?: [number, number]
+  yRange?: [number, number]
+  cursorX?: number
+  onViewportChange?: (viewport: PlotViewport) => void
+  onVisibilityChange?: (visible: boolean[]) => void
 }
 
 /** PSD traces on a dB axis with the ACLR integration bands shaded (UX spec §5). */
-export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = t('chart.spectrum.title'), height, onRendered, viewKey = '' }: SpectrumPlotProps) {
+export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = t('chart.spectrum.title'), height, onRendered, viewKey = '', xRange, yRange, cursorX, onViewportChange, onVisibilityChange }: SpectrumPlotProps) {
   const colors = useStudioColors()
   const mhz = useMemo(() => Float64Array.from(frequencyHz, (f) => (axis === 'hz' ? f / 1e6 : f)), [frequencyHz, axis])
   const data = useMemo<PlotTrace[]>(
-    () => traces.map((tr, i) => ({ x: mhz, y: tr.psdDb, name: tr.name, mode: 'lines', type: 'scatter', line: { width: 1.2, dash: seriesDash(i), ...(tr.color ? { color: tr.color } : {}) } })),
-    [traces, mhz],
+    () => traces.map((tr, i) => ({ x: tr.frequencyHz ? Float64Array.from(tr.frequencyHz, (f) => axis === 'hz' ? f / 1e6 : f) : mhz, y: tr.psdDb, name: tr.name, visible: tr.visible === false ? 'legendonly' : true, mode: 'lines', type: 'scatter', hovertemplate: `%{x:.4f} ${axis === 'hz' ? 'MHz' : 'cycles/sample'}<br>%{y:.3f} dB<extra>%{fullData.name}</extra>`, line: { width: tr.width ?? 1.2, dash: tr.dash ?? seriesDash(i), ...(tr.color ? { color: tr.color } : {}) } })),
+    [traces, mhz, axis],
   )
   // Keyed by value so an inline `bands` literal does not redraw on every render.
   const bandsKey = JSON.stringify(bands ?? null)
@@ -44,13 +54,14 @@ export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = 
   const layout = useMemo<PlotLayout>(() => {
     const parsed = JSON.parse(bandsKey) as SpectrumBands | null
     const shapes: NonNullable<PlotLayout['shapes']> = []
-    if (parsed) {
+    if (parsed && axis === 'hz') {
       const shade = (edges: [number, number], color: string) =>
         shapes.push({ type: 'rect', x0: edges[0] / 1e6, x1: edges[1] / 1e6, y0: 0, y1: 1, yref: 'paper', fillcolor: color, line: { width: 0 } })
       shade(parsed.main, `${colors.primary}14`)
       for (const adj of parsed.adjacent) shade(adj, `${colors.status.warning}14`)
     }
-    return { xaxis: { title: { text: xTitle } }, yaxis: { title: { text: yTitle } }, shapes, showlegend: true }
-  }, [bandsKey, xTitle, yTitle, colors])
-  return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} viewKey={`${viewKey}:${axis}`} data-testid="spectrum-plot" />
+    if (cursorX !== undefined) shapes.push({ type: 'line', x0: cursorX, x1: cursorX, y0: 0, y1: 1, yref: 'paper', line: { width: 1, dash: 'dot', color: colors.textSecondary } })
+    return { xaxis: { title: { text: xTitle }, ...(xRange ? { range: xRange } : {}) }, yaxis: { title: { text: yTitle }, ...(yRange ? { range: yRange } : {}) }, shapes, showlegend: true }
+  }, [bandsKey, xTitle, yTitle, colors, axis, xRange, yRange, cursorX])
+  return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} onViewportChange={onViewportChange} onVisibilityChange={onVisibilityChange} viewKey={`${viewKey}:${axis}`} data-testid="spectrum-plot" />
 }

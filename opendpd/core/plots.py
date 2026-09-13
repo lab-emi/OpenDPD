@@ -105,3 +105,34 @@ def am_am_pm(x: np.ndarray, outputs: Dict[str, np.ndarray], roles: Dict[str, Tra
             "n_samples": int(n), "amp_in": _round(amp_in, AMP_DECIMALS), "traces": traces,
             "note": "AM-AM: |out| vs |in|; AM-PM: angle(out * conj(in)) in degrees; every trace uses the same "
                     "input samples (fixed stride over the valid range)"}
+
+
+def error_distribution(reference: np.ndarray, outputs: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *,
+                       valid_samples: Optional[int] = None) -> Dict:
+    """Display-only binned residual CDF. No gain/phase fitting or demodulation.
+
+    Counts use every valid sample and a common 64-bin linear magnitude axis.
+    This diagnostic never supplies a formal EVM or NMSE value.
+    """
+    ref = to_complex(reference, valid_samples)
+    values = {name: to_complex(arr, valid_samples) for name, arr in outputs.items()}
+    n = min([len(ref), *[len(v) for v in values.values()]])
+    rms = float(np.sqrt(np.mean(np.abs(ref[:n]) ** 2))) if n else 0.
+    data = dict(version='residual-cdf-v1', kind='error_distribution', n_samples=n, reference_rms=rms,
+        note='CDF of |output − saved evaluation reference| / RMS(reference), all valid samples, 64 common linear bins. '
+             'No additional delay/gain/phase fit. Not demodulated EVM. Values are cumulative at each bin upper edge.',
+        x_label='Residual magnitude / reference RMS', x_unit='ratio', y_label='Cumulative samples', y_unit='%', x=[], bin_edges=[], traces=[])
+    if n == 0 or not np.isfinite(rms) or rms <= 0 or not values:
+        data['note'] += ' Unavailable: the evaluation reference has no finite positive RMS.'
+        return data
+    residuals = {name: np.abs(arr[:n] - ref[:n]) / rms for name, arr in values.items()}
+    edges = np.linspace(0., max(1e-12, max(float(v.max()) for v in residuals.values())), 65)
+    data.update(x=edges[1:].tolist(), bin_edges=edges.tolist())
+    for name, residual in residuals.items():
+        # Right-closed bins make the cumulative value exactly count residuals
+        # <= each plotted upper edge, including zeros in the first bin.
+        indices = np.searchsorted(edges[1:], residual, side='left')
+        counts = np.bincount(indices, minlength=64)
+        data['traces'].append(dict(name=name, role=roles.get(name, 'primary'), counts=counts.tolist(),
+                                   y=(np.cumsum(counts) * (100. / n)).tolist()))
+    return data
