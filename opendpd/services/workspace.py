@@ -19,6 +19,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import secrets
 import shutil
 import sys
@@ -145,6 +146,19 @@ def _git_state():
         return None, None
 
 
+# Mirrors schemas.common.Slug. Identifiers that name a directory are checked
+# here, at the one place every caller goes through, so a caller that forgets
+# cannot turn an identifier into a path separator or an absolute path.
+IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+
+def checked_identifier(value: str, field: str = "identifier") -> str:
+    """Return ``value`` if it can only ever name one directory entry."""
+    if not isinstance(value, str) or not IDENTIFIER.fullmatch(value):
+        raise WorkspaceError(f"{field} '{value}' is not an identifier; it must match {IDENTIFIER.pattern}")
+    return value
+
+
 def slugify(name: str) -> str:
     out = "".join(c.lower() if c.isalnum() else "-" for c in name).strip("-")
     while "--" in out:
@@ -241,7 +255,7 @@ class Workspace:
 
     # -- datasets ----------------------------------------------------------
     def dataset_dir(self, dataset_id: str) -> Path:
-        return self.datasets_dir / dataset_id
+        return self.datasets_dir / checked_identifier(dataset_id, "dataset id")
 
     def list_datasets(self) -> List[DatasetManifest]:
         out = []
@@ -265,7 +279,7 @@ class Workspace:
         """Directory in the trainer's split-CSV layout for one data version.
         Built-in datasets keep raw-v1 in ``raw/``; imports materialise every
         version (raw-v1 included) under ``versions/<name>/``."""
-        candidate = self.dataset_dir(dataset_id) / "versions" / version
+        candidate = self.dataset_dir(dataset_id) / "versions" / checked_identifier(version, "version")
         if candidate.is_dir():
             return candidate
         if version == "raw-v1":

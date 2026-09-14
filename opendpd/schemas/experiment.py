@@ -98,7 +98,10 @@ class QuantizationConfig(StrictModel):
     pretrained_run_id: Optional[Slug] = None
     pretrained_checkpoint_artifact_id: Optional[Slug] = Field(default=None, exclude_if=lambda value: value is None)
     pretrained_checkpoint_sha256: Optional[Sha256] = Field(default=None, exclude_if=lambda value: value is None)
-    label: str = ""
+    # Names a directory under the run's save/ and log/ trees, so it is an
+    # identifier and not a path: an absolute label would otherwise win the
+    # os.path.join in modules/paths.py and escape the run directory.
+    label: str = Field(default="", pattern=r"^$|^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
 class PAReference(StrictModel):

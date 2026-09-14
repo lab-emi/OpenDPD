@@ -6009,6 +6009,7 @@
           "dataset_id": {
             "anyOf": [
               {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
                 "type": "string"
               },
               {
@@ -8814,6 +8815,7 @@
         "properties": {
           "base_version": {
             "default": "raw-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Base Version",
             "type": "string"
           },
@@ -8824,6 +8826,7 @@
             "anyOf": [
               {
                 "maxLength": 64,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
                 "type": "string"
               },
               {
@@ -8966,6 +8969,7 @@
           },
           "label": {
             "default": "",
+            "pattern": "^$|^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
             "title": "Label",
             "type": "string"
           },
@@ -13491,6 +13495,7 @@
             "schema": {
               "default": "raw-v1",
               "maxLength": 64,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
               "title": "Version",
               "type": "string"
             }
@@ -13592,6 +13597,7 @@
             "schema": {
               "default": "raw-v1",
               "maxLength": 64,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
               "title": "Version",
               "type": "string"
             }

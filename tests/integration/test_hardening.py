@@ -179,6 +179,60 @@ def test_import_root_symlink_escapes_are_invisible_and_unreadable(client, ws, tm
         assert r.status_code in (404, 409) and "escapes" in r.text, (path, r.text)
 
 
+def test_builtin_dataset_ids_cannot_escape_the_workspace(client, ws, tmp_path):
+    """`dataset_id` names a directory under datasets/; it is never a path.
+
+    The directory was created and the built-in's seven files copied into it
+    before `DatasetManifest` rejected the id, so the refusal has to happen
+    before any write, not at manifest construction.
+    """
+    outside = tmp_path / "escaped"
+    for dataset_id in (str(outside), "../../escaped", "..", "a/b", "/etc/opendpd-escape"):
+        r = client.post("/api/v1/datasets/import-builtin",
+                        json={"name": "DPA_200MHz", "dataset_id": dataset_id})
+        assert r.status_code == 422, (dataset_id, r.status_code, r.text)
+    assert not outside.exists(), "a refused import still wrote outside the workspace"
+    assert sorted(p.name for p in ws.datasets_dir.iterdir()) == ["dpa-200mhz"], "a stray dataset directory was created"
+
+
+
+def test_dataset_versions_cannot_escape_the_workspace(client, ws, tmp_path):
+    """`version` names a directory under the dataset's versions/, so it is an identifier.
+
+    `_materialise` wrote the nine split files and only then let
+    `DatasetVersion` reject the name, so the refusal has to come first. The
+    read side is guarded at `Workspace.dataset_version_dir` for every caller.
+    """
+    before = sorted(p.name for p in (ws.dataset_dir("dpa-200mhz") / "versions").glob("*")) \
+        if (ws.dataset_dir("dpa-200mhz") / "versions").is_dir() else []
+    for version in ("../../../../escaped", "a/b", "/tmp/opendpd-escape", ".."):
+        r = client.post("/api/v1/datasets/dpa-200mhz/preprocess",
+                        json={"params": {}, "base_version": "raw-v1", "version": version})
+        assert r.status_code == 422, (version, r.status_code, r.text)
+    for version in ("../../../../etc", "a/b"):
+        assert client.get("/api/v1/datasets/dpa-200mhz/analysis",
+                          params={"version": version}).status_code == 422, version
+    after = sorted(p.name for p in (ws.dataset_dir("dpa-200mhz") / "versions").glob("*")) \
+        if (ws.dataset_dir("dpa-200mhz") / "versions").is_dir() else []
+    assert before == after, "a refused preprocess still materialised a version directory"
+
+def test_quantization_labels_cannot_escape_the_run_directory(client):
+    """`quantization.label` is joined into the run's save/ and log/ trees.
+
+    `os.path.join` discards everything before an absolute component, so an
+    absolute label would relocate the checkpoint write out of the run
+    directory that the supervisor's `cwd` and `run_in_directory` confine.
+    """
+    cfg = json.loads(instantiate("pa-gru-smoke-v1", "dpa-200mhz").model_dump_json())
+    for label in ("/tmp/opendpd-escape", "../../escape", "a/b", "."):
+        cfg["quantization"] = {"enabled": True, "label": label}
+        r = client.post("/api/v1/runs", json={"config": cfg, "name": "escape"})
+        assert r.status_code == 422, (label, r.status_code, r.text)
+        assert any("label" in d["field"] for d in r.json()["error"]["details"]), (label, r.text)
+    cfg["quantization"] = {"enabled": True, "label": "ci_quant"}
+    assert client.post("/api/v1/experiments/validate", json={"config": cfg}).status_code == 200
+
+
 # --- archives ----------------------------------------------------------------------------------
 
 def test_symlink_members_are_refused(share_package, tmp_path, client):
