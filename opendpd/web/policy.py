@@ -92,8 +92,20 @@ class WebConfig:
             raise ValueError("tunnel host must begin with a random, private 32+ character label")
 
 
+# A dataset id contains no separator, so `/datasets/<id>` also matches static
+# sibling routes registered under the same prefix. FastAPI dispatches those to
+# the static endpoint, never to `dataset_get`, so an id pattern silently
+# publishes a route nobody listed. `import-roots` answers with absolute host
+# paths, which is exactly what `app.state.workspace_label` exists to keep out
+# of `/system/capabilities`. Keep such routes out by name.
+# `tests/unit/test_public_policy_surface.py` fails if a new one appears.
+NEVER_PUBLIC = ("/datasets/import-roots",)
+
+
 def allowed(method: str, path: str) -> bool:
-    return ".." not in path and any(re.fullmatch(pattern, path) for pattern in ROUTES.get(method, []))
+    if ".." in path or any(path == p or path.startswith(p + "/") for p in NEVER_PUBLIC):
+        return False
+    return any(re.fullmatch(pattern, path) for pattern in ROUTES.get(method, []))
 
 
 def check_slug(value, field: str):
