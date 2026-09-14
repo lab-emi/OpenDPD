@@ -5,14 +5,17 @@ import io
 import json
 import time
 import zipfile
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
 from opendpd.services.recipes import instantiate
+from opendpd.web import gpu_broker
 from opendpd.web.app import create_web_app
 from opendpd.web.gpu_archive import pack, unpack, read_regular
 from opendpd.web.policy import WebConfig
+from opendpd.web.runtime import DAY
 
 pytestmark = pytest.mark.integration
 TOKEN = "private-test-gpu-token-" * 4
@@ -29,9 +32,15 @@ def eventually(predicate):
     raise AssertionError("condition did not become true")
 
 
-def test_private_gpu_lease_stream_replay_and_cross_tenant_cancel(tmp_path):
+def test_private_gpu_lease_stream_replay_and_cross_tenant_cancel(tmp_path, monkeypatch):
+    # Keep session and job expiry on the same fixed daytime clock. Real
+    # monotonic time still drives polling and the lost-lease assertion below.
+    def now():
+        return DAY * 20000 + 3600
+
+    monkeypatch.setattr(gpu_broker, "time", SimpleNamespace(time=now, monotonic=time.monotonic))
     config = WebConfig(tmp_path / "web", "https://opendpd.com", "api.opendpd.com", TUNNEL, gpu_token=TOKEN)
-    app = create_web_app(config)
+    app = create_web_app(config, now=now)
     with TestClient(app, base_url="http://127.0.0.1", client=("127.0.0.1", 10)) as client:
         private = {"X-OpenDPD-GPU": TOKEN}
         public = {"Host": TUNNEL, "Origin": "https://opendpd.com", "X-Forwarded-Proto": "https", "CF-Connecting-IP": "203.0.113.10"}
@@ -40,7 +49,9 @@ def test_private_gpu_lease_stream_replay_and_cross_tenant_cancel(tmp_path):
         assert client.post("/_gpu/poll", json={"name": "CUDA test device"}, headers=private).json() == {"job": None}
         auth = []
         for _ in range(2):
-            token = client.post("/api/v1/web/sessions", json={}, headers=public).json()["access_token"]
+            session = client.post("/api/v1/web/sessions", json={}, headers=public)
+            assert session.status_code == 201, session.text
+            token = session.json()["access_token"]
             auth.append({**public, "Authorization": "Bearer " + token})
         capability = client.get("/api/v1/system/capabilities", headers=auth[0]).json()
         assert next(d for d in capability["devices"] if d["device"] == "cuda")["detected"]
