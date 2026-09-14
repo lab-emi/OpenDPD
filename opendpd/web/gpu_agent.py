@@ -59,8 +59,20 @@ class Agent:
             def redirect_request(self, *args, **kwargs):
                 return None
         self.http = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+        from opendpd.services.server_status import ResourceSampler
+        self.resources = ResourceSampler(include_gpu=True)
+        self.last_resources = None
 
-    def request(self, path, body=None, job=None, code=None):
+    def publish_resources(self):
+        sample = self.resources.snapshot()
+        if not sample.stale and sample.load.sampled_at != self.last_resources:
+            self.last_resources = sample.load.sampled_at
+            try:
+                self.request('/resources', sample.load.model_dump(mode='json'), timeout=2)
+            except (OSError, ValueError):
+                pass  # Optional telemetry must never interrupt a training lease.
+
+    def request(self, path, body=None, job=None, code=None, *, timeout=20):
         headers = {"X-OpenDPD-GPU": self.token, "Content-Type": "application/json"}
         if job:
             headers["X-OpenDPD-Lease"] = job["lease"]
@@ -69,13 +81,14 @@ class Agent:
         if isinstance(body, dict):
             body = json.dumps(body).encode()
         request = urllib.request.Request(self.base + path, data=body, headers=headers)
-        with self.http.open(request, timeout=20) as response:
+        with self.http.open(request, timeout=timeout) as response:
             data = response.read(MAX_BYTES + 1)
             if len(data) > MAX_BYTES:
                 raise ValueError("GPU response exceeds transfer limit")
             return json.loads(data) if response.headers.get_content_type() == "application/json" else data
 
     def update(self, job, root, offsets):
+        self.publish_resources()
         payload = dict(offsets)
         for key, name in [("log", "logs/worker.log"), ("events", "events.jsonl")]:
             data = read_regular(root, name, offsets.get(key + "_offset", 0), 256 * 1024)
@@ -165,6 +178,7 @@ class Agent:
                 shutil.rmtree(path)
         while not stopping:
             try:
+                self.publish_resources()
                 gpu = subprocess.run(["nvidia-smi", "--query-gpu=name,memory.free", "--format=csv,noheader,nounits", "--id=0"], check=True, capture_output=True, text=True, timeout=10).stdout.strip()
                 name, free = gpu.rsplit(",", 1)
                 if int(free.strip()) >= 4096:
@@ -198,7 +212,11 @@ def main():
         stopping = True
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    agent.loop()
+    agent.resources.start()
+    try:
+        agent.loop()
+    finally:
+        agent.resources.stop()
 
 
 if __name__ == "__main__":

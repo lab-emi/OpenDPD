@@ -6,7 +6,8 @@ from opendpd.server.security import SessionStore, host_is_loopback, origin_match
 def test_host_is_loopback():
     for ok in ("127.0.0.1:8765", "localhost", "LOCALHOST:80", "[::1]:8765", "[::1]"):
         assert host_is_loopback(ok), ok
-    for bad in ("evil.example", "127.0.0.1.evil.example", "localhost.evil.example", "", None, "10.0.0.5:8765"):
+    for bad in ("evil.example", "127.0.0.1.evil.example", "localhost.evil.example", "", None, "10.0.0.5:8765",
+                '[::1]evil.example', 'localhost:notaport', 'localhost:99999', 'localhost/path'):
         assert not host_is_loopback(bad), bad
 
 
@@ -18,6 +19,7 @@ def test_origin_must_match_host_when_present():
     assert not origin_matches("http://evil.example", "127.0.0.1:8765")
     assert not origin_matches("null", "127.0.0.1:8765")
     assert not origin_matches("file:///tmp/x.html", "127.0.0.1:8765")
+    assert not origin_matches('http://[broken', '127.0.0.1:8765')
 
 
 def test_bootstrap_token_is_single_secret_and_sessions_are_random():
@@ -28,3 +30,16 @@ def test_bootstrap_token_is_single_secret_and_sessions_are_random():
     assert a.session_id != b.session_id and a.csrf_token != b.csrf_token
     assert len(a.session_id) >= 40
     assert store.get(a.session_id) is a and store.get("nope") is None and store.get(None) is None
+
+
+def test_local_sessions_expire_on_the_server_and_are_bounded():
+    from opendpd.server.security import SESSION_MAX_AGE
+    store = SessionStore('secret')
+    old = store.exchange('secret')
+    old.created_at -= SESSION_MAX_AGE
+    assert store.get(old.session_id) is None
+    first = store.exchange('secret')
+    for _ in range(128):
+        newest = store.exchange('secret')
+    assert store.get(first.session_id) is None
+    assert store.get(newest.session_id) is newest

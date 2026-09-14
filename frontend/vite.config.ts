@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => {
     transformIndexHtml: {
       order: 'pre',
       handler: () => web ? [{ tag: 'meta', injectTo: 'head-prepend', attrs: { 'http-equiv': 'Content-Security-Policy', content:
-        `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${apiOrigin}; object-src 'none'; base-uri 'self'; form-action 'none'` } },
+        `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${apiOrigin}; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests` } },
       { tag: 'meta', injectTo: 'head', attrs: { name: 'referrer', content: 'no-referrer' } }] : [],
     },
   }

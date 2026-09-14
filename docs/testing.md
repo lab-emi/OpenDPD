@@ -69,3 +69,7 @@ The documentation integration test validates CLI flags and runs real CPU experim
 ## Default installation checks
 
 CI installs the default package on Linux, macOS and Windows with uv automatic PyTorch backend selection. `scripts/check_install.py` verifies platform bindings and tensor arithmetic on each available CPU/CUDA/MPS backend. A subprocess regression checks that a failed browser opener leaves the service reachable. This does not claim a native window was manually exercised on all three platforms.
+
+## Dependency advisory checks
+
+CI audits the frontend lockfile with `npm audit --audit-level=moderate`. The Linux default-install job audits its resolved Python environment using `scripts/audit_requirements.py` and `pip-audit --strict --no-deps --disable-pip`. The helper normalizes official PyTorch build suffixes to the upstream release and respects environment import precedence; it omits only this source-reviewed application. Deployment review separately scans the actual GPU image, including OS packages. A clean advisory scan is a dated check, not a guarantee against undisclosed defects.

@@ -50,7 +50,7 @@ it terminates remaining requests and workers, then discards its private tmpfs.
 The stop timeout is 20 seconds with SIGKILL as the final fallback. This leaves
 margin before any session data reaches 24 hours. Sessions do not get a fresh
 24 hours when they are accessed or when new files are generated. Late visitors
-therefore have a shorter session; the UI displays their exact expiry.
+therefore have a shorter session; the persistent top bar displays the exact scheduled cleanup start in UTC, with local time in its tooltip. Active requests can delay individual deletions until the next sweep; the independent reset bounds that delay.
 
 Refreshing a browser or reconnecting within the same tab resumes the existing
 session, events and saved plots. Restarting the API or VM discards every session;
@@ -118,10 +118,11 @@ Cloudflare response header for `/studio/` because a meta CSP cannot enforce it.
 | HTTP requests | 120/minute per session, 600/minute per IP; preflight has a separate 600/minute bucket; 8 concurrent globally, 3/session |
 | JSON request body | 64 KiB, 10-second receive deadline; no multipart |
 | Jobs | 8/session, 12/IP/day, 60/day globally; 2 pending/session |
+| Heavy API work | 2 concurrent analyses/generations/exports globally; one workspace mutation at a time; cancellation is exempt |
 | Concurrent training/inference | 1 globally across every session, oldest queued experiment first |
 | Job runtime | 30 minutes, followed by cancellation and forced termination |
 | Public model/training parameters | bounded layers, widths, batches, frames, epochs and threads |
-| Storage | 256 MiB/session checked every 15 seconds; **2 GiB hard limit globally** |
+| Storage | 256 MiB/session checked every 15 seconds; **2 GiB hard limit globally**; heavy writers reserve capacity before receiving data, retaining 64 MiB free headroom |
 | Files/processes | 64 MiB/file, 256 tasks, 4 CPU equivalents, 6 GiB API cgroup RAM |
 
 IPv6 addresses share a /64 rate-limit bucket. IP quotas use an ephemeral HMAC
@@ -359,3 +360,11 @@ termination and empty host temporary storage before publishing the frontend.
 Deploy the reviewed 2.2.4 source consistently to the isolated API, the private GPU agent and its pinned container image, and the `opendpd-site` Pages build. Drain queued/running experiments before replacing the API; retain prior source and image pins for rollback. Restarting the API expires existing temporary sessions. Verify reported versions before the public generation → Virtual PA → paired dataset → CUDA PA/DPD training/testing journey.
 
 Generator records contain input only. The `/pa-library/` routes perform bounded mathematical simulation inside the owning temporary workspace, preserve synthetic provenance and require explicit paired-dataset creation. New PSD `signal_node` fields are display metadata; tenant boundaries, quotas, expiry and numerical metric protocols remain unchanged. Publication-figure and optional GitHub dataset-contribution capabilities keep their existing operator policy.
+
+## 2.2.6 resource status and security update
+
+Authenticated `GET /api/v1/system/status` exposes aggregate session/job counts and cached resource samples. A single background sampler per API process reads CPU/RAM every five seconds; the private GPU agent samples host CPU/RAM and GPU 0 and sends validated telemetry to `POST /_gpu/resources`. That endpoint requires the existing private bridge credential and refuses browser origins. Status reads neither run GPU commands nor disclose process names, IPs, workspace identifiers or dataset details. Job counts are cached across viewers; collection errors produce unknown counts instead of zero. Samples older than 20 seconds are stale.
+
+Workspace POST/PUT operations serialize within a tenant; cancellation remains available. Heavy API work has a separate global admission limit, and temporary-space reservations prevent concurrent writers from spending the same free capacity. Cleanup scans run off the event loop and tolerate files atomically replaced by legitimate writers. Failed cleanup still disables new sessions.
+
+The runtime image pins PyTorch 2.14/CUDA 13.2 by digest, applies Ubuntu updates and removes unused build headers and package installers. Keep the existing network-free, non-root, read-only worker limits. Deploy reviewed source to the API, agent, image and Pages together, with no queued/running jobs at the swap and rollback copies retained. See [load semantics](../guides/server-load.md) and the [2.2.6 security review](../releases/security-review-2.2.6.md).

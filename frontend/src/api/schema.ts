@@ -1709,6 +1709,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Server Status */
+        get: operations["server_status_api_v1_system_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3772,6 +3789,15 @@ export interface components {
             /** Trace Sha256 */
             trace_sha256: string;
         };
+        /** GpuLoad */
+        GpuLoad: {
+            /** Memory Total Bytes */
+            memory_total_bytes?: number | null;
+            /** Memory Used Bytes */
+            memory_used_bytes?: number | null;
+            /** Utilization Percent */
+            utilization_percent?: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -4225,6 +4251,20 @@ export interface components {
             next_offset: number;
             /** Size */
             size: number;
+        };
+        /** MachineLoad */
+        MachineLoad: {
+            /** Cpu Percent */
+            cpu_percent?: number | null;
+            gpu?: components["schemas"]["GpuLoad"] | null;
+            /** Memory Percent */
+            memory_percent?: number | null;
+            /** Memory Total Bytes */
+            memory_total_bytes?: number | null;
+            /** Memory Used Bytes */
+            memory_used_bytes?: number | null;
+            /** Sampled At */
+            sampled_at?: string | null;
         };
         /** ManifestUpdate */
         ManifestUpdate: {
@@ -5188,6 +5228,17 @@ export interface components {
             /** Weight Bytes */
             weight_bytes: number;
         };
+        /** ResourceStatus */
+        ResourceStatus: {
+            /** Age Seconds */
+            age_seconds?: number | null;
+            load?: components["schemas"]["MachineLoad"];
+            /**
+             * Stale
+             * @default true
+             */
+            stale: boolean;
+        };
         /** ReviewBand */
         ReviewBand: {
             /** Available */
@@ -5401,6 +5452,43 @@ export interface components {
             /** Reference Gain */
             reference_gain?: number | null;
         };
+        /** ServerStatus */
+        ServerStatus: {
+            /** Active Sessions */
+            active_sessions?: number | null;
+            /**
+             * Active Window Seconds
+             * @default 300
+             */
+            active_window_seconds: number;
+            api: components["schemas"]["ResourceStatus"];
+            compute?: components["schemas"]["ResourceStatus"] | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "web" | "local";
+            /** Parallel Capacity */
+            parallel_capacity?: number | null;
+            /** Queued Jobs */
+            queued_jobs: number | null;
+            /**
+             * Refresh Seconds
+             * @default 5
+             */
+            refresh_seconds: number;
+            /** Running Jobs */
+            running_jobs: number | null;
+            /**
+             * Sampled At
+             * Format: date-time
+             */
+            sampled_at: string;
+            /** Workspace Capacity */
+            workspace_capacity?: number | null;
+            /** Workspaces */
+            workspaces: number;
+        };
         /** SessionCapture */
         SessionCapture: {
             /**
@@ -5434,7 +5522,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.5
+             * @default 2.2.6
              */
             version: string;
         };
@@ -9479,6 +9567,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Capabilities"];
+                };
+            };
+        };
+    };
+    server_status_api_v1_system_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerStatus"];
                 };
             };
         };

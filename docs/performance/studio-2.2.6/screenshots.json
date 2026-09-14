@@ -1,0 +1,18 @@
+{
+  "version": "2.2.6",
+  "source": "current local source; clean workspace, actual host telemetry",
+  "records": [
+    {
+      "file": "pics/studio-home.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "95cea05401e8d53dd8432d07d9d66174566f40585a9a0adb478bfee82bb22235"
+    },
+    {
+      "file": "pics/studio-server-load.png",
+      "width": 1920,
+      "height": 1080,
+      "sha256": "a782ca6b756cc25340bb27c3df7ab7da3fbe2f75b91c73343602e1e541899b3f"
+    }
+  ]
+}

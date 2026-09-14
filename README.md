@@ -37,11 +37,11 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.5** adds LaTeX equations with interactive PA parameter highlighting, shared or per-channel OFDMA settings, and **ILC + ILA DPD** with a separate waveform-specific Ideal benchmark. Next-step controls sit above settings, and metric calculation methods have clearer names.
+**OpenDPD 2.2.6** adds a **Server load** tab with active sessions, queued/running jobs, CPU, memory and GPU utilization. The top bar shows one exact workspace cleanup timestamp. Stronger request, filesystem and resource limits protect shared compute.
 
 **Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input waveform, simulate its output with one of nine Virtual PAs, or upload existing input/output CSV data. Results label synthetic, surrogate and measured evidence and show separate PSD charts at each signal-chain position.
 
-[2.2.5 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.5/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [ILC guide](https://lab-emi.github.io/OpenDPD/guides/ilc-dpd/). Standard presets are engineering stimuli, not conformance waveforms; Wi-Fi 8 is experimental.
+[2.2.6 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.6/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [ILC guide](https://lab-emi.github.io/OpenDPD/guides/ilc-dpd/). Standard presets are engineering stimuli, not conformance waveforms; Wi-Fi 8 is experimental.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)
@@ -70,7 +70,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.5" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.2.6" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 

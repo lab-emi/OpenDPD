@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import hmac
 import re
 from datetime import timedelta
 from pathlib import Path
@@ -96,7 +97,7 @@ def require_session(request: Request) -> Session:
 
 def require_csrf(request: Request, session: Session = Depends(require_session)) -> Session:
     header = request.headers.get(CSRF_HEADER)
-    if not header or header != session.csrf_token:
+    if not header or not hmac.compare_digest(header.encode('utf-8'), session.csrf_token.encode('utf-8')):
         raise _error(403, "csrf_required", f"state-changing requests need the {CSRF_HEADER} header",
                      hint="read the token from GET /api/v1/session")
     return session
@@ -131,6 +132,14 @@ def session_info(request: Request):
 
 
 # --- system -----------------------------------------------------------------------
+
+from opendpd.schemas.system import ServerStatus
+
+
+@router.get('/system/status', response_model=ServerStatus, tags=['system'], dependencies=[Depends(require_session)])
+def server_status(request: Request):
+    from opendpd.services.server_status import local_status
+    return local_status(request.app)
 
 @router.get("/system/about", response_model=Dict[str, Any], tags=["system"],
             dependencies=[Depends(require_session)])

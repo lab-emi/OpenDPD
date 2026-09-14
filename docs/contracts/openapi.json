@@ -5511,6 +5511,52 @@
         "title": "GoldenCase",
         "type": "object"
       },
+      "GpuLoad": {
+        "additionalProperties": false,
+        "properties": {
+          "memory_total_bytes": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.152921504606847e+18,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Total Bytes"
+          },
+          "memory_used_bytes": {
+            "anyOf": [
+              {
+                "maximum": 1.152921504606847e+18,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Used Bytes"
+          },
+          "utilization_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilization Percent"
+          }
+        },
+        "title": "GpuLoad",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -6895,6 +6941,87 @@
           "size"
         ],
         "title": "LogPage",
+        "type": "object"
+      },
+      "MachineLoad": {
+        "additionalProperties": false,
+        "properties": {
+          "cpu_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpu Percent"
+          },
+          "gpu": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GpuLoad"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "memory_percent": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Percent"
+          },
+          "memory_total_bytes": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.152921504606847e+18,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Total Bytes"
+          },
+          "memory_used_bytes": {
+            "anyOf": [
+              {
+                "maximum": 1.152921504606847e+18,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Used Bytes"
+          },
+          "sampled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampled At"
+          }
+        },
+        "title": "MachineLoad",
         "type": "object"
       },
       "ManifestUpdate": {
@@ -9658,6 +9785,33 @@
         "title": "ResourceEstimate",
         "type": "object"
       },
+      "ResourceStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "age_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Seconds"
+          },
+          "load": {
+            "$ref": "#/components/schemas/MachineLoad"
+          },
+          "stale": {
+            "default": true,
+            "title": "Stale",
+            "type": "boolean"
+          }
+        },
+        "title": "ResourceStatus",
+        "type": "object"
+      },
       "ReviewBand": {
         "additionalProperties": false,
         "properties": {
@@ -10319,6 +10473,122 @@
         "title": "ScalingInfo",
         "type": "object"
       },
+      "ServerStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "active_sessions": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Sessions"
+          },
+          "active_window_seconds": {
+            "default": 300,
+            "title": "Active Window Seconds",
+            "type": "integer"
+          },
+          "api": {
+            "$ref": "#/components/schemas/ResourceStatus"
+          },
+          "compute": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResourceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "enum": [
+              "web",
+              "local"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "parallel_capacity": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parallel Capacity"
+          },
+          "queued_jobs": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queued Jobs"
+          },
+          "refresh_seconds": {
+            "default": 5,
+            "title": "Refresh Seconds",
+            "type": "integer"
+          },
+          "running_jobs": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Running Jobs"
+          },
+          "sampled_at": {
+            "format": "date-time",
+            "title": "Sampled At",
+            "type": "string"
+          },
+          "workspace_capacity": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Capacity"
+          },
+          "workspaces": {
+            "minimum": 0.0,
+            "title": "Workspaces",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mode",
+          "sampled_at",
+          "workspaces",
+          "running_jobs",
+          "queued_jobs",
+          "api"
+        ],
+        "title": "ServerStatus",
+        "type": "object"
+      },
       "SessionCapture": {
         "additionalProperties": false,
         "properties": {
@@ -10416,7 +10686,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.5",
+            "default": "2.2.6",
             "title": "Version",
             "type": "string"
           }
@@ -12606,7 +12876,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.5"
+    "version": "2.2.6"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -17196,6 +17466,27 @@
           }
         },
         "summary": "Capabilities",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/status": {
+      "get": {
+        "operationId": "server_status_api_v1_system_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Server Status",
         "tags": [
           "system"
         ]

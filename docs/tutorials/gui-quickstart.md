@@ -1,6 +1,6 @@
 # Your first experiment in Studio
 
-Open [Studio on the web](https://opendpd.com/studio/), or follow the [uv installation steps](../install.md) for the packaged local app. Studio, PyTorch and pywebview install together in 2.2.5.
+Open [Studio on the web](https://opendpd.com/studio/), or follow the [uv installation steps](../install.md) for the packaged local app. Studio, PyTorch and pywebview install together by default.
 
 Get Started now offers **Signal Generator** first, then existing datasets and CSV upload. The [Signal Generator guide](../guides/signal-generator.md) walks through creating and inspecting a waveform and creating a PA Input Dataset, then explicitly simulating a Virtual PA output in the [PA Library](../guides/virtual-pa-library.md) to make paired synthetic data. Each PA Model and DPD Model workspace contains Training and Testing tabs; Testing displays the selected split's exact complex I/Q count.
 
@@ -16,7 +16,7 @@ On **Home**, click **Get Started → Use an existing dataset** and choose **DPA_
 
 The dataset page shows input/output I/Q signals, sample rate, bandwidth and signal quality. Use the **Dataset Doctor** tab to inspect findings, then **Configure experiment** to continue. Built-in measured datasets keep their supplied splits; **MyCustomPA** is explicitly labeled synthetic tutorial data.
 
-Use **Get Started → Upload CSV** to upload your own I/Q data. Studio validates the complete CSV in quarantine before preview. Invalid files are deleted; the hosted app removes all session files within 24 hours. Download your results before they expire. See [import and preprocessing](headless-cli.md#use-your-own-data) for local workflows.
+Use **Get Started → Upload CSV** to upload your own I/Q data. Studio validates the complete CSV in quarantine before preview. Invalid files are deleted; the hosted app removes all session files within 24 hours. The persistent top bar shows the scheduled cleanup time in UTC. Download your results before that time. See [import and preprocessing](headless-cli.md#use-your-own-data) for local workflows.
 
 ## 2. Train and test a PA model
 
@@ -82,3 +82,7 @@ For remote use, keep the server on loopback and use an SSH tunnel, for example `
 PA Training/Testing includes an ILC linearization tab; DPD Training/Testing includes an ILC-DPD / Ideal benchmark tab. Both use the same bounded, recorded controller and ILA fitting workflow described in the [ILC guide](../guides/ilc-dpd.md). Select a trained PA reference first. The main score is the fitted DPD on held-out input; the Ideal test-waveform feedback result is labelled separately.
 
 Virtual PA equations and result metric formulas use local LaTeX rendering. Click a formula coefficient or its parameter field to highlight the pair. Next-step buttons appear above configuration fields. The result's calculation-method chip uses a descriptive name; expand Metric definitions to change the method or inspect its recorded version.
+
+## Server load
+
+Open **Server load** to check active sessions, running/queued jobs and CPU/RAM/GPU usage. The public app separates its API virtual machine from the compute host. Values refresh every five seconds while the page is visible; unavailable values appear as a dash. See [server load and cleanup](../guides/server-load.md) for the counting rules.

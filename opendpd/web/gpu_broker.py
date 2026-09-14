@@ -40,6 +40,26 @@ class GpuBroker:
         self.jobs: dict[str, Job] = {}
         self.last_seen = 0.0
         self.name = None
+        self.telemetry = None
+        self.telemetry_seen = None
+
+    def record_resources(self, payload):
+        from opendpd.schemas.system import MachineLoad
+        # Only the private host agent can supply telemetry. Validate and copy a
+        # fixed numeric schema; never forward arbitrary fields or process data.
+        sample = MachineLoad.model_validate(payload)
+        if sample.sampled_at is None or sample.sampled_at.tzinfo is None:
+            raise ValueError('telemetry requires a timezone-aware timestamp')
+        with self.lock:
+            self.telemetry, self.telemetry_seen = sample, time.monotonic()
+
+    def resource_status(self):
+        from opendpd.schemas.system import ResourceStatus, MachineLoad
+        from opendpd.services.server_status import STALE_SECONDS
+        with self.lock:
+            age = max(0., time.monotonic() - self.telemetry_seen) if self.telemetry_seen is not None else None
+            return ResourceStatus(load=self.telemetry.model_copy(deep=True) if self.telemetry else MachineLoad(),
+                                  age_seconds=age, stale=age is None or age > STALE_SECONDS)
 
     def devices(self):
         available = time.monotonic() - self.last_seen < LEASE_SECONDS

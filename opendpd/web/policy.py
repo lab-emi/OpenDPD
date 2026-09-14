@@ -19,7 +19,7 @@ FILE_ID = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,200}"
 # arbitrary path imports, RF control, package imports, or executable exports.
 ROUTES = {
     "GET": [
-        r"/system/(capabilities|about)", r"/settings", r"/models", r"/recipes",
+        r"/system/(capabilities|about|status)", r"/settings", r"/models", r"/recipes",
         r"/datasets", r"/datasets/builtin", r"/datasets/import-defaults", rf"/datasets/{SLUG}(/(analysis|diagnostics))?",
         r"/runs", r"/runs/count", rf"/runs/{SLUG}(/(config|artifacts|history|live|lineage|logs|events/list))?",
         rf"/runs/{SLUG}/checkpoint(/download)?",
@@ -68,6 +68,7 @@ class WebConfig:
     max_workspace_bytes: int = 256 * 1024 * 1024
     max_body: int = 64 * 1024
     max_requests: int = 8
+    max_expensive_requests: int = 2
     # Hosted publication uses the operator's dedicated GitHub CLI identity and
     # must be explicitly enabled. Browser users never supply a GitHub token.
     dataset_publications: bool = False
@@ -106,6 +107,13 @@ def allowed(method: str, path: str) -> bool:
     if ".." in path or any(path == p or path.startswith(p + "/") for p in NEVER_PUBLIC):
         return False
     return any(re.fullmatch(pattern, path) for pattern in ROUTES.get(method, []))
+
+
+def expensive_request(method: str, path: str) -> bool:
+    """Bound in-process numeric/file work separately from lightweight status and cancellation."""
+    if method == 'GET':
+        return bool(re.fullmatch(r'/datasets/[^/]+/analysis|/results/compare|/results/[^/]+(/(report|review))?', path))
+    return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/pa-library/', '/dataset-publications/')))
 
 
 def check_slug(value, field: str):

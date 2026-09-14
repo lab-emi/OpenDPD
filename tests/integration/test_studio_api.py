@@ -110,6 +110,16 @@ def test_host_header_enforced(client, session):
     assert client.get("/api/v1/runs", headers={"Host": "localhost:8765"}).status_code == 200
 
 
+def test_duplicate_security_headers_and_non_ascii_csrf_are_refused(client, session):
+    response = client.get('/api/v1/runs', headers=[('Host', '127.0.0.1:8765'), ('Host', 'localhost:8765')])
+    assert response.status_code == 400
+    assert response.json()['error']['code'] == 'ambiguous_headers'
+    assert response.headers['cache-control'] == 'no-store'
+    response = client.put('/api/v1/settings', json={'language': 'en'}, headers=[(CSRF_HEADER.encode(), b'\xff')])
+    assert response.status_code == 403
+    assert response.headers['cache-control'] == 'no-store'
+
+
 def test_payload_too_large(client, session):
     big = {"config": smoke_config(), "name": "x" * (3 * 1024 * 1024)}
     r = client.post("/api/v1/runs", json=big)

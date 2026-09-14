@@ -1,5 +1,14 @@
 # What's new
 
+## 2.2.6: server load and stronger isolation
+
+- Live aggregate CPU, RAM, GPU and queue status, with an active-session estimate and clear stale-data handling.
+- One persistent UTC cleanup timestamp, including a compact mobile layout.
+- Stricter filesystem identifiers and request boundaries, serialized workspace writes, bounded shared analysis and reserved temporary storage.
+- Updated runtime dependencies and GPU image, with dependency audits in CI.
+
+[Release notes](releases/release-notes-2.2.6.md) · [Server load](guides/server-load.md) · [Security review](releases/security-review-2.2.6.md)
+
 ## 2.2.5: ILC, interactive LaTeX and simpler installation
 
 - ILC + ILA DPD with a separate waveform-specific Ideal test reference, configurable bounds and convergence evidence.

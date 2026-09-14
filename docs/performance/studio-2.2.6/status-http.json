@@ -1,0 +1,9 @@
+{
+  "requests": 100,
+  "transport": "real loopback HTTP; cached local resource samples",
+  "environment": "Linux host with Python regression running concurrently",
+  "median_ms": 1.01,
+  "p95_ms": 1.56,
+  "max_ms": 1.87,
+  "max_body_bytes": 557
+}
