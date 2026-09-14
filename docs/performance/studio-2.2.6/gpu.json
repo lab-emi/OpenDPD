@@ -1,0 +1,27 @@
+{
+  "image": "sha256:d49dc51a7059d0baa98c5db1005b1ae2ee6e74abbbd3e493c81019465b71e6fc",
+  "dataset": "synthetic 32768 I/Q pairs",
+  "records": [
+    {
+      "recipe": "pa-gru-smoke-v1",
+      "run": "run-20260914-120910-ec566d",
+      "status": "succeeded",
+      "seconds": 7.78,
+      "test_samples": 6452
+    },
+    {
+      "recipe": "dpd-gru-smoke-v1",
+      "run": "run-20260914-120917-1d1842",
+      "status": "succeeded",
+      "seconds": 6.18,
+      "test_samples": 6452
+    },
+    {
+      "recipe": "dpd-ilc-ila-v1",
+      "run": "run-20260914-120924-06d95c",
+      "status": "succeeded",
+      "seconds": 6.58,
+      "test_samples": 6452
+    }
+  ]
+}

@@ -16,7 +16,7 @@ from starlette.responses import JSONResponse, Response
 
 from opendpd import __version__
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE
-from opendpd.web.policy import WebConfig, allowed, check_body, check_query, reject
+from opendpd.web.policy import WebConfig, allowed, check_body, check_query, expensive_request, reject
 from opendpd.web.runtime import TenantManager, directory_bytes
 from opendpd.web.gpu_archive import MAX_BYTES
 
@@ -52,7 +52,7 @@ class PublicBoundary:
                 # The nested local app's same-origin headers do not describe this
                 # cross-origin API. Never forward local cookies or cache headers.
                 replaced = {b"set-cookie", b"content-security-policy", b"cache-control", b"cross-origin-resource-policy",
-                            b"access-control-allow-origin", b"access-control-allow-credentials", b"referrer-policy"}
+                            b"access-control-allow-origin", b"access-control-allow-credentials", b"referrer-policy", b"x-content-type-options"}
                 headers = [(k, v) for k, v in message.get("headers", []) if k.lower() not in replaced]
                 headers.extend([(b"cache-control", b"no-store"), (b"referrer-policy", b"no-referrer"),
                                 (b"content-security-policy", b"default-src 'none'; frame-ancestors 'none'; sandbox"),
@@ -133,10 +133,26 @@ class PublicBoundary:
             reject(401, "unauthorized", "start a temporary session first")
         if tenant:
             self.manager.rate_limit("session:" + tenant.identifier, self.config.requests_per_session_minute)
+            tenant.last_activity = self.manager.now()
         if self.manager.inflight >= self.config.max_requests or (tenant and tenant.inflight >= 3):
             reject(429, "service_busy", "too many simultaneous requests; try again later")
+        mutation = tenant is not None and method in {'POST', 'PUT'} and not path.endswith('/cancel')
+        expensive = expensive_request(method, path)
+        if mutation and tenant.mutating:
+            reject(429, 'workspace_busy', 'Wait for the current workspace change to finish; cancellation remains available.')
+        if expensive and self.manager.expensive_requests >= self.config.max_expensive_requests:
+            reject(429, 'compute_busy', 'Shared analysis capacity is busy; try again shortly.')
+        storage = self.config.max_workspace_bytes if expensive and mutation else 0
+        if storage:
+            # Reserve a whole bounded workspace before receiving a writer's
+            # body; concurrent tenants cannot each spend the same free tmpfs.
+            self.manager.reserve_storage(storage)
         # Reserve before receiving the body, including chunked and slow requests.
         self.manager.inflight += 1
+        if mutation:
+            tenant.mutating = True
+        if expensive:
+            self.manager.expensive_requests += 1
         if tenant:
             tenant.inflight += 1
         try:
@@ -176,6 +192,14 @@ class PublicBoundary:
                 return
             if path == "/session":
                 await JSONResponse(session_info(tenant))(scope, receive, send)
+                return
+            if path == '/system/status':
+                status = await asyncio.to_thread(self.manager.server_status)
+                await JSONResponse(status.model_dump(mode='json'))(scope, receive, send)
+                return
+            if path == '/system/about':
+                # The public About page does not need an outbound GitHub fetch.
+                await JSONResponse({'version': __version__, 'local_commit': None})(scope, receive, send)
                 return
             if path in {"/models", "/recipes"}:
                 from opendpd.core.registry import list_models
@@ -316,6 +340,12 @@ class PublicBoundary:
             await tenant.app(child_scope, child_receive, send)
         finally:
             self.manager.inflight -= 1
+            if mutation:
+                tenant.mutating = False
+            if expensive:
+                self.manager.expensive_requests -= 1
+            if storage:
+                self.manager.release_storage(storage)
             if tenant:
                 tenant.inflight -= 1
 
@@ -386,10 +416,17 @@ class PublicBoundary:
                 or len(headers.getlist("x-opendpd-gpu")) != 1
                 or not secrets.compare_digest(headers.get("x-opendpd-gpu", ""), token)):
             reject(403, "private_endpoint", "private compute endpoint")
+        for key in ('content-length', 'x-opendpd-lease', 'x-opendpd-exit'):
+            if len(headers.getlist(key)) > 1:
+                reject(400, 'ambiguous_headers', 'duplicate security headers are refused')
         path = request.url.path.split("/")
         broker = self.manager.gpu
         if request.method == "POST":
-            limit = MAX_BYTES if path[-1] == "result" else 24 * 1024 * 1024 if path[-1] == 'checkpoint' else 4 * 1024 * 1024
+            limit = (4096 if request.url.path in {'/_gpu/resources', '/_gpu/poll'} else
+                     MAX_BYTES if path[-1] == "result" else 24 * 1024 * 1024 if path[-1] == 'checkpoint' else 4 * 1024 * 1024)
+            length = headers.get('content-length')
+            if length is not None and (not length.isdecimal() or int(length) > limit):
+                reject(413, 'transfer_limit', 'GPU transfer exceeds limit')
             async def read():
                 data = bytearray()
                 async for chunk in request.stream():
@@ -397,11 +434,17 @@ class PublicBoundary:
                     if len(data) > limit:
                         reject(413, "transfer_limit", "GPU transfer exceeds limit")
                 return bytes(data)
-            raw = await asyncio.wait_for(read(), timeout=20)
+            try:
+                raw = await asyncio.wait_for(read(), timeout=20)
+            except asyncio.TimeoutError:
+                reject(408, 'request_timeout', 'GPU transfer took too long')
         else:
             raw = b""
         try:
-            if request.url.path == "/_gpu/poll" and request.method == "POST":
+            if request.url.path == '/_gpu/resources' and request.method == 'POST':
+                broker.record_resources(json.loads(raw))
+                result = {'ok': True}
+            elif request.url.path == "/_gpu/poll" and request.method == "POST":
                 body = json.loads(raw)
                 result = {"job": broker.poll(body["name"])}
             else:

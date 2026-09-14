@@ -6,8 +6,8 @@ import InsightsIcon from '@mui/icons-material/Insights'
 import ScienceIcon from '@mui/icons-material/Science'
 import SettingsIcon from '@mui/icons-material/Settings'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import DnsOutlinedIcon from '@mui/icons-material/DnsOutlined'
 import AppBar from '@mui/material/AppBar'
-import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Drawer from '@mui/material/Drawer'
@@ -30,9 +30,10 @@ import { ReportBugsButton } from '@/components/ReportBugsButton'
 import { StudioLogo } from '@/components/StudioLogo'
 import { ExperimentTerminal } from '@/components/ExperimentTerminal'
 import { WorkflowProgress } from '@/components/WorkflowProgress'
+import { WorkspaceExpiry } from '@/components/WorkspaceExpiry'
 import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 import { isExperimentTask } from '@/components/ExperimentTasks'
-import { formatDateTime, t, type MessageKey } from '@/i18n'
+import { t, type MessageKey } from '@/i18n'
 import { tokens, useStudioColors } from '@/theme'
 
 const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
@@ -42,6 +43,7 @@ const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
   { to: '/datasets', key: 'nav.datasets', Icon: DatasetIcon },
   { to: '/experiments', key: 'nav.experiments', Icon: ScienceIcon },
   { to: '/results', key: 'nav.results', Icon: InsightsIcon },
+  { to: '/server', key: 'server.title', Icon: DnsOutlinedIcon },
   { to: '/settings', key: 'nav.settings', Icon: SettingsIcon },
   { to: '/about', key: 'about.title', Icon: InfoOutlinedIcon },
 ]
@@ -119,12 +121,12 @@ export function AppShell() {
         </Box>
       </Drawer>
       <AppBar position="fixed" color="default" elevation={0} sx={{ width: { xs: 'calc(100% - 64px)', md: `calc(100% - ${tokens.layout.navWidth}px)` }, border: 0, borderBottom: `1px solid ${colors.border}`, bgcolor: 'background.paper' }}>
-        <Toolbar sx={{ minHeight: '56px !important', gap: { xs: .5, sm: 1, lg: 1.5 }, px: { xs: '8px !important', sm: '16px !important', lg: '20px !important' } }}>
-          <Typography variant="body2" noWrap sx={{ fontWeight: 600, minWidth: 0, display: { xs: 'none', sm: 'block' } }}>{current ? t(current.key) : t('app.title')}</Typography>
+        <Toolbar sx={{ minHeight: { xs: WEB_MODE ? '88px !important' : '56px !important', sm: '56px !important' }, flexWrap: { xs: WEB_MODE ? 'wrap' : 'nowrap', sm: 'nowrap' }, columnGap: { xs: .5, sm: 1, lg: 1.5 }, px: { xs: '8px !important', sm: '16px !important', lg: '20px !important' } }}>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 600, minWidth: 0, display: { xs: 'none', sm: WEB_MODE ? 'none' : 'block', lg: 'block' } }}>{current ? t(current.key) : t('app.title')}</Typography>
           <Box sx={{ height: 16, borderLeft: `1px solid ${colors.border}`, display: { xs: 'none', lg: 'block' } }} />
-          <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 380, minWidth: 0, display: { xs: 'none', lg: 'block' } }} title={caps.data?.workspace}>
+          {WEB_MODE && session?.expires_at ? <WorkspaceExpiry expiresAt={session.expires_at} /> : <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 380, minWidth: 0, display: { xs: 'none', lg: 'block' } }} title={caps.data?.workspace}>
             {caps.data?.workspace.split(/[\\/]/).filter(Boolean).at(-1) ?? '…'}
-          </Typography>
+          </Typography>}
           <Box sx={{ flex: 1 }} />
           <ReportBugsButton compact={compactToolbar} />
           <ResetButton compact={compactToolbar} disabled={mutating} detail={resetDetail} onReset={() => reset(false)} />
@@ -133,8 +135,7 @@ export function AppShell() {
           <LanguageMenu />
         </Toolbar>
       </AppBar>
-      <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: '76px', minWidth: 0 }}>
-        {WEB_MODE && session?.expires_at && <Alert severity="info" sx={{ mb: 2 }}>{t('web.retention', { date: formatDateTime(session.expires_at) })}</Alert>}
+      <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: { xs: WEB_MODE ? '108px' : '76px', sm: '76px' }, minWidth: 0 }}>
         <Box sx={{ maxWidth: tokens.layout.maxContent, mx: 'auto', minWidth: 0 }}>
           <WorkflowProgress />
           <Outlet />

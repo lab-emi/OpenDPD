@@ -12,6 +12,7 @@ import logging
 import os
 import secrets
 import shutil
+import sqlite3
 import threading
 import time
 from dataclasses import dataclass
@@ -62,7 +63,15 @@ def clear_sessions(root: Path):
 
 
 def directory_bytes(root: Path) -> int:
-    return sum(p.stat(follow_symlinks=False).st_size for p in root.rglob("*") if not p.is_symlink())
+    total = 0
+    for path in root.rglob('*'):
+        try:
+            if not path.is_symlink():
+                total += path.stat(follow_symlinks=False).st_size
+        except FileNotFoundError:
+            # Writers replace/remove temporary files during a quota scan.
+            continue
+    return total
 
 
 @dataclass
@@ -78,6 +87,8 @@ class Tenant:
     inflight: int = 0
     closing: bool = False
     uploading: bool = False
+    mutating: bool = False
+    last_activity: float = 0.0
 
 
 class WebSupervisor(Supervisor):
@@ -143,10 +154,18 @@ class TenantManager:
     def __init__(self, config: WebConfig, *, now=time.time):
         self.config, self.now = config, now
         self.gpu = GpuBroker()
+        from opendpd.services.server_status import ResourceSampler
+        self.resources = ResourceSampler()
+        self.expensive_requests = 0
+        self.storage_reserved = 0
+        self.status_counts = (0, 0)
+        self.status_updated = 0.0
+        self.status_lock = threading.Lock()
         self.tenants: dict[str, Tenant] = {}
         self.slots = threading.BoundedSemaphore(config.max_parallel)
         self.budget_lock = threading.RLock()
         self.create_lock = asyncio.Lock()
+        self.sweep_lock = asyncio.Lock()
         self.ip_secret = secrets.token_bytes(32)
         self.ip_sessions: dict[str, int] = {}
         self.ip_runs: dict[str, int] = {}
@@ -163,6 +182,7 @@ class TenantManager:
         self.lock = prepare_root(self.config.root)
         clear_sessions(self.config.root)
         (self.config.root / "service-tmp").mkdir(mode=0o700, exist_ok=True)
+        self.resources.start()
 
     def ip_key(self, address: str) -> str:
         ip = ipaddress.ip_address(address)
@@ -182,6 +202,16 @@ class TenantManager:
         self.rate[ip_key] = (minute, count)
         if count > (limit or self.config.requests_per_minute):
             reject(429, "rate_limited", "too many requests; try again in a minute")
+
+    def reserve_storage(self, amount):
+        with self.budget_lock:
+            if shutil.disk_usage(self.config.root).free - self.storage_reserved < amount + 64 * 2**20:
+                reject(507, 'storage_busy', 'Shared temporary storage is nearly full. Try again after workspaces are cleared.')
+            self.storage_reserved += amount
+
+    def release_storage(self, amount):
+        with self.budget_lock:
+            self.storage_reserved -= amount
 
     @property
     def cutoff(self):
@@ -219,7 +249,7 @@ class TenantManager:
                 return WebSupervisor(ws, store, manager=self, ip_key=ip_key, expires_at=expires_at, **kwargs)
 
             app = create_app(root / "workspace", supervisor_factory=factory, shutdown_timeout=0,
-                             allow_dataset_publications=self.config.dataset_publications)
+                             allow_dataset_publications=self.config.dataset_publications, monitor_resources=False)
             if self.config.gpu_token:
                 app.state.device_detector = self.gpu.devices
             app.state.workspace_label = "Temporary workspace (deleted within 24 hours)"
@@ -233,6 +263,7 @@ class TenantManager:
                 shutil.rmtree(root)
                 raise
             tenant = Tenant(identifier, digest, ip_key, expires_at, root, app, context, local_session)
+            tenant.last_activity = self.now()
             self.tenants[digest] = tenant
             self.ip_sessions[ip_key] = self.ip_sessions.get(ip_key, 0) + 1
             return tenant, token
@@ -248,11 +279,21 @@ class TenantManager:
         self.tenants.pop(tenant.token_hash, None)
 
     async def sweep(self):
-        self.gpu.sweep()
+        async with self.sweep_lock:
+            await self._sweep()
+
+    async def _sweep(self):
+        try:
+            self.gpu.sweep()
+        except Exception:
+            # GPU finalization must not stop tenant expiry or silently kill the
+            # maintenance task. The independent reset remains a final backstop.
+            self.cleanup_healthy = False
+            log.exception('GPU maintenance failed; session admission disabled')
         day = int(self.now() // DAY)
         for tenant in list(self.tenants.values()):
             try:
-                if tenant.closing or self.now() >= tenant.expires_at or directory_bytes(tenant.root) > self.config.max_workspace_bytes:
+                if tenant.closing or self.now() >= tenant.expires_at or await asyncio.to_thread(directory_bytes, tenant.root) > self.config.max_workspace_bytes:
                     await self.remove(tenant)
             except Exception:
                 self.cleanup_healthy = False
@@ -268,12 +309,48 @@ class TenantManager:
     async def maintenance(self):
         while True:
             await asyncio.sleep(self.config.sweep_seconds)
-            await self.sweep()
+            try:
+                await self.sweep()
+            except Exception:
+                self.cleanup_healthy = False
+                log.exception('temporary workspace maintenance failed; session admission disabled')
 
     async def stop(self):
         try:
             for tenant in list(self.tenants.values()):
                 await self.remove(tenant)
         finally:
+            self.resources.stop()
             if self.lock:
                 self.lock.close()
+
+    def server_status(self):
+        from datetime import datetime, timezone
+        from opendpd.schemas.system import ServerStatus
+        from opendpd.services.server_status import job_counts, SAMPLE_SECONDS
+        now = self.now()
+        tenants = [t for t in list(self.tenants.values()) if not t.closing and now < t.expires_at]
+        # Bound SQLite work across every viewer of the status page. A closing
+        # workspace may disappear between snapshots; never expose its identity.
+        with self.status_lock:
+            if time.monotonic() - self.status_updated >= SAMPLE_SECONDS:
+                counts = [0, 0]
+                for tenant in tenants:
+                    try:
+                        running, queued = job_counts(tenant.app.state.store)
+                    except sqlite3.Error:
+                        if tenant.closing:
+                            continue
+                        # A database failure is unknown load, never zero jobs.
+                        counts = [None, None]
+                        log.warning('job-count telemetry unavailable')
+                        break
+                    counts[0] += running
+                    counts[1] += queued
+                self.status_counts = tuple(counts)
+                self.status_updated = time.monotonic()
+            running, queued = self.status_counts
+        return ServerStatus(mode='web', sampled_at=datetime.fromtimestamp(now, timezone.utc),
+            active_sessions=sum(now - t.last_activity < 300 for t in tenants), workspaces=len(tenants),
+            workspace_capacity=self.config.max_sessions, running_jobs=running, queued_jobs=queued,
+            parallel_capacity=self.config.max_parallel, api=self.resources.snapshot(), compute=self.gpu.resource_status())

@@ -8,7 +8,7 @@ file (S05).
 ## Sessions
 
 1. The launcher prints `http://127.0.0.1:<port>/bootstrap?token=…`. Opening it
-   exchanges the one-time token for an `HttpOnly; SameSite=Strict` cookie and
+   exchanges the launcher secret for an `HttpOnly; SameSite=Strict` cookie and
    redirects to `/` so the token never stays in the address bar.
 2. `GET /api/v1/session` returns `{authenticated, csrf_token}`. Every
    state-changing request (POST) must send `X-OpenDPD-CSRF: <csrf_token>`.

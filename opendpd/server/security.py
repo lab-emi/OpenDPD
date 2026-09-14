@@ -4,7 +4,7 @@ Threat model (docs/architecture/threat-model.md): the server listens on
 127.0.0.1, but any web page the user visits can still send requests to
 ``http://127.0.0.1:<port>``. Defences, in order:
 
-1. A one-time **bootstrap token** (printed by the launcher, embedded in the
+1. A launcher **bootstrap secret** (printed by the launcher, embedded in the
    URL it opens) is exchanged for a session cookie; API routes require it.
 2. State-changing requests must carry ``X-OpenDPD-CSRF`` equal to the
    session's CSRF token. A foreign page cannot read that token and cannot
@@ -22,9 +22,11 @@ Threat model (docs/architecture/threat-model.md): the server listens on
 from __future__ import annotations
 
 import hmac
+import re
 import secrets
 import threading
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from typing import Dict, Optional
 from urllib.parse import urlsplit
 
@@ -48,6 +50,7 @@ SECURITY_HEADERS = (
     (b"referrer-policy", b"same-origin"),
     (b"cross-origin-opener-policy", b"same-origin"),
     (b"cross-origin-resource-policy", b"same-origin"),
+    (b"permissions-policy", b"camera=(), microphone=(), geolocation=(), payment=()"),
 )
 NO_STORE_PREFIXES = ("/api/", "/bootstrap", "/healthz", "/readyz")
 
@@ -56,6 +59,7 @@ NO_STORE_PREFIXES = ("/api/", "/bootstrap", "/healthz", "/readyz")
 class Session:
     session_id: str
     csrf_token: str
+    created_at: float = field(default_factory=time.monotonic)
 
 
 class SessionStore:
@@ -71,6 +75,10 @@ class SessionStore:
             return None
         session = Session(session_id=secrets.token_urlsafe(32), csrf_token=secrets.token_urlsafe(32))
         with self._lock:
+            now = time.monotonic()
+            self._sessions = {key: value for key, value in self._sessions.items() if now - value.created_at < SESSION_MAX_AGE}
+            if len(self._sessions) >= 128:
+                self._sessions.pop(next(iter(self._sessions)))
             self._sessions[session.session_id] = session
         return session
 
@@ -78,26 +86,30 @@ class SessionStore:
         if not session_id:
             return None
         with self._lock:
-            return self._sessions.get(session_id)
+            session = self._sessions.get(session_id)
+            if session and time.monotonic() - session.created_at >= SESSION_MAX_AGE:
+                self._sessions.pop(session_id, None)
+                return None
+            return session
 
 
 def host_is_loopback(host_header: Optional[str]) -> bool:
     if not host_header:
         return False
-    host = host_header.strip().lower()
-    if host.startswith("["):
-        host = host.split("]")[0] + "]"
-    else:
-        host = host.split(":")[0]
-    return host in LOOPBACK_HOSTS
+    match = re.fullmatch(r'(?:localhost|127\.0\.0\.1|\[::1\])(?::([0-9]{1,5}))?', host_header, re.IGNORECASE)
+    return bool(match and (match[1] is None or 0 < int(match[1]) <= 65535))
 
 
 def origin_matches(origin: Optional[str], host_header: Optional[str]) -> bool:
     """True when ``origin`` (an Origin or Referer value) targets this server."""
     if not origin:
         return True   # non-browser clients; CSRF header still required for writes
-    parts = urlsplit(origin)
-    if parts.scheme not in ("http", "https") or not parts.netloc:
+    try:
+        parts = urlsplit(origin)
+        parts.port  # Validate malformed IPv6 and port fields before comparison.
+    except ValueError:
+        return False
+    if parts.scheme not in ("http", "https") or not parts.netloc or parts.username or parts.password:
         return False
     return parts.netloc.lower() == (host_header or "").strip().lower()
 
@@ -140,7 +152,12 @@ class LocalBoundaryMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-        headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+        raw_headers = [(k.decode('latin-1').lower(), v.decode('latin-1')) for k, v in scope.get('headers', [])]
+        for key in ('host', 'origin', 'referer', 'cookie', CSRF_HEADER, 'content-length'):
+            if sum(name == key for name, _ in raw_headers) > 1:
+                await _reject(send, 400, 'ambiguous_headers', 'duplicate security headers are refused')
+                return
+        headers = dict(raw_headers)
         method = scope.get("method", "GET").upper()
         host = headers.get("host")
         if not host_is_loopback(host):
@@ -182,7 +199,9 @@ class LocalBoundaryMiddleware:
                 extra = list(SECURITY_HEADERS)
                 if no_store:
                     extra.append((b"cache-control", b"no-store"))
-                message = {**message, "headers": list(message.get("headers", [])) + extra}
+                replaced = {key for key, _ in extra}
+                existing = [(key, value) for key, value in message.get('headers', []) if key.lower() not in replaced]
+                message = {**message, "headers": existing + extra}
             await send(message)
 
         received = 0
@@ -211,5 +230,6 @@ async def _reject(send, status: int, code: str, message: str) -> None:
     import json
     body = json.dumps({"error": {"code": code, "message": message, "details": [], "hint": None}}).encode()
     await send({"type": "http.response.start", "status": status,
-                "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
+                "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode()),
+                            (b"cache-control", b"no-store"), *SECURITY_HEADERS]})
     await send({"type": "http.response.body", "body": body})

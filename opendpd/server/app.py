@@ -56,7 +56,8 @@ def static_status(static_dir: Path = STATIC_DIR) -> dict:
 
 def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, static_dir: Path = STATIC_DIR,
                supervisor_kwargs: Optional[dict] = None, shutdown_timeout: float = 10.0,
-               allow_custom_datasets: bool = True, allow_dataset_publications: bool = True, supervisor_factory=Supervisor) -> FastAPI:
+               allow_custom_datasets: bool = True, allow_dataset_publications: bool = True, supervisor_factory=Supervisor,
+               monitor_resources: bool = True) -> FastAPI:
     sessions = SessionStore(bootstrap_token)
 
     @asynccontextmanager
@@ -72,9 +73,14 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         app.state.sweeps = sweeps
         from opendpd.services.dataset_publication import PublicationController
         app.state.dataset_publications = PublicationController(ws)
+        from opendpd.services.server_status import ResourceSampler
+        app.state.resources = ResourceSampler(include_gpu=True)
+        if monitor_resources:
+            app.state.resources.start()
         try:
             yield
         finally:
+            app.state.resources.stop()
             sweeps.stop()
             app.state.dataset_publications.stop()
             supervisor.stop(timeout=shutdown_timeout)

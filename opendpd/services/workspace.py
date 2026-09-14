@@ -377,7 +377,7 @@ class Workspace:
                 return run_id
 
     def run_dir(self, run_id: str) -> Path:
-        return self.runs_dir / run_id
+        return self.runs_dir / checked_identifier(run_id, 'run id')
 
     def list_run_ids(self) -> List[str]:
         return sorted(p.name for p in self.runs_dir.glob("run-*") if (p / "run.json").exists())

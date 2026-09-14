@@ -52,6 +52,7 @@ nav:
       - Signal Generator: guides/signal-generator.md
       - Virtual PA Library: guides/virtual-pa-library.md
       - ILC and ILA DPD: guides/ilc-dpd.md
+      - Server load and cleanup: guides/server-load.md
       - Headless CLI: tutorials/headless-cli.md
       - Python examples & Colab: examples.md
   - Core workflow:
@@ -132,6 +133,7 @@ exclude_docs: |
 not_in_nav: |
   performance/studio-2.2.4.md
   performance/studio-2.2.5.md
+  performance/studio-2.2.6.md
   architecture/**
   community/**
   design/**

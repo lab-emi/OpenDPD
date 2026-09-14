@@ -121,6 +121,11 @@ jobs:
           uv pip install --python .venv -e ".[dev]" --torch-backend=auto
       - name: Check default dependencies and available compute
         run: uv run --no-project --python .venv python scripts/check_install.py
+      - name: Audit the resolved Python dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          uv run --no-project --python .venv python scripts/audit_requirements.py > /tmp/opendpd-audit.txt
+          uvx pip-audit --strict --no-deps --disable-pip -r /tmp/opendpd-audit.txt
       - name: Real browser fallback remains reachable
         run: uv run --no-project --python .venv python -m pytest tests/integration/test_launcher_browser_fallback.py -q
 
@@ -142,6 +147,9 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=moderate
 
       - name: Generated API types match docs/contracts/openapi.json
         run: npm run types:check

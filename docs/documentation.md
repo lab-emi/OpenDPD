@@ -63,3 +63,7 @@ The README's `brand` snippet uses GitHub-compatible `<picture class="brand-logo"
 ## Release 2.2.5 screenshot set
 
 Refresh `pics/studio-home.png`, `studio-signal-generator.png`, `studio-pa-library.png`, `studio-psd-chain.png`, and `studio-ilc.png` from the actual current GUI. Use a disposable synthetic workspace, record exact sample counts and real worker outcomes, and inspect chart legends at desktop and mobile sizes. Current guides link to these shared assets. Older release and performance directories remain historical evidence and are not overwritten as if they represented the new version.
+
+## Release 2.2.6 screenshots
+
+Refresh Home and add `pics/studio-server-load.png` from the current local GUI with a disposable workspace. Server-load readings in this image describe that local machine, not the public VM. Preserve the historical 2.2.5 waveform/ILC screenshots because those views are unchanged. Verify the public top bar at desktop and narrow sizes; keep session tokens and private paths out of screenshots and evidence.

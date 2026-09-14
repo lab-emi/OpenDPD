@@ -27,6 +27,7 @@ import { SweepBoardPage } from '@/pages/SweepBoardPage'
 import { HardwareCostsPage } from '@/pages/HardwareCostsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { AboutPage } from '@/pages/AboutPage'
+import { ServerStatusPage } from '@/pages/ServerStatusPage'
 import { themeFor } from '@/theme'
 
 function createQueryClient(): QueryClient {
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="gallery" element={<GalleryPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="server" element={<ServerStatusPage />} />
         <Route path="*" element={<HomePage />} />
       </Route>
     </Routes>
