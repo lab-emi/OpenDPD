@@ -85,7 +85,11 @@ Dataset/code/package/checkpoint path imports, shell execution, RF control and ex
 
 The public entrypoint is `python -m opendpd.web`, **not** `opendpd gui`.
 An explicit route allowlist sits ahead of separate local-app instances; new
-desktop routes are not automatically public. Each app has its own workspace,
+desktop routes are not automatically public. Because an id pattern such as
+`/datasets/<id>` also matches a static sibling route, routes that must never be
+published are listed by name in `policy.NEVER_PUBLIC`, and
+`tests/unit/test_public_policy_surface.py` fails if a static route becomes
+reachable without being listed. Each app has its own workspace,
 SQLite database and supervisor. Read, download, event polling, cancel and retry
 requests all resolve within the authenticated workspace.
 

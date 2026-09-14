@@ -31,8 +31,8 @@ from opendpd.schemas import (
     SignalSpec,
     SplitSpec,
 )
-from opendpd.services.workspace import Workspace, WorkspaceError, combined_sha256, read_json, sha256_file, slugify, \
-    write_json_atomic
+from opendpd.services.workspace import Workspace, WorkspaceError, checked_identifier, combined_sha256, read_json, \
+    sha256_file, slugify, write_json_atomic
 from opendpd.schemas.importing import CsvOptions, DatasetImportDefaults
 
 LOGICAL = ("I_in", "Q_in", "I_out", "Q_out")
@@ -329,7 +329,7 @@ def _materialise(ws: Workspace, manifest: DatasetManifest, version: str, x: np.n
     n = len(x)
     boundaries = contiguous_boundaries(n, ratios, guard)
     split = SplitSpec(version=SPLIT_VERSION, ratios=ratios, guard_samples=guard, boundaries=boundaries)
-    directory = ws.dataset_dir(manifest.dataset_id) / "versions" / version
+    directory = ws.dataset_dir(manifest.dataset_id) / "versions" / checked_identifier(version, "version")
     if directory.exists():
         raise ImportError_(f"version '{version}' already exists for dataset '{manifest.dataset_id}'")
     files = _write_split_dir(directory, x, y, boundaries, _legacy_spec(manifest.signal, split, manifest.display_name))

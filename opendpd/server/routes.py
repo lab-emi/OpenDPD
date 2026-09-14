@@ -58,6 +58,10 @@ from opendpd.services.dataset_analysis import analyze_dataset
 from opendpd.schemas.analysis import DatasetAnalysis
 from opendpd.schemas.importing import BuiltinDatasetInfo, CsvInspection, CsvOptions, DatasetImportDefaults
 from opendpd.schemas.common import Slug, Sha256
+
+# The Slug pattern as a plain string: Query() needs it stated, an Annotated
+# Field inside Slug does not reach the query validator.
+SLUG_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
 from opendpd.services import experiments
 from opendpd.services import packages
 from opendpd.services.evaluation import available_profiles, compare_results, comparison_csv
@@ -243,7 +247,8 @@ def recipes():
 
 class ImportBuiltinRequest(BaseModel):
     name: str
-    dataset_id: Optional[str] = None
+    # An identifier, never a path fragment: it names a directory under datasets/.
+    dataset_id: Optional[Slug] = None
 
 
 class ImportRootInfo(BaseModel):
@@ -311,8 +316,10 @@ class ManifestUpdate(BaseModel):
 
 class PreprocessRequest(BaseModel):
     params: PreprocessingParams
-    base_version: str = "raw-v1"
-    version: Optional[str] = Field(default=None, max_length=64)   # required to create, ignored for preview
+    # Both name a directory under the dataset's versions/, so both are
+    # identifiers rather than paths.
+    base_version: Slug = "raw-v1"
+    version: Optional[Slug] = Field(default=None, max_length=64)   # required to create, ignored for preview
 
 
 class PreprocessPreview(BaseModel):
@@ -446,7 +453,7 @@ def dataset_get(dataset_id: str, request: Request):
 
 @router.get("/datasets/{dataset_id}/analysis", response_model=DatasetAnalysis, tags=["datasets"],
             dependencies=[Depends(require_session)])
-def dataset_analysis(dataset_id: str, request: Request, version: str = Query("raw-v1", max_length=64)):
+def dataset_analysis(dataset_id: str, request: Request, version: str = Query("raw-v1", max_length=64, pattern=SLUG_PATTERN)):
     return analyze_dataset(_ws(request), dataset_id, version)
 
 
@@ -466,7 +473,7 @@ def dataset_diagnostics_latest(dataset_id: str, request: Request):
 
 @router.post("/datasets/{dataset_id}/diagnostics", response_model=DiagnosticReport, tags=["datasets"],
              dependencies=[Depends(require_csrf)])
-def dataset_diagnostics_run(dataset_id: str, request: Request, version: str = Query("raw-v1", max_length=64)):
+def dataset_diagnostics_run(dataset_id: str, request: Request, version: str = Query("raw-v1", max_length=64, pattern=SLUG_PATTERN)):
     return datasets_service.run_doctor(_ws(request), dataset_id, version)
 
 
