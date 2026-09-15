@@ -63,16 +63,49 @@ test('a CSV upload uses a bearer header, no cookie or token in the URL, and a ra
   expect(fetcher.mock.calls[0]![1]).toMatchObject({ credentials: 'omit', redirect: 'error', body: file, headers: { 'Content-Type': 'text/csv', Authorization: 'Bearer test-capability' } })
 })
 
-test('a DNS or transport failure is recoverable without creating a session or retrying a POST automatically', async () => {
+test('a lost admission response keeps the same private ticket for an explicit retry', async () => {
   const fetcher = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch'))
     .mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: true, access_token: 'recovered' }), { status: 201 }))
   vi.stubGlobal('fetch', fetcher)
   const { createWebSession, ApiConnectionError } = await import('./client')
   await expect(createWebSession()).rejects.toBeInstanceOf(ApiConnectionError)
   expect(fetcher).toHaveBeenCalledTimes(1)
-  expect(sessionStorage.length).toBe(0)
+  expect(sessionStorage.getItem('opendpd-web-session:https://api.opendpd.com')).toBeNull()
+  const ticket = fetcher.mock.calls[0]![1].headers.Authorization
+  expect(ticket).toMatch(/^Queue [a-f0-9]{64}$/)
   expect(await createWebSession()).toMatchObject({ authenticated: true })
+  expect(fetcher.mock.calls[1]![1].headers.Authorization).toBe(ticket)
   expect(sessionStorage.getItem('opendpd-web-session:https://api.opendpd.com')).toBe('recovered')
+})
+
+test('queued responses keep credentials out of cached data and reuse one ticket until admission', async () => {
+  const fetcher = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: false, status: 'queued', queue_position: 3, queue_token: 'private-queue' }), { status: 202 }))
+    .mockResolvedValueOnce(new Response(JSON.stringify({ authenticated: true, access_token: 'admitted' }), { status: 201 }))
+  vi.stubGlobal('fetch', fetcher)
+  const { createWebSession, hasQueuedWebSession } = await import('./client')
+  const queued = await createWebSession()
+  expect(queued).toMatchObject({ authenticated: false, queue_position: 3 })
+  expect(queued).not.toHaveProperty('queue_token')
+  expect(hasQueuedWebSession()).toBe(true)
+  expect(await createWebSession()).toMatchObject({ authenticated: true })
+  expect(fetcher.mock.calls[1]![1].headers.Authorization).toBe(fetcher.mock.calls[0]![1].headers.Authorization)
+  expect(hasQueuedWebSession()).toBe(false)
+})
+
+test('leaving while admission is in flight cannot install its late session token', async () => {
+  let finish: (response: Response) => void = () => {}
+  const fetcher = vi.fn().mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve }))
+    .mockResolvedValueOnce(new Response(null, { status: 204 }))
+  vi.stubGlobal('fetch', fetcher)
+  const { createWebSession, cancelWebQueue } = await import('./client')
+  const admission = createWebSession()
+  const rejected = expect(admission).rejects.toMatchObject({ name: 'AbortError' })
+  await cancelWebQueue()
+  finish(new Response(JSON.stringify({ authenticated: true, access_token: 'late' }), { status: 201 }))
+  await rejected
+  expect(sessionStorage.length).toBe(0)
+  expect(fetcher.mock.calls[1]![0]).toBe('https://api.opendpd.com/api/v1/web/queue/cancel')
+  expect(fetcher.mock.calls[1]![1].headers.Authorization).toBe(fetcher.mock.calls[0]![1].headers.Authorization)
 })
 
 test('HTTP quota responses remain distinguishable from a connection failure', async () => {

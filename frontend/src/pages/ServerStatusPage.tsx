@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@/api/client'
 import type { components } from '@/api/schema'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
+import { EndWorkspaceButton } from '@/components/EndWorkspaceButton'
 import { formatDateTime, formatNumber, t } from '@/i18n'
 
 type ServerStatus = components['schemas']['ServerStatus']
@@ -85,7 +86,13 @@ export function ServerStatusPage() {
           <Typography variant="caption" color="text.secondary">{note}</Typography>
         </Paper></Grid>)}
       </Grid>
-      {data.mode === 'web' && <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}><PeopleOutlineIcon fontSize="small" color="action" /><Typography variant="body2" color="text.secondary">{t('server.workspaces', { count: data.workspaces, capacity: data.workspace_capacity ?? '—' })}</Typography></Stack>}
+      {data.mode === 'web' && <Stack direction="row" sx={{ gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Stack direction="row" sx={{ gap: 1, alignItems: 'center', flex: 1 }}><PeopleOutlineIcon fontSize="small" color="action" /><Box>
+          <Typography variant="body2" color="text.secondary">{t('server.workspaces', { count: data.workspaces, capacity: data.workspace_capacity ?? '—' })}</Typography>
+          <Typography variant="body2" color="text.secondary">{t('server.waitingVisitors', { count: data.waiting_sessions ?? '—' })}</Typography>
+        </Box></Stack>
+        <EndWorkspaceButton />
+      </Stack>}
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: data.mode === 'web' ? 6 : 12 }}><ResourcePanel title={t(data.mode === 'web' ? 'server.api' : 'server.local')} description={t(data.mode === 'web' ? 'server.apiHelp' : 'server.localHelp')} resource={{ ...data.api, stale: data.api.stale || status.isError }} gpu={data.mode === 'local'} /></Grid>
         {data.compute && <Grid size={{ xs: 12, md: 6 }}><ResourcePanel title={t('server.compute')} description={t('server.computeHelp')} resource={{ ...data.compute, stale: data.compute.stale || status.isError }} gpu /></Grid>}

@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.7: more workspaces and an automatic waiting room
+
+Hosted capacity grows from 16 to 256 workspaces with up to 1,024 waiting tickets. A full service shows a position and admits visitors automatically. One shared scheduler replaces per-visitor background loops, while GPU jobs keep their own bounded FIFO queue. Workspaces now expire at 11:55 and 23:55 UTC; Server load includes waiting visitors and an explicit End workspace action.
+
+[Release notes](releases/release-notes-2.2.7.md) · [Waiting room and cleanup](guides/server-load.md) · [Capacity validation](performance/studio-2.2.7.md)
+
 ## 2.2.6: server load and stronger isolation
 
 - Live aggregate CPU, RAM, GPU and queue status, with an active-session estimate and clear stale-data handling.

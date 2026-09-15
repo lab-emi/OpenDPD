@@ -296,7 +296,7 @@ def test_fixed_expiry_is_not_extended_and_purges_all_files(public):
     expiry = tenant.expires_at
     (tenant.root / "future-upload").write_bytes(b"future upload")
     (tenant.app.state.ws.cache_dir / "analysis").write_bytes(b"analysis")
-    assert expiry - now[0] < DAY
+    assert expiry - now[0] < DAY / 2
     now[0] += 3600
     assert client.get("/api/v1/session", headers=auth).status_code == 200
     assert tenant.expires_at == expiry
@@ -305,7 +305,9 @@ def test_fixed_expiry_is_not_extended_and_purges_all_files(public):
     client.portal.call(manager.sweep)
     assert not tenant.root.exists()
     assert not manager.tenants
-    assert client.post("/api/v1/web/sessions", json={}).status_code == 503
+    waiting = client.post("/api/v1/web/sessions", json={})
+    assert waiting.status_code == 202
+    assert waiting.json()['reason'] == 'cleanup'
 
 
 def test_new_sessions_cannot_bypass_ip_quota_with_forged_forwarding(public):

@@ -1,6 +1,6 @@
 # OpenDPD 云端 API、持久队列与本地 GPU 主动取任务部署计划
 
-> 历史方案：当前采用 [GitHub Pages + Cloudflare Tunnel + 本机隔离 VM](public-studio.md)，匿名会话与文件在 24 小时内清除。以下 VPS、持久队列和用户注册设计不属于当前实现。
+> 历史方案：当前采用 [GitHub Pages + Cloudflare Tunnel + 本机隔离 VM](public-studio.md)，匿名会话与文件在 12 小时内清除。以下 VPS、持久队列和用户注册设计不属于当前实现。
 
 日期：2026-09-12。状态：实施计划，尚未部署公网服务。适用于小规模公开科研平台；最终允许互联网用户注册使用，通过身份、配额和排队控制计算量。
 

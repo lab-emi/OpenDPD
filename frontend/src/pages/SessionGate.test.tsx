@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { expect, test, vi } from 'vitest'
-import { ApiConnectionError, createWebSession, loadSession } from '@/api/client'
+import { beforeEach, expect, test, vi } from 'vitest'
+import { ApiConnectionError, cancelWebQueue, createWebSession, loadSession } from '@/api/client'
 import { SessionGate } from '@/pages/SessionGate'
 import { renderWithProviders } from '@/test/utils'
 
@@ -10,7 +10,11 @@ vi.mock('@/api/client', async (importOriginal) => ({
   WEB_MODE: true,
   loadSession: vi.fn(),
   createWebSession: vi.fn(),
+  hasQueuedWebSession: vi.fn(() => false),
+  cancelWebQueue: vi.fn(),
 }))
+
+beforeEach(() => { vi.mocked(createWebSession).mockReset(); vi.mocked(cancelWebQueue).mockReset().mockResolvedValue(undefined) })
 
 test('a failed connection explains recovery and Retry opens the workspace when connectivity returns', async () => {
   vi.mocked(loadSession).mockResolvedValue({ authenticated: false, version: '', mode: 'web' })
@@ -25,4 +29,29 @@ test('a failed connection explains recovery and Retry opens the workspace when c
   await user.click(screen.getByRole('button', { name: 'Retry' }))
   expect(await screen.findByText('Workspace ready')).toBeInTheDocument()
   expect(createWebSession).toHaveBeenCalledTimes(2)
+})
+
+test('full capacity displays a position and automatically opens the admitted workspace', async () => {
+  vi.mocked(loadSession).mockResolvedValue({ authenticated: false, version: '', mode: 'web' })
+  vi.mocked(createWebSession).mockResolvedValueOnce({ authenticated: false, version: '', mode: 'web', status: 'queued',
+    queue_position: 2, waiting: 2, reason: 'capacity', retry_after_seconds: 5, admission_resumes_at: null })
+    .mockResolvedValueOnce({ authenticated: true, version: '', mode: 'web' })
+  renderWithProviders(<SessionGate><p>Workspace ready</p></SessionGate>)
+  await userEvent.click(await screen.findByRole('button', { name: 'Start a temporary session' }))
+  expect(await screen.findByText('Position 2')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Leave waiting room' })).toBeEnabled()
+  expect(await screen.findByText('Workspace ready', {}, { timeout: 8000 })).toBeInTheDocument()
+  expect(createWebSession).toHaveBeenCalledTimes(2)
+}, 12000)
+
+test('leaving the waiting room stops admission polling', async () => {
+  vi.mocked(loadSession).mockResolvedValue({ authenticated: false, version: '', mode: 'web' })
+  vi.mocked(createWebSession).mockResolvedValue({ authenticated: false, version: '', mode: 'web', status: 'queued',
+    queue_position: 1, waiting: 1, reason: 'capacity', retry_after_seconds: 5, admission_resumes_at: null })
+  renderWithProviders(<SessionGate><p>Workspace ready</p></SessionGate>)
+  await userEvent.click(await screen.findByRole('button', { name: 'Start a temporary session' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Leave waiting room' }))
+  expect(cancelWebQueue).toHaveBeenCalledOnce()
+  expect(await screen.findByRole('button', { name: 'Start a temporary session' })).toBeEnabled()
+  expect(screen.queryByTestId('workspace-queue')).not.toBeInTheDocument()
 })

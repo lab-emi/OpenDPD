@@ -9,7 +9,10 @@ export const WEB_MODE = import.meta.env.VITE_STUDIO_MODE === 'web'
 export const API_ORIGIN = WEB_MODE ? String(import.meta.env.VITE_API_ORIGIN).replace(/\/$/, '') : ''
 export const API = `${API_ORIGIN}/api/v1`
 const SESSION_KEY = `opendpd-web-session:${API_ORIGIN}`
+const QUEUE_KEY = `opendpd-web-queue:${API_ORIGIN}`
 export type WebSessionInfo = SessionInfo & { mode?: 'web'; expires_at?: string; access_token?: string }
+export type WebQueueInfo = WebSessionInfo & { authenticated: false; status: 'queued'; queue_position: number; waiting: number; reason: 'capacity' | 'cleanup' | 'storage'; retry_after_seconds: number; admission_resumes_at: string | null }
+export type WebAdmissionInfo = WebSessionInfo | WebQueueInfo
 const CSRF_HEADER = 'X-OpenDPD-CSRF'
 
 export interface ApiErrorDetail {
@@ -171,12 +174,51 @@ export async function loadSession(): Promise<WebSessionInfo> {
   return info
 }
 
-export async function createWebSession(): Promise<WebSessionInfo> {
-  const info = await api.post<WebSessionInfo>('/web/sessions', {})
+export function hasQueuedWebSession(): boolean {
+  return sessionStorage.getItem(QUEUE_KEY) !== null
+}
+
+export function clearWebQueue(): void {
+  sessionStorage.removeItem(QUEUE_KEY)
+}
+
+export async function createWebSession(signal?: AbortSignal): Promise<WebAdmissionInfo> {
+  if (bearerToken()) return api.post<WebSessionInfo>('/web/sessions', {})
+  let ticket = sessionStorage.getItem(QUEUE_KEY)
+  if (!ticket) {
+    ticket = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('')
+    sessionStorage.setItem(QUEUE_KEY, ticket)
+  }
+  // A retry after a lost response uses the same capability. It cannot create a
+  // second workspace, and neither admission secret enters a URL or query cache.
+  const response = await fetchApi(`${API}/web/sessions`, { method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Queue ${ticket}` },
+    credentials: 'omit', redirect: 'error', body: '{}', signal: signal ?? AbortSignal.timeout(30_000) })
+  if (sessionStorage.getItem(QUEUE_KEY) !== ticket) throw new DOMException('Queue changed', 'AbortError')
+  if (!response.ok) throw await parseError(response)
+  const info = await response.json() as WebAdmissionInfo & { queue_token?: string }
+  if (sessionStorage.getItem(QUEUE_KEY) !== ticket) throw new DOMException('Queue changed', 'AbortError')
   if (info.access_token) sessionStorage.setItem(SESSION_KEY, info.access_token)
+  if (info.authenticated) clearWebQueue()
   // Keep the capability out of React Query caches and browser-visible diagnostics.
-  const { access_token: _token, ...publicInfo } = info
+  const { access_token: _token, queue_token: _queue, ...publicInfo } = info
   return publicInfo
+}
+
+export async function cancelWebQueue(): Promise<void> {
+  const ticket = sessionStorage.getItem(QUEUE_KEY)
+  clearWebQueue()
+  if (!ticket) return
+  const response = await fetchApi(`${API}/web/queue/cancel`, { method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Queue ${ticket}` },
+    credentials: 'omit', redirect: 'error', body: '{}', signal: AbortSignal.timeout(15_000) })
+  if (!response.ok) throw await parseError(response)
+}
+
+export async function endWebSession(): Promise<void> {
+  await api.post('/web/sessions/end', {})
+  clearWebSession()
+  window.dispatchEvent(new Event('opendpd-session-expired'))
 }
 
 /** Authenticated downloads never put bearer capabilities into URLs or referrers. */

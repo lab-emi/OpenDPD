@@ -55,31 +55,42 @@ class WebConfig:
     # origin credential, NOT a frontend secret. Never trust arbitrary proxy headers.
     tunnel_host: str
     gpu_token: str | None = field(default=None, repr=False)
-    max_sessions: int = 16
-    sessions_per_ip: int = 8
-    requests_per_minute: int = 600
+    max_sessions: int = 256
+    sessions_per_ip: int = 64
+    max_waiting: int = 1024
+    waiting_per_ip: int = 16
+    queue_lease_seconds: int = 180
+    requests_per_minute: int = 3600
     requests_per_session_minute: int = 120
-    runs_per_ip: int = 12
+    runs_per_ip: int = 96
     runs_per_session: int = 8
-    runs_per_day: int = 60
+    runs_per_day: int = 512
+    max_pending_global: int = 128
     max_pending: int = 2
     max_parallel: int = 1
     max_runtime_seconds: int = 1800
     max_workspace_bytes: int = 256 * 1024 * 1024
     max_body: int = 64 * 1024
-    max_requests: int = 8
+    max_requests: int = 32
     max_expensive_requests: int = 2
     # Hosted publication uses the operator's dedicated GitHub CLI identity and
     # must be explicitly enabled. Browser users never supply a GitHub token.
     dataset_publications: bool = False
     publications_per_ip: int = 2
     publications_per_day: int = 20
-    sweep_seconds: float = 15.0
-    # Stop new requests five minutes before the daily reset. The independent
-    # systemd reset kills the whole service cgroup and purges at 23:59 UTC.
+    sweep_seconds: float = 5.0
+    quota_checks_per_sweep: int = 16
+    cleanup_interval_seconds: int = 12 * 3600
+    # Drain before each independent reset at 11:59 / 23:59 UTC.
     drain_seconds: int = 300
 
     def __post_init__(self):
+        for name in ('max_sessions', 'sessions_per_ip', 'max_waiting', 'waiting_per_ip',
+                     'queue_lease_seconds', 'max_pending_global', 'max_requests', 'quota_checks_per_sweep'):
+            if not 1 <= getattr(self, name) <= 65536:
+                raise ValueError(f'{name} must be a bounded positive integer')
+        if self.cleanup_interval_seconds != 12 * 3600 or not 60 <= self.drain_seconds < 3600:
+            raise ValueError('public cleanup must run every 12 hours with a bounded drain window')
         if self.gpu_token is not None and len(self.gpu_token) < 48:
             raise ValueError("GPU broker requires a private 48+ character token")
         url = urlsplit(self.origin)
