@@ -108,6 +108,11 @@ test.describe('keyboard-only journey', () => {
 
   test('complete the dataset guide and start PA training without a pointer', async ({ page }) => {
     const state = await installFakeApi(page)
+    // Exercise the first visit when its route chunk arrives after navigation.
+    await page.route('**/assets/RunDetailPage-*.js', async route => {
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await route.continue()
+    })
     await page.goto('/')
     await expect(page.getByRole('link', { name: 'Get Started' })).toBeVisible()
     await tabTo(page, /^Get Started$/)
@@ -129,6 +134,9 @@ test.describe('keyboard-only journey', () => {
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/runs\/run-e2e-0001$/)
     expect(state.submitted).toHaveLength(1)
+    // The URL changes before a lazy page is ready. Do not exhaust the bounded
+    // keyboard traversal against the loading shell (or tab into browser chrome).
+    await expect(page.getByRole('tab', { name: 'Overview', exact: true })).toBeVisible()
     // tabs follow the ARIA tabs pattern: Tab reaches the selected tab, arrows move between tabs
     await tabTo(page, /^Overview$/)
     await page.keyboard.press('ArrowRight')

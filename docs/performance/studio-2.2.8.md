@@ -47,7 +47,9 @@ The full Python regression passes: **953 tests**, with 19 extended tests deselec
 All 246 frontend tests pass, including event coalescing, no untouched-tab
 keepalive, hidden tabs, abort on unmount, no retry loop after activity failure,
 server-clock skew, same-IP renewal and credential retention on network failure.
-Type checking and lint pass.
+Type checking and lint pass. The keyboard journey also covers a two-second
+route-load delay; it waits for the actual Overview tab before bounded keyboard
+traversal. That delayed journey passes five repeated Firefox runs.
 
 The actual browser journey verifies foreground renewal across two workspaces
 from one IP, another IP's independent deadline, read polls that cannot renew,
