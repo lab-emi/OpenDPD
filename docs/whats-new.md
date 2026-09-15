@@ -1,5 +1,13 @@
 # What's new
 
+## 2.2.8: lighter pages and trial inactivity cleanup
+
+Studio loads tools when you open their page, cancels obsolete reads when you navigate away and polls idle run lists every 30 seconds. Active runs retain their existing live updates. Empty workspaces no longer trigger individual SQLite job-count queries.
+
+During the trial, **2 hours without user activity clears the temporary workspaces created from that IP**. Foreground interaction renews the group; background polling and running jobs do not. The top bar shows the earlier of inactivity expiry and the existing scheduled cutoff.
+
+[Release notes](releases/release-notes-2.2.8.md) · [Performance measurements](performance/studio-2.2.8.md) · [Cleanup details](guides/server-load.md)
+
 ## 2.2.7: more workspaces and an automatic waiting room
 
 Hosted capacity grows from 16 to 256 workspaces with up to 1,024 waiting tickets. A full service shows a position and admits visitors automatically. One shared scheduler replaces per-visitor background loops, while GPU jobs keep their own bounded FIFO queue. Workspaces now expire at 11:55 and 23:55 UTC; Server load includes waiting visitors and an explicit End workspace action.

@@ -1,0 +1,39 @@
+{
+  "before": {
+    "js": {
+      "raw_bytes": 1422440,
+      "gzip_bytes": 417272
+    },
+    "css": {
+      "raw_bytes": 29443,
+      "gzip_bytes": 7873
+    },
+    "files": [
+      "assets/index-CMtzOvDc.js",
+      "assets/index-Cw4sfHpa.css"
+    ]
+  },
+  "after": {
+    "js": {
+      "raw_bytes": 823598,
+      "gzip_bytes": 261674
+    },
+    "css": {
+      "raw_bytes": 0,
+      "gzip_bytes": 0
+    },
+    "files": [
+      "assets/MenuItem-BUaqICVC.js",
+      "assets/Modal-laMb_gNB.js",
+      "assets/Stack-DfWzj_-K.js",
+      "assets/SwitchBase-B9kp9mm-.js",
+      "assets/TextField-DSib0BnQ.js",
+      "assets/Transition-51bgyWsf.js",
+      "assets/index-CZz553Tz.js",
+      "assets/isMuiElement-C5kvk0e0.js",
+      "assets/rolldown-runtime-CbXtAM7H.js",
+      "assets/useControlled-CpqDwkya.js",
+      "assets/useSlotProps-BucaVp5V.js"
+    ]
+  }
+}

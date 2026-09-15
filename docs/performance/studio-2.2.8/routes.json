@@ -1,0 +1,16 @@
+{
+  "version": "2.2.8",
+  "realApi": true,
+  "lazyRoutes": [
+    "signal-generator",
+    "pa-library",
+    "experiments",
+    "results",
+    "server",
+    "settings",
+    "about"
+  ],
+  "realGenerationPlots": 4,
+  "latexLoaded": true,
+  "errors": []
+}

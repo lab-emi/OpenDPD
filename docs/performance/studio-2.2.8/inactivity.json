@@ -1,0 +1,16 @@
+{
+  "version": "2.2.8",
+  "api": "real loopback ASGI; controlled server clock",
+  "foregroundRenewal": true,
+  "sameIpGroupRenewal": true,
+  "readPollingDoesNotRenew": true,
+  "otherIpUnaffected": true,
+  "expiredAccessRevoked": true,
+  "expiredDirectoriesRemoved": true,
+  "clientRechecksSharedDeadline": true,
+  "startPromptWidths": [
+    1366,
+    390
+  ],
+  "errors": []
+}

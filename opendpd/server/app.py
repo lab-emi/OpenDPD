@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import html
 import json
 import logging
@@ -81,11 +82,17 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         try:
             yield
         finally:
-            app.state.resources.stop()
-            sweeps.stop()
-            app.state.dataset_publications.stop()
-            supervisor.stop(timeout=shutdown_timeout)
-            store.close()
+            def close_runtime():
+                try:
+                    app.state.resources.stop()
+                    sweeps.stop()
+                    app.state.dataset_publications.stop()
+                    supervisor.stop(timeout=shutdown_timeout)
+                finally:
+                    store.close()
+            # A hosted IP can retire many workspaces at once. Joining workers
+            # and closing SQLite must not block other visitors' HTTP requests.
+            await asyncio.to_thread(close_runtime)
 
     app = FastAPI(title="OpenDPD Studio API", version=__version__, lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=f"{API_PREFIX}/openapi.json")

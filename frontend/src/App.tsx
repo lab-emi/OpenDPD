@@ -2,36 +2,37 @@ import CssBaseline from '@mui/material/CssBaseline'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { ThemeProvider } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { lazy, useMemo, useState } from 'react'
 import { BrowserRouter, HashRouter, Route, Routes } from 'react-router'
 import { WEB_MODE } from '@/api/client'
 import { useLanguage } from '@/i18n'
 import { LanguageGate } from '@/i18n/LanguageGate'
 import { AppShell } from '@/layout/AppShell'
-import { DatasetDetailPage } from '@/pages/DatasetDetailPage'
-import { DatasetsPage } from '@/pages/DatasetsPage'
-import { ExperimentsPage } from '@/pages/ExperimentsPage'
-import { GalleryPage } from '@/pages/GalleryPage'
 import { HomePage } from '@/pages/HomePage'
-import { SignalGeneratorPage } from '@/pages/SignalGeneratorPage'
-import { PALibraryPage } from '@/pages/PALibraryPage'
 import { StudioWorkflowProvider } from '@/workflow/StudioWorkflow'
-import { NewExperimentPage } from '@/pages/NewExperimentPage'
-import { ResultDetailPage } from '@/pages/ResultDetailPage'
-import { ComparePage } from '@/pages/ComparePage'
-import { ResultsPage } from '@/pages/ResultsPage'
-import { RunDetailPage } from '@/pages/RunDetailPage'
 import { SessionGate } from '@/pages/SessionGate'
-import { RobustnessPage } from '@/pages/RobustnessPage'
-import { SweepBoardPage } from '@/pages/SweepBoardPage'
-import { HardwareCostsPage } from '@/pages/HardwareCostsPage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { AboutPage } from '@/pages/AboutPage'
-import { ServerStatusPage } from '@/pages/ServerStatusPage'
 import { themeFor } from '@/theme'
 
+const DatasetDetailPage = lazy(() => import('@/pages/DatasetDetailPage').then(m => ({ default: m.DatasetDetailPage })))
+const DatasetsPage = lazy(() => import('@/pages/DatasetsPage').then(m => ({ default: m.DatasetsPage })))
+const ExperimentsPage = lazy(() => import('@/pages/ExperimentsPage').then(m => ({ default: m.ExperimentsPage })))
+const GalleryPage = lazy(() => import('@/pages/GalleryPage').then(m => ({ default: m.GalleryPage })))
+const SignalGeneratorPage = lazy(() => import('@/pages/SignalGeneratorPage').then(m => ({ default: m.SignalGeneratorPage })))
+const PALibraryPage = lazy(() => import('@/pages/PALibraryPage').then(m => ({ default: m.PALibraryPage })))
+const NewExperimentPage = lazy(() => import('@/pages/NewExperimentPage').then(m => ({ default: m.NewExperimentPage })))
+const ResultDetailPage = lazy(() => import('@/pages/ResultDetailPage').then(m => ({ default: m.ResultDetailPage })))
+const ComparePage = lazy(() => import('@/pages/ComparePage').then(m => ({ default: m.ComparePage })))
+const ResultsPage = lazy(() => import('@/pages/ResultsPage').then(m => ({ default: m.ResultsPage })))
+const RunDetailPage = lazy(() => import('@/pages/RunDetailPage').then(m => ({ default: m.RunDetailPage })))
+const RobustnessPage = lazy(() => import('@/pages/RobustnessPage').then(m => ({ default: m.RobustnessPage })))
+const SweepBoardPage = lazy(() => import('@/pages/SweepBoardPage').then(m => ({ default: m.SweepBoardPage })))
+const HardwareCostsPage = lazy(() => import('@/pages/HardwareCostsPage').then(m => ({ default: m.HardwareCostsPage })))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const AboutPage = lazy(() => import('@/pages/AboutPage').then(m => ({ default: m.AboutPage })))
+const ServerStatusPage = lazy(() => import('@/pages/ServerStatusPage').then(m => ({ default: m.ServerStatusPage })))
+
 function createQueryClient(): QueryClient {
-  return new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } } })
+  return new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 10_000, refetchOnWindowFocus: true } } })
 }
 
 function AppRoutes() {

@@ -751,7 +751,7 @@
   "language.loadFailed": "De gekozen taal kon niet worden geladen. Probeer opnieuw.",
   "web.welcome": "OpenDPD Studio op het web",
   "web.description": "Verken ingebouwde datasets en voer analyses, neurale training en inferentie uit op onze geïsoleerde server.",
-  "web.temporary": "Je werkruimte wordt binnen 12 uur verwijderd. De bovenbalk toont het exacte opruimtijdstip. Download je gegevens en modellen vooraf. CSV-datasets worden gecontroleerd; code uploaden is niet beschikbaar.",
+  "web.temporary": "Tijdens deze proef worden alle tijdelijke werkruimtes van een IP-adres verwijderd na 2 uur zonder gebruikersactiviteit. Automatisch verversen en lopende taken verlengen deze periode niet. Werkruimtes worden ook elke 12 uur opgeruimd. De bovenbalk toont de eerstvolgende deadline; download je gegevens en modellen vooraf. CSV-datasets worden gecontroleerd; code uploaden is niet beschikbaar.",
   "web.start": "Tijdelijke sessie starten",
   "web.retention": "Tijdelijke werkruimte · download resultaten vóór {date}. Bestanden worden automatisch verwijderd.",
   "web.connection.title": "Geen verbinding met de rekenserver",
@@ -1362,5 +1362,6 @@
   "web.end.keep": "Werkruimte behouden",
   "web.end.confirm": "Afsluiten en werkruimte verwijderen",
   "server.waitingVisitors": "{count} bezoekers wachten op een werkruimte",
-  "web.queue.retrying": "De verbinding of toegang is tijdelijk niet beschikbaar. Je aanvraag wordt automatisch opnieuw geprobeerd."
+  "web.queue.retrying": "De verbinding of toegang is tijdelijk niet beschikbaar. Je aanvraag wordt automatisch opnieuw geprobeerd.",
+  "web.inactivityHelp": "Dit is de vroegste van de gedeelde IP-inactiviteitsdeadline en de geplande opruiming. Gebruikersactiviteit kan de inactiviteitsdeadline verlengen; automatisch verversen niet. Download je gegevens en modellen vooraf."
 }

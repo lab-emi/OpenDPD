@@ -81,6 +81,7 @@ class WebConfig:
     sweep_seconds: float = 5.0
     quota_checks_per_sweep: int = 16
     cleanup_interval_seconds: int = 12 * 3600
+    inactivity_seconds: int = 2 * 3600
     # Drain before each independent reset at 11:59 / 23:59 UTC.
     drain_seconds: int = 300
 
@@ -91,6 +92,8 @@ class WebConfig:
                 raise ValueError(f'{name} must be a bounded positive integer')
         if self.cleanup_interval_seconds != 12 * 3600 or not 60 <= self.drain_seconds < 3600:
             raise ValueError('public cleanup must run every 12 hours with a bounded drain window')
+        if not 60 <= self.inactivity_seconds <= 2 * 3600:
+            raise ValueError('public inactivity must be between one minute and two hours')
         if self.gpu_token is not None and len(self.gpu_token) < 48:
             raise ValueError("GPU broker requires a private 48+ character token")
         url = urlsplit(self.origin)

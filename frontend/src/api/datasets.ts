@@ -22,8 +22,8 @@ export type CsvOptions = Schemas['CsvOptions']
 export type CsvPreviewRequest = Schemas['CsvPreviewRequest']
 export type CsvCreateRequest = Schemas['CsvCreateRequest']
 
-export const useBuiltinDatasets = () => useQuery({ queryKey: ['builtin-datasets'], queryFn: () => api.get<BuiltinDatasetInfo[]>('/datasets/builtin') })
-export const useDatasetImportDefaults = () => useQuery({ queryKey: ['dataset-import-defaults'], queryFn: () => api.get<DatasetImportDefaults>('/datasets/import-defaults') })
+export const useBuiltinDatasets = () => useQuery({ queryKey: ['builtin-datasets'], queryFn: ({ signal }: { signal: AbortSignal }) => api.get<BuiltinDatasetInfo[]>('/datasets/builtin', signal) })
+export const useDatasetImportDefaults = () => useQuery({ queryKey: ['dataset-import-defaults'], queryFn: ({ signal }: { signal: AbortSignal }) => api.get<DatasetImportDefaults>('/datasets/import-defaults', signal) })
 export const previewCsv = (body: CsvPreviewRequest) => api.post<CsvInspection>('/datasets/csv/preview', body)
 
 export function useCreateCsvDataset() {
@@ -47,20 +47,20 @@ export const datasetKeys = {
 export const useDatasetAnalysis = (id: string, version: string, enabled = true) =>
   useQuery({
     queryKey: datasetKeys.analysis(id, version),
-    queryFn: () => api.get<DatasetAnalysis>(`/datasets/${encodeURIComponent(id)}/analysis?version=${encodeURIComponent(version)}`),
+    queryFn: ({ signal }: { signal: AbortSignal }) => api.get<DatasetAnalysis>(`/datasets/${encodeURIComponent(id)}/analysis?version=${encodeURIComponent(version)}`, signal),
     enabled, staleTime: 60_000,
   })
 
-export const useImportRoots = () => useQuery({ queryKey: datasetKeys.roots, queryFn: () => api.get<ImportRootInfo[]>('/datasets/import-roots') })
+export const useImportRoots = () => useQuery({ queryKey: datasetKeys.roots, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<ImportRootInfo[]>('/datasets/import-roots', signal) })
 export const useRootFiles = (root: string, path: string, enabled = true) =>
   useQuery({
     queryKey: datasetKeys.files(root, path),
-    queryFn: () => api.get<FileEntryInfo[]>(`/datasets/import-roots/${encodeURIComponent(root)}/files?path=${encodeURIComponent(path)}`),
+    queryFn: ({ signal }: { signal: AbortSignal }) => api.get<FileEntryInfo[]>(`/datasets/import-roots/${encodeURIComponent(root)}/files?path=${encodeURIComponent(path)}`, signal),
     enabled,
   })
 export const inspectSource = (root_id: string, path: string) => api.post<SourceInfo>('/datasets/inspect', { root_id, path })
 export const useDiagnostics = (id: string) =>
-  useQuery({ queryKey: datasetKeys.diagnostics(id), queryFn: () => api.get<DiagnosticReport | null>(`/datasets/${encodeURIComponent(id)}/diagnostics`) })
+  useQuery({ queryKey: datasetKeys.diagnostics(id), queryFn: ({ signal }: { signal: AbortSignal }) => api.get<DiagnosticReport | null>(`/datasets/${encodeURIComponent(id)}/diagnostics`, signal) })
 
 export function useImportDataset() {
   const qc = useQueryClient()

@@ -25,10 +25,15 @@ log = logging.getLogger(__name__)
 PREFIX = "/api/v1"
 
 
-def session_info(tenant=None, token=None):
+def session_info(tenant=None, token=None, *, manager=None):
     result = {"authenticated": tenant is not None, "csrf_token": None, "version": __version__, "mode": "web"}
+    if manager:
+        result['server_time'] = datetime.fromtimestamp(manager.now(), timezone.utc).isoformat()
     if tenant:
         result["expires_at"] = datetime.fromtimestamp(tenant.expires_at, timezone.utc).isoformat()
+        if manager:
+            result['idle_expires_at'] = datetime.fromtimestamp(manager.idle_deadline(tenant.ip_key), timezone.utc).isoformat()
+            result['inactivity_seconds'] = manager.config.inactivity_seconds
     if token:
         result["access_token"] = token
     return result
@@ -113,7 +118,7 @@ class PublicBoundary:
         special = path in {"/session", "/web/sessions", "/web/queue/cancel"}
         requested = headers.get("access-control-request-method", "") if method == "OPTIONS" else method
         if not (allowed(requested, path) or (path == "/session" and requested == "GET")
-                or (path in {"/web/sessions", "/web/queue/cancel", "/web/sessions/end"} and requested == "POST")):
+                or (path in {"/web/sessions", "/web/queue/cancel", "/web/sessions/end", "/web/activity"} and requested == "POST")):
             reject(403, "feature_unavailable", "this feature is unavailable in the public demo")
         if method == "OPTIONS":
             requested_headers = {h.strip().lower() for h in headers.get("access-control-request-headers", "").split(",") if h.strip()}
@@ -143,7 +148,7 @@ class PublicBoundary:
             tenant.last_activity = self.manager.now()
         if self.manager.inflight >= self.config.max_requests or (tenant and tenant.inflight >= 3):
             reject(429, "service_busy", "too many simultaneous requests; try again later")
-        mutation = tenant is not None and method in {'POST', 'PUT'} and not path.endswith('/cancel')
+        mutation = tenant is not None and method in {'POST', 'PUT'} and not path.endswith('/cancel') and path != '/web/activity'
         expensive = expensive_request(method, path)
         if mutation and tenant.mutating:
             reject(429, 'workspace_busy', 'Wait for the current workspace change to finish; cancellation remains available.')
@@ -188,7 +193,7 @@ class PublicBoundary:
                 reject(422, "invalid_json", "invalid JSON body")
             except asyncio.TimeoutError:
                 reject(408, "request_timeout", "request body took too long")
-            if path in {"/web/sessions", "/web/queue/cancel", "/web/sessions/end"}:
+            if path in {"/web/sessions", "/web/queue/cancel", "/web/sessions/end", "/web/activity"}:
                 if body != {}:
                     reject(422, "invalid_request", "session creation takes an empty JSON object")
                 if path == '/web/queue/cancel':
@@ -202,18 +207,22 @@ class PublicBoundary:
                     tenant.app.state.supervisor._accepting = False
                     await Response(status_code=204)(scope, receive, send)
                     return
+                if path == '/web/activity':
+                    self.manager.activity(tenant)
+                    await JSONResponse(session_info(tenant, manager=self.manager))(scope, receive, send)
+                    return
                 if tenant:
-                    await JSONResponse(session_info(tenant))(scope, receive, send)
+                    await JSONResponse(session_info(tenant, manager=self.manager))(scope, receive, send)
                 else:
                     created, token, waiting = await self.manager.admit(ip_key, ticket)
                     if waiting:
                         await JSONResponse({**waiting, 'version': __version__}, status_code=202,
                                            headers={'Retry-After': '5'})(scope, receive, send)
                     else:
-                        await JSONResponse(session_info(created, token), status_code=201)(scope, receive, send)
+                        await JSONResponse(session_info(created, token, manager=self.manager), status_code=201)(scope, receive, send)
                 return
             if path == "/session":
-                await JSONResponse(session_info(tenant))(scope, receive, send)
+                await JSONResponse(session_info(tenant, manager=self.manager))(scope, receive, send)
                 return
             if path == '/system/status':
                 status = await asyncio.to_thread(self.manager.server_status)

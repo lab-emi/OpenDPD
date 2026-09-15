@@ -69,8 +69,25 @@ def main():
                 data = result.json()
                 assert data['workspaces'] == 256 and data['waiting_sessions'] == 1024
                 return (time.perf_counter() - started) * 1000
-            # Warm the shared status cache, then model 100 independent viewers.
-            status(0)
+            # Measure the first aggregate read separately from cache hits. Count
+            # actual SQLite statements, including those on idle workspaces.
+            count_queries = [0]
+            def trace(sql):
+                if sql.upper().startswith('SELECT COUNT('):
+                    count_queries[0] += 1
+            stores = [tenant.app.state.store for tenant in app.state.manager.tenants.values()]
+            for store in stores:
+                store._conn.set_trace_callback(trace)
+            app.state.manager.status_updated = 0.0
+            cold_status_ms = status(0)
+            for store in stores:
+                store._conn.set_trace_callback(None)
+            token = sessions[0]['Authorization'][7:]
+            auth_start = time.perf_counter()
+            for _ in range(10000):
+                app.state.manager.authenticate(token)
+            auth_ms = (time.perf_counter() - auth_start) * 1000
+            # Model 100 independent viewers after warming the shared snapshot.
             with ThreadPoolExecutor(max_workers=8) as pool:
                 status_ms = list(pool.map(status, range(100)))
             cpu_before = sum(process.cpu_times()[:2])
@@ -82,6 +99,8 @@ def main():
             report = {'version': __version__, 'transport': 'loopback HTTP', 'workspaces': config.max_sessions,
                 'waiting_tickets': config.max_waiting, 'overflow_status': rejected.status_code,
                 'creation': timings(latencies), 'status_100_requests_8_clients': timings(status_ms),
+                'cold_status_ms': round(cold_status_ms, 3), 'idle_status_sql_count_queries': count_queries[0],
+                'authenticate_10000_calls_ms': round(auth_ms, 3),
                 'rss_initial_mib': round(initial_rss / 2**20, 2), 'rss_256_workspaces_mib': round(occupied_rss / 2**20, 2),
                 'rss_with_waiting_mib': round(process.memory_info().rss / 2**20, 2),
                 'background_threads': [t.name for t in threading.enumerate() if t.name.startswith('opendpd-')],

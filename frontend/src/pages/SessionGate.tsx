@@ -12,17 +12,24 @@ import { WebSessionStart } from '@/components/WebSessionStart'
 import { t } from '@/i18n'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 import { ReportBugsButton } from '@/components/ReportBugsButton'
+import { useWebActivity } from '@/components/useWebActivity'
 
 /** Renders children only with a valid local session; otherwise explains how to get one. */
 export function SessionGate({ children }: { children: ReactNode }) {
   const qc = useQueryClient()
-  const session = useQuery({ queryKey: ['session'], queryFn: loadSession, retry: false, staleTime: Infinity })
+  const session = useQuery({ queryKey: ['session'], queryFn: ({ signal }) => loadSession(signal), retry: false, staleTime: Infinity })
+  useWebActivity(session.data?.authenticated ?? false)
   const [token, setToken] = useState('')
   const [invalid, setInvalid] = useState(false)
   const [busy, setBusy] = useState(false)
   const expiresAt = session.data?.expires_at
+  const idleExpiresAt = session.data?.idle_expires_at
+  const serverTime = session.data?.server_time
   useEffect(() => {
     if (!WEB_MODE) return
+    let stopped = false
+    let timer: number | undefined
+    const controller = new AbortController()
     const reset = () => {
       clearWebSession()
       void qc.cancelQueries()
@@ -30,10 +37,23 @@ export function SessionGate({ children }: { children: ReactNode }) {
       qc.setQueryData(['session'], { authenticated: false, mode: 'web', version: '' })
     }
     window.addEventListener('opendpd-session-expired', reset)
-    const delay = expiresAt ? new Date(expiresAt).getTime() - Date.now() : null
-    const timer = delay === null ? undefined : window.setTimeout(reset, Math.max(0, delay))
-    return () => { window.removeEventListener('opendpd-session-expired', reset); window.clearTimeout(timer) }
-  }, [qc, expiresAt])
+    const deadlines = [expiresAt, idleExpiresAt].filter(Boolean).map(value => Date.parse(value!)).filter(Number.isFinite)
+    // Another workspace on this IP may have renewed the shared deadline. Ask
+    // the server before discarding credentials; a read itself does not renew it.
+    const verify = async () => {
+      try {
+        const info = await loadSession(controller.signal)
+        if (!stopped) { if (info.authenticated) qc.setQueryData(['session'], info); else reset() }
+      } catch {
+        if (!stopped) timer = window.setTimeout(() => void verify(), 30_000)
+      }
+    }
+    if (deadlines.length) {
+      const now = serverTime ? Date.parse(serverTime) : Date.now()
+      timer = window.setTimeout(() => void verify(), Math.max(0, Math.min(...deadlines) - now))
+    }
+    return () => { stopped = true; controller.abort(); window.removeEventListener('opendpd-session-expired', reset); window.clearTimeout(timer) }
+  }, [qc, expiresAt, idleExpiresAt, serverTime])
 
   if (session.isPending) return <LoadingState />
   const reportBugs = <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}><ReportBugsButton /></Box>

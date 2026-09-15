@@ -751,7 +751,7 @@
   "language.loadFailed": "无法加载所选语言，请重试。",
   "web.welcome": "OpenDPD Studio 网页版",
   "web.description": "使用内置数据集进行分析、神经网络训练和推理。计算在隔离服务器上运行。",
-  "web.temporary": "工作区将在 12 小时内清除，顶部会显示准确的清理时间。请提前下载数据和模型。CSV 数据集使用前会经过验证；不支持上传代码。",
+  "web.temporary": "试用期间，同一 IP 连续 2 小时没有用户操作，将清理该 IP 对应的所有临时工作区。后台自动刷新和运行中的任务不会延长有效期。工作区仍每 12 小时统一清理；顶部显示下一次清理截止时间，请提前下载数据和模型。CSV 数据集使用前会经过验证；不支持上传代码。",
   "web.start": "开始临时会话",
   "web.retention": "临时工作区 · 请在 {date} 前下载结果，文件将自动删除。",
   "web.connection.title": "无法连接计算服务器",
@@ -1362,5 +1362,6 @@
   "web.end.keep": "保留工作区",
   "web.end.confirm": "结束并删除工作区",
   "server.waitingVisitors": "{count} 位用户正在等待工作区",
-  "web.queue.retrying": "连接或工作区分配暂时不可用，将自动重试。"
+  "web.queue.retrying": "连接或工作区分配暂时不可用，将自动重试。",
+  "web.inactivityHelp": "这里显示 IP 共用的两小时无活动截止时间与定时清理时间中较早的一个。用户操作可延长无活动截止时间，后台自动刷新不会续期。请提前下载数据和模型。"
 }

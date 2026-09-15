@@ -1,7 +1,7 @@
 <!-- --8<-- [start:hero] -->
 > **[Try OpenDPD Studio in your browser →](https://opendpd.com/studio/)**
 >
-> No installation. Explore example data or upload your own CSV, train PA/DPD models on shared CUDA compute, and download your checkpoints. Temporary data and results are deleted within 12 hours.
+> No installation. Explore example data or upload your own CSV, train PA/DPD models on shared CUDA compute, and download your checkpoints. During the trial, 2 hours without user activity clears that IP’s temporary workspaces; all data is deleted within 12 hours.
 
 [![OpenDPD Studio: click to try the web app](https://raw.githubusercontent.com/lab-emi/OpenDPD/main/pics/studio-home.png)](https://opendpd.com/studio/)
 <!-- --8<-- [end:hero] -->
@@ -37,11 +37,11 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.7** expands hosted capacity from **16 to 256 workspaces**, adds an automatic waiting room when full, and clears temporary data every **12 hours**. Server load shows waiting visitors and lets you end a workspace to free its slot. Training uses a separate shared compute queue.
+**OpenDPD 2.2.8** loads pages on demand, reduces idle polling and avoids database scans for empty workspaces. During the trial, **2 hours of inactivity clears that IP’s temporary workspaces**. The top bar shows the earlier of this deadline and the 12-hour scheduled cleanup. Hosted capacity remains 256 workspaces with an automatic waiting room.
 
 **Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input waveform, simulate its output with one of nine Virtual PAs, or upload existing input/output CSV data. Results label synthetic, surrogate and measured evidence and show separate PSD charts at each signal-chain position.
 
-[2.2.7 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.7/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [ILC guide](https://lab-emi.github.io/OpenDPD/guides/ilc-dpd/). Standard presets are engineering stimuli, not conformance waveforms; Wi-Fi 8 is experimental.
+[2.2.8 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.8/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [ILC guide](https://lab-emi.github.io/OpenDPD/guides/ilc-dpd/). Standard presets are engineering stimuli, not conformance waveforms; Wi-Fi 8 is experimental.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)
@@ -70,7 +70,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.7" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.2.8" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 

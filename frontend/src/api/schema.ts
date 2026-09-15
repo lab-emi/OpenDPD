@@ -5524,7 +5524,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.7
+             * @default 2.2.8
              */
             version: string;
         };

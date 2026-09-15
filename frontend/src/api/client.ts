@@ -10,7 +10,7 @@ export const API_ORIGIN = WEB_MODE ? String(import.meta.env.VITE_API_ORIGIN).rep
 export const API = `${API_ORIGIN}/api/v1`
 const SESSION_KEY = `opendpd-web-session:${API_ORIGIN}`
 const QUEUE_KEY = `opendpd-web-queue:${API_ORIGIN}`
-export type WebSessionInfo = SessionInfo & { mode?: 'web'; expires_at?: string; access_token?: string }
+export type WebSessionInfo = SessionInfo & { mode?: 'web'; expires_at?: string; idle_expires_at?: string; server_time?: string; inactivity_seconds?: number; access_token?: string }
 export type WebQueueInfo = WebSessionInfo & { authenticated: false; status: 'queued'; queue_position: number; waiting: number; reason: 'capacity' | 'cleanup' | 'storage'; retry_after_seconds: number; admission_resumes_at: string | null }
 export type WebAdmissionInfo = WebSessionInfo | WebQueueInfo
 const CSRF_HEADER = 'X-OpenDPD-CSRF'
@@ -161,17 +161,26 @@ export const api = {
 }
 
 /** Loads the session and remembers the CSRF token for later writes. */
-export async function loadSession(): Promise<WebSessionInfo> {
+export async function loadSession(signal?: AbortSignal): Promise<WebSessionInfo> {
   if (WEB_MODE && !bearerToken()) return { authenticated: false, mode: 'web', version: '' }
   let info: WebSessionInfo
   try {
-    info = await api.get<WebSessionInfo>('/session')
+    info = await api.get<WebSessionInfo>('/session', signal)
   } catch (error) {
     if (WEB_MODE && error instanceof ApiError && error.status === 401) return { authenticated: false, mode: 'web', version: '' }
     throw error
   }
   setCsrfToken(info.csrf_token ?? null)
   return info
+}
+
+/** Share the read budget so a foreground heartbeat cannot consume Stop's slot. */
+export function reportWebActivity(signal?: AbortSignal): Promise<WebSessionInfo> {
+  const session = bearerToken()
+  return boundedRead(readSignal => {
+    if (bearerToken() !== session) throw new DOMException('Session changed', 'AbortError')
+    return request<WebSessionInfo>('POST', '/web/activity', {}, readSignal)
+  }, signal)
 }
 
 export function hasQueuedWebSession(): boolean {

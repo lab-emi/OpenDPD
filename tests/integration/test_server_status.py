@@ -146,16 +146,25 @@ def test_storage_reservation_refuses_writes_before_disk_is_full(public, monkeypa
 
 def test_job_count_failure_is_unknown_load(public, monkeypatch):
     import sqlite3
+    from opendpd.services.recipes import instantiate
     from opendpd.services import server_status
-    client, _, _, _, session = public
+    client, manager, _, _, session = public
     auth = session()
+    assert client.post('/api/v1/datasets/import-builtin', json={'name': 'MyCustomPA'}, headers=auth).status_code == 201
+    assert manager.slots.acquire(blocking=False)
+    queued = client.post('/api/v1/runs', json={'config': instantiate('pa-gru-smoke-v1', 'mycustompa').model_dump(mode='json')}, headers=auth)
+    assert queued.status_code == 201
     def unavailable(_):
         raise sqlite3.OperationalError('database is unavailable')
     monkeypatch.setattr(server_status, 'job_counts', unavailable)
-    response = client.get('/api/v1/system/status', headers=auth)
-    assert response.status_code == 200
-    assert response.json()['running_jobs'] is None
-    assert response.json()['queued_jobs'] is None
+    try:
+        response = client.get('/api/v1/system/status', headers=auth)
+        assert response.status_code == 200
+        assert response.json()['running_jobs'] is None
+        assert response.json()['queued_jobs'] is None
+    finally:
+        client.post('/api/v1/runs/' + queued.json()['run_id'] + '/cancel', json={}, headers=auth)
+        manager.slots.release()
 
 
 def test_gpu_cleanup_failure_does_not_stop_tenant_expiry(public, monkeypatch):
