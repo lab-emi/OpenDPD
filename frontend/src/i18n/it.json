@@ -1361,5 +1361,6 @@
   "web.end.body": "Download everything you want to keep first. This ends your session, stops its jobs and deletes its data and results, freeing a workspace for someone else.",
   "web.end.keep": "Keep workspace",
   "web.end.confirm": "End and delete workspace",
-  "server.waitingVisitors": "{count} visitors waiting for a workspace"
+  "server.waitingVisitors": "{count} visitors waiting for a workspace",
+  "web.queue.retrying": "Connection or admission is temporarily unavailable. Your request will retry automatically."
 }

@@ -189,8 +189,8 @@ export async function createWebSession(signal?: AbortSignal): Promise<WebAdmissi
     ticket = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('')
     sessionStorage.setItem(QUEUE_KEY, ticket)
   }
-  // A retry after a lost response uses the same capability. It cannot create a
-  // second workspace, and neither admission secret enters a URL or query cache.
+  // Retries during the admission lease reuse one capability and cannot create
+  // a second workspace. Neither secret enters a URL or query cache.
   const response = await fetchApi(`${API}/web/sessions`, { method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Queue ${ticket}` },
     credentials: 'omit', redirect: 'error', body: '{}', signal: signal ?? AbortSignal.timeout(30_000) })

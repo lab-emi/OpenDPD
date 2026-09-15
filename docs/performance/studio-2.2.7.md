@@ -39,9 +39,10 @@ abandoned-ticket expiry, exact noon cleanup and reopening, low-storage waiting,
 and 32 idle workspaces without per-visitor threads. Existing real CPU training
 and private GPU lease/cancellation regressions also passed.
 
-The 238 frontend tests passed, including waiting-position rendering, automatic
+The 239 frontend tests passed, including waiting-position rendering, automatic
 admission, cancellation and rejection of a late session response after leaving
-the queue. Type checking, lint and regenerated API types passed.
+the queue. A busy admission boundary is retried automatically even before a
+queue position has been allocated. Type checking, lint and regenerated API types passed.
 
 Chromium connected to the real candidate HTTP API under a controlled two-slot
 policy. Five independent browser contexts verified FIFO positions, automatic
@@ -51,6 +52,7 @@ the ticket across refresh, and recovery after a dropped network request. Desktop
 See [browser evidence](studio-2.2.7/browser.json).
 
 The new pinned GPU image reports OpenDPD 2.2.7 and PyTorch 2.14.0+cu132 and passed
-a real CUDA tensor operation on the host GPU. Full-regression and production
-workflow evidence is added to the release record after verification. Synthetic
+a real CUDA tensor operation on the host GPU. The full local Python regression passed **963 tests**; a fresh 59-test boundary
+run also passed after the final scheduler guards. Distribution wheel/sdist
+metadata passed validation. Production workflow evidence is added to the release record after verification. Synthetic
 PA/DPD runs validate the software workflow; they are not measured RF hardware results.

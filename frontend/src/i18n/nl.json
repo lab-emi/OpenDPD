@@ -1361,5 +1361,6 @@
   "web.end.body": "Download eerst alles wat je wilt bewaren. Dit beëindigt je sessie, stopt de taken en verwijdert je gegevens en resultaten, zodat iemand anders een werkruimte krijgt.",
   "web.end.keep": "Werkruimte behouden",
   "web.end.confirm": "Afsluiten en werkruimte verwijderen",
-  "server.waitingVisitors": "{count} bezoekers wachten op een werkruimte"
+  "server.waitingVisitors": "{count} bezoekers wachten op een werkruimte",
+  "web.queue.retrying": "De verbinding of toegang is tijdelijk niet beschikbaar. Je aanvraag wordt automatisch opnieuw geprobeerd."
 }

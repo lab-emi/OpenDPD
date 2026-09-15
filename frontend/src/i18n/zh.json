@@ -1361,5 +1361,6 @@
   "web.end.body": "请先下载需要保留的内容。此操作将结束会话、停止其中的任务并删除数据及结果，为其他用户释放工作区。",
   "web.end.keep": "保留工作区",
   "web.end.confirm": "结束并删除工作区",
-  "server.waitingVisitors": "{count} 位用户正在等待工作区"
+  "server.waitingVisitors": "{count} 位用户正在等待工作区",
+  "web.queue.retrying": "连接或工作区分配暂时不可用，将自动重试。"
 }

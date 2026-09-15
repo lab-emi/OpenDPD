@@ -48,7 +48,9 @@ export function WebSessionStart() {
           clearWebQueue()
         } else {
           setError(failure)
-          if (!queued || (failure instanceof ApiError && ['session_quota', 'queue_quota'].includes(failure.code))) {
+          const transient = failure instanceof ApiError && [408, 429, 500, 502, 503, 504, 507].includes(failure.status)
+          const refused = failure instanceof ApiError && (!transient || ['session_quota', 'queue_quota'].includes(failure.code))
+          if ((!queued && !transient) || refused) {
             setRunning(false)
             return
           }
@@ -81,7 +83,7 @@ export function WebSessionStart() {
           <LinearProgress aria-label={t('web.queue.joining')} />
         </Stack>
       </Paper>}
-      {error != null && <ErrorState error={error} />}
+      {error != null && (running ? <Alert severity="warning">{t('web.queue.retrying')}</Alert> : <ErrorState error={error} />)}
       {running ? <Button variant="outlined" onClick={() => {
         setRunning(false); setQueue(null); setError(null)
         void cancelWebQueue().catch(setError)

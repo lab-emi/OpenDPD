@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, test, vi } from 'vitest'
-import { ApiConnectionError, cancelWebQueue, createWebSession, loadSession } from '@/api/client'
+import { ApiConnectionError, ApiError, cancelWebQueue, createWebSession, loadSession } from '@/api/client'
 import { SessionGate } from '@/pages/SessionGate'
 import { renderWithProviders } from '@/test/utils'
 
@@ -54,4 +54,15 @@ test('leaving the waiting room stops admission polling', async () => {
   expect(cancelWebQueue).toHaveBeenCalledOnce()
   expect(await screen.findByRole('button', { name: 'Start a temporary session' })).toBeEnabled()
   expect(screen.queryByTestId('workspace-queue')).not.toBeInTheDocument()
+})
+
+test('a busy admission boundary retries automatically even before a queue position is allocated', async () => {
+  vi.mocked(loadSession).mockResolvedValue({ authenticated: false, version: '', mode: 'web' })
+  vi.mocked(createWebSession).mockRejectedValue(new ApiError(429, 'service_busy', 'busy'))
+  renderWithProviders(<SessionGate><p>Workspace ready</p></SessionGate>)
+  await userEvent.click(await screen.findByRole('button', { name: 'Start a temporary session' }))
+  expect(await screen.findByText('Connection or admission is temporarily unavailable. Your request will retry automatically.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Leave waiting room' })).toBeEnabled()
+  expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Leave waiting room' }))
 })
