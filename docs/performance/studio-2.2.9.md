@@ -6,7 +6,7 @@ Date: 2026-09-15. Local Linux x86-64, Python 3.13.14, NumPy 2.4.4. Numeric tests
 
 One million complex samples, 4,096-point Hann Welch PSD, 50% overlap and all analyzer views took 0.122 s on the first call and a 0.102 s median across three subsequent calls. Peak process RSS was 248.5 MiB, including imports and input allocation; it is not incremental request memory. JSON visualization data was 1,216,614 bytes. The spectrogram retained 128 × 256 cells; time retained 2,048 contiguous samples and scatter 4,096 samples. All scalar statistics used the entire selected window. [Raw measurements](studio-2.2.9/analyzer.json).
 
-The analyzer route and chart libraries load on demand. The spectrogram uses bounded canvas pixels and does not add another plotting library. Uploads have independent limits of 25 MiB, one million rows and two million numeric fields. Both upload validation and analysis share public compute admission; status and cancellation retain capacity.
+The analyzer route and chart libraries load on demand. The spectrogram uses bounded canvas pixels and does not add another plotting library. Uploads have independent limits of 25 MiB, one million rows and two million numeric fields. Upload validation, analysis and source-catalog reads share public compute admission; status and cancellation retain capacity.
 
 ## Correctness and browser checks
 

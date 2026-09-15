@@ -92,5 +92,6 @@ def test_new_public_surface_is_explicit_and_numeric_work_is_limited():
     for path in ('/signal-analyzer/analyze', '/signal-analyzer/upload'):
         assert allowed('POST', path) and expensive_request('POST', path)
     assert allowed('GET', '/signal-analyzer/sources')
+    assert expensive_request('GET', '/signal-analyzer/sources')
     assert not allowed('GET', '/signal-analyzer/files')
     assert not allowed('POST', '/signal-analyzer/execute')
