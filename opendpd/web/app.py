@@ -7,6 +7,7 @@ import contextlib
 import ipaddress
 import json
 import logging
+import re
 import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -109,10 +110,10 @@ class PublicBoundary:
             reject(404, "not_found", "unknown public API route")
         path = path[len(PREFIX):]
         method = request.method
-        special = path in {"/session", "/web/sessions"}
+        special = path in {"/session", "/web/sessions", "/web/queue/cancel"}
         requested = headers.get("access-control-request-method", "") if method == "OPTIONS" else method
         if not (allowed(requested, path) or (path == "/session" and requested == "GET")
-                or (path == "/web/sessions" and requested == "POST")):
+                or (path in {"/web/sessions", "/web/queue/cancel", "/web/sessions/end"} and requested == "POST")):
             reject(403, "feature_unavailable", "this feature is unavailable in the public demo")
         if method == "OPTIONS":
             requested_headers = {h.strip().lower() for h in headers.get("access-control-request-headers", "").split(",") if h.strip()}
@@ -125,10 +126,16 @@ class PublicBoundary:
         check_query(request.query_params)
         auth = headers.get("authorization", "")
         tenant = None
+        ticket = None
         if auth:
-            if not auth.startswith("Bearer ") or len(auth) > 128:
+            if auth.startswith('Queue ') and path in {'/web/sessions', '/web/queue/cancel'}:
+                ticket = auth[6:]
+                if not re.fullmatch(r'[A-Za-z0-9_-]{40,96}', ticket):
+                    reject(401, 'unauthorized', 'a valid waiting-room ticket is required')
+            elif not auth.startswith("Bearer ") or len(auth) > 128:
                 reject(401, "unauthorized", "a valid bearer session is required")
-            tenant = self.manager.authenticate(auth[7:])
+            else:
+                tenant = self.manager.authenticate(auth[7:])
         if not tenant and not special:
             reject(401, "unauthorized", "start a temporary session first")
         if tenant:
@@ -181,14 +188,29 @@ class PublicBoundary:
                 reject(422, "invalid_json", "invalid JSON body")
             except asyncio.TimeoutError:
                 reject(408, "request_timeout", "request body took too long")
-            if path == "/web/sessions":
+            if path in {"/web/sessions", "/web/queue/cancel", "/web/sessions/end"}:
                 if body != {}:
                     reject(422, "invalid_request", "session creation takes an empty JSON object")
+                if path == '/web/queue/cancel':
+                    if ticket is None:
+                        reject(401, 'unauthorized', 'a waiting-room ticket is required')
+                    await self.manager.admit(ip_key, ticket, cancel=True)
+                    await Response(status_code=204)(scope, receive, send)
+                    return
+                if path == '/web/sessions/end':
+                    tenant.closing = True
+                    tenant.app.state.supervisor._accepting = False
+                    await Response(status_code=204)(scope, receive, send)
+                    return
                 if tenant:
                     await JSONResponse(session_info(tenant))(scope, receive, send)
                 else:
-                    created, token = await self.manager.create(ip_key)
-                    await JSONResponse(session_info(created, token), status_code=201)(scope, receive, send)
+                    created, token, waiting = await self.manager.admit(ip_key, ticket)
+                    if waiting:
+                        await JSONResponse({**waiting, 'version': __version__}, status_code=202,
+                                           headers={'Retry-After': '5'})(scope, receive, send)
+                    else:
+                        await JSONResponse(session_info(created, token), status_code=201)(scope, receive, send)
                 return
             if path == "/session":
                 await JSONResponse(session_info(tenant))(scope, receive, send)

@@ -33,7 +33,7 @@ An IP also changes and is not an authentication credential. Two visitors using
 the same IP receive independent workspaces and cannot list or download each
 other's files. A browser tab stores its random bearer token in `sessionStorage`;
 tokens are sent only in the Authorization header, never in links or query strings.
-The API retains only token hashes in memory. A token is not bound to an IP.
+The API normally retains only token hashes in memory. During admission it temporarily retains the new session capability for at most three minutes so that a lost response can be retried without creating another workspace; the first authenticated request immediately discards that plaintext copy. A token is not bound to an IP.
 
 ```text
 /run/opendpd-web/                    # private 2 GiB tmpfs, no swap
@@ -43,13 +43,13 @@ The API retains only token hashes in memory. A token is not bound to an IP.
   service-tmp/                      # shared library temporary files
 ```
 
-All sessions expire at **23:55 UTC**. New sessions pause until 00:00 UTC.
-Every 15 seconds the API stops expired workspaces and deletes their files.
-Independently, a systemd timer at **23:59 UTC** restarts the entire API cgroup:
+All sessions expire at the next **11:55 or 23:55 UTC** cutoff. New sessions pause until 12:00 or 00:00 UTC, respectively.
+Every five seconds the API stops expired workspaces and deletes their files.
+Independently, a systemd timer at **11:59 and 23:59 UTC** restarts the entire API cgroup:
 it terminates remaining requests and workers, then discards its private tmpfs.
 The stop timeout is 20 seconds with SIGKILL as the final fallback. This leaves
-margin before any session data reaches 24 hours. Sessions do not get a fresh
-24 hours when they are accessed or when new files are generated. Late visitors
+margin before any session data reaches 12 hours. Sessions do not get a fresh
+12 hours when they are accessed or when new files are generated. Late visitors
 therefore have a shorter session; the persistent top bar displays the exact scheduled cleanup start in UTC, with local time in its tooltip. Active requests can delay individual deletions until the next sweep; the independent reset bounds that delay.
 
 Refreshing a browser or reconnecting within the same tab resumes the existing
@@ -114,19 +114,20 @@ Cloudflare response header for `/studio/` because a meta CSP cannot enforce it.
 
 | Limit | Default |
 |---|---|
-| Live sessions | 16 globally; 8 created per IP per UTC day |
-| HTTP requests | 120/minute per session, 600/minute per IP; preflight has a separate 600/minute bucket; 8 concurrent globally, 3/session |
+| Live sessions | 256 globally; 64 created per network budget interval |
+| Waiting room | 1,024 pending tickets; 16/network; three-minute heartbeat lease; five-second browser polling |
+| HTTP requests | 120/minute per session, 3,600/minute per IP; preflight has a separate 3,600/minute bucket; 32 concurrent globally, 3/session; Uvicorn connection ceiling 128 |
 | JSON request body | 64 KiB, 10-second receive deadline; no multipart |
-| Jobs | 8/session, 12/IP/day, 60/day globally; 2 pending/session |
+| Jobs | 8/session, 96/network and 512 globally per budget interval; 2 pending/session, 128 pending globally |
 | Heavy API work | 2 concurrent analyses/generations/exports globally; one workspace mutation at a time; cancellation is exempt |
 | Concurrent training/inference | 1 globally across every session, oldest queued experiment first |
 | Job runtime | 30 minutes, followed by cancellation and forced termination |
 | Public model/training parameters | bounded layers, widths, batches, frames, epochs and threads |
-| Storage | 256 MiB/session checked every 15 seconds; **2 GiB hard limit globally**; heavy writers reserve capacity before receiving data, retaining 64 MiB free headroom |
+| Storage | 256 MiB/session with bounded route checks and rotating background scans (16 workspaces every five seconds, up to 80 seconds per full pass); **2 GiB hard limit globally**; heavy writers reserve capacity before receiving data, retaining 64 MiB free headroom |
 | Files/processes | 64 MiB/file, 256 tasks, 4 CPU equivalents, 6 GiB API cgroup RAM |
 
 IPv6 addresses share a /64 rate-limit bucket. IP quotas use an ephemeral HMAC
-key and reset on service restart. They discourage abuse but do not identify
+key and reset at the UTC day boundary or a service restart, including the twice-daily reset. Thus the production budget interval is at most 12 hours. They discourage abuse but do not identify
 people or stop distributed clients. Global concurrency, memory, disk and job
 budgets bound the effect of IP rotation. There is no Turnstile implementation;
 do not describe this demo as bot-proof. Cloudflare edge controls and monitoring
@@ -300,8 +301,7 @@ A background request failure preserves the existing experiment view. Resync
 invalidates the run's snapshots, history and artifacts without submitting a new
 experiment; the terminal remains read-only and has a Stop experiment button.
 The frontend gives a localized connection error and an explicit Retry action.
-It does not automatically retry session creation or other POST requests, or
-send a bearer token to an alternate origin. Browser fetch errors cannot by
+Waiting-room admission is the sole automatically retried POST: its capability makes lost-response retries idempotent during the admission lease. Other mutation requests are not automatically retried, and bearer tokens are never sent to an alternate origin. Browser fetch errors cannot by
 themselves distinguish DNS, offline, TLS and CORS failures.
 
 ## Validation evidence
@@ -368,3 +368,13 @@ Authenticated `GET /api/v1/system/status` exposes aggregate session/job counts a
 Workspace POST/PUT operations serialize within a tenant; cancellation remains available. Heavy API work has a separate global admission limit, and temporary-space reservations prevent concurrent writers from spending the same free capacity. Cleanup scans run off the event loop and tolerate files atomically replaced by legitimate writers. Failed cleanup still disables new sessions.
 
 The runtime image pins PyTorch 2.14/CUDA 13.2 by digest, applies Ubuntu updates and removes unused build headers and package installers. Keep the existing network-free, non-root, read-only worker limits. Deploy reviewed source to the API, agent, image and Pages together, with no queued/running jobs at the swap and rollback copies retained. See [load semantics](../guides/server-load.md) and the [2.2.6 security review](../releases/security-review-2.2.6.md).
+
+## 2.2.7 admission and bounded scheduling
+
+`POST /api/v1/web/sessions` accepts an empty JSON object. The web client generates a 256-bit ticket and stores it in tab-scoped sessionStorage before the first request, sending it as `Authorization: Queue <ticket>`. The server hashes it and bounds waiting tickets before creating any workspace. Legacy requests without a ticket still work and receive a ticket if queued. Responses use **201** for admission (session bearer and fixed expiry) or **202** for waiting (position, capacity/storage/cleanup reason, five-second retry delay). Credentials are excluded from React Query data, URLs, telemetry and logs.
+
+Each live ticket preserves FIFO position, refreshes its three-minute lease and reserves no worker, dataset directory or CPU task. A dropped admission response can be replayed with the same ticket; after the first authenticated request, replay returns `queue_expired` rather than exposing an acknowledged session token. Expired tickets rejoin at the back; shutdown discards the in-memory queue. `POST /web/queue/cancel` requires the same queue credential and removes only that ticket or its still-unclaimed admission. A queue credential cannot access workspace routes or the private GPU bridge.
+
+`POST /web/sessions/end` requires the normal session bearer. It marks that workspace closed immediately; expiry maintenance waits for in-flight operations before deleting it. The UI requires explicit confirmation before this destructive action. A later queue poll can reclaim the closed slot immediately after requests finish.
+
+One shared supervisor thread polls only workspaces with submitted jobs. The dispatcher reads pending runs once per iteration and chooses the oldest globally; empty workspaces run neither a supervisor loop nor the unavailable local sweep controller. A separate shared resource sampler remains. Admission builds routing tables off the event loop, reserves storage for workspace metadata and skips full quota scans. Maintenance checks expiry on every pass but spreads storage scans across 16 workspaces per pass. Existing heavy-operation limits and the one-job compute semaphore remain in force. See the [2.2.7 validation](../performance/studio-2.2.7.md) for measured empty-workspace capacity and its limits.

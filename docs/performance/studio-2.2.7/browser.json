@@ -1,0 +1,16 @@
+{
+  "version": "2.2.7",
+  "backend": "real local ASGI API over HTTP; two-slot test policy",
+  "fifo": true,
+  "automaticAdmission": true,
+  "refreshPreservesTicket": true,
+  "transportFailureRecovers": true,
+  "queueCancel": true,
+  "endWorkspaceConfirmation": true,
+  "widths": [
+    1366,
+    390,
+    360
+  ],
+  "errors": []
+}

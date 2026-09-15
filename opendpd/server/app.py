@@ -57,7 +57,7 @@ def static_status(static_dir: Path = STATIC_DIR) -> dict:
 def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, static_dir: Path = STATIC_DIR,
                supervisor_kwargs: Optional[dict] = None, shutdown_timeout: float = 10.0,
                allow_custom_datasets: bool = True, allow_dataset_publications: bool = True, supervisor_factory=Supervisor,
-               monitor_resources: bool = True) -> FastAPI:
+               monitor_resources: bool = True, start_sweeps: bool = True) -> FastAPI:
     sessions = SessionStore(bootstrap_token)
 
     @asynccontextmanager
@@ -69,7 +69,8 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         app.state.ws, app.state.store, app.state.supervisor = ws, store, supervisor
         from opendpd.services.sweeps import SweepController
         sweeps = SweepController(ws, supervisor)
-        sweeps.start()
+        if start_sweeps:
+            sweeps.start()
         app.state.sweeps = sweeps
         from opendpd.services.dataset_publication import PublicationController
         app.state.dataset_publications = PublicationController(ws)

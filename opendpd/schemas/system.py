@@ -36,6 +36,7 @@ class ServerStatus(StrictModel):
     active_window_seconds: int = 300
     workspaces: int = Field(ge=0)
     workspace_capacity: Optional[int] = Field(default=None, ge=1)
+    waiting_sessions: Optional[int] = Field(default=None, ge=0)
     running_jobs: Optional[int] = Field(ge=0)
     queued_jobs: Optional[int] = Field(ge=0)
     parallel_capacity: Optional[int] = Field(default=None, ge=1)

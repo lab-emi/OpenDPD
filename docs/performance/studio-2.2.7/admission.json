@@ -1,0 +1,26 @@
+{
+  "version": "2.2.7",
+  "transport": "loopback HTTP",
+  "workspaces": 256,
+  "waiting_tickets": 1024,
+  "overflow_status": 429,
+  "creation": {
+    "median_ms": 2.451,
+    "p95_ms": 6.002,
+    "max_ms": 790.263
+  },
+  "status_100_requests_8_clients": {
+    "median_ms": 11.212,
+    "p95_ms": 20.189,
+    "max_ms": 22.761
+  },
+  "rss_initial_mib": 78.46,
+  "rss_256_workspaces_mib": 223.78,
+  "rss_with_waiting_mib": 225.97,
+  "background_threads": [
+    "opendpd-resource-sampler",
+    "opendpd-web-dispatch"
+  ],
+  "idle_process_cpu_percent_one_core": 0.5,
+  "scope": "Empty workspace admission and aggregate status; not 256 simultaneous training jobs or a distributed-load SLA."
+}

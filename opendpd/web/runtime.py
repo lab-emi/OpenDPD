@@ -15,7 +15,7 @@ import shutil
 import sqlite3
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from opendpd.runtime.supervisor import Supervisor
@@ -91,6 +91,15 @@ class Tenant:
     last_activity: float = 0.0
 
 
+@dataclass
+class Admission:
+    ip_key: str
+    last_seen: float
+    tenant_hash: str | None = None
+    # Only retained for a short, unacknowledged admission retry window.
+    access_token: str | None = field(default=None, repr=False)
+
+
 class WebSupervisor(Supervisor):
     def __init__(self, workspace, store, *, manager, ip_key, expires_at, **kwargs):
         self.manager, self.ip_key, self.expires_at = manager, ip_key, expires_at
@@ -104,6 +113,20 @@ class WebSupervisor(Supervisor):
                                      "MKL_NUM_THREADS": "4", "OPENBLAS_NUM_THREADS": "4",
                                      "PYTHONDONTWRITEBYTECODE": "1"}, **kwargs)
 
+    def start(self):
+        # Idle visitors do not each need a supervisor and sweep thread. Public
+        # sweeps are disabled; one shared dispatcher services submitted work.
+        self.recover()
+
+    @property
+    def alive(self):
+        return self._accepting and self.manager.scheduler.is_alive()
+
+    def stop(self, timeout=0):
+        with self.manager.budget_lock:
+            self.manager.scheduled.discard(self)
+            super().stop(timeout=timeout)
+
     def worker_command(self, record):
         command = super().worker_command(record)
         if record.device == "cuda" and self.manager.config.gpu_token:
@@ -116,15 +139,23 @@ class WebSupervisor(Supervisor):
             self.manager.gpu.enqueue(self, record)
 
     def _dispatch(self):
-        # Cross-tenant FIFO: a fast-polling supervisor cannot jump ahead of an
-        # older queued experiment in another workspace.
-        queued = [r for t in list(self.manager.tenants.values())
-                  for r in t.app.state.store.list_runs(status=RunStatus.queued, limit=100)]
-        if queued:
-            first = min(queued, key=lambda r: (r.created_at, r.run_id))
-            if self.store.get_run(first.run_id) is None:
-                return
-        super()._dispatch()
+        if not self._accepting or self.manager.now() >= self.expires_at:
+            return
+        candidate = self.manager.next_dispatch
+        if candidate is None or candidate[0] is not self:
+            return
+        record = candidate[1]
+        if sum(a.device_key == self._device_key(record) for a in self._active.values()) >= self.max_per_device:
+            return
+        if not self.dispatch_slots.acquire(blocking=False):
+            return
+        try:
+            self._spawn(record)
+        finally:
+            if record.run_id in self._active:
+                self._active[record.run_id].owns_dispatch_slot = True
+            else:
+                self.dispatch_slots.release()
 
     def submit(self, config, **kwargs):
         check_config(config)
@@ -141,12 +172,18 @@ class WebSupervisor(Supervisor):
                 reject(429, "run_quota", "this temporary workspace has reached its run limit")
             if sum(r.status not in TERMINAL_STATUSES for r in records) >= self.manager.config.max_pending:
                 reject(429, "queue_full", "finish or cancel an existing run before submitting another")
+            pending = sum(len(s.store.list_runs(status=RunStatus.queued, limit=1000)) + len(s._active)
+                          for s in self.manager.scheduled)
+            if pending >= self.manager.config.max_pending_global:
+                reject(429, 'queue_full', 'The shared compute queue is full; try again when queued jobs finish.')
             ip_runs = self.manager.ip_runs.get(self.ip_key, 0)
             if ip_runs >= self.manager.config.runs_per_ip or self.manager.total_runs >= self.manager.config.runs_per_day:
-                reject(429, "run_quota", "the daily compute quota has been reached")
+                reject(429, "run_quota", "the shared compute budget for this service interval has been reached")
             record = super().submit(config, **kwargs)
             self.manager.ip_runs[self.ip_key] = ip_runs + 1
             self.manager.total_runs += 1
+            self.manager.scheduled.add(self)
+            self.manager.scheduler_wake.set()
             return record
 
 
@@ -166,6 +203,13 @@ class TenantManager:
         self.budget_lock = threading.RLock()
         self.create_lock = asyncio.Lock()
         self.sweep_lock = asyncio.Lock()
+        self.admissions: dict[str, Admission] = {}
+        self.quota_cursor = 0
+        self.scheduled: set[WebSupervisor] = set()
+        self.next_dispatch = None
+        self.scheduler_stop = threading.Event()
+        self.scheduler_wake = threading.Event()
+        self.scheduler = threading.Thread(target=self.dispatch_loop, name='opendpd-web-dispatch', daemon=True)
         self.ip_secret = secrets.token_bytes(32)
         self.ip_sessions: dict[str, int] = {}
         self.ip_runs: dict[str, int] = {}
@@ -183,6 +227,25 @@ class TenantManager:
         clear_sessions(self.config.root)
         (self.config.root / "service-tmp").mkdir(mode=0o700, exist_ok=True)
         self.resources.start()
+        self.scheduler.start()
+
+    def dispatch_loop(self):
+        while not self.scheduler_stop.is_set():
+            try:
+                with self.budget_lock:
+                    queued = [(s, r) for s in self.scheduled
+                              for r in s.store.list_runs(status=RunStatus.queued, limit=1000)]
+                    self.next_dispatch = min(queued, key=lambda item: (item[1].created_at, item[1].run_id), default=None)
+                    pending = {s for s, _ in queued}
+                    for supervisor in list(self.scheduled):
+                        supervisor._tick()
+                        if supervisor not in pending and not supervisor._active:
+                            self.scheduled.discard(supervisor)
+            except Exception:
+                self.cleanup_healthy = False
+                log.exception('shared dispatcher failed; new admission disabled')
+            self.scheduler_wake.wait(.25 if self.scheduled else 1)
+            self.scheduler_wake.clear()
 
     def ip_key(self, address: str) -> str:
         ip = ipaddress.ip_address(address)
@@ -215,28 +278,108 @@ class TenantManager:
 
     @property
     def cutoff(self):
-        return (int(self.now() // DAY) + 1) * DAY - self.config.drain_seconds
+        return self.next_reset - self.config.drain_seconds
+
+    @property
+    def next_reset(self):
+        interval = self.config.cleanup_interval_seconds
+        return (int(self.now() // interval) + 1) * interval
 
     def authenticate(self, token: str) -> Tenant:
         digest = hashlib.sha256(token.encode()).hexdigest()
         tenant = self.tenants.get(digest)
         if tenant is None or tenant.closing or self.now() >= tenant.expires_at:
             reject(401, "session_expired", "the temporary session has expired; start a new session")
+        # The first authenticated request acknowledges receipt. No plaintext
+        # session capability is retained after that point.
+        for admission in self.admissions.values():
+            if admission.tenant_hash == digest:
+                admission.access_token = None
         return tenant
 
-    async def create(self, ip_key: str):
+    def prune_admissions(self):
+        now = self.now()
+        self.admissions = {key: item for key, item in self.admissions.items()
+                           if now - item.last_seen < self.config.queue_lease_seconds}
+
+    def waiting_count(self):
+        now = self.now()
+        return sum(item.tenant_hash is None and now - item.last_seen < self.config.queue_lease_seconds
+                   for item in list(self.admissions.values()))
+
+    async def admit(self, ip_key: str, ticket: str | None = None, *, cancel=False):
+        """FIFO entry with bearer-only queue capabilities and bounded heartbeat leases.
+
+        Returns (tenant, access token, queued response). Retries with the same
+        ticket replay an unacknowledged admission rather than allocating twice.
+        """
+        ticket = ticket or secrets.token_urlsafe(32)
+        digest = hashlib.sha256(ticket.encode()).hexdigest()
         async with self.create_lock:
-            await self.sweep()
+            self.prune_admissions()
+            await self.sweep(quotas=False)
+            entry = self.admissions.get(digest)
+            if cancel:
+                if entry and entry.tenant_hash and entry.access_token:
+                    tenant = self.tenants.get(entry.tenant_hash)
+                    if tenant:
+                        async with self.sweep_lock:
+                            await self.remove(tenant)
+                self.admissions.pop(digest, None)
+                return None, None, None
             if not self.cleanup_healthy:
                 reject(503, "cleanup_unavailable", "temporary storage maintenance is unavailable")
-            if self.now() >= self.cutoff:
-                reject(503, "daily_cleanup", "daily cleanup is in progress; try again after 00:00 UTC")
-            if len(self.tenants) >= self.config.max_sessions:
-                reject(503, "service_busy", "all temporary workspaces are in use; try again later")
-            if self.ip_sessions.get(ip_key, 0) >= self.config.sessions_per_ip:
+            if entry and entry.tenant_hash:
+                tenant = self.tenants.get(entry.tenant_hash)
+                if tenant and not tenant.closing and self.now() < tenant.expires_at and entry.access_token:
+                    return tenant, entry.access_token, None
+                reject(410, 'queue_expired', 'This admission has already ended; start a new session.')
+            owner = entry.ip_key if entry else ip_key
+            if self.ip_sessions.get(owner, 0) >= self.config.sessions_per_ip:
                 reject(429, "session_quota", "the daily session limit for this network has been reached")
             if len(self.ip_sessions) >= 4096:
                 reject(429, "service_busy", "the service is busy; try again later")
+            if entry is None:
+                if len(self.admissions) >= self.config.max_waiting + self.config.max_sessions:
+                    reject(429, 'queue_full', 'The waiting room is full; try again in a minute.')
+                waiting = [item for item in self.admissions.values() if item.tenant_hash is None]
+                if len(waiting) >= self.config.max_waiting:
+                    reject(429, 'queue_full', 'The waiting room is full; try again in a minute.')
+                if sum(item.ip_key == ip_key for item in waiting) >= self.config.waiting_per_ip:
+                    reject(429, 'queue_quota', 'This network already has several waiting visitors; try again shortly.')
+                entry = Admission(ip_key, self.now())
+                self.admissions[digest] = entry
+            entry.last_seen = self.now()
+            waiting = [key for key, item in self.admissions.items() if item.tenant_hash is None]
+            position = waiting.index(digest) + 1
+            reason = 'capacity'
+            storage = 2 * 2**20
+            if self.now() >= self.cutoff:
+                reason = 'cleanup'
+            elif position == 1 and len(self.tenants) < self.config.max_sessions:
+                try:
+                    self.reserve_storage(storage)
+                except Exception as exc:
+                    from fastapi import HTTPException
+                    if not isinstance(exc, HTTPException) or exc.status_code != 507:
+                        raise
+                    reason = 'storage'
+                else:
+                    try:
+                        tenant, token = await self.create(owner)
+                    finally:
+                        self.release_storage(storage)
+                    entry.tenant_hash, entry.access_token = tenant.token_hash, token
+                    return tenant, token, None
+            from datetime import datetime, timezone
+            return None, None, {'authenticated': False, 'mode': 'web', 'status': 'queued', 'queue_token': ticket,
+                'queue_position': position, 'waiting': len(waiting), 'reason': reason, 'retry_after_seconds': 5,
+                'admission_resumes_at': datetime.fromtimestamp(self.next_reset, timezone.utc).isoformat() if reason == 'cleanup' else None}
+
+    async def create(self, ip_key: str):
+        # Caller holds create_lock and has reserved storage/admission capacity.
+        # Route construction is CPU work; it must not block existing visitors.
+        try:
             identifier = secrets.token_hex(24)
             token = secrets.token_urlsafe(32)
             digest = hashlib.sha256(token.encode()).hexdigest()
@@ -248,11 +391,11 @@ class TenantManager:
             def factory(ws, store, **kwargs):
                 return WebSupervisor(ws, store, manager=self, ip_key=ip_key, expires_at=expires_at, **kwargs)
 
-            app = create_app(root / "workspace", supervisor_factory=factory, shutdown_timeout=0,
-                             allow_dataset_publications=self.config.dataset_publications, monitor_resources=False)
+            app = await asyncio.to_thread(create_app, root / "workspace", supervisor_factory=factory, shutdown_timeout=0,
+                             allow_dataset_publications=self.config.dataset_publications, monitor_resources=False, start_sweeps=False)
             if self.config.gpu_token:
                 app.state.device_detector = self.gpu.devices
-            app.state.workspace_label = "Temporary workspace (deleted within 24 hours)"
+            app.state.workspace_label = "Temporary workspace (deleted within 12 hours)"
             local_session = app.state.sessions.exchange(app.state.sessions.bootstrap_token)
             context = app.router.lifespan_context(app)
             try:
@@ -267,6 +410,10 @@ class TenantManager:
             self.tenants[digest] = tenant
             self.ip_sessions[ip_key] = self.ip_sessions.get(ip_key, 0) + 1
             return tenant, token
+        except BaseException:
+            if 'root' in locals() and root.exists():
+                shutil.rmtree(root)
+            raise
 
     async def remove(self, tenant: Tenant):
         tenant.closing = True
@@ -278,11 +425,11 @@ class TenantManager:
         shutil.rmtree(tenant.root)
         self.tenants.pop(tenant.token_hash, None)
 
-    async def sweep(self):
+    async def sweep(self, *, quotas=True):
         async with self.sweep_lock:
-            await self._sweep()
+            await self._sweep(quotas=quotas)
 
-    async def _sweep(self):
+    async def _sweep(self, *, quotas=True):
         try:
             self.gpu.sweep()
         except Exception:
@@ -291,9 +438,16 @@ class TenantManager:
             self.cleanup_healthy = False
             log.exception('GPU maintenance failed; session admission disabled')
         day = int(self.now() // DAY)
-        for tenant in list(self.tenants.values()):
+        tenants = list(self.tenants.values())
+        checked = set()
+        if quotas and tenants:
+            checked = {tenants[(self.quota_cursor + i) % len(tenants)].token_hash
+                       for i in range(min(len(tenants), self.config.quota_checks_per_sweep))}
+            self.quota_cursor = (self.quota_cursor + len(checked)) % len(tenants)
+        for tenant in tenants:
             try:
-                if tenant.closing or self.now() >= tenant.expires_at or await asyncio.to_thread(directory_bytes, tenant.root) > self.config.max_workspace_bytes:
+                if (tenant.closing or self.now() >= tenant.expires_at
+                        or (tenant.token_hash in checked and await asyncio.to_thread(directory_bytes, tenant.root) > self.config.max_workspace_bytes)):
                     await self.remove(tenant)
             except Exception:
                 self.cleanup_healthy = False
@@ -310,12 +464,16 @@ class TenantManager:
         while True:
             await asyncio.sleep(self.config.sweep_seconds)
             try:
+                self.prune_admissions()
                 await self.sweep()
             except Exception:
                 self.cleanup_healthy = False
                 log.exception('temporary workspace maintenance failed; session admission disabled')
 
     async def stop(self):
+        self.scheduler_stop.set()
+        self.scheduler_wake.set()
+        await asyncio.to_thread(self.scheduler.join, 5)
         try:
             for tenant in list(self.tenants.values()):
                 await self.remove(tenant)
@@ -353,4 +511,5 @@ class TenantManager:
         return ServerStatus(mode='web', sampled_at=datetime.fromtimestamp(now, timezone.utc),
             active_sessions=sum(now - t.last_activity < 300 for t in tenants), workspaces=len(tenants),
             workspace_capacity=self.config.max_sessions, running_jobs=running, queued_jobs=queued,
+            waiting_sessions=self.waiting_count(),
             parallel_capacity=self.config.max_parallel, api=self.resources.snapshot(), compute=self.gpu.resource_status())

@@ -33,7 +33,7 @@ def main():
                        gpu_token=os.environ.get("OPENDPD_GPU_TOKEN"),
                        dataset_publications=os.environ.get("OPENDPD_WEB_DATASET_PUBLICATIONS") == "1")
     uvicorn.run(create_web_app(config), host=args.host, port=args.port, proxy_headers=False,
-                access_log=False, limit_concurrency=32, timeout_keep_alive=5)
+                access_log=False, limit_concurrency=128, timeout_keep_alive=5)
 
 
 if __name__ == "__main__":

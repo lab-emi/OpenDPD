@@ -10560,6 +10560,18 @@
             "title": "Sampled At",
             "type": "string"
           },
+          "waiting_sessions": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waiting Sessions"
+          },
           "workspace_capacity": {
             "anyOf": [
               {
@@ -10686,7 +10698,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.6",
+            "default": "2.2.7",
             "title": "Version",
             "type": "string"
           }
@@ -12876,7 +12888,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.6"
+    "version": "2.2.7"
   },
   "openapi": "3.1.0",
   "paths": {

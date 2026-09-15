@@ -7,7 +7,8 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { WEB_MODE, bootstrapSession, clearWebSession, createWebSession, loadSession } from '@/api/client'
+import { WEB_MODE, bootstrapSession, clearWebSession, loadSession } from '@/api/client'
+import { WebSessionStart } from '@/components/WebSessionStart'
 import { t } from '@/i18n'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 import { ReportBugsButton } from '@/components/ReportBugsButton'
@@ -19,7 +20,6 @@ export function SessionGate({ children }: { children: ReactNode }) {
   const [token, setToken] = useState('')
   const [invalid, setInvalid] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [webError, setWebError] = useState<unknown>(null)
   const expiresAt = session.data?.expires_at
   useEffect(() => {
     if (!WEB_MODE) return
@@ -40,23 +40,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
   if (session.isError) return <Stack sx={{ maxWidth: 560, mx: 'auto', p: 3 }} spacing={2}>{reportBugs}<ErrorState error={session.error} onRetry={() => void session.refetch()} /></Stack>
   if (session.data.authenticated) return <>{children}</>
 
-  if (WEB_MODE) return <Paper sx={{ maxWidth: 560, mx: 'auto', my: '10vh', p: 3 }}>
-    <Stack spacing={2}>
-      {reportBugs}
-      <Typography variant="h1">{t('web.welcome')}</Typography>
-      <Typography>{t('web.description')}</Typography>
-      <Alert severity="info">{t('web.temporary')}</Alert>
-      {webError != null && <ErrorState error={webError} />}
-      <Button variant="contained" disabled={busy} onClick={() => {
-        setBusy(true); setWebError(null)
-        void createWebSession().then((info) => {
-          qc.removeQueries({ predicate: (query) => query.queryKey[0] !== 'session' })
-          qc.setQueryData(['session'], info)
-        })
-          .catch(setWebError).finally(() => setBusy(false))
-      }}>{t(webError != null ? 'state.error.retry' : 'web.start')}</Button>
-    </Stack>
-  </Paper>
+  if (WEB_MODE) return <WebSessionStart />
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()

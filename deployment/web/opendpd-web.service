@@ -24,7 +24,7 @@ TimeoutStopSec=20
 SendSIGKILL=yes
 # The supplied VM has worker UID/GID 1001. install-guest.sh checks this.
 # Namespace-local tmpfs is discarded when the service cgroup stops, including
-# on crashes and nightly reset; no user data enters the qcow2 disk or snapshots.
+# on crashes and twice-daily reset; no user data enters the qcow2 disk or snapshots.
 TemporaryFileSystem=/run/opendpd-web:rw,size=2G,mode=0700,uid=1001,gid=1001,nodev,nosuid
 UMask=0077
 CPUQuota=400%

@@ -5484,6 +5484,8 @@ export interface components {
              * Format: date-time
              */
             sampled_at: string;
+            /** Waiting Sessions */
+            waiting_sessions?: number | null;
             /** Workspace Capacity */
             workspace_capacity?: number | null;
             /** Workspaces */
@@ -5522,7 +5524,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.6
+             * @default 2.2.7
              */
             version: string;
         };
