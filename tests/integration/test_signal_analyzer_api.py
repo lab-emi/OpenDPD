@@ -27,6 +27,7 @@ def client(tmp_path):
 @pytest.mark.parametrize('header,rows,real', [
     ('voltage', ['0.25']*512, True), ('z', ['0.2+0.3i']*512, False),
     ('I,Q', ['0.2,0.3']*512, False), ('', ['-0.5']*512, True),
+    ('I', ['0.25']*512, True), ('', ['i']*512, False),
 ])
 def test_real_complex_and_iq_uploads_analyze_without_pa_output(client, header, rows, real):
     data = ('\n'.join(([header] if header else [])+rows)+'\n').encode()

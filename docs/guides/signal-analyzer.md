@@ -13,6 +13,8 @@ Open **Signal Analyzer** in the sidebar, or select **Open in Signal Analyzer** f
 
 CSV files must be UTF-8 and comma-separated, with 256–1,000,000 rows, at most eight columns and two million numeric fields, and at most 25 MiB. Every field must be finite and fit the supported sample range. Binary files, formulas, inconsistent row widths and malformed samples are rejected. Files are quarantined until the complete scan passes. At most 16 uploaded signals are retained per workspace.
 
+An uppercase single-column `I` is a column header. Use `1i` or `1j` for an imaginary-unit sample to avoid header ambiguity.
+
 **Confirm the sample rate.** CSV does not carry it. For known sources, changing the rate reinterprets the sample timing without resampling, and the report records the override. Select a zero-based start and maximum sample count; the page displays how many available samples will be analyzed. Nothing runs automatically when you change a control.
 
 ## Views

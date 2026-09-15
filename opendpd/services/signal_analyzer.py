@@ -52,7 +52,7 @@ def admit_signal_upload(ws, path: Path):
             width = len(first)
             if not 1 <= width <= 8:
                 raise CsvUploadRejected("Use 1–8 numeric columns, with an optional header.")
-            header = _is_header(first) or (width >= 2 and all(
+            header = _is_header(first) or first == ["I"] or (width >= 2 and all(
                 _is_header([v]) or v.strip().lower() in ('i', 'q') for v in first))
             columns = [v.strip() for v in first] if header else [f"Column {i + 1}" for i in range(width)]
             if len(set(columns)) != width or any(len(v) > 64 for v in columns):
