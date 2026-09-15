@@ -1,0 +1,29 @@
+{
+  "version": "2.2.7",
+  "transport": "loopback HTTP",
+  "workspaces": 256,
+  "waiting_tickets": 1024,
+  "overflow_status": 429,
+  "creation": {
+    "median_ms": 2.423,
+    "p95_ms": 3.628,
+    "max_ms": 482.573
+  },
+  "status_100_requests_8_clients": {
+    "median_ms": 7.052,
+    "p95_ms": 12.232,
+    "max_ms": 15.619
+  },
+  "cold_status_ms": 4.397,
+  "idle_status_sql_count_queries": 768,
+  "authenticate_10000_calls_ms": 267.271,
+  "rss_initial_mib": 79.09,
+  "rss_256_workspaces_mib": 225.0,
+  "rss_with_waiting_mib": 227.16,
+  "background_threads": [
+    "opendpd-resource-sampler",
+    "opendpd-web-dispatch"
+  ],
+  "idle_process_cpu_percent_one_core": 0.0,
+  "scope": "Empty workspace admission and aggregate status; not 256 simultaneous training jobs or a distributed-load SLA."
+}

@@ -355,6 +355,8 @@ def test_real_training_is_private_and_global_dispatch_is_serial(public):
     assert manager.total_runs == 1
     second = client.post("/api/v1/runs", json={"config": cfg}, headers=b)
     assert second.status_code == 201
+    status = client.get('/api/v1/system/status', headers=a).json()
+    assert status['queued_jobs'] == 2 and status['running_jobs'] == 0
     assert all(not t.app.state.supervisor.active_run_ids() for t in manager.tenants.values())
     assert client.get(f"/api/v1/runs/{rid}", headers=b).status_code == 404
     assert client.get(f"/api/v1/runs/{rid}/events/list", headers=b).status_code == 404

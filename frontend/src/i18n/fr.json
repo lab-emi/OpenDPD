@@ -751,7 +751,7 @@
   "language.loadFailed": "Impossible de charger la langue choisie. Réessayez.",
   "web.welcome": "OpenDPD Studio sur le Web",
   "web.description": "Explorez les jeux de données intégrés et lancez des analyses, des entraînements neuronaux et des inférences sur notre serveur isolé.",
-  "web.temporary": "Your workspace is deleted within 12 hours. The top bar shows the exact cleanup time. Download your data and models beforehand. CSV datasets are validated before use; code uploads are not available.",
+  "web.temporary": "During this trial, 2 hours without user activity from an IP causes all temporary workspaces associated with that IP to be deleted. Background refreshes and running jobs do not extend this period. Workspaces are also cleared every 12 hours. The top bar shows the next cleanup deadline; download your data and models before then. CSV datasets are validated; code uploads are unavailable.",
   "web.start": "Démarrer une session temporaire",
   "web.retention": "Espace temporaire · téléchargez vos résultats avant {date}. Les fichiers sont supprimés automatiquement.",
   "web.connection.title": "Connexion au serveur de calcul impossible",
@@ -1362,5 +1362,6 @@
   "web.end.keep": "Keep workspace",
   "web.end.confirm": "End and delete workspace",
   "server.waitingVisitors": "{count} visitors waiting for a workspace",
-  "web.queue.retrying": "Connection or admission is temporarily unavailable. Your request will retry automatically."
+  "web.queue.retrying": "Connection or admission is temporarily unavailable. Your request will retry automatically.",
+  "web.inactivityHelp": "This is the earlier of the shared IP inactivity deadline and scheduled cleanup. User activity can extend the inactivity deadline; automatic refreshes cannot. Download your data and models beforehand."
 }

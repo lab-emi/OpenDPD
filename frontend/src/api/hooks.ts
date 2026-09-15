@@ -57,10 +57,10 @@ export const keys = {
 }
 
 export const useCapabilities = () =>
-  useQuery({ queryKey: keys.capabilities, queryFn: () => api.get<Capabilities>('/system/capabilities'), staleTime: 60_000 })
+  useQuery({ queryKey: keys.capabilities, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<Capabilities>('/system/capabilities', signal), staleTime: 60_000 })
 /** Closed until the server explicitly enables the retained custom-data workflow. */
 export const useCustomDatasetImports = () => useCapabilities().data?.custom_dataset_imports === true
-export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api.get<WorkspaceSettings>('/settings'), staleTime: Infinity })
+export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<WorkspaceSettings>('/settings', signal), staleTime: Infinity })
 
 /** Full replacement of the workbench settings; the response is the stored state. */
 export function useUpdateSettings() {
@@ -72,11 +72,11 @@ export function useUpdateSettings() {
     onSuccess: (saved) => qc.setQueryData(keys.settings, saved),
   })
 }
-export const useModels = () => useQuery({ queryKey: keys.models, queryFn: () => api.get<ModelInfo[]>('/models'), staleTime: Infinity })
-export const useRecipes = () => useQuery({ queryKey: keys.recipes, queryFn: () => api.get<RecipeInfo[]>('/recipes'), staleTime: Infinity })
-export const useDatasets = () => useQuery({ queryKey: keys.datasets, queryFn: () => api.get<DatasetManifest[]>('/datasets') })
+export const useModels = () => useQuery({ queryKey: keys.models, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<ModelInfo[]>('/models', signal), staleTime: Infinity })
+export const useRecipes = () => useQuery({ queryKey: keys.recipes, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<RecipeInfo[]>('/recipes', signal), staleTime: Infinity })
+export const useDatasets = () => useQuery({ queryKey: keys.datasets, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<DatasetManifest[]>('/datasets', signal) })
 export const useDataset = (id: string) =>
-  useQuery({ queryKey: keys.dataset(id), queryFn: () => api.get<DatasetManifest>(`/datasets/${encodeURIComponent(id)}`) })
+  useQuery({ queryKey: keys.dataset(id), queryFn: ({ signal }: { signal: AbortSignal }) => api.get<DatasetManifest>(`/datasets/${encodeURIComponent(id)}`, signal) })
 
 export interface RunPage {
   /** Case-insensitive substring over id, name, dataset and model (server side). */
@@ -96,16 +96,16 @@ function runParams(status?: RunStatus, page: RunPage = {}): string {
 export const useRuns = (status?: RunStatus, page: RunPage = {}) =>
   useQuery({
     queryKey: keys.runs(status, page),
-    queryFn: () => api.get<RunView[]>(`/runs?${runParams(status, page)}`),
-    refetchInterval: WEB_MODE ? 10_000 : 5_000,
+    queryFn: ({ signal }: { signal: AbortSignal }) => api.get<RunView[]>(`/runs?${runParams(status, page)}`, signal),
+    refetchInterval: query => WEB_MODE ? (query.state.data?.some(run => !isTerminal(run.status)) ? 10_000 : 30_000) : 5_000,
     placeholderData: keepPreviousData,
   })
 
 export const useRunCount = (status?: RunStatus, q?: string) =>
   useQuery({
     queryKey: keys.runCount(status, q),
-    queryFn: () => api.get<{ count: number }>(`/runs/count?${runParams(status, { q, limit: 1 }).replace(/&?limit=1&offset=0/, '')}`),
-    refetchInterval: WEB_MODE ? 10_000 : 5_000,
+    queryFn: ({ signal }: { signal: AbortSignal }) => api.get<{ count: number }>(`/runs/count?${runParams(status, { q, limit: 1 }).replace(/&?limit=1&offset=0/, '')}`, signal),
+    refetchInterval: WEB_MODE ? 30_000 : 5_000,
   })
 
 /** Snapshot of one run; polls slowly while active as a fallback to the event stream. */
@@ -118,17 +118,17 @@ export const useRun = (id: string, enabled = true) =>
   })
 
 export const useRunConfig = (id: string, enabled = true) =>
-  useQuery({ queryKey: keys.runConfig(id), queryFn: () => api.get<ResolvedExperimentConfig>(`/runs/${encodeURIComponent(id)}/config`), enabled })
+  useQuery({ queryKey: keys.runConfig(id), queryFn: ({ signal }: { signal: AbortSignal }) => api.get<ResolvedExperimentConfig>(`/runs/${encodeURIComponent(id)}/config`, signal), enabled })
 export const useRunArtifacts = (id: string, enabled = true) =>
-  useQuery({ queryKey: keys.runArtifacts(id), queryFn: () => api.get<ArtifactManifest>(`/runs/${encodeURIComponent(id)}/artifacts`), enabled })
+  useQuery({ queryKey: keys.runArtifacts(id), queryFn: ({ signal }: { signal: AbortSignal }) => api.get<ArtifactManifest>(`/runs/${encodeURIComponent(id)}/artifacts`, signal), enabled })
 export const useRunLineage = (id: string, enabled = true) =>
-  useQuery({ queryKey: keys.runLineage(id), queryFn: () => api.get<RunLineage>(`/runs/${encodeURIComponent(id)}/lineage`), enabled })
+  useQuery({ queryKey: keys.runLineage(id), queryFn: ({ signal }: { signal: AbortSignal }) => api.get<RunLineage>(`/runs/${encodeURIComponent(id)}/lineage`, signal), enabled })
 export const useRunHistory = (id: string, enabled = true) =>
-  useQuery({ queryKey: keys.runHistory(id), queryFn: () => api.get<HistoryPoint[]>(`/runs/${encodeURIComponent(id)}/history`), enabled, retry: false })
+  useQuery({ queryKey: keys.runHistory(id), queryFn: ({ signal }: { signal: AbortSignal }) => api.get<HistoryPoint[]>(`/runs/${encodeURIComponent(id)}/history`, signal), enabled, retry: false })
 /** A registered JSON artifact (plots-v1 data, stored results); cached for the life of the page. */
 export const artifactJsonQuery = <T,>(id: string, artifactId: string) => ({
   queryKey: keys.artifactJson(id, artifactId),
-  queryFn: () => api.get<T>(`/artifacts/${encodeURIComponent(id)}/${encodeURIComponent(artifactId)}`),
+  queryFn: ({ signal }: { signal: AbortSignal }) => api.get<T>(`/artifacts/${encodeURIComponent(id)}/${encodeURIComponent(artifactId)}`, signal),
   retry: false,
   staleTime: Infinity,
 })
@@ -136,7 +136,7 @@ export const useArtifactJson = <T,>(id: string, artifactId: string, enabled = tr
 export const useCompare = (ids: string[], profile: string | null = null, profiles: string[] = []) =>
   useQuery({
     queryKey: [...keys.compare(ids, profile), ...profiles],
-    queryFn: () => api.get<ComparisonReport>(`/results/compare?${ids.map((i) => `runs=${encodeURIComponent(i)}`).join('&')}${profile ? `&profile=${encodeURIComponent(profile)}` : ''}${profiles.map(p => `&profiles=${encodeURIComponent(p)}`).join('')}`),
+    queryFn: ({ signal }: { signal: AbortSignal }) => api.get<ComparisonReport>(`/results/compare?${ids.map((i) => `runs=${encodeURIComponent(i)}`).join('&')}${profile ? `&profile=${encodeURIComponent(profile)}` : ''}${profiles.map(p => `&profiles=${encodeURIComponent(p)}`).join('')}`, signal),
     enabled: ids.length >= 2,
     placeholderData: keepPreviousData,
     retry: false,
@@ -144,16 +144,16 @@ export const useCompare = (ids: string[], profile: string | null = null, profile
 export const useResult = (id: string, enabled = true, profile: string | null = null) =>
   useQuery({
     queryKey: keys.result(id, profile),
-    queryFn: () => api.get<EvaluationResult>(`/results/${encodeURIComponent(id)}${profile ? `?profile=${encodeURIComponent(profile)}` : ''}`),
+    queryFn: ({ signal }: { signal: AbortSignal }) => api.get<EvaluationResult>(`/results/${encodeURIComponent(id)}${profile ? `?profile=${encodeURIComponent(profile)}` : ''}`, signal),
     enabled,
     placeholderData: (previous, query) => query?.queryKey[1] === id ? previous : undefined,
     retry: false,
   })
-export const useResultProfiles = (id: string) => useQuery({ queryKey: keys.resultProfiles(id), queryFn: () => api.get<string[]>(`/results/${encodeURIComponent(id)}/profiles`) })
-export const useMetricProfiles = () => useQuery({ queryKey: keys.metricProfiles, queryFn: () => api.get<MetricProfile[]>('/metrics/profiles'), staleTime: Infinity })
+export const useResultProfiles = (id: string) => useQuery({ queryKey: keys.resultProfiles(id), queryFn: ({ signal }: { signal: AbortSignal }) => api.get<string[]>(`/results/${encodeURIComponent(id)}/profiles`, signal) })
+export const useMetricProfiles = () => useQuery({ queryKey: keys.metricProfiles, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<MetricProfile[]>('/metrics/profiles', signal), staleTime: Infinity })
 export const reviewQuery = (runId: string, profileId?: string) => ({
   queryKey: ['review', runId, profileId ?? 'primary'],
-  queryFn: () => api.get<ReviewContext>(`/results/${encodeURIComponent(runId)}/review${profileId ? `?profile=${encodeURIComponent(profileId)}` : ''}`),
+  queryFn: ({ signal }: { signal: AbortSignal }) => api.get<ReviewContext>(`/results/${encodeURIComponent(runId)}/review${profileId ? `?profile=${encodeURIComponent(profileId)}` : ''}`, signal),
   staleTime: Infinity, retry: false,
 })
 
@@ -232,11 +232,11 @@ export function useRetryRun() {
 
 /** conditions-v1 adaptation reports stored by `opendpd adaptation report` (read only; the GUI never runs a plan). */
 export const useAdaptationReports = () =>
-  useQuery({ queryKey: keys.adaptationReports, queryFn: () => api.get<AdaptationReportSummary[]>('/adaptation/reports') })
+  useQuery({ queryKey: keys.adaptationReports, queryFn: ({ signal }: { signal: AbortSignal }) => api.get<AdaptationReportSummary[]>('/adaptation/reports', signal) })
 export const useAdaptationReport = (planSha: string, enabled = true) =>
   useQuery({
     queryKey: keys.adaptationReport(planSha),
-    queryFn: () => api.get<AdaptationReport>(`/adaptation/reports/${encodeURIComponent(planSha)}`),
+    queryFn: ({ signal }: { signal: AbortSignal }) => api.get<AdaptationReport>(`/adaptation/reports/${encodeURIComponent(planSha)}`, signal),
     enabled,
     retry: false,
     staleTime: Infinity,

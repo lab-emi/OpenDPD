@@ -89,6 +89,7 @@ class Tenant:
     uploading: bool = False
     mutating: bool = False
     last_activity: float = 0.0
+    admission_key: str | None = None
 
 
 @dataclass
@@ -139,7 +140,8 @@ class WebSupervisor(Supervisor):
             self.manager.gpu.enqueue(self, record)
 
     def _dispatch(self):
-        if not self._accepting or self.manager.now() >= self.expires_at:
+        if (not self._accepting or self.manager.now() >= self.expires_at
+                or self.manager.now() >= self.manager.idle_deadline(self.ip_key)):
             return
         candidate = self.manager.next_dispatch
         if candidate is None or candidate[0] is not self:
@@ -162,7 +164,8 @@ class WebSupervisor(Supervisor):
         # Admission, including retry and idempotency, is one transaction across
         # ALL workspaces. New anonymous sessions cannot multiply the GPU limit.
         with self.manager.budget_lock:
-            if self.manager.now() >= self.expires_at:
+            if (self.manager.now() >= self.expires_at
+                    or self.manager.now() >= self.manager.idle_deadline(self.ip_key)):
                 reject(401, "session_expired", "the temporary workspace has expired")
             existing = self.store.find_idempotent(kwargs.get("idempotency_key")) if kwargs.get("idempotency_key") else None
             if existing is not None:
@@ -212,6 +215,7 @@ class TenantManager:
         self.scheduler = threading.Thread(target=self.dispatch_loop, name='opendpd-web-dispatch', daemon=True)
         self.ip_secret = secrets.token_bytes(32)
         self.ip_sessions: dict[str, int] = {}
+        self.ip_activity: dict[str, float] = {}
         self.ip_runs: dict[str, int] = {}
         self.rate: dict[str, tuple[int, int]] = {}
         self.total_runs = 0
@@ -288,14 +292,39 @@ class TenantManager:
     def authenticate(self, token: str) -> Tenant:
         digest = hashlib.sha256(token.encode()).hexdigest()
         tenant = self.tenants.get(digest)
-        if tenant is None or tenant.closing or self.now() >= tenant.expires_at:
+        if tenant is None or not self.is_live(tenant):
             reject(401, "session_expired", "the temporary session has expired; start a new session")
         # The first authenticated request acknowledges receipt. No plaintext
         # session capability is retained after that point.
-        for admission in self.admissions.values():
-            if admission.tenant_hash == digest:
-                admission.access_token = None
+        admission = self.admissions.get(tenant.admission_key)
+        if admission is not None:
+            admission.access_token = None
+        tenant.admission_key = None
         return tenant
+
+    def idle_deadline(self, ip_key: str) -> float:
+        return self.ip_activity.get(ip_key, 0.) + self.config.inactivity_seconds
+
+    def close_ip(self, ip_key: str):
+        # Revocation is immediate, including while an in-flight download finishes.
+        # Cleanup never deletes files underneath a request that already owns them.
+        for tenant in list(self.tenants.values()):
+            if tenant.ip_key == ip_key:
+                tenant.closing = True
+                tenant.app.state.supervisor._accepting = False
+
+    def is_live(self, tenant: Tenant) -> bool:
+        if self.now() >= self.idle_deadline(tenant.ip_key):
+            self.close_ip(tenant.ip_key)
+        return not tenant.closing and self.now() < tenant.expires_at
+
+    def activity(self, tenant: Tenant):
+        # Only explicit foreground interaction renews this lease. Polls, status
+        # reads, queue heartbeats and running jobs never count as user activity.
+        if not self.is_live(tenant):
+            reject(401, 'session_expired', 'the temporary session has expired; start a new session')
+        self.ip_activity[tenant.ip_key] = self.now()
+        tenant.last_activity = self.now()
 
     def prune_admissions(self):
         now = self.now()
@@ -370,6 +399,7 @@ class TenantManager:
                     finally:
                         self.release_storage(storage)
                     entry.tenant_hash, entry.access_token = tenant.token_hash, token
+                    tenant.admission_key = digest
                     return tenant, token, None
             from datetime import datetime, timezone
             return None, None, {'authenticated': False, 'mode': 'web', 'status': 'queued', 'queue_token': ticket,
@@ -395,7 +425,7 @@ class TenantManager:
                              allow_dataset_publications=self.config.dataset_publications, monitor_resources=False, start_sweeps=False)
             if self.config.gpu_token:
                 app.state.device_detector = self.gpu.devices
-            app.state.workspace_label = "Temporary workspace (deleted within 12 hours)"
+            app.state.workspace_label = "Temporary workspace"
             local_session = app.state.sessions.exchange(app.state.sessions.bootstrap_token)
             context = app.router.lifespan_context(app)
             try:
@@ -407,6 +437,9 @@ class TenantManager:
                 raise
             tenant = Tenant(identifier, digest, ip_key, expires_at, root, app, context, local_session)
             tenant.last_activity = self.now()
+            if self.now() >= self.idle_deadline(ip_key):
+                self.close_ip(ip_key)
+            self.ip_activity[ip_key] = self.now()
             self.tenants[digest] = tenant
             self.ip_sessions[ip_key] = self.ip_sessions.get(ip_key, 0) + 1
             return tenant, token
@@ -417,13 +450,16 @@ class TenantManager:
 
     async def remove(self, tenant: Tenant):
         tenant.closing = True
+        tenant.app.state.supervisor._accepting = False
         if tenant.inflight:
             # No directory deletion underneath an analysis request or download.
             # The independent systemd cgroup reset bounds a wedged request.
             return
         await tenant.context.__aexit__(None, None, None)
-        shutil.rmtree(tenant.root)
+        await asyncio.to_thread(shutil.rmtree, tenant.root)
         self.tenants.pop(tenant.token_hash, None)
+        if not any(t.ip_key == tenant.ip_key for t in self.tenants.values()):
+            self.ip_activity.pop(tenant.ip_key, None)
 
     async def sweep(self, *, quotas=True):
         async with self.sweep_lock:
@@ -446,7 +482,7 @@ class TenantManager:
             self.quota_cursor = (self.quota_cursor + len(checked)) % len(tenants)
         for tenant in tenants:
             try:
-                if (tenant.closing or self.now() >= tenant.expires_at
+                if (not self.is_live(tenant)
                         or (tenant.token_hash in checked and await asyncio.to_thread(directory_bytes, tenant.root) > self.config.max_workspace_bytes)):
                     await self.remove(tenant)
             except Exception:
@@ -487,24 +523,29 @@ class TenantManager:
         from opendpd.schemas.system import ServerStatus
         from opendpd.services.server_status import job_counts, SAMPLE_SECONDS
         now = self.now()
-        tenants = [t for t in list(self.tenants.values()) if not t.closing and now < t.expires_at]
+        tenants = [t for t in list(self.tenants.values()) if not t.closing and now < t.expires_at
+                   and now < self.idle_deadline(t.ip_key)]
         # Bound SQLite work across every viewer of the status page. A closing
         # workspace may disappear between snapshots; never expose its identity.
         with self.status_lock:
             if time.monotonic() - self.status_updated >= SAMPLE_SECONDS:
                 counts = [0, 0]
-                for tenant in tenants:
-                    try:
-                        running, queued = job_counts(tenant.app.state.store)
-                    except sqlite3.Error:
-                        if tenant.closing:
+                # Only submitted work can have nonterminal records. The same
+                # lock orders dispatch and retirement, so idle workspaces need
+                # no SQLite reads and a closed store cannot enter this snapshot.
+                with self.budget_lock:
+                    for supervisor in self.scheduled:
+                        if (not supervisor._accepting or now >= supervisor.expires_at
+                                or now >= self.idle_deadline(supervisor.ip_key)):
                             continue
-                        # A database failure is unknown load, never zero jobs.
-                        counts = [None, None]
-                        log.warning('job-count telemetry unavailable')
-                        break
-                    counts[0] += running
-                    counts[1] += queued
+                        try:
+                            running, queued = job_counts(supervisor.store)
+                        except sqlite3.Error:
+                            counts = [None, None]
+                            log.warning('job-count telemetry unavailable')
+                            break
+                        counts[0] += running
+                        counts[1] += queued
                 self.status_counts = tuple(counts)
                 self.status_updated = time.monotonic()
             running, queued = self.status_counts

@@ -19,11 +19,12 @@ import Toolbar from '@mui/material/Toolbar'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { useIsMutating, useQueryClient } from '@tanstack/react-query'
+import { useIsMutating, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { Link, Outlet, useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { useCapabilities, useRun, useRuns } from '@/api/hooks'
-import { WEB_MODE, type WebSessionInfo } from '@/api/client'
+import { WEB_MODE, loadSession } from '@/api/client'
+import { RouteContent } from '@/components/RouteContent'
 import { LanguageMenu } from '@/components/LanguageMenu'
 import { ResetButton } from '@/components/ResetButton'
 import { ReportBugsButton } from '@/components/ReportBugsButton'
@@ -57,7 +58,7 @@ export function AppShell() {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const session = queryClient.getQueryData<WebSessionInfo>(['session'])
+  const { data: session } = useQuery({ queryKey: ['session'], queryFn: () => loadSession(), staleTime: Infinity, retry: false })
   const mutating = useIsMutating() > 0
   const [revision, setRevision] = useState(0)
   const runId = pathname.startsWith('/runs/') ? decodeURIComponent(pathname.split('/')[2] ?? '') : ''
@@ -124,7 +125,7 @@ export function AppShell() {
         <Toolbar sx={{ minHeight: { xs: WEB_MODE ? '88px !important' : '56px !important', sm: '56px !important' }, flexWrap: { xs: WEB_MODE ? 'wrap' : 'nowrap', sm: 'nowrap' }, columnGap: { xs: .5, sm: 1, lg: 1.5 }, px: { xs: '8px !important', sm: '16px !important', lg: '20px !important' } }}>
           <Typography variant="body2" noWrap sx={{ fontWeight: 600, minWidth: 0, display: { xs: 'none', sm: WEB_MODE ? 'none' : 'block', lg: 'block' } }}>{current ? t(current.key) : t('app.title')}</Typography>
           <Box sx={{ height: 16, borderLeft: `1px solid ${colors.border}`, display: { xs: 'none', lg: 'block' } }} />
-          {WEB_MODE && session?.expires_at ? <WorkspaceExpiry expiresAt={session.expires_at} /> : <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 380, minWidth: 0, display: { xs: 'none', lg: 'block' } }} title={caps.data?.workspace}>
+          {WEB_MODE && session?.expires_at ? <WorkspaceExpiry expiresAt={session.expires_at} idleExpiresAt={session.idle_expires_at} /> : <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 380, minWidth: 0, display: { xs: 'none', lg: 'block' } }} title={caps.data?.workspace}>
             {caps.data?.workspace.split(/[\\/]/).filter(Boolean).at(-1) ?? '…'}
           </Typography>}
           <Box sx={{ flex: 1 }} />
@@ -138,7 +139,7 @@ export function AppShell() {
       <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: { xs: WEB_MODE ? '108px' : '76px', sm: '76px' }, minWidth: 0 }}>
         <Box sx={{ maxWidth: tokens.layout.maxContent, mx: 'auto', minWidth: 0 }}>
           <WorkflowProgress />
-          <Outlet />
+          <RouteContent />
           {(pathname.startsWith('/experiments') || pathname.startsWith('/runs/')) && <ExperimentTerminal />}
         </Box>
       </Box>

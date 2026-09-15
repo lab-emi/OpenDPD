@@ -12,6 +12,7 @@ vi.mock('@/api/client', async (importOriginal) => ({
   createWebSession: vi.fn(),
   hasQueuedWebSession: vi.fn(() => false),
   cancelWebQueue: vi.fn(),
+  reportWebActivity: vi.fn().mockResolvedValue({ authenticated: true, version: '', mode: 'web' }),
 }))
 
 beforeEach(() => { vi.mocked(createWebSession).mockReset(); vi.mocked(cancelWebQueue).mockReset().mockResolvedValue(undefined) })

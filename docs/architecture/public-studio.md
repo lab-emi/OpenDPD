@@ -43,14 +43,16 @@ The API normally retains only token hashes in memory. During admission it tempor
   service-tmp/                      # shared library temporary files
 ```
 
-All sessions expire at the next **11:55 or 23:55 UTC** cutoff. New sessions pause until 12:00 or 00:00 UTC, respectively.
+During the trial, **two hours without foreground user activity expires every temporary workspace in the creation-IP group**. Groups use the existing ephemeral IP HMAC (IPv6 /64); they never grant access to another workspace. A valid session remains in its original group when its client changes network. Session creation and authenticated `POST /api/v1/web/activity` initialize or renew the group. Reads, waiting-room polling and running jobs do not renew it. An expired group is revoked before a new admission can initialize another lease, so later activity cannot revive old credentials. The browser coalesces foreground events to one report per minute and sends no periodic keepalive for untouched tabs.
+
+All sessions also expire at the next **11:55 or 23:55 UTC** hard cutoff. New sessions pause until 12:00 or 00:00 UTC, respectively.
 Every five seconds the API stops expired workspaces and deletes their files.
 Independently, a systemd timer at **11:59 and 23:59 UTC** restarts the entire API cgroup:
 it terminates remaining requests and workers, then discards its private tmpfs.
 The stop timeout is 20 seconds with SIGKILL as the final fallback. This leaves
 margin before any session data reaches 12 hours. Sessions do not get a fresh
 12 hours when they are accessed or when new files are generated. Late visitors
-therefore have a shorter session; the persistent top bar displays the exact scheduled cleanup start in UTC, with local time in its tooltip. Active requests can delay individual deletions until the next sweep; the independent reset bounds that delay.
+therefore have a shorter session; the persistent top bar displays the earlier inactivity or scheduled cleanup start in UTC, with local time in its tooltip. Authenticated session responses include `server_time`, `idle_expires_at` and `inactivity_seconds`, while `expires_at` remains the hard deadline. At the client deadline, a session read checks whether another workspace renewed the shared group before discarding credentials. Active requests can delay individual deletions until the next sweep; the independent reset bounds that delay. Worker shutdown, database close and directory deletion run off the API event loop.
 
 Refreshing a browser or reconnecting within the same tab resumes the existing
 session, events and saved plots. Restarting the API or VM discards every session;
@@ -115,6 +117,7 @@ Cloudflare response header for `/studio/` because a meta CSP cannot enforce it.
 | Limit | Default |
 |---|---|
 | Live sessions | 256 globally; 64 created per network budget interval |
+| Trial inactivity | 2 hours per creation-IP group; foreground activity only; hard scheduled expiry still applies |
 | Waiting room | 1,024 pending tickets; 16/network; three-minute heartbeat lease; five-second browser polling |
 | HTTP requests | 120/minute per session, 3,600/minute per IP; preflight has a separate 3,600/minute bucket; 32 concurrent globally, 3/session; Uvicorn connection ceiling 128 |
 | JSON request body | 64 KiB, 10-second receive deadline; no multipart |
@@ -304,6 +307,8 @@ The frontend gives a localized connection error and an explicit Retry action.
 Waiting-room admission is the sole automatically retried POST: its capability makes lost-response retries idempotent during the admission lease. Other mutation requests are not automatically retried, and bearer tokens are never sent to an alternate origin. Browser fetch errors cannot by
 themselves distinguish DNS, offline, TLS and CORS failures.
 
+Since 2.2.8, routes load on demand and abandoned query reads are cancelled to release the two-read budget. Hosted idle run lists/counts poll every 30 seconds; active runs retain ten-second list updates and their existing event stream. The activity POST shares the read budget so it cannot consume Stop's reserved slot. It requires the same bearer, origin, trusted proxy and bounded empty JSON body as other authenticated routes, but does not take the dataset-mutation mutex. Activity is client-reported and is a resource-retention policy, not a bot detector.
+
 ## Validation evidence
 
 Local validation on 2026-09-12 passed 279 Python unit tests (1 skipped),
@@ -378,3 +383,5 @@ Each live ticket preserves FIFO position, refreshes its three-minute lease and r
 `POST /web/sessions/end` requires the normal session bearer. It marks that workspace closed immediately; expiry maintenance waits for in-flight operations before deleting it. The UI requires explicit confirmation before this destructive action. A later queue poll can reclaim the closed slot immediately after requests finish.
 
 One shared supervisor thread polls only workspaces with submitted jobs. The dispatcher reads pending runs once per iteration and chooses the oldest globally; empty workspaces run neither a supervisor loop nor the unavailable local sweep controller. A separate shared resource sampler remains. Admission builds routing tables off the event loop, reserves storage for workspace metadata and skips full quota scans. Maintenance checks expiry on every pass but spreads storage scans across 16 workspaces per pass. Existing heavy-operation limits and the one-job compute semaphore remain in force. See the [2.2.7 validation](../performance/studio-2.2.7.md) for measured empty-workspace capacity and its limits.
+
+In 2.2.8, job-count snapshots query only the registered supervisors with submitted work, under the same lock as dispatch and retirement. Empty workspace counts are known to be zero; a SQLite failure for actual submitted work remains unknown. Admission acknowledgment uses a direct ticket lookup rather than scanning all waiting tickets for each authenticated request. See the [2.2.8 measurements](../performance/studio-2.2.8.md).

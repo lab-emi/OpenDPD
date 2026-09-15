@@ -16,7 +16,7 @@ On **Home**, click **Get Started → Use an existing dataset** and choose **DPA_
 
 The dataset page shows input/output I/Q signals, sample rate, bandwidth and signal quality. Use the **Dataset Doctor** tab to inspect findings, then **Configure experiment** to continue. Built-in measured datasets keep their supplied splits; **MyCustomPA** is explicitly labeled synthetic tutorial data.
 
-Use **Get Started → Upload CSV** to upload your own I/Q data. Studio validates the complete CSV in quarantine before preview. Invalid files are deleted; the hosted app removes all session files within 12 hours. The persistent top bar shows the scheduled cleanup time in UTC. Download your results before that time. See [import and preprocessing](headless-cli.md#use-your-own-data) for local workflows.
+Use **Get Started → Upload CSV** to upload your own I/Q data. Studio validates the complete CSV in quarantine before preview. Invalid files are deleted. During the hosted trial, 2 hours without user activity clears the temporary workspaces created from that IP. Background polling and running jobs do not extend this deadline. Scheduled cleanup still removes all session files within 12 hours. The persistent top bar shows the earlier cleanup deadline in UTC. Download your results before that time. See [import and preprocessing](headless-cli.md#use-your-own-data) for local workflows.
 
 ## 2. Train and test a PA model
 

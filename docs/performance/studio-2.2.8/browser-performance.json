@@ -1,0 +1,132 @@
+{
+  "before": {
+    "resources": [
+      {
+        "file": "index-CMtzOvDc.js",
+        "bytes": 1422440
+      },
+      {
+        "file": "index-Cw4sfHpa.css",
+        "bytes": 29443
+      }
+    ],
+    "initial_js_css_bytes": 1451883,
+    "idle_65s_requests": [
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      }
+    ]
+  },
+  "after": {
+    "resources": [
+      {
+        "file": "index-CZz553Tz.js",
+        "bytes": 380463
+      },
+      {
+        "file": "rolldown-runtime-CbXtAM7H.js",
+        "bytes": 589
+      },
+      {
+        "file": "Transition-51bgyWsf.js",
+        "bytes": 17714
+      },
+      {
+        "file": "Stack-DfWzj_-K.js",
+        "bytes": 290838
+      },
+      {
+        "file": "isMuiElement-C5kvk0e0.js",
+        "bytes": 231
+      },
+      {
+        "file": "Modal-laMb_gNB.js",
+        "bytes": 13082
+      },
+      {
+        "file": "useSlotProps-BucaVp5V.js",
+        "bytes": 14753
+      },
+      {
+        "file": "MenuItem-BUaqICVC.js",
+        "bytes": 19118
+      },
+      {
+        "file": "useControlled-CpqDwkya.js",
+        "bytes": 38003
+      },
+      {
+        "file": "SwitchBase-B9kp9mm-.js",
+        "bytes": 2491
+      },
+      {
+        "file": "TextField-DSib0BnQ.js",
+        "bytes": 46316
+      }
+    ],
+    "initial_js_css_bytes": 823598,
+    "idle_65s_requests": [
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0",
+        "method": "GET"
+      },
+      {
+        "path": "/api/v1/runs?limit=200&offset=0&status=running",
+        "method": "GET"
+      }
+    ]
+  }
+}

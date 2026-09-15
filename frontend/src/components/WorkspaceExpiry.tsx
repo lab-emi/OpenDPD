@@ -5,11 +5,12 @@ import Typography from '@mui/material/Typography'
 import { formatDateTime, t } from '@/i18n'
 
 /** A single timestamp, with a timezone, in the persistent top bar. */
-export function WorkspaceExpiry({ expiresAt }: { expiresAt: string }) {
-  const date = new Date(expiresAt)
+export function WorkspaceExpiry({ expiresAt, idleExpiresAt }: { expiresAt: string; idleExpiresAt?: string }) {
+  const idle = idleExpiresAt ? Date.parse(idleExpiresAt) : Infinity
+  const date = new Date(Math.min(Date.parse(expiresAt), Number.isFinite(idle) ? idle : Infinity))
   if (!Number.isFinite(date.getTime())) return null
   const utc = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')
-  return <Tooltip title={`${t('web.expiryHelp')} ${t('web.localTime', { date: formatDateTime(date) })}`}>
+  return <Tooltip title={`${t(idleExpiresAt ? 'web.inactivityHelp' : 'web.expiryHelp')} ${t('web.localTime', { date: formatDateTime(date) })}`}>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: .75, minWidth: 0, flexBasis: { xs: '100%', sm: 'auto' }, order: { xs: 2, sm: 0 }, pb: { xs: 1, sm: 0 } }} data-testid="workspace-expiry">
       <AutoDeleteOutlinedIcon sx={{ fontSize: 18, flexShrink: 0, color: 'text.secondary' }} />
       <Box sx={{ minWidth: 0, display: { xs: 'flex', sm: 'block' }, alignItems: 'center', gap: .75 }}>
