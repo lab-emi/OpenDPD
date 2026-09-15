@@ -1,5 +1,13 @@
 # What's new
 
+## 2.2.9: signal generation and analysis
+
+Signal Analyzer accepts real or complex CSV and opens generated signals, Virtual PA outputs and dataset captures directly. Configurable PSD, spectrograms, time traces, raw I/Q, CCDF, eyes and aligned reference errors share explicit sample ranges and exportable measurement definitions.
+
+Signal Generator adds Gray-labeled PSK/QAM payloads, PRBS and editable bit sequences, FSK/GFSK, band-limited noise, DFT spreading, burst envelopes, phase jitter and EVM trends. RRC span now means total filter span. Standard presets remain continuous uncoded stimuli.
+
+[Release notes](releases/release-notes-2.2.9.md) · [Signal Analyzer](guides/signal-analyzer.md) · [Signal Generator](guides/signal-generator.md)
+
 ## 2.2.8: lighter pages and trial inactivity cleanup
 
 Studio loads tools when you open their page, cancels obsolete reads when you navigate away and polls idle run lists every 30 seconds. Active runs retain their existing live updates. Empty workspaces no longer trigger individual SQLite job-count queries.

@@ -40,6 +40,7 @@ import { tokens, useStudioColors } from '@/theme'
 const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
   { to: '/', key: 'nav.home', Icon: HomeIcon },
   { to: '/signal-generator', key: 'generator.title', Icon: GraphicEqIcon },
+  { to: '/signal-analyzer', key: 'analyzer.title', Icon: InsightsIcon },
   { to: '/pa-library', key: 'paLibrary.title', Icon: ElectricalServicesIcon },
   { to: '/datasets', key: 'nav.datasets', Icon: DatasetIcon },
   { to: '/experiments', key: 'nav.experiments', Icon: ScienceIcon },

@@ -1,0 +1,17 @@
+{
+  "generated": "sg-d38a4948c741b5e0efeeeeb2096d9d8b46a22f64067a410a27ed96810526e706",
+  "real": {
+    "papr": 3.0102999566398077,
+    "samples": 4096
+  },
+  "iq": {
+    "papr": 0,
+    "samples": 4096
+  },
+  "complex": {
+    "papr": 0,
+    "samples": 4096
+  },
+  "accessibility": [],
+  "runtimeErrors": []
+}

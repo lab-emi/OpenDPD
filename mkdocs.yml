@@ -50,6 +50,7 @@ nav:
       - Installation: install.md
       - First Studio experiment: tutorials/gui-quickstart.md
       - Signal Generator: guides/signal-generator.md
+      - Signal Analyzer: guides/signal-analyzer.md
       - Virtual PA Library: guides/virtual-pa-library.md
       - ILC and ILA DPD: guides/ilc-dpd.md
       - Server load and cleanup: guides/server-load.md
@@ -58,6 +59,7 @@ nav:
   - Core workflow:
       - PA and DPD training: training.md
       - Studio CUDA performance: performance/studio-2.2.1.md
+      - Signal tools validation: performance/studio-2.2.9.md
       - Datasets: datasets.md
       - Visualization: visualization.md
       - Signal-chain PSD plots: guides/signal-chain-spectra.md

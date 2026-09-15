@@ -36,6 +36,12 @@ def presets() -> list[GeneratorPreset]:
     add("custom-tone", "custom", "Single tone", "Complex sinusoid for gain and phase checks", waveform="tone")
     add("custom-multitone", "custom", "Multitone", "Equally spaced tones with seeded random phases", waveform="multitone")
     add("custom-chirp", "custom", "Linear chirp", "Complex baseband frequency sweep", waveform="chirp")
+    add("custom-psk", "custom", "8-PSK", "Gray-labeled phase modulation with RRC pulse shaping", waveform="psk")
+    add("custom-fsk", "custom", "Binary FSK", "Continuous-phase frequency modulation", waveform="fsk", samples_per_symbol=16)
+    add("custom-gfsk", "custom", "Gaussian FSK", "Continuous phase · configurable Gaussian BT", waveform="gfsk", samples_per_symbol=16)
+    add("custom-noise", "custom", "Band-limited noise", "Complex Gaussian noise for spectral loading", waveform="noise")
+    add("custom-dft-ofdm", "custom", "DFT-spread OFDM", "Single-carrier-like envelope · uncoded uplink stimulus",
+        dft_spreading=True, pilot_mode="none")
     return items
 
 
@@ -44,7 +50,7 @@ def coverage(config: GeneratorConfig) -> str:
     if preset is None or preset.family == "custom":
         return "custom"
     keys = ("waveform", "sample_rate_hz", "bandwidth_hz", "fft_size", "oversampling",
-            "channel_subcarriers", "channel_gap_bins", "cp_mode", "cp_samples", "dc_null")
+            "channel_subcarriers", "channel_gap_bins", "cp_mode", "cp_samples", "dc_null", "dft_spreading")
     if any(getattr(config, k) != getattr(preset.config, k) for k in keys):
         return "custom"
     return "experimental" if preset.family == "wifi8" else "numerology"

@@ -13,7 +13,7 @@ from .dataset import DatasetManifest
 class GeneratorConfig(StrictModel):
     version: Literal["signal-generator-v1"] = "signal-generator-v1"
     preset_id: str = Field(default="custom-ofdm", max_length=64)
-    waveform: Literal["ofdm", "qam", "tone", "multitone", "chirp"] = "ofdm"
+    waveform: Literal["ofdm", "qam", "psk", "fsk", "gfsk", "tone", "multitone", "chirp", "noise"] = "ofdm"
     sample_rate_hz: float = Field(default=80e6, ge=1000, le=2e9, allow_inf_nan=False)
     bandwidth_hz: float = Field(default=20e6, gt=0, le=1e9, allow_inf_nan=False)
     carrier_frequency_hz: float = Field(default=3.5e9, ge=0, le=110e9, allow_inf_nan=False)
@@ -40,8 +40,20 @@ class GeneratorConfig(StrictModel):
     samples_per_symbol: int = Field(default=8, ge=2, le=64)
     rrc_rolloff: float = Field(default=.25, ge=0, le=1, allow_inf_nan=False)
     rrc_span_symbols: int = Field(default=10, ge=4, le=32)
+    psk_order: Literal[2, 4, 8, 16, 32] = 8
+    payload_mode: Literal["random", "prbs9", "prbs15", "bits"] = "random"
+    payload_bits: str = Field(default="00110101", min_length=1, max_length=4096, pattern=r"^[01]+$")
+    dft_spreading: bool = False
+    fsk_deviation_hz: float = Field(default=1e6, gt=0, le=1e9, allow_inf_nan=False)
+    gaussian_bt: float = Field(default=.5, ge=.1, le=2, allow_inf_nan=False)
     tone_frequency_hz: float = Field(default=1e6, allow_inf_nan=False)
     tone_count: int = Field(default=8, ge=2, le=64)
+    multitone_phase: Literal["random", "coherent", "schroeder"] = "random"
+    phase_offset_deg: float = Field(default=0, ge=-360, le=360, allow_inf_nan=False)
+    phase_noise_rms_deg: float = Field(default=0, ge=0, le=30, allow_inf_nan=False)
+    burst_on_samples: int | None = Field(default=None, ge=16, le=1_000_000)
+    burst_off_samples: int = Field(default=1024, ge=0, le=1_000_000)
+    burst_ramp_samples: int = Field(default=32, ge=0, le=65536)
     frequency_offset_hz: float = Field(default=0, allow_inf_nan=False)
     iq_gain_db: float = Field(default=0, ge=-6, le=6, allow_inf_nan=False)
     iq_phase_deg: float = Field(default=0, ge=-30, le=30, allow_inf_nan=False)
@@ -79,6 +91,8 @@ class GeneratorConfig(StrictModel):
         if len(set(self.pilot_indices)) != len(self.pilot_indices):
             raise ValueError("Pilot carrier indices must be unique.")
         if self.waveform == "ofdm":
+            if self.dft_spreading and self.pilot_mode != "none":
+                raise ValueError("DFT spreading requires pilot mode None; transform-spread reference pilots are not implemented.")
             span = sum(self.channel_subcarriers) + (count - 1) * self.channel_gap_bins
             occupied = span + int(self.dc_null)
             spacing = self.sample_rate_hz / (self.fft_size * self.oversampling)
@@ -98,10 +112,16 @@ class GeneratorConfig(StrictModel):
                     raise ValueError("NR extended cyclic prefix requires 60 kHz spacing.")
                 if self.fft_size < 128:
                     raise ValueError("NR cyclic prefix needs at least 128 FFT bins.")
-        if self.waveform == "qam" and (1 + self.rrc_rolloff) * self.sample_rate_hz / self.samples_per_symbol > self.bandwidth_hz * (1 + 1e-12):
+        if self.waveform in ("qam", "psk") and self.rrc_span_symbols * self.samples_per_symbol % 2:
+            raise ValueError("RRC span × samples per symbol must be even.")
+        if self.burst_on_samples is not None and 2 * self.burst_ramp_samples > self.burst_on_samples:
+            raise ValueError("Burst ramps must fit within the on interval.")
+        if self.waveform in ("qam", "psk") and (1 + self.rrc_rolloff) * self.sample_rate_hz / self.samples_per_symbol > self.bandwidth_hz * (1 + 1e-12):
             raise ValueError("RRC QAM bandwidth exceeds the declared bandwidth; increase samples/symbol or bandwidth.")
+        if self.waveform in ("fsk", "gfsk") and 2 * (self.fsk_deviation_hz + self.sample_rate_hz / self.samples_per_symbol) > self.bandwidth_hz:
+            raise ValueError("The FSK deviation and symbol rate exceed the declared engineering bandwidth estimate.")
         extent = (allocated_extent if self.waveform == "ofdm" else
-                  (1 + self.rrc_rolloff) * self.sample_rate_hz / self.samples_per_symbol / 2 if self.waveform == "qam" else
+                  (1 + self.rrc_rolloff) * self.sample_rate_hz / self.samples_per_symbol / 2 if self.waveform in ("qam", "psk") else
                   abs(self.tone_frequency_hz) if self.waveform == "tone" else self.bandwidth_hz / 2)
         if self.waveform == "tone" and extent > self.bandwidth_hz / 2:
             raise ValueError("The tone must lie inside the declared baseband bandwidth.")
@@ -138,6 +158,9 @@ class GeneratorAnalysis(StrictModel):
     dc_magnitude: float
     evm_percent: float | None
     evm_symbols: int
+    evm_per_symbol_percent: list[float] = Field(default_factory=list)
+    evm_subcarrier_indices: list[int] = Field(default_factory=list)
+    evm_per_subcarrier_percent: list[float] = Field(default_factory=list)
     time_us: list[float]
     time_i: list[float]
     time_q: list[float]

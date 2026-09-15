@@ -1,5 +1,6 @@
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import { analyzerLink } from '@/api/signalAnalyzer'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Tab from '@mui/material/Tab'
@@ -133,6 +134,7 @@ export function DatasetDetailPage() {
             {t('datasets.detail.versions.new')}
           </Button>
           <Button variant="contained" endIcon={<ArrowForwardIcon />} component={RouterLink} to={`/experiments/new?dataset=${encodeURIComponent(datasetId)}&version=${encodeURIComponent(doctorVersion)}`} disabled={!analysis.data?.inspection_ready}>{t('inspection.configure')}</Button>
+          <Button variant="outlined" endIcon={<ArrowForwardIcon />} component={RouterLink} to={analyzerLink('dataset', datasetId, 'input', doctorVersion)}>{t('analyzer.open')}</Button>
         </Stack>
       </Stack>
       {missing.length > 0 && <Alert severity="warning">{t('datasets.detail.missing', { fields: missing.join(', ') })}</Alert>}

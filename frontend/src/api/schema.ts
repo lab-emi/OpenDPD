@@ -1381,6 +1381,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signal-analyzer/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze */
+        post: operations["analyze_api_v1_signal_analyzer_analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-analyzer/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sources */
+        get: operations["sources_api_v1_signal_analyzer_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-analyzer/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload */
+        post: operations["upload_api_v1_signal_analyzer_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signal-generator/presets": {
         parameters: {
             query?: never;
@@ -1947,6 +1998,144 @@ export interface components {
             /** Role */
             role: string;
         };
+        /** AnalyzerConfig */
+        AnalyzerConfig: {
+            /** Adjacent Offset Hz */
+            adjacent_offset_hz?: number | null;
+            /**
+             * Bandwidth Hz
+             * @default 20000000
+             */
+            bandwidth_hz: number;
+            /**
+             * Center Hz
+             * @default 0
+             */
+            center_hz: number;
+            /**
+             * Fft Size
+             * @default 4096
+             */
+            fft_size: number;
+            /**
+             * Frequency Shift Hz
+             * @default 0
+             */
+            frequency_shift_hz: number;
+            /**
+             * I Column
+             * @default 0
+             */
+            i_column: number;
+            /**
+             * N Samples
+             * @default 262144
+             */
+            n_samples: number;
+            /**
+             * Occupied Percent
+             * @default 99
+             */
+            occupied_percent: number;
+            /**
+             * Overlap
+             * @default 0.5
+             * @enum {unknown}
+             */
+            overlap: 0 | 0.5 | 0.75;
+            /**
+             * Q Column
+             * @default 1
+             */
+            q_column: number;
+            /**
+             * Reference Gain Fit
+             * @default false
+             */
+            reference_gain_fit: boolean;
+            /**
+             * Remove Dc
+             * @default false
+             */
+            remove_dc: boolean;
+            /**
+             * Sample Format
+             * @default auto
+             * @enum {string}
+             */
+            sample_format: "auto" | "real" | "complex" | "iq";
+            /**
+             * Sample Rate Hz
+             * @default 80000000
+             */
+            sample_rate_hz: number;
+            /**
+             * Samples Per Symbol
+             * @default 8
+             */
+            samples_per_symbol: number;
+            /**
+             * Start Sample
+             * @default 0
+             */
+            start_sample: number;
+            /**
+             * Symbol Offset
+             * @default 0
+             */
+            symbol_offset: number;
+            /**
+             * Window
+             * @default hann
+             * @enum {string}
+             */
+            window: "hann" | "hamming" | "blackman" | "boxcar";
+        };
+        /** AnalyzerRequest */
+        AnalyzerRequest: {
+            config?: components["schemas"]["AnalyzerConfig"];
+            reference?: components["schemas"]["AnalyzerSource"] | null;
+            source: components["schemas"]["AnalyzerSource"];
+        };
+        /** AnalyzerSource */
+        AnalyzerSource: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "generated" | "upload" | "dataset" | "virtual_pa";
+            /**
+             * Role
+             * @default input
+             * @enum {string}
+             */
+            role: "input" | "output";
+            /** Source Id */
+            source_id: string;
+            /**
+             * Version
+             * @default raw-v1
+             */
+            version: string;
+        };
+        /** AnalyzerSourceInfo */
+        AnalyzerSourceInfo: {
+            /** Bandwidth Hz */
+            bandwidth_hz?: number | null;
+            /** Columns */
+            columns?: string[];
+            /** Complex Columns */
+            complex_columns?: number[];
+            /** Label */
+            label: string;
+            /** Origin */
+            origin: string;
+            /** Sample Count */
+            sample_count: number;
+            /** Sample Rate Hz */
+            sample_rate_hz?: number | null;
+            source: components["schemas"]["AnalyzerSource"];
+        };
         /** Artifact */
         Artifact: {
             /** Artifact Id */
@@ -2024,6 +2213,11 @@ export interface components {
         };
         /** Body_upload_api_v1_hardware_reports_upload_post */
         Body_upload_api_v1_hardware_reports_upload_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_api_v1_signal_analyzer_upload_post */
+        Body_upload_api_v1_signal_analyzer_upload_post: {
             /** File */
             file: string;
         };
@@ -3472,8 +3666,14 @@ export interface components {
             dc_magnitude: number;
             /** Duration Ms */
             duration_ms: number;
+            /** Evm Per Subcarrier Percent */
+            evm_per_subcarrier_percent?: number[];
+            /** Evm Per Symbol Percent */
+            evm_per_symbol_percent?: number[];
             /** Evm Percent */
             evm_percent: number | null;
+            /** Evm Subcarrier Indices */
+            evm_subcarrier_indices?: number[];
             /** Evm Symbols */
             evm_symbols: number;
             /** Frequency Mhz */
@@ -3525,6 +3725,18 @@ export interface components {
              */
             bandwidth_hz: number;
             /**
+             * Burst Off Samples
+             * @default 1024
+             */
+            burst_off_samples: number;
+            /** Burst On Samples */
+            burst_on_samples?: number | null;
+            /**
+             * Burst Ramp Samples
+             * @default 32
+             */
+            burst_ramp_samples: number;
+            /**
              * Carrier Frequency Hz
              * @default 3500000000
              */
@@ -3569,6 +3781,11 @@ export interface components {
              */
             dc_q: number;
             /**
+             * Dft Spreading
+             * @default false
+             */
+            dft_spreading: boolean;
+            /**
              * Duration Ms
              * @default 1
              */
@@ -3583,6 +3800,16 @@ export interface components {
              * @default 0
              */
             frequency_offset_hz: number;
+            /**
+             * Fsk Deviation Hz
+             * @default 1000000
+             */
+            fsk_deviation_hz: number;
+            /**
+             * Gaussian Bt
+             * @default 0.5
+             */
+            gaussian_bt: number;
             /**
              * Iq Gain Db
              * @default 0
@@ -3606,6 +3833,12 @@ export interface components {
              */
             modulation_order: 2 | 4 | 16 | 64 | 256 | 1024 | 4096;
             /**
+             * Multitone Phase
+             * @default random
+             * @enum {string}
+             */
+            multitone_phase: "random" | "coherent" | "schroeder";
+            /**
              * N Samples
              * @default 131072
              */
@@ -3616,6 +3849,27 @@ export interface components {
              * @enum {integer}
              */
             oversampling: 1 | 2 | 4 | 8;
+            /**
+             * Payload Bits
+             * @default 00110101
+             */
+            payload_bits: string;
+            /**
+             * Payload Mode
+             * @default random
+             * @enum {string}
+             */
+            payload_mode: "random" | "prbs9" | "prbs15" | "bits";
+            /**
+             * Phase Noise Rms Deg
+             * @default 0
+             */
+            phase_noise_rms_deg: number;
+            /**
+             * Phase Offset Deg
+             * @default 0
+             */
+            phase_offset_deg: number;
             /**
              * Pilot Boost Db
              * @default 0
@@ -3639,6 +3893,12 @@ export interface components {
              * @default custom-ofdm
              */
             preset_id: string;
+            /**
+             * Psk Order
+             * @default 8
+             * @enum {integer}
+             */
+            psk_order: 2 | 4 | 8 | 16 | 32;
             /**
              * Rms
              * @default 0.2
@@ -3694,7 +3954,7 @@ export interface components {
              * @default ofdm
              * @enum {string}
              */
-            waveform: "ofdm" | "qam" | "tone" | "multitone" | "chirp";
+            waveform: "ofdm" | "qam" | "psk" | "fsk" | "gfsk" | "tone" | "multitone" | "chirp" | "noise";
         };
         /** GeneratorDatasetRequest */
         GeneratorDatasetRequest: {
@@ -5524,7 +5784,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.8
+             * @default 2.2.9
              */
             version: string;
         };
@@ -5533,6 +5793,88 @@ export interface components {
          * @enum {string}
          */
         Severity: "error" | "warning" | "info";
+        /** SignalAnalysis */
+        SignalAnalysis: {
+            /** Ccdf Db */
+            ccdf_db: number[];
+            /** Ccdf Probability */
+            ccdf_probability: number[];
+            config: components["schemas"]["AnalyzerConfig"];
+            /** Envelope */
+            envelope: number[];
+            /** Eye I */
+            eye_i: number[][];
+            /** Eye Q */
+            eye_q: number[][];
+            /** Frequency Hz */
+            frequency_hz: number[];
+            /** Histogram Amplitude */
+            histogram_amplitude: number[];
+            /** Histogram Probability */
+            histogram_probability: number[];
+            /** Instantaneous Frequency Hz */
+            instantaneous_frequency_hz: (number | null)[];
+            /** Measurements */
+            measurements: components["schemas"]["SignalMeasurement"][];
+            /** Notes */
+            notes: string[];
+            /** Psd Dbfs Hz */
+            psd_dbfs_hz: number[];
+            /** Real Signal */
+            real_signal: boolean;
+            /** Reference Error Percent */
+            reference_error_percent?: number[];
+            /** Reference Sha256 */
+            reference_sha256?: string | null;
+            /** Sample Count */
+            sample_count: number;
+            /** Sample Range */
+            sample_range: [
+                number,
+                number
+            ];
+            /** Scatter I */
+            scatter_i: number[];
+            /** Scatter Q */
+            scatter_q: number[];
+            /**
+             * Schema Version
+             * @default signal-analysis-v1
+             * @constant
+             */
+            schema_version: "signal-analysis-v1";
+            source: components["schemas"]["AnalyzerSourceInfo"];
+            /** Source Sha256 */
+            source_sha256: string;
+            /** Spectrogram Dbfs Hz */
+            spectrogram_dbfs_hz: number[][];
+            /** Spectrogram Frequency Hz */
+            spectrogram_frequency_hz: number[];
+            /** Spectrogram Time S */
+            spectrogram_time_s: number[];
+            /** Time I */
+            time_i: number[];
+            /** Time Q */
+            time_q: number[];
+            /** Time S */
+            time_s: number[];
+        };
+        /** SignalMeasurement */
+        SignalMeasurement: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+            /** Value */
+            value: number | null;
+        };
         /**
          * SignalReference
          * @description What the evaluated signal was compared against.
@@ -8933,6 +9275,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkspaceSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analyze_api_v1_signal_analyzer_analyze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyzerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalAnalysis"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sources_api_v1_signal_analyzer_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyzerSourceInfo"][];
+                };
+            };
+        };
+    };
+    upload_api_v1_signal_analyzer_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_api_v1_signal_analyzer_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyzerSourceInfo"];
                 };
             };
             /** @description Validation Error */

@@ -11,6 +11,7 @@ import threading
 import zipfile
 
 import numpy as np
+import scipy
 
 from opendpd.core.splits import contiguous_boundaries
 from opendpd.core.waveforms.generator import synthesize
@@ -91,9 +92,10 @@ def read_signal(ws, identifier) -> GeneratedSignal:
 
 def generate(ws: Workspace, config: GeneratorConfig) -> GeneratedSignal:
     from opendpd.core.waveforms import generator
-    source_hash = sha256_file(Path(generator.__file__))
+    source_hash = hashlib.sha256(b"".join((Path(generator.__file__).parent / name).read_bytes()
+        for name in ("generator.py", "modulation.py", "generator_presets.py"))).hexdigest()
     serialized = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
-    identifier = "sg-" + hashlib.sha256((source_hash + serialized).encode()).hexdigest()
+    identifier = "sg-" + hashlib.sha256((source_hash + np.__version__ + scipy.__version__ + serialized).encode()).hexdigest()
     with _LOCK:
         target = directory(ws, identifier)
         if (target / "manifest.json").is_file():
@@ -110,7 +112,7 @@ def generate(ws: Workspace, config: GeneratorConfig) -> GeneratedSignal:
             download_url=f"/api/v1/signal-generator/signals/{identifier}/download")
         write_json_atomic(target / "manifest.json", result)
         write_json_atomic(target / "provenance.json", {"generator_source_sha256": source_hash,
-            "numpy_version": np.__version__, "physical_measurement": False, "sample_format": "float32 [I,Q]",
+            "numpy_version": np.__version__, "scipy_version": scipy.__version__, "physical_measurement": False, "sample_format": "float32 [I,Q]",
             "coverage": result.coverage, "full_protocol_frames": False, "config": config.model_dump(mode="json")})
         return result
 

@@ -18,6 +18,7 @@ const DatasetsPage = lazy(() => import('@/pages/DatasetsPage').then(m => ({ defa
 const ExperimentsPage = lazy(() => import('@/pages/ExperimentsPage').then(m => ({ default: m.ExperimentsPage })))
 const GalleryPage = lazy(() => import('@/pages/GalleryPage').then(m => ({ default: m.GalleryPage })))
 const SignalGeneratorPage = lazy(() => import('@/pages/SignalGeneratorPage').then(m => ({ default: m.SignalGeneratorPage })))
+const SignalAnalyzerPage = lazy(() => import('@/pages/SignalAnalyzerPage').then(m => ({ default: m.SignalAnalyzerPage })))
 const PALibraryPage = lazy(() => import('@/pages/PALibraryPage').then(m => ({ default: m.PALibraryPage })))
 const NewExperimentPage = lazy(() => import('@/pages/NewExperimentPage').then(m => ({ default: m.NewExperimentPage })))
 const ResultDetailPage = lazy(() => import('@/pages/ResultDetailPage').then(m => ({ default: m.ResultDetailPage })))
@@ -41,6 +42,7 @@ function AppRoutes() {
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
         <Route path="signal-generator" element={<SignalGeneratorPage />} />
+        <Route path="signal-analyzer" element={<SignalAnalyzerPage />} />
         <Route path="pa-library" element={<PALibraryPage />} />
         <Route path="datasets" element={<DatasetsPage />} />
         <Route path="datasets/:datasetId" element={<DatasetDetailPage />} />

@@ -94,6 +94,34 @@ def test_public_signal_generator_is_private_and_bounded(public):
     assert client.post('/api/v1/signal-generator/signals', json={**config, 'n_samples': 1000001}, headers=auth).status_code == 422
 
 
+def test_public_signal_csv_analysis_preserves_isolation_and_upload_limits(public):
+    client, manager, _ = public
+    auth, other = new_session(client), new_session(client)
+    path = '/api/v1/signal-analyzer/upload?filename=iq.csv'
+    data = b'I,Q\n' + b'0.2,0.3\n'*1024
+    uploaded = client.post(path, content=data, headers={**auth, 'Content-Type': 'text/csv'})
+    assert uploaded.status_code == 201, uploaded.text
+    source = uploaded.json()['source']
+    assert client.get('/api/v1/signal-analyzer/sources', headers=other).json() == []
+    request = {'source': source}
+    response = client.post('/api/v1/signal-analyzer/analyze', json=request, headers=auth)
+    assert response.status_code == 200, response.text
+    assert response.json()['sample_count'] == 1024
+    denied = client.post('/api/v1/signal-analyzer/analyze', json=request, headers=other)
+    assert denied.status_code == 409
+    assert str(manager.config.root) not in denied.text
+    assert client.post(path, content=data+b'nan,0\n', headers={**auth, 'Content-Type': 'text/csv'}).status_code == 422
+    assert client.post(path, content=data, headers={**auth, 'Content-Type': 'application/octet-stream'}).status_code == 415
+    assert client.post('/api/v1/signal-analyzer/analyze', json={**request, 'config': {'fft_size': 2**30}}, headers=auth).status_code == 422
+    manager.expensive_requests = manager.config.max_expensive_requests
+    try:
+        assert client.post('/api/v1/signal-analyzer/analyze', json=request, headers=auth).status_code == 429
+        assert client.get('/api/v1/session', headers=auth).status_code == 200
+    finally:
+        manager.expensive_requests = 0
+    assert manager.inflight == 0 and not manager.storage_reserved
+
+
 def test_public_virtual_pa_input_output_and_pairing_are_tenant_scoped(public):
     client, manager, _ = public
     auth, other = new_session(client), new_session(client)

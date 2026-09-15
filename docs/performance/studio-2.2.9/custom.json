@@ -1,0 +1,30 @@
+{
+  "cases": [
+    {
+      "label": "8-PSK",
+      "samples": 32768,
+      "papr_db": 6.9471191678334066
+    },
+    {
+      "label": "Binary FSK",
+      "samples": 32768,
+      "papr_db": 3.9916046548177045e-7
+    },
+    {
+      "label": "Gaussian FSK",
+      "samples": 32768,
+      "papr_db": 3.754976526757708e-7
+    },
+    {
+      "label": "Band-limited noise",
+      "samples": 32768,
+      "papr_db": 9.989319756873343
+    },
+    {
+      "label": "DFT-spread OFDM",
+      "samples": 32768,
+      "papr_db": 8.594135369896428
+    }
+  ],
+  "runtimeErrors": []
+}
