@@ -611,6 +611,278 @@
         "title": "AmTrace",
         "type": "object"
       },
+      "AnalyzerConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "adjacent_offset_hz": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 2000000000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjacent Offset Hz"
+          },
+          "bandwidth_hz": {
+            "default": 20000000.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 2000000000.0,
+            "title": "Bandwidth Hz",
+            "type": "number"
+          },
+          "center_hz": {
+            "default": 0,
+            "title": "Center Hz",
+            "type": "number"
+          },
+          "fft_size": {
+            "default": 4096,
+            "maximum": 16384.0,
+            "minimum": 256.0,
+            "title": "Fft Size",
+            "type": "integer"
+          },
+          "frequency_shift_hz": {
+            "default": 0,
+            "title": "Frequency Shift Hz",
+            "type": "number"
+          },
+          "i_column": {
+            "default": 0,
+            "maximum": 7.0,
+            "minimum": 0.0,
+            "title": "I Column",
+            "type": "integer"
+          },
+          "n_samples": {
+            "default": 262144,
+            "maximum": 1000000.0,
+            "minimum": 256.0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "occupied_percent": {
+            "default": 99,
+            "maximum": 99.99,
+            "minimum": 50.0,
+            "title": "Occupied Percent",
+            "type": "number"
+          },
+          "overlap": {
+            "default": 0.5,
+            "enum": [
+              0,
+              0.5,
+              0.75
+            ],
+            "title": "Overlap"
+          },
+          "q_column": {
+            "default": 1,
+            "maximum": 7.0,
+            "minimum": 0.0,
+            "title": "Q Column",
+            "type": "integer"
+          },
+          "reference_gain_fit": {
+            "default": false,
+            "title": "Reference Gain Fit",
+            "type": "boolean"
+          },
+          "remove_dc": {
+            "default": false,
+            "title": "Remove Dc",
+            "type": "boolean"
+          },
+          "sample_format": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "real",
+              "complex",
+              "iq"
+            ],
+            "title": "Sample Format",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "default": 80000000.0,
+            "maximum": 2000000000.0,
+            "minimum": 1.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "samples_per_symbol": {
+            "default": 8,
+            "maximum": 128.0,
+            "minimum": 2.0,
+            "title": "Samples Per Symbol",
+            "type": "integer"
+          },
+          "start_sample": {
+            "default": 0,
+            "maximum": 1000000000.0,
+            "minimum": 0.0,
+            "title": "Start Sample",
+            "type": "integer"
+          },
+          "symbol_offset": {
+            "default": 0,
+            "maximum": 127.0,
+            "minimum": 0.0,
+            "title": "Symbol Offset",
+            "type": "integer"
+          },
+          "window": {
+            "default": "hann",
+            "enum": [
+              "hann",
+              "hamming",
+              "blackman",
+              "boxcar"
+            ],
+            "title": "Window",
+            "type": "string"
+          }
+        },
+        "title": "AnalyzerConfig",
+        "type": "object"
+      },
+      "AnalyzerRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/AnalyzerConfig"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyzerSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "$ref": "#/components/schemas/AnalyzerSource"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "AnalyzerRequest",
+        "type": "object"
+      },
+      "AnalyzerSource": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "generated",
+              "upload",
+              "dataset",
+              "virtual_pa"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "role": {
+            "default": "input",
+            "enum": [
+              "input",
+              "output"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "source_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "version": {
+            "default": "raw-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "source_id"
+        ],
+        "title": "AnalyzerSource",
+        "type": "object"
+      },
+      "AnalyzerSourceInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidth_hz": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bandwidth Hz"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "complex_columns": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Complex Columns",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "sample_count": {
+            "title": "Sample Count",
+            "type": "integer"
+          },
+          "sample_rate_hz": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate Hz"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AnalyzerSource"
+          }
+        },
+        "required": [
+          "source",
+          "label",
+          "sample_count",
+          "origin"
+        ],
+        "title": "AnalyzerSourceInfo",
+        "type": "object"
+      },
       "Artifact": {
         "additionalProperties": false,
         "properties": {
@@ -788,6 +1060,20 @@
           "file"
         ],
         "title": "Body_upload_api_v1_hardware_reports_upload_post",
+        "type": "object"
+      },
+      "Body_upload_api_v1_signal_analyzer_upload_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_api_v1_signal_analyzer_upload_post",
         "type": "object"
       },
       "BootstrapRequest": {
@@ -4830,6 +5116,20 @@
             "title": "Duration Ms",
             "type": "number"
           },
+          "evm_per_subcarrier_percent": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Evm Per Subcarrier Percent",
+            "type": "array"
+          },
+          "evm_per_symbol_percent": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Evm Per Symbol Percent",
+            "type": "array"
+          },
           "evm_percent": {
             "anyOf": [
               {
@@ -4840,6 +5140,13 @@
               }
             ],
             "title": "Evm Percent"
+          },
+          "evm_subcarrier_indices": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Evm Subcarrier Indices",
+            "type": "array"
           },
           "evm_symbols": {
             "title": "Evm Symbols",
@@ -5015,6 +5322,33 @@
             "title": "Bandwidth Hz",
             "type": "number"
           },
+          "burst_off_samples": {
+            "default": 1024,
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Burst Off Samples",
+            "type": "integer"
+          },
+          "burst_on_samples": {
+            "anyOf": [
+              {
+                "maximum": 1000000.0,
+                "minimum": 16.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Burst On Samples"
+          },
+          "burst_ramp_samples": {
+            "default": 32,
+            "maximum": 65536.0,
+            "minimum": 0.0,
+            "title": "Burst Ramp Samples",
+            "type": "integer"
+          },
           "carrier_frequency_hz": {
             "default": 3500000000.0,
             "maximum": 110000000000.0,
@@ -5105,6 +5439,11 @@
             "title": "Dc Q",
             "type": "number"
           },
+          "dft_spreading": {
+            "default": false,
+            "title": "Dft Spreading",
+            "type": "boolean"
+          },
           "duration_ms": {
             "default": 1,
             "exclusiveMinimum": 0.0,
@@ -5122,6 +5461,20 @@
           "frequency_offset_hz": {
             "default": 0,
             "title": "Frequency Offset Hz",
+            "type": "number"
+          },
+          "fsk_deviation_hz": {
+            "default": 1000000.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000000000.0,
+            "title": "Fsk Deviation Hz",
+            "type": "number"
+          },
+          "gaussian_bt": {
+            "default": 0.5,
+            "maximum": 2.0,
+            "minimum": 0.1,
+            "title": "Gaussian Bt",
             "type": "number"
           },
           "iq_gain_db": {
@@ -5161,6 +5514,16 @@
             "title": "Modulation Order",
             "type": "integer"
           },
+          "multitone_phase": {
+            "default": "random",
+            "enum": [
+              "random",
+              "coherent",
+              "schroeder"
+            ],
+            "title": "Multitone Phase",
+            "type": "string"
+          },
           "n_samples": {
             "default": 131072,
             "maximum": 1000000.0,
@@ -5178,6 +5541,39 @@
             ],
             "title": "Oversampling",
             "type": "integer"
+          },
+          "payload_bits": {
+            "default": "00110101",
+            "maxLength": 4096,
+            "minLength": 1,
+            "pattern": "^[01]+$",
+            "title": "Payload Bits",
+            "type": "string"
+          },
+          "payload_mode": {
+            "default": "random",
+            "enum": [
+              "random",
+              "prbs9",
+              "prbs15",
+              "bits"
+            ],
+            "title": "Payload Mode",
+            "type": "string"
+          },
+          "phase_noise_rms_deg": {
+            "default": 0,
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Phase Noise Rms Deg",
+            "type": "number"
+          },
+          "phase_offset_deg": {
+            "default": 0,
+            "maximum": 360.0,
+            "minimum": -360.0,
+            "title": "Phase Offset Deg",
+            "type": "number"
           },
           "pilot_boost_db": {
             "default": 0,
@@ -5216,6 +5612,18 @@
             "maxLength": 64,
             "title": "Preset Id",
             "type": "string"
+          },
+          "psk_order": {
+            "default": 8,
+            "enum": [
+              2,
+              4,
+              8,
+              16,
+              32
+            ],
+            "title": "Psk Order",
+            "type": "integer"
           },
           "rms": {
             "default": 0.2,
@@ -5306,9 +5714,13 @@
             "enum": [
               "ofdm",
               "qam",
+              "psk",
+              "fsk",
+              "gfsk",
               "tone",
               "multitone",
-              "chirp"
+              "chirp",
+              "noise"
             ],
             "title": "Waveform",
             "type": "string"
@@ -10698,7 +11110,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.8",
+            "default": "2.2.9",
             "title": "Version",
             "type": "string"
           }
@@ -10717,6 +11129,300 @@
         ],
         "title": "Severity",
         "type": "string"
+      },
+      "SignalAnalysis": {
+        "additionalProperties": false,
+        "properties": {
+          "ccdf_db": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ccdf Db",
+            "type": "array"
+          },
+          "ccdf_probability": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ccdf Probability",
+            "type": "array"
+          },
+          "config": {
+            "$ref": "#/components/schemas/AnalyzerConfig"
+          },
+          "envelope": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Envelope",
+            "type": "array"
+          },
+          "eye_i": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Eye I",
+            "type": "array"
+          },
+          "eye_q": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Eye Q",
+            "type": "array"
+          },
+          "frequency_hz": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Frequency Hz",
+            "type": "array"
+          },
+          "histogram_amplitude": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Histogram Amplitude",
+            "type": "array"
+          },
+          "histogram_probability": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Histogram Probability",
+            "type": "array"
+          },
+          "instantaneous_frequency_hz": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Instantaneous Frequency Hz",
+            "type": "array"
+          },
+          "measurements": {
+            "items": {
+              "$ref": "#/components/schemas/SignalMeasurement"
+            },
+            "title": "Measurements",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "psd_dbfs_hz": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Psd Dbfs Hz",
+            "type": "array"
+          },
+          "real_signal": {
+            "title": "Real Signal",
+            "type": "boolean"
+          },
+          "reference_error_percent": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Reference Error Percent",
+            "type": "array"
+          },
+          "reference_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Sha256"
+          },
+          "sample_count": {
+            "title": "Sample Count",
+            "type": "integer"
+          },
+          "sample_range": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Sample Range",
+            "type": "array"
+          },
+          "scatter_i": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Scatter I",
+            "type": "array"
+          },
+          "scatter_q": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Scatter Q",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "signal-analysis-v1",
+            "default": "signal-analysis-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AnalyzerSourceInfo"
+          },
+          "source_sha256": {
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "spectrogram_dbfs_hz": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Spectrogram Dbfs Hz",
+            "type": "array"
+          },
+          "spectrogram_frequency_hz": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Spectrogram Frequency Hz",
+            "type": "array"
+          },
+          "spectrogram_time_s": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Spectrogram Time S",
+            "type": "array"
+          },
+          "time_i": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time I",
+            "type": "array"
+          },
+          "time_q": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time Q",
+            "type": "array"
+          },
+          "time_s": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time S",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source",
+          "config",
+          "source_sha256",
+          "sample_range",
+          "sample_count",
+          "real_signal",
+          "measurements",
+          "frequency_hz",
+          "psd_dbfs_hz",
+          "time_s",
+          "time_i",
+          "time_q",
+          "envelope",
+          "instantaneous_frequency_hz",
+          "scatter_i",
+          "scatter_q",
+          "ccdf_db",
+          "ccdf_probability",
+          "histogram_amplitude",
+          "histogram_probability",
+          "spectrogram_time_s",
+          "spectrogram_frequency_hz",
+          "spectrogram_dbfs_hz",
+          "eye_i",
+          "eye_q",
+          "notes"
+        ],
+        "title": "SignalAnalysis",
+        "type": "object"
+      },
+      "SignalMeasurement": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "unit": {
+            "default": "",
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value"
+        ],
+        "title": "SignalMeasurement",
+        "type": "object"
       },
       "SignalReference": {
         "additionalProperties": false,
@@ -12888,7 +13594,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.8"
+    "version": "2.2.9"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -16655,6 +17361,113 @@
         "summary": "Settings Put",
         "tags": [
           "settings"
+        ]
+      }
+    },
+    "/api/v1/signal-analyzer/analyze": {
+      "post": {
+        "operationId": "analyze_api_v1_signal_analyzer_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalAnalysis"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze",
+        "tags": [
+          "signal analyzer"
+        ]
+      }
+    },
+    "/api/v1/signal-analyzer/sources": {
+      "get": {
+        "operationId": "sources_api_v1_signal_analyzer_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnalyzerSourceInfo"
+                  },
+                  "title": "Response Sources Api V1 Signal Analyzer Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sources",
+        "tags": [
+          "signal analyzer"
+        ]
+      }
+    },
+    "/api/v1/signal-analyzer/upload": {
+      "post": {
+        "operationId": "upload_api_v1_signal_analyzer_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_api_v1_signal_analyzer_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzerSourceInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload",
+        "tags": [
+          "signal analyzer"
         ]
       }
     },

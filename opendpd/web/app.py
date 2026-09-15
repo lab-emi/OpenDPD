@@ -154,7 +154,7 @@ class PublicBoundary:
             reject(429, 'workspace_busy', 'Wait for the current workspace change to finish; cancellation remains available.')
         if expensive and self.manager.expensive_requests >= self.config.max_expensive_requests:
             reject(429, 'compute_busy', 'Shared analysis capacity is busy; try again shortly.')
-        storage = self.config.max_workspace_bytes if expensive and mutation else 0
+        storage = self.config.max_workspace_bytes if expensive and mutation and path != '/signal-analyzer/analyze' else 0
         if storage:
             # Reserve a whole bounded workspace before receiving a writer's
             # body; concurrent tenants cannot each spend the same free tmpfs.
@@ -168,7 +168,7 @@ class PublicBoundary:
         if tenant:
             tenant.inflight += 1
         try:
-            if path == '/datasets/upload' and method == 'POST':
+            if path in ('/datasets/upload', '/signal-analyzer/upload') and method == 'POST':
                 await self.upload_csv(request, tenant, scope, receive, send)
                 return
             data = b""
@@ -242,6 +242,8 @@ class PublicBoundary:
                 return
             if method in {"POST", "PUT"}:
                 check_body(path, body)
+            if path == '/signal-analyzer/analyze' and method == 'POST':
+                self.manager.rate_limit('signal-analysis:' + tenant.ip_key, 36)
             if path == '/signal-generator/signals' and method == 'POST':
                 from opendpd.schemas.signal_generator import GeneratorConfig
                 try:
@@ -382,6 +384,9 @@ class PublicBoundary:
 
     async def upload_csv(self, request, tenant, scope, receive, send):
         from opendpd.services.csv_upload import MAX_UPLOAD_BYTES, CsvUploadRejected, admit_upload, check_filename, quarantine_path
+        signal_upload = request.url.path.endswith('/signal-analyzer/upload')
+        if signal_upload:
+            from opendpd.services.signal_analyzer import admit_signal_upload
         if tenant.uploading:
             reject(429, 'upload_busy', 'Wait for the current CSV upload to finish.')
         self.manager.rate_limit('csv-upload:' + tenant.ip_key, 6)
@@ -398,10 +403,10 @@ class PublicBoundary:
         path = None
         try:
             used = await asyncio.to_thread(directory_bytes, tenant.root)
-            if used + MAX_UPLOAD_BYTES > self.config.max_workspace_bytes:
+            if used + (MAX_UPLOAD_BYTES + 34_000_000 if signal_upload else MAX_UPLOAD_BYTES) > self.config.max_workspace_bytes:
                 reject(413, 'workspace_limit', 'Temporary workspace storage is full.')
             ws = tenant.app.state.ws
-            if len(list((ws.imports_dir / 'uploads').glob('*.csv'))) >= 4:
+            if not signal_upload and len(list((ws.imports_dir / 'uploads').glob('*.csv'))) >= 4:
                 reject(429, 'upload_limit', 'This workspace already has four uploaded CSV files.')
             path = quarantine_path(ws)
 
@@ -421,13 +426,13 @@ class PublicBoundary:
                 reject(401, 'session_expired', 'The temporary workspace expired. Upload deleted.')
             # Shield validation from request cancellation: wait for the bounded
             # scan before cleanup so no background thread can publish afterward.
-            scan = asyncio.create_task(asyncio.to_thread(admit_upload, ws, path))
+            scan = asyncio.create_task(asyncio.to_thread(admit_signal_upload if signal_upload else admit_upload, ws, path))
             try:
                 result = await asyncio.shield(scan)
             except asyncio.CancelledError:
                 await scan
                 raise
-            await JSONResponse(result, status_code=201)(scope, receive, send)
+            await JSONResponse(result.model_dump(mode='json') if signal_upload else result, status_code=201)(scope, receive, send)
         except CsvUploadRejected as exc:
             reject(422, 'csv_rejected', str(exc))
         except asyncio.TimeoutError:

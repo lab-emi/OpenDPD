@@ -71,6 +71,7 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
     <Tabs value={tab} onChange={(_, value: string) => setTab(value)} variant="scrollable" scrollButtons="auto" aria-label={t('generator.visualizations')}>
       <Tab value="overview" label={t('generator.overview')} />
       <Tab value="allocation" label={t('generator.allocation')} disabled={!allocations.length} />
+      <Tab value="evm" label={t('generator.evmTrends')} disabled={!a.evm_per_symbol_percent?.length} />
       <Tab value="metrics" label={t('generator.metrics')} />
     </Tabs>
     {tab === 'overview' && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'repeat(2, minmax(0, 1fr))' }, gap: 1.5 }}>
@@ -83,13 +84,18 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
       ]} layout={{ ...legendSpace, xaxis: axis('µs'), yaxis: axis(t('generator.amplitude')) }} /><Typography variant="caption" color="text.secondary">{t('generator.timeHelp', { count: a.time_us.length })}</Typography></Paper>
       <Paper sx={{ p: 1.5, minWidth: 0 }}>{a.constellation_i.length ? <PlotlyChart title={t('generator.constellation')} height={270} viewKey={result.signal_id} traces={[
         { x: a.reference_i, y: a.reference_q, mode: 'markers', name: t('generator.reference'), marker: { size: 7, opacity: .4, color: PALETTE[1], symbol: 'cross' } },
-        { x: a.constellation_i, y: a.constellation_q, mode: 'markers', name: t(result.config.waveform === 'ofdm' ? 'generator.recovered' : 'generator.transmitted'), marker: { size: 4, opacity: .65, color: PALETTE[0] } },
+        { x: a.constellation_i, y: a.constellation_q, mode: 'markers', name: t('generator.recovered'), marker: { size: 4, opacity: .65, color: PALETTE[0] } },
       ]} layout={{ ...legendSpace, xaxis: axis('I'), yaxis: { ...axis('Q'), scaleanchor: 'x', scaleratio: 1 } }} /> : <Stack sx={{ minHeight: 270, justifyContent: 'center', p: 2 }}><Typography variant="h3">{t('generator.constellation')}</Typography><Typography color="text.secondary">{t('generator.noConstellation')}</Typography></Stack>}
-        <Typography variant="caption" color="text.secondary">{t(result.config.waveform === 'qam' ? 'generator.qamConstellationHelp' : 'generator.constellationHelp')}</Typography></Paper>
+        <Typography variant="caption" color="text.secondary">{t(['qam', 'psk'].includes(result.config.waveform) ? 'generator.qamConstellationHelp' : 'generator.constellationHelp')}</Typography></Paper>
       <Paper sx={{ p: 1.5, minWidth: 0 }}><PlotlyChart title={t('generator.ccdf')} height={270} viewKey={result.signal_id} traces={[{ x: ccdf.map(p => p.x), y: ccdf.map(p => p.y), name: 'CCDF', mode: 'lines+markers', marker: { size: 2, color: PALETTE[2] }, line: { color: PALETTE[2], width: 2 } }]} layout={{ xaxis: axis(t('generator.ccdfAxis')), yaxis: axis('log₁₀ Pr(P / Pavg > x)'), showlegend: false }} />
         <Typography variant="caption" color="text.secondary">{t('generator.ccdfHelp')}</Typography></Paper>
     </Box>}
     {tab === 'allocation' && <Paper sx={{ p: 2, minWidth: 0 }}><PlotlyChart title={t('generator.allocation')} height={360} viewKey={result.signal_id} traces={allocations} layout={{ xaxis: axis(t('generator.binIndex')), yaxis: axis(t('generator.channel')), showlegend: false }} /><Typography variant="body2" color="text.secondary">{t('generator.allocationHelp')}</Typography></Paper>}
+    {tab === 'evm' && <Stack spacing={1.5}>
+      <Alert severity="info">{t('generator.evmTrendHelp')}</Alert>
+      <Paper sx={{ p: 2 }}><PlotlyChart title={t('generator.evmSymbols')} height={290} viewKey={result.signal_id} traces={[{ x: (a.evm_per_symbol_percent ?? []).map((_, i) => i), y: a.evm_per_symbol_percent ?? [], mode: 'lines+markers' }]} layout={{ showlegend: false, xaxis: axis(t('generator.symbols')), yaxis: axis('EVM (%)') }} /></Paper>
+      <Paper sx={{ p: 2 }}><PlotlyChart title={t('generator.evmCarriers')} height={290} viewKey={result.signal_id} traces={[{ x: a.evm_subcarrier_indices ?? [], y: a.evm_per_subcarrier_percent ?? [] }]} layout={{ showlegend: false, xaxis: axis(t('generator.binIndex')), yaxis: axis('EVM (%)') }} /></Paper>
+    </Stack>}
     {tab === 'metrics' && <Stack spacing={2}>
       <Paper><TableContainer><Table size="small"><TableBody>{metrics.map(([key, value]) => <TableRow key={key}><TableCell component="th">{key}</TableCell><TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{value}</TableCell></TableRow>)}</TableBody></Table></TableContainer></Paper>
       <Typography variant="h3">{t('generator.scope')}</Typography>

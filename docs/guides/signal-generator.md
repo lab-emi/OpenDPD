@@ -1,7 +1,7 @@
 # Studio Signal Generator
 
 Open **Signal Generator** in the sidebar, or choose **Get Started → Signal Generator**.
-The first visit generates a private 5G NR numerology preview. Choose one of the five
+The first visit selects a private 5G NR numerology configuration; generation starts only when requested. Choose one of the five
 signal families, select a preset, and press **Generate & preview**. Parameter edits
 mark the current plots stale and disable waveform export and the next step until
 generation succeeds. Returning to the tab restores the selected input. The result
@@ -24,7 +24,7 @@ not complete protocol implementations or certified reference test models.
 | Wi-Fi 6 | 20 / 40 / 80 / 160 MHz | 78.125 kHz spacing, 0.8 µs guard interval, up to 1024-QAM |
 | Wi-Fi 7 | 20 / 40 / 80 / 160 / 320 MHz | 78.125 kHz spacing, up to 4096-QAM |
 | Wi-Fi 8 | 80 / 160 / 320 MHz | Experimental OFDM numerology profile; generic allocations and pilots |
-| Custom | OFDM/OFDMA, single-carrier QAM/PSK, single tone, multitone, chirp | Fully editable baseband parameters |
+| Custom | OFDM/OFDMA, DFT-spread OFDM, QAM, PSK, FSK/GFSK, noise, tone, multitone, chirp | Fully editable baseband parameters |
 
 OFDM payload symbols are uncoded and continuous. Pilots are generic seeded BPSK,
 including when their bin positions are explicitly specified. Synchronization, FEC,
@@ -50,7 +50,7 @@ As of 2026-09-13, 802.11bn remains a draft; its development status is tracked by
   power. Counts include pilots. Channel gaps are specified in FFT bins. These are
   users within one RF band, not separate RF carriers for adjacent-channel metrics.
 - Per-channel pilot comb, explicit signed carrier indices, or no pilots; pilot boost.
-- RRC QAM/PSK pulse shaping, samples per symbol, roll-off and filter half-span.
+- RRC QAM/PSK pulse shaping, samples per symbol, roll-off and total filter span.
 - Tone frequency, multitone count, and a linear chirp over the declared bandwidth.
 - Frequency offset, I gain mismatch, Q phase mismatch, I/Q DC offsets, envelope
   clipping and independent white Gaussian noise.
@@ -80,8 +80,7 @@ plot, with empirical resolution 1/N.
 OFDM constellation and diagnostic reference EVM use data carriers from up to the
 first 16 complete symbols. The FFT receiver uses the known generation normalization;
 it does not fit gain, phase, delay, or equalization. A capture with no complete symbol
-has no reference EVM. Single-carrier constellation shows transmitted symbols before
-RRC filtering and impairments, not a receiver estimate. Incomplete final symbols are
+has no reference EVM. Single-carrier constellation uses matched RRC filtering at known symbol timing, excluding edge transients. Finite-span ISI and impairments remain visible. Incomplete final symbols are
 retained to preserve the exact requested sample count and disclosed in metadata.
 
 ## Export and training
@@ -89,9 +88,9 @@ retained to preserve the exact requested sample count and disclosed in metadata.
 **Save configuration** downloads JSON; **Load configuration** validates it against
 the server contract before applying it. **Export I/Q + configuration** contains
 `iq.csv` (I,Q), `iq.npy` (float32 N×2), configuration, measurements, source hash,
-NumPy version and scope notes. CSV float32 values round-trip exactly. Seeded
+NumPy/SciPy versions and scope notes. CSV float32 values round-trip exactly. Seeded
 regeneration requires the recorded configuration, generator implementation and
-numeric environment. Generated records live privately under `signals/sg-<sha>/`
+numeric environment. Numerical dependency versions participate in the signal identity. Generated records live privately under `signals/sg-<sha>/`
 inside the workspace.
 
 **Download PA input CSV** and **Download input metadata JSON** are separate actions.
@@ -123,7 +122,7 @@ transmitter, GitHub submission, or email is activated by generating a waveform.
 
 ## Verification
 
-Numerical tests cover all 20 presets, exact sample counts, one-millisecond NR CP
+Numerical tests cover all 25 presets, exact sample counts, one-millisecond NR CP
 timing, FFT allocations, empty bins, deterministic impairments, analytic single-tone
 PAPR, invalid parameters, export round trips and dataset provenance. API tests cover
 authentication, CSRF, host feature gating and per-version test counts. Hosted tests
@@ -135,7 +134,7 @@ custom two-channel OFDMA with explicit pilots and noise, ZIP export, dataset cre
 and real CPU PA/DPD training and testing. These checks validate the software workflow;
 they do not constitute independent standards conformance or physical RF validation.
 
-## Studio 2.2.5 preview
+## Studio 2.2.9 preview
 
 ![PA input waveform and its independent PSD](../../pics/studio-signal-generator.png)
 
@@ -148,3 +147,19 @@ Opening the generator no longer creates a saved default waveform. Choose a prese
 **Use the same settings for all channels** is checked by default for equal allocations. One set of subcarrier-count, modulation and power fields then controls every channel; a newly added channel inherits it. Uncheck to edit those parameters independently. Importing unequal channel settings keeps them independent. Re-enabling sharing applies channel 1's settings to every channel. The number of channels remains visible. FFT timing, cyclic prefix and the global pilot-bin allocation share the OFDM grid.
 
 Configuration JSON records the sharing choice together with every channel's resolved settings. Generated CSV/metadata downloads and the next-step PA Library button are above advanced parameters.
+
+## Repeatable payloads and envelope controls (2.2.9)
+
+Choose seeded random bits, PRBS9/PRBS15 with all-ones initial state, or an editable repeating bit sequence of up to 4,096 digits. Bits are grouped most-significant first into Gray-labeled QAM/PSK symbols. Payload and generic pilot sequences are distinct. One seed does not specify a protocol packet or a coded transport block.
+
+Custom choices add 8-PSK (editable to 2/4/8/16/32-PSK), binary continuous-phase FSK, Gaussian FSK with editable BT, band-limited complex noise and DFT-spread OFDM. DFT spreading operates separately on each channel, requires no pilots and does not implement uplink reference-signal mapping. Multitone phase can be random, coherent or quadratic (Schroeder).
+
+Burst envelopes repeat on/idle intervals with optional raised-cosine ramps. The underlying payload remains continuous. RMS is normalized before gating, so idle samples reduce the measured mean power; DC offsets and noise are added after gating. Constant phase rotation and independent Gaussian phase jitter precede IQ mismatch. Phase jitter is not a frequency-dependent oscillator noise mask.
+
+RRC **span** denotes the total span: `span × samples_per_symbol + 1` taps. This corrects the previous half-span interpretation. Source identities include the generator, modulation and preset implementations, so regeneration produces a new record. Existing saved waveforms remain readable.
+
+**EVM trends** shows errors by OFDM symbol and data subcarrier from at most 16 complete symbols. It uses the exact known transmitted grid without phase/gain fitting; these diagnostic values are not conformance measurements.
+
+**Open in Signal Analyzer** sends the saved input directly to the [analysis workspace](signal-analyzer.md) for configurable PSD, spectrogram, amplitude statistics, eyes, aligned reference errors and report exports.
+
+![Custom signal controls](../../pics/studio-signal-generator-custom.png)

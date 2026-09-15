@@ -129,7 +129,7 @@ async function request<T>(method: 'GET' | 'POST' | 'PUT', path: string, body?: u
 async function upload<T>(path: string, form: FormData): Promise<T> {
   if (WEB_MODE) {
     const file = form.get('file')
-    if (path !== '/datasets/upload' || !(file instanceof File) || !/\.csv$/i.test(file.name)) throw new ApiError(415, 'csv_required', 'Only CSV dataset uploads are accepted')
+    if (!['/datasets/upload', '/signal-analyzer/upload'].includes(path) || !(file instanceof File) || !/\.csv$/i.test(file.name)) throw new ApiError(415, 'csv_required', 'Only CSV signal or dataset uploads are accepted')
     if (file.size > 25 * 1024 * 1024) throw new ApiError(413, 'payload_too_large', 'CSV files must be at most 25 MiB')
     const session = bearerToken()
     const response = await fetchApi(`${API}${path}?filename=${encodeURIComponent(file.name)}`, {

@@ -6,6 +6,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import { analyzerLink } from '@/api/signalAnalyzer'
 import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
@@ -204,6 +205,7 @@ function Library({ models }: { models: VirtualPA[] }) {
     {preview && <>
       <Paper sx={{ p: 2.5 }}><Stack spacing={2}>
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+          <Button variant="outlined" endIcon={<ArrowForwardIcon />} onClick={() => navigate(analyzerLink('virtual_pa', preview.simulation_id, 'output'))}>{t('analyzer.open')}</Button>
           <Button startIcon={<DownloadIcon />} variant="outlined" disabled={downloading} onClick={() => download(preview.output_csv_url)}>{t('paLibrary.outputCsv')}</Button>
           <Button startIcon={<DownloadIcon />} variant="outlined" disabled={downloading} onClick={() => download(preview.paired_csv_url)}>{t('paLibrary.pairedCsv')}</Button>
           <Button startIcon={<DownloadIcon />} variant="outlined" disabled={downloading} onClick={() => download(preview.metadata_url)}>{t('paLibrary.metadata')}</Button>

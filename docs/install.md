@@ -1,6 +1,6 @@
 # Installation
 
-[Use the hosted Studio](https://opendpd.com/studio/) without installation, or run OpenDPD **2.2.8** locally. Python 3.12 is the recommended starting point; the compute suite also covers 3.10–3.13.
+[Use the hosted Studio](https://opendpd.com/studio/) without installation, or run OpenDPD **2.2.9** locally. Python 3.12 is the recommended starting point; the compute suite also covers 3.10–3.13.
 
 ## Install uv
 
@@ -26,7 +26,7 @@ These commands work on macOS, Linux and Windows; activation is unnecessary becau
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.8" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.2.9" --torch-backend=auto
 uv run --no-project --python .venv opendpd doctor
 uv run --no-project --python .venv opendpd gui
 ```
@@ -76,7 +76,7 @@ A browser-open failure is nonfatal: Studio continues serving its URL. The launch
 Standard pip installs all Python dependencies too:
 
 ```sh
-python -m pip install "opendpd==2.2.8"
+python -m pip install "opendpd==2.2.9"
 opendpd gui
 ```
 

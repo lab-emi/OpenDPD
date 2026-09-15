@@ -86,3 +86,7 @@ Virtual PA equations and result metric formulas use local LaTeX rendering. Click
 ## Server load
 
 Open **Server load** to check active sessions, running/queued jobs and CPU/RAM/GPU usage. The public app separates its API virtual machine from the compute host. Values refresh every five seconds while the page is visible; unavailable values appear as a dash. See [server load and cleanup](../guides/server-load.md) for the counting rules.
+
+## Inspect an individual signal
+
+Open **Signal Analyzer** from the sidebar or use **Open in Signal Analyzer** on a generated input, PA output or dataset. Upload real or complex CSV, confirm sample rate, choose a contiguous sample range and press **Analyze signal**. See the [Signal Analyzer guide](../guides/signal-analyzer.md) for measurement settings and JSON/PSD exports. Analysis alone does not create paired PA training data.

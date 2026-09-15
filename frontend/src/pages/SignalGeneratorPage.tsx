@@ -30,6 +30,7 @@ import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import { api, downloadFile } from '@/api/client'
+import { analyzerLink } from '@/api/signalAnalyzer'
 import { useGenerateSignal, useGeneratedSignal, useGeneratorPresets, type GeneratedSignal, type GeneratorConfig, type GeneratorPreset } from '@/api/signalGenerator'
 import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 import { SignalGeneratorPlots } from '@/components/SignalGeneratorPlots'
@@ -110,11 +111,15 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       </ButtonBase>)}
     </Box>
     <Typography variant="body2" color="text.secondary">{t(family === 'wifi8' ? 'generator.wifi8Scope' : 'generator.scopeHelp')}</Typography>
+    {family === 'custom' && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,minmax(0,1fr))', md: 'repeat(5,minmax(0,1fr))' }, gap: 1 }}>
+      {presets.filter(p => p.family === 'custom').map(entry => <Button key={entry.preset_id} variant={entry.preset_id === config.preset_id ? 'contained' : 'outlined'} disabled={generate.isPending} onClick={() => select(entry)} sx={{ minHeight: 52 }}>{entry.label}</Button>)}
+    </Box>}
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '350px minmax(0, 1fr)' }, alignItems: 'start', gap: 2.5 }}>
       <Stack spacing={1.5} component="fieldset" disabled={generate.isPending} sx={{ m: 0, p: 0, border: 0, minWidth: 0 }}>
         {result && <Paper sx={{ p: 2 }}><Stack spacing={1.5}><Typography variant="h3">{t('generator.next')}</Typography>
           <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
           <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(result.signal_id)}>{t('paInput.next')}</Button>
+          <Button variant="outlined" endIcon={<ArrowForwardIcon />} disabled={stale} component={RouterLink} to={analyzerLink('generated', result.signal_id)}>{t('analyzer.open')}</Button>
           <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.csv')}</Button>
           <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile('/api/v1/signal-generator/signals/' + result.signal_id + '/metadata.json').catch(setError).finally(() => setDownloading(false)) }}>{t('paInput.metadata')}</Button>
           <Button variant="outlined" startIcon={<DownloadIcon />} disabled={stale || downloading} onClick={() => { setDownloading(true); void downloadFile(result.download_url).catch(setError).finally(() => setDownloading(false)) }}>{t('generator.exportIq')}</Button>
@@ -141,8 +146,13 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
             {numeric('bandwidth_hz', 'generator.bandwidth', 'MHz', 1e6)}
             {numeric('carrier_frequency_hz', 'generator.carrier', 'GHz', 1e9, t('generator.carrierHelp'))}
             {numeric('rms', 'generator.rms')}{numeric('seed', 'generator.seed')}
+            {['ofdm', 'qam', 'psk', 'fsk', 'gfsk'].includes(config.waveform) && <>
+              <TextField select label={t('generator.payload')} value={config.payload_mode} onChange={e => change('payload_mode', e.target.value as GeneratorConfig['payload_mode'])}>{(['random', 'prbs9', 'prbs15', 'bits'] as const).map(v => <MenuItem key={v} value={v}>{t(`generator.payload.${v}`)}</MenuItem>)}</TextField>
+              {config.payload_mode === 'bits' && <TextField label={t('generator.payloadBits')} value={config.payload_bits} onChange={e => change('payload_bits', e.target.value)} helperText={t('generator.payloadHelp')} error={!/^[01]{1,4096}$/.test(config.payload_bits)} multiline minRows={2} />}
+            </>}
             {ofdm && <>
               <Typography variant="h3">OFDM / OFDMA</Typography>
+              <FormControlLabel label={t('generator.dftSpreading')} control={<Switch checked={config.dft_spreading} onChange={(_, value) => setConfig(c => ({ ...c, dft_spreading: value, ...(value ? { pilot_mode: 'none' } : {}) }))} />} />
               {numeric('fft_size', 'generator.fft')}
               <NumberField label="generator.spacing" unit="kHz" value={spacing / 1000} onChange={value => change('sample_rate_hz', value * 1000 * config.fft_size * config.oversampling)} help={t('generator.spacingHelp')} />
               <TextField select label={t('generator.oversampling')} value={config.oversampling} onChange={e => change('oversampling', Number(e.target.value) as GeneratorConfig['oversampling'])} helperText={t('generator.oversamplingHelp')}>{[1, 2, 4, 8].map(n => <MenuItem key={n} value={n}>{n}×</MenuItem>)}</TextField>
@@ -166,13 +176,18 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
               {config.pilot_mode === 'explicit' && <TextField label={t('generator.pilotIndices')} value={pilotText} helperText={t('generator.pilotIndicesHelp')} onChange={e => { setPilotText(e.target.value); change('pilot_indices', e.target.value.trim() ? e.target.value.trim().split(/[\s,]+/).map(Number) : []) }} />}
               {config.pilot_mode !== 'none' && numeric('pilot_boost_db', 'generator.pilotBoost', 'dB')}
             </>}
-            {config.waveform === 'qam' && <>
-              <TextField select label={t('generator.modulation')} value={config.modulation_order} onChange={e => change('modulation_order', Number(e.target.value) as GeneratorConfig['modulation_order'])}>{ORDERS.map(m => <MenuItem key={m} value={m}>{modulation(m)}</MenuItem>)}</TextField>
+            {['qam', 'psk'].includes(config.waveform) && <>
+              {config.waveform === 'qam' ? <TextField select label={t('generator.modulation')} value={config.modulation_order} onChange={e => change('modulation_order', Number(e.target.value) as GeneratorConfig['modulation_order'])}>{ORDERS.map(m => <MenuItem key={m} value={m}>{modulation(m)}</MenuItem>)}</TextField> : <TextField select label={t('generator.modulation')} value={config.psk_order} onChange={e => change('psk_order', Number(e.target.value) as GeneratorConfig['psk_order'])}>{[2, 4, 8, 16, 32].map(v => <MenuItem key={v} value={v}>{v}-PSK</MenuItem>)}</TextField>}
               {numeric('samples_per_symbol', 'generator.samplesPerSymbol')}{numeric('rrc_rolloff', 'generator.rolloff')}{numeric('rrc_span_symbols', 'generator.rrcSpan')}
             </>}
+            {['fsk', 'gfsk'].includes(config.waveform) && <>{numeric('samples_per_symbol', 'generator.samplesPerSymbol')}{numeric('fsk_deviation_hz', 'generator.fskDeviation', 'MHz', 1e6)}{config.waveform === 'gfsk' && numeric('gaussian_bt', 'generator.gaussianBt')}</>}
             {config.waveform === 'tone' && numeric('tone_frequency_hz', 'generator.toneFrequency', 'MHz', 1e6)}
-            {config.waveform === 'multitone' && numeric('tone_count', 'generator.tones')}
+            {config.waveform === 'multitone' && <>{numeric('tone_count', 'generator.tones')}<TextField select label={t('generator.tonePhase')} value={config.multitone_phase} onChange={e => change('multitone_phase', e.target.value as GeneratorConfig['multitone_phase'])}>{(['random', 'coherent', 'schroeder'] as const).map(v => <MenuItem key={v} value={v}>{t(`generator.tonePhase.${v}`)}</MenuItem>)}</TextField></>}
+            <Typography variant="h3">{t('generator.burst')}</Typography>
+            <FormControlLabel label={t('generator.burstEnable')} control={<Switch checked={config.burst_on_samples !== null} onChange={(_, value) => change('burst_on_samples', value ? 4096 : null)} />} />
+            {config.burst_on_samples !== null && <>{numeric('burst_on_samples', 'generator.burstOn')}{numeric('burst_off_samples', 'generator.burstOff')}{numeric('burst_ramp_samples', 'generator.burstRamp')}<Typography variant="caption">{t('generator.burstHelp')}</Typography></>}
             <Typography variant="h3">{t('generator.impairments')}</Typography>
+            {numeric('phase_offset_deg', 'generator.phaseOffset', '°')}{numeric('phase_noise_rms_deg', 'generator.phaseNoise', '°', 1, t('generator.phaseNoiseHelp'))}
             {numeric('frequency_offset_hz', 'generator.frequencyOffset', 'kHz', 1000)}
             <Grid container spacing={1.5}><Grid size={6}>{numeric('iq_gain_db', 'generator.iqGain', 'dB')}</Grid><Grid size={6}>{numeric('iq_phase_deg', 'generator.iqPhase', '°')}</Grid></Grid>
             <Grid container spacing={1.5}><Grid size={6}>{numeric('dc_i', 'generator.dcI')}</Grid><Grid size={6}>{numeric('dc_q', 'generator.dcQ')}</Grid></Grid>

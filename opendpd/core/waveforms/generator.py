@@ -10,6 +10,7 @@ import numpy as np
 from scipy import signal
 
 from opendpd.schemas.signal_generator import GeneratorAnalysis, GeneratorConfig
+from .modulation import Payload, qam_symbols, psk_symbols
 
 
 def qam(rng, order, shape):
@@ -58,7 +59,7 @@ def cp_length(config, index):
 
 
 def rrc_taps(sps, rolloff, span):
-    time = np.arange(-span*sps, span*sps+1) / sps
+    time = np.arange(-span*sps//2, span*sps//2+1) / sps
     if rolloff == 0:
         taps = np.sinc(time)
     else:
@@ -77,6 +78,7 @@ def synthesize(config: GeneratorConfig):
     """Return exact length complex64 IQ plus bounded diagnostic data."""
     seeds = np.random.SeedSequence(config.seed).spawn(2)
     rng, noise = [np.random.Generator(np.random.PCG64(s)) for s in seeds]
+    payload = Payload(config, rng)
     n = config.sample_count
     fft = config.fft_size * config.oversampling
     refs, positions, cp_lengths = [], [], []
@@ -90,7 +92,10 @@ def synthesize(config: GeneratorConfig):
         while cursor < n:
             grid = np.zeros(fft, dtype=np.complex128)
             for bins, order, power in zip(channels, config.channel_modulations, config.channel_power_db):
-                grid[bins % fft] = qam(rng, order, len(bins)) * 10**(power/20)
+                values = qam_symbols(payload, order, len(bins))
+                if config.dft_spreading:
+                    values = np.fft.fft(values) / np.sqrt(len(values))
+                grid[bins % fft] = values * 10**(power/20)
                 channel_pilots = np.intersect1d(pilots, bins)
                 grid[channel_pilots % fft] = qam(rng, 2, len(channel_pilots)) * 10**((power+config.pilot_boost_db)/20)
             block = np.fft.ifft(grid) * fft / np.sqrt(len(active))
@@ -109,9 +114,11 @@ def synthesize(config: GeneratorConfig):
             cursor += len(symbol)
             index += 1
         x = np.concatenate(blocks)
-    elif config.waveform == "qam":
+    elif config.waveform in ("qam", "psk"):
         sps, span = config.samples_per_symbol, config.rrc_span_symbols
-        symbols = qam(rng, config.modulation_order, math.ceil(n/sps) + 4*span)
+        mapper = psk_symbols if config.waveform == "psk" else qam_symbols
+        order = config.psk_order if config.waveform == "psk" else config.modulation_order
+        symbols = mapper(payload, order, math.ceil(n/sps) + 4*span)
         up = np.zeros(len(symbols)*sps, dtype=complex)
         up[::sps] = symbols
         filtered = signal.fftconvolve(up, rrc_taps(sps, config.rrc_rolloff, span), mode="same")
@@ -122,15 +129,46 @@ def synthesize(config: GeneratorConfig):
         time = np.arange(n) / config.sample_rate_hz
         if config.waveform == "tone":
             x = np.exp(2j*np.pi*config.tone_frequency_hz*time)
+        elif config.waveform in ("fsk", "gfsk"):
+            levels = 2 * payload.integers(2, math.ceil(n/config.samples_per_symbol) + 16) - 1
+            frequency = np.repeat(levels, config.samples_per_symbol).astype(float)
+            if config.waveform == "gfsk":
+                t = np.arange(-4*config.samples_per_symbol, 4*config.samples_per_symbol + 1) / config.samples_per_symbol
+                taps = np.exp(-2 * np.pi**2 * config.gaussian_bt**2 * t**2 / np.log(2))
+                frequency = signal.fftconvolve(frequency, taps / np.sum(taps), mode="same")
+            frequency = frequency[8*config.samples_per_symbol:8*config.samples_per_symbol+n]
+            phase = np.r_[0., np.cumsum(frequency[:-1])] * (2*np.pi*config.fsk_deviation_hz/config.sample_rate_hz)
+            x = np.exp(1j*phase)
+            complete, trailing = divmod(n, config.samples_per_symbol)
+        elif config.waveform == "noise":
+            grid = np.zeros(n, dtype=complex)
+            bins = np.fft.fftfreq(n, 1/config.sample_rate_hz)
+            mask = abs(bins) <= config.bandwidth_hz/2
+            grid[mask] = rng.standard_normal(np.count_nonzero(mask)) + 1j*rng.standard_normal(np.count_nonzero(mask))
+            x = np.fft.ifft(grid)
         elif config.waveform == "multitone":
             x = np.zeros(n, dtype=complex)
-            for frequency, phase in zip(np.linspace(-config.bandwidth_hz/2, config.bandwidth_hz/2, config.tone_count), rng.uniform(-np.pi, np.pi, config.tone_count)):
+            k = np.arange(config.tone_count)
+            phases = (rng.uniform(-np.pi, np.pi, config.tone_count) if config.multitone_phase == "random" else
+                      -np.pi*k*(k-1)/config.tone_count if config.multitone_phase == "schroeder" else np.zeros(config.tone_count))
+            for frequency, phase in zip(np.linspace(-config.bandwidth_hz/2, config.bandwidth_hz/2, config.tone_count), phases):
                 x += np.exp(2j*np.pi*frequency*time + 1j*phase)
         else:
             slope = config.bandwidth_hz / (n/config.sample_rate_hz)
             x = np.exp(2j*np.pi*(-config.bandwidth_hz/2*time + .5*slope*time**2))
     scale = config.rms / np.sqrt(np.mean(np.abs(x)**2))
     x *= scale
+    if config.burst_on_samples is not None:
+        position = np.arange(n) % (config.burst_on_samples + config.burst_off_samples)
+        envelope = (position < config.burst_on_samples).astype(float)
+        ramp = config.burst_ramp_samples
+        if ramp:
+            phase = np.minimum(position, config.burst_on_samples - 1 - position) / ramp
+            envelope *= .5 - .5 * np.cos(np.pi * np.clip(phase, 0, 1))
+        x *= envelope
+    x *= np.exp(1j * np.deg2rad(config.phase_offset_deg))
+    if config.phase_noise_rms_deg:
+        x *= np.exp(1j * np.deg2rad(config.phase_noise_rms_deg) * noise.standard_normal(n))
     # Gain mismatch scales I only; phase mismatch rotates Q only. There is no
     # post-impairment renormalization or receiver equalization hiding these effects.
     x = x.real * 10**(config.iq_gain_db/20) + 1j*x.imag*np.exp(1j*np.deg2rad(config.iq_phase_deg))
@@ -146,6 +184,7 @@ def synthesize(config: GeneratorConfig):
     x = x.astype(np.complex64)
     recovered, references = [], []
     evm_percent = None
+    evm_per_symbol, evm_per_carrier, evm_bins = [], [], []
     if refs:
         active = np.concatenate(channels)
         data = np.setdiff1d(active, pilots)
@@ -156,6 +195,20 @@ def synthesize(config: GeneratorConfig):
         constellation = np.concatenate(recovered)
         truth = np.concatenate(references)
         evm_percent = float(100*np.sqrt(np.sum(np.abs(constellation-truth)**2)/np.sum(np.abs(truth)**2)))
+        error_power = np.abs(np.array(recovered) - np.array(references))**2
+        reference_power = np.abs(references)**2
+        evm_per_symbol = (100*np.sqrt(np.sum(error_power, axis=1)/np.sum(reference_power, axis=1))).tolist()
+        carrier_power = np.sum(reference_power, axis=0)
+        powered = carrier_power > 1e-24
+        evm_per_carrier = (100*np.sqrt(np.sum(error_power, axis=0)[powered]/carrier_power[powered])).tolist()
+        evm_bins = data[powered].tolist()
+    elif config.waveform in ("qam", "psk"):
+        matched = signal.fftconvolve(x, rrc_taps(sps, config.rrc_rolloff, span), mode="same")
+        indices = np.arange(span*sps, max(span*sps, n-span*sps), sps)
+        constellation = matched[indices] / scale
+        truth = symbols[2*span + indices//sps]
+        if len(truth):
+            evm_percent = float(100*np.sqrt(np.sum(abs(constellation-truth)**2)/np.sum(abs(truth)**2)))
     else:
         truth = constellation.copy()
     power = np.abs(x.astype(complex))**2
@@ -188,8 +241,18 @@ def synthesize(config: GeneratorConfig):
                   "Constellation and reference EVM use data carriers from the first 16 complete OFDM symbols at most; no equalization or phase/gain fit. This is a generator diagnostic, not standard EVM."]
         if not refs:
             notes.append("No complete OFDM symbol fits this capture; increase length for constellation and reference EVM.")
-    if config.waveform == "qam":
-        notes.append("Constellation shows transmitted modulation symbols before RRC filtering and impairments; no receiver EVM is reported.")
+    if config.waveform in ("qam", "psk"):
+        notes.append("Constellation uses a matched RRC filter at known symbol timing, excluding edge transients. Reference EVM includes finite filter-span ISI; no gain/phase fitting or timing recovery is applied.")
+    if config.dft_spreading:
+        notes.append("DFT spreading is applied independently per channel before OFDM modulation. This is an uncoded engineering stimulus; no uplink transport or reference-signal mapping is implied. EVM describes transformed subcarriers.")
+    if config.burst_on_samples is not None:
+        notes.append("Burst gating follows continuous-wave RMS normalization; average power includes idle samples and ramps. AWGN and DC offsets are added after gating and may remain during idle intervals.")
+    if config.phase_noise_rms_deg:
+        notes.append("Phase noise is independent Gaussian phase jitter with the configured RMS per sample, not a frequency-dependent oscillator noise mask.")
+    if config.waveform in ("fsk", "gfsk"):
+        notes.append("Continuous-phase binary FSK stimulus; Gaussian BT shapes frequency pulses when enabled. No Bluetooth framing, whitening or protocol compliance is implied.")
+    if config.payload_mode != "random":
+        notes.append("Payload bits repeat deterministically, most-significant bit first, with Gray-labeled modulation. PRBS uses an all-ones initial state; the random seed still controls pilots and impairments.")
     if trailing:
         notes.append(f"Exact requested length retained: {trailing} samples from the final incomplete symbol. No extra samples are exported.")
     if config.preset_id.startswith("wifi8"):
@@ -202,6 +265,8 @@ def synthesize(config: GeneratorConfig):
         rms=math.sqrt(average), peak=math.sqrt(float(np.max(power))), papr_db=float(np.max(relative)),
         mean_power_dbfs=10*math.log10(average), occupied_bandwidth_99_hz=occupied,
         dc_magnitude=float(abs(np.mean(x))), evm_percent=evm_percent, evm_symbols=len(refs),
+        evm_per_symbol_percent=evm_per_symbol, evm_subcarrier_indices=evm_bins,
+        evm_per_subcarrier_percent=evm_per_carrier,
         time_us=(np.arange(shown)/config.sample_rate_hz*1e6).tolist(), time_i=x[:shown].real.tolist(),
         time_q=x[:shown].imag.tolist(), time_envelope=np.abs(x[:shown]).tolist(),
         frequency_mhz=(frequencies/1e6).tolist(), psd_dbfs_hz=(10*np.log10(np.maximum(psd, 1e-30))).tolist(),

@@ -5,6 +5,8 @@ designed for but no test evidence yet; **unsupported** = out of scope.
 A platform being able to open the page does not imply every model or
 accelerator path is supported, so three tables are kept separately.
 
+Latest signal-tool validation: [Studio 2.2.9](../performance/studio-2.2.9.md), 2026-09-15. Covers real/complex CSV, bounded numerical analysis, browser handoffs, plots and upload isolation.
+
 Latest performance and inactivity validation: [Studio 2.2.8](../performance/studio-2.2.8.md), 2026-09-15. Covers initial JavaScript, idle requests, shared-IP renewal and cleanup without blocking other visitors. Earlier capacity validation: [Studio 2.2.7](../performance/studio-2.2.7.md), 2026-09-15. Covers hosted admission, shared scheduling and twice-daily cleanup. Previous feature validation: [Studio 2.2.6](../performance/studio-2.2.6.md), 2026-09-14. Includes resource telemetry, mobile cleanup timestamps, request isolation and dependency checks. [Studio 2.2.5](../performance/studio-2.2.5.md) retains the ILC/ILA, interactive LaTeX and installation evidence. Native-window and hardware-specific verification remain separate below.
 
 Native baseline update: 2026-09-11 (native macOS fix verified in [the follow-up report](https://github.com/lab-emi/OpenDPD/blob/64d3e5e76b25d2d9dd59c91bf5c70c1d3ab2c698/docs/baseline/native-window-macos-fix-2026-09-11.md); S13 baseline in `docs/baseline/baseline-report.md`, hardening in `docs/releases/hardening-report.md`).

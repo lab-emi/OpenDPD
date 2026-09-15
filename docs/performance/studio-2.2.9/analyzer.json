@@ -1,0 +1,22 @@
+{
+  "python": "3.13.14",
+  "numpy": "2.4.4",
+  "samples": 1000000,
+  "fft_size": 4096,
+  "seconds": [
+    0.1216534289997071,
+    0.10211210895795375,
+    0.10823032300686464,
+    0.09269940503872931
+  ],
+  "median_warm_seconds": 0.10211210895795375,
+  "peak_process_rss_mib": 248.453125,
+  "json_bytes": 1216614,
+  "spectrogram_shape": [
+    128,
+    256
+  ],
+  "psd_bins": 4096,
+  "time_samples": 2048,
+  "scatter_samples": 4096
+}
