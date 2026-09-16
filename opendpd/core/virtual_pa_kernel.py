@@ -72,4 +72,3 @@ def simulate_resolved(x, fs, model_id, p):
     if not np.isfinite(y).all() or np.max(np.abs(y)) > np.finfo(np.float32).max:
         raise ValueError("These parameters exceed the finite float32 output range.")
     return y, states
-
