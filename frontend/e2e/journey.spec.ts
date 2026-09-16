@@ -9,7 +9,7 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
     await page.getByRole('link', { name: 'Get Started' }).click()
     await page.getByRole('button', { name: 'Use an existing dataset' }).click()
     await page.getByRole('button', { name: 'Add & inspect DPA_200MHz' }).click()
-    for (const step of ['input', 'virtual', 'output', 'paired']) await expect(page.getByTestId('workflow-' + step)).toHaveAttribute('data-complete', 'true')
+    for (const step of ['input', 'virtual', 'output']) await expect(page.getByTestId('workflow-' + step)).toHaveAttribute('data-complete', 'true')
     await expect(page.getByRole('heading', { level: 1, name: 'PA Model', exact: true })).toBeVisible()
     await expect(page.getByText(/Quick trial: a few epochs/)).toBeVisible()
     await expect(page.getByText('Configuration is valid')).toBeVisible()

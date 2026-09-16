@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from opendpd.core.waveforms.generator_presets import presets
 from opendpd.core.waveforms.generator import allocation
 from opendpd.schemas.signal_generator import (DatasetSampleCounts, GeneratedSignal, GeneratorConfig,
-    GeneratorDatasetRequest, GeneratorDatasetResponse, GeneratorPreset)
+    GeneratorDatasetRequest, GeneratorDatasetResponse, GeneratorPreset, GeneratorBatchRequest)
 from opendpd.server.routes import require_csrf, require_session
 from opendpd.server.errors import api_error as _error
 from opendpd.services import signal_generator as service
@@ -80,3 +80,20 @@ def archive(signal_id: str, request: Request):
 @router.post('/signal-generator/signals/{signal_id}/restore', response_model=PAInputDataset, dependencies=[Depends(require_csrf)])
 def restore(signal_id: str, request: Request):
     return service.archive_input(request.app.state.ws, signal_id, restore=True)
+
+
+@router.post("/signal-generator/batches", response_model=list[PAInputDataset], status_code=201,
+             dependencies=[Depends(require_csrf)])
+def generate_batch(body: GeneratorBatchRequest, request: Request):
+    return service.generate_batch(request.app.state.ws, body)
+
+
+@router.get("/datasets/{dataset_id}/download", dependencies=[Depends(require_session)])
+def dataset_download(dataset_id: str, request: Request, version: str = "raw-v1", collection: bool = True):
+    import shutil
+    from starlette.background import BackgroundTask
+    from opendpd.services.dataset_downloads import export_dataset
+    path, temporary = export_dataset(request.app.state.ws, dataset_id, version, collection)
+    return FileResponse(path, filename=path.name,
+        media_type="application/zip" if path.suffix == ".zip" else "text/csv",
+        background=BackgroundTask(shutil.rmtree, temporary, ignore_errors=True))

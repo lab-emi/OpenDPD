@@ -123,7 +123,7 @@ test.describe('keyboard-only journey', () => {
     await expect(page.getByRole('button', { name: 'Add & inspect DPA_200MHz' })).toBeVisible()
     await tabTo(page, /^Add & inspect DPA_200MHz$/)
     await page.keyboard.press('Enter')
-    for (const step of ['input', 'virtual', 'output', 'paired']) await expect(page.getByTestId('workflow-' + step)).toHaveAttribute('data-complete', 'true')
+    for (const step of ['input', 'virtual', 'output']) await expect(page.getByTestId('workflow-' + step)).toHaveAttribute('data-complete', 'true')
     await expect(page.getByRole('heading', { level: 1, name: 'PA Model', exact: true })).toBeVisible()
     await expect(page.getByText('Configuration is valid')).toBeVisible()
     await tabTo(page, /^Continue$/)

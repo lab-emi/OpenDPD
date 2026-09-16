@@ -50,6 +50,7 @@ nav:
       - Installation: install.md
       - First Studio experiment: tutorials/gui-quickstart.md
       - Signal Generator: guides/signal-generator.md
+      - Signal preset reference: guides/signal-presets.md
       - Signal Analyzer: guides/signal-analyzer.md
       - Virtual PA Library: guides/virtual-pa-library.md
       - ILC and ILA DPD: guides/ilc-dpd.md

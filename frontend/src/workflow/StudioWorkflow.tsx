@@ -2,12 +2,15 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useCapabilities, useRun, useRunConfig } from '@/api/hooks'
 import { WEB_MODE } from '@/api/client'
 import type { RunView } from '@/api/types'
+import type { GeneratorConfig } from '@/api/signalGenerator'
 import { parameterKey, type PASimulation } from '@/api/virtualPA'
 import { LoadingState } from '@/components/StateBlock'
 
 export interface WorkflowState {
   version: 1
   origin: 'generated' | 'existing' | null
+  inputIds?: string[]
+  inputConfigs?: GeneratorConfig[]
   inputId: string | null
   inputName: string
   modelId: string | null
@@ -23,6 +26,9 @@ const empty = (): WorkflowState => ({ version: 1, origin: null, inputId: null, i
 
 interface WorkflowActions {
   selectInput: (id: string, name: string) => void
+  selectInputs: (ids: string[], configs: GeneratorConfig[]) => void
+  completeDataset: (id: string, simulationId: string) => void
+  selectCapture: (id: string, version: string) => void
   configurePA: (id: string, parameters: Record<string, number>) => void
   simulated: (result: PASimulation) => void
   paired: (datasetId: string, simulationId: string) => void
@@ -40,7 +46,7 @@ interface WorkflowContextValue extends WorkflowActions {
 }
 const noop = () => undefined
 const fallback: WorkflowContextValue = { state: empty(), paDone: false, dpdDone: false,
-  selectInput: noop, configurePA: noop, simulated: noop, paired: noop, selectDataset: noop,
+  selectInputs: noop, completeDataset: noop, selectCapture: noop, selectInput: noop, configurePA: noop, simulated: noop, paired: noop, selectDataset: noop,
   selectPAReference: noop, invalidateOutput: noop, resetPA: noop, trackRun: noop, reset: noop }
 const Context = createContext<WorkflowContextValue>(fallback)
 export const useStudioWorkflow = () => useContext(Context)
@@ -49,6 +55,8 @@ function read(key: string): WorkflowState {
   try {
     const value = JSON.parse((WEB_MODE ? sessionStorage : localStorage).getItem(key) ?? 'null') as WorkflowState | null
     if (!value || value.version !== 1 || !['generated', 'existing', null].includes(value.origin)) return empty()
+    if (value.inputIds && (!Array.isArray(value.inputIds) || value.inputIds.length > 16 || value.inputIds.some(id => !/^sg-[a-f0-9]{64}$/.test(id)))) return empty()
+    if (value.inputConfigs && (!Array.isArray(value.inputConfigs) || value.inputConfigs.length !== value.inputIds?.length)) return empty()
     if (value.inputId && !/^sg-[a-f0-9]{64}$/.test(value.inputId)) return empty()
     if (value.simulationId && !/^vpa-[a-f0-9]{64}$/.test(value.simulationId)) return empty()
     if (value.datasetId && !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value.datasetId)) return empty()
@@ -73,6 +81,10 @@ function ScopedWorkflow({ scope, children }: { scope: string; children: ReactNod
     && dpdConfig.data?.dataset.id === state.datasetId && (dpdConfig.data?.dataset.preprocessing_version ?? 'raw-v1') === state.datasetVersion
     && dpdConfig.data?.pa_reference?.run_id === state.paRunId
   const actions = useMemo<WorkflowActions>(() => ({
+    selectInputs: (ids, configs) => set(old => ({ ...empty(), origin: 'generated', inputId: ids[0] ?? null,
+      inputIds: ids, inputConfigs: configs, inputName: configs.map(c => c.preset_id).join(', '), modelId: old.modelId, parameters: old.parameters })),
+    selectCapture: (id, version) => set(old => old.datasetId === id && old.datasetVersion === version ? old : { ...old, datasetId: id, datasetVersion: version, paRunId: null, dpdRunId: null }),
+    completeDataset: (id, simulationId) => set(old => ({ ...old, datasetId: id, simulationId, datasetVersion: 'raw-v1', paRunId: null, dpdRunId: null })),
     selectInput: (id, name) => set(old => old.origin === 'generated' && old.inputId === id ? old
       : { ...empty(), origin: 'generated', inputId: id, inputName: name, modelId: old.modelId, parameters: old.parameters }),
     configurePA: (id, parameters) => set(old => old.origin === 'generated' && old.modelId === id && parameterKey(old.parameters) === parameterKey(parameters) ? old
@@ -88,7 +100,7 @@ function ScopedWorkflow({ scope, children }: { scope: string; children: ReactNod
     selectPAReference: id => set(old => old.paRunId === id ? old : { ...old, paRunId: id, dpdRunId: null }),
     invalidateOutput: () => set(old => !old.simulationId && !old.datasetId && !old.paRunId && !old.dpdRunId ? old
       : { ...old, simulationId: null, datasetId: null, paRunId: null, dpdRunId: null }),
-    resetPA: () => set(old => ({ ...empty(), origin: old.inputId ? 'generated' : null, inputId: old.inputId, inputName: old.inputName })),
+    resetPA: () => set(old => ({ ...empty(), origin: old.inputId ? 'generated' : null, inputId: old.inputId, inputIds: old.inputIds, inputConfigs: old.inputConfigs, inputName: old.inputName })),
     trackRun: (run, version, paRunId) => set(old => {
       if (!run.dataset_id) return old
       const base = old.datasetId === run.dataset_id && old.datasetVersion === version ? old

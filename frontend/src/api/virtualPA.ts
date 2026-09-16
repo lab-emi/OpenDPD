@@ -24,3 +24,10 @@ export function usePairedDataset() {
     api.post<Schemas['GeneratorDatasetResponse']>('/pa-library/simulations/' + encodeURIComponent(id) + '/dataset', request),
   onSuccess: () => void qc.invalidateQueries({ queryKey: keys.datasets }) })
 }
+
+export function useSimulateDataset() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: (request: Schemas['VirtualPADatasetRequest']) =>
+    api.post<Schemas['GeneratorDatasetResponse']>('/pa-library/datasets', request),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.datasets }) })
+}

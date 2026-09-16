@@ -18,36 +18,60 @@ const result = {
 }
 
 function setup() {
-  return mockApi({
+  const signals: Record<string, typeof result> = {}
+  const routes: Parameters<typeof mockApi>[0] = {
     'GET /api/v1/signal-generator/presets': () => fixturePresets,
     'GET /api/v1/system/capabilities': () => ({ custom_dataset_imports: true }),
-    'POST /api/v1/signal-generator/signals': (_url, init) => ({ ...result, config: JSON.parse(String(init.body)) }),
-    [`POST /api/v1/signal-generator/signals/${result.signal_id}/dataset`]: (_url, init) => ({ dataset: { dataset_id: JSON.parse(String(init.body)).dataset_id }, test_samples: 26112 }),
+    'POST /api/v1/signal-generator/batches': (_url, init) => {
+      const configs = JSON.parse(String(init.body)).configs as typeof config[]
+      return configs.map((c, i) => {
+        const id = 'sg-' + (i === 0 ? 'a' : 'b').repeat(64)
+        signals[id] = { ...result, signal_id: id, config: c }
+        return { signal_id: id, name: c.preset_id }
+      })
+    },
     'POST /api/v1/signal-generator/validate': (_url, init) => JSON.parse(String(init.body)),
-  })
+  }
+  for (const letter of ['a', 'b']) {
+    const id = 'sg-' + letter.repeat(64)
+    routes['GET /api/v1/signal-generator/signals/' + id] = () => signals[id]
+  }
+  return mockApi(routes)
 }
 
 function Probe() { const location = useLocation(); return <output data-testid="location">{location.pathname}{location.search}</output> }
 
-test('explicit preview only, simple family selection, stale-export guard and duration conversion', async () => {
+test('matrix selection keeps different preset lengths and disables stale exports', async () => {
   const { calls } = setup()
   renderWithProviders(<SignalGeneratorPage />)
   expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
-  await userEvent.click(await screen.findByRole('button', { name: 'Generate & preview' }))
+  await screen.findByRole('heading', { name: 'Signal setup' })
+  expect(screen.queryByRole('combobox', { name: 'Preset' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Wi-Fi 8/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('checkbox', { name: 'Ideal PA-input filter (recommended)' })).toBeChecked()
+  await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
   await screen.findByTestId('signal-generator-results')
-  expect(calls.filter(c => c.path === '/api/v1/signal-generator/signals')).toHaveLength(1)
-  expect(screen.getByText('Time-domain I/Q')).toBeVisible()
-  expect(screen.getByText('PA Input · PSD')).toBeVisible()
-  await userEvent.click(screen.getByRole('button', { name: /Wi-Fi 8/ }))
-  expect(screen.getByText(/Wi-Fi 8 is an experimental/)).toBeVisible()
-  expect(screen.getByRole('button', { name: 'Export I/Q + configuration' })).toBeDisabled()
-  expect(screen.getByText(/Parameters changed/)).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeEnabled()
+  await userEvent.click(screen.getByRole('button', { name: /02 ·.*Wi-Fi 6/ }))
+  await userEvent.click(screen.getByTestId('preset-wifi6-20'))
+  expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeDisabled()
   await userEvent.click(screen.getByRole('button', { name: 'Elapsed time' }))
   fireEvent.change(screen.getByLabelText('Equivalent duration (ms)'), { target: { value: '.25' } })
-  expect(screen.getByTestId('generator-length')).toHaveTextContent('80,000 I/Q samples')
+  expect(screen.getByTestId('generator-length')).toHaveTextContent('20,000 I/Q')
   await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Export I/Q + configuration' })).toBeEnabled())
-  expect(calls.filter(c => c.path === '/api/v1/signal-generator/signals').at(-1)?.body).toMatchObject({ preset_id: 'wifi8-80', length_mode: 'duration', duration_ms: .25 })
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeEnabled())
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/batches').at(-1)?.body).toMatchObject({ configs: [
+    { preset_id: 'nr-20', n_samples: 30720, filter_enabled: true },
+    { preset_id: 'wifi6-20', length_mode: 'duration', duration_ms: .25, filter_enabled: true },
+  ] })
+  await userEvent.click(screen.getByTestId('remove-preset-nr-20'))
+  expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeDisabled()
+  await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeEnabled())
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/batches').at(-1)?.body).toEqual({ configs: [expect.objectContaining({ preset_id: 'wifi6-20' })] })
+  fireEvent.keyUp(screen.getByTestId('selected-preset-wifi6-20'), { key: 'Delete' })
+  expect(screen.getByRole('button', { name: 'Generate & preview' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeDisabled()
 })
 
 test('advanced OFDMA channels and pilots reach the generator request', async () => {
@@ -65,8 +89,8 @@ test('advanced OFDMA channels and pilots reach the generator request', async () 
   await userEvent.click(screen.getByRole('option', { name: 'Explicit signed bin indices' }))
   fireEvent.change(screen.getByLabelText('Pilot carrier indices'), { target: { value: '-39, 39' } })
   await userEvent.click(screen.getByRole('button', { name: 'Apply & regenerate' }))
-  await waitFor(() => expect(calls.filter(c => c.path === '/api/v1/signal-generator/signals')).toHaveLength(2))
-  expect(calls.filter(c => c.path === '/api/v1/signal-generator/signals').at(-1)?.body).toMatchObject({ channel_subcarriers: [612, 52], channel_modulations: [64, 64], channel_power_db: [0, 0], pilot_mode: 'explicit', pilot_indices: [-39, 39] })
+  await waitFor(() => expect(calls.filter(c => c.path === '/api/v1/signal-generator/batches')).toHaveLength(2))
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/batches').at(-1)?.body).toMatchObject({ configs: [{ channel_subcarriers: [612, 52], channel_modulations: [64, 64], channel_power_db: [0, 0], pilot_mode: 'explicit', pilot_indices: [-39, 39] }] })
 })
 
 test('generated signal is input-only, with separate exports and an explicit Virtual PA step', async () => {
@@ -75,7 +99,7 @@ test('generated signal is input-only, with separate exports and an explicit Virt
   await userEvent.click(await screen.findByRole('button', { name: 'Generate & preview' }))
   await screen.findByTestId('signal-generator-results')
   expect(screen.getByRole('heading', { name: 'PA Input Dataset' })).toBeVisible()
-  expect(screen.getAllByText(/complete training dataset needs matching PA input x and PA output y/).length).toBeGreaterThan(0)
+  expect(screen.getByText(/one input\/output CSV per preset/)).toBeVisible()
   expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Download input metadata JSON' })).toBeEnabled()
   await userEvent.click(screen.getByRole('link', { name: 'Choose Virtual PA →' }))

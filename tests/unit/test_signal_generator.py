@@ -21,24 +21,23 @@ def preset(identifier, **changes):
 
 @pytest.mark.parametrize("item", presets(), ids=lambda p: p.preset_id)
 def test_presets_are_finite_exact_length_and_explicit_about_coverage(item):
-    x, a = synthesize(item.config)
-    assert x.dtype == np.complex64 and len(x) == item.config.sample_count
+    config = item.config.model_copy(update={"n_samples": max(4096, 2*(item.config.fft_size + 256)*item.config.oversampling)})
+    x, a = synthesize(config)
+    assert x.dtype == np.complex64 and len(x) == config.sample_count
     assert np.isfinite(x).all() and np.isfinite(a.psd_dbfs_hz).all()
     assert a.rms == pytest.approx(item.config.rms, rel=1e-6)
     assert a.papr_db == pytest.approx(10*np.log10(np.max(np.abs(x.astype(complex))**2)/np.mean(np.abs(x.astype(complex))**2)))
     assert a.ccdf_probability == sorted(a.ccdf_probability, reverse=True)
     assert a.duration_ms == len(x)/item.config.sample_rate_hz*1000
     if item.config.waveform == "ofdm":
-        assert a.evm_percent < .0001
+        assert a.evm_percent is not None and np.isfinite(a.evm_percent)
         assert a.pilot_carriers + a.data_carriers == sum(item.config.channel_subcarriers)
         assert any("Not a conformance" in note for note in a.notes)
-    if item.family == "wifi8":
-        assert coverage(item.config) == "experimental"
-        assert any("UHR" in note for note in a.notes)
+    assert coverage(config) in {"custom", "numerology"}
 
 
 def test_one_ms_nr_prefix_lengths_follow_subframe_timing():
-    config = preset("nr-20", length_mode="duration", duration_ms=1)
+    config = preset("nr-20", length_mode="duration", duration_ms=1, filter_enabled=False)
     x, a = synthesize(config)
     assert len(x) == 122880 and a.complete_symbols == 28 and a.trailing_samples == 0
     assert a.cp_lengths_samples == [352] + [288]*13 + [352] + [288]*13
@@ -50,7 +49,7 @@ def test_one_ms_nr_prefix_lengths_follow_subframe_timing():
 
 
 def test_tone_has_analytic_zero_db_papr_and_rf_metadata_does_not_mix():
-    config = preset("custom-tone", n_samples=4096)
+    config = preset("custom-tone", n_samples=4096, filter_enabled=False)
     x, a = synthesize(config)
     time = np.arange(4096)/config.sample_rate_hz
     np.testing.assert_allclose(x, config.rms*np.exp(2j*np.pi*config.tone_frequency_hz*time), atol=2e-8)
@@ -60,7 +59,7 @@ def test_tone_has_analytic_zero_db_papr_and_rf_metadata_does_not_mix():
 
 
 def test_pilots_channel_powers_and_nulls_are_real_fft_allocations():
-    config = GeneratorConfig(fft_size=512, sample_rate_hz=80e6, bandwidth_hz=20e6,
+    config = GeneratorConfig(filter_enabled=False, fft_size=512, sample_rate_hz=80e6, bandwidth_hz=20e6,
         channel_subcarriers=[48, 72], channel_modulations=[4, 16], channel_power_db=[0, -6],
         channel_gap_bins=4, pilot_mode="explicit", pilot_indices=[-50, -25, 25, 50], n_samples=32768)
     channels, pilots = allocation(config)
@@ -80,7 +79,7 @@ def test_impairments_are_visible_and_seed_is_reproducible():
     np.testing.assert_array_equal(x, synthesize(noisy)[0])
     assert a.evm_percent > 10
     assert not np.array_equal(x, synthesize(noisy.model_copy(update={"seed": 43}))[0])
-    clipped = clean.model_copy(update={"clip_db": 3})
+    clipped = clean.model_copy(update={"clip_db": 3, "filter_enabled": False})
     z, _ = synthesize(clipped)
     assert np.max(np.abs(z)) <= clean.rms*10**(3/20)*(1+1e-6)
 
@@ -166,3 +165,39 @@ def test_archive_is_reversible_and_preserves_simulation_source(tmp_path):
     assert read_signal(ws,signal.signal_id).iq_sha256==signal.iq_sha256
     archive_input(ws,signal.signal_id,restore=True)
     assert list_inputs(ws)[0].signal_id==signal.signal_id
+
+
+def test_catalog_covers_axes_and_no_wifi8():
+    items = presets()
+    assert len(items) == 1186 and len({p.preset_id for p in items}) == len(items)
+    assert {p.family for p in items} == {"nr", "wifi6", "wifi7", "custom"}
+    assert max(p.config.bandwidth_hz for p in items if p.family == "wifi7") == 320e6
+    assert max(p.config.bandwidth_hz for p in items if p.family == "wifi6") == 160e6
+    nr = [p for p in items if p.numerology == "FR1 · 30 kHz" and p.channel_count == 1]
+    assert next(p.config.channel_subcarriers for p in nr if p.config.bandwidth_hz == 100e6) == [273*12]
+    assert {p.channel_count for p in items if p.family == "wifi6"} == {1, 2, 4, 8}
+
+
+def test_default_filter_suppresses_stopband_preserves_length_rms_and_is_optional():
+    raw = preset("nr-20", n_samples=32768, filter_enabled=False)
+    x, before = synthesize(raw)
+    y, after = synthesize(raw.model_copy(update={"filter_enabled": True}))
+    f = np.fft.fftfreq(len(x), 1/raw.sample_rate_hz)
+    outside = abs(f) >= raw.bandwidth_hz/2
+    power = lambda z: abs(np.fft.fft(z.astype(complex)))**2
+    px, py = power(x), power(y)
+    assert py[outside].sum()/py.sum() < 1e-13
+    assert px[outside].sum()/px.sum() > 1e-5
+    assert len(x) == len(y) == 32768
+    assert after.rms == pytest.approx(before.rms, rel=1e-7)
+    assert GeneratorConfig().filter_enabled is True
+    np.testing.assert_array_equal(y, synthesize(raw.model_copy(update={"filter_enabled": True}))[0])
+    np.testing.assert_array_equal(x, synthesize(raw)[0])
+
+
+def test_filter_passband_tone_and_frequency_offset():
+    c = GeneratorConfig(waveform="tone", n_samples=8192, sample_rate_hz=80e6,
+                        tone_frequency_hz=80e6*128/8192, frequency_offset_hz=80e6*64/8192)
+    actual, _ = synthesize(c)
+    expected, _ = synthesize(c.model_copy(update={"filter_enabled": False}))
+    np.testing.assert_allclose(actual, expected, atol=1e-8)

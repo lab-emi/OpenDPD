@@ -87,6 +87,7 @@ class VirtualPASimulation(StrictModel):
     model: VirtualPAModel
     input_iq_sha256: Sha256
     output_iq_sha256: Sha256
+    kernel_sha256: Sha256 | None = None
     simulator_source_sha256: Sha256
     sample_rate_hz: float
     analysis: PAAnalysis
@@ -106,4 +107,16 @@ class PairedDatasetRequest(StrictModel):
     def _split(self):
         if self.train_ratio + self.val_ratio >= 1:
             raise ValueError("Leave a nonzero fraction for the test split.")
+        return self
+
+
+class VirtualPADatasetRequest(StrictModel):
+    input_signal_ids: list[Annotated[str, Field(pattern=r"^sg-[a-f0-9]{64}$")]] = Field(min_length=1, max_length=16)
+    model_id: Slug
+    parameters: dict[str, Annotated[float, Field(strict=True, allow_inf_nan=False)]] = Field(default_factory=dict, max_length=32)
+
+    @model_validator(mode="after")
+    def _unique(self):
+        if len(set(self.input_signal_ids)) != len(self.input_signal_ids):
+            raise ValueError("Select each PA input only once.")
         return self

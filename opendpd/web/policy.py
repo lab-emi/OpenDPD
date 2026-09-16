@@ -34,8 +34,8 @@ ROUTES = {
     "PUT": [r"/settings"],
 }
 ROUTES["POST"] += [r"/datasets/synthetic", r"/dataset-publications/prepare", r"/dataset-publications/dspr-[a-f0-9]{64}/submit"]
-ROUTES["GET"] += [r"/signal-generator/presets", r"/signal-generator/signals/sg-[a-f0-9]{64}(/download)?", rf"/datasets/{SLUG}/sample-counts"]
-ROUTES["POST"] += [r"/signal-generator/validate", r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/dataset"]
+ROUTES["GET"] += [r"/signal-generator/presets", r"/signal-generator/signals/sg-[a-f0-9]{64}(/download)?", rf"/datasets/{SLUG}/(sample-counts|download)"]
+ROUTES["POST"] += [r"/signal-generator/batches", r"/pa-library/datasets", r"/signal-generator/validate", r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/dataset"]
 ROUTES["GET"] += [r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/(input\.csv|metadata\.json)",
     r"/pa-library/models", r"/pa-library/simulations/vpa-[a-f0-9]{64}(/(output\.csv|paired\.csv|metadata\.json))?"]
 ROUTES["POST"] += [r"/signal-generator/signals/sg-[a-f0-9]{64}/(archive|restore)", r"/pa-library/simulations", r"/pa-library/simulations/vpa-[a-f0-9]{64}/dataset"]
@@ -128,7 +128,7 @@ def allowed(method: str, path: str) -> bool:
 def expensive_request(method: str, path: str) -> bool:
     """Bound in-process numeric/file work separately from lightweight status and cancellation."""
     if method == 'GET':
-        return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/sources|/datasets/[^/]+/analysis|/results/compare|/results/[^/]+(/(report|review))?', path))
+        return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/sources|/datasets/[^/]+/(analysis|download)|/results/compare|/results/[^/]+(/(report|review))?', path))
     return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/')))
 
 

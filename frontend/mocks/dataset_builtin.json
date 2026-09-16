@@ -2,6 +2,7 @@
   "_mock": true,
   "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
   "data": {
+    "captures": [],
     "columns": null,
     "dataset_id": "dpa-200mhz",
     "display_name": "DPA_200MHz (built-in, measured)",
@@ -20,6 +21,7 @@
     "n_samples": 38400,
     "notes": null,
     "origin": "measured",
+    "parent_dataset_id": null,
     "preprocessing_version": "raw-v1",
     "raw_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
     "schema_version": 1,

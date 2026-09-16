@@ -117,3 +117,25 @@ test('a QAM label without a bound demodulator stays a raw I/Q plot with a reason
   expect(screen.queryByRole('button', { name: 'Symbols' })).not.toBeInTheDocument()
   expect(screen.getByTitle(/No dataset-specific demodulator is bound/)).toBeInTheDocument()
 })
+
+test('subdataset selection changes charts, metadata and training to its own sample rate', async () => {
+  const captures = [
+    { dataset_id: 'mine', preset_id: 'nr-20', label: 'NR · 20 MHz', n_samples: 20000, sample_rate_hz: 122.88e6, bandwidth_hz: 20e6 },
+    { dataset_id: 'second', preset_id: 'wifi7-80', label: 'Wi-Fi 7 · 80 MHz', n_samples: 32768, sample_rate_hz: 320e6, bandwidth_hz: 80e6 },
+  ]
+  const { calls } = mockApi({
+    'GET /api/v1/datasets/mine': () => ({ ...dataset, captures }),
+    'GET /api/v1/datasets/mine/analysis': () => inspection,
+    'GET /api/v1/datasets/second': () => ({ ...dataset, dataset_id: 'second', display_name: 'Wi-Fi capture', parent_dataset_id: 'mine', n_samples: 32768, signal: { ...dataset.signal, sample_rate_hz: 320e6, bandwidth_hz: 80e6 } }),
+    'GET /api/v1/datasets/second/analysis': () => ({ ...inspection, dataset_id: 'second', total_samples: 32768 }),
+  })
+  renderWithProviders(<DatasetDetailPage />, { route: '/datasets/mine', path: '/datasets/:datasetId' })
+  expect(await screen.findByRole('button', { name: 'Download all · ZIP' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Download CSV' })).toBeVisible()
+  await userEvent.click(screen.getByRole('combobox', { name: 'Visualize subdataset' }))
+  await userEvent.click(screen.getByRole('option', { name: /Wi-Fi 7 · 80 MHz/ }))
+  await screen.findByRole('heading', { name: 'Wi-Fi capture' })
+  expect(screen.getByText('320 MS/s')).toBeVisible()
+  await waitFor(() => expect(calls.some(c => c.path === '/api/v1/datasets/second/analysis')).toBe(true))
+  expect(screen.getByRole('link', { name: /Configure experiment/ })).toHaveAttribute('href', '/experiments/new?dataset=second&version=raw-v1')
+})

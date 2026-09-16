@@ -5,8 +5,8 @@ import asyncio
 from dataclasses import dataclass
 import re
 
-from opendpd.schemas.signal_generator import GeneratorConfig
-from opendpd.schemas.virtual_pa import VirtualPARequest
+from opendpd.schemas.signal_generator import GeneratorConfig, GeneratorBatchRequest
+from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPADatasetRequest
 from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest, DatasetPublicationDraft
 from opendpd.services.workspace import WorkspaceError
 from opendpd.web.policy import reject
@@ -23,6 +23,8 @@ class MutationRule:
 
 
 MUTATIONS = (
+    MutationRule(r"/signal-generator/batches", GeneratorBatchRequest, "signal-generator", 12, "generator_batch"),
+    MutationRule(r"/pa-library/datasets", VirtualPADatasetRequest, "virtual-pa-dataset", 6, "pa_dataset"),
     MutationRule(r'/signal-analyzer/analyze', None, 'signal-analysis', 36, 'none'),
     MutationRule(r'/signal-generator/signals', GeneratorConfig, 'signal-generator', 24, 'generator'),
     MutationRule(r'/signal-generator/signals/sg-[a-f0-9]{64}/dataset', None, 'signal-dataset', 6, 'input_dataset'),
@@ -36,6 +38,10 @@ MUTATIONS = (
 def estimate_storage(rule, payload, path, ws):
     from opendpd.services.signal_generator import read_signal
     from opendpd.services.virtual_pa import read_simulation
+    if rule.estimate == 'generator_batch':
+        return sum(c.sample_count * 100 + 2_000_000 for c in payload.configs)
+    if rule.estimate == 'pa_dataset':
+        return sum(read_signal(ws, i).analysis.sample_count * 280 + 2_000_000 for i in payload.input_signal_ids)
     if rule.estimate == 'generator':
         return payload.sample_count * 100 + 2_000_000
     if rule.estimate == 'synthetic':

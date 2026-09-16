@@ -60,6 +60,7 @@ class GeneratorConfig(StrictModel):
     dc_i: float = Field(default=0, ge=-1, le=1, allow_inf_nan=False)
     dc_q: float = Field(default=0, ge=-1, le=1, allow_inf_nan=False)
     snr_db: float | None = Field(default=None, ge=0, le=100, allow_inf_nan=False)
+    filter_enabled: bool = True
     clip_db: float | None = Field(default=None, ge=0, le=30, allow_inf_nan=False)
 
     @property
@@ -130,11 +131,25 @@ class GeneratorConfig(StrictModel):
         return self
 
 
+class GeneratorBatchRequest(StrictModel):
+    configs: list[GeneratorConfig] = Field(min_length=1, max_length=16)
+
+    @model_validator(mode="after")
+    def _bounded(self):
+        if sum(c.sample_count for c in self.configs) > 4_000_000:
+            raise ValueError("Select at most 4,000,000 samples across all presets.")
+        if len({c.preset_id for c in self.configs}) != len(self.configs):
+            raise ValueError("Select each preset only once per dataset.")
+        return self
+
+
 class GeneratorPreset(StrictModel):
     preset_id: str
-    family: Literal["nr", "wifi6", "wifi7", "wifi8", "custom"]
+    family: Literal["nr", "wifi6", "wifi7", "custom"]
     label: str
     description: str
+    numerology: str = "Custom"
+    channel_count: int = 1
     config: GeneratorConfig
 
 

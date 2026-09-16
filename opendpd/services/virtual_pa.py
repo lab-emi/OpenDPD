@@ -4,18 +4,15 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-import re
-import tempfile
 import threading
 
 import numpy as np
 
-from opendpd.core import virtual_pa as engine
+from opendpd.core import virtual_pa as engine, virtual_pa_kernel
 from opendpd.core.splits import contiguous_boundaries
-from opendpd.schemas.dataset import DatasetOrigin, SignalSpec
-from opendpd.schemas.importing import CsvOptions
+from opendpd.schemas.dataset import DatasetCapture, DatasetOrigin, SignalSpec
 from opendpd.schemas.signal_generator import GeneratorDatasetResponse
-from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPASimulation, PairedDatasetRequest
+from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPASimulation, PairedDatasetRequest, VirtualPADatasetRequest
 from opendpd.services import signal_generator as inputs
 from opendpd.services.datasets import import_arrays
 from opendpd.services.workspace import WorkspaceError, read_json, sha256_file, write_json_atomic
@@ -49,7 +46,9 @@ def preview(ws, request: VirtualPARequest):
         except ValueError as exc:
             raise WorkspaceError(str(exc)) from exc
         config = request.model_copy(update={"parameters": parameters})
-        source_hash = sha256_file(Path(engine.__file__))
+        kernel = Path(virtual_pa_kernel.__file__).read_bytes()
+        kernel_hash = hashlib.sha256(kernel).hexdigest()
+        source_hash = hashlib.sha256(Path(engine.__file__).read_bytes() + kernel).hexdigest()
         identity = {"version": "virtual-pa-v1", "config": config.model_dump(mode="json"),
             "input_iq_sha256": signal.iq_sha256, "sample_rate_hz": signal.config.sample_rate_hz,
             "simulator_source_sha256": source_hash}
@@ -68,11 +67,12 @@ def preview(ws, request: VirtualPARequest):
         y = output[:, 0].astype(complex) + 1j*output[:, 1]
         analysis = engine.analyze(x, y, signal.config.sample_rate_hz, states, parameters)
         target.mkdir(parents=True, exist_ok=True)
+        (target / "kernel.py").write_bytes(kernel)
         np.save(target / "output.npy", output, allow_pickle=False)
         base = f"/api/v1/pa-library/simulations/{identifier}"
         result = VirtualPASimulation(simulation_id=identifier, config=config, model=model,
             input_iq_sha256=signal.iq_sha256, output_iq_sha256=sha256_file(target / "output.npy"),
-            simulator_source_sha256=source_hash, sample_rate_hz=signal.config.sample_rate_hz,
+            kernel_sha256=kernel_hash, simulator_source_sha256=source_hash, sample_rate_hz=signal.config.sample_rate_hz,
             analysis=analysis, output_csv_url=base + "/output.csv", paired_csv_url=base + "/paired.csv",
             metadata_url=base + "/metadata.json")
         write_json_atomic(target / "manifest.json", result)
@@ -106,7 +106,7 @@ def export(ws, identifier, kind):
         return path
 
 
-def create_dataset(ws, identifier, request: PairedDatasetRequest):
+def create_dataset(ws, identifier, request: PairedDatasetRequest, *, _created=None):
     with _LOCK:
         result = read_simulation(ws, identifier)
         signal = inputs.read_signal(ws, result.config.input_signal_id)
@@ -144,7 +144,52 @@ def create_dataset(ws, identifier, request: PairedDatasetRequest):
                 nperseg=min(4096, max(512, config.fft_size*config.oversampling)),
                 modulation=f"{config.waveform.upper()} synthetic PA input", amplitude_units="normalized"),
             notes="SYNTHETIC paired PA input x and virtual PA output y. " + result.model.limitations.en + " " + " ".join(result.analysis.notes))
+        if _created is not None:
+            _created.append(request.dataset_id)
         manifest = manifest.model_copy(update={"simulation": provenance,
             "source": manifest.source.model_copy(update={"original_path": None})})
         ws.save_dataset(manifest)
         return GeneratorDatasetResponse(dataset=manifest, test_samples=bounds["test"][1]-bounds["test"][0])
+
+
+def simulate_dataset(ws, request: VirtualPADatasetRequest):
+    """Validate captures before registration and roll back newly created data on failure."""
+    import shutil
+    from opendpd.core.waveforms.generator_presets import presets
+
+    with _LOCK:
+        signals = [inputs.read_signal(ws, identifier) for identifier in request.input_signal_ids]
+        if any(s.analysis.sample_count < 8192 for s in signals):
+            raise WorkspaceError("Each preset needs at least 8,192 samples to create a training dataset.")
+        if sum(s.analysis.sample_count for s in signals) > 4_000_000:
+            raise WorkspaceError("Use at most 4,000,000 samples across all presets.")
+        if len({s.config.preset_id for s in signals}) != len(signals):
+            raise WorkspaceError("Choose distinct presets for a multi-preset dataset.")
+        simulations = [preview(ws, VirtualPARequest(input_signal_id=s.signal_id,
+            model_id=request.model_id, parameters=request.parameters)) for s in signals]
+        identity = json.dumps([r.simulation_id for r in simulations], separators=(",", ":"))
+        parent_id = "vpa-set-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
+        identifiers = [parent_id] + [f"{parent_id}-{i+1}" for i in range(1, len(signals))]
+        labels = {p.preset_id: p.label for p in presets()}
+        created, results = [], []
+        try:
+            for identifier, signal, result in zip(identifiers, signals, simulations):
+                label = labels.get(signal.config.preset_id, signal.config.preset_id)
+                response = create_dataset(ws, result.simulation_id, PairedDatasetRequest(
+                    dataset_id=identifier, display_name=f"Synthetic · {label} · {result.model.name.en}"), _created=created)
+                results.append(response)
+            captures = [DatasetCapture(dataset_id=identifier, preset_id=s.config.preset_id,
+                label=labels.get(s.config.preset_id, s.config.preset_id), n_samples=s.analysis.sample_count,
+                sample_rate_hz=s.config.sample_rate_hz, bandwidth_hz=s.config.bandwidth_hz)
+                for identifier, s in zip(identifiers, signals)]
+            for response in results[1:]:
+                ws.save_dataset(response.dataset.model_copy(update={"parent_dataset_id": parent_id}))
+            parent = results[0].dataset.model_copy(update={"captures": captures})
+            if len(captures) > 1:
+                parent = parent.model_copy(update={"display_name": f"Synthetic · {len(captures)} presets · {simulations[0].model.name.en}"})
+            ws.save_dataset(parent)
+            return results[0].model_copy(update={"dataset": parent})
+        except Exception:
+            for identifier in created:
+                shutil.rmtree(ws.dataset_dir(identifier), ignore_errors=True)
+            raise

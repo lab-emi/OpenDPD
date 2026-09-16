@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.11: matrix presets and automatic PA datasets
+
+Select multiple compact presets by bandwidth, QAM and OFDMA channel count. The catalog contains 1,186 NR, Wi-Fi 6/7 and custom engineering presets, with optional ideal input filtering. Virtual PA simulation now creates the dataset and opens its details in one action. Switch subdatasets to inspect different sample rates and lengths; download a CSV or a ZIP with all captures, metadata and a standalone PA replay script. Wi-Fi 8 generation and the separate pairing step are removed.
+
+[Release notes](releases/release-notes-2.2.11.md) · [Preset reference](guides/signal-presets.md)
+
 ## 2.2.10: security and reliability
 
 Faster built-in dataset browsing, resilient worker failures, safe upload cancellation, strict API inputs, explicit Python training arguments and hardened hosted deployment. Desktop dependencies and offline built-in data remain included.

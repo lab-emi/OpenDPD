@@ -181,6 +181,22 @@ def synthesize(config: GeneratorConfig):
     if config.snr_db is not None:
         noise_rms = config.rms * 10**(-config.snr_db/20)
         x += noise_rms/np.sqrt(2) * (noise.standard_normal(n) + 1j*noise.standard_normal(n))
+    if config.filter_enabled:
+        # A periodic-record zero-phase low-pass retains the exact requested length.
+        f = np.fft.fftfreq(n, 1 / config.sample_rate_hz) - config.frequency_offset_hz
+        f = (f + config.sample_rate_hz / 2) % config.sample_rate_hz - config.sample_rate_hz / 2
+        edge = np.abs(f) / (config.bandwidth_hz / 2)
+        transition = np.clip((edge - .96) / .04, 0, 1)
+        response = .5 * (1 + np.cos(np.pi * transition))
+        response[edge >= 1] = 0
+        before = np.mean(np.abs(x)**2)
+        x = np.fft.ifft(np.fft.fft(x) * response)
+        after = np.mean(np.abs(x)**2)
+        if after <= before * 1e-20:
+            raise ValueError("The configured signal lies outside the baseband filter. Adjust bandwidth or disable filtering.")
+        correction = np.sqrt(before / after)
+        x *= correction
+        scale *= correction
     x = x.astype(np.complex64)
     recovered, references = [], []
     evm_percent = None
@@ -255,8 +271,8 @@ def synthesize(config: GeneratorConfig):
         notes.append("Payload bits repeat deterministically, most-significant bit first, with Gray-labeled modulation. PRBS uses an all-ones initial state; the random seed still controls pilots and impairments.")
     if trailing:
         notes.append(f"Exact requested length retained: {trailing} samples from the final incomplete symbol. No extra samples are exported.")
-    if config.preset_id.startswith("wifi8"):
-        notes.append("Wi-Fi 8 / IEEE 802.11bn is an experimental numerology profile; no draft-specific UHR features are implemented.")
+    if config.filter_enabled:
+        notes.append("Ideal PA-input filter: zero-phase periodic-record FFT low-pass, cosine transition from 96% to 100% of the nominal half-bandwidth, centered on the frequency offset. Applied after impairments; RMS preserved. Filtering can change EVM, peaks and burst edges. Welch window leakage is not the stop-band floor.")
     analysis = GeneratorAnalysis(sample_count=n, duration_ms=n/config.sample_rate_hz*1000,
         sample_rate_hz=config.sample_rate_hz, subcarrier_spacing_hz=spacing,
         useful_symbol_us=(1e6/spacing if spacing else None), cp_lengths_samples=cp_lengths,
