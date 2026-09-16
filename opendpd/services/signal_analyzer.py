@@ -19,13 +19,7 @@ from opendpd.services.workspace import WorkspaceError, read_json, sha256_file, w
 
 
 def upload_directory(ws, identifier):
-    if not re.fullmatch(r"sa-[a-f0-9]{64}", identifier):
-        raise WorkspaceError("Unknown uploaded signal.")
-    root = ws.root / "signal_uploads"
-    target = root / identifier
-    if root.is_symlink() or target.is_symlink():
-        raise WorkspaceError("Signal storage cannot be a symbolic link.")
-    return target
+    return ws.hashed_store('signal_uploads', 'sa').directory(identifier)
 
 
 def admit_signal_upload(ws, path: Path):

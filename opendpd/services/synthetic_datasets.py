@@ -10,7 +10,7 @@ from opendpd.schemas.conditions import Condition, ConditionSet
 from opendpd.schemas.dataset import DatasetOrigin, SignalSpec
 from opendpd.schemas.dataset_catalog import SyntheticSuite, SyntheticSuiteRequest
 from opendpd.schemas.importing import CsvOptions
-from opendpd.services.datasets import import_dataset
+from opendpd.services.datasets import import_arrays
 from opendpd.services.workspace import Workspace, WorkspaceError, sha256_file
 
 GENERATOR = "synthetic-memory-pa-v1"
@@ -78,13 +78,10 @@ def generate_suite(ws: Workspace, request: SyntheticSuiteRequest) -> SyntheticSu
             if identifier in by_id:
                 continue
             data, provenance = capture(request, condition, repeat)
-            with tempfile.TemporaryDirectory(prefix="opendpd-synthetic-") as temporary:
-                source = Path(temporary) / "data.csv"
-                np.savetxt(source, data, fmt="%.9g", delimiter=",", header="I_in,Q_in,I_out,Q_out", comments="")
-                manifest = import_dataset(ws, source, dataset_id=identifier,
-                    display_name=f"Synthetic PA · drive {DRIVES[condition]:.2f} · realization {repeat + 1}",
-                    origin=DatasetOrigin.synthetic, signal=signal, guard_samples=512,
-                    notes=" ".join(LIMITATIONS), csv_options=CsvOptions())
+            manifest = import_arrays(ws, data[:, :2], data[:, 2:], dataset_id=identifier,
+                display_name=f"Synthetic PA · drive {DRIVES[condition]:.2f} · realization {repeat + 1}",
+                origin=DatasetOrigin.synthetic, signal=signal, guard_samples=512,
+                notes=" ".join(LIMITATIONS))
             manifest = manifest.model_copy(update={"simulation": provenance,
                 "source": manifest.source.model_copy(update={"original_path": None})})
             ws.save_dataset(manifest)

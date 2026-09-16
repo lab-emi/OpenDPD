@@ -46,5 +46,6 @@ export function MathFormula({ latex, variables = [], active, onSelect, display =
     '& [data-variable]': { cursor: 'pointer', borderRadius: .5, outlineOffset: 2 },
     '& [data-active="true"]': { color: colors.primary, bgcolor: colors.selected, outline: `1px solid ${colors.primary}` },
     '& [data-variable]:focus-visible': { outline: `2px solid ${colors.primary}` },
+  // oxlint-disable-next-line react/no-danger -- KaTeX is restricted to known parameter classes; hostile input is tested.
   }} dangerouslySetInnerHTML={{ __html: html }} />
 }

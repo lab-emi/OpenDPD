@@ -4,7 +4,6 @@ __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import torch
 import torch.nn as nn
-from backbones.rvtdcnn import RVTDCNN
 
 
 class CoreModel(nn.Module):
@@ -23,135 +22,10 @@ class CoreModel(nn.Module):
         self.bidirectional = False
         self.bias = True
 
-        if backbone_type == 'gmp':
-            from backbones.gmp import GMP
-            self.backbone = GMP()
-        elif backbone_type == 'gru':
-            from backbones.gru import GRU
-            self.backbone = GRU(input_size=self.input_size,
-                                hidden_size=self.hidden_size,
-                                output_size=self.output_size,
-                                num_layers=self.num_layers,
-                                bidirectional=self.bidirectional,
-                                batch_first=self.batch_first,
-                                bias=self.bias)
-        elif backbone_type == 'dgru':
-            from backbones.dgru import DGRU
-            self.backbone = DGRU(hidden_size=self.hidden_size,
-                                 output_size=self.output_size,
-                                 num_layers=self.num_layers,
-                                 bidirectional=self.bidirectional,
-                                 batch_first=self.batch_first,
-                                 bias=self.bias)
-        elif backbone_type == 'qgru':
-            from backbones.qgru import QGRU
-            self.backbone = QGRU(hidden_size=self.hidden_size,
-                                 output_size=self.output_size,
-                                 num_layers=self.num_layers,
-                                 bidirectional=self.bidirectional,
-                                 batch_first=self.batch_first,
-                                 bias=self.bias)
-        elif backbone_type == 'qgru_amp1':
-            from backbones.qgru_amp1 import QGRU
-            self.backbone = QGRU(hidden_size=self.hidden_size,
-                                 output_size=self.output_size,
-                                 num_layers=self.num_layers,
-                                 bidirectional=self.bidirectional,
-                                 batch_first=self.batch_first,
-                                 bias=self.bias)
-        elif backbone_type == 'lstm':
-            from backbones.lstm import LSTM
-            self.backbone = LSTM(input_size=self.input_size,
-                                 hidden_size=self.hidden_size,
-                                 output_size=self.output_size,
-                                 num_layers=self.num_layers,
-                                 bidirectional=self.bidirectional,
-                                 batch_first=self.batch_first,
-                                 bias=self.bias)
-        elif backbone_type == 'vdlstm':
-            from backbones.vdlstm import VDLSTM
-            self.backbone = VDLSTM(input_size=self.input_size,
-                                   hidden_size=self.hidden_size,
-                                   output_size=self.output_size,
-                                   num_layers=self.num_layers,
-                                   bidirectional=self.bidirectional,
-                                   batch_first=self.batch_first,
-                                   bias=self.bias)
-        elif backbone_type == 'rvtdcnn':
-            self.backbone = RVTDCNN(fc_hid_size=hidden_size)
-        elif backbone_type == 'apnrru':
-            from backbones.apnrru import APNRRU
-            self.backbone = APNRRU(hidden_size=self.hidden_size,
-                                   bias=self.bias)
-        elif backbone_type == 'bojanet':
-            from backbones.bojanet import BOJANET
-            self.backbone = BOJANET(hidden_size=self.hidden_size,
-                                   output_size=self.output_size,
-                                   bias=self.bias)
-        elif backbone_type == 'deltagru':
-            from backbones.deltagru import DeltaGRU
-            self.backbone = DeltaGRU(input_size=6,
-                                     hidden_size=self.hidden_size,
-                                     output_size=self.output_size,
-                                     num_layers=self.num_layers,
-                                     thx=self.thx,
-                                     thh=self.thh,
-                                     bias=self.bias)  
-        elif backbone_type == 'deltajanet':
-            from backbones.deltajanet import DeltaJANET
-            self.backbone = DeltaJANET(input_size=6,
-                                     hidden_size=self.hidden_size,
-                                     output_size=self.output_size,
-                                     num_layers=self.num_layers,
-                                     thx=self.thx,
-                                     thh=self.thh,
-                                     bias=self.bias)
-        elif backbone_type == 'pgjanet':
-            from backbones.pgjanet import PGJANET
-            self.backbone = PGJANET(hidden_size=self.hidden_size,
-                                  output_size=self.output_size,
-                                  bias=self.bias)
-        elif backbone_type == 'dvrjanet':
-            from backbones.dvrjanet import DVRJANET
-            self.backbone = DVRJANET(hidden_size=self.hidden_size,
-                                   output_size=self.output_size,
-                                   num_dvr_units=self.num_dvr_units,
-                                   bias=self.bias)
-        elif backbone_type == 'tres_deltagru':
-            from backbones.tres_deltagru import TResDeltaGRU
-            self.backbone = TResDeltaGRU(input_size=6,
-                                             hidden_size=self.hidden_size,
-                                             output_size=self.output_size,
-                                             num_layers=self.num_layers,
-                                             thx=self.thx,
-                                             thh=self.thh,
-                                             bias=self.bias)
-        elif backbone_type == 'tres_gru':
-            from backbones.tres_gru import TResGRU
-            self.backbone = TResGRU(input_size=6,
-                                    hidden_size=self.hidden_size,
-                                    output_size=self.output_size,
-                                    num_layers=self.num_layers,
-                                    bias=self.bias)
-        elif backbone_type == 'tcn':
-            from backbones.tcn import TCN
-            self.backbone = TCN(hidden_channels=self.hidden_size)
-        elif backbone_type == 'neuraltx':
-            from backbones.neuraltx import NeuralTX
-            self.backbone = NeuralTX(hidden_channels=self.hidden_size)
-        elif backbone_type == 'mcldnn':
-            from backbones.mcldnn import MCLDNN
-            self.backbone = MCLDNN(hidden_size=self.hidden_size)
-        else:
-            raise ValueError(f"The backbone type '{self.backbone_type}' is not supported. Please add your own "
-                             f"backbone under ./backbones and update models.py accordingly.")
-
-        # Initialize backbone parameters
-        try:
+        from opendpd.core.backbone_builders import build_backbone
+        self.backbone = build_backbone(backbone_type, vars(self))
+        if hasattr(self.backbone, 'reset_parameters'):
             self.backbone.reset_parameters()
-            print("Backbone Initialized...")
-        except AttributeError:
-            pass
 
     def forward(self, x, h_0=None):
         batch_size = x.size(0)  # NOTE: dim of x must be (batch, time, feat)/(N, T, F)

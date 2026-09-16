@@ -1,3 +1,4 @@
+import { useSession } from '@/api/hooks'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
@@ -5,7 +6,7 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { WEB_MODE, bootstrapSession, clearWebSession, loadSession } from '@/api/client'
 import { WebSessionStart } from '@/components/WebSessionStart'
@@ -17,7 +18,7 @@ import { useWebActivity } from '@/components/useWebActivity'
 /** Renders children only with a valid local session; otherwise explains how to get one. */
 export function SessionGate({ children }: { children: ReactNode }) {
   const qc = useQueryClient()
-  const session = useQuery({ queryKey: ['session'], queryFn: ({ signal }) => loadSession(signal), retry: false, staleTime: Infinity })
+  const session = useSession()
   useWebActivity(session.data?.authenticated ?? false)
   const [token, setToken] = useState('')
   const [invalid, setInvalid] = useState(false)

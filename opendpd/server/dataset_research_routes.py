@@ -9,7 +9,8 @@ from fastapi.responses import FileResponse
 
 from opendpd.schemas.dataset_catalog import (DatasetPublication, DatasetPublicationDraft,
     PublicationCapability, PublicationConsent, SyntheticSuite, SyntheticSuiteRequest)
-from opendpd.server.routes import require_csrf, require_session, _error
+from opendpd.server.routes import require_csrf, require_session
+from opendpd.server.errors import api_error as _error
 from opendpd.services.dataset_catalog import checked_file
 from opendpd.services.synthetic_datasets import generate_suite
 

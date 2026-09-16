@@ -70,7 +70,7 @@ def test_http_python_and_cli_inspect_the_same_capture_without_mutation(capture):
         with contextlib.redirect_stdout(out):
             assert main(["datasets", "analyze", "capture", "--workspace", str(ws.root)]) == 0
         assert json.loads(out.getvalue())["measurements"] == body["measurements"]
-        assert client.get("/api/v1/datasets/capture/analysis?version=missing-v1").status_code == 409
+        assert client.get("/api/v1/datasets/capture/analysis?version=missing-v1").status_code == 404
     assert ws.get_dataset("capture").model_dump_json() == before
     assert not (ws.dataset_dir("capture") / "diagnostics").exists()
 

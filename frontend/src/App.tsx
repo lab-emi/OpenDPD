@@ -1,3 +1,4 @@
+import { RouteError } from '@/components/RouteContent'
 import CssBaseline from '@mui/material/CssBaseline'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { ThemeProvider } from '@mui/material/styles'
@@ -58,7 +59,7 @@ function AppRoutes() {
         <Route path="hardware" element={<HardwareCostsPage />} />
         <Route path="robustness/:planSha" element={<RobustnessPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="gallery" element={<GalleryPage />} />
+        {import.meta.env.DEV && <Route path="gallery" element={<GalleryPage />} />}
         <Route path="about" element={<AboutPage />} />
         <Route path="server" element={<ServerStatusPage />} />
         <Route path="*" element={<HomePage />} />
@@ -82,7 +83,7 @@ export default function App({ queryClient }: { queryClient?: QueryClient }) {
         <Router>
           <SessionGate>
             <LanguageGate>
-              <StudioWorkflowProvider><AppRoutes /></StudioWorkflowProvider>
+              <RouteError><StudioWorkflowProvider><AppRoutes /></StudioWorkflowProvider></RouteError>
             </LanguageGate>
           </SessionGate>
         </Router>

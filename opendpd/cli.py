@@ -14,11 +14,6 @@ __email__ = "chang.gao@tudelft.nl, yizhuo.wu@tudelft.nl, a.li-2@tudelft.nl"
 import sys
 from pathlib import Path
 
-# Add parent directory to path to import existing modules
-_parent_dir = Path(__file__).parent.parent
-if str(_parent_dir) not in sys.path:
-    sys.path.insert(0, str(_parent_dir))
-
 
 def main():
     """Legacy entry point (``opendpd-cli``): identical to ``python main.py``."""

@@ -1,3 +1,4 @@
+import { getQuery } from '@/api/client'
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material'
@@ -32,7 +33,7 @@ export function PublicationFigureDialog({ initial, onClose }: { initial: FigureS
   const viewports = useRef<Record<number, PlotViewport>>({})
   const ids = Object.keys(spec.profiles)
   const source = useQuery({ queryKey: ['figure-sources', spec.profiles], queryFn: () => api.post<Sources>('/figure-sources', { profiles: spec.profiles }) })
-  const figures = useQuery({ queryKey: ['figures', ...ids], queryFn: () => api.get<SavedFigure[]>(`/figures?${ids.map(id => `runs=${encodeURIComponent(id)}`).join('&')}`) })
+  const figures = useQuery({ queryKey: ['figures', ...ids], queryFn: getQuery<SavedFigure[]>(`/figures?${ids.map(id => `runs=${encodeURIComponent(id)}`).join('&')}`) })
   const offered = figures.data?.filter(f => f.bindings.every(b => b.review.profile.validation !== 'pending_cross_validation')) ?? []
   const change = (next: FigureSpec) => { setSpec(next); setSaved(undefined) }
   const updatePanel = (index: number, patch: Partial<Panel>) => change({ ...spec, panels: spec.panels.map((p, i) => i === index ? { ...p, ...patch } : p) })

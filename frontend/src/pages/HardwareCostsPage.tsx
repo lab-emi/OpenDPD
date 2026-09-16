@@ -1,3 +1,4 @@
+import { getQuery } from '@/api/client'
 import { useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -39,7 +40,7 @@ export function HardwareCostsPage() {
   const profile = params.get('profile') ?? 'general-spectral-v1'
   const ids = (params.get('runs') ?? '').split(',').filter(Boolean).slice(0, 8)
   const query = new URLSearchParams({ runs: ids.join(','), profile }).toString()
-  const report = useQuery({ queryKey: ['hardware-costs', ids.join(','), profile], queryFn: () => api.get<Report>(`/hardware/costs?${query}`), enabled: ids.length > 0 && !WEB_MODE })
+  const report = useQuery({ queryKey: ['hardware-costs', ids.join(','), profile], queryFn: getQuery<Report>(`/hardware/costs?${query}`), enabled: ids.length > 0 && !WEB_MODE })
   if (WEB_MODE) return null
   const options = runs.data?.filter(r => r.status === 'succeeded' && r.result_id) ?? []
   const definition = profiles.data?.find(p => p.profile_id === profile && p.validation !== 'pending_cross_validation')

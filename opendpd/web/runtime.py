@@ -128,11 +128,9 @@ class WebSupervisor(Supervisor):
             self.manager.scheduled.discard(self)
             super().stop(timeout=timeout)
 
-    def worker_command(self, record):
-        command = super().worker_command(record)
-        if record.device == "cuda" and self.manager.config.gpu_token:
-            command[2] = "opendpd.web.gpu_proxy"
-        return command
+    def worker_module_for(self, record):
+        return ('opendpd.web.gpu_proxy' if record.device == 'cuda' and self.manager.config.gpu_token
+                else super().worker_module_for(record))
 
     def _spawn(self, record):
         super()._spawn(record)
@@ -224,6 +222,7 @@ class TenantManager:
         self.day = int(now() // DAY)
         self.inflight = 0
         self.cleanup_healthy = True
+        self.dispatch_healthy = True
         self.lock = None
 
     async def start(self):
@@ -243,10 +242,11 @@ class TenantManager:
                     pending = {s for s, _ in queued}
                     for supervisor in list(self.scheduled):
                         supervisor._tick()
-                        if supervisor not in pending and not supervisor._active:
+                        if supervisor not in pending and not supervisor.active_count():
                             self.scheduled.discard(supervisor)
+                self.dispatch_healthy = True
             except Exception:
-                self.cleanup_healthy = False
+                self.dispatch_healthy = False
                 log.exception('shared dispatcher failed; new admission disabled')
             self.scheduler_wake.wait(.25 if self.scheduled else 1)
             self.scheduler_wake.clear()
@@ -311,7 +311,7 @@ class TenantManager:
         for tenant in list(self.tenants.values()):
             if tenant.ip_key == ip_key:
                 tenant.closing = True
-                tenant.app.state.supervisor._accepting = False
+                tenant.app.state.supervisor.stop_accepting()
 
     def is_live(self, tenant: Tenant) -> bool:
         if self.now() >= self.idle_deadline(tenant.ip_key):
@@ -356,7 +356,7 @@ class TenantManager:
                             await self.remove(tenant)
                 self.admissions.pop(digest, None)
                 return None, None, None
-            if not self.cleanup_healthy:
+            if not self.cleanup_healthy or not self.dispatch_healthy:
                 reject(503, "cleanup_unavailable", "temporary storage maintenance is unavailable")
             if entry and entry.tenant_hash:
                 tenant = self.tenants.get(entry.tenant_hash)
@@ -450,13 +450,13 @@ class TenantManager:
 
     async def remove(self, tenant: Tenant):
         tenant.closing = True
-        tenant.app.state.supervisor._accepting = False
+        tenant.app.state.supervisor.stop_accepting()
         if tenant.inflight:
             # No directory deletion underneath an analysis request or download.
             # The independent systemd cgroup reset bounds a wedged request.
             return
         await tenant.context.__aexit__(None, None, None)
-        await asyncio.to_thread(shutil.rmtree, tenant.root)
+        await asyncio.to_thread(self.gpu.retire, tenant.app.state.supervisor, tenant.root)
         self.tenants.pop(tenant.token_hash, None)
         if not any(t.ip_key == tenant.ip_key for t in self.tenants.values()):
             self.ip_activity.pop(tenant.ip_key, None)
@@ -466,12 +466,13 @@ class TenantManager:
             await self._sweep(quotas=quotas)
 
     async def _sweep(self, *, quotas=True):
+        healthy = True
         try:
             self.gpu.sweep()
         except Exception:
             # GPU finalization must not stop tenant expiry or silently kill the
             # maintenance task. The independent reset remains a final backstop.
-            self.cleanup_healthy = False
+            healthy = False
             log.exception('GPU maintenance failed; session admission disabled')
         day = int(self.now() // DAY)
         tenants = list(self.tenants.values())
@@ -486,7 +487,7 @@ class TenantManager:
                         or (tenant.token_hash in checked and await asyncio.to_thread(directory_bytes, tenant.root) > self.config.max_workspace_bytes)):
                     await self.remove(tenant)
             except Exception:
-                self.cleanup_healthy = False
+                healthy = False
                 log.exception("temporary workspace cleanup failed; session admission disabled")
         if day != self.day:
             with self.budget_lock:
@@ -495,6 +496,8 @@ class TenantManager:
                 self.rate.clear()
                 self.total_runs = 0
                 self.day = day
+
+        self.cleanup_healthy = healthy
 
     async def maintenance(self):
         while True:

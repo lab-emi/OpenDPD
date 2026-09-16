@@ -1,8 +1,7 @@
 """Import smoke tests: every core module must be importable.
 
 Catches broken imports (missing modules, renamed symbols, syntax errors) at
-collection speed, before any training runs. utils.split_dataset is excluded
-on purpose: it is a standalone script that reads a dataset CSV at import time.
+collection speed, before any training runs. Importing a library never reads or writes a dataset.
 """
 
 import importlib

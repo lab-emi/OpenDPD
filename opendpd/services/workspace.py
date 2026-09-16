@@ -15,6 +15,8 @@ after registration; their hashes live in the manifest.
 
 from __future__ import annotations
 
+from functools import lru_cache
+import threading
 import hashlib
 import json
 import os
@@ -49,7 +51,20 @@ BUILTIN_DATASETS_DIR = PACKAGE_ROOT / "datasets"
 MIN_FREE_MB = 500
 
 
+_catalog_lock = threading.Lock()
+
+
 def list_builtin_datasets():
+    from opendpd.services.dataset_catalog import CATALOG_ROOT
+    paths = sorted([*BUILTIN_DATASETS_DIR.glob('*/spec.json'), *BUILTIN_DATASETS_DIR.glob('*/*.csv'),
+                    *CATALOG_ROOT.glob('**/dataset.json'), *CATALOG_ROOT.glob('**/*.csv')])
+    signature = tuple((str(p), p.stat().st_mtime_ns, p.stat().st_ctime_ns, p.stat().st_size) for p in paths)
+    with _catalog_lock:
+        return [entry.model_copy(deep=True) for entry in _builtin_catalog(signature)]
+
+
+@lru_cache(maxsize=1)
+def _builtin_catalog(signature):
     """Discover every shipped spec; no frontend-maintained dataset list."""
     from opendpd.schemas.importing import BuiltinDatasetInfo
 
@@ -81,7 +96,24 @@ def list_builtin_datasets():
 
 
 class WorkspaceError(RuntimeError):
-    pass
+    status_code = 409
+    code = 'workspace_error'
+
+
+class NotFound(WorkspaceError):
+    status_code = 404
+    code = 'not_found'
+
+
+class InvalidInput(WorkspaceError):
+    status_code = 422
+    code = 'invalid_input'
+
+
+class Conflict(WorkspaceError):
+    status_code = 409
+    code = 'conflict'
+
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -104,9 +136,16 @@ def write_json_atomic(path: Path, data: Any) -> None:
         text = data.model_dump_json(indent=2)
     else:
         text = json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False)
-    tmp = path.with_name(f".{path.name}.{secrets.token_hex(4)}.tmp")
-    tmp.write_text(text + "\n", encoding="utf-8")
-    os.replace(tmp, path)
+    write_atomic(path, lambda temporary: temporary.write_text(text + "\n", encoding='utf-8'))
+
+
+def write_atomic(path: Path, writer) -> None:
+    temporary = path.with_name(f'.{path.name}.{secrets.token_hex(8)}.tmp')
+    try:
+        writer(temporary)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def read_json(path: Path) -> Any:
@@ -149,13 +188,15 @@ def _git_state():
 # Mirrors schemas.common.Slug. Identifiers that name a directory are checked
 # here, at the one place every caller goes through, so a caller that forgets
 # cannot turn an identifier into a path separator or an absolute path.
-IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+from opendpd.schemas.common import SLUG_RE
+
+IDENTIFIER = SLUG_RE
 
 
 def checked_identifier(value: str, field: str = "identifier") -> str:
     """Return ``value`` if it can only ever name one directory entry."""
     if not isinstance(value, str) or not IDENTIFIER.fullmatch(value):
-        raise WorkspaceError(f"{field} '{value}' is not an identifier; it must match {IDENTIFIER.pattern}")
+        raise InvalidInput(f"{field} '{value}' is not an identifier; it must match {IDENTIFIER.pattern}")
     return value
 
 
@@ -166,6 +207,27 @@ def slugify(name: str) -> str:
     return out or "dataset"
 
 
+class HashedStore:
+    """Workspace-owned content directories with the same link and identifier checks."""
+    def __init__(self, root: Path, prefix: str):
+        from opendpd.schemas.common import hashed_id
+        self.root, self.pattern = root, re.compile(hashed_id(prefix))
+
+    def directory(self, identifier: str) -> Path:
+        if not isinstance(identifier, str) or not self.pattern.fullmatch(identifier):
+            raise InvalidInput('Unknown stored signal identifier.')
+        path = self.root / identifier
+        if self.root.is_symlink() or path.is_symlink():
+            raise Conflict('Signal storage cannot be a symbolic link.')
+        return path
+
+    def manifest(self, identifier, model):
+        path = self.directory(identifier) / 'manifest.json'
+        if not path.is_file() or path.is_symlink():
+            raise NotFound('Signal not found. Generate or upload it first.')
+        return model.model_validate(read_json(path))
+
+
 class Workspace:
     def __init__(self, root: Path):
         self.root = Path(root).expanduser().resolve()
@@ -174,6 +236,9 @@ class Workspace:
         self.cache_dir = self.root / "cache"
         self.exports_dir = self.root / "exports"
         self.meta_path = self.root / "workspace.json"
+
+    def hashed_store(self, kind: str, prefix: str) -> HashedStore:
+        return HashedStore(self.root / checked_identifier(kind), checked_identifier(prefix))
 
     # -- lifecycle ---------------------------------------------------------
     @classmethod
@@ -266,7 +331,7 @@ class Workspace:
     def get_dataset(self, dataset_id: str) -> DatasetManifest:
         path = self.dataset_dir(dataset_id) / "manifest.json"
         if not path.exists():
-            raise WorkspaceError(f"dataset '{dataset_id}' is not registered in {self.root}")
+            raise NotFound(f"dataset '{dataset_id}' is not registered in {self.root}")
         return DatasetManifest.model_validate(read_json(path))
 
     def save_dataset(self, manifest: DatasetManifest) -> None:
@@ -284,7 +349,7 @@ class Workspace:
             return candidate
         if version == "raw-v1":
             return self.dataset_raw_dir(dataset_id)
-        raise WorkspaceError(f"dataset '{dataset_id}' has no version '{version}'")
+        raise NotFound(f"dataset '{dataset_id}' has no version '{version}'")
 
     # -- authorised import roots ------------------------------------------------
     @property
@@ -314,9 +379,6 @@ class Workspace:
             raise WorkspaceError(f"unknown built-in dataset '{name}'; available: {', '.join(known)}")
         src = BUILTIN_DATASETS_DIR / name
         spec_path = src / "spec.json"
-        if not spec_path.is_file():
-            known = sorted(p.parent.name for p in BUILTIN_DATASETS_DIR.glob("*/spec.json"))
-            raise WorkspaceError(f"unknown built-in dataset '{name}'; available: {', '.join(known)}")
         copied = ["spec.json"] + sorted(p.name for p in src.glob("*.csv"))
         source_hash = combined_sha256(sha256_file(src / filename) for filename in copied)
         explicit_id = dataset_id is not None

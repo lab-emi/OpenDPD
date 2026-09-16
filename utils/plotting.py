@@ -4,12 +4,10 @@ __email__ = "chang.gao@tudelft.nl"
 
 import os
 import sys
-import importlib.util
 from pathlib import Path
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from utils.metrics import IQ_to_complex, power_spectrum, moving_average, EVM, ACLR
 
@@ -17,41 +15,21 @@ from utils.metrics import IQ_to_complex, power_spectrum, moving_average, EVM, AC
 # Publication-quality styling
 # ===========================================================================
 
-_SFP_PATH = Path(__file__).resolve().parents[1] / (
-    ".claude/plugins/cache/figures4papers/figures4papers/unknown/"
-    "skills/scientific-figure-pro/scripts/scientific_figure_pro.py"
-)
-_SFP_HOME = Path.home() / (
-    ".claude/plugins/cache/figures4papers/figures4papers/unknown/"
-    "skills/scientific-figure-pro/scripts/scientific_figure_pro.py"
-)
-
-_sfp = None
-for _candidate in [_SFP_PATH, _SFP_HOME]:
-    if _candidate.exists():
-        _spec = importlib.util.spec_from_file_location("scientific_figure_pro", _candidate)
-        _sfp = importlib.util.module_from_spec(_spec)
-        sys.modules[_spec.name] = _sfp
-        _spec.loader.exec_module(_sfp)
-        break
+PUBLICATION_STYLE = {
+    'font.size': 12, 'axes.spines.right': False, 'axes.spines.top': False,
+    'legend.frameon': False, 'savefig.bbox': 'tight',
+}
 
 
-def _apply_pub_style():
-    """Apply publication style if available, else basic cleanup."""
-    if _sfp is not None:
-        _sfp.apply_publication_style(_sfp.FigureStyle(font_size=14, axes_linewidth=2))
-    else:
-        plt.rcParams.update({
-            'font.size': 12,
-            'axes.spines.right': False,
-            'axes.spines.top': False,
-            'legend.frameon': False,
-            'savefig.bbox': 'tight',
-        })
+def publication_style(function):
+    """Apply deterministic figure defaults only for the duration of a call."""
+    from functools import wraps
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        with plt.rc_context(PUBLICATION_STYLE):
+            return function(*args, **kwargs)
+    return wrapped
 
-
-# Apply at module load time
-_apply_pub_style()
 
 # --- Palette constants -----------------------------------------------------
 C_PRED = '#0F4D92'     # blue_main - predictions / with DPD
@@ -218,6 +196,7 @@ def _ensure_2d_segments(sig, nperseg):
     return sig
 
 
+@publication_style
 def plot_psd(signal_complex, save_path, label='Signal',
              ref_complex=None, ref_label='Reference',
              fs=800e6, nperseg=2560, smoothing_window=10):
@@ -249,6 +228,7 @@ def plot_psd(signal_complex, save_path, label='Signal',
     _savefig(fig, save_path)
 
 
+@publication_style
 def plot_amam(input_iq, output_iq, save_path, label='Model',
               ref_output_iq=None, ref_label='Reference'):
     """AM/AM characteristic: input amplitude vs output amplitude."""
@@ -288,6 +268,7 @@ def plot_amam(input_iq, output_iq, save_path, label='Model',
     _savefig(fig, save_path)
 
 
+@publication_style
 def plot_ampm(input_iq, output_iq, save_path, label='Model',
               ref_output_iq=None, ref_label='Reference'):
     """AM/PM characteristic: input amplitude vs phase difference."""
@@ -339,6 +320,7 @@ def _demod_signal(sig_complex, demod, sync_complex=None):
     return demod.demodulate(sig, sync_signal=ref)
 
 
+@publication_style
 def _plot_full_seq_constellation(full_const_data, demod, save_path,
                                   left_key, left_label, left_color,
                                   right_key, right_label, right_color,
@@ -417,6 +399,7 @@ def _plot_constellation_density(ax, sig_complex, label, cmap='Blues',
     ax.grid(alpha=0.2, linestyle='--')
 
 
+@publication_style
 def plot_constellation(signal_complex, save_path, demod, label='Signal',
                        ref_complex=None, ref_label='Reference'):
     """Constellation diagram via dataset-specific OFDM demodulation.
@@ -452,6 +435,7 @@ def plot_constellation(signal_complex, save_path, demod, label='Signal',
     _savefig(fig, save_path)
 
 
+@publication_style
 def plot_constellation_dual(left_complex, left_label, left_color,
                             right_complex, right_label, right_color,
                             ref_complex, ref_label, ref_color,
@@ -499,6 +483,7 @@ def plot_constellation_dual(left_complex, left_label, left_color,
     _savefig(fig, save_path)
 
 
+@publication_style
 def plot_waveform(input_iq, output_iq, save_path, pred_iq=None,
                   n_samples=500, label_in='Input', label_out='Output',
                   label_pred='Prediction', ylim=None, epoch=None):
@@ -530,6 +515,7 @@ def plot_waveform(input_iq, output_iq, save_path, pred_iq=None,
     _savefig(fig, save_path)
 
 
+@publication_style
 def plot_error_signal(pred_iq, target_iq, save_path, n_samples=500, ylim=None,
                       epoch=None):
     """Plot prediction error (residual) in time domain."""
@@ -554,6 +540,7 @@ def plot_error_signal(pred_iq, target_iq, save_path, n_samples=500, ylim=None,
     _savefig(fig, save_path)
 
 
+@publication_style
 def plot_training_curves(history, save_path, metric_keys=None):
     """Plot training metric curves over epochs from a list of dicts."""
     if not history:
@@ -589,6 +576,7 @@ def plot_training_curves(history, save_path, metric_keys=None):
         _savefig(fig, os.path.join(save_path, fname))
 
 
+@publication_style
 def plot_metrics_summary(metrics_wo, metrics_w, save_path, metric_names=None):
     """Bar chart comparing metrics with and without DPD."""
     if metric_names is None:
@@ -627,6 +615,7 @@ def plot_metrics_summary(metrics_wo, metrics_w, save_path, metric_names=None):
 # 2x2 Overview plot
 # ===========================================================================
 
+@publication_style
 def generate_overview_plot(epoch_dir, split, pred_flat, gt_flat, pa_flat,
                            pred_c, gt_c, pa_c, fs, nperseg, bw_main_ch,
                            n_sub_ch, demod=None, sw=10,
@@ -758,6 +747,7 @@ def generate_overview_plot(epoch_dir, split, pred_flat, gt_flat, pa_flat,
 # High-level epoch plotting dispatchers
 # ===========================================================================
 
+@publication_style
 def generate_epoch_plots_train_pa(plot_dir, epoch, prediction, ground_truth,
                                   input_data, split, spec, demod=None,
                                   subfolder=None, fixed_limits=None,
@@ -887,6 +877,7 @@ def generate_epoch_plots_train_pa(plot_dir, epoch, prediction, ground_truth,
                       ylim=fl.get('error_ylim'), epoch=ep)
 
 
+@publication_style
 def generate_epoch_plots_train_dpd(plot_dir, epoch, prediction, ground_truth,
                                    split, spec, demod=None, subfolder=None,
                                    pa_only_prediction=None, fixed_limits=None,
@@ -1152,6 +1143,7 @@ def generate_plots_run_dpd(plot_dir, dpd_input, dpd_output, spec, demod=None):
                   label_in='Original Input', label_out='DPD Output (Pre-distorted)')
 
 
+@publication_style
 def generate_plots_compare(plot_dir, pa_input, pa_output_wo_dpd, pa_output_w_dpd,
                            spec, demod=None, metrics_wo=None, metrics_w=None,
                            full_const_data=None):

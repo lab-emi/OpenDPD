@@ -31,5 +31,24 @@ ReadWritePaths=/var/lib/containers /run/containers /run/libpod /run/lock /run/ru
 # Podman needs namespaces and device setup here. Every experiment container
 # drops all capabilities, runs as UID 65532 and has no network or host sockets.
 
+# The current host uses root-owned OCI storage. Bound the agent separately from
+# the unprivileged experiment container. The OCI runtime requires NET_ADMIN
+# for its private network namespace and SYS_PTRACE for init handoff on this host.
+# Neither capability is granted to experiment containers.
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_SETGID CAP_SETUID CAP_SETPCAP CAP_SYS_ADMIN CAP_MKNOD CAP_SYS_CHROOT CAP_KILL CAP_NET_ADMIN CAP_SYS_PTRACE
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_NETLINK
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8
+InaccessiblePaths=-/etc/opendpd-web/admin_ed25519 -/etc/opendpd-web/tunnel.token -/var/lib/opendpd-sandbox
+ExecStartPre=/usr/bin/python3 /opt/opendpd-gpu/deployment/web/check-permissions.py gpu
+
 [Install]
 WantedBy=multi-user.target

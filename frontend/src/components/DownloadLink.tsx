@@ -3,7 +3,7 @@ import Button from '@mui/material/Button'
 import Link from '@mui/material/Link'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { useState, type ReactNode } from 'react'
-import { WEB_MODE, downloadFile } from '@/api/client'
+import { artifactDownloadUrl, downloadFile } from '@/api/client'
 
 /** Same-origin desktop links, authenticated fetch downloads in the public app. */
 export function DownloadLink({ href, download, children, button = false, variant = 'text', size = 'small', sx }: {
@@ -12,9 +12,11 @@ export function DownloadLink({ href, download, children, button = false, variant
 }) {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const props = { href, download: download ?? true, sx, onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!WEB_MODE) return
+  let safeHref: string | undefined
+  try { artifactDownloadUrl(href); safeHref = href } catch { /* Invalid links stay inert. */ }
+  const props = { href: safeHref, download: download ?? true, sx, onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
+    if (!safeHref) { setError('Invalid artifact URL'); return }
     if (busy) return
     setBusy(true); setError(null)
     void downloadFile(href, typeof download === 'string' ? download : undefined)

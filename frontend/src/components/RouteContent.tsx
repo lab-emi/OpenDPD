@@ -2,7 +2,7 @@ import { Component, Suspense, type ReactNode } from 'react'
 import { Outlet, useLocation } from 'react-router'
 import { ErrorState, LoadingState } from './StateBlock'
 
-class RouteError extends Component<{ children: ReactNode }, { error: Error | null }> {
+export class RouteError extends Component<{ children: ReactNode }, { error: Error | null }> {
   override state = { error: null as Error | null }
   static getDerivedStateFromError(error: Error) { return { error } }
   override render() {

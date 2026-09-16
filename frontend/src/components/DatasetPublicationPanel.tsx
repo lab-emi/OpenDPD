@@ -1,8 +1,9 @@
+import { getQuery } from '@/api/client'
 import { useState } from 'react'
 import { Alert, Box, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Link, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
-import { api, API } from '@/api/client'
+import { api, API, safePullRequestUrl } from '@/api/client'
 import type { components } from '@/api/schema'
 import type { DatasetManifest } from '@/api/types'
 import { t, type MessageKey } from '@/i18n'
@@ -33,11 +34,11 @@ function PublicationDialog({ dataset, onClose }: { dataset: DatasetManifest; onC
   const [review, setReview] = useState<Publication>()
   const [stamp, setStamp] = useState('')
   const formStamp = JSON.stringify({ description, attribution, license })
-  const capability = useQuery({ queryKey: ['dataset-publication-capability'], queryFn: () => api.get<components['schemas']['PublicationCapability']>('/dataset-publications/capability'), staleTime: 15000 })
-  const history = useQuery({ queryKey, queryFn: () => api.get<Publication[]>(`/dataset-publications?dataset_id=${encodeURIComponent(dataset.dataset_id)}`), refetchInterval: q => q.state.data?.some(active) ? 1000 : false })
+  const capability = useQuery({ queryKey: ['dataset-publication-capability'], queryFn: getQuery<components['schemas']['PublicationCapability']>('/dataset-publications/capability'), staleTime: 15000 })
+  const history = useQuery({ queryKey, queryFn: getQuery<Publication[]>(`/dataset-publications?dataset_id=${encodeURIComponent(dataset.dataset_id)}`), refetchInterval: q => q.state.data?.some(active) ? 1000 : false })
   const selected = (review && history.data?.find(r => r.publication_id === review.publication_id)) ?? review
   const prepare = useMutation({ mutationFn: () => api.post<Publication>('/dataset-publications/prepare', { dataset_id: dataset.dataset_id, description, attribution, license }), onSuccess: r => { setReview(r); setStamp(formStamp); setConsent(false); void qc.invalidateQueries({ queryKey }) } })
-  const submit = useMutation({ mutationFn: (record: Publication) => api.post<Publication>(`/dataset-publications/${record.publication_id}/submit`, { package_sha256: record.package_sha256, publish_publicly: true, rights_confirmed: true }), onSuccess: r => { setReview(r); void qc.invalidateQueries({ queryKey }) } })
+  const submit = useMutation({ mutationFn: (record: Publication) => api.post<Publication>(`/dataset-publications/${encodeURIComponent(record.publication_id)}/submit`, { package_sha256: record.package_sha256, publish_publicly: true, rights_confirmed: true }), onSuccess: r => { setReview(r); void qc.invalidateQueries({ queryKey }) } })
   const busy = prepare.isPending || submit.isPending || active(selected)
   const fresh = !!review && stamp === formStamp
   return <Dialog open fullWidth maxWidth="md" onClose={prepare.isPending || submit.isPending ? undefined : onClose} aria-labelledby="publication-title">
@@ -57,13 +58,13 @@ function PublicationDialog({ dataset, onClose }: { dataset: DatasetManifest; onC
         <Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>SHA256: {selected.package_sha256}</Typography>
         {selected.files.map(f => <Typography variant="body2" key={f.path}>{f.path} · {f.size_bytes == null ? t('common.na') : `${(f.size_bytes / 1024).toFixed(1)} KiB`}</Typography>)}
         <Box component="details"><Typography component="summary">{t('datasetResearch.metadata')}</Typography><Box component="pre" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{JSON.stringify(selected.catalog, null, 2)}</Box></Box>
-        <DownloadLink href={`${API}/dataset-publications/${selected.publication_id}/download`} download>{t('datasetResearch.download')}</DownloadLink>
+        <DownloadLink href={`${API}/dataset-publications/${encodeURIComponent(selected.publication_id)}/download`} download>{t('datasetResearch.download')}</DownloadLink>
         {selected.error && <Alert severity="error">{selected.error}</Alert>}
-        {selected.pull_request_url && <Alert severity="success"><Link href={selected.pull_request_url} target="_blank" rel="noreferrer">{t('datasetResearch.openPR')}</Link> · {selected.pull_request_state}</Alert>}
+        {selected.pull_request_url && <Alert severity="success"><Link href={safePullRequestUrl(selected.pull_request_url)} target="_blank" rel="noreferrer">{t('datasetResearch.openPR')}</Link> · {selected.pull_request_state}</Alert>}
         {selected.status !== 'submitted' && <FormControlLabel control={<Checkbox checked={consent} disabled={busy} onChange={e => setConsent(e.target.checked)} />} label={t('datasetResearch.consent')} />}
       </Stack></Paper>}
       {prepare.isError && <ErrorState error={prepare.error} />}{submit.isError && <ErrorState error={submit.error} />}
-      {!!history.data?.length && <Box component="details"><Typography component="summary">{t('datasetResearch.history')}</Typography><Stack spacing={1} sx={{ pt: 1 }}>{history.data.map(r => <Stack key={r.publication_id} direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}><Typography variant="body2">{r.created_at} · {t(`datasetResearch.status.${r.status}` as MessageKey)}</Typography>{r.pull_request_url ? <Link href={r.pull_request_url} target="_blank" rel="noreferrer">{t('datasetResearch.openPR')}</Link> : <Button onClick={() => { setDescription(r.catalog.description); setAttribution(r.catalog.attribution); setLicense(r.catalog.license); setReview(r); setStamp(JSON.stringify({ description: r.catalog.description, attribution: r.catalog.attribution, license: r.catalog.license })); setConsent(false) }}>{t('datasetResearch.reopen')}</Button>}</Stack>)}</Stack></Box>}
+      {!!history.data?.length && <Box component="details"><Typography component="summary">{t('datasetResearch.history')}</Typography><Stack spacing={1} sx={{ pt: 1 }}>{history.data.map(r => <Stack key={r.publication_id} direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }}><Typography variant="body2">{r.created_at} · {t(`datasetResearch.status.${r.status}` as MessageKey)}</Typography>{r.pull_request_url ? <Link href={safePullRequestUrl(r.pull_request_url)} target="_blank" rel="noreferrer">{t('datasetResearch.openPR')}</Link> : <Button onClick={() => { setDescription(r.catalog.description); setAttribution(r.catalog.attribution); setLicense(r.catalog.license); setReview(r); setStamp(JSON.stringify({ description: r.catalog.description, attribution: r.catalog.attribution, license: r.catalog.license })); setConsent(false) }}>{t('datasetResearch.reopen')}</Button>}</Stack>)}</Stack></Box>}
       {history.isError && <ErrorState error={history.error} />}
     </Stack></DialogContent>
     <DialogActions><Button onClick={onClose} disabled={prepare.isPending || submit.isPending}>{t('common.back')}</Button><Button variant="contained" disabled={busy || !fresh || !consent || !capability.data?.available || selected?.status === 'submitted'} onClick={() => selected && submit.mutate(selected)}>{t('datasetResearch.submit')}</Button></DialogActions>

@@ -1,8 +1,8 @@
+import { getQuery } from '@/api/client'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/api/client'
 import { isTerminal, type RunView } from '@/api/types'
 import type { components } from '@/api/schema'
 import { t } from '@/i18n'
@@ -11,7 +11,7 @@ import { DownloadLink } from './DownloadLink'
 export function ModelDownloadButton({ run }: { run: RunView }) {
   const model = useQuery({
     queryKey: ['run', run.run_id, 'checkpoint', run.status],
-    queryFn: () => api.get<components['schemas']['ModelDownloadInfo']>(`/runs/${encodeURIComponent(run.run_id)}/checkpoint`),
+    queryFn: getQuery<components['schemas']['ModelDownloadInfo']>(`/runs/${encodeURIComponent(run.run_id)}/checkpoint`),
     refetchInterval: isTerminal(run.status) ? false : 5000,
   })
   const available = model.data?.available && model.data.download_url

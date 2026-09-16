@@ -404,13 +404,8 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
 # --- execution --------------------------------------------------------------------
 
 def _worker_info() -> WorkerInfo:
-    pid = os.getpid()
-    try:
-        import psutil
-        create_time = psutil.Process(pid).create_time()
-    except Exception:  # psutil optional in the core install
-        create_time = time.time()
-    return WorkerInfo(pid=pid, create_time=create_time, host=socket.gethostname())
+    from opendpd.runtime.procs import worker_info
+    return worker_info()
 
 
 def _transition(record: RunRecord, new: RunStatus, **updates) -> RunRecord:

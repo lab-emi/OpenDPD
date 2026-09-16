@@ -13,6 +13,7 @@ import os
 import re
 import secrets
 from pathlib import Path
+from opendpd.services.workspace import sha256_file
 
 from opendpd.services.csv_import import _is_header, _number
 from opendpd.services.workspace import write_json_atomic
@@ -119,7 +120,7 @@ def validated_source(ws, source):
     if path.is_symlink() or proof.is_symlink() or not path.is_file() or not proof.is_file():
         raise CsvUploadRejected('The validated CSV is unavailable. Upload it again.')
     validation = json.loads(proof.read_text())
-    if path.stat().st_size > MAX_UPLOAD_BYTES or hashlib.sha256(path.read_bytes()).hexdigest() != validation['sha256']:
+    if path.stat().st_size > MAX_UPLOAD_BYTES or sha256_file(path) != validation['sha256']:
         path.unlink(missing_ok=True)
         proof.unlink(missing_ok=True)
         raise CsvUploadRejected('CSV changed after validation. Upload deleted.')

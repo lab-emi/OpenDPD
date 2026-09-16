@@ -145,8 +145,9 @@ class APNRRU(nn.Module):
                 nn.init.constant_(module.bias, 0)
         
         # Initialize output layer
-        nn.init.xavier_uniform_(self.output_layer.weight)
-        if self.output_layer.bias is not None:
-            nn.init.constant_(self.output_layer.bias, 0)
+        for layer in (self.output_layer_I, self.output_layer_Q):
+            nn.init.xavier_uniform_(layer.weight)
+            if layer.bias is not None:
+                nn.init.constant_(layer.bias, 0)
 
         

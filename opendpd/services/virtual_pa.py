@@ -17,19 +17,14 @@ from opendpd.schemas.importing import CsvOptions
 from opendpd.schemas.signal_generator import GeneratorDatasetResponse
 from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPASimulation, PairedDatasetRequest
 from opendpd.services import signal_generator as inputs
-from opendpd.services.datasets import import_dataset
+from opendpd.services.datasets import import_arrays
 from opendpd.services.workspace import WorkspaceError, read_json, sha256_file, write_json_atomic
 
 _LOCK = threading.RLock()
 
 
 def directory(ws, identifier):
-    if not re.fullmatch(r"vpa-[a-f0-9]{64}", identifier):
-        raise WorkspaceError("Unknown virtual PA simulation.")
-    path = ws.root / "pa_simulations" / identifier
-    if path.is_symlink():
-        raise WorkspaceError("Simulation directory cannot be a symbolic link.")
-    return path
+    return ws.hashed_store('pa_simulations', 'vpa').directory(identifier)
 
 
 def read_simulation(ws, identifier):
@@ -139,19 +134,16 @@ def create_dataset(ws, identifier, request: PairedDatasetRequest):
                 if path.is_symlink() or not path.is_file() or sha256_file(path) != ref.sha256:
                     raise WorkspaceError("Existing paired dataset bytes have changed.")
             return GeneratorDatasetResponse(dataset=existing, test_samples=bounds["test"][1]-bounds["test"][0])
-        paired = export(ws, identifier, "paired")
+        x = np.load(inputs.directory(ws, result.config.input_signal_id) / "iq.npy", allow_pickle=False)
+        y = np.load(directory(ws, identifier) / "output.npy", allow_pickle=False)
         config = signal.config
-        with tempfile.TemporaryDirectory(prefix="opendpd-virtual-pa-") as tmp:
-            # An ordinary CSV import provides the same split and validation path as measured pairs.
-            source = Path(tmp) / "input-output.csv"
-            source.write_bytes(paired.read_bytes())
-            manifest = import_dataset(ws, source, dataset_id=request.dataset_id, display_name=request.display_name,
-                origin=DatasetOrigin.synthetic, guard_samples=request.guard_samples, ratios=ratios, csv_options=CsvOptions(),
-                signal=SignalSpec(sample_rate_hz=config.sample_rate_hz, bandwidth_hz=config.bandwidth_hz,
-                    sub_channel_bandwidth_hz=config.bandwidth_hz, n_sub_ch=1,
-                    nperseg=min(4096, max(512, config.fft_size*config.oversampling)),
-                    modulation=f"{config.waveform.upper()} synthetic PA input", amplitude_units="normalized"),
-                notes="SYNTHETIC paired PA input x and virtual PA output y. " + result.model.limitations.en + " " + " ".join(result.analysis.notes))
+        manifest = import_arrays(ws, x, y, dataset_id=request.dataset_id, display_name=request.display_name,
+            origin=DatasetOrigin.synthetic, guard_samples=request.guard_samples, ratios=ratios,
+            signal=SignalSpec(sample_rate_hz=config.sample_rate_hz, bandwidth_hz=config.bandwidth_hz,
+                sub_channel_bandwidth_hz=config.bandwidth_hz, n_sub_ch=1,
+                nperseg=min(4096, max(512, config.fft_size*config.oversampling)),
+                modulation=f"{config.waveform.upper()} synthetic PA input", amplitude_units="normalized"),
+            notes="SYNTHETIC paired PA input x and virtual PA output y. " + result.model.limitations.en + " " + " ".join(result.analysis.notes))
         manifest = manifest.model_copy(update={"simulation": provenance,
             "source": manifest.source.model_copy(update={"original_path": None})})
         ws.save_dataset(manifest)

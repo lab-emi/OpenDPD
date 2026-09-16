@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import math
 import posixpath
 from datetime import datetime, timezone
@@ -13,7 +14,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 SCHEMA_VERSION = 1
 
 # Identifiers used in paths, URLs and databases: no spaces, no path separators.
-Slug = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")]
+SLUG_PATTERN = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
+SLUG_RE = re.compile(SLUG_PATTERN)
+FILE_ID_PATTERN = r"[A-Za-z0-9][A-Za-z0-9._-]{0,200}"
+Slug = Annotated[str, Field(pattern=f"^{SLUG_PATTERN}$")]
+
+
+def hashed_id(prefix: str) -> str:
+    return rf"^{re.escape(prefix)}-[a-f0-9]{{64}}$"
+
 Sha256 = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 
 
@@ -111,3 +120,7 @@ class FileRef(StrictModel):
         if ":" in parts[0] and len(parts[0]) == 2:  # C: style drive prefix
             raise ValueError("FileRef.path must not contain a drive prefix")
         return value
+
+
+def error_payload(code: str, message: str, details=None, hint=None):
+    return {'error': {'code': code, 'message': message, 'details': details or [], 'hint': hint}}

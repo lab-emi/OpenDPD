@@ -1,3 +1,4 @@
+import { getQuery } from '@/api/client'
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -20,7 +21,7 @@ function CreateSession({ result, close, saved }: { result: EvaluationResult; clo
   const [interval, setInterval] = useState<'none' | 'student_t_95'>('none')
   const [captures, setCaptures] = useState<DraftCapture[]>([newCapture(result.run_id!)])
   const [records, setRecords] = useState('{"instruments": [], "calibrations": []}')
-  const details = useQueries({ queries: captures.map(c => ({ queryKey: ['result', c.run_id, result.metric_profile_id], queryFn: () => api.get<EvaluationResult>(`/results/${encodeURIComponent(c.run_id)}?profile=${encodeURIComponent(result.metric_profile_id)}`), retry: false })) })
+  const details = useQueries({ queries: captures.map(c => ({ queryKey: ['result', c.run_id, result.metric_profile_id], queryFn: getQuery<EvaluationResult>(`/results/${encodeURIComponent(c.run_id)}?profile=${encodeURIComponent(result.metric_profile_id)}`), retry: false })) })
   const change = (index: number, values: Partial<DraftCapture>) => setCaptures(captures.map((c, i) => i === index ? { ...c, ...values } : c))
   const create = useMutation({
     mutationFn: () => {
@@ -75,11 +76,11 @@ function CreateSession({ result, close, saved }: { result: EvaluationResult; clo
 
 export function MeasurementSessions({ result }: { result: EvaluationResult }) {
   const qc = useQueryClient()
-  const list = useQuery({ queryKey: ['measurement-sessions', result.run_id], queryFn: () => api.get<MeasurementSession[]>(`/measurement-sessions?run_id=${encodeURIComponent(result.run_id!)}`) })
+  const list = useQuery({ queryKey: ['measurement-sessions', result.run_id], queryFn: getQuery<MeasurementSession[]>(`/measurement-sessions?run_id=${encodeURIComponent(result.run_id!)}`) })
   const [open, setOpen] = useState(false)
   const [chosen, setChosen] = useState('')
   const sessionId = chosen || list.data?.[0]?.session_id || ''
-  const current = useQuery({ queryKey: ['measurement-session', sessionId], queryFn: () => api.get<MeasurementSession>(`/measurement-sessions/${encodeURIComponent(sessionId)}`), enabled: !!sessionId })
+  const current = useQuery({ queryKey: ['measurement-session', sessionId], queryFn: getQuery<MeasurementSession>(`/measurement-sessions/${encodeURIComponent(sessionId)}`), enabled: !!sessionId })
   const session = current.data
   const runs = [...new Set(session?.spec.captures.map(c => c.run_id) ?? [])]
   const value = (n: number | null | undefined) => typeof n === 'number' ? formatNumber(n, { maximumFractionDigits: 4 }) : t('review.missing')

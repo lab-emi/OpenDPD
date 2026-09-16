@@ -21,6 +21,33 @@ from opendpd.schemas import ResolvedExperimentConfig, TaskType
 from opendpd.services.workspace import WorkspaceError
 
 
+def namespace_from_kwargs(step: str, options: dict) -> argparse.Namespace:
+    """Validate public API options through parser actions without modifying process arguments."""
+    from arguments import build_parser
+    parser = build_parser()
+    actions = {a.dest: a for a in parser._actions}
+    tokens = ['--step', step]
+    if not options.get('dataset_name') and not options.get('dataset_path'):
+        raise ValueError(f'{step} requires dataset_name or dataset_path')
+    for name, value in options.items():
+        if value is None:
+            continue
+        action = actions.get(name)
+        if action is None or name in {'help', 'step'}:
+            raise ValueError(f'Unknown training option: {name}')
+        if isinstance(action, argparse._StoreTrueAction):
+            if not isinstance(value, bool):
+                raise ValueError(f'{name} must be a boolean')
+            if value:
+                tokens.append(action.option_strings[0])
+        else:
+            tokens.extend([action.option_strings[0], str(value)])
+    try:
+        return parser.parse_args(tokens)
+    except SystemExit as exc:
+        raise ValueError('Invalid training options') from exc
+
+
 def build_namespace(resolved: ResolvedExperimentConfig, *, dataset_dir: Path,
                     dataset_name: str) -> argparse.Namespace:
     """Legacy namespace equivalent to ``resolved``.
