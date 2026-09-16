@@ -136,3 +136,21 @@ def test_imported_plotting_keeps_the_callers_backend_and_styles():
         importlib.reload(datasets.plot_utils)
         assert dict(plt.rcParams) == before
         assert matplotlib.get_backend() == backend
+
+
+def test_array_import_cannot_delete_a_concurrently_created_dataset(tmp_path, monkeypatch):
+    import numpy as np
+    from opendpd.services.datasets import import_arrays, ImportError_
+    from opendpd.services.workspace import Workspace
+    ws = Workspace.create(tmp_path / 'workspace')
+    target = ws.dataset_dir('shared')
+    (target / 'raw').mkdir(parents=True)
+    owned = target / 'raw' / 'data.csv'
+    owned.write_text('another request owns these samples')
+    exists = Path.exists
+    # Simulate a stale existence check while another request claims the name.
+    monkeypatch.setattr(Path, 'exists', lambda path: False if path == target else exists(path))
+    samples = np.ones((4096, 2), dtype=np.float32)
+    with pytest.raises(ImportError_, match='already exists'):
+        import_arrays(ws, samples, samples, dataset_id='shared', guard_samples=32)
+    assert owned.read_text() == 'another request owns these samples'

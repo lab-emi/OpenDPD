@@ -4,7 +4,7 @@ This maintenance release addresses the release blockers from the repository code
 
 - A worker that cannot start fails once, releases its queue slot and records an actionable error.
 - All local upload consumers run outside the event loop. Cancellation waits for file consumers to finish, and imported package archives are removed.
-- Built-in catalog reads reuse a fingerprinted cache; expensive public reads share the existing compute budget. Generated paired datasets no longer write and reparse a temporary CSV.
+- Built-in catalog reads reuse a fingerprinted cache; expensive public reads share the existing compute budget. Generated paired datasets reserve their names atomically and no longer write and reparse a temporary CSV.
 - Plotting uses deterministic local styles without executing personal plugin code or changing the global plotting backend.
 - Python training calls validate explicit arguments without changing `sys.argv` or `sys.path`. CLI model choices match available constructors. QGRU and APNRRU initialization errors are fixed; checkpoint parameter layouts are retained.
 - API request/response contracts use strict validation. Shared error, identifier and content-store helpers reduce inconsistent checks. Unknown request fields are rejected.

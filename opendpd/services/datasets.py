@@ -619,15 +619,18 @@ def import_arrays(ws: Workspace, x: np.ndarray, y: np.ndarray, *, dataset_id: st
     x, y = x.astype(np.float32), y.astype(np.float32)
     ratios = dict(DEFAULT_RATIOS if ratios is None else ratios)
     contiguous_boundaries(len(x), ratios, guard_samples)
-    target = ws.dataset_dir(dataset_id)
-    if target.exists():
-        raise ImportError_('Dataset already exists; choose another identifier.')
     name = display_name or dataset_id
     if origin == DatasetOrigin.synthetic and 'synthetic' not in name.lower():
         name += ' (synthetic)'
+    target = ws.dataset_dir(dataset_id)
+    # Claim ownership atomically so a competing request cannot remove this import.
+    try:
+        target.mkdir()
+    except FileExistsError:
+        raise ImportError_('Dataset already exists; choose another identifier.') from None
     try:
         raw = target / 'raw'
-        raw.mkdir(parents=True)
+        raw.mkdir()
         source = raw / 'data.csv'
         np.savetxt(source, np.column_stack((x, y)), delimiter=',', fmt='%.9g',
                    header='I_in,Q_in,I_out,Q_out', comments='')
