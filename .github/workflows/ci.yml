@@ -55,6 +55,9 @@ jobs:
     env:
       MPLBACKEND: Agg
       TQDM_DISABLE: "1"
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
@@ -166,7 +169,8 @@ jobs:
       - name: Production build excludes developer fixtures
         run: |
           npm run build
-          test -z "$(find dist/assets -name 'GalleryPage-*')"
+          test -d ../opendpd/studio/static/assets
+          test -z "$(find ../opendpd/studio/static/assets -name 'GalleryPage-*')"
 
       - name: Browser journeys and accessibility audit on Chromium, Firefox and WebKit (mock API; visual baselines are compared locally)
         run: |
