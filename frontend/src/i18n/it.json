@@ -1465,5 +1465,6 @@
   "datasets.capture": "Visualizza sottoinsieme",
   "datasets.captureHelp": "Grafici, metadati, preelaborazione e addestramento usano il sottoinsieme scelto con frequenza e lunghezza proprie. Lo ZIP contiene tutte le acquisizioni originali e lo script PA.",
   "datasets.downloadCsv": "Scarica CSV",
-  "datasets.downloadZip": "Scarica tutto · ZIP"
+  "datasets.downloadZip": "Scarica tutto · ZIP",
+  "generator.removePreset": "Rimuovi preset {name}"
 }

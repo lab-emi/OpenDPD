@@ -1465,5 +1465,6 @@
   "datasets.capture": "Visualizar subconjunto",
   "datasets.captureHelp": "Gráficas, metadatos, preprocesamiento y entrenamiento usan el subconjunto seleccionado con su frecuencia y longitud. El ZIP contiene todas las capturas originales y el script PA.",
   "datasets.downloadCsv": "Descargar CSV",
-  "datasets.downloadZip": "Descargar todo · ZIP"
+  "datasets.downloadZip": "Descargar todo · ZIP",
+  "generator.removePreset": "Eliminar preajuste {name}"
 }

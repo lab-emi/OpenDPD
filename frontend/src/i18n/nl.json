@@ -1465,5 +1465,6 @@
   "datasets.capture": "Subdataset bekijken",
   "datasets.captureHelp": "Grafieken, metadata, voorbewerking en training gebruiken de gekozen subdataset met eigen samplefrequentie en lengte. De ZIP bevat alle oorspronkelijke opnamen en het PA-script.",
   "datasets.downloadCsv": "CSV downloaden",
-  "datasets.downloadZip": "Alles downloaden · ZIP"
+  "datasets.downloadZip": "Alles downloaden · ZIP",
+  "generator.removePreset": "Voorinstelling {name} verwijderen"
 }

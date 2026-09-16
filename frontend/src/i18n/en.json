@@ -1465,5 +1465,6 @@
   "datasets.capture": "Visualize subdataset",
   "datasets.captureHelp": "Charts, metadata, preprocessing and training use the selected subdataset. Each preset retains its own sample rate and length. The collection ZIP contains all original captures and the PA replay script.",
   "datasets.downloadCsv": "Download CSV",
-  "datasets.downloadZip": "Download all · ZIP"
+  "datasets.downloadZip": "Download all · ZIP",
+  "generator.removePreset": "Remove preset {name}"
 }

@@ -1465,5 +1465,6 @@
   "datasets.capture": "하위 데이터셋 시각화",
   "datasets.captureHelp": "그래프, 메타데이터, 전처리 및 학습은 선택한 하위 데이터셋의 샘플레이트와 길이를 사용합니다. ZIP에는 모든 원본 캡처와 PA 재현 스크립트가 포함됩니다.",
   "datasets.downloadCsv": "CSV 다운로드",
-  "datasets.downloadZip": "전체 다운로드 · ZIP"
+  "datasets.downloadZip": "전체 다운로드 · ZIP",
+  "generator.removePreset": "프리셋 {name} 제거"
 }

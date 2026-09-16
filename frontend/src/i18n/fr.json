@@ -1465,5 +1465,6 @@
   "datasets.capture": "Visualiser un sous-ensemble",
   "datasets.captureHelp": "Graphiques, métadonnées, prétraitement et entraînement utilisent le sous-ensemble choisi, avec sa fréquence et sa longueur. Le ZIP contient toutes les captures originales et le script PA.",
   "datasets.downloadCsv": "Télécharger CSV",
-  "datasets.downloadZip": "Tout télécharger · ZIP"
+  "datasets.downloadZip": "Tout télécharger · ZIP",
+  "generator.removePreset": "Retirer le préréglage {name}"
 }

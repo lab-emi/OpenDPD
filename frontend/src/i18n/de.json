@@ -1465,5 +1465,6 @@
   "datasets.capture": "Teildatensatz anzeigen",
   "datasets.captureHelp": "Diagramme, Metadaten, Vorverarbeitung und Training verwenden die Auswahl mit eigener Abtastrate und Länge. Die ZIP enthält alle Originaldaten und das PA-Skript.",
   "datasets.downloadCsv": "CSV herunterladen",
-  "datasets.downloadZip": "Alles herunterladen · ZIP"
+  "datasets.downloadZip": "Alles herunterladen · ZIP",
+  "generator.removePreset": "Voreinstellung {name} entfernen"
 }

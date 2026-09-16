@@ -1465,5 +1465,6 @@
   "datasets.capture": "可视化子数据集",
   "datasets.captureHelp": "图表、元数据、预处理与训练使用当前子数据集。每个预设保留自身采样率和长度。ZIP 下载包含所有原始子集和 PA 复现脚本。",
   "datasets.downloadCsv": "下载 CSV",
-  "datasets.downloadZip": "下载全部 · ZIP"
+  "datasets.downloadZip": "下载全部 · ZIP",
+  "generator.removePreset": "移除预设 {name}"
 }

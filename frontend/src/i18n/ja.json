@@ -1465,5 +1465,6 @@
   "datasets.capture": "サブデータセットを表示",
   "datasets.captureHelp": "グラフ、メタデータ、前処理、学習には選択したサブセット固有のサンプルレートと長さを使用します。ZIP には全元データと PA 再現スクリプトを含みます。",
   "datasets.downloadCsv": "CSV をダウンロード",
-  "datasets.downloadZip": "すべてダウンロード · ZIP"
+  "datasets.downloadZip": "すべてダウンロード · ZIP",
+  "generator.removePreset": "プリセット {name} を削除"
 }

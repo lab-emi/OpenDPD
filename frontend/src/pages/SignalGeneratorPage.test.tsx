@@ -64,6 +64,14 @@ test('matrix selection keeps different preset lengths and disables stale exports
     { preset_id: 'nr-20', n_samples: 30720, filter_enabled: true },
     { preset_id: 'wifi6-20', length_mode: 'duration', duration_ms: .25, filter_enabled: true },
   ] })
+  await userEvent.click(screen.getByTestId('remove-preset-nr-20'))
+  expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeDisabled()
+  await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeEnabled())
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/batches').at(-1)?.body).toEqual({ configs: [expect.objectContaining({ preset_id: 'wifi6-20' })] })
+  fireEvent.keyUp(screen.getByTestId('selected-preset-wifi6-20'), { key: 'Delete' })
+  expect(screen.getByRole('button', { name: 'Generate & preview' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeDisabled()
 })
 
 test('advanced OFDMA channels and pilots reach the generator request', async () => {

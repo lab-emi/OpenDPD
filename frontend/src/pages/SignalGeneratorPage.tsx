@@ -97,11 +97,13 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const setConfig = (update: GeneratorConfig | ((old: GeneratorConfig) => GeneratorConfig)) => setConfigs(old => ({ ...old, [activeId]: typeof update === 'function' ? update(old[activeId] ?? config) : update }))
   const change = <K extends keyof GeneratorConfig>(key: K, value: GeneratorConfig[K]) => setConfig(old => ({ ...old, [key]: value }))
   const activate = (id: string) => { setActiveId(id); setPilotText((configs[id]?.pilot_indices ?? []).join(', ')) }
+  const remove = (id: string) => {
+    const next = { ...configs }; delete next[id]; setConfigs(next)
+    if (id === activeId) { const remaining = Object.keys(next)[0]; if (remaining) activate(remaining) }
+  }
   const toggle = (entry: GeneratorPreset) => {
-    if (configs[entry.preset_id]) {
-      const next = { ...configs }; delete next[entry.preset_id]; setConfigs(next)
-      if (entry.preset_id === activeId) { const id = Object.keys(next)[0]; if (id) activate(id) }
-    } else if (selected.length < 16) {
+    if (configs[entry.preset_id]) remove(entry.preset_id)
+    else if (selected.length < 16) {
       setConfigs(old => ({ ...old, [entry.preset_id]: entry.config as GeneratorConfig }))
       setActiveId(entry.preset_id); setPilotText((entry.config.pilot_indices ?? []).join(', '))
     }
@@ -149,7 +151,8 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       </Stack> : <PresetMatrix key={family} presets={presets.filter(p => p.family === family)} selected={selected} disabled={generate.isPending} toggle={toggle} />}
       <Typography variant="caption" color="text.secondary">{t('generator.scopeHelp')}</Typography>
       <Stack direction="row" useFlexGap sx={{ gap: .75, flexWrap: 'wrap' }} aria-label={t('generator.selectedPresets')}>
-        {selected.map(id => <Chip key={id} label={presets.find(p => p.preset_id === id)?.label ?? id} color={activeId === id ? 'primary' : 'default'} variant={activeId === id ? 'filled' : 'outlined'} onClick={() => activate(id)} disabled={generate.isPending} />)}
+        {selected.map(id => <Chip key={id} label={presets.find(p => p.preset_id === id)?.label ?? id} color={activeId === id ? 'primary' : 'default'} variant={activeId === id ? 'filled' : 'outlined'} onClick={() => activate(id)} onDelete={() => remove(id)} data-testid={'selected-preset-' + id}
+          deleteIcon={<DeleteOutlineIcon data-testid={'remove-preset-' + id} titleAccess={t('generator.removePreset', { name: presets.find(p => p.preset_id === id)?.label ?? id })} />} disabled={generate.isPending} />)}
       </Stack>
       {!!selected.length && <Box component="fieldset" disabled={generate.isPending} sx={{ m: 0, p: 0, border: 0, minWidth: 0 }}><Stack spacing={1.25}>
         <Typography variant="caption" color="text.secondary">{t('generator.editSelected')} · {config.sample_rate_hz / 1e6} MS/s · {config.bandwidth_hz / 1e6} MHz {ofdm && ` · ${(spacing / 1000).toPrecision(4)} kHz SCS`}</Typography>

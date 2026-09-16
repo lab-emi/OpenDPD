@@ -104,14 +104,16 @@ function VersionsTable({ d }: { d: DatasetManifest }) {
   )
 }
 
+const NO_CAPTURES: NonNullable<DatasetManifest['captures']> = []
+
 export function DatasetDetailPage() {
   const { datasetId: routeId = '' } = useParams()
   const entry = useDataset(routeId)
   const collectionId = entry.data?.parent_dataset_id ?? routeId
   const parent = useDataset(collectionId)
-  const workflow = useStudioWorkflow()
+  const { state: { datasetId: workflowDatasetId }, selectCapture } = useStudioWorkflow()
   const [search, setSearch] = useSearchParams()
-  const captures = parent.data?.captures ?? []
+  const captures = parent.data?.captures ?? NO_CAPTURES
   const datasetId = captures.some(c => c.dataset_id === search.get('capture')) ? search.get('capture')! : captures.some(c => c.dataset_id === routeId) ? routeId : collectionId
   const ds = useDataset(datasetId)
   const doctor = useRunDoctor(datasetId)
@@ -131,8 +133,8 @@ export function DatasetDetailPage() {
   const select = (key: string, value: string) => setSearch((old) => { const next = new URLSearchParams(old); next.set(key, value); return next })
   const [created, setCreated] = useState<string | null>(null)
   useEffect(() => {
-    if (captures.some(c => c.dataset_id === workflow.state.datasetId)) workflow.selectCapture(datasetId, doctorVersion)
-  }, [captures, datasetId, doctorVersion, workflow.selectCapture, workflow.state.datasetId])
+    if (captures.some(c => c.dataset_id === workflowDatasetId)) selectCapture(datasetId, doctorVersion)
+  }, [captures, datasetId, doctorVersion, selectCapture, workflowDatasetId])
   if (ds.isPending) return <LoadingState />
   if (ds.isError) return <ErrorState error={ds.error} onRetry={() => void ds.refetch()} />
   const d = ds.data
