@@ -1,3 +1,4 @@
+import { loadSession } from './client'
 import { getLanguage } from '@/i18n'
 /**
  * Server state lives in TanStack Query; URL state in the router; only
@@ -34,6 +35,8 @@ import type {
 import { isTerminal } from './types'
 
 export const keys = {
+  session: ['session'] as const,
+  runLive: (id: string) => ['run', id, 'live'] as const,
   capabilities: ['capabilities'] as const,
   settings: ['settings'] as const,
   models: ['models'] as const,
@@ -245,3 +248,5 @@ export const useAdaptationReport = (planSha: string, enabled = true) =>
 /** fixed-point-v1 deployment package for a finished GRU run (S19); the server verifies the C99 reference bit for bit. */
 export const useDeployExport = () =>
   useMutation({ mutationFn: (body: { run_id: string }) => api.post<DeployExportInfo>('/deploy/exports', body) })
+
+export const useSession = () => useQuery({ queryKey: keys.session, queryFn: ({ signal }) => loadSession(signal), retry: false, staleTime: Infinity })

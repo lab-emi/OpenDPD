@@ -604,3 +604,48 @@ def receive_upload(ws: Workspace, filename: str, chunks: Iterable[bytes], max_by
         return ws.imports_dir / result['path']
     finally:
         target.unlink(missing_ok=True)
+
+
+def import_arrays(ws: Workspace, x: np.ndarray, y: np.ndarray, *, dataset_id: str,
+                  display_name: Optional[str] = None, signal: Optional[SignalSpec] = None,
+                  origin: DatasetOrigin = DatasetOrigin.synthetic, guard_samples: int = DEFAULT_GUARD_SAMPLES,
+                  ratios=None, notes: Optional[str] = None) -> DatasetManifest:
+    """Store validated paired arrays directly; retain one portable raw CSV for provenance."""
+    x, y = np.asarray(x), np.asarray(y)
+    if (x.ndim != 2 or x.shape[1] != 2 or x.shape != y.shape or not len(x)
+            or np.iscomplexobj(x) or np.iscomplexobj(y) or not np.isfinite(x).all() or not np.isfinite(y).all()
+            or np.max(np.abs(x)) > np.finfo(np.float32).max or np.max(np.abs(y)) > np.finfo(np.float32).max):
+        raise ImportError_('Arrays must be finite, paired Nx2 real I/Q values in the float32 range.')
+    x, y = x.astype(np.float32), y.astype(np.float32)
+    ratios = dict(DEFAULT_RATIOS if ratios is None else ratios)
+    contiguous_boundaries(len(x), ratios, guard_samples)
+    name = display_name or dataset_id
+    if origin == DatasetOrigin.synthetic and 'synthetic' not in name.lower():
+        name += ' (synthetic)'
+    target = ws.dataset_dir(dataset_id)
+    # Claim ownership atomically so a competing request cannot remove this import.
+    try:
+        target.mkdir()
+    except FileExistsError:
+        raise ImportError_('Dataset already exists; choose another identifier.') from None
+    try:
+        raw = target / 'raw'
+        raw.mkdir()
+        source = raw / 'data.csv'
+        np.savetxt(source, np.column_stack((x, y)), delimiter=',', fmt='%.9g',
+                   header='I_in,Q_in,I_out,Q_out', comments='')
+        ref = FileRef(path='raw/data.csv', sha256=sha256_file(source), size_bytes=source.stat().st_size)
+        manifest = DatasetManifest(dataset_id=dataset_id, display_name=name, origin=origin,
+            source=DatasetSource(kind=DatasetSourceKind.csv_import), signal=signal or SignalSpec(),
+            files=[ref], n_samples=len(x), columns={key: key for key in ('I_in', 'Q_in', 'I_out', 'Q_out')},
+            split=SplitSpec(version=SPLIT_VERSION, ratios=ratios, guard_samples=guard_samples),
+            raw_sha256=combined_sha256([ref.sha256]), notes=notes)
+        version = _materialise(ws, manifest, 'raw-v1', x, y, base_version=None, params=None,
+            record={'code_version': None, 'note': 'validated paired arrays, contiguous split with guard'},
+            guard=guard_samples, ratios=ratios)
+        manifest = manifest.model_copy(update={'split': version.split, 'versions': [version]})
+        ws.save_dataset(manifest)
+        return manifest
+    except BaseException:
+        shutil.rmtree(target, ignore_errors=True)
+        raise

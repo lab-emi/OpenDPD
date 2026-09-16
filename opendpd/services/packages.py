@@ -28,6 +28,7 @@ from opendpd.schemas import (
     ArtifactKind,
     ArtifactManifest,
     DatasetSourceKind,
+    DatasetManifest,
     ImportReport,
     PACKAGE_VERSION,
     PackageDataset,
@@ -422,7 +423,7 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
         elif ds.included:
             target = ws.dataset_dir(ds.dataset_id)
             _extract(zf, "dataset/", target, sizes)
-            (target / "manifest.json").write_text(json.dumps(packaged_dataset, indent=2, sort_keys=True), encoding="utf-8")
+            ws.save_dataset(DatasetManifest.model_validate(packaged_dataset))
             dataset_status = "imported"
         else:
             dataset_status = "missing"

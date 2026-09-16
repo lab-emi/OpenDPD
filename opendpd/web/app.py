@@ -94,7 +94,7 @@ class PublicBoundary:
             await self.gpu_request(request, scope, receive, send)
             return
         if request.url.path == "/healthz" and headers.get("host") in {"127.0.0.1", "localhost"}:
-            code = 200 if self.manager.cleanup_healthy else 503
+            code = 200 if (self.manager.cleanup_healthy and self.manager.dispatch_healthy) else 503
             await JSONResponse({"status": "ok" if code == 200 else "cleanup_failed"}, status_code=code)(scope, receive, send)
             return
         for key in ("host", "origin", "authorization", "cf-connecting-ip", "content-length", "x-forwarded-proto"):
@@ -204,7 +204,7 @@ class PublicBoundary:
                     return
                 if path == '/web/sessions/end':
                     tenant.closing = True
-                    tenant.app.state.supervisor._accepting = False
+                    tenant.app.state.supervisor.stop_accepting()
                     await Response(status_code=204)(scope, receive, send)
                     return
                 if path == '/web/activity':
@@ -242,81 +242,9 @@ class PublicBoundary:
                 return
             if method in {"POST", "PUT"}:
                 check_body(path, body)
-            if path == '/signal-analyzer/analyze' and method == 'POST':
-                self.manager.rate_limit('signal-analysis:' + tenant.ip_key, 36)
-            if path == '/signal-generator/signals' and method == 'POST':
-                from opendpd.schemas.signal_generator import GeneratorConfig
-                try:
-                    generated_config = GeneratorConfig.model_validate(body)
-                except ValueError:
-                    reject(422, 'invalid_request', 'Invalid signal parameters. Check duration, bandwidth, FFT size and channel allocations.')
-                self.manager.rate_limit('signal-generator:' + tenant.ip_key, 24)
-                used = await asyncio.to_thread(directory_bytes, tenant.root)
-                if used + generated_config.sample_count * 100 + 2_000_000 > self.config.max_workspace_bytes:
-                    reject(413, 'workspace_limit', 'Generated waveform and exports would exceed temporary storage. Use fewer samples.')
-            if path.startswith('/signal-generator/signals/') and path.endswith('/dataset') and method == 'POST':
-                from opendpd.services.signal_generator import read_signal
-                from opendpd.services.workspace import WorkspaceError
-                self.manager.rate_limit('signal-dataset:' + tenant.ip_key, 6)
-                try:
-                    generated_source = await asyncio.to_thread(read_signal, tenant.app.state.ws, path.split('/')[3])
-                except WorkspaceError:
-                    reject(404, 'signal_not_found', 'Generate this waveform in the current session first.')
-                used = await asyncio.to_thread(directory_bytes, tenant.root)
-                if used + generated_source.analysis.sample_count * 160 > self.config.max_workspace_bytes:
-                    reject(413, 'workspace_limit', 'The PA dataset would exceed temporary storage. Generate fewer samples.')
-            if path == '/pa-library/simulations' and method == 'POST':
-                from opendpd.schemas.virtual_pa import VirtualPARequest
-                from opendpd.services.signal_generator import read_signal
-                from opendpd.services.workspace import WorkspaceError
-                try:
-                    pa_request = VirtualPARequest.model_validate(body)
-                except ValueError:
-                    reject(422, 'invalid_request', 'Choose a PA input, Virtual PA and valid numeric parameters.')
-                self.manager.rate_limit('virtual-pa:' + tenant.ip_key, 24)
-                try:
-                    pa_input = await asyncio.to_thread(read_signal, tenant.app.state.ws, pa_request.input_signal_id)
-                except WorkspaceError:
-                    reject(404, 'signal_not_found', 'Generate this PA input in the current session first.')
-                used = await asyncio.to_thread(directory_bytes, tenant.root)
-                if used + pa_input.analysis.sample_count * 100 + 2_000_000 > self.config.max_workspace_bytes:
-                    reject(413, 'workspace_limit', 'PA simulation and exports would exceed temporary storage. Use fewer samples.')
-            if path.startswith('/pa-library/simulations/') and path.endswith('/dataset') and method == 'POST':
-                from opendpd.services.virtual_pa import read_simulation
-                from opendpd.services.workspace import WorkspaceError
-                self.manager.rate_limit('virtual-pa-dataset:' + tenant.ip_key, 6)
-                try:
-                    pa_output = await asyncio.to_thread(read_simulation, tenant.app.state.ws, path.split('/')[3])
-                except WorkspaceError:
-                    reject(404, 'simulation_not_found', 'Simulate this Virtual PA in the current session first.')
-                used = await asyncio.to_thread(directory_bytes, tenant.root)
-                if used + pa_output.analysis.n_samples * 160 > self.config.max_workspace_bytes:
-                    reject(413, 'workspace_limit', 'The paired PA dataset would exceed temporary storage. Use fewer samples.')
-            if path == '/datasets/synthetic' and method == 'POST':
-                from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest
-                try:
-                    synthetic = SyntheticSuiteRequest.model_validate(body)
-                except ValueError:
-                    reject(422, 'invalid_request', 'Invalid synthetic dataset size, prefix, seed or repeat count.')
-                self.manager.rate_limit('synthetic:' + tenant.ip_key, 3)
-                used = await asyncio.to_thread(directory_bytes, tenant.root)
-                if used + synthetic.samples_per_capture * synthetic.repeats * 3 * 160 > self.config.max_workspace_bytes:
-                    reject(413, 'workspace_limit', 'Synthetic datasets would exceed temporary workspace storage. Use fewer samples or realizations.')
-            if path == '/dataset-publications/prepare' and method == 'POST':
-                from opendpd.schemas.dataset_catalog import DatasetPublicationDraft
-                from opendpd.services.workspace import WorkspaceError
-                try:
-                    publication_draft = DatasetPublicationDraft.model_validate(body)
-                except ValueError:
-                    reject(422, 'invalid_request', 'Choose a dataset, public description, attribution and license.')
-                self.manager.rate_limit('publication-preview:' + tenant.ip_key, 6)
-                used = await asyncio.to_thread(directory_bytes, tenant.root)
-                try:
-                    dataset = tenant.app.state.ws.get_dataset(publication_draft.dataset_id)
-                except WorkspaceError:
-                    reject(404, 'dataset_not_found', 'Dataset is unavailable in this temporary workspace.')
-                if used + (dataset.n_samples or 0) * 100 > self.config.max_workspace_bytes:
-                    reject(413, 'workspace_limit', 'The contribution preview would exceed temporary workspace storage.')
+            if method == 'POST':
+                from opendpd.web.mutation_policy import enforce_mutation_budget
+                await enforce_mutation_budget(self.manager, tenant, path, body)
             if path.startswith('/dataset-publications/') and path.endswith('/submit') and method == 'POST':
                 if not self.config.dataset_publications:
                     reject(403, 'publication_unavailable', 'Public dataset submissions are disabled on this Studio host.')

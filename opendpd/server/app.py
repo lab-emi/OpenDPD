@@ -33,8 +33,7 @@ STATIC_DIR = Path(__file__).resolve().parents[1] / "studio" / "static"
 API_PREFIX = "/api/v1"
 
 
-def error_payload(code: str, message: str, details=None, hint: Optional[str] = None) -> dict:
-    return {"error": {"code": code, "message": message, "details": details or [], "hint": hint}}
+from opendpd.schemas.common import error_payload
 
 
 def static_status(static_dir: Path = STATIC_DIR) -> dict:
@@ -127,7 +126,7 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
 
     @app.exception_handler(WorkspaceError)
     async def _workspace_error(request: Request, exc: WorkspaceError):
-        return JSONResponse(error_payload("workspace_error", str(exc)), status_code=409)
+        return JSONResponse(error_payload(exc.code, str(exc)), status_code=exc.status_code)
 
     # -- liveness / readiness --------------------------------------------------
     @app.get("/healthz", include_in_schema=False)
@@ -141,7 +140,7 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         if ws is None:
             problems.append("workspace not open")
         else:
-            problems.extend(ws.preflight())
+            problems.extend("workspace preflight failed" for _ in ws.preflight())
         sup = getattr(request.app.state, "supervisor", None)
         if sup is None or not sup.alive:
             problems.append("supervisor not running")

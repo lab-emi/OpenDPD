@@ -1,3 +1,4 @@
+import { getQuery } from '@/api/client'
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Checkbox, FormControlLabel, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -30,7 +31,7 @@ export function SpectrumReview({ results, referenceRunId, mode = 'same_condition
   const ids = results.map(r => r.run_id!).filter(Boolean)
   const spectra = useQueries({ queries: ids.map(id => artifactJsonQuery<SpectrumData>(id, 'plot-spectrum')) })
   const reviews = useQueries({ queries: results.filter(r => r.run_id).map(r => reviewQuery(r.run_id!, r.metric_profile_id)) })
-  const figures = useQuery({ queryKey: ['figures', ...ids], queryFn: () => api.get<SavedFigure[]>(`/figures?${ids.map(id => `runs=${encodeURIComponent(id)}`).join('&')}`), enabled: !WEB_MODE })
+  const figures = useQuery({ queryKey: ['figures', ...ids], queryFn: getQuery<SavedFigure[]>(`/figures?${ids.map(id => `runs=${encodeURIComponent(id)}`).join('&')}`), enabled: !WEB_MODE })
   const [title, setTitle] = useState(t('chart.spectrum.title'))
   const [showBands, setShowBands] = useState(true)
   const [cursor, setCursor] = useState('')

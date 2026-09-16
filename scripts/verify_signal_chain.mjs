@@ -7,7 +7,9 @@ import path from 'node:path'
 const [base, flowFile, out] = process.argv.slice(2)
 const flow = JSON.parse(await fs.readFile(flowFile, 'utf8'))[0]
 await fs.mkdir(out, { recursive: true })
-const browser = await chromium.connectOverCDP('http://127.0.0.1:9222')
+const bootstrapToken = process.env.OPENDPD_BOOTSTRAP_TOKEN
+if (!bootstrapToken) throw new Error('Set OPENDPD_BOOTSTRAP_TOKEN for the local test server')
+const browser = await chromium.connectOverCDP(process.env.OPENDPD_CDP_URL ?? 'http://127.0.0.1:9222')
 const evidence = []
 try {
   for (const [width, height] of [[1366, 768], [1920, 1080], [390, 844]]) {
@@ -15,7 +17,7 @@ try {
     try {
       const page = await context.newPage(), errors = []
       page.on('pageerror', e => errors.push(e.message))
-      await page.goto(base + '/bootstrap?token=studio-next-local-review')
+      await page.goto(base + '/bootstrap?token=' + encodeURIComponent(bootstrapToken))
       await page.goto(`${base}/results/${flow.runs[3]}`)
       const review = page.getByTestId('spectrum-review')
       await review.waitFor()

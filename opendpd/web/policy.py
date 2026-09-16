@@ -13,8 +13,7 @@ from fastapi import HTTPException
 from opendpd.core.registry import get_model
 from opendpd.schemas import ExperimentConfig
 
-SLUG = r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}"
-FILE_ID = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,200}"
+from opendpd.schemas.common import SLUG_PATTERN as SLUG, FILE_ID_PATTERN as FILE_ID
 # New local routes are NOT automatically published. In particular: no path imports,
 # arbitrary path imports, RF control, package imports, or executable exports.
 ROUTES = {
@@ -45,7 +44,8 @@ ROUTES["POST"] += [r"/signal-analyzer/(analyze|upload)"]
 
 
 def reject(status: int, code: str, message: str):
-    raise HTTPException(status, {"error": {"code": code, "message": message, "details": [], "hint": None}})
+    from opendpd.server.errors import api_error
+    raise api_error(status, code, message)
 
 
 @dataclass(frozen=True)
@@ -128,12 +128,12 @@ def allowed(method: str, path: str) -> bool:
 def expensive_request(method: str, path: str) -> bool:
     """Bound in-process numeric/file work separately from lightweight status and cancellation."""
     if method == 'GET':
-        return bool(re.fullmatch(r'/signal-analyzer/sources|/datasets/[^/]+/analysis|/results/compare|/results/[^/]+(/(report|review))?', path))
+        return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/sources|/datasets/[^/]+/analysis|/results/compare|/results/[^/]+(/(report|review))?', path))
     return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/')))
 
 
 def check_slug(value, field: str):
-    if not isinstance(value, str) or not re.fullmatch(FILE_ID, value) or ".." in value:
+    if not isinstance(value, str) or not re.fullmatch(SLUG, value) or ".." in value:
         reject(422, "invalid_identifier", f"{field} must be an identifier, never a filesystem path")
 
 

@@ -95,6 +95,8 @@ def test_frontend_html_sinks_are_confined_to_the_audited_math_renderer():
     sinks = ("dangerouslySetInnerHTML", ".innerHTML", "eval(", "new Function(", "document.write(")
     offenders = []
     for path in FRONTEND_SRC.rglob("*.ts*"):
+        if ".test." in path.name:
+            continue
         text = path.read_text(encoding="utf-8")
         # KaTeX escapes source text and permits only known coefficient classes.
         # MathFormula.test.tsx exercises malicious TeX/HTML and dynamic interaction.
@@ -394,6 +396,8 @@ def test_network_clients_are_centralized_without_telemetry():
             if needle in text and needle not in allowed.get(relative, set()):
                 offenders.append(f"{path.relative_to(root)}: {needle}")
     for path in FRONTEND_SRC.rglob("*.ts*"):
+        if ".test." in path.name:
+            continue
         text = path.read_text(encoding="utf-8")
         if path.name.endswith(".test.tsx") or path.name.endswith(".test.ts"):
             continue

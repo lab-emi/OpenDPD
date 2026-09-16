@@ -1,3 +1,4 @@
+import { runIdFromPath } from '@/api/client'
 import TerminalIcon from '@mui/icons-material/Terminal'
 import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined'
 import Alert from '@mui/material/Alert'
@@ -31,7 +32,7 @@ export function ExperimentTerminal() {
   const { pathname, search } = useLocation()
   const runs = useRuns()
   const cancel = useCancelRun()
-  const id = pathname.startsWith('/runs/') ? decodeURIComponent(pathname.split('/')[2] ?? '') : ''
+  const id = runIdFromPath(pathname)
   const detail = useRun(id, !!id)
   const routeRun = detail.data ?? runs.data?.find((run) => run.run_id === id)
   const records = routeRun && !runs.data?.some((run) => run.run_id === routeRun.run_id) ? [routeRun, ...(runs.data ?? [])] : runs.data ?? []

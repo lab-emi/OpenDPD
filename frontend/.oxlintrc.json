@@ -1,6 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["src/vendor/*.cjs"],
+  "ignorePatterns": [
+    "src/vendor/*.cjs"
+  ],
   "plugins": [
     "react",
     "typescript",
@@ -23,7 +25,10 @@
       }
     ],
     "react/react-in-jsx-scope": "off",
-    "import/no-unassigned-import": "off"
+    "import/no-unassigned-import": "off",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/no-danger": "error"
   },
   "env": {
     "browser": true,

@@ -12,7 +12,6 @@ from utils.util import count_net_params
 from modules.data_collector import load_dataset
 
 import sys
-sys.path.append('../..')
 from quant import get_quant_model
 from quant.utlis import register_activation_hooks
 

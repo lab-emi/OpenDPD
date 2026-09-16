@@ -4,31 +4,31 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
+/build/
 develop-eggs/
-dist/
+/dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
-parts/
+/lib/
+/lib64/
+/parts/
 sdist/
-var/
+/var/
 wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-build/
+/build/
 plots/
 datasets/MATLAB
 
 docs/_build/
 
 # Virtual environments
-venv/
-env/
-ENV/
+/venv/
+/env/
+/ENV/
 .env
 .env.*
 *.env
@@ -42,7 +42,7 @@ ENV/
 !*.env.sample
 !*.env.template
 .venv
-env/
+/env/
 opendpd_env/
 
 # Jupyter Notebooks
@@ -158,7 +158,6 @@ output/playwright/
 
 # IDE specific files
 # Local agent instructions (case-insensitive names, at any directory depth)
-[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
 [Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd]
 .idea/
 *.sublime-project
@@ -220,3 +219,5 @@ adc/*
 opendpd/studio/static/
 # MkDocs build output
 site/
+
+/output/

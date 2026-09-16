@@ -48,6 +48,15 @@ function asNumber(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null
 }
 
+export function isRunEvent(value: unknown): value is RunEvent {
+  if (!value || typeof value !== 'object') return false
+  const event = value as Record<string, unknown>
+  return typeof event.seq === 'number' && Number.isSafeInteger(event.seq) && event.seq > 0
+    && typeof event.type === 'string' && (EVENT_TYPES as readonly string[]).includes(event.type)
+    && typeof event.ts === 'string' && Number.isFinite(Date.parse(event.ts))
+    && typeof event.run_id === 'string' && !!event.payload && typeof event.payload === 'object' && !Array.isArray(event.payload)
+}
+
 export function reduceEvent(state: StreamState, event: RunEvent): StreamState {
   if (event.seq <= state.lastSeq) return state
   const next: StreamState = { ...state, lastSeq: event.seq, lastUpdate: new Date(event.ts) }
@@ -121,7 +130,7 @@ export function useRunStream(runId: string, enabled: boolean): StreamState & { r
     dispatch({ kind: 'reset' })
     cursorRef.current = 0
     // The run ID deliberately resets replay, even before a transport is enabled.
-    // eslint-disable-next-line react/exhaustive-effect-dependencies
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- A different run starts a new replay cursor.
   }, [runId])
 
   useEffect(() => {
@@ -155,7 +164,7 @@ export function useRunStream(runId: string, enabled: boolean): StreamState & { r
             void qc.invalidateQueries({ queryKey: keys.run(runId), exact: true })
           }
           if (page.events.length < 500 && page.events.some((event) => event.type === 'progress' && event.payload?.['preview_revision'])) {
-            void qc.invalidateQueries({ queryKey: ['run', runId, 'live'], exact: true })
+            void qc.invalidateQueries({ queryKey: keys.runLive(runId), exact: true })
           }
           if (page.terminal && page.events.length < 500) {
             ended = true
@@ -216,13 +225,14 @@ export function useRunStream(runId: string, enabled: boolean): StreamState & { r
       } catch {
         return
       }
+      if (!isRunEvent(event)) return
       pending.push(event)
       if (timer === undefined) timer = window.setTimeout(flush, 500)
       if (event.type === 'status' || event.type === 'error' || event.type === 'artifact') {
         flush()
         void qc.invalidateQueries({ queryKey: keys.run(runId) })
       }
-      if (event.type === 'progress' && event.payload?.['preview_revision']) void qc.invalidateQueries({ queryKey: ['run', runId, 'live'] })
+      if (event.type === 'progress' && event.payload?.['preview_revision']) void qc.invalidateQueries({ queryKey: keys.runLive(runId) })
     }
     for (const type of EVENT_TYPES) source.addEventListener(type, onEvent as EventListener)
     source.addEventListener('end', () => {
@@ -232,7 +242,7 @@ export function useRunStream(runId: string, enabled: boolean): StreamState & { r
       void qc.invalidateQueries({ queryKey: keys.run(runId) })
       void qc.invalidateQueries({ queryKey: keys.result(runId) })
       void qc.invalidateQueries({ queryKey: keys.runArtifacts(runId) })
-      void qc.invalidateQueries({ queryKey: ['run', runId, 'live'] })
+      void qc.invalidateQueries({ queryKey: keys.runLive(runId) })
       void qc.invalidateQueries({ queryKey: ['runs'] })
     })
     return () => {
@@ -241,7 +251,7 @@ export function useRunStream(runId: string, enabled: boolean): StreamState & { r
       sourceRef.current = null
     }
     // A manual reconnect deliberately replaces the transport, preserving its cursor.
-    // eslint-disable-next-line react/exhaustive-effect-dependencies
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- Manual reconnect replaces the transport.
   }, [runId, enabled, qc, revision])
 
   return { ...state, reconnect }

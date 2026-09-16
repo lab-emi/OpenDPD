@@ -13,7 +13,6 @@ from utils.metrics import NMSE, EVM, ACLR
 from utils.plotting import get_plot_dir_compare, generate_plots_compare
 
 import sys
-sys.path.append('../..')
 from quant import get_quant_model
 
 

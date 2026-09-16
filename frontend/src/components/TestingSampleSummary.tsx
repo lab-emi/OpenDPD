@@ -1,16 +1,16 @@
+import { getQuery } from '@/api/client'
 import { useQuery } from '@tanstack/react-query'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { api } from '@/api/client'
 import type { Schemas } from '@/api/types'
 import { formatNumber, t } from '@/i18n'
 
 export function TestingSampleSummary({ datasetId, version }: { datasetId: string; version: string }) {
   const counts = useQuery({ queryKey: ['dataset-sample-counts', datasetId, version], enabled: !!datasetId,
-    queryFn: () => api.get<Schemas['DatasetSampleCounts']>(`/datasets/${encodeURIComponent(datasetId)}/sample-counts?version=${encodeURIComponent(version)}`),
+    queryFn: getQuery<Schemas['DatasetSampleCounts']>(`/datasets/${encodeURIComponent(datasetId)}/sample-counts?version=${encodeURIComponent(version)}`),
     staleTime: 0, retry: false })
   const n = counts.data?.counts.test
   return <Paper variant="outlined" sx={{ p: 2, borderColor: 'primary.main' }} aria-live="polite" data-testid="testing-samples">

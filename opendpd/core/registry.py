@@ -290,7 +290,6 @@ MODELS: Tuple[ModelDescriptor, ...] = (
         key="apnrru", display_name="APNRRU", family="recurrent", legacy_backbone="apnrru",
         training_method="gradient", roles=("pa", "dpd"), params=(_hidden(23),), status="experimental",
         devices_tested=("cpu",), lookahead_samples=0, lookahead_note=CAUSAL,
-        constraints="not selectable through the legacy CLI (its choices list spells it 'apnrnn')",
         evidence="tests/test_backbones.py forward pass (CPU)",
     ),
     ModelDescriptor(
@@ -336,6 +335,12 @@ _BY_KEY: Dict[str, ModelDescriptor] = {m.key: m for m in MODELS}
 def streaming_variant_of(key: str) -> Optional[ModelDescriptor]:
     """The registered streaming variant that executes ``key``'s weights, if any."""
     return next((m for m in MODELS if m.weights_from == key and m.execution_semantics == STREAMING), None)
+
+
+def legacy_choices(role: str):
+    from opendpd.core.backbone_builders import BACKBONE_BUILDERS
+    return sorted({m.legacy_backbone for m in MODELS if role in m.roles
+                   and m.legacy_backbone in BACKBONE_BUILDERS})
 
 
 def list_models() -> List[ModelDescriptor]:

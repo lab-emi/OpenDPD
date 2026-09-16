@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from opendpd.server.uploads import consume_upload
+
 import asyncio
 import json
 import hmac
@@ -58,11 +60,11 @@ from opendpd.services import datasets as datasets_service
 from opendpd.services.dataset_analysis import analyze_dataset
 from opendpd.schemas.analysis import DatasetAnalysis
 from opendpd.schemas.importing import BuiltinDatasetInfo, CsvInspection, CsvOptions, DatasetImportDefaults
-from opendpd.schemas.common import Slug, Sha256
+from opendpd.schemas.common import Slug, Sha256, SLUG_PATTERN as ID_PATTERN, StrictModel
 
 # The Slug pattern as a plain string: Query() needs it stated, an Annotated
 # Field inside Slug does not reach the query validator.
-SLUG_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+SLUG_PATTERN = f"^{ID_PATTERN}$"
 from opendpd.services import experiments
 from opendpd.services import packages
 from opendpd.services.evaluation import available_profiles, compare_results, comparison_csv
@@ -76,13 +78,15 @@ from opendpd.services import review as review_service, figures as figure_service
 from opendpd.schemas.measurement_session import MeasurementSessionSpec, MeasurementSession
 from opendpd.services import measurement_sessions
 
+from opendpd.schemas.api import (
+    BootstrapRequest, SessionInfo, DeviceInfo, Capabilities, ParamSpecInfo, ModelInfo, RecipeInfo, ImportBuiltinRequest, ImportRootInfo, FileEntryInfo, SourceRef, SourceInfoOut, ImportRequest, CsvPreviewRequest, CsvCreateRequest, ManifestUpdate, PreprocessRequest, PreprocessPreview, UploadValidation, UploadResult, ValidateRequest, SubmitRunRequest, RunView, RunCount, ModelDownloadInfo, ExportRequest, ExportInfo, DeployRequest, DeployExportInfo, EventPage, LogPage
+)
+
 router = APIRouter()
 HEARTBEAT_TIMEOUT = timedelta(seconds=60)
 
 
-def _error(status: int, code: str, message: str, hint: Optional[str] = None, details=None) -> HTTPException:
-    return HTTPException(status_code=status,
-                         detail={"error": {"code": code, "message": message, "details": details or [], "hint": hint}})
+from opendpd.server.errors import api_error as _error
 
 
 # --- session ---------------------------------------------------------------------
@@ -103,14 +107,8 @@ def require_csrf(request: Request, session: Session = Depends(require_session)) 
     return session
 
 
-class BootstrapRequest(BaseModel):
-    token: str
 
 
-class SessionInfo(BaseModel):
-    authenticated: bool
-    csrf_token: Optional[str] = None
-    version: str = __version__
 
 
 @router.post("/session/bootstrap", response_model=SessionInfo, tags=["session"])
@@ -163,20 +161,8 @@ def settings_put(body: WorkspaceSettings, request: Request):
     return _ws(request).save_settings(body)
 
 
-class DeviceInfo(BaseModel):
-    device: str
-    detected: bool
-    name: Optional[str] = None
-    count: int = 0
-    tested_models: List[str] = Field(default_factory=list)   # models with recorded evidence on this device
 
 
-class Capabilities(BaseModel):
-    version: str
-    devices: List[DeviceInfo]
-    workspace: str
-    note: str
-    custom_dataset_imports: bool = False
 
 
 @router.get("/system/capabilities", response_model=Capabilities, tags=["system"],
@@ -198,48 +184,10 @@ def capabilities(request: Request):
                              "with recorded evidence on it. One does not imply the other.")
 
 
-class ParamSpecInfo(BaseModel):
-    name: str
-    type: str
-    default: Any
-    description: str
-    minimum: Optional[float] = None
-    maximum: Optional[float] = None
-    choices: Optional[List[Any]] = None
-    legacy_arg: Dict[str, str] = Field(default_factory=dict)
 
 
-class ModelInfo(BaseModel):
-    """Registry descriptor as seen by clients (opendpd.core.registry.ModelDescriptor)."""
-    key: str
-    display_name: str
-    family: str
-    legacy_backbone: str
-    training_method: str
-    roles: List[str]
-    params: List[ParamSpecInfo]
-    status: str
-    devices_tested: List[str]
-    lookahead_samples: Optional[int] = None
-    lookahead_note: str
-    execution_semantics: str
-    weights_from: Optional[str] = None
-    export_formats: List[str]
-    constraints: Optional[str] = None
-    reference: Optional[str] = None
-    evidence: Optional[str] = None
 
 
-class RecipeInfo(BaseModel):
-    recipe_id: str
-    title: str
-    purpose: str
-    task: TaskType
-    model: ModelSpec
-    training: TrainingConfig
-    description: str
-    limits: str
-    expected_duration: str
 
 
 @router.get("/models", response_model=List[ModelInfo], tags=["system"], dependencies=[Depends(require_session)])
@@ -254,102 +202,30 @@ def recipes():
 
 # --- datasets ------------------------------------------------------------------------
 
-class ImportBuiltinRequest(BaseModel):
-    name: str
-    # An identifier, never a path fragment: it names a directory under datasets/.
-    dataset_id: Optional[Slug] = None
 
 
-class ImportRootInfo(BaseModel):
-    root_id: str
-    path: str
-    exists: bool
 
 
-class FileEntryInfo(BaseModel):
-    path: str
-    kind: str
-    size_bytes: int = 0
 
 
-class SourceRef(BaseModel):
-    """A file inside an authorised import root; clients never send absolute paths."""
-    root_id: str
-    path: str = Field(max_length=1024)
 
 
-class SourceInfoOut(BaseModel):
-    kind: str
-    path: str
-    columns: List[str]
-    suggested_mapping: Dict[str, str]
-    n_rows: Optional[int] = None
-    preview: List[Dict[str, float]]
-    arrays: Dict[str, Dict[str, Any]]
-    problems: List[str]
-    legacy_files: List[str]
 
 
-class ImportRequest(BaseModel):
-    source: SourceRef
-    dataset_id: Optional[str] = Field(default=None, max_length=64)
-    display_name: Optional[str] = Field(default=None, max_length=200)
-    mapping: Dict[str, str] = Field(default_factory=dict)
-    signal: SignalSpec = SignalSpec()
-    origin: DatasetOrigin = DatasetOrigin.unknown
-    guard_samples: int = Field(default=DEFAULT_GUARD_SAMPLES, ge=0, le=100_000)
-    notes: Optional[str] = Field(default=None, max_length=2000)
 
 
-class CsvPreviewRequest(BaseModel):
-    source: SourceRef
-    options: CsvOptions = Field(default_factory=CsvOptions)
-    split: DatasetImportDefaults = Field(default_factory=DatasetImportDefaults)
-    signal: SignalSpec = Field(default_factory=SignalSpec)
 
 
-class CsvCreateRequest(CsvPreviewRequest):
-    dataset_id: Slug
-    display_name: str = Field(min_length=1, max_length=200)
-    signal: SignalSpec = Field(default_factory=SignalSpec)
-    origin: DatasetOrigin = DatasetOrigin.unknown
-    expected_sha256: Sha256
 
 
-class ManifestUpdate(BaseModel):
-    signal: Optional[SignalSpec] = None
-    display_name: Optional[str] = Field(default=None, max_length=200)
-    origin: Optional[DatasetOrigin] = None
-    notes: Optional[str] = Field(default=None, max_length=2000)
 
 
-class PreprocessRequest(BaseModel):
-    params: PreprocessingParams
-    # Both name a directory under the dataset's versions/, so both are
-    # identifiers rather than paths.
-    base_version: Slug = "raw-v1"
-    version: Optional[Slug] = Field(default=None, max_length=64)   # required to create, ignored for preview
 
 
-class PreprocessPreview(BaseModel):
-    n_samples_before: int
-    n_samples_after: int
-    record: Dict[str, Any]
-    report_after: DiagnosticReport
 
 
-class UploadValidation(BaseModel):
-    status: Literal['passed']
-    sha256: Sha256
-    n_samples: int
-    columns: int
 
 
-class UploadResult(BaseModel):
-    root_id: str
-    path: str
-    size_bytes: int
-    validation: UploadValidation
 
 
 def _ws(request: Request):
@@ -411,25 +287,15 @@ def dataset_import(body: ImportRequest, request: Request):
              dependencies=[Depends(require_csrf)])
 async def dataset_upload(request: Request, file: UploadFile):
     """Validate the entire CSV in quarantine before publishing an import reference."""
-    import asyncio
     from opendpd.services.csv_upload import CsvUploadRejected
     ws = _ws(request)
 
-    def chunks():
-        while True:
-            chunk = file.file.read(1 << 20)
-            if not chunk:
-                return
-            yield chunk
-
     try:
-        path = await asyncio.to_thread(datasets_service.receive_upload, ws, file.filename or '', chunks(), UPLOAD_MAX_BODY)
+        path = await consume_upload(file, lambda chunks: datasets_service.receive_upload(ws, file.filename or '', chunks, UPLOAD_MAX_BODY))
     except datasets_service.UploadTooLarge as err:
         raise _error(413, "payload_too_large", str(err))
     except CsvUploadRejected as err:
         raise _error(422, 'csv_rejected', str(err))
-    finally:
-        await file.close()
     return UploadResult(root_id="imports", path=path.relative_to(ws.imports_dir).as_posix(),
                         size_bytes=path.stat().st_size, validation=json.loads(path.with_suffix('.json').read_text()))
 
@@ -509,8 +375,6 @@ def dataset_import_builtin(body: ImportBuiltinRequest, request: Request):
 
 # --- experiments and runs ------------------------------------------------------------
 
-class ValidateRequest(BaseModel):
-    config: Dict[str, Any]
 
 
 @router.post("/experiments/validate", tags=["experiments"], dependencies=[Depends(require_session)])
@@ -519,22 +383,14 @@ def experiments_validate(body: ValidateRequest, request: Request) -> Dict[str, A
     return experiments.validate_experiment(_ws(request), body.config).to_dict()
 
 
-class SubmitRunRequest(BaseModel):
-    config: ExperimentConfig
-    name: Optional[str] = None
-    idempotency_key: Optional[str] = Field(default=None, max_length=256)
 
 
-class RunView(RunRecord):
-    heartbeat_stale: bool = False
 
 
 def _view(record: RunRecord) -> RunView:
     return RunView(**record.model_dump(), heartbeat_stale=heartbeat_is_stale(record, utcnow(), HEARTBEAT_TIMEOUT))
 
 
-class RunCount(BaseModel):
-    count: int
 
 
 @router.get("/runs", response_model=List[RunView], tags=["runs"], dependencies=[Depends(require_session)])
@@ -581,13 +437,6 @@ def runs_get(run_id: str, request: Request):
     return _view(_get_run(request, run_id))
 
 
-class ModelDownloadInfo(BaseModel):
-    available: bool
-    final: bool
-    epoch: Optional[int] = None
-    sha256: Optional[Sha256] = None
-    size_bytes: Optional[int] = None
-    download_url: Optional[str] = None
 
 
 @router.get('/runs/{run_id}/checkpoint', response_model=ModelDownloadInfo, tags=['runs'], dependencies=[Depends(require_session)])
@@ -869,17 +718,8 @@ def results_report(run_id: str, request: Request, format: Literal["html", "md"] 
                     headers={"Content-Disposition": f"attachment; filename=\"{run_id}-report.{ext}\""})
 
 
-class ExportRequest(BaseModel):
-    run_id: str = Field(max_length=128)
-    kind: Literal["full", "share"] = "share"
 
 
-class ExportInfo(BaseModel):
-    export_id: str
-    filename: str
-    size_bytes: int
-    download_url: str
-    manifest: PackageManifest
 
 
 _EXPORT_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$")
@@ -912,16 +752,8 @@ def exports_create(body: ExportRequest, request: Request, language: Optional[UIL
 
 # --- deployment packages (fixed-point-v1, plan S19) ------------------------------------------
 
-class DeployRequest(BaseModel):
-    run_id: str = Field(max_length=128)
 
 
-class DeployExportInfo(BaseModel):
-    export_id: str
-    filename: str
-    size_bytes: int
-    download_url: str
-    manifest: DeploymentManifest
 
 
 @router.post("/deploy/exports", response_model=DeployExportInfo, status_code=201, tags=["exports"],
@@ -962,16 +794,15 @@ async def imports_create(request: Request, file: UploadFile):
     """Upload an experiment package and import it; every hash is verified before anything is written."""
     ws = _ws(request)
 
-    def chunks():
-        while True:
-            chunk = file.file.read(1 << 20)
-            if not chunk:
-                return
-            yield chunk
+    def receive(chunks):
+        path = packages.receive_package(ws, file.filename or "package.zip", chunks, UPLOAD_MAX_BODY)
+        try:
+            return packages.import_package(ws, path)
+        finally:
+            path.unlink(missing_ok=True)
 
     try:
-        path = packages.receive_package(ws, file.filename or "package.zip", chunks(), UPLOAD_MAX_BODY)
-        return packages.import_package(ws, path)
+        return await consume_upload(file, receive)
     except PackageError as err:
         raise _package_error(err)
     except WorkspaceError as err:
@@ -980,10 +811,6 @@ async def imports_create(request: Request, file: UploadFile):
 
 # --- events: replayable list, SSE stream --------------------------------------------------
 
-class EventPage(BaseModel):
-    events: List[RunEvent]
-    last_seq: int
-    terminal: bool
 
 
 def _check_cursor(request: Request, run_id: str, after: int) -> RunRecord:
@@ -1018,12 +845,12 @@ async def events_stream(run_id: str, request: Request, after: int = Query(0, ge=
         while True:
             if await request.is_disconnected():
                 return
-            events = store.events_after(run_id, cursor, 500)
+            events = await asyncio.to_thread(store.events_after, run_id, cursor, 500)
             for e in events:
                 cursor = e.seq
                 yield f"id: {e.seq}\nevent: {e.type.value}\ndata: {e.model_dump_json()}\n\n"
-            record = store.get_run(run_id)
-            if record is not None and record.status in TERMINAL_STATUSES and not store.events_after(run_id, cursor, 1):
+            record = await asyncio.to_thread(store.get_run, run_id)
+            if record is not None and record.status in TERMINAL_STATUSES and not await asyncio.to_thread(store.events_after, run_id, cursor, 1):
                 yield f"event: end\ndata: {json.dumps({'status': record.status.value, 'last_seq': cursor})}\n\n"
                 return
             if events:
@@ -1041,11 +868,6 @@ async def events_stream(run_id: str, request: Request, after: int = Query(0, ge=
 
 # --- logs and artifacts -----------------------------------------------------------------------
 
-class LogPage(BaseModel):
-    lines: List[str]
-    next_offset: int
-    eof: bool
-    size: int
 
 
 @router.get("/runs/{run_id}/logs", response_model=LogPage, tags=["runs"], dependencies=[Depends(require_session)])

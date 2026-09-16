@@ -20,7 +20,7 @@ from opendpd.schemas.dataset import DatasetOrigin, SignalSpec
 from opendpd.schemas.importing import CsvOptions
 from opendpd.schemas.signal_generator import (DatasetSampleCounts, GeneratedSignal, GeneratorConfig,
     GeneratorDatasetRequest, GeneratorDatasetResponse)
-from opendpd.services.datasets import import_dataset, load_version_arrays
+from opendpd.services.datasets import import_arrays, load_version_arrays
 from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha256_file, write_json_atomic
 
 _LOCK = threading.RLock()
@@ -71,12 +71,7 @@ def export_input(ws, identifier, kind):
 
 
 def directory(ws, identifier):
-    if not re.fullmatch(r"sg-[a-f0-9]{64}", identifier):
-        raise WorkspaceError("Unknown generated signal.")
-    target = ws.root / "signals" / identifier
-    if target.is_symlink():
-        raise WorkspaceError("Generated signal directory cannot be a symbolic link.")
-    return target
+    return ws.hashed_store('signals', 'sg').directory(identifier)
 
 
 def read_signal(ws, identifier) -> GeneratedSignal:
@@ -177,18 +172,14 @@ def create_dataset(ws, identifier, request: GeneratorDatasetRequest) -> Generato
         noise_rms = np.sqrt(np.mean(np.abs(y)**2))*10**(request.noise_db/20)
         y += noise_rms/np.sqrt(2)*(rng.standard_normal(len(y))+1j*rng.standard_normal(len(y)))
         config = result.config
-        with tempfile.TemporaryDirectory(prefix="opendpd-generator-") as tmp:
-            source = Path(tmp) / "data.csv"
-            np.savetxt(source, np.column_stack((x.real, x.imag, y.real, y.imag)).astype(np.float32), delimiter=",",
-                       fmt="%.9g", header="I_in,Q_in,I_out,Q_out", comments="")
-            manifest = import_dataset(ws, source, dataset_id=request.dataset_id, display_name=request.display_name,
-                origin=DatasetOrigin.synthetic, guard_samples=request.guard_samples, ratios=ratios, csv_options=CsvOptions(),
-                signal=SignalSpec(sample_rate_hz=config.sample_rate_hz, bandwidth_hz=config.bandwidth_hz,
-                    # OFDMA users are not separate adjacent RF carriers in the metric profile.
-                    sub_channel_bandwidth_hz=config.bandwidth_hz, n_sub_ch=1,
-                    nperseg=min(4096, max(512, config.fft_size*config.oversampling)),
-                    modulation=f"{config.waveform.upper()} synthetic stimulus", amplitude_units="normalized"),
-                notes="SYNTHETIC stimulus and illustrative nonlinear memory PA. No physical capture, calibrated RF power or standard conformance claim. " + " ".join(result.analysis.notes))
+        manifest = import_arrays(ws, np.column_stack((x.real, x.imag)), np.column_stack((y.real, y.imag)), dataset_id=request.dataset_id, display_name=request.display_name,
+            origin=DatasetOrigin.synthetic, guard_samples=request.guard_samples, ratios=ratios,
+            signal=SignalSpec(sample_rate_hz=config.sample_rate_hz, bandwidth_hz=config.bandwidth_hz,
+                # OFDMA users are not separate adjacent RF carriers in the metric profile.
+                sub_channel_bandwidth_hz=config.bandwidth_hz, n_sub_ch=1,
+                nperseg=min(4096, max(512, config.fft_size*config.oversampling)),
+                modulation=f"{config.waveform.upper()} synthetic stimulus", amplitude_units="normalized"),
+            notes="SYNTHETIC stimulus and illustrative nonlinear memory PA. No physical capture, calibrated RF power or standard conformance claim. " + " ".join(result.analysis.notes))
         manifest = manifest.model_copy(update={"simulation": simulation,
             "source": manifest.source.model_copy(update={"original_path": None})})
         ws.save_dataset(manifest)

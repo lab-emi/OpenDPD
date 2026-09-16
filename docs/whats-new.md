@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.10: security and reliability
+
+Faster built-in dataset browsing, resilient worker failures, safe upload cancellation, strict API inputs, explicit Python training arguments and hardened hosted deployment. Desktop dependencies and offline built-in data remain included.
+
+[Release notes](releases/release-notes-2.2.10.md) · [Review disposition](releases/review-2.2.10.md)
+
 ## 2.2.9: signal generation and analysis
 
 Signal Analyzer accepts real or complex CSV and opens generated signals, Virtual PA outputs and dataset captures directly. Configurable PSD, spectrograms, time traces, raw I/Q, CCDF, eyes and aligned reference errors share explicit sample ranges and exportable measurement definitions.

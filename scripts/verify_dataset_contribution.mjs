@@ -7,7 +7,9 @@ import path from 'node:path'
 const [baseURL, out] = process.argv.slice(2)
 await fs.mkdir(out, { recursive: true })
 const fixture = await fs.readFile(new URL('../dataset/synthetic/studio-research-v1/synthetic-research-d0-r0/data.csv', import.meta.url))
-const browser = await chromium.connectOverCDP('http://127.0.0.1:9222')
+const bootstrapToken = process.env.OPENDPD_BOOTSTRAP_TOKEN
+if (!bootstrapToken) throw new Error('Set OPENDPD_BOOTSTRAP_TOKEN for the local test server')
+const browser = await chromium.connectOverCDP(process.env.OPENDPD_CDP_URL ?? 'http://127.0.0.1:9222')
 const evidence = []
 try {
   for (const [width, height] of [[1366, 768], [1920, 1080]]) {
@@ -17,7 +19,7 @@ try {
       const errors = [], submissions = []
       page.on('pageerror', e => errors.push(e.message))
       page.on('request', r => { if (r.url().includes('/dataset-publications/') && r.url().endsWith('/submit')) submissions.push(r.url()) })
-      await page.goto(`${baseURL}/bootstrap?token=studio-next-local-review`)
+      await page.goto(`${baseURL}/bootstrap?token=${encodeURIComponent(bootstrapToken)}`)
       await page.goto(baseURL + '/datasets')
       await page.getByRole('button', { name: 'Generate synthetic datasets', exact: true }).click()
       let dialog = page.getByRole('dialog')

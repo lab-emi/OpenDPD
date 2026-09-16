@@ -30,3 +30,16 @@ recursive-exclude save *
 recursive-exclude log *
 recursive-exclude dpd_out *
 exclude *.sh
+
+prune papers
+prune docs
+prune deployment
+prune .github
+prune .vscode
+prune frontend
+prune tests
+prune output
+prune benchmark
+prune pics
+exclude CODE_REVIEW_REPORT.md
+exclude *Plan*.md

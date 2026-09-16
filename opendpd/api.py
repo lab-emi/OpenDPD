@@ -9,35 +9,14 @@ __license__ = "Apache-2.0 License"
 __email__ = "chang.gao@tudelft.nl, yizhuo.wu@tudelft.nl, a.li-2@tudelft.nl"
 
 import os
-import sys
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any
 from pathlib import Path
-
-# Add parent directory to path to import existing modules
-_parent_dir = Path(__file__).parent.parent
-sys.path.insert(0, str(_parent_dir))
 
 from project import Project
 from steps import train_pa as train_pa_module
 from steps import train_dpd as train_dpd_module
 from steps import run_dpd as run_dpd_module
 from steps import plot as plot_module
-from arguments import get_arguments
-
-
-def _append_cli_kwargs(kwargs: Dict[str, Any]) -> None:
-    """Append keyword options while respecting argparse boolean flags."""
-
-    boolean_flags = {
-        'use_segments', 'quant', 'collect_delta_stats',
-        'cuda_graph_training', 'plot',
-    }
-    for key, value in kwargs.items():
-        if isinstance(value, bool) and key in boolean_flags:
-            if value:
-                sys.argv.append(f'--{key}')
-        elif value is not None:
-            sys.argv.extend([f'--{key}', str(value)])
 
 
 def train_pa(
@@ -85,38 +64,24 @@ def train_pa(
         >>> results = opendpd.train_pa(dataset_name='DPA_200MHz', n_epochs=50, plot=True)
     """
     # Prepare arguments
-    sys.argv = ['opendpd']
-    sys.argv.extend(['--step', 'train_pa'])
-    
-    if dataset_path:
-        raise ValueError(
-            "train_pa no longer accepts dataset_path. Please create an OpenDPD "
-            "dataset (e.g., with create_dataset) and pass its dataset_name instead."
-        )
-
-    if dataset_name:
-        sys.argv.extend(['--dataset_name', dataset_name])
-    else:
-        raise ValueError("train_pa requires dataset_name."
-                         " Create a dataset first with create_dataset().")
-    
-    sys.argv.extend(['--PA_backbone', PA_backbone])
-    sys.argv.extend(['--PA_hidden_size', str(PA_hidden_size)])
-    sys.argv.extend(['--n_epochs', str(n_epochs)])
-    sys.argv.extend(['--batch_size', str(batch_size)])
-    sys.argv.extend(['--lr', str(lr)])
-    sys.argv.extend(['--accelerator', accelerator])
-    sys.argv.extend(['--frame_length', str(frame_length)])
-    sys.argv.extend(['--seed', str(seed)])
-    if plot:
-        sys.argv.append('--plot')
-    sys.argv.extend(['--plot_every', str(plot_every)])
-
-    # Add any additional keyword arguments
-    _append_cli_kwargs(kwargs)
-
-    # Create project and run training
-    proj = Project()
+    from opendpd.services.legacy_adapter import namespace_from_kwargs
+    options = {
+        'dataset_name': dataset_name,
+        'dataset_path': dataset_path,
+        'PA_backbone': PA_backbone,
+        'PA_hidden_size': PA_hidden_size,
+        'n_epochs': n_epochs,
+        'batch_size': batch_size,
+        'lr': lr,
+        'accelerator': accelerator,
+        'frame_length': frame_length,
+        'seed': seed,
+        'plot': plot,
+        'plot_every': plot_every,
+        **kwargs,
+    }
+    ns = namespace_from_kwargs('train_pa', options)
+    proj = Project(args=ns)
     train_pa_module.main(proj)
 
     return {
@@ -179,46 +144,30 @@ def train_dpd(
         >>> dpd_results = opendpd.train_dpd(dataset_name='DPA_200MHz', n_epochs=50, plot=True)
     """
     # Prepare arguments
-    sys.argv = ['opendpd']
-    sys.argv.extend(['--step', 'train_dpd'])
-    
-    if dataset_path:
-        raise ValueError(
-            "train_dpd no longer accepts dataset_path. Please create an OpenDPD "
-            "dataset (e.g., with create_dataset) and pass its dataset_name instead."
-        )
-
-    if dataset_name:
-        sys.argv.extend(['--dataset_name', dataset_name])
-    else:
-        raise ValueError("train_dpd requires dataset_name."
-                         " Create a dataset first with create_dataset().")
-    
-    sys.argv.extend(['--DPD_backbone', DPD_backbone])
-    sys.argv.extend(['--DPD_hidden_size', str(DPD_hidden_size)])
-    sys.argv.extend(['--PA_backbone', PA_backbone])
-    sys.argv.extend(['--PA_hidden_size', str(PA_hidden_size)])
-    sys.argv.extend(['--n_epochs', str(n_epochs)])
-    sys.argv.extend(['--batch_size', str(batch_size)])
-    sys.argv.extend(['--lr', str(lr)])
-    sys.argv.extend(['--accelerator', accelerator])
-    sys.argv.extend(['--frame_length', str(frame_length)])
-    sys.argv.extend(['--seed', str(seed)])
-    sys.argv.extend(['--thx', str(thx)])
-    sys.argv.extend(['--thh', str(thh)])
-    if collect_delta_stats:
-        sys.argv.append('--collect_delta_stats')
-    if cuda_graph_training:
-        sys.argv.append('--cuda_graph_training')
-    if plot:
-        sys.argv.append('--plot')
-    sys.argv.extend(['--plot_every', str(plot_every)])
-
-    # Add any additional keyword arguments
-    _append_cli_kwargs(kwargs)
-
-    # Create project and run training
-    proj = Project()
+    from opendpd.services.legacy_adapter import namespace_from_kwargs
+    options = {
+        'dataset_name': dataset_name,
+        'dataset_path': dataset_path,
+        'DPD_backbone': DPD_backbone,
+        'DPD_hidden_size': DPD_hidden_size,
+        'PA_backbone': PA_backbone,
+        'PA_hidden_size': PA_hidden_size,
+        'n_epochs': n_epochs,
+        'batch_size': batch_size,
+        'lr': lr,
+        'accelerator': accelerator,
+        'frame_length': frame_length,
+        'seed': seed,
+        'thx': thx,
+        'thh': thh,
+        'plot': plot,
+        'plot_every': plot_every,
+        'collect_delta_stats': collect_delta_stats,
+        'cuda_graph_training': cuda_graph_training,
+        **kwargs,
+    }
+    ns = namespace_from_kwargs('train_dpd', options)
+    proj = Project(args=ns)
     train_dpd_module.main(proj)
 
     return {
@@ -257,32 +206,18 @@ def run_dpd(
         >>> results = opendpd.run_dpd(dataset_name='DPA_200MHz', plot=True)
     """
     # Prepare arguments
-    sys.argv = ['opendpd']
-    sys.argv.extend(['--step', 'run_dpd'])
-
-    if dataset_path:
-        raise ValueError(
-            "run_dpd no longer accepts dataset_path. Please create an OpenDPD "
-            "dataset (e.g., with create_dataset) and pass its dataset_name instead."
-        )
-
-    if dataset_name:
-        sys.argv.extend(['--dataset_name', dataset_name])
-    else:
-        raise ValueError("run_dpd requires dataset_name."
-                         " Create a dataset first with create_dataset().")
-
-    sys.argv.extend(['--DPD_backbone', DPD_backbone])
-    sys.argv.extend(['--DPD_hidden_size', str(DPD_hidden_size)])
-    sys.argv.extend(['--accelerator', accelerator])
-    if plot:
-        sys.argv.append('--plot')
-
-    # Add any additional keyword arguments
-    _append_cli_kwargs(kwargs)
-
-    # Create project and run DPD
-    proj = Project()
+    from opendpd.services.legacy_adapter import namespace_from_kwargs
+    options = {
+        'dataset_name': dataset_name,
+        'dataset_path': dataset_path,
+        'DPD_backbone': DPD_backbone,
+        'DPD_hidden_size': DPD_hidden_size,
+        'accelerator': accelerator,
+        'plot': plot,
+        **kwargs,
+    }
+    ns = namespace_from_kwargs('run_dpd', options)
+    proj = Project(args=ns)
     run_dpd_module.main(proj)
 
     return {
@@ -324,23 +259,18 @@ def plot_dpd(
         >>> results = opendpd.plot_dpd(dataset_name='DPA_200MHz')
         >>> print(f"Plots saved at: {results['plot_dir']}")
     """
-    sys.argv = ['opendpd']
-    sys.argv.extend(['--step', 'plot'])
-
-    if dataset_name:
-        sys.argv.extend(['--dataset_name', dataset_name])
-    else:
-        raise ValueError("plot_dpd requires dataset_name.")
-
-    sys.argv.extend(['--PA_backbone', PA_backbone])
-    sys.argv.extend(['--PA_hidden_size', str(PA_hidden_size)])
-    sys.argv.extend(['--DPD_backbone', DPD_backbone])
-    sys.argv.extend(['--DPD_hidden_size', str(DPD_hidden_size)])
-    sys.argv.extend(['--accelerator', accelerator])
-
-    _append_cli_kwargs(kwargs)
-
-    proj = Project()
+    from opendpd.services.legacy_adapter import namespace_from_kwargs
+    options = {
+        'dataset_name': dataset_name,
+        'PA_backbone': PA_backbone,
+        'PA_hidden_size': PA_hidden_size,
+        'DPD_backbone': DPD_backbone,
+        'DPD_hidden_size': DPD_hidden_size,
+        'accelerator': accelerator,
+        **kwargs,
+    }
+    ns = namespace_from_kwargs('plot', options)
+    proj = Project(args=ns)
     plot_module.main(proj)
 
     return {

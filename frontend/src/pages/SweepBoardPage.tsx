@@ -1,3 +1,4 @@
+import { getQuery } from '@/api/client'
 import { useState } from 'react'
 import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -28,7 +29,7 @@ export function SweepBoardPage() {
   const conditionSet = (location.state as { conditionSet?: components['schemas']['ConditionSet'] } | null)?.conditionSet
   const [open, setOpen] = useState(!!conditionSet)
   const [copy, setCopy] = useState<Draft | undefined>(conditionSet ? { protocol_id: 'sweep-v1', title: 'Synthetic condition demonstration', mode: 'cross_condition', condition_set: conditionSet, methods: [{ entry_id: 'pa', recipe_id: 'pa-gru-smoke-v1' }], seeds: [0], tasks: ['zero_update', 'full_retrain'], budgets: [2000], metric_profile_id: 'general-spectral-v1', device: 'cpu', max_runs: 12, max_wall_clock_seconds: 3600 } : undefined)
-  const records = useQuery({ queryKey: ['sweeps'], queryFn: () => api.get<Board[]>('/sweeps'), enabled: !WEB_MODE, refetchInterval: 2000 })
+  const records = useQuery({ queryKey: ['sweeps'], queryFn: getQuery<Board[]>('/sweeps'), enabled: !WEB_MODE, refetchInterval: 2000 })
   const selected = records.data?.find(r => r.sweep_id === sweepId) ?? (!sweepId ? records.data?.[0] : undefined)
   const action = useMutation({ mutationFn: ({ id, verb, resume = false }: { id: string; verb: 'start' | 'cancel'; resume?: boolean }) => api.post<Board>(`/sweeps/${id}/${verb}`, verb === 'start' ? { resume_failed: resume } : undefined), onSuccess: () => void qc.invalidateQueries({ queryKey: ['sweeps'] }) })
   if (WEB_MODE) return null
@@ -58,7 +59,7 @@ export function SweepBoardPage() {
 }
 
 function SeedSummary({ board }: { board: Board }) {
-  const summary = useQuery({ queryKey: ['sweep-report', board.sweep_id, board.cells.map(c => c.status).join(',')], queryFn: () => api.get<components['schemas']['SweepReport']>(`/sweeps/${board.sweep_id}/report`), enabled: board.cells.some(c => c.status === 'succeeded') })
+  const summary = useQuery({ queryKey: ['sweep-report', board.sweep_id, board.cells.map(c => c.status).join(',')], queryFn: getQuery<components['schemas']['SweepReport']>(`/sweeps/${board.sweep_id}/report`), enabled: board.cells.some(c => c.status === 'succeeded') })
   const profiles = useMetricProfiles()
   const profile = profiles.data?.find(p => p.profile_id === board.preview.draft.metric_profile_id)
   if (!profile || profile.validation === 'pending_cross_validation') return null

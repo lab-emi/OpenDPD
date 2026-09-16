@@ -1,4 +1,4 @@
-# Scientific-semantics paths need a maintainer review (see AGENTS.md §3).
+# Scientific-semantics paths need a maintainer review (see docs/architecture/review-policy.md).
 /tests/golden/                       @lab-emi/opendpd-maintainers
 /opendpd/core/metrics/               @lab-emi/opendpd-maintainers
 /opendpd/core/splits.py              @lab-emi/opendpd-maintainers
@@ -6,3 +6,9 @@
 /docs/protocols/                     @lab-emi/opendpd-maintainers
 /.github/CODEOWNERS                  @lab-emi/opendpd-maintainers
 /.github/workflows/protected-paths.yml @lab-emi/opendpd-maintainers
+
+/.github/workflows/ @lab-emi/opendpd-maintainers
+/deployment/ @lab-emi/opendpd-maintainers
+/pyproject.toml @lab-emi/opendpd-maintainers
+/opendpd/web/ @lab-emi/opendpd-maintainers
+/scripts/check_protected_review.py @lab-emi/opendpd-maintainers

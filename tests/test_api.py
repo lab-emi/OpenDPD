@@ -14,7 +14,7 @@ from conftest import REPO_ROOT, SMOKE_DATASET
 
 @pytest.fixture
 def preserved_argv():
-    """The API passes parameters by rewriting sys.argv — keep tests isolated."""
+    """Isolate tests that explicitly exercise the command-line parser."""
     argv = sys.argv[:]
     yield
     sys.argv = argv
@@ -156,21 +156,16 @@ class TestApiTraining:
         sys.argv = ['opendpd', '--cuda_graph_training']
         assert get_arguments().cuda_graph_training is True
 
-    def test_boolean_kwargs_are_emitted_as_flags(self, preserved_argv):
-        from opendpd import api
-
-        sys.argv = ['opendpd']
-        api._append_cli_kwargs({
-            "collect_delta_stats": True,
-            "cuda_graph_training": True,
-            "plot": False,
-            "frame_stride": 16,
-            "unused": None,
-        })
-        assert sys.argv == [
-            'opendpd', '--collect_delta_stats', '--cuda_graph_training',
-            '--frame_stride', '16'
-        ]
+    def test_options_leave_process_arguments_unchanged(self):
+        from opendpd.services.legacy_adapter import namespace_from_kwargs
+        original = sys.argv[:]
+        ns = namespace_from_kwargs('train_pa', {'dataset_name': 'test',
+            'collect_delta_stats': True, 'cuda_graph_training': True, 'plot': False, 'frame_stride': 16})
+        assert ns.collect_delta_stats and ns.cuda_graph_training and not ns.plot
+        assert ns.frame_stride == 16 and sys.argv == original
+        with pytest.raises(ValueError, match='Unknown training option'):
+            namespace_from_kwargs('train_pa', {'dataset_name': 'test', 'typo': 1})
+        assert sys.argv == original
 
     def test_train_pa_smoke(self, tmp_path, monkeypatch, preserved_argv):
         from pathlib import Path

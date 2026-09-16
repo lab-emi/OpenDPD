@@ -37,11 +37,11 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.9** adds **Signal Analyzer** for real or complex CSV signals, generated waveforms and PA captures. Inspect PSD, spectrograms, I/Q, CCDF, eye diagrams and reference errors, then export the results. Signal Generator adds PSK, FSK/GFSK, noise, DFT-spread OFDM, repeatable payloads, burst envelopes and EVM trends.
+**OpenDPD 2.2.10** improves Studio security and reliability: bounded uploads, faster built-in dataset browsing, safer worker startup, and hardened publishing and hosted services. Signal Analyzer supports real or complex CSV signals and connects directly to Signal Generator and Virtual PA.
 
 **Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input, simulate its output with one of nine Virtual PAs, or use existing input/output data. Standard presets remain uncoded engineering stimuli; Wi-Fi 8 is experimental.
 
-[2.2.9 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.9/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
+[2.2.10 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.10/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)
@@ -70,7 +70,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.9" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.2.10" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 
@@ -108,7 +108,7 @@ uv run --no-project --python .venv opendpd gui
 
 [PA Library guide](docs/guides/virtual-pa-library.md) · [Reading signal-chain PSD plots](docs/guides/signal-chain-spectra.md)
 
-![Studio 2.2.9: Signal Analyzer with independent spectrum and spectrogram](pics/studio-signal-analyzer.png)
+![Studio 2.2.10: Signal Analyzer with independent spectrum and spectrogram](pics/studio-signal-analyzer.png)
 
 ## Choose your next step
 

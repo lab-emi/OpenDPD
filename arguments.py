@@ -3,6 +3,7 @@ __license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
 import argparse
+from opendpd.core.registry import legacy_choices
 
 
 def build_parser():
@@ -59,8 +60,7 @@ def build_parser():
     parser.add_argument('--gmp_memory_length', default=11, type=int, help='Memory length of GMP model')
     # Power Amplifier Model Settings
     parser.add_argument('--PA_backbone', default='gru',
-                        choices=['gmp','deltagru', 'deltajanet', 'janet', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm',
-                                'rvtdcnn', 'mamba', 'tcn', 'tres_deltagru', 'tres_gru', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'apnrnn', 'djanet', 'mcldnn'],
+                        choices=legacy_choices('pa'),
                         help='Modeling PA Recurrent layer type')
     parser.add_argument('--PA_hidden_size', default=23, type=int,
                         help='Hidden size of PA backbone')
@@ -68,8 +68,7 @@ def build_parser():
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
     parser.add_argument('--DPD_backbone', default='gru',
-                        choices=['gmp', 'deltagru', 'deltajanet', 'janet', 'snn', 'fcn', 'gru', 'dgru', 'qgru', 'qgru_amp1', 'lstm', 'vdlstm',
-                                'rvtdcnn', 'tres_deltagru', 'tres_gru', 'tcn', 'pntdnn', 'pdgru', 'pgjanet', 'dvrjanet', 'bojanet', 'pnjanet', 'djanet', 'mcldnn'],
+                        choices=legacy_choices('dpd'),
                         help='DPD model Recurrent layer type')
     parser.add_argument('--DPD_hidden_size', default=15, type=int, help='Hidden size of DPD backbone.')
     parser.add_argument('--DPD_num_layers', default=1, type=int, help='Number of layers of the DPD backbone.')
@@ -81,7 +80,7 @@ def build_parser():
     parser.add_argument('--n_bits_a', default=8, type=int, help='Number of bits for activations')
     parser.add_argument('--pretrained_model', default='', help='Path to pretrained model')
     parser.add_argument('--quant_dir_label', default='', help='Directory label for quantization')
-    parser.add_argument('--q_pretrain', default=False, type=bool, help='pretrain the model with \
+    parser.add_argument('--q_pretrain', default=False, action='store_true', help='pretrain the model with \
                         self-implementation float models for quantization')
 
 
@@ -106,7 +105,7 @@ def build_parser():
     parser.add_argument('--plot', action='store_true', default=False,
                         help='Enable plot generation during training and inference.')
     parser.add_argument('--plot_every', default=10, type=int,
-                        help='Generate per-epoch plots every N epochs (default: 1).')
+                        help='Generate per-epoch plots every N epochs (default: 10).')
     parser.add_argument('--gif_duration', default=10.0, type=float,
                         help='Duration of GIF animations in seconds (default: 10.0).')
 

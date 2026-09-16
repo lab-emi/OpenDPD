@@ -1,8 +1,9 @@
 """Authenticated signal inspection and quarantined numeric CSV import."""
-import asyncio
+from opendpd.server.uploads import consume_upload
 from fastapi import APIRouter, Depends, Request, UploadFile
 from opendpd.schemas.signal_analyzer import AnalyzerRequest, AnalyzerSourceInfo, SignalAnalysis
-from opendpd.server.routes import require_csrf, require_session, _error
+from opendpd.server.routes import require_csrf, require_session
+from opendpd.server.errors import api_error as _error
 from opendpd.services import signal_analyzer as service
 from opendpd.services.csv_upload import MAX_UPLOAD_BYTES, CsvUploadRejected, check_filename, quarantine_path
 
@@ -21,26 +22,22 @@ def analyze(body: AnalyzerRequest, request: Request):
 
 @router.post("/signal-analyzer/upload", response_model=AnalyzerSourceInfo, status_code=201, dependencies=[Depends(require_csrf)])
 async def upload(request: Request, file: UploadFile):
-    path = None
-    try:
-        check_filename(file.filename or "")
-        path = quarantine_path(request.app.state.ws)
-        size = 0
-        with path.open("xb") as output:
-            while chunk := await file.read(1024 * 1024):
-                size += len(chunk)
-                if size > MAX_UPLOAD_BYTES:
-                    raise _error(413, "payload_too_large", "CSV files must be at most 25 MiB.")
-                output.write(chunk)
-        scan = asyncio.create_task(asyncio.to_thread(service.admit_signal_upload, request.app.state.ws, path))
+    def receive(chunks):
+        path = None
         try:
-            return await asyncio.shield(scan)
-        except asyncio.CancelledError:
-            await scan
-            raise
-    except CsvUploadRejected as exc:
-        raise _error(422, "csv_rejected", str(exc)) from exc
-    finally:
-        if path:
-            path.unlink(missing_ok=True)
-        await file.close()
+            check_filename(file.filename or "")
+            path = quarantine_path(request.app.state.ws)
+            size = 0
+            with path.open("xb") as output:
+                for chunk in chunks:
+                    size += len(chunk)
+                    if size > MAX_UPLOAD_BYTES:
+                        raise _error(413, "payload_too_large", "CSV files must be at most 25 MiB.")
+                    output.write(chunk)
+            return service.admit_signal_upload(request.app.state.ws, path)
+        except CsvUploadRejected as exc:
+            raise _error(422, "csv_rejected", str(exc)) from exc
+        finally:
+            if path:
+                path.unlink(missing_ok=True)
+    return await consume_upload(file, receive)

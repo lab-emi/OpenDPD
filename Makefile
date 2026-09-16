@@ -1,4 +1,4 @@
-.SHELL := /bin/bash
+SHELL := /bin/bash
 
 .PHONY: help install uninstall clean clean-data clean-logs clean-models clean-all
 

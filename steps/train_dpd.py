@@ -8,7 +8,6 @@ import models as model
 from project import Project
 from utils.util import count_net_params
 import sys
-sys.path.append('../..')
 from quant import get_quant_model
 
 def main(proj: Project):

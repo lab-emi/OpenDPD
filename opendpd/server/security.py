@@ -228,7 +228,8 @@ class LocalBoundaryMiddleware:
 
 async def _reject(send, status: int, code: str, message: str) -> None:
     import json
-    body = json.dumps({"error": {"code": code, "message": message, "details": [], "hint": None}}).encode()
+    from opendpd.schemas.common import error_payload
+    body = json.dumps(error_payload(code, message)).encode()
     await send({"type": "http.response.start", "status": status,
                 "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode()),
                             (b"cache-control", b"no-store"), *SECURITY_HEADERS]})

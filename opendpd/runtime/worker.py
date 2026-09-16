@@ -70,19 +70,21 @@ def main(argv=None) -> int:
     run_dir = ws.run_dir(args.run_id)
     emit = FileEmitter(run_dir / EVENTS_FILE)
     stop = threading.Event()
-    threading.Thread(target=_heartbeat, args=(emit, stop), daemon=True, name="heartbeat").start()
+    heartbeat = threading.Thread(target=_heartbeat, args=(emit, stop), daemon=True, name="heartbeat")
+    heartbeat.start()
     cancel_path = run_dir / CANCEL_FILE
     try:
         record = execute_run(ws, args.run_id, emit=emit, should_cancel=cancel_path.exists)
     except Exception as err:  # noqa: BLE001 - last resort: make the failure visible
         emit(RunEventType.error, {"code": "worker_crash", "message": f"{type(err).__name__}: {err}"})
         stop.set()
+        heartbeat.join()
         emit.close()
         return 1
     stop.set()
+    heartbeat.join()
     emit.close()
     sys.stdout.flush()
-    time.sleep(0.05)   # let the supervisor's tail see the final lines before the exit is observed
     return EXIT_CODES.get(record.status, 1)
 
 

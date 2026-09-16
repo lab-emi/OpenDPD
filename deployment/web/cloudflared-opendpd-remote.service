@@ -2,7 +2,8 @@
 Description=OpenDPD dashboard-managed Cloudflare Tunnel (host)
 After=network-online.target opendpd-web-vm.service
 Wants=network-online.target
-Requires=opendpd-web-vm.service
+Requires=opendpd-web-vm.service opendpd-tunnel-guard.service
+After=opendpd-tunnel-guard.service
 
 [Service]
 User=opendpd-tunnel

@@ -3,11 +3,11 @@ WORKDIR /opt/opendpd
 # Apply Ubuntu security updates and remove build headers from the runtime.
 # Containers use the host kernel; linux-libc-dev is an unused header package.
 RUN apt-get update && apt-get upgrade -y && apt-get purge -y linux-libc-dev python3-pip python3-wheel binutils-common libctf-nobfd0 libsframe1 libc-dev-bin && rm -rf /var/lib/apt/lists/*
-RUN uv pip install --system --break-system-packages --no-cache --upgrade 'setuptools>=83'
 RUN uv venv --system-site-packages --python /usr/bin/python /opt/opendpd-runtime
 ENV PATH="/opt/opendpd-runtime/bin:${PATH}"
-RUN uv pip install --python /opt/opendpd-runtime --no-cache --upgrade pip setuptools wheel numpy scipy pandas matplotlib pillow tqdm rich 'pydantic>=2.5,<3' psutil
-COPY pyproject.toml README.md arguments.py project.py models.py main.py ./
+COPY deployment/web/requirements-gpu.lock /tmp/requirements-gpu.lock
+RUN uv pip install --python /opt/opendpd-runtime --no-cache --require-hashes -r /tmp/requirements-gpu.lock
+COPY pyproject.toml README.md LICENSE arguments.py project.py models.py main.py ./
 COPY opendpd ./opendpd
 COPY backbones ./backbones
 COPY modules ./modules
@@ -16,9 +16,9 @@ COPY utils ./utils
 COPY quant ./quant
 COPY datasets ./datasets
 COPY dataset ./dataset
-RUN pip install --no-cache-dir --no-deps --no-build-isolation . && chmod -R a-w /opt/opendpd
+RUN uv pip install --python /opt/opendpd-runtime --no-cache --no-deps --no-build-isolation . && chmod -R a-w /opt/opendpd
 # No package installation is needed in an offline inference/training worker.
 # Remove installers and their bundled dependencies after building the app.
-RUN uv pip uninstall --python /opt/opendpd-runtime pip && uv pip uninstall --system --break-system-packages pip uv
+RUN uv pip uninstall --system --break-system-packages pip setuptools wheel uv
 USER 65532:65532
 ENTRYPOINT ["python", "-m", "opendpd.web.gpu_container"]
