@@ -48,7 +48,7 @@ jobs:
           <!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=https://opendpd.com/studio/"><title>OpenDPD Studio</title><a href="https://opendpd.com/studio/">Open OpenDPD Studio</a>
           HTML
           touch site/.nojekyll
-      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         if: github.event_name != 'pull_request'
         with:
           path: site
