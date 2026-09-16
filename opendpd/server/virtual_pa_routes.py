@@ -28,7 +28,7 @@ def simulation(simulation_id: str, request: Request):
 
 @router.get("/simulations/{simulation_id}/{filename}", dependencies=[Depends(require_session)])
 def download(simulation_id: str, filename: str, request: Request):
-    from opendpd.server.routes import _error
+    from opendpd.server.errors import api_error as _error
     kinds = {"output.csv": "output", "paired.csv": "paired", "metadata.json": "metadata"}
     if filename not in kinds:
         raise _error(404, "export_not_found", "Unknown PA simulation export.")

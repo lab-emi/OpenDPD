@@ -29,9 +29,8 @@ class Job:
         return self.supervisor.ws.run_dir(self.run_id)
 
     def cancelled(self):
-        active = self.supervisor._active.get(self.run_id)
         return (self.done or time.time() >= self.expires_at or (self.root / "CANCEL").exists()
-                or active is None or active.process.poll() is not None)
+                or not self.supervisor.worker_alive(self.run_id))
 
 
 class GpuBroker:
@@ -70,6 +69,19 @@ class GpuBroker:
             job = Job(secrets.token_hex(16), supervisor, record.run_id,
                       min(supervisor.expires_at, time.time() + supervisor.manager.config.max_runtime_seconds))
             self.jobs[job.id] = job
+
+    def retire(self, supervisor, directory):
+        """Synchronize expiry with result extraction, then remove the tenant atomically."""
+        import shutil
+        with self.lock:
+            for key, job in list(self.jobs.items()):
+                if job.supervisor is supervisor:
+                    job.done = True
+                    self.jobs.pop(key, None)
+            try:
+                shutil.rmtree(directory)
+            except FileNotFoundError:
+                pass
 
     def sweep(self):
         with self.lock:

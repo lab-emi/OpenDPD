@@ -1,0 +1,17 @@
+[Unit]
+Description=Limit the tunnel connector to the public API loopback port
+Before=cloudflared-opendpd-remote.service cloudflared-opendpd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/bash /etc/opendpd-web/tunnel-guard.sh
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_NET_ADMIN
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_NETLINK AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

@@ -288,7 +288,7 @@ def test_public_csv_validation_import_and_tenant_isolation(public, data):
     assert client.get('/api/v1/datasets', headers=other).json() == []
     signal = {'sample_rate_hz': 800e6, 'bandwidth_hz': 200e6, 'nperseg': 256, 'n_sub_ch': 3}
     assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': signal}, headers=auth).status_code == 200
-    assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': signal}, headers=other).status_code == 409
+    assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': signal}, headers=other).status_code == 404
     assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': {'nperseg': 2**40}}, headers=auth).status_code == 422
     assert client.post('/api/v1/datasets/my-capture/manifest', json={'signal': {'waveform': {}}}, headers=auth).status_code == 422
     assert client.get('/api/v1/system/capabilities', headers=auth).json()['custom_dataset_imports'] is True
@@ -402,3 +402,26 @@ def test_real_training_is_private_and_global_dispatch_is_serial(public):
         pytest.fail("training did not finish")
     assert client.get(f"/api/v1/results/{rid}", headers=a).status_code == 200
     assert client.get(f"/api/v1/results/{rid}", headers=b).status_code == 404
+
+
+def test_cleanup_recovers_after_success_without_hiding_dispatch_failure(public, monkeypatch):
+    client, manager, _ = public
+    manager.scheduler_stop.set()
+    manager.scheduler_wake.set()
+    manager.scheduler.join(timeout=5)
+    assert not manager.scheduler.is_alive()
+    original = manager.gpu.sweep
+    def fail():
+        raise OSError('transient maintenance failure')
+    monkeypatch.setattr(manager.gpu, 'sweep', fail)
+    client.portal.call(manager.sweep)
+    assert not manager.cleanup_healthy
+    monkeypatch.setattr(manager.gpu, 'sweep', original)
+    client.portal.call(manager.sweep)
+    assert manager.cleanup_healthy
+    manager.dispatch_healthy = False
+    client.portal.call(manager.sweep)
+    assert manager.cleanup_healthy and not manager.dispatch_healthy
+    # A healthy cleanup must not clear an independent dispatcher failure.
+    assert client.post('/api/v1/web/sessions', json={}).status_code == 503
+    manager.dispatch_healthy = True

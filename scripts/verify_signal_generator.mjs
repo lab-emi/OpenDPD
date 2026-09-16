@@ -7,7 +7,9 @@ import { createHash } from 'node:crypto'
 
 const [baseURL, out] = process.argv.slice(2)
 await fs.mkdir(out, { recursive: true })
-const browser = await chromium.connectOverCDP('http://127.0.0.1:9222')
+const bootstrapToken = process.env.OPENDPD_BOOTSTRAP_TOKEN
+if (!bootstrapToken) throw new Error('Set OPENDPD_BOOTSTRAP_TOKEN for the local test server')
+const browser = await chromium.connectOverCDP(process.env.OPENDPD_CDP_URL ?? 'http://127.0.0.1:9222')
 const evidence = []
 const suffix = Date.now().toString(36)
 try {
@@ -35,7 +37,7 @@ try {
         return signal
       }
       const plots = () => page.waitForFunction(() => document.querySelectorAll('.js-plotly-plot .plot-container').length === 4)
-      await page.goto(baseURL + '/bootstrap?token=studio-next-local-review')
+      await page.goto(baseURL + '/bootstrap?token=' + encodeURIComponent(bootstrapToken))
       await page.getByRole('link', { name: 'Get Started', exact: true }).click()
       const guide = page.getByRole('dialog')
       assert.deepEqual((await guide.getByRole('button').allTextContents()).slice(0, 3), ['Signal Generator', 'Use an existing dataset', 'Upload CSV'])

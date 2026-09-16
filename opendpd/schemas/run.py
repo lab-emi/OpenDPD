@@ -30,7 +30,7 @@ TERMINAL_STATUSES: FrozenSet[RunStatus] = frozenset(
 # queued -> cancelled.  Terminal states never change again: a late completion
 # event cannot turn a cancelled run into a success.
 _TRANSITIONS: Dict[RunStatus, FrozenSet[RunStatus]] = {
-    RunStatus.queued: frozenset({RunStatus.running, RunStatus.cancelled, RunStatus.interrupted}),
+    RunStatus.queued: frozenset({RunStatus.running, RunStatus.failed, RunStatus.cancelled, RunStatus.interrupted}),
     RunStatus.running: frozenset({RunStatus.succeeded, RunStatus.failed, RunStatus.cancel_requested,
                                   RunStatus.interrupted}),
     RunStatus.cancel_requested: frozenset({RunStatus.cancelled, RunStatus.failed, RunStatus.interrupted}),

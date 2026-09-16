@@ -22,7 +22,7 @@ stopping = False
 
 
 def podman(*args, **kwargs):
-    return subprocess.run(["/usr/bin/podman", *args], timeout=30, check=True, **kwargs)
+    return subprocess.run(["/usr/bin/podman", *args], timeout=30, check=kwargs.pop("check", True), **kwargs)
 
 
 def cleanup_containers():
@@ -140,7 +140,7 @@ class Agent:
                 while process.poll() is None:
                     if stopping or time.time() >= job["expires_at"] or not self.update(job, run, offsets):
                         cancelled = True
-                        podman("kill", name, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        podman("kill", name, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         break
                     size = 0
                     for count, path in enumerate(root.rglob("*")):

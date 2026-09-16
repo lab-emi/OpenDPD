@@ -72,3 +72,10 @@ test('same-task reset clears the independent terminal tab and collapses it', asy
   await userEvent.click(terminal)
   expect(within(screen.getByRole('tablist', { name: 'Terminal steps' })).getByRole('tab', { name: 'PA Model Training' })).toHaveAttribute('aria-selected', 'true')
 })
+
+test('a malformed run URL leaves navigation and the page mounted', async () => {
+  const calls = setup('/runs/%zz')
+  expect(await screen.findByLabelText('Draft')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Reset page' })).toBeVisible()
+  expect(calls.some(c => c.path.includes('%zz'))).toBe(false)
+})

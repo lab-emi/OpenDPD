@@ -187,8 +187,11 @@ class RunStore:
                          payload=json.loads(r[3])) for r in rows]
 
     def export_events_jsonl(self, run_id: str, path: Path) -> int:
-        events = self.events_after(run_id, 0, limit=10 ** 9)
+        count, cursor = 0, 0
         with open(path, "w", encoding="utf-8") as f:
-            for e in events:
-                f.write(e.model_dump_json() + "\n")
-        return len(events)
+            while events := self.events_after(run_id, cursor, limit=1000):
+                for event in events:
+                    f.write(event.model_dump_json() + "\n")
+                cursor = events[-1].seq
+                count += len(events)
+        return count

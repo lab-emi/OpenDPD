@@ -1077,6 +1077,7 @@
         "type": "object"
       },
       "BootstrapRequest": {
+        "additionalProperties": false,
         "properties": {
           "token": {
             "title": "Token",
@@ -1232,6 +1233,7 @@
         "type": "object"
       },
       "Capabilities": {
+        "additionalProperties": false,
         "properties": {
           "custom_dataset_imports": {
             "default": false,
@@ -2309,6 +2311,7 @@
         "type": "object"
       },
       "CsvCreateRequest": {
+        "additionalProperties": false,
         "properties": {
           "dataset_id": {
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
@@ -2525,6 +2528,7 @@
         "type": "object"
       },
       "CsvPreviewRequest": {
+        "additionalProperties": false,
         "properties": {
           "options": {
             "$ref": "#/components/schemas/CsvOptions"
@@ -3367,6 +3371,7 @@
         "type": "object"
       },
       "DeployExportInfo": {
+        "additionalProperties": false,
         "properties": {
           "download_url": {
             "title": "Download Url",
@@ -3399,6 +3404,7 @@
         "type": "object"
       },
       "DeployRequest": {
+        "additionalProperties": false,
         "properties": {
           "run_id": {
             "maxLength": 128,
@@ -3502,6 +3508,7 @@
         "type": "object"
       },
       "DeviceInfo": {
+        "additionalProperties": false,
         "properties": {
           "count": {
             "default": 0,
@@ -4012,6 +4019,7 @@
         "type": "object"
       },
       "EventPage": {
+        "additionalProperties": false,
         "properties": {
           "events": {
             "items": {
@@ -4332,6 +4340,7 @@
         "type": "object"
       },
       "ExportInfo": {
+        "additionalProperties": false,
         "properties": {
           "download_url": {
             "title": "Download Url",
@@ -4364,6 +4373,7 @@
         "type": "object"
       },
       "ExportRequest": {
+        "additionalProperties": false,
         "properties": {
           "kind": {
             "default": "share",
@@ -4769,6 +4779,7 @@
         "type": "object"
       },
       "FileEntryInfo": {
+        "additionalProperties": false,
         "properties": {
           "kind": {
             "title": "Kind",
@@ -6463,6 +6474,7 @@
         "type": "object"
       },
       "ImportBuiltinRequest": {
+        "additionalProperties": false,
         "properties": {
           "dataset_id": {
             "anyOf": [
@@ -6561,6 +6573,7 @@
         "type": "object"
       },
       "ImportRequest": {
+        "additionalProperties": false,
         "properties": {
           "dataset_id": {
             "anyOf": [
@@ -6633,6 +6646,7 @@
         "type": "object"
       },
       "ImportRootInfo": {
+        "additionalProperties": false,
         "properties": {
           "exists": {
             "title": "Exists",
@@ -7325,6 +7339,7 @@
         "type": "string"
       },
       "LogPage": {
+        "additionalProperties": false,
         "properties": {
           "eof": {
             "title": "Eof",
@@ -7437,6 +7452,7 @@
         "type": "object"
       },
       "ManifestUpdate": {
+        "additionalProperties": false,
         "properties": {
           "display_name": {
             "anyOf": [
@@ -8237,6 +8253,7 @@
         "type": "object"
       },
       "ModelDownloadInfo": {
+        "additionalProperties": false,
         "properties": {
           "available": {
             "title": "Available",
@@ -8393,6 +8410,7 @@
         "type": "object"
       },
       "ModelInfo": {
+        "additionalProperties": false,
         "description": "Registry descriptor as seen by clients (opendpd.core.registry.ModelDescriptor).",
         "properties": {
           "constraints": {
@@ -9232,6 +9250,7 @@
         "type": "object"
       },
       "ParamSpecInfo": {
+        "additionalProperties": false,
         "properties": {
           "choices": {
             "anyOf": [
@@ -9323,6 +9342,7 @@
         "type": "object"
       },
       "PreprocessPreview": {
+        "additionalProperties": false,
         "properties": {
           "n_samples_after": {
             "title": "N Samples After",
@@ -9351,6 +9371,7 @@
         "type": "object"
       },
       "PreprocessRequest": {
+        "additionalProperties": false,
         "properties": {
           "base_version": {
             "default": "raw-v1",
@@ -9823,6 +9844,7 @@
         "type": "object"
       },
       "RecipeInfo": {
+        "additionalProperties": false,
         "properties": {
           "description": {
             "title": "Description",
@@ -10398,6 +10420,7 @@
         "type": "object"
       },
       "RunCount": {
+        "additionalProperties": false,
         "properties": {
           "count": {
             "title": "Count",
@@ -11093,6 +11116,7 @@
         "type": "object"
       },
       "SessionInfo": {
+        "additionalProperties": false,
         "properties": {
           "authenticated": {
             "title": "Authenticated",
@@ -11110,7 +11134,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.9",
+            "default": "2.2.10",
             "title": "Version",
             "type": "string"
           }
@@ -11725,6 +11749,7 @@
         "type": "object"
       },
       "SourceInfoOut": {
+        "additionalProperties": false,
         "properties": {
           "arrays": {
             "additionalProperties": {
@@ -11806,6 +11831,7 @@
         "type": "object"
       },
       "SourceRef": {
+        "additionalProperties": false,
         "description": "A file inside an authorised import root; clients never send absolute paths.",
         "properties": {
           "path": {
@@ -12018,6 +12044,7 @@
         "type": "object"
       },
       "SubmitRunRequest": {
+        "additionalProperties": false,
         "properties": {
           "config": {
             "$ref": "#/components/schemas/ExperimentConfig"
@@ -13016,6 +13043,7 @@
         "type": "object"
       },
       "UploadResult": {
+        "additionalProperties": false,
         "properties": {
           "path": {
             "title": "Path",
@@ -13043,6 +13071,7 @@
         "type": "object"
       },
       "UploadValidation": {
+        "additionalProperties": false,
         "properties": {
           "columns": {
             "title": "Columns",
@@ -13073,6 +13102,7 @@
         "type": "object"
       },
       "ValidateRequest": {
+        "additionalProperties": false,
         "properties": {
           "config": {
             "additionalProperties": true,
@@ -13594,7 +13624,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.9"
+    "version": "2.2.10"
   },
   "openapi": "3.1.0",
   "paths": {

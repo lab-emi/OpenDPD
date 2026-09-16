@@ -19,59 +19,23 @@ __email__ = "chang.gao@tudelft.nl"
 import os
 import sys
 import json
-import importlib.util
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # ---------------------------------------------------------------------------
 # Load scientific-figure-pro styling (optional — graceful fallback)
 # ---------------------------------------------------------------------------
-_SFP_PATH = Path(__file__).resolve().parents[1] / (
-    ".claude/plugins/cache/figures4papers/figures4papers/unknown/"
-    "skills/scientific-figure-pro/scripts/scientific_figure_pro.py"
-)
-# Try home-relative path
-_SFP_HOME = Path.home() / (
-    ".claude/plugins/cache/figures4papers/figures4papers/unknown/"
-    "skills/scientific-figure-pro/scripts/scientific_figure_pro.py"
-)
-
-_sfp = None
-for candidate in [_SFP_PATH, _SFP_HOME]:
-    if candidate.exists():
-        spec = importlib.util.spec_from_file_location("scientific_figure_pro", candidate)
-        _sfp = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = _sfp
-        spec.loader.exec_module(_sfp)
-        break
-
-
-def _apply_style():
-    """Apply publication style if available, else basic cleanup."""
-    if _sfp is not None:
-        _sfp.apply_publication_style(_sfp.FigureStyle(font_size=14, axes_linewidth=2))
-    else:
-        plt.rcParams.update({
-            'font.size': 12,
-            'axes.spines.right': False,
-            'axes.spines.top': False,
-            'legend.frameon': False,
-            'savefig.bbox': 'tight',
-        })
+from utils.plotting import publication_style
 
 
 def _savefig(fig, path, dpi=300):
-    if _sfp is not None:
-        _sfp.finalize_figure(fig, path, formats=['png'], dpi=dpi, pad=0.1)
-    else:
-        os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
-        fig.savefig(path, dpi=dpi, bbox_inches='tight')
-        plt.close(fig)
+    os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+    fig.savefig(path, dpi=dpi, bbox_inches='tight')
+    plt.close(fig)
 
 
 # --- Palette ---------------------------------------------------------------
@@ -84,11 +48,11 @@ C_CONST = '#0F4D92'
 # Public API
 # ---------------------------------------------------------------------------
 
+@publication_style
 def plot_dataset(dataset_name: str):
     """Generate all quick-look plots for *dataset_name* and save them
     in ``datasets/<dataset_name>/``."""
 
-    _apply_style()
 
     ds_dir = os.path.join(os.path.dirname(__file__), dataset_name)
     spec_path = os.path.join(ds_dir, 'spec.json')

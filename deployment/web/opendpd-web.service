@@ -54,5 +54,10 @@ IPAddressDeny=any
 IPAddressAllow=127.0.0.0/8
 IPAddressAllow=10.0.2.2/32
 
+PrivateDevices=yes
+ProtectHostname=yes
+ProtectProc=invisible
+SystemCallFilter=@system-service
+
 [Install]
 WantedBy=multi-user.target

@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from opendpd.runtime.db import RunStore
-from opendpd.runtime.procs import is_same_process, kill_tree, process_identity
+from opendpd.runtime.procs import is_same_process, kill_tree, process_identity, worker_info
 from opendpd.runtime.worker import CANCEL_FILE, EVENTS_FILE
 from opendpd.schemas import (
     ExperimentConfig,
@@ -66,7 +66,8 @@ class Supervisor:
     def __init__(self, workspace: Workspace, store: RunStore, *, max_per_device: int = 1,
                  poll_interval: float = 0.25, cancel_grace: float = 30.0, heartbeat_timeout: float = 60.0,
                  worker_env: Optional[Dict[str, str]] = None, dispatch_slots=None,
-                 max_runtime_seconds: Optional[float] = None, inherit_worker_env: bool = True):
+                 max_runtime_seconds: Optional[float] = None, inherit_worker_env: bool = True,
+                 worker_module: str = "opendpd.runtime.worker"):
         self.ws = workspace
         self.store = store
         self.max_per_device = max_per_device
@@ -77,12 +78,28 @@ class Supervisor:
         self.dispatch_slots = dispatch_slots
         self.max_runtime_seconds = max_runtime_seconds
         self.inherit_worker_env = inherit_worker_env
+        self.worker_module = worker_module
         self._active: Dict[str, _Active] = {}
         self._lock = threading.RLock()
         self._stop = threading.Event()
         self._accepting = True
         self._thread: Optional[threading.Thread] = None
         self._wake = threading.Event()
+        self._last_index = 0.0
+
+    @property
+    def is_accepting(self):
+        return self._accepting
+
+    def stop_accepting(self):
+        self._accepting = False
+
+    def active_count(self):
+        return len(self._active)
+
+    def worker_alive(self, run_id):
+        active = self._active.get(run_id)
+        return active is not None and active.process.poll() is None
 
     # -- lifecycle -----------------------------------------------------------
     def start(self) -> None:
@@ -122,6 +139,11 @@ class Supervisor:
         """Register finished runs another entry point (CLI, Python API) wrote into this workspace.
         One workspace, three entry points: a run made by ``opendpd run`` must be visible here.
         Runs still active elsewhere are left to the process that owns them."""
+        now = time.monotonic()
+        if run_id is None:
+            if now - self._last_index < 2.0:
+                return 0
+            self._last_index = now
         known = set(self.store.run_ids())
         candidates = [run_id] if run_id is not None else self.ws.list_run_ids()
         added = 0
@@ -285,17 +307,18 @@ class Supervisor:
                                            error=RunError(code="spawn_failed", stage="spawn", message=str(err)))
             experiments.save_run(self.ws, record)
             return
-        ident = process_identity(process.pid)
-        worker = WorkerInfo(pid=process.pid, create_time=ident[1] if ident else time.time(),
-                            host=os.uname().nodename if hasattr(os, "uname") else "localhost")
+        worker = worker_info(process.pid)
         self.store.transition(record.run_id, RunStatus.running, reason=None, started_at=_now(), worker=worker,
                               last_heartbeat_at=_now())
         self._active[record.run_id] = _Active(run_id=record.run_id, process=process,
                                               device_key=self._device_key(record), log_file=log_file,
                                               events_path=run_dir / EVENTS_FILE)
 
+    def worker_module_for(self, record: RunRecord) -> str:
+        return self.worker_module
+
     def worker_command(self, record: RunRecord) -> List[str]:
-        return [sys.executable, "-m", "opendpd.runtime.worker", "--workspace", str(self.ws.root),
+        return [sys.executable, "-m", self.worker_module_for(record), "--workspace", str(self.ws.root),
                 "--run-id", record.run_id]
 
     def _request_cancel_file(self, active: _Active) -> None:

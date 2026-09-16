@@ -1,3 +1,5 @@
+import { runIdFromPath } from '@/api/client'
+import { useSession } from '@/api/hooks'
 import DatasetIcon from '@mui/icons-material/Dataset'
 import GraphicEqIcon from '@mui/icons-material/GraphicEq'
 import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices'
@@ -19,11 +21,11 @@ import Toolbar from '@mui/material/Toolbar'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { useIsMutating, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useIsMutating, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useCapabilities, useRun, useRuns } from '@/api/hooks'
-import { WEB_MODE, loadSession } from '@/api/client'
+import { WEB_MODE } from '@/api/client'
 import { RouteContent } from '@/components/RouteContent'
 import { LanguageMenu } from '@/components/LanguageMenu'
 import { ResetButton } from '@/components/ResetButton'
@@ -59,10 +61,10 @@ export function AppShell() {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { data: session } = useQuery({ queryKey: ['session'], queryFn: () => loadSession(), staleTime: Infinity, retry: false })
+  const { data: session } = useSession()
   const mutating = useIsMutating() > 0
   const [revision, setRevision] = useState(0)
-  const runId = pathname.startsWith('/runs/') ? decodeURIComponent(pathname.split('/')[2] ?? '') : ''
+  const runId = runIdFromPath(pathname)
   const run = useRun(runId, !!runId)
   const requestedTask = runId ? run.data?.task ?? null : new URLSearchParams(search).get('task')
   const task = isExperimentTask(requestedTask) ? requestedTask : null

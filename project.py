@@ -251,26 +251,6 @@ class Project:
 
         return (train_loader, val_loader, test_loader), input_size
 
-    def build_model(self):
-        # Load Pretrained Model if Running Retrain
-        if self.step == 'retrain':
-            net = self.net_retrain.Model(self)  # Instantiate Retrain Model
-            if self.path_net_pretrain is None:
-                print('::: Loading pretrained model: ', self.default_path_net_pretrain)
-                # net = util.load_model(self, net, self.default_path_net_pretrain)
-                net.load_pretrain_model(self.default_path_net_pretrain)
-            else:
-                print('::: Loading pretrained model: ', self.path_net_pretrain)
-                net = util.load_model(self, net, self.path_net_pretrain)
-        else:
-            net = self.net_pretrain.Model(self)  # Instantiate Pretrain Model
-
-        # Cast net to the target device
-        net.to(self.device)
-        self.add_arg("net", net)
-
-        return net
-
     def build_criterion(self):
         dict_loss = {'l2': nn.MSELoss(),
                      'l1': nn.L1Loss()

@@ -9,7 +9,9 @@ const [workspace, baseURL, out] = process.argv.slice(2)
 if (!workspace || !baseURL || !out) throw new Error('workspace, base URL and output directory are required')
 const demo = JSON.parse(await fs.readFile(path.join(workspace, 'review-demo/index.json'), 'utf8'))
 await fs.mkdir(out, { recursive: true })
-const browser = await chromium.connectOverCDP('http://127.0.0.1:9222')
+const bootstrapToken = process.env.OPENDPD_BOOTSTRAP_TOKEN
+if (!bootstrapToken) throw new Error('Set OPENDPD_BOOTSTRAP_TOKEN for the local test server')
+const browser = await chromium.connectOverCDP(process.env.OPENDPD_CDP_URL ?? 'http://127.0.0.1:9222')
 const measurements = []
 try {
   for (const [width, height] of [[1366, 768], [1920, 1080]]) {
@@ -18,7 +20,7 @@ try {
       const page = await context.newPage()
       const errors = []
       page.on('pageerror', error => errors.push(error.message))
-      await page.goto(`${baseURL}/bootstrap?token=studio-next-local-review`)
+      await page.goto(`${baseURL}/bootstrap?token=${encodeURIComponent(bootstrapToken)}`)
       const start = performance.now()
       await page.goto(baseURL + demo.compare_path)
       const selector = '[data-testid="spectrum-plot"] [role="figure"]'

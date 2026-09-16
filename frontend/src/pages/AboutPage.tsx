@@ -1,3 +1,4 @@
+import { getQuery } from '@/api/client'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import Avatar from '@mui/material/Avatar'
@@ -10,7 +11,6 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/api/client'
 import { t, type MessageKey } from '@/i18n'
 import emi from '@/assets/emi-logo.svg'
 import tudelft from '@/assets/tudelft-logo.svg'
@@ -36,7 +36,7 @@ export function AboutPage() {
   const colors = useStudioColors()
   // Partner artwork keeps its official colors on an intentional light brand plate.
   const partnerPlate = { display: 'flex', alignItems: 'center', p: 1.5, borderRadius: 1, bgcolor: '#F9FBFD' }
-  const info = useQuery({ queryKey: ['system', 'about'], queryFn: () => api.get<ProjectInfo>('/system/about?activity=false'), staleTime: 300_000, retry: false })
+  const info = useQuery({ queryKey: ['system', 'about'], queryFn: getQuery<ProjectInfo>('/system/about?activity=false'), staleTime: 300_000, retry: false })
   const data = info.data
   return <Stack spacing={3} sx={{ maxWidth: 1180, mx: 'auto' }}>
     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2 }}><Typography variant="h1">{t('about.title')}</Typography><Chip variant="outlined" size="small" label={data?.version ? `v${data.version}` : 'OpenDPD Studio'} /></Stack>

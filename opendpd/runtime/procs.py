@@ -78,3 +78,11 @@ def descendants(pid: int) -> List[int]:
         return [p.pid for p in psutil.Process(pid).children(recursive=True)]
     except psutil.NoSuchProcess:
         return []
+
+
+def worker_info(pid=None):
+    from opendpd.schemas import WorkerInfo
+    import socket
+    pid = os.getpid() if pid is None else pid
+    identity = process_identity(pid)
+    return WorkerInfo(pid=pid, create_time=identity[1] if identity else 0.0, host=socket.gethostname())

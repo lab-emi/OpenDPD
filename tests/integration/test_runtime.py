@@ -221,3 +221,29 @@ def test_heartbeat_staleness_uses_store_timestamps(tmp_path):
     store.append_event("r1", RunEventType.heartbeat, {}, last_heartbeat_at=now)
     assert not heartbeat_is_stale(store.get_run("r1"), now, timedelta(seconds=60))
     store.close()
+
+
+def test_missing_worker_executable_fails_once_and_releases_dispatch_slot(tmp_path, monkeypatch):
+    import threading
+    ws = Workspace.create(tmp_path / 'workspace')
+    ws.register_builtin_dataset('DPA_200MHz')
+    store = RunStore(ws.root / 'metadata.sqlite')
+    slots = threading.BoundedSemaphore(1)
+    supervisor = Supervisor(ws, store, dispatch_slots=slots)
+    calls = []
+    def command(record):
+        calls.append(record.run_id)
+        return [str(tmp_path / 'nonexistent-worker')]
+    monkeypatch.setattr(supervisor, 'worker_command', command)
+    try:
+        record = supervisor.submit(smoke())
+        supervisor._tick()
+        supervisor._tick()
+        final = store.get_run(record.run_id)
+        assert final.status == RunStatus.failed and final.error.code == 'spawn_failed'
+        assert final.finished_at and calls == [record.run_id]
+        assert experiments.load_run(ws, record.run_id).status == RunStatus.failed
+        assert slots.acquire(blocking=False)
+        slots.release()
+    finally:
+        store.close()

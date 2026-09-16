@@ -4,7 +4,6 @@ Description: Quantized GRU (QGRU) backbone
 
 import torch
 from torch import nn
-from quant import Sqrt, Pow
 
 class QGRU(nn.Module):
     def __init__(self, hidden_size, output_size, num_layers, bidirectional=False, batch_first=True,
@@ -47,12 +46,6 @@ class QGRU(nn.Module):
         for name, param in self.fc_out.named_parameters():
             if 'weight' in name:
                 nn.init.xavier_uniform_(param)
-            if 'bias' in name:
-                nn.init.constant_(param, 0)
-
-        for name, param in self.fc_hid.named_parameters():
-            if 'weight' in name:
-                nn.init.kaiming_uniform_(param)
             if 'bias' in name:
                 nn.init.constant_(param, 0)
 

@@ -6,7 +6,8 @@ from opendpd.core.waveforms.generator_presets import presets
 from opendpd.core.waveforms.generator import allocation
 from opendpd.schemas.signal_generator import (DatasetSampleCounts, GeneratedSignal, GeneratorConfig,
     GeneratorDatasetRequest, GeneratorDatasetResponse, GeneratorPreset)
-from opendpd.server.routes import require_csrf, require_session, _error
+from opendpd.server.routes import require_csrf, require_session
+from opendpd.server.errors import api_error as _error
 from opendpd.services import signal_generator as service
 from opendpd.schemas.virtual_pa import PAInputDataset
 

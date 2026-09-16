@@ -142,8 +142,8 @@ async function upload<T>(path: string, form: FormData): Promise<T> {
   }
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (csrfToken) headers[CSRF_HEADER] = csrfToken
-  const response = await fetch(`${API}${path}`, { method: 'POST', headers, credentials: 'same-origin', body: form })
-  if (!response.ok) throw await parseError(response)
+  const response = await fetchApi(`${API}${path}`, { method: 'POST', headers, credentials: 'same-origin', redirect: 'error', body: form })
+  if (!response.ok) { expired(response); throw await parseError(response) }
   return (await response.json()) as T
 }
 
@@ -204,7 +204,7 @@ export async function createWebSession(signal?: AbortSignal): Promise<WebAdmissi
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Queue ${ticket}` },
     credentials: 'omit', redirect: 'error', body: '{}', signal: signal ?? AbortSignal.timeout(30_000) })
   if (sessionStorage.getItem(QUEUE_KEY) !== ticket) throw new DOMException('Queue changed', 'AbortError')
-  if (!response.ok) throw await parseError(response)
+  if (!response.ok) { expired(response); throw await parseError(response) }
   const info = await response.json() as WebAdmissionInfo & { queue_token?: string }
   if (sessionStorage.getItem(QUEUE_KEY) !== ticket) throw new DOMException('Queue changed', 'AbortError')
   if (info.access_token) sessionStorage.setItem(SESSION_KEY, info.access_token)
@@ -221,7 +221,7 @@ export async function cancelWebQueue(): Promise<void> {
   const response = await fetchApi(`${API}/web/queue/cancel`, { method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Queue ${ticket}` },
     credentials: 'omit', redirect: 'error', body: '{}', signal: AbortSignal.timeout(15_000) })
-  if (!response.ok) throw await parseError(response)
+  if (!response.ok) { expired(response); throw await parseError(response) }
 }
 
 export async function endWebSession(): Promise<void> {
@@ -232,9 +232,7 @@ export async function endWebSession(): Promise<void> {
 
 /** Authenticated downloads never put bearer capabilities into URLs or referrers. */
 export async function downloadFile(href: string, filename?: string): Promise<void> {
-  const url = new URL(href, WEB_MODE ? API_ORIGIN : window.location.origin)
-  const expected = WEB_MODE ? API_ORIGIN : window.location.origin
-  if (url.origin !== expected || !url.pathname.startsWith('/api/v1/')) throw new Error('Invalid artifact URL')
+  const url = new URL(artifactDownloadUrl(href))
   const session = bearerToken()
   const download = async (signal?: AbortSignal) => {
     if (WEB_MODE && bearerToken() !== session) throw new DOMException('Session changed', 'AbortError')
@@ -261,4 +259,29 @@ export async function bootstrapSession(token: string): Promise<SessionInfo> {
 
 export function artifactUrl(runId: string, artifactId: string): string {
   return `${API}/artifacts/${encodeURIComponent(runId)}/${encodeURIComponent(artifactId)}`
+}
+
+
+/** React Query reads always propagate cancellation to the bounded read queue. */
+export const getQuery = <T>(path: string) => ({ signal }: { signal: AbortSignal }) => api.get<T>(path, signal)
+
+export function artifactDownloadUrl(href: string): string {
+  const expected = WEB_MODE ? API_ORIGIN : window.location.origin
+  const url = new URL(href, expected)
+  if (url.origin !== expected || url.username || url.password || !url.pathname.startsWith('/api/v1/')) throw new Error('Invalid artifact URL')
+  return url.href
+}
+
+export function safePullRequestUrl(value?: string | null): string | undefined {
+  return value && /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/pull\/[0-9]+$/.test(value) ? value : undefined
+}
+
+
+/** An invalid or encoded run path must never throw during layout rendering. */
+export function runIdFromPath(pathname: string): string {
+  if (!pathname.startsWith('/runs/')) return ''
+  try {
+    const value = decodeURIComponent(pathname.split('/')[2] ?? '')
+    return /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value) ? value : ''
+  } catch { return '' }
 }

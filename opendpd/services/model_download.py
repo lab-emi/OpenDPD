@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
+from opendpd.services.workspace import write_atomic, write_json_atomic
 from pathlib import Path
 
 MODEL_FILE = 'model-download.pt'
@@ -17,19 +17,8 @@ def publish_model(root: Path, data: bytes, *, epoch: int, sha256: str | None = N
     digest = hashlib.sha256(data).hexdigest()
     if sha256 is not None and digest != sha256:
         raise ValueError('model snapshot checksum mismatch')
-    temporary = root / '.model-download.tmp'
-    try:
-        with temporary.open('wb') as output:
-            output.write(data)
-        os.replace(temporary, root / MODEL_FILE)
-        meta = root / '.model-meta.tmp'
-        try:
-            meta.write_text(json.dumps({'sha256': digest, 'size_bytes': len(data), 'epoch': epoch}))
-            os.replace(meta, root / MODEL_META)
-        finally:
-            meta.unlink(missing_ok=True)
-    finally:
-        temporary.unlink(missing_ok=True)
+    write_atomic(root / MODEL_FILE, lambda path: path.write_bytes(data))
+    write_json_atomic(root / MODEL_META, {'sha256': digest, 'size_bytes': len(data), 'epoch': epoch})
 
 
 def read_model(root: Path):
