@@ -1,11 +1,11 @@
 # Studio Signal Generator
 
 Open **Signal Generator** in the sidebar, or choose **Get Started → Signal Generator**.
-The first visit selects a private 5G NR numerology configuration; generation starts only when requested. Choose one of the five
-signal families, select a preset, and press **Generate & preview**. Parameter edits
-mark the current plots stale and disable waveform export and the next step until
-generation succeeds. Returning to the tab restores the selected input. The result
-is explicitly a **PA Input Dataset (x)**, with no PA output.
+The first visit selects a private NR 20 MHz configuration; generation starts only when requested. Choose **5G NR**, **Wi-Fi 6**, **Wi-Fi 7** or **Custom**. The **Signal setup** panel is directly below the family buttons, followed by **Use this signal**.
+
+Select one or more compact matrix cells: bandwidth runs horizontally, QAM vertically, and each group has a different OFDMA channel count. NR numerology buttons switch FR1/FR2 and subcarrier spacing. Selected chips let you edit or preview each preset. Sample count, duration and the optional default filter apply to the highlighted preset. Press **Generate & preview** once for the whole selection.
+
+The result is explicitly a **PA Input Dataset (x)**, with no PA output. Parameter changes disable exports and the next step until regenerated. Returning to this tab restores the selected batch. Up to 16 presets can be selected, with different sample rates and lengths; they are never silently concatenated.
 
 The onboarding dialog has exactly one highlighted action: Signal Generator. Existing
 datasets are the second choice, and CSV upload is third. PA and DPD each have one
@@ -20,25 +20,12 @@ not complete protocol implementations or certified reference test models.
 
 | Family | Presets | Implemented signal |
 | --- | --- | --- |
-| 5G NR | FR1 20 / 100 MHz; FR2 100 MHz | 30 / 120 kHz subcarrier spacing, normal CP, 51 / 273 / 66 resource-block-sized payload grids, generic pilots |
-| Wi-Fi 6 | 20 / 40 / 80 / 160 MHz | 78.125 kHz spacing, 0.8 µs guard interval, up to 1024-QAM |
-| Wi-Fi 7 | 20 / 40 / 80 / 160 / 320 MHz | 78.125 kHz spacing, up to 4096-QAM |
-| Wi-Fi 8 | 80 / 160 / 320 MHz | Experimental OFDM numerology profile; generic allocations and pilots |
-| Custom | OFDM/OFDMA, DFT-spread OFDM, QAM, PSK, FSK/GFSK, noise, tone, multitone, chirp | Fully editable baseband parameters |
+| 5G NR | 940 presets | FR1 3–100 MHz and FR2-1 50–400 MHz; 15/30/60/120 kHz SCS where defined; QPSK through 1024-QAM |
+| Wi-Fi 6 | 96 presets | 20/40/80/160 MHz; BPSK through 1024-QAM; 1/2/4/8 allocations |
+| Wi-Fi 7 | 140 presets | 20/40/80/160/320 MHz; BPSK through 4096-QAM; 1/2/4/8 allocations |
+| Custom | 10 waveforms | OFDM/OFDMA, DFT-spread OFDM, QAM, PSK, FSK/GFSK, noise, tone, multitone, chirp |
 
-OFDM payload symbols are uncoded and continuous. Pilots are generic seeded BPSK,
-including when their bin positions are explicitly specified. Synchronization, FEC,
-NR physical/control-channel mapping, WLAN preambles, standard RU allocation bitmaps,
-MAC packets, and draft-specific UHR mechanisms are **not implemented**. The GUI,
-saved metadata, and exports all disclose this scope. Changing preset numerology
-marks the waveform custom. Existing known-waveform evaluation bindings are not
-assigned to these generated signals.
-
-NR CP timing follows [TS 38.211, §5.3.1](https://www.etsi.org/deliver/etsi_ts/138200_138299/138211/15.02.00_60/ts_138211v150200p.pdf).
-The long normal CP appears twice per subframe; extended CP requires 60 kHz spacing.
-For WLAN background, see the [IEEE 802.11 working group](https://www.ieee802.org/11/).
-As of 2026-09-13, 802.11bn remains a draft; its development status is tracked by
-[IEEE TGbn](https://www.ieee802.org/11/Reports/tgbn_update.htm).
+See the [preset tables and source references](signal-presets.md) for exact RB/tone counts, timing and implementation limits. These uncoded payloads use generic pilots and allocation placement, with no full protocol framing or conformance certification. Wi-Fi 8 generation has been removed. Existing stored signals remain readable.
 
 ## Advanced parameters
 
@@ -61,8 +48,7 @@ samples. Changing SCS in the GUI updates the output sample rate. Carrier frequen
 is saved as RF metadata and never digitally mixes a GHz signal into the baseband.
 
 RMS normalization precedes impairments. I gain and Q phase mismatch are applied
-first, followed by DC offset, frequency offset, clipping and noise. There is no
-post-impairment normalization or hidden receiver equalization.
+first, followed by DC offset, frequency offset, clipping and noise. The optional default FFT low-pass follows the impairments and preserves their resulting RMS. Its cosine transition spans the outer 4% of nominal half-bandwidth. Filtering can change EVM, peaks and burst edges; the receiver performs no fitted equalization. See [filter semantics](signal-presets.md#length-and-filtering).
 
 ## Visualizations and measurements
 
@@ -85,27 +71,21 @@ retained to preserve the exact requested sample count and disclosed in metadata.
 
 ## Export and training
 
-**Save configuration** downloads JSON; **Load configuration** validates it against
-the server contract before applying it. **Export I/Q + configuration** contains
-`iq.csv` (I,Q), `iq.npy` (float32 N×2), configuration, measurements, source hash,
-NumPy/SciPy versions and scope notes. CSV float32 values round-trip exactly. Seeded
-regeneration requires the recorded configuration, generator implementation and
-numeric environment. Numerical dependency versions participate in the signal identity. Generated records live privately under `signals/sg-<sha>/`
-inside the workspace.
+**Save configuration** downloads the highlighted preset's JSON; **Load configuration** validates and selects it. **Download PA input CSV** and **Download input metadata JSON** export the currently previewed signal separately. CSV columns are `I,Q`; metadata records the signal role, actual sample rate/count, seed, filter and waveform parameters, numeric environment and hashes. Seeded byte reproduction requires the recorded implementation and environment.
 
-**Download PA input CSV** and **Download input metadata JSON** are separate actions.
-The CSV has two columns, `I,Q`; metadata declares `signal_role: pa_input`,
-`has_pa_output: false`, the sample rate/count, carrier metadata, generator parameters
-and CSV/NPY hashes. The complete signal archive remains available as well.
+The waveform has **no PA output**. **Choose Virtual PA** carries all selected inputs to [PA Library](virtual-pa-library.md). Choose the mathematical PA and parameters, then click **Simulate PA output**. Studio simulates every capture independently, saves the complete dataset automatically and opens **Datasets → details**. There is no separate pairing form. Each capture requires at least 8,192 input samples. The default split is 60/20/20 with 256-sample guards; preprocessing can create a different version later.
 
-The waveform alone has **no PA output**. **Choose Virtual PA** opens the
-[PA Library](virtual-pa-library.md). Users select a mathematical Virtual PA,
-adjust its formula parameters, choose a saved input and explicitly simulate y.
-After reviewing the output, **Create paired dataset & train PA** pairs the exact
-input and frozen output, then opens PA Training. It requires at least 8,192 input
-samples and at least 256 samples per split after guards. Both x and y are marked
-synthetic. The deprecated implicit-PA API remains available to older clients;
-the Studio UI no longer uses it.
+For multiple presets, **Visualize subdataset** switches charts, metadata, preprocessing and training to that capture's own sample rate. **Download CSV** exports the selected capture/version as `I_in,Q_in,I_out,Q_out`. **Download all · ZIP** exports every original capture, per-capture metadata and one frozen `simulate_pa.py`:
+
+```bash
+uv run simulate_pa.py 01-nr-20.csv --output pa-output.csv
+# For an independently named input:
+uv run simulate_pa.py my-input.csv --preset 01-nr-20.csv --output pa-output.csv
+```
+
+The script accepts `I,Q` or `I_in,Q_in`, requires NumPy/SciPy, and exposes `--sample-rate` and bounded `--parameter NAME=VALUE` overrides. It runs without an OpenDPD installation. Each CSV can have a different length. Memory state starts from zero for each capture; output is not filtered or normalized. Matching numerical libraries reproduce float32 output exactly in release tests; other platforms may differ by roundoff.
+
+A single-preset dataset downloads directly as CSV. The deprecated separate-pairing APIs remain for older clients; the new GUI uses the one-step dataset endpoint.
 
 Get Started → existing dataset opens a paired-data selector and proceeds straight
 to PA Training. The compact, expandable workflow diagram marks dataset making as
@@ -122,19 +102,15 @@ transmitter, GitHub submission, or email is activated by generating a waveform.
 
 ## Verification
 
-Numerical tests cover all 25 presets, exact sample counts, one-millisecond NR CP
+Numerical tests cover all 1,186 presets, exact sample counts, one-millisecond NR CP
 timing, FFT allocations, empty bins, deterministic impairments, analytic single-tone
 PAPR, invalid parameters, export round trips and dataset provenance. API tests cover
 authentication, CSRF, host feature gating and per-version test counts. Hosted tests
 verify that one session cannot access another session's generated signals or data.
 
-`scripts/verify_signal_generator.mjs` exercises the real local browser at 1366×768
-and 1920×1080: onboarding order and highlight, generation, stale-result protection,
-custom two-channel OFDMA with explicit pilots and noise, ZIP export, dataset creation,
-and real CPU PA/DPD training and testing. These checks validate the software workflow;
-they do not constitute independent standards conformance or physical RF validation.
+`scripts/verify_signal_generator.mjs` exercises a real local browser at desktop and mobile widths: matrix selection, heterogeneous captures, formula highlighting, automatic dataset navigation, CSV/ZIP downloads, per-capture visualization and restored selection. Integration tests replay both captures through the exported Python script for all nine Virtual PA families and check tenant isolation, resource limits, rollback and real CPU training. These are software/numerical checks, not physical RF or full standards-conformance evidence.
 
-## Studio 2.2.9 preview
+## Studio 2.2.11 preview
 
 ![PA input waveform and its independent PSD](../../pics/studio-signal-generator.png)
 
@@ -163,3 +139,5 @@ RRC **span** denotes the total span: `span × samples_per_symbol + 1` taps. This
 **Open in Signal Analyzer** sends the saved input directly to the [analysis workspace](signal-analyzer.md) for configurable PSD, spectrogram, amplitude statistics, eyes, aligned reference errors and report exports.
 
 ![Custom signal controls](../../pics/studio-signal-generator-custom.png)
+
+![Selecting a subdataset and downloading its CSV or the complete collection](../../pics/studio-dataset-presets.png)

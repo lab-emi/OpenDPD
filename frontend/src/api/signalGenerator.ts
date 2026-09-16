@@ -14,3 +14,9 @@ export function useGenerateSignal() {
   return useMutation({ mutationFn: (config: GeneratorConfig) => api.post<GeneratedSignal>('/signal-generator/signals', config),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['pa-inputs'] }) })
 }
+
+export function useGenerateBatch() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: (configs: GeneratorConfig[]) => api.post<Schemas['PAInputDataset'][]>('/signal-generator/batches', { configs }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['pa-inputs'] }) })
+}

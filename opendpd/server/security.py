@@ -124,7 +124,7 @@ class DatasetImportBoundary:
     PATHS = {
         "/api/v1/datasets/upload", "/api/v1/datasets/inspect", "/api/v1/datasets/import",
         "/api/v1/datasets/csv", "/api/v1/datasets/csv/preview", "/api/v1/imports",
-        "/api/v1/datasets/synthetic",
+        "/api/v1/datasets/synthetic", "/api/v1/pa-library/datasets",
     }
 
     def __init__(self, app, enabled: bool = False):

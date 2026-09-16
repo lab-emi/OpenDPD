@@ -403,3 +403,12 @@ The GPU service retains rootful Podman on this installation, with an explicit ca
 The guest installer moves an existing `OPENDPD_GPU_TOKEN` value into `/etc/opendpd-web-gpu.token`, readable only by root and the worker group, and stores only `OPENDPD_GPU_TOKEN_FILE` in the environment file. New installations should use the file setting directly. Keep public dataset publication disabled unless a separately reviewed submission identity and approval process are configured.
 
 The VM administrator has passwordless sudo solely inside the isolated disposable VM; the host administrator's SSH key is root-readable only. Provision the baseline from a reviewed clean image with no user captures, credentials or histories. The production installer refuses to replace an existing VM disk.
+
+
+## Multi-preset generation in 2.2.11
+
+`POST /signal-generator/batches` accepts up to 16 distinct presets and four million total samples. `POST /pa-library/datasets` validates all sources before registering any datasets, simulates each at its own sample rate, and saves a collection. Captures use ordinary versioned dataset storage so existing training/evaluation operates on one selected capture with truthful frequency metadata. The first capture is the parent; other captures refer to its ID. The parent manifest records membership, sample counts and independent sample rates. Failed registration removes only datasets created by that operation.
+
+The two new mutations have explicit public allowlist entries, schema validation, per-IP rates, shared numeric admission and aggregate disk estimates. Custom-dataset capability gating also covers the one-step endpoint. Authenticated `GET /datasets/{id}/download` returns a CSV or collection ZIP and shares heavy-read admission. `collection=false` selects a single capture/version. Export reads verify file membership and hashes; generated replay source is frozen and hash checked, never evaluated by the server. Response completion removes temporary export files. No user-supplied executable code is accepted.
+
+Deploy the same reviewed 2.2.11 commit to the API, GPU agent/container and static site after draining pending jobs. Retain source/image rollback copies; a server restart expires temporary sessions. Validate multi-preset generation, dataset navigation, authenticated ZIP download and a CUDA training/testing job after deployment.

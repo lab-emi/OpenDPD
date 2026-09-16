@@ -425,3 +425,25 @@ def test_cleanup_recovers_after_success_without_hiding_dispatch_failure(public, 
     # A healthy cleanup must not clear an independent dispatcher failure.
     assert client.post('/api/v1/web/sessions', json={}).status_code == 503
     manager.dispatch_healthy = True
+
+
+def test_public_collections_are_bounded_private_and_downloadable(public):
+    client, manager, _ = public
+    auth, other = new_session(client), new_session(client)
+    configs = [{'preset_id': 'capture-one', 'n_samples': 8192}, {'preset_id': 'capture-two', 'n_samples': 12288}]
+    generated = client.post('/api/v1/signal-generator/batches', json={'configs': configs}, headers=auth)
+    assert generated.status_code == 201, generated.text
+    ids = [s['signal_id'] for s in generated.json()]
+    request = {'input_signal_ids': ids, 'model_id': 'rapp-am-pm'}
+    assert client.post('/api/v1/pa-library/datasets', json=request, headers=other).status_code == 404
+    created = client.post('/api/v1/pa-library/datasets', json=request, headers=auth)
+    assert created.status_code == 201, created.text
+    ds = created.json()['dataset']
+    url = '/api/v1/datasets/' + ds['dataset_id'] + '/download'
+    assert client.get(url, headers=auth).headers['content-type'] == 'application/zip'
+    assert client.get(url + '?collection=false', headers=auth).headers['content-type'] == 'text/csv; charset=utf-8'
+    assert client.get(url, headers=other).status_code != 200
+    assert client.get(url + '?version=../../etc/passwd', headers=auth).status_code == 422
+    assert client.post('/api/v1/signal-generator/batches', json={'configs': [{}]*17}, headers=auth).status_code == 422
+    huge = [{'preset_id': str(i), 'n_samples': 1_000_000} for i in range(4)]
+    assert client.post('/api/v1/signal-generator/batches', json={'configs': huge}, headers=auth).status_code == 413

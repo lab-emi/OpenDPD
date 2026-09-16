@@ -83,7 +83,7 @@ export function DatasetsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {datasets.data.map((d) => (
+            {datasets.data.filter(d => !d.parent_dataset_id).map((d) => (
               <TableRow key={d.dataset_id} hover>
                 <TableCell>
                   <Link component={RouterLink} to={`/datasets/${encodeURIComponent(d.dataset_id)}`}>
@@ -115,7 +115,7 @@ export function DatasetsPage() {
       <Dialog open={choosingExisting} onClose={() => setChoosingExisting(false)} fullWidth maxWidth="sm" aria-labelledby="choose-paired-dataset">
         <DialogTitle id="choose-paired-dataset">{t('paFlow.existingTitle')}</DialogTitle>
         <DialogContent><Typography color="text.secondary" sx={{ mb: 2 }}>{t('paFlow.existingHelp')}</Typography><Stack spacing={1}>
-          {datasets.data?.map(d => <Button key={d.dataset_id} variant="outlined" sx={{ justifyContent: 'space-between', textAlign: 'left' }} onClick={() => train(d.dataset_id)}>
+          {datasets.data?.filter(d => !d.parent_dataset_id).map(d => <Button key={d.dataset_id} variant="outlined" sx={{ justifyContent: 'space-between', textAlign: 'left' }} onClick={() => train(d.dataset_id)}>
             <span>{datasetLabel(d)}</span><span>{formatNumber(d.n_samples ?? 0)} I/Q</span></Button>)}
         </Stack></DialogContent>
         <DialogActions><Button onClick={() => setChoosingExisting(false)}>{t('common.close')}</Button><Button onClick={() => { setChoosingExisting(false); setBuiltin(true) }}>{t('datasets.builtin.title')}</Button></DialogActions>

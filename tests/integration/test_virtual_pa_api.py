@@ -92,3 +92,4 @@ def test_custom_import_boundary_also_covers_virtual_pairs(tmp_path):
         response = client.post("/api/v1/pa-library/simulations/vpa-" + "a"*64 + "/dataset",
             json={"dataset_id": "blocked"})
         assert response.status_code == 403
+        assert client.post("/api/v1/pa-library/datasets", json={"input_signal_ids": ["sg-" + "a"*64], "model_id": "rapp-am-pm"}).status_code == 403

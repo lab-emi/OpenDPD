@@ -106,20 +106,20 @@ def test_gray_bit_mapping_and_total_rrc_span():
 
 
 def test_burst_gating_constant_phase_and_dft_zero_bins_are_honest():
-    c = GeneratorConfig(waveform='tone', n_samples=4096, burst_on_samples=1024,
+    c = GeneratorConfig(waveform='tone', n_samples=4096, filter_enabled=False, burst_on_samples=1024,
                         burst_off_samples=1024, burst_ramp_samples=0, phase_offset_deg=90)
     x, a = synthesize(c)
     assert x[0].imag == pytest.approx(c.rms)
     assert not np.any(x[1024:2048])
     assert a.papr_db == pytest.approx(10*np.log10(2), abs=1e-6)
-    _, a = synthesize(GeneratorConfig(dft_spreading=True, pilot_mode='none', payload_mode='bits', payload_bits='0'))
+    _, a = synthesize(GeneratorConfig(filter_enabled=False, dft_spreading=True, pilot_mode='none', payload_mode='bits', payload_bits='0'))
     assert np.isfinite(a.evm_per_subcarrier_percent).all()
     assert a.evm_percent < .001
 
 
 @pytest.mark.parametrize('waveform', ['psk', 'fsk', 'gfsk', 'noise'])
 def test_new_waveforms_are_reproducible(waveform):
-    c = GeneratorConfig(waveform=waveform, samples_per_symbol=16, n_samples=8192)
+    c = GeneratorConfig(waveform=waveform, samples_per_symbol=16, n_samples=8192, filter_enabled=False)
     x, a = synthesize(c)
     np.testing.assert_array_equal(x, synthesize(c)[0])
     assert len(x) == 8192 and np.isfinite(x).all()

@@ -12,7 +12,7 @@ Studio opens locally in your browser, or in a native window if you installed the
 
 ## 1. Open and inspect a dataset
 
-On **Home**, click **Get Started → Use an existing dataset** and choose **DPA_200MHz**. Studio opens PA Training with dataset making already complete in the workflow diagram. Use the Datasets sidebar to inspect the paired capture. Alternatively choose **Signal Generator**, generate x, then **Choose Virtual PA → Simulate PA output → Create paired dataset & train PA**.
+On **Home**, click **Get Started → Use an existing dataset** and choose **DPA_200MHz**. Studio opens PA Training with dataset making already complete in the workflow diagram. Use the Datasets sidebar to inspect the paired capture. Alternatively choose **Signal Generator**, generate x, then **Choose Virtual PA → Simulate PA output → Dataset details → Configure experiment**.
 
 The dataset page shows input/output I/Q signals, sample rate, bandwidth and signal quality. Use the **Dataset Doctor** tab to inspect findings, then **Configure experiment** to continue. Built-in measured datasets keep their supplied splits; **MyCustomPA** is explicitly labeled synthetic tutorial data.
 

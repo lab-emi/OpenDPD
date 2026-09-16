@@ -425,6 +425,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/{dataset_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dataset Download */
+        get: operations["dataset_download_api_v1_datasets__dataset_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/{dataset_id}/manifest": {
         parameters: {
             query?: never;
@@ -829,6 +846,23 @@ export interface paths {
         get: operations["models_api_v1_models_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pa-library/datasets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Simulate Dataset */
+        post: operations["simulate_dataset_api_v1_pa_library_datasets_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1426,6 +1460,23 @@ export interface paths {
         put?: never;
         /** Upload */
         post: operations["upload_api_v1_signal_analyzer_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Batch */
+        post: operations["generate_batch_api_v1_signal_generator_batches_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2764,6 +2815,21 @@ export interface components {
              */
             version: "dataset-inspection-v1";
         };
+        /** DatasetCapture */
+        DatasetCapture: {
+            /** Bandwidth Hz */
+            bandwidth_hz: number;
+            /** Dataset Id */
+            dataset_id: string;
+            /** Label */
+            label: string;
+            /** N Samples */
+            n_samples: number;
+            /** Preset Id */
+            preset_id: string;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+        };
         /** DatasetEvidence */
         DatasetEvidence: {
             /** Dataset Id */
@@ -2798,6 +2864,8 @@ export interface components {
         };
         /** DatasetManifest */
         DatasetManifest: {
+            /** Captures */
+            captures?: components["schemas"]["DatasetCapture"][];
             /** Columns */
             columns?: {
                 [key: string]: string;
@@ -2813,6 +2881,8 @@ export interface components {
             /** Notes */
             notes?: string | null;
             origin: components["schemas"]["DatasetOrigin"];
+            /** Parent Dataset Id */
+            parent_dataset_id?: string | null;
             /**
              * Preprocessing Version
              * @default raw-v1
@@ -3717,6 +3787,11 @@ export interface components {
             /** Useful Symbol Us */
             useful_symbol_us: number | null;
         };
+        /** GeneratorBatchRequest */
+        GeneratorBatchRequest: {
+            /** Configs */
+            configs: components["schemas"]["GeneratorConfig"][];
+        };
         /** GeneratorConfig */
         GeneratorConfig: {
             /**
@@ -3795,6 +3870,11 @@ export interface components {
              * @default 256
              */
             fft_size: number;
+            /**
+             * Filter Enabled
+             * @default true
+             */
+            filter_enabled: boolean;
             /**
              * Frequency Offset Hz
              * @default 0
@@ -4014,6 +4094,11 @@ export interface components {
         };
         /** GeneratorPreset */
         GeneratorPreset: {
+            /**
+             * Channel Count
+             * @default 1
+             */
+            channel_count: number;
             config: components["schemas"]["GeneratorConfig"];
             /** Description */
             description: string;
@@ -4021,9 +4106,14 @@ export interface components {
              * Family
              * @enum {string}
              */
-            family: "nr" | "wifi6" | "wifi7" | "wifi8" | "custom";
+            family: "nr" | "wifi6" | "wifi7" | "custom";
             /** Label */
             label: string;
+            /**
+             * Numerology
+             * @default Custom
+             */
+            numerology: string;
             /** Preset Id */
             preset_id: string;
         };
@@ -5784,7 +5874,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.10
+             * @default 2.2.11
              */
             version: string;
         };
@@ -6553,6 +6643,17 @@ export interface components {
              */
             status: "bit_exact" | "mismatch" | "not_run";
         };
+        /** VirtualPADatasetRequest */
+        VirtualPADatasetRequest: {
+            /** Input Signal Ids */
+            input_signal_ids: string[];
+            /** Model Id */
+            model_id: string;
+            /** Parameters */
+            parameters?: {
+                [key: string]: number;
+            };
+        };
         /** VirtualPAModel */
         VirtualPAModel: {
             /**
@@ -6593,6 +6694,8 @@ export interface components {
             config: components["schemas"]["VirtualPARequest"];
             /** Input Iq Sha256 */
             input_iq_sha256: string;
+            /** Kernel Sha256 */
+            kernel_sha256?: string | null;
             /**
              * Kind
              * @default simulated_pa_output
@@ -7473,6 +7576,40 @@ export interface operations {
             };
         };
     };
+    dataset_download_api_v1_datasets__dataset_id__download_get: {
+        parameters: {
+            query?: {
+                version?: string;
+                collection?: boolean;
+            };
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     dataset_update_api_v1_datasets__dataset_id__manifest_post: {
         parameters: {
             query?: never;
@@ -8292,6 +8429,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelInfo"][];
+                };
+            };
+        };
+    };
+    simulate_dataset_api_v1_pa_library_datasets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VirtualPADatasetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratorDatasetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -9361,6 +9531,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnalyzerSourceInfo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_batch_api_v1_signal_generator_batches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratorBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PAInputDataset"][];
                 };
             };
             /** @description Validation Error */

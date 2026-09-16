@@ -2727,6 +2727,51 @@
         "title": "DatasetAnalysis",
         "type": "object"
       },
+      "DatasetCapture": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidth_hz": {
+            "exclusiveMinimum": 0.0,
+            "title": "Bandwidth Hz",
+            "type": "number"
+          },
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 180,
+            "title": "Label",
+            "type": "string"
+          },
+          "n_samples": {
+            "exclusiveMinimum": 0.0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "preset_id": {
+            "maxLength": 64,
+            "title": "Preset Id",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "exclusiveMinimum": 0.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "preset_id",
+          "label",
+          "n_samples",
+          "sample_rate_hz",
+          "bandwidth_hz"
+        ],
+        "title": "DatasetCapture",
+        "type": "object"
+      },
       "DatasetEvidence": {
         "additionalProperties": false,
         "properties": {
@@ -2822,6 +2867,14 @@
       "DatasetManifest": {
         "additionalProperties": false,
         "properties": {
+          "captures": {
+            "items": {
+              "$ref": "#/components/schemas/DatasetCapture"
+            },
+            "maxItems": 16,
+            "title": "Captures",
+            "type": "array"
+          },
           "columns": {
             "anyOf": [
               {
@@ -2878,6 +2931,18 @@
           },
           "origin": {
             "$ref": "#/components/schemas/DatasetOrigin"
+          },
+          "parent_dataset_id": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Dataset Id"
           },
           "preprocessing_version": {
             "default": "raw-v1",
@@ -5323,6 +5388,25 @@
         "title": "GeneratorAnalysis",
         "type": "object"
       },
+      "GeneratorBatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "configs": {
+            "items": {
+              "$ref": "#/components/schemas/GeneratorConfig"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Configs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "configs"
+        ],
+        "title": "GeneratorBatchRequest",
+        "type": "object"
+      },
       "GeneratorConfig": {
         "additionalProperties": false,
         "properties": {
@@ -5468,6 +5552,11 @@
             "minimum": 64.0,
             "title": "Fft Size",
             "type": "integer"
+          },
+          "filter_enabled": {
+            "default": true,
+            "title": "Filter Enabled",
+            "type": "boolean"
           },
           "frequency_offset_hz": {
             "default": 0,
@@ -5839,6 +5928,11 @@
       "GeneratorPreset": {
         "additionalProperties": false,
         "properties": {
+          "channel_count": {
+            "default": 1,
+            "title": "Channel Count",
+            "type": "integer"
+          },
           "config": {
             "$ref": "#/components/schemas/GeneratorConfig"
           },
@@ -5851,7 +5945,6 @@
               "nr",
               "wifi6",
               "wifi7",
-              "wifi8",
               "custom"
             ],
             "title": "Family",
@@ -5859,6 +5952,11 @@
           },
           "label": {
             "title": "Label",
+            "type": "string"
+          },
+          "numerology": {
+            "default": "Custom",
+            "title": "Numerology",
             "type": "string"
           },
           "preset_id": {
@@ -11134,7 +11232,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.10",
+            "default": "2.2.11",
             "title": "Version",
             "type": "string"
           }
@@ -13242,6 +13340,40 @@
         "title": "Verification",
         "type": "object"
       },
+      "VirtualPADatasetRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "input_signal_ids": {
+            "items": {
+              "pattern": "^sg-[a-f0-9]{64}$",
+              "type": "string"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Input Signal Ids",
+            "type": "array"
+          },
+          "model_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Model Id",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "maxProperties": 32,
+            "title": "Parameters",
+            "type": "object"
+          }
+        },
+        "required": [
+          "input_signal_ids",
+          "model_id"
+        ],
+        "title": "VirtualPADatasetRequest",
+        "type": "object"
+      },
       "VirtualPAModel": {
         "additionalProperties": false,
         "properties": {
@@ -13359,6 +13491,18 @@
             "pattern": "^[0-9a-f]{64}$",
             "title": "Input Iq Sha256",
             "type": "string"
+          },
+          "kernel_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kernel Sha256"
           },
           "kind": {
             "const": "simulated_pa_output",
@@ -13624,7 +13768,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.10"
+    "version": "2.2.11"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -14646,6 +14790,66 @@
         "summary": "Dataset Diagnostics Run",
         "tags": [
           "datasets"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_id}/download": {
+      "get": {
+        "operationId": "dataset_download_api_v1_datasets__dataset_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "default": "raw-v1",
+              "title": "Version",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collection",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Collection",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Download",
+        "tags": [
+          "signal generator"
         ]
       }
     },
@@ -15791,6 +15995,47 @@
         "summary": "Models",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/pa-library/datasets": {
+      "post": {
+        "operationId": "simulate_dataset_api_v1_pa_library_datasets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VirtualPADatasetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratorDatasetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Simulate Dataset",
+        "tags": [
+          "virtual PA library"
         ]
       }
     },
@@ -17498,6 +17743,51 @@
         "summary": "Upload",
         "tags": [
           "signal analyzer"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/batches": {
+      "post": {
+        "operationId": "generate_batch_api_v1_signal_generator_batches_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratorBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PAInputDataset"
+                  },
+                  "title": "Response Generate Batch Api V1 Signal Generator Batches Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Batch",
+        "tags": [
+          "signal generator"
         ]
       }
     },

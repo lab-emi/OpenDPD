@@ -114,6 +114,15 @@ class DatasetVersion(StrictModel):
     sha256: Optional[Sha256] = None
 
 
+class DatasetCapture(StrictModel):
+    dataset_id: Slug
+    preset_id: str = Field(max_length=64)
+    label: str = Field(max_length=180)
+    n_samples: int = Field(gt=0)
+    sample_rate_hz: float = Field(gt=0, allow_inf_nan=False)
+    bandwidth_hz: float = Field(gt=0, allow_inf_nan=False)
+
+
 class DatasetManifest(StrictModel):
     schema_version: int = SCHEMA_VERSION
     dataset_id: Slug
@@ -125,6 +134,8 @@ class DatasetManifest(StrictModel):
     n_samples: Optional[int] = Field(default=None, ge=0)
     columns: Optional[Dict[str, str]] = None   # logical name -> column in the source file
     split: SplitSpec
+    captures: List[DatasetCapture] = Field(default_factory=list, max_length=16)
+    parent_dataset_id: Optional[Slug] = None
     preprocessing_version: str = "raw-v1"
     raw_sha256: Optional[Sha256] = None
     versions: List[DatasetVersion] = Field(default_factory=list)   # empty for built-ins: raw/ is the split dir

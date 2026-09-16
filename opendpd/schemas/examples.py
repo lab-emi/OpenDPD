@@ -664,7 +664,9 @@ def all_examples() -> Dict[str, object]:
     from opendpd.core.waveforms.generator_presets import presets
     from opendpd.core.virtual_pa import catalog
     return {
-        "generator_presets": presets(),
+        "generator_presets": [p for p in presets() if p.family == "custom" or p.preset_id in {
+            "nr-20", "nr-100", "nr-fr2", "nr-fr1-30-20-q16-c1", "nr-fr1-30-100-q16-c1",
+            "nr-fr1-30-20-q64-c2", "nr-fr1-30-100-q64-c2", "wifi6-20", "wifi6-80", "wifi7-20", "wifi7-320"}],
         "virtual_pa_models": catalog(),
         "metric_profile_legacy": legacy_metric_profile(),
         "metric_profile_general": general_metric_profile(),

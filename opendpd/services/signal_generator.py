@@ -214,3 +214,14 @@ def archive_input(ws, identifier, *, restore=False):
             return input_summary(result)
         marker.touch()
         return {'signal_id': identifier, 'removed': True}
+
+
+def generate_batch(ws, request):
+    from opendpd.core.waveforms.generator import allocation
+    for config in request.configs:
+        if config.waveform == "ofdm":
+            try:
+                allocation(config)
+            except ValueError as exc:
+                raise WorkspaceError(str(exc)) from exc
+    return [input_summary(generate(ws, config)) for config in request.configs]

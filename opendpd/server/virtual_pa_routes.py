@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse
 
 from opendpd.core.virtual_pa import catalog
-from opendpd.schemas.virtual_pa import VirtualPAModel, VirtualPARequest, VirtualPASimulation, PairedDatasetRequest
+from opendpd.schemas.virtual_pa import VirtualPAModel, VirtualPARequest, VirtualPASimulation, PairedDatasetRequest, VirtualPADatasetRequest
 from opendpd.schemas.signal_generator import GeneratorDatasetResponse
 from opendpd.server.routes import require_csrf, require_session
 from opendpd.services import virtual_pa
@@ -41,3 +41,9 @@ def download(simulation_id: str, filename: str, request: Request):
              dependencies=[Depends(require_csrf)])
 def dataset(simulation_id: str, body: PairedDatasetRequest, request: Request):
     return virtual_pa.create_dataset(request.app.state.ws, simulation_id, body)
+
+
+@router.post("/datasets", response_model=GeneratorDatasetResponse, status_code=201,
+             dependencies=[Depends(require_csrf)])
+def simulate_dataset(body: VirtualPADatasetRequest, request: Request):
+    return virtual_pa.simulate_dataset(request.app.state.ws, body)

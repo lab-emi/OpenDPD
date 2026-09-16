@@ -12,12 +12,10 @@ Keeping these roles separate makes the provenance of every PA output explicit.
    describe illustrative applications, not device calibrations or foundry models.
 3. Select a saved input. Adjust sliders or numeric fields; selecting a control
    highlights the matching variables in the displayed equations, and vice versa.
-4. Click **Simulate PA output**. Inspect input/output AM/AM, AM/PM, envelope and
-   spectrum, plus dynamic states where applicable. Output CSV, paired CSV and
-   simulation metadata JSON are independent downloads.
-5. Click **Create paired dataset & train PA**. This is the only new GUI step that
-   registers the generated pair as trainable data. Then train the PA surrogate
-   and use it as the reference for DPD training.
+4. Click **Simulate PA output**. Studio computes each selected preset at its own sample rate, creates the complete dataset and opens its detail page automatically.
+5. Inspect the input/output plots in **Datasets**. For a collection, use **Visualize subdataset** to switch captures. Download the current CSV or the whole ZIP, which includes metadata and one standalone, parameterized PA replay script. Continue to PA Training from the selected capture.
+
+There is no separate **Paired dataset** node or dataset-creation form. Each capture uses a 60/20/20 split with 256-sample guards and needs at least 8,192 samples. Captures may have unequal lengths; memory state starts from zero independently for each preset. The generator's optional ideal input filter does not filter PA output.
 
 The diagram separates dataset making from model training. It stays compact while
 scrolling and expands for inspection. Existing paired datasets bypass generation
@@ -49,7 +47,7 @@ calibrated transistor-physics simulation.
 ## Equations and units
 
 The complete equations, parameter bounds, defaults, explanations and symbols
-come from `opendpd/core/virtual_pa.py` and are included in each frozen simulation.
+come from `opendpd/core/virtual_pa.py`; the numerical kernel is `opendpd/core/virtual_pa_kernel.py` and are included in each frozen simulation.
 Studio 2.2.5 renders the catalog equations as LaTeX using bundled KaTeX and fonts. Parameter coefficients remain keyboard/click controls with dynamic highlighting. Rendering allows only the fixed parameter classes, with external links/resources and arbitrary styles disabled; no formula code is evaluated.
 For example, the Rapp helper is
 
@@ -125,13 +123,13 @@ causality, zero input, deterministic replay, analytic gain/saturation, memory-ta
 response and physical-time consistency. API tests cover input-only isolation,
 exact pairing, hashes, frozen parameters, unchanged splits, real CPU PA/DPD jobs,
 feature gating and public-session isolation. Frontend tests cover linked controls,
-invalidated previews, explicit pairing and existing-dataset bypass. The browser
-script `scripts/verify_signal_generator.mjs` exercises real downloads and workers.
+invalidated outputs, automatic dataset creation and existing-dataset bypass. The browser
+script `scripts/verify_signal_generator.mjs` exercises real downloads and dataset navigation.
 
-## Studio 2.2.5 preview
+## Studio 2.2.11 preview
 
 ![Virtual PA formula controls](../../pics/studio-pa-library.png)
 
-The output preview draws **PA Input** and **PA Output** PSDs separately on matching initial dB scales. Independent controls enlarge or zoom each location. The paired dataset remains synthetic when used to learn a PA surrogate or DPD model. See [signal-chain spectra](signal-chain-spectra.md).
+The dataset detail page draws **PA Input** and **PA Output** PSDs separately on matching initial dB scales. Independent controls enlarge or zoom each location. The paired dataset remains synthetic when used to learn a PA surrogate or DPD model. See [signal-chain spectra](signal-chain-spectra.md).
 
-The input selector and **Simulate PA output** control sit above the mathematical parameters. After simulation, dataset creation appears above the output charts. **Remove PA Input Dataset** hides only the selected input from this workspace's picker; Undo restores it. Existing simulation sources and paired datasets remain intact. For linearization experiments after forward-model training, continue to [ILC and ILA DPD](ilc-dpd.md).
+The input selector and **Simulate PA output** control sit above the mathematical parameters. After simulation, Studio opens the saved dataset details directly. **Remove PA Input Dataset** hides only the selected input from this workspace's picker; Undo restores it. Existing simulation sources and paired datasets remain intact. For linearization experiments after forward-model training, continue to [ILC and ILA DPD](ilc-dpd.md).
