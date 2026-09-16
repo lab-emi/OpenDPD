@@ -52,6 +52,8 @@ jobs:
         if: github.event_name != 'pull_request'
         with:
           path: site
+          # Preserve the generated .nojekyll marker in the deployed site.
+          include-hidden-files: true
 
   deploy:
     name: Deploy to GitHub Pages
