@@ -14,7 +14,7 @@ export default defineConfig({
   reporter: [['list']],
   use: { baseURL: 'http://127.0.0.1:4173', trace: 'retain-on-failure' },
   webServer: {
-    command: 'npx vite preview --port 4173 --strictPort --host 127.0.0.1',
+    command: 'npx vite build --mode test-ui --outDir /tmp/opendpd-ui-e2e && npx vite preview --outDir /tmp/opendpd-ui-e2e --port 4173 --strictPort --host 127.0.0.1',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

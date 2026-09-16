@@ -163,8 +163,10 @@ jobs:
       - name: Unit and interaction tests
         run: npm test -- --maxWorkers=2
 
-      - name: Production build
-        run: npm run build
+      - name: Production build excludes developer fixtures
+        run: |
+          npm run build
+          test -z "$(find dist/assets -name 'GalleryPage-*')"
 
       - name: Browser journeys and accessibility audit on Chromium, Firefox and WebKit (mock API; visual baselines are compared locally)
         run: |

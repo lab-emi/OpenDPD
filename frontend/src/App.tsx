@@ -17,7 +17,9 @@ import { themeFor } from '@/theme'
 const DatasetDetailPage = lazy(() => import('@/pages/DatasetDetailPage').then(m => ({ default: m.DatasetDetailPage })))
 const DatasetsPage = lazy(() => import('@/pages/DatasetsPage').then(m => ({ default: m.DatasetsPage })))
 const ExperimentsPage = lazy(() => import('@/pages/ExperimentsPage').then(m => ({ default: m.ExperimentsPage })))
-const GalleryPage = lazy(() => import('@/pages/GalleryPage').then(m => ({ default: m.GalleryPage })))
+// Explicit browser-test builds retain fixtures; shipped builds exclude their module.
+const GalleryPage = import.meta.env.DEV || import.meta.env.MODE === 'test-ui'
+  ? lazy(() => import('@/pages/GalleryPage').then(m => ({ default: m.GalleryPage }))) : null
 const SignalGeneratorPage = lazy(() => import('@/pages/SignalGeneratorPage').then(m => ({ default: m.SignalGeneratorPage })))
 const SignalAnalyzerPage = lazy(() => import('@/pages/SignalAnalyzerPage').then(m => ({ default: m.SignalAnalyzerPage })))
 const PALibraryPage = lazy(() => import('@/pages/PALibraryPage').then(m => ({ default: m.PALibraryPage })))
@@ -59,7 +61,7 @@ function AppRoutes() {
         <Route path="hardware" element={<HardwareCostsPage />} />
         <Route path="robustness/:planSha" element={<RobustnessPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        {import.meta.env.DEV && <Route path="gallery" element={<GalleryPage />} />}
+        {GalleryPage && <Route path="gallery" element={<GalleryPage />} />}
         <Route path="about" element={<AboutPage />} />
         <Route path="server" element={<ServerStatusPage />} />
         <Route path="*" element={<HomePage />} />
