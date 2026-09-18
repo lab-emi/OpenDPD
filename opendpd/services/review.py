@@ -66,6 +66,16 @@ def integration_bands(profile_id, signal):
         band("Left", "adjacent", -3 * bw / 2, -bw / 2)
         band("Right", "adjacent", bw / 2, 3 * bw / 2)
         return bands, "General spectral profile: bin centres in [low, high); adjacent/main power, pooled Welch PSD."
+    if profile_id == "opendpd-spectral-v2":
+        if not signal.n_sub_ch:
+            return [], "Carrier integration bands unavailable: n_sub_ch was not recorded."
+        width = bw / signal.n_sub_ch
+        band("Main envelope", "main", -bw / 2, bw / 2)
+        for i in range(signal.n_sub_ch):
+            band(f"Carrier {i + 1}", "subchannel", -bw / 2 + i * width, -bw / 2 + (i + 1) * width)
+        band("Left", "adjacent", -bw / 2 - width, -bw / 2)
+        band("Right", "adjacent", bw / 2, bw / 2 + width)
+        return bands, "Carrier ACLR: bin centres in [low, high); adjacent/strongest in-band carrier power, pooled Welch PSD."
     if profile_id == "legacy-opendpd-v1":
         if not signal.nperseg or not signal.n_sub_ch:
             return [], "Legacy integration bands unavailable: nperseg and n_sub_ch were not recorded. The display PSD uses the general estimator."

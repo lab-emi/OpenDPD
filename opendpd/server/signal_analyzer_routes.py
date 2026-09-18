@@ -2,12 +2,18 @@
 from opendpd.server.uploads import consume_upload
 from fastapi import APIRouter, Depends, Request, UploadFile
 from opendpd.schemas.signal_analyzer import AnalyzerRequest, AnalyzerSourceInfo, SignalAnalysis
+from opendpd.schemas.signal_dataset import AnalyzerDataset
 from opendpd.server.routes import require_csrf, require_session
 from opendpd.server.errors import api_error as _error
 from opendpd.services import signal_analyzer as service
 from opendpd.services.csv_upload import MAX_UPLOAD_BYTES, CsvUploadRejected, check_filename, quarantine_path
 
 router = APIRouter(tags=["signal analyzer"])
+
+
+@router.get("/signal-analyzer/datasets", response_model=list[AnalyzerDataset], dependencies=[Depends(require_session)])
+def datasets(request: Request):
+    return service.list_datasets(request.app.state.ws)
 
 
 @router.get("/signal-analyzer/sources", response_model=list[AnalyzerSourceInfo], dependencies=[Depends(require_session)])
@@ -34,7 +40,7 @@ async def upload(request: Request, file: UploadFile):
                     if size > MAX_UPLOAD_BYTES:
                         raise _error(413, "payload_too_large", "CSV files must be at most 25 MiB.")
                     output.write(chunk)
-            return service.admit_signal_upload(request.app.state.ws, path)
+            return service.admit_signal_upload(request.app.state.ws, path, file.filename)
         except CsvUploadRejected as exc:
             raise _error(422, "csv_rejected", str(exc)) from exc
         finally:

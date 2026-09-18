@@ -39,6 +39,7 @@ test.each([
   ['/?panel=recent#bottom', '/'],
   ['/settings#devices', '/settings'],
   ['/about#contributors', '/about'],
+  ['/signal-generator/preview?signal=old', '/signal-generator'],
 ])('reset returns %s to %s with draft and scroll position cleared', async (route, destination) => {
   const calls = setup(route)
   await userEvent.type(screen.getByLabelText('Draft'), 'Discard this progress')
@@ -78,4 +79,23 @@ test('a malformed run URL leaves navigation and the page mounted', async () => {
   expect(await screen.findByLabelText('Draft')).toBeVisible()
   expect(screen.getByRole('button', { name: 'Reset page' })).toBeVisible()
   expect(calls.some(c => c.path.includes('%zz'))).toBe(false)
+})
+
+test('Signal Generator expands only its active submenu and defaults to Generate', async () => {
+  setup('/')
+  const nav = screen.getByRole('navigation', { name: 'Main navigation' })
+  const generator = within(nav).getByRole('link', { name: 'Signal Generator' })
+  expect(generator).toHaveAttribute('aria-expanded', 'false')
+  expect(within(nav).queryByRole('link', { name: 'Generate' })).not.toBeInTheDocument()
+  await userEvent.click(generator)
+  expect(generator).toHaveAttribute('aria-expanded', 'true')
+  expect(within(nav).getByRole('link', { name: 'Generate' })).toHaveAttribute('aria-current', 'page')
+  await userEvent.click(within(nav).getByRole('link', { name: 'Preview' }))
+  expect(screen.getByTestId('location').textContent).toBe('/signal-generator/preview')
+  expect(within(nav).getByRole('link', { name: 'Preview' })).toHaveAttribute('aria-current', 'page')
+  expect(within(nav).getByRole('link', { name: 'Generate' })).not.toHaveAttribute('aria-current')
+  await userEvent.click(within(nav).getByRole('link', { name: 'Home' }))
+  expect(within(nav).queryByRole('link', { name: 'Preview' })).not.toBeInTheDocument()
+  await userEvent.click(generator)
+  expect(screen.getByTestId('location').textContent).toBe('/signal-generator')
 })

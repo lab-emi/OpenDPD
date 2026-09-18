@@ -10,6 +10,7 @@ vi.mock('./SpectrumPlot', () => ({ SpectrumPlot: (props: SpectrumPlotProps) => <
   <button onClick={() => props.onViewportChange?.({ x: [-10, 12], y: [-100, -50], autoX: false, autoY: false, dragmode: 'pan' })}>Zoom test spectrum</button>
   <button onClick={() => props.onVisibilityChange?.([false, true])}>Hide input trace</button>
   <output data-testid="restored-ranges">{JSON.stringify([props.xRange, props.yRange])}</output>
+  <output data-testid="visible-traces">{JSON.stringify(props.traces.filter(t => t.visible !== false).map(t => t.name))}</output>
 </div> }))
 const result = paMock.data as unknown as EvaluationResult
 const data = { axis: 'hz', frequency: [-20e6, 0, 20e6], traces: [
@@ -56,4 +57,25 @@ test('cursor picks each trace’s actual nearest bin and refuses out-of-capture 
   expect(nearestBin([-30, -5, 20, 60], -17.5)).toBe(0)
   expect(nearestBin([-30, -5, 20, 60], 61)).toBe(-1)
   expect(nearestBin([], 1)).toBe(-1)
+})
+
+test('comparing DPD results keeps the input panels visible and saves the full signal chain', async () => {
+  const chain = { ...data, traces: [
+    { name: 'input x', role: 'input', signal_node: 'dpd_input', psd_db: [-90, -80, -90] },
+    { name: 'predistorted u', role: 'dpd_output', signal_node: 'pa_input', psd_db: [-80, -70, -80] },
+    { name: 'with DPD', role: 'primary', signal_node: 'pa_output', psd_db: [-70, -60, -70] },
+  ] }
+  const { calls } = mockApi({
+    'GET /api/v1/artifacts/run-pa-0001/plot-spectrum': () => chain,
+    'GET /api/v1/artifacts/run-pa-0002/plot-spectrum': () => chain,
+    'GET /api/v1/figures': () => [],
+    'POST /api/v1/figures': (_url, init) => ({ figure_id: 'fig-chain', spec: JSON.parse(String(init.body)), bindings: [] }),
+  })
+  renderWithProviders(<SpectrumReview results={[result, { ...result, run_id: 'run-pa-0002', result_id: 'run-pa-0002' }]} referenceRunId="run-pa-0001" />)
+  await waitFor(() => expect(screen.getAllByTestId('visible-traces')).toHaveLength(3))
+  expect(screen.getAllByTestId('visible-traces').every(el => JSON.parse(el.textContent!).length === 2)).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: 'Save view' }))
+  await waitFor(() => expect(calls.some(c => c.method === 'POST')).toBe(true))
+  const request = calls.find(c => c.method === 'POST')!.body as FigureSpec
+  expect(request.panels.map(p => p.signal_node)).toEqual(['dpd_input', 'pa_input', 'pa_output'])
 })

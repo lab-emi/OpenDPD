@@ -191,7 +191,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
             locales: { [languageInfo(language).tag]: { dictionary: Object.fromEntries(MODEBAR_TEXT.map((text) => [text, message(text)])) } },
             // Wheel/pinch are handled once by the shared controller; native mouse
             // dragging, box zoom, fit/reset, legend controls and export stay Plotly's.
-            modeBarButtonsToRemove: ['select2d', 'lasso2d'],
+            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'sendDataToCloud', 'sendChartToCloud'],
             doubleClick: 'autosize',
           })
         } catch (error) {

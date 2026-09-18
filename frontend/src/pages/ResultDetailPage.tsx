@@ -27,7 +27,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { Link as RouterLink, useParams, useSearchParams } from 'react-router'
 import { API, artifactUrl, WEB_MODE } from '@/api/client'
-import { useDeployExport, useExportRun, useMetricProfiles, useModels, useResult, useResultProfiles } from '@/api/hooks'
+import { useDeployExport, useExportRun, useMetricProfiles, useModels, useResult, useResultProfiles, useRun } from '@/api/hooks'
 import { offeredProfiles } from '@/api/profiles'
 import type { BaselineScore, DeploymentManifest, EvaluationResult, ExecutionEvidence, MetricProfile, MetricValue } from '@/api/types'
 import { formatNumber, formatDateTime, getLanguage, message, t, type MessageKey } from '@/i18n'
@@ -35,6 +35,7 @@ import { EvidenceBadge } from '@/components/EvidenceBadge'
 import { MetricCard } from '@/components/MetricCard'
 import { ResultCharts } from '@/components/ResultCharts'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
+import { useRunWorkflow } from '@/workflow/StudioWorkflow'
 
 const bytes = (n: number) => (n >= 1 << 20 ? `${(n / (1 << 20)).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} kB`)
 
@@ -448,12 +449,12 @@ function Baselines({ result }: { result: EvaluationResult }) {
 }
 
 /** Result view: evidence first, then metrics with their registry definitions, then how they were produced. */
-export function ResultView({ result, profile, stored = [], onProfile }: { result: EvaluationResult; profile?: MetricProfile; stored?: string[]; onProfile?: (id: string) => void }) {
+export function ResultView({ result, profile, stored = [], onProfile, runName }: { result: EvaluationResult; profile?: MetricProfile; stored?: string[]; onProfile?: (id: string) => void; runName?: string | null }) {
   const definitions = new Map((profile?.metrics ?? []).map((m) => [m.name, m]))
   return (
     <Stack spacing={2}>
       <Stack sx={{ alignItems: 'center', flexWrap: 'wrap' }} direction="row" spacing={2} useFlexGap>
-        <Typography variant="h1">{result.result_id}</Typography>
+        <Typography variant="h1" sx={{ overflowWrap: 'anywhere', minWidth: 0 }}>{runName || result.result_id}</Typography>
         <EvidenceBadge evidence={result.evidence_type} mock={result.is_mock} />
         <Chip size="small" variant="outlined" label={profileLabel(result.metric_profile_id)} data-profile={result.metric_profile_id} />
         <Typography variant="body2" color="text.secondary">
@@ -620,6 +621,8 @@ export function ResultView({ result, profile, stored = [], onProfile }: { result
 
 export function ResultDetailPage() {
   const { runId = '' } = useParams()
+  const run = useRun(runId, !!runId)
+  useRunWorkflow(run.data)
   const [params, setParams] = useSearchParams()
   const profiles = useMetricProfiles()
   const requested = params.get('profile')
@@ -634,5 +637,5 @@ export function ResultDetailPage() {
   // stored results under a profile the GUI does not offer yet stay reachable through the CLI and the API only
   if (profile?.validation === 'pending_cross_validation') return <Alert severity="warning">{t('results.detail.profile.unavailable')}</Alert>
   const visible = (stored.data ?? []).filter((id) => offered.has(id))
-  return <ResultView result={result.data} profile={profile} stored={visible} onProfile={id => { const next = new URLSearchParams(params); next.set('profile', id); setParams(next) }} />
+  return <ResultView result={result.data} profile={profile} stored={visible} runName={run.data?.name} onProfile={id => { const next = new URLSearchParams(params); next.set('profile', id); setParams(next) }} />
 }

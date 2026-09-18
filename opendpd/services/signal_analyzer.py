@@ -22,7 +22,7 @@ def upload_directory(ws, identifier):
     return ws.hashed_store('signal_uploads', 'sa').directory(identifier)
 
 
-def admit_signal_upload(ws, path: Path):
+def admit_signal_upload(ws, path: Path, filename: str | None = None):
     """Scan every CSV field before publishing a typed array; no executable formats."""
     temporary = None
     try:
@@ -76,8 +76,9 @@ def admit_signal_upload(ws, path: Path):
                 values[i] = [_number(v, True) for v in row]
         values.flush()
         del values
+        label = filename.replace("\\", "/").rsplit("/", 1)[-1][:160] if filename else f"CSV signal · {source_hash[:10]}"
         info = AnalyzerSourceInfo(source=AnalyzerSource(kind="upload", source_id=identifier),
-            label=f"CSV signal · {source_hash[:10]}", sample_count=count, columns=columns,
+            label=label, sample_count=count, columns=columns,
             complex_columns=sorted(complex_columns), origin="uploaded")
         write_json_atomic(temporary / "manifest.json", {"info": info.model_dump(mode="json"),
             "csv_sha256": source_hash, "array_sha256": sha256_file(temporary / "samples.npy")})
@@ -122,6 +123,51 @@ def list_sources(ws):
     return results
 
 
+def list_datasets(ws):
+    """Expose named collections and legacy data through one dataset-first picker."""
+    from opendpd.core.waveforms.dataset_names import dataset_name
+    from opendpd.schemas.signal_dataset import AnalyzerDataset
+    from opendpd.services import signal_datasets, signal_generator, virtual_pa
+
+    results, covered = [], set()
+    for dataset in signal_datasets.list_datasets(ws):
+        covered.update((s.source.kind, s.source.source_id) for s in dataset.signals)
+        if (ws.hashed_store("signal_datasets", "sds").directory(dataset.dataset_id) / ".removed").exists():
+            continue
+        if dataset.kind == "pa_input" and any((signal_generator.directory(ws, s.source.source_id) / ".removed").exists() for s in dataset.signals):
+            continue
+        results.append(AnalyzerDataset.model_validate(dataset.model_dump(exclude={"requested_name"})))
+
+    manifests = {m.dataset_id: m for m in ws.list_datasets()}
+    for parent in manifests.values():
+        if parent.parent_dataset_id:
+            continue
+        captures = [(manifests[c.dataset_id], c.label) for c in parent.captures if c.dataset_id in manifests] if parent.captures else [(parent, parent.display_name)]
+        members = [AnalyzerSourceInfo(source=AnalyzerSource(kind="dataset", source_id=m.dataset_id, role=role),
+            label=f"{label} · PA {role}", sample_count=m.n_samples or 0, sample_rate_hz=m.signal.sample_rate_hz,
+            bandwidth_hz=m.signal.bandwidth_hz, origin=m.origin.value)
+            for m, label in captures for role in ("input", "output")]
+        results.append(AnalyzerDataset(dataset_id=parent.dataset_id, name=parent.display_name, kind="paired", signals=members,
+            download_url=f"/api/v1/datasets/{parent.dataset_id}/download"))
+
+    for info in list_sources(ws):
+        source = info.source
+        if source.kind == "dataset" or (source.kind, source.source_id) in covered:
+            continue
+        if source.kind == "generated":
+            config = signal_generator.read_signal(ws, source.source_id).config
+            name, kind = dataset_name([config]) + "_" + source.source_id[3:9], "pa_input"
+        elif source.kind == "virtual_pa":
+            simulation = virtual_pa.read_simulation(ws, source.source_id)
+            config = signal_generator.read_signal(ws, simulation.config.input_signal_id).config
+            info = info.model_copy(update={"bandwidth_hz": config.bandwidth_hz})
+            name, kind = dataset_name([config], "out", simulation.config.model_id) + "_" + source.source_id[4:10], "pa_output"
+        else:
+            name, kind = info.label, "upload"
+        results.append(AnalyzerDataset(dataset_id=source.source_id, name=name, kind=kind, signals=[info]))
+    return sorted(results, key=lambda d: (d.name, d.dataset_id))
+
+
 def _load(ws, source):
     if source.kind == "generated":
         from opendpd.services.signal_generator import read_signal, directory
@@ -132,9 +178,11 @@ def _load(ws, source):
         return np.load(directory(ws, source.source_id) / "iq.npy", mmap_mode="r", allow_pickle=False), info
     if source.kind == "virtual_pa":
         from opendpd.services.virtual_pa import read_simulation, directory
+        from opendpd.services.signal_generator import read_signal
         data = read_simulation(ws, source.source_id)
+        config = read_signal(ws, data.config.input_signal_id).config
         info = AnalyzerSourceInfo(source=source, label=data.model.name.en + " · PA output",
-            sample_count=data.analysis.n_samples, sample_rate_hz=data.sample_rate_hz, origin="synthetic")
+            sample_count=data.analysis.n_samples, sample_rate_hz=data.sample_rate_hz, bandwidth_hz=config.bandwidth_hz, origin="synthetic")
         return np.load(directory(ws, source.source_id) / "output.npy", mmap_mode="r", allow_pickle=False), info
     if source.kind == "dataset":
         from opendpd.services.datasets import load_version_arrays

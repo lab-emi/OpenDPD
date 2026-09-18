@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { useCustomDatasetImports, useDatasets } from '@/api/hooks'
+import type { DatasetManifest } from '@/api/types'
 import { WEB_MODE } from '@/api/client'
 import { datasetLabel, formatNumber, message, t } from '@/i18n'
 import { ImportDatasetDialog } from '@/components/ImportDatasetDialog'
@@ -23,6 +24,14 @@ import { CreateDatasetDialog } from '@/components/CreateDatasetDialog'
 import { DatasetGuide } from '@/components/DatasetGuide'
 import { SyntheticDatasetDialog } from '@/components/SyntheticDatasetDialog'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
+
+const sampleCount = (d: DatasetManifest) => d.captures?.length ? d.captures.reduce((total, c) => total + c.n_samples, 0) : d.n_samples ?? 0
+function sampleRates(d: DatasetManifest) {
+  const rates = d.captures?.length ? d.captures.map(c => c.sample_rate_hz) : d.signal.sample_rate_hz ? [d.signal.sample_rate_hz] : []
+  if (!rates.length) return t('common.na')
+  const low = Math.min(...rates) / 1e6, high = Math.max(...rates) / 1e6
+  return `${formatNumber(low, { maximumFractionDigits: 2 })}${low === high ? '' : '–' + formatNumber(high, { maximumFractionDigits: 2 })} MS/s`
+}
 import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 
 export function DatasetsPage() {
@@ -93,8 +102,8 @@ export function DatasetsPage() {
                     {d.dataset_id}
                   </Typography>
                 </TableCell>
-                <TableCell align="right">{formatNumber(d.n_samples ?? 0)}</TableCell>
-                <TableCell align="right">{d.signal.sample_rate_hz ? `${(d.signal.sample_rate_hz / 1e6).toFixed(2)} MHz` : t('common.na')}</TableCell>
+                <TableCell align="right">{formatNumber(sampleCount(d))}{(d.captures?.length ?? 0) > 1 && <Typography variant="caption" component="div" color="text.secondary">{t('datasets.captureCount', { count: d.captures!.length })}</Typography>}</TableCell>
+                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{sampleRates(d)}</TableCell>
                 <TableCell>{message(d.origin)}</TableCell>
                 <TableCell align="right">{Math.max(1, d.versions?.length ?? 0)}</TableCell>
               </TableRow>
@@ -116,7 +125,7 @@ export function DatasetsPage() {
         <DialogTitle id="choose-paired-dataset">{t('paFlow.existingTitle')}</DialogTitle>
         <DialogContent><Typography color="text.secondary" sx={{ mb: 2 }}>{t('paFlow.existingHelp')}</Typography><Stack spacing={1}>
           {datasets.data?.filter(d => !d.parent_dataset_id).map(d => <Button key={d.dataset_id} variant="outlined" sx={{ justifyContent: 'space-between', textAlign: 'left' }} onClick={() => train(d.dataset_id)}>
-            <span>{datasetLabel(d)}</span><span>{formatNumber(d.n_samples ?? 0)} I/Q</span></Button>)}
+            <span>{datasetLabel(d)}</span><span>{formatNumber(sampleCount(d))} I/Q</span></Button>)}
         </Stack></DialogContent>
         <DialogActions><Button onClick={() => setChoosingExisting(false)}>{t('common.close')}</Button><Button onClick={() => { setChoosingExisting(false); setBuiltin(true) }}>{t('datasets.builtin.title')}</Button></DialogActions>
       </Dialog>

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import datasetMock from '@mocks/dataset_builtin.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { DatasetDetailPage } from './DatasetDetailPage'
+import { StudioWorkflowProvider, useStudioWorkflow } from '@/workflow/StudioWorkflow'
 
 const plotMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
 vi.mock('plotly.js-basic-dist-min', () => ({ default: { react: plotMock, purge: vi.fn() } }))
@@ -137,5 +138,20 @@ test('subdataset selection changes charts, metadata and training to its own samp
   await screen.findByRole('heading', { name: 'Wi-Fi capture' })
   expect(screen.getByText('320 MS/s')).toBeVisible()
   await waitFor(() => expect(calls.some(c => c.path === '/api/v1/datasets/second/analysis')).toBe(true))
-  expect(screen.getByRole('link', { name: /Configure experiment/ })).toHaveAttribute('href', '/experiments/new?dataset=second&version=raw-v1')
+  expect(screen.getByRole('link', { name: 'Train PA & DPD Models' })).toHaveAttribute('href', '/experiments/new?dataset=second&version=raw-v1')
+})
+
+test('opening another dataset clears the previous dataset training progress', async () => {
+  const key = 'opendpd-workflow-v1:dataset-context-test'
+  localStorage.setItem(key, JSON.stringify({ version: 1, origin: 'existing', datasetId: 'previous', datasetVersion: 'raw-v1', parameters: {}, paRunId: 'old-pa', dpdRunId: 'old-dpd' }))
+  function Context() { const { state } = useStudioWorkflow(); return <output data-testid="dataset-workflow">{JSON.stringify(state)}</output> }
+  mockApi({
+    'GET /api/v1/system/capabilities': () => ({ workspace: 'dataset-context-test' }),
+    'GET /api/v1/datasets/mine': () => dataset,
+    'GET /api/v1/datasets/mine/analysis': () => inspection,
+  })
+  try {
+    renderWithProviders(<StudioWorkflowProvider><DatasetDetailPage /><Context /></StudioWorkflowProvider>, { route: '/datasets/mine', path: '/datasets/:datasetId' })
+    await waitFor(() => expect(JSON.parse(screen.getByTestId('dataset-workflow').textContent!)).toMatchObject({ datasetId: 'mine', datasetVersion: 'raw-v1', paRunId: null, dpdRunId: null }))
+  } finally { localStorage.removeItem(key) }
 })

@@ -1432,6 +1432,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signal-analyzer/datasets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Datasets */
+        get: operations["datasets_api_v1_signal_analyzer_datasets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signal-analyzer/sources": {
         parameters: {
             query?: never;
@@ -1477,6 +1494,74 @@ export interface paths {
         put?: never;
         /** Generate Batch */
         post: operations["generate_batch_api_v1_signal_generator_batches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/datasets/{dataset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Signal Dataset */
+        get: operations["signal_dataset_api_v1_signal_generator_datasets__dataset_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/datasets/{dataset_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Signal Dataset */
+        post: operations["archive_signal_dataset_api_v1_signal_generator_datasets__dataset_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/datasets/{dataset_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Signal Dataset Download */
+        get: operations["signal_dataset_download_api_v1_signal_generator_datasets__dataset_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/datasets/{dataset_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Signal Dataset */
+        post: operations["restore_signal_dataset_api_v1_signal_generator_datasets__dataset_id__restore_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2141,6 +2226,22 @@ export interface components {
              * @enum {string}
              */
             window: "hann" | "hamming" | "blackman" | "boxcar";
+        };
+        /** AnalyzerDataset */
+        AnalyzerDataset: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Download Url */
+            download_url?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "pa_input" | "pa_output" | "paired" | "upload";
+            /** Name */
+            name: string;
+            /** Signals */
+            signals: components["schemas"]["AnalyzerSourceInfo"][];
         };
         /** AnalyzerRequest */
         AnalyzerRequest: {
@@ -3791,6 +3892,8 @@ export interface components {
         GeneratorBatchRequest: {
             /** Configs */
             configs: components["schemas"]["GeneratorConfig"][];
+            /** Dataset Name */
+            dataset_name?: string | null;
         };
         /** GeneratorConfig */
         GeneratorConfig: {
@@ -5028,6 +5131,10 @@ export interface components {
             bandwidth_hz: number;
             /** Csv Url */
             csv_url: string;
+            /** Dataset Id */
+            dataset_id?: string | null;
+            /** Dataset Name */
+            dataset_name?: string | null;
             /** Iq Sha256 */
             iq_sha256: string;
             /**
@@ -5874,7 +5981,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.15
+             * @default 2.2.16
              */
             version: string;
         };
@@ -5948,6 +6055,24 @@ export interface components {
             time_q: number[];
             /** Time S */
             time_s: number[];
+        };
+        /** SignalDataset */
+        SignalDataset: {
+            /** Dataset Id */
+            dataset_id: string;
+            /** Download Url */
+            download_url?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "pa_input" | "pa_output";
+            /** Name */
+            name: string;
+            /** Requested Name */
+            requested_name: string;
+            /** Signals */
+            signals: components["schemas"]["AnalyzerSourceInfo"][];
         };
         /** SignalMeasurement */
         SignalMeasurement: {
@@ -6645,6 +6770,8 @@ export interface components {
         };
         /** VirtualPADatasetRequest */
         VirtualPADatasetRequest: {
+            /** Dataset Name */
+            dataset_name?: string | null;
             /** Input Signal Ids */
             input_signal_ids: string[];
             /** Model Id */
@@ -9491,6 +9618,26 @@ export interface operations {
             };
         };
     };
+    datasets_api_v1_signal_analyzer_datasets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyzerDataset"][];
+                };
+            };
+        };
+    };
     sources_api_v1_signal_analyzer_sources_get: {
         parameters: {
             query?: never;
@@ -9564,6 +9711,130 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PAInputDataset"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    signal_dataset_api_v1_signal_generator_datasets__dataset_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalDataset"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_signal_dataset_api_v1_signal_generator_datasets__dataset_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalDataset"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    signal_dataset_download_api_v1_signal_generator_datasets__dataset_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_signal_dataset_api_v1_signal_generator_datasets__dataset_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalDataset"];
                 };
             };
             /** @description Validation Error */

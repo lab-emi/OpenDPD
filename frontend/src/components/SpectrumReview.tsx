@@ -49,7 +49,8 @@ export function SpectrumReview({ results, referenceRunId, mode = 'same_condition
     const result = results.find(r => r.run_id === ids[i])!
     const id = `${ids[i]}:${tr.name}`
     const measured = tr.source?.startsWith('measured') || ['measured PA without DPD', 'measured PA output'].includes(tr.name)
-    const opt = options[id] ?? { run_id: ids[i]!, trace_name: tr.name, color: colors.chart[(ids.length === 1 ? j : i) % colors.chart.length]!, dash: result.is_mock || tr.role === 'reference' ? 'dot' : measured ? 'solid' : tr.role === 'input' ? 'longdash' : tr.role === 'baseline' ? 'dashdot' : ['dpd_surrogate', 'pa_modeling'].includes(result.evidence_type) ? 'dash' : 'solid', visible: ids.length === 1 || tr.role === 'primary' || (ids[i] === referenceRunId && tr.role === 'reference') }
+    const node = signalNode(tr, hasDPD(q.data!.traces))
+    const opt = options[id] ?? { run_id: ids[i]!, trace_name: tr.name, color: colors.chart[(ids.length === 1 ? j : i) % colors.chart.length]!, dash: result.is_mock || tr.role === 'reference' ? 'dot' : measured ? 'solid' : tr.role === 'input' ? 'longdash' : tr.role === 'baseline' ? 'dashdot' : ['dpd_surrogate', 'pa_modeling'].includes(result.evidence_type) ? 'dash' : 'solid', visible: ids.length === 1 || node === 'dpd_input' || node === 'pa_input' || tr.role === 'primary' || (ids[i] === referenceRunId && tr.role === 'reference') }
     return { id, opt: opt as FigureTrace, trace: tr, data: q.data!, result }
   })), [spectra, results, ids, options, colors, referenceRunId])
   const traces = useMemo(() => traceRows.map(({ opt, trace, data, result }) => ({

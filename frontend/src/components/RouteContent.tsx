@@ -15,5 +15,9 @@ export class RouteError extends Component<{ children: ReactNode }, { error: Erro
 /** Keep navigation and the workflow visible while the selected page loads. */
 export function RouteContent() {
   const location = useLocation()
-  return <RouteError key={location.pathname}><Suspense fallback={<LoadingState />}><Outlet /></Suspense></RouteError>
+  // Generate and Preview are views of one workspace. Keep their shared draft
+  // mounted while switching views; leaving the generator still resets the boundary.
+  const pageKey = location.pathname === '/signal-generator' || location.pathname.startsWith('/signal-generator/')
+    ? '/signal-generator' : location.pathname
+  return <RouteError key={pageKey}><Suspense fallback={<LoadingState />}><Outlet /></Suspense></RouteError>
 }

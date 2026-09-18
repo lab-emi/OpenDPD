@@ -37,6 +37,7 @@ import { LiveRunDashboard } from '@/components/LiveRunDashboard'
 import { ExperimentTasks, taskLabel } from '@/components/ExperimentTasks'
 import { RunTimeline } from '@/components/RunTimeline'
 import { StatusChip } from '@/components/StatusChip'
+import { useRunWorkflow } from '@/workflow/StudioWorkflow'
 import { DisconnectedState, EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
 const TABS = ['overview', 'logs', 'artifacts', 'config'] as const
@@ -65,6 +66,7 @@ export function RunDetailPage() {
   const [params, setParams] = useSearchParams()
   const tab: TabKey = TABS.includes(params.get('tab') as TabKey) ? (params.get('tab') as TabKey) : 'overview'
   const run = useRun(runId)
+  useRunWorkflow(run.data)
   const active = !!run.data && !isTerminal(run.data.status)
   const stream = useRunStream(runId, !!run.data)
   const history = useRunHistory(runId, !!run.data && isTerminal(run.data.status) && (run.data.task === 'train_pa' || run.data.task === 'train_dpd'))
@@ -84,12 +86,12 @@ export function RunDetailPage() {
   return (
     <Stack spacing={2}>
       <Stack sx={{ alignItems: 'center', flexWrap: 'wrap' }} direction="row" spacing={2} useFlexGap>
-        <Typography variant="h1" sx={{ wordBreak: 'break-all' }}>
+        <Typography variant="h1" sx={{ overflowWrap: 'anywhere', minWidth: 0 }}>
           {r.name || r.run_id}
         </Typography>
         <StatusChip status={r.status} stale={r.heartbeat_stale} size="medium" />
         {active && <Chip size="small" variant="outlined" label={stream.connection === 'live' ? t('run.live') : stream.connection === 'ended' ? t('run.ended') : t('run.connecting')} data-testid="stream-state" />}
-        <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ ml: { sm: 'auto' }, width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}>
           <Button size="small" onClick={stream.reconnect}>{t('run.reconnect')}</Button>
           {active &&
             (confirmCancel ? (
@@ -426,7 +428,7 @@ function ConfigTab({ runId, run }: { runId: string; run: RunView }) {
         <DownloadLink button variant="outlined" size="small"  href={artifactUrl(runId, 'config-resolved')} download={`${runId}.config.json`}>
           {t('run.config.download')}
         </DownloadLink>
-        <Button variant="contained" size="small" component={RouterLink} to={`/experiments/new?from=${encodeURIComponent(runId)}`}>
+        <Button variant="contained" size="small" component={RouterLink} to={'/experiments/new?' + new URLSearchParams({ from: runId, task: cfg.data.task, dataset: cfg.data.dataset.id, version: cfg.data.dataset.preprocessing_version ?? 'raw-v1' })}>
           {t('run.config.rerun')}
         </Button>
       </Stack>

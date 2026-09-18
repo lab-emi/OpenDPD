@@ -752,6 +752,56 @@
         "title": "AnalyzerConfig",
         "type": "object"
       },
+      "AnalyzerDataset": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "download_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Url"
+          },
+          "kind": {
+            "enum": [
+              "pa_input",
+              "pa_output",
+              "paired",
+              "upload"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyzerSourceInfo"
+            },
+            "title": "Signals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "name",
+          "kind",
+          "signals"
+        ],
+        "title": "AnalyzerDataset",
+        "type": "object"
+      },
       "AnalyzerRequest": {
         "additionalProperties": false,
         "properties": {
@@ -5399,6 +5449,19 @@
             "minItems": 1,
             "title": "Configs",
             "type": "array"
+          },
+          "dataset_name": {
+            "anyOf": [
+              {
+                "maxLength": 96,
+                "pattern": "^syn_pa_in_[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Name"
           }
         },
         "required": [
@@ -8846,6 +8909,28 @@
             "title": "Csv Url",
             "type": "string"
           },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "dataset_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Name"
+          },
           "iq_sha256": {
             "pattern": "^[0-9a-f]{64}$",
             "title": "Iq Sha256",
@@ -11232,7 +11317,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.15",
+            "default": "2.2.16",
             "title": "Version",
             "type": "string"
           }
@@ -11497,6 +11582,61 @@
           "notes"
         ],
         "title": "SignalAnalysis",
+        "type": "object"
+      },
+      "SignalDataset": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_id": {
+            "pattern": "^sds-[a-f0-9]{64}$",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "download_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Download Url"
+          },
+          "kind": {
+            "enum": [
+              "pa_input",
+              "pa_output"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "requested_name": {
+            "title": "Requested Name",
+            "type": "string"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyzerSourceInfo"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Signals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dataset_id",
+          "name",
+          "kind",
+          "signals",
+          "requested_name"
+        ],
+        "title": "SignalDataset",
         "type": "object"
       },
       "SignalMeasurement": {
@@ -13343,6 +13483,19 @@
       "VirtualPADatasetRequest": {
         "additionalProperties": false,
         "properties": {
+          "dataset_name": {
+            "anyOf": [
+              {
+                "maxLength": 96,
+                "pattern": "^syn_pa_inout_[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Name"
+          },
           "input_signal_ids": {
             "items": {
               "pattern": "^sg-[a-f0-9]{64}$",
@@ -13768,7 +13921,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.15"
+    "version": "2.2.16"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -17680,6 +17833,31 @@
         ]
       }
     },
+    "/api/v1/signal-analyzer/datasets": {
+      "get": {
+        "operationId": "datasets_api_v1_signal_analyzer_datasets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnalyzerDataset"
+                  },
+                  "title": "Response Datasets Api V1 Signal Analyzer Datasets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Datasets",
+        "tags": [
+          "signal analyzer"
+        ]
+      }
+    },
     "/api/v1/signal-analyzer/sources": {
       "get": {
         "operationId": "sources_api_v1_signal_analyzer_sources_get",
@@ -17786,6 +17964,172 @@
           }
         },
         "summary": "Generate Batch",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/datasets/{dataset_id}": {
+      "get": {
+        "operationId": "signal_dataset_api_v1_signal_generator_datasets__dataset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalDataset"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Signal Dataset",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/datasets/{dataset_id}/archive": {
+      "post": {
+        "operationId": "archive_signal_dataset_api_v1_signal_generator_datasets__dataset_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalDataset"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive Signal Dataset",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/datasets/{dataset_id}/download": {
+      "get": {
+        "operationId": "signal_dataset_download_api_v1_signal_generator_datasets__dataset_id__download_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Signal Dataset Download",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/datasets/{dataset_id}/restore": {
+      "post": {
+        "operationId": "restore_signal_dataset_api_v1_signal_generator_datasets__dataset_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalDataset"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Restore Signal Dataset",
         "tags": [
           "signal generator"
         ]

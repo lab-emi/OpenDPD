@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.16: named datasets and clearer Studio workflows
+
+Signal Generator separates Generate and Preview, with dataset naming and generation at the top of setup. Named input/output collections feed searchable Analyzer and Virtual PA selectors. Dataset pages emphasize model training; navigation, saved-run context, plot legends, dark mode and narrow-screen layouts are clearer. Short DPD captures are checked before training, and comparison plots show the correct signal traces and carrier integration bands.
+
+[Release notes](releases/release-notes-2.2.16.md)
+
 ## 2.2.15: focused training waveforms
 
 Output and reference now appear in separate I and Q charts, with two curves per chart, a short initial sample window and larger legends above the axes. Inputs and baselines remain available through individual signal selection. Completed results use the same view; training spectra have more room.

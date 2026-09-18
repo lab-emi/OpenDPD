@@ -6,6 +6,8 @@ Open **Signal Analyzer** in the sidebar, or select **Open in Signal Analyzer** f
 
 ## Choose a source
 
+Choose a named **Source dataset**, then a **Signal in dataset**. The searchable dataset selector groups input, output, paired and uploaded data. A collection keeps each member's own sample rate and bandwidth. CSV uploads are listed under their original filenames.
+
 - **Generated PA input:** reuse its exact exported samples and sample-rate metadata.
 - **Virtual PA output:** inspect a simulated response and optionally choose its input as an aligned reference.
 - **Dataset:** select input or output; a link from dataset inspection preserves the selected preprocessing version.

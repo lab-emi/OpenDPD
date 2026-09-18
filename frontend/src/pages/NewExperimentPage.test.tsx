@@ -182,6 +182,15 @@ test('an exported configuration can be imported and is submitted as is (resoluti
   expect(posted.config['resolution']).toBeUndefined()
 })
 
+test('an imported DPD configuration uses its actual task and dataset in navigation', async () => {
+  base(() => ({ ok: true, errors: [], warnings: [], resolved: null }))
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  await importConfiguration({ task: 'train_dpd', dataset: { id: 'another-dataset', preprocessing_version: 'aligned-v1' }, model: { key: 'gru', parameters: {} }, pa_reference: { run_id: 'saved-pa' } })
+  expect(await screen.findByRole('heading', { name: 'DPD Model' })).toBeVisible()
+  expect(screen.getByRole('link', { name: '02 DPD Model' })).toHaveAttribute('href', '/experiments/new?task=train_dpd&dataset=another-dataset&version=aligned-v1')
+})
+
 test('a profile pending cross-validation is computed by the service but never offered by the form', async () => {
   mockApi({
     'GET /api/v1/recipes': () => [recipe],

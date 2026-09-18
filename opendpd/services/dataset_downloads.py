@@ -145,15 +145,16 @@ def export_dataset(ws, dataset_id, version="raw-v1", collection=True):
         raise WorkspaceError("Dataset download supports at most 4,000,000 total samples.")
     target = Path(tempfile.mkdtemp(prefix="dataset-download-", dir=ws.exports_dir))
     try:
+        basename = parent.display_name if re.fullmatch(r"syn_pa_inout_[A-Za-z0-9][A-Za-z0-9_.-]{0,95}", parent.display_name) else dataset_id
         if len(manifests) == 1:
-            path = target / f"{dataset_id}.csv"
+            path = target / f"{basename}.csv"
             _csv(ws, parent, version, path)
             return path, target
         # Preset labels are never used as paths. IDs have already passed the schema.
         filenames = [f"{i+1:02d}-" + re.sub(r"[^A-Za-z0-9_-]", "-", c.preset_id)[:64] + ".csv"
                      for i, c in enumerate(parent.captures)]
         script = _replay(ws, manifests, filenames)
-        path = target / f"{dataset_id}.zip"
+        path = target / f"{basename}.zip"
         with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
             for manifest, filename in zip(manifests, filenames):
                 csv = target / filename

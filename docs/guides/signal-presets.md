@@ -60,6 +60,14 @@ The default ideal PA-input filter is a periodic-record, zero-phase FFT low-pass,
 
 Stop-band energy is tested on the full-record DFT; the displayed Welch PSD includes finite-window leakage and should not be interpreted as the exact filter response. Float32 export introduces a small numerical floor.
 
+## Dataset names and analysis
+
+The editable name beside **Generate & preview** is saved with the entire selected batch. A single-spec example is `syn_pa_in_nr_bw20M_q64_c1_n1`. A mixed example is `syn_pa_in_nr-w7_bw20-80M_q64-256_c1-4_s30-78p125k_n2`: NR and Wi-Fi 7, 20–80 MHz bandwidth, modulation orders 64–256, 1–4 OFDMA channels, 30–78.125 kHz subcarrier spacing, and two signals. Ranges describe the selected members, not every possible combination. `p` denotes PSK order when applicable; in numbers it replaces the decimal point. The exact configurations remain in the metadata.
+
+Automatic names follow setup changes until edited. **Use automatic name** resumes this behavior. The PA Library suggests an editable `syn_pa_inout_` name, including the PA model; the corresponding output dataset uses `syn_pa_out_`. Different data with an existing name receives a numbered suffix. Existing waveforms and datasets are preserved.
+
+Signal Analyzer selects a **Source dataset**, then a **Signal in dataset**. Paired datasets offer input and output for every capture. Switching signals updates the sampling rate, bandwidth, and sample range; click **Analyze signal** to update the results. Named input/output datasets persist in the workspace and download as ZIPs with separate I/Q CSVs and metadata for each signal. Signals with different sampling rates are never concatenated.
+
 ## Primary references
 
 - [ETSI / 3GPP TS 38.104 V18.9.0](https://www.etsi.org/deliver/etsi_ts/138100_138199/138104/18.09.00_60/ts_138104v180900p.pdf), Tables 5.3.2-1 and 5.3.2-2.

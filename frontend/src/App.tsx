@@ -44,7 +44,7 @@ function AppRoutes() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
-        <Route path="signal-generator" element={<SignalGeneratorPage />} />
+        <Route path="signal-generator/*" element={<SignalGeneratorPage />} />
         <Route path="signal-analyzer" element={<SignalAnalyzerPage />} />
         <Route path="pa-library" element={<PALibraryPage />} />
         <Route path="datasets" element={<DatasetsPage />} />

@@ -146,6 +146,7 @@ not_in_nav: |
   leaderboard/**
   protocols/**
   releases/**
+  reviews/**
 
 extra:
   social:

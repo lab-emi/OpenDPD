@@ -218,10 +218,18 @@ def archive_input(ws, identifier, *, restore=False):
 
 def generate_batch(ws, request):
     from opendpd.core.waveforms.generator import allocation
+    from opendpd.core.waveforms.dataset_names import dataset_name
+    from opendpd.schemas.signal_analyzer import AnalyzerSource, AnalyzerSourceInfo
+    from opendpd.services.signal_datasets import save_dataset
     for config in request.configs:
         if config.waveform == "ofdm":
             try:
                 allocation(config)
             except ValueError as exc:
                 raise WorkspaceError(str(exc)) from exc
-    return [input_summary(generate(ws, config)) for config in request.configs]
+    signals = [generate(ws, config) for config in request.configs]
+    members = [AnalyzerSourceInfo(source=AnalyzerSource(kind="generated", source_id=s.signal_id),
+        label=s.config.preset_id, sample_count=s.analysis.sample_count, sample_rate_hz=s.config.sample_rate_hz,
+        bandwidth_hz=s.config.bandwidth_hz, origin="synthetic") for s in signals]
+    dataset = save_dataset(ws, request.dataset_name or dataset_name(request.configs), "pa_input", members)
+    return [input_summary(s).model_copy(update={"dataset_id": dataset.dataset_id, "dataset_name": dataset.name}) for s in signals]

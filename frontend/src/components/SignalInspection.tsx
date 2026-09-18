@@ -84,10 +84,10 @@ export function SignalInspection({ data }: { data: DatasetAnalysis }) {
     x: data.am!.amp_in, y: amMode === 'am' ? tr.amp_out : tr.phase_deg, name: tr.name, type: 'scatter', mode: 'markers',
     marker: { size: 2.5, opacity: .4, color: colors.chart[1] },
   })), [data.am, amMode, colors])
-  const iqLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: 'I' }, constrain: 'domain' }, yaxis: { title: { text: 'Q' }, scaleanchor: 'x', scaleratio: 1 }, showlegend: true }), [])
+  const iqLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: 'I' }, constrain: 'domain' }, yaxis: { title: { text: 'Q' }, scaleanchor: 'x', scaleratio: 1 }, margin: { l: 56, r: 16, t: 64, b: 50 }, showlegend: true }), [])
   const amXTitle = t('chart.am.x'), amYTitle = t(amMode === 'am' ? 'chart.am.y' : 'chart.pm.y')
-  const amLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: amXTitle } }, yaxis: { title: { text: amYTitle } }, showlegend: true }), [amXTitle, amYTitle])
-  const height = tallViewport ? 276 : 174
+  const amLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: amXTitle } }, yaxis: { title: { text: amYTitle } }, margin: { l: 56, r: 16, t: 64, b: 50 }, showlegend: true }), [amXTitle, amYTitle])
+  const height = tallViewport ? 320 : 280
   const panel = { p: 1.25, minWidth: 0, overflow: 'hidden' }
   const constellationNote = showSymbols
     ? `${t('inspection.constellationNote')} ${data.constellation!.demodulator}; ${t('inspection.symbolWindow')}: ${data.constellation!.sample_range?.join('–')}. ${message(data.constellation!.note)}`

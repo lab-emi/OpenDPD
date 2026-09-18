@@ -1,4 +1,5 @@
 import DownloadIcon from '@mui/icons-material/Download'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { downloadFile } from '@/api/client'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
@@ -8,6 +9,9 @@ import Chip from '@mui/material/Chip'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import Alert from '@mui/material/Alert'
+import Accordion from '@mui/material/Accordion'
+import AccordionDetails from '@mui/material/AccordionDetails'
+import AccordionSummary from '@mui/material/AccordionSummary'
 import Button from '@mui/material/Button'
 import Grid from '@mui/material/Grid'
 import MenuItem from '@mui/material/MenuItem'
@@ -111,7 +115,7 @@ export function DatasetDetailPage() {
   const entry = useDataset(routeId)
   const collectionId = entry.data?.parent_dataset_id ?? routeId
   const parent = useDataset(collectionId)
-  const { state: { datasetId: workflowDatasetId }, selectCapture } = useStudioWorkflow()
+  const { state: { datasetId: workflowDatasetId }, selectCapture, selectDataset } = useStudioWorkflow()
   const [search, setSearch] = useSearchParams()
   const captures = parent.data?.captures ?? NO_CAPTURES
   const datasetId = captures.some(c => c.dataset_id === search.get('capture')) ? search.get('capture')! : captures.some(c => c.dataset_id === routeId) ? routeId : collectionId
@@ -133,8 +137,10 @@ export function DatasetDetailPage() {
   const select = (key: string, value: string) => setSearch((old) => { const next = new URLSearchParams(old); next.set(key, value); return next })
   const [created, setCreated] = useState<string | null>(null)
   useEffect(() => {
-    if (captures.some(c => c.dataset_id === workflowDatasetId)) selectCapture(datasetId, doctorVersion)
-  }, [captures, datasetId, doctorVersion, selectCapture, workflowDatasetId])
+    if (!ds.data) return
+    if (workflowDatasetId === datasetId || captures.some(c => c.dataset_id === workflowDatasetId)) selectCapture(datasetId, doctorVersion)
+    else selectDataset(datasetId, doctorVersion)
+  }, [captures, datasetId, doctorVersion, selectCapture, selectDataset, workflowDatasetId, ds.data])
   if (ds.isPending) return <LoadingState />
   if (ds.isError) return <ErrorState error={ds.error} onRetry={() => void ds.refetch()} />
   const d = ds.data
@@ -144,10 +150,12 @@ export function DatasetDetailPage() {
   return (
     <Stack spacing={1}>
       {search.get('guide') === 'ready' && <DatasetReadyGuide onClose={() => setSearch((old) => { const next = new URLSearchParams(old); next.delete('guide'); return next }, { replace: true })} />}
-      <Stack sx={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }} direction="row" spacing={1} useFlexGap>
-        <Box sx={{ flex: '1 1 200px', minWidth: 0 }}><Typography variant="overline" color="primary" sx={{ fontSize: 11, lineHeight: 1.3, letterSpacing: ".12em", fontWeight: 700 }}>{t('inspection.step')}</Typography><Typography variant="h1" noWrap title={datasetLabel(d)}>{datasetLabel(d)}</Typography></Box>
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: .5 }}>
-          {captures.length > 1 && <Button startIcon={<DownloadIcon />} variant="contained" disabled={downloading} onClick={() => download(collectionId, 'raw-v1', true)}>{t('datasets.downloadZip')}</Button>}
+      <Stack sx={{ alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between', gap: 2, mb: 1 }} direction={{ xs: 'column', md: 'row' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}><Typography variant="overline" color="primary" sx={{ fontSize: 11, lineHeight: 1.3, letterSpacing: ".12em", fontWeight: 700 }}>{t('inspection.step')}</Typography><Typography variant="h1" sx={{ overflowWrap: 'anywhere', mt: .5 }}>{datasetLabel(d)}</Typography></Box>
+        <Button variant="contained" size="large" sx={{ minHeight: 56, px: 3, fontSize: 16, fontWeight: 700, flexShrink: 0 }} endIcon={<ArrowForwardIcon />} component={RouterLink} to={`/experiments/new?dataset=${encodeURIComponent(datasetId)}&version=${encodeURIComponent(doctorVersion)}`} disabled={!analysis.data?.inspection_ready}>{t('inspection.configure')}</Button>
+      </Stack>
+      <Paper sx={{ p: 1.5 }}><Stack direction="row" useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+          {captures.length > 1 && <Button startIcon={<DownloadIcon />} variant="outlined" disabled={downloading} onClick={() => download(collectionId, 'raw-v1', true)}>{t('datasets.downloadZip')}</Button>}
           <Button startIcon={<DownloadIcon />} variant="outlined" disabled={downloading} onClick={() => download(datasetId, doctorVersion, false)}>{t('datasets.downloadCsv')}</Button>
           <TextField select size="small" label={t('form.dataVersion')} value={doctorVersion} onChange={(e) => select('version', e.target.value)} sx={{ minWidth: 125 }}>{names.map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}</TextField>
           <Button variant="outlined" onClick={() => setDialog('manifest')}>
@@ -156,10 +164,8 @@ export function DatasetDetailPage() {
           <Button variant="outlined" onClick={() => setDialog('preprocess')}>
             {t('datasets.detail.versions.new')}
           </Button>
-          <Button variant="contained" endIcon={<ArrowForwardIcon />} component={RouterLink} to={`/experiments/new?dataset=${encodeURIComponent(datasetId)}&version=${encodeURIComponent(doctorVersion)}`} disabled={!analysis.data?.inspection_ready}>{t('inspection.configure')}</Button>
           <Button variant="outlined" endIcon={<ArrowForwardIcon />} component={RouterLink} to={analyzerLink('dataset', datasetId, 'input', doctorVersion)}>{t('analyzer.open')}</Button>
-        </Stack>
-      </Stack>
+      </Stack></Paper>
       {captures.length > 1 && <Paper sx={{ p: 1.5 }}><Stack spacing={1}>
         <TextField select fullWidth label={t('datasets.capture')} value={datasetId} onChange={e => {
           setCreated(null); setDialog('none'); setSearch(old => { const next = new URLSearchParams(old); next.set('capture', e.target.value); next.delete('version'); return next })
@@ -168,9 +174,14 @@ export function DatasetDetailPage() {
       </Stack></Paper>}
       {!!downloadError && <ErrorState error={downloadError} />}
       {missing.length > 0 && <Alert severity="warning">{t('datasets.detail.missing', { fields: missing.join(', ') })}</Alert>}
-      {d.origin === 'synthetic' && <Alert severity="warning">{t('datasetResearch.syntheticNotice')}</Alert>}
-      {d.simulation && <Box component="details"><Typography component="summary">{t('datasetResearch.generatorDetails')}</Typography><Box component="pre" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{JSON.stringify(d.simulation, null, 2)}</Box></Box>}
-      <DatasetPublicationPanel key={datasetId} dataset={d} />
+      <Accordion key={datasetId} defaultExpanded={search.get('publish') === '1'} disableGutters>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography variant="body2" sx={{ fontWeight: 600 }}>{t('inspection.datasetDetails')}</Typography></AccordionSummary>
+        <AccordionDetails><Stack spacing={1.5}>
+          {d.origin === 'synthetic' && <Alert severity="warning">{t('datasetResearch.syntheticNotice')}</Alert>}
+          {d.simulation && <Box component="details"><Typography component="summary">{t('datasetResearch.generatorDetails')}</Typography><Box component="pre" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{JSON.stringify(d.simulation, null, 2)}</Box></Box>}
+          <DatasetPublicationPanel dataset={d} />
+        </Stack></AccordionDetails>
+      </Accordion>
       {created && (
         <Alert severity="success" onClose={() => setCreated(null)}>
           {t('datasets.preprocess.created', { version: created })}

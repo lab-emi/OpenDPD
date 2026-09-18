@@ -39,7 +39,8 @@ ROUTES["POST"] += [r"/signal-generator/batches", r"/pa-library/datasets", r"/sig
 ROUTES["GET"] += [r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/(input\.csv|metadata\.json)",
     r"/pa-library/models", r"/pa-library/simulations/vpa-[a-f0-9]{64}(/(output\.csv|paired\.csv|metadata\.json))?"]
 ROUTES["POST"] += [r"/signal-generator/signals/sg-[a-f0-9]{64}/(archive|restore)", r"/pa-library/simulations", r"/pa-library/simulations/vpa-[a-f0-9]{64}/dataset"]
-ROUTES["GET"] += [r"/signal-analyzer/sources"]
+ROUTES["POST"] += [r"/signal-generator/datasets/sds-[a-f0-9]{64}/(archive|restore)"]
+ROUTES["GET"] += [r"/signal-analyzer/(sources|datasets)", r"/signal-generator/datasets/sds-[a-f0-9]{64}(/download)?"]
 ROUTES["POST"] += [r"/signal-analyzer/(analyze|upload)"]
 
 
@@ -128,7 +129,7 @@ def allowed(method: str, path: str) -> bool:
 def expensive_request(method: str, path: str) -> bool:
     """Bound in-process numeric/file work separately from lightweight status and cancellation."""
     if method == 'GET':
-        return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/sources|/datasets/[^/]+/(analysis|download)|/results/compare|/results/[^/]+(/(report|review))?', path))
+        return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/(sources|datasets)|/signal-generator/datasets/[^/]+/download|/datasets/[^/]+/(analysis|download)|/results/compare|/results/[^/]+(/(report|review))?', path))
     return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/')))
 
 

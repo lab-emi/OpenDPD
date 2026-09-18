@@ -35,7 +35,7 @@ export function WorkflowProgress() {
     { key: 'dpd', label: t('paFlow.trainDPD'), symbol: 'DPD', done: workflow.dpdDone,
       route: '/experiments/new?task=train_dpd' + (state.datasetId ? '&dataset=' + encodeURIComponent(state.datasetId) : '') + (state.paRunId ? '&paRun=' + encodeURIComponent(state.paRunId) : '') },
   ]
-  const active = pathname === '/signal-generator' ? 0 : pathname === '/pa-library' ? (state.simulationId ? 2 : 1)
+  const active = pathname === '/signal-generator' || pathname.startsWith('/signal-generator/') ? 0 : pathname === '/pa-library' ? (state.simulationId ? 2 : 1)
     : pathname.startsWith('/datasets') ? 2 : new URLSearchParams(search).get('task')?.includes('dpd') ? 4
       : pathname.startsWith('/experiments') || pathname.startsWith('/runs') ? (state.dpdRunId ? 4 : 3) : -1
   const currentStep = steps[active] ?? steps.find(step => !step.done) ?? steps[4]!

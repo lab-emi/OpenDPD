@@ -2,6 +2,10 @@ import { runIdFromPath } from '@/api/client'
 import { useSession } from '@/api/hooks'
 import DatasetIcon from '@mui/icons-material/Dataset'
 import GraphicEqIcon from '@mui/icons-material/GraphicEq'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import PreviewIcon from '@mui/icons-material/Preview'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ElectricalServicesIcon from '@mui/icons-material/ElectricalServices'
 import HomeIcon from '@mui/icons-material/Home'
 import InsightsIcon from '@mui/icons-material/Insights'
@@ -69,20 +73,25 @@ export function AppShell() {
   const requestedTask = runId ? run.data?.task ?? null : new URLSearchParams(search).get('task')
   const task = isExperimentTask(requestedTask) ? requestedTask : null
   const datasetDetail = pathname.startsWith('/datasets/')
+  const generatorActive = pathname === '/signal-generator' || pathname.startsWith('/signal-generator/')
+  const generatorPreview = pathname === '/signal-generator/preview'
   const resultDetail = pathname.startsWith('/results/')
   const resetDetail = datasetDetail ? t('reset.page.dataset') : runId ? t('reset.page.experiment') : resultDetail ? t('reset.page.results') : undefined
   useEffect(() => {
-    if (revision > 0) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  }, [revision])
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    // Route changes and explicit same-page resets are the viewport triggers.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [pathname, revision])
+  const showWorkflow = !['/settings', '/about', '/server', '/hardware', '/robustness', '/sweeps'].some(path => pathname === path || pathname.startsWith(path + '/'))
   const reset = (global: boolean) => {
     // Drop selections encoded in detail URLs as well as drafts in React state.
     // A run restarts at its task's setup, never at the old progress dashboard.
     setRevision((value) => value + 1)
     if (global) { workflow.reset(); navigate('/datasets?guide=start', { replace: true }) }
     else {
-      if (pathname === '/signal-generator') workflow.reset()
+      if (generatorActive) workflow.reset()
       if (pathname === '/pa-library') workflow.resetPA()
-      const destination = datasetDetail ? '/datasets' : resultDetail ? '/results' : runId ? (task ? '/experiments/new' : '/experiments') : pathname.startsWith('/robustness/') ? '/robustness' : pathname
+      const destination = generatorActive ? '/signal-generator' : datasetDetail ? '/datasets' : resultDetail ? '/results' : runId ? (task ? '/experiments/new' : '/experiments') : pathname.startsWith('/robustness/') ? '/robustness' : pathname
       navigate({ pathname: destination, search: destination === '/experiments/new' && task ? `?task=${task}` : '', hash: '' }, { replace: true })
     }
     void queryClient.invalidateQueries()
@@ -105,19 +114,31 @@ export function AppShell() {
           </Box>
         </Box>
         <List component="nav" aria-label={t('nav.primary')} sx={{ px: 1, pt: 1 }}>
-          {NAV.map(({ to, key, Icon }) => (
-            <Tooltip key={to} title={t(key)} placement="right" disableHoverListener={wideNavigation}>
-              <ListItemButton component={Link} to={to} selected={active(to)} aria-current={active(to) ? 'page' : undefined} aria-label={t(key)} sx={{
+          {NAV.map(({ to, key, Icon }) => <Box key={to}>
+            <Tooltip title={t(key)} placement="right" disableHoverListener={wideNavigation}>
+              <ListItemButton component={Link} to={to} selected={active(to)} aria-current={active(to) && to !== '/signal-generator' ? 'page' : undefined} aria-label={t(key)}
+                aria-expanded={to === '/signal-generator' ? generatorActive : undefined} aria-controls={to === '/signal-generator' && generatorActive ? 'generator-navigation' : undefined} sx={{
                 minHeight: 44, px: 1.5, mb: .75, borderRadius: 1, color: 'inherit', position: 'relative',
                 ...(to === '/settings' ? { mt: 3 } : {}),
                 '&:hover': { bgcolor: colors.surfaceMuted },
                 '&.Mui-selected': { bgcolor: colors.selected, color: 'primary.main', '&:hover': { bgcolor: colors.selectedHover }, '&::before': { content: '""', position: 'absolute', width: 3, height: 22, left: 0, borderRadius: 2, bgcolor: 'primary.main' } },
               }}>
-                <ListItemIcon sx={{ minWidth: { xs: 24, md: 32 }, color: active(to) ? 'primary.main' : 'inherit' }}><Icon fontSize="small" /></ListItemIcon>
+                <ListItemIcon sx={{ minWidth: { xs: 24, md: to === '/signal-generator' ? 24 : 32 }, color: active(to) ? 'primary.main' : 'inherit' }}><Icon fontSize="small" /></ListItemIcon>
                 <ListItemText primary={t(key)} sx={{ display: { xs: 'none', md: 'block' } }} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: active(to) ? 650 : 450 } } }} />
+                {to === '/signal-generator' && (generatorActive ? <ExpandMoreIcon sx={{ fontSize: 16, display: { xs: 'none', md: 'block' } }} /> : <ChevronRightIcon sx={{ fontSize: 16, display: { xs: 'none', md: 'block' } }} />)}
               </ListItemButton>
             </Tooltip>
-          ))}
+            {to === '/signal-generator' && generatorActive && <List id="generator-navigation" component="div" role="group" aria-label={t('generator.navigation')} disablePadding sx={{ mb: 1, ml: { xs: 0, md: 2 }, borderLeft: { md: '1px solid' }, borderColor: 'divider' }}>
+              {[
+                { path: '/signal-generator', label: 'generator.page.generate' as const, ChildIcon: PlayArrowIcon, selected: !generatorPreview },
+                { path: '/signal-generator/preview', label: 'generator.page.preview' as const, ChildIcon: PreviewIcon, selected: generatorPreview },
+              ].map(({ path, label, ChildIcon, selected }) => <ListItemButton key={path} component={Link} to={path} selected={selected} aria-current={selected ? 'page' : undefined} aria-label={t(label)}
+                sx={{ minHeight: 44, px: { xs: .25, md: 1.25 }, py: .75, mb: .5, borderRadius: 1, flexDirection: { xs: 'column', md: 'row' }, gap: { xs: .25, md: 1 }, color: selected ? 'primary.main' : 'inherit', '&.Mui-selected': { bgcolor: colors.selected }, '&:hover': { bgcolor: colors.surfaceMuted } }}>
+                <ChildIcon sx={{ fontSize: 18 }} />
+                <Typography component="span" sx={{ fontSize: { xs: 9, md: 13 }, lineHeight: 1.4, fontWeight: selected ? 650 : 450 }}>{t(label)}</Typography>
+              </ListItemButton>)}
+            </List>}
+          </Box>)}
         </List>
         <Box sx={{ mt: 'auto', px: 2.5, py: 2, display: { xs: 'none', md: 'block' }, borderTop: '1px solid', borderColor: 'divider' }}>
           <Typography variant="caption">{WEB_MODE ? t('web.welcome') : t('shell.localWorkspace')}</Typography>
@@ -141,7 +162,7 @@ export function AppShell() {
       </AppBar>
       <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: { xs: WEB_MODE ? '108px' : '76px', sm: '76px' }, minWidth: 0 }}>
         <Box sx={{ maxWidth: tokens.layout.maxContent, mx: 'auto', minWidth: 0 }}>
-          <WorkflowProgress />
+          {showWorkflow && <WorkflowProgress />}
           <RouteContent />
           {(pathname.startsWith('/experiments') || pathname.startsWith('/runs/')) && <ExperimentTerminal />}
         </Box>
