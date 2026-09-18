@@ -233,6 +233,7 @@ class Project:
         train_set = IQFrameDataset(X_train, y_train, frame_length=self.frame_length, stride=self.frame_stride)
         val_set = IQSegmentDataset(X_val, y_val, nperseg=self.args.nperseg)
         test_set = IQSegmentDataset(X_test, y_test, nperseg=self.args.nperseg)
+        self.validation_samples, self.test_samples = len(X_val), len(X_test)
 
         # Define PyTorch Dataloaders
         pin_memory = self.device.type == 'cuda'
@@ -393,7 +394,8 @@ class Project:
                                                                criterion=criterion,
                                                                dataloader=val_loader,
                                                                device=self.device)
-                self.log_val = calculate_metrics(self.args, self.log_val, val_prediction, val_ground_truth)
+                self.log_val = calculate_metrics(self.args, self.log_val, val_prediction, val_ground_truth,
+                                                 valid_samples=self.validation_samples)
 
             # -----------
             # Test
@@ -406,7 +408,8 @@ class Project:
                                                                  criterion=criterion,
                                                                  dataloader=test_loader,
                                                                  device=self.device)
-                self.log_test = calculate_metrics(self.args, self.log_test, test_prediction, test_ground_truth)
+                self.log_test = calculate_metrics(self.args, self.log_test, test_prediction, test_ground_truth,
+                                                  valid_samples=self.test_samples)
 
             # Studio reuses the predictions already computed above. This hook
             # never enters the optimizer or checkpoint-selection path.

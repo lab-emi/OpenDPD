@@ -45,10 +45,20 @@ class Recipe:
         return data
 
 
-_SMOKE = dict(epochs=10, frame_length=50, frame_stride=16, batch_size_eval=256)
+_SMOKE = dict(epochs=10, frame_length=50, frame_stride=16)
 _RESEARCH = dict(epochs=150, frame_length=200, frame_stride=1)
 
 RECIPES: List[Recipe] = [
+    Recipe("pa-tres_gru-research-v1", "PA model, TRes-GRU, full training", "research", TaskType.train_pa,
+           ModelSpec(key="tres_gru", parameters={"hidden_size": 27, "num_layers": 1}), TrainingConfig(**_RESEARCH),
+           "Full Studio PA training: 150 epochs with AdamW and ReduceLROnPlateau.",
+           "Single seed; a starting point for training, not a benchmark claim.",
+           "minutes to tens of minutes on a GPU"),
+    Recipe("dpd-tres_gru-research-v1", "DPD, TRes-GRU, full training", "research", TaskType.train_dpd,
+           ModelSpec(key="tres_gru", parameters={"hidden_size": 15, "num_layers": 1}), TrainingConfig(**_RESEARCH),
+           "Full Studio DPD training: 150 epochs through a compatible PA model.",
+           "Requires a PA run with frame_length 200 and the same seed. PA-model predictions only.",
+           "minutes to tens of minutes on a GPU"),
     Recipe("pa-gru-smoke-v1", "PA model, GRU, smoke", "smoke", TaskType.train_pa,
            ModelSpec(key="gru", parameters={"hidden_size": 23, "num_layers": 1}), TrainingConfig(**_SMOKE),
            "Fast end-to-end check of PA modelling on CPU.",

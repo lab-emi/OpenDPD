@@ -36,8 +36,11 @@ def build_parser():
     parser.add_argument('--seed', default=0, type=int, help='Global random number seed.')
     parser.add_argument('--loss_type', default='l2', choices=['l1', 'l2'], help='Type of loss function.')
     parser.add_argument('--opt_type', default='adamw', choices=['sgd', 'adam', 'adamw', 'adabound', 'rmsprop'], help='Type of optimizer.')
-    parser.add_argument('--batch_size', default=64, type=int, help='Batch size for training.')
-    parser.add_argument('--batch_size_eval', default=64, type=int, help='Batch size for evaluation.')
+    parser.add_argument('--batch_size', default=16, type=int, help='Batch size for training.')
+    parser.add_argument('--batch_size_eval', default=16, type=int, help='Batch size for evaluation.')
+    parser.add_argument('--metric_profile', default='legacy-opendpd-v1',
+                        choices=['opendpd-spectral-v2', 'legacy-opendpd-v1'],
+                        help='Historical CLI defaults to legacy scores; Studio uses opendpd-spectral-v2 on valid samples.')
     parser.add_argument('--n_epochs', default=150, type=int, help='Number of epochs to train for.')
     parser.add_argument('--lr_schedule', default=1, type=int,
                         help='Whether to enable ReduceLROnPlateau learning-rate scheduling.')
@@ -59,15 +62,15 @@ def build_parser():
     parser.add_argument('--K', default=5, type=int, help='Degree of GMP model')
     parser.add_argument('--gmp_memory_length', default=11, type=int, help='Memory length of GMP model')
     # Power Amplifier Model Settings
-    parser.add_argument('--PA_backbone', default='gru',
+    parser.add_argument('--PA_backbone', default='tres_gru',
                         choices=legacy_choices('pa'),
                         help='Modeling PA Recurrent layer type')
-    parser.add_argument('--PA_hidden_size', default=23, type=int,
+    parser.add_argument('--PA_hidden_size', default=27, type=int,
                         help='Hidden size of PA backbone')
     parser.add_argument('--PA_num_layers', default=1, type=int,
                         help="Number of layers of the PA backbone.")
     # Digital Predistortion Model Settings
-    parser.add_argument('--DPD_backbone', default='gru',
+    parser.add_argument('--DPD_backbone', default='tres_gru',
                         choices=legacy_choices('dpd'),
                         help='DPD model Recurrent layer type')
     parser.add_argument('--DPD_hidden_size', default=15, type=int, help='Hidden size of DPD backbone.')

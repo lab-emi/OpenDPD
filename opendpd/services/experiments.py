@@ -91,7 +91,7 @@ RESULT_FILE = "result.json"
 RESULTS_DIR = "results"
 PLOTS_DIR = "plots"          # one result per metric profile
 
-METRIC_COLUMNS = ("NMSE", "EVM", "ACLR_L", "ACLR_R", "ACLR_AVG")
+METRIC_COLUMNS = ("NMSE", "EVM", "IBE", "ACLR_L", "ACLR_R", "ACLR_AVG", "ACPR_L", "ACPR_R")
 SMOKE_EPOCH_LIMIT = 10
 
 

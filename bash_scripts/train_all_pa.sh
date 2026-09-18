@@ -47,7 +47,7 @@ patience=${PATIENCE:-10}
 for i_seed in "${seed_values[@]}"; do
   for ((i=0; i<${#PA_backbone[@]}; i++)); do
     step=train_pa
-    "${PYTHON_BIN}" main.py \
+    "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 \
       --dataset_name "${dataset_name}" \
       --seed "${i_seed}" \
       --step "${step}" \

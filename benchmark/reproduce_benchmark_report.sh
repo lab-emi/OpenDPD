@@ -536,6 +536,7 @@ neural_common=(
   --patience 5
   --batch_size 64
   --batch_size_eval 64
+  --metric_profile legacy-opendpd-v1
   --loss_type l2
   --grad_clip_val 200
   --thx 0

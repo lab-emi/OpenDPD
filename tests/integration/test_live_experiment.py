@@ -36,9 +36,10 @@ def test_observer_preserves_checkpoint_and_scores_and_four_tasks_produce_live_sn
     monitor = live.load_live(ws, pa.run_id)
     assert monitor["preview"]["source"] == "final_test"
     assert monitor["preview"]["metrics"] == {m.name: m.value for m in load_result(ws, pa.run_id).metrics if m.value is not None}
-    assert monitor["preview"]["units"]["EVM"] == "dB"
-    assert any(kind == "progress" and payload.get("sequences") == 64 and payload.get("sequence_samples") == 50 for kind, payload in events)
-    assert any(kind == "metric" and payload.get("split") == "validation_probe" for kind, payload in events)
+    assert monitor["preview"]["units"]["IBE"] == "dB"
+    assert any(kind == "progress" and payload.get("sequences") == 16 and payload.get("sequence_samples") == 50 for kind, payload in events)
+    assert any(kind == "metric" and payload.get("split") == "val" for kind, payload in events)
+    assert not any(kind == "metric" and payload.get("split", "").endswith("_probe") for kind, payload in events)
     assert "preview_error" not in monitor
     assert len(json.dumps(monitor)) < 1_000_000
 
@@ -62,9 +63,10 @@ def test_observer_preserves_checkpoint_and_scores_and_four_tasks_produce_live_sn
 
     pa_test, test_events = run(ws, ExperimentConfig(task=TaskType.evaluate_pa, dataset=DatasetRef(id="dpa-200mhz"),
                                model=ModelSpec(key="gru"), pa_reference=PAReference(run_id=pa.run_id)))
-    assert any(p.get("split") == "test_probe" for _, p in test_events)
+    assert not any(p.get("split", "").endswith("_probe") for kind, p in test_events if kind == "metric")
     dpd, dpd_events = run(ws, instantiate("dpd-gru-smoke-v1", "dpa-200mhz", pa_run_id=pa.run_id))
-    assert any("ACLR_AVG" in p.get("values", {}) and p.get("split") == "validation_probe" for _, p in dpd_events)
+    assert any("ACLR_AVG" in p.get("values", {}) and p.get("split") == "val" for _, p in dpd_events)
+    assert not any(p.get("split", "").endswith("_probe") for kind, p in dpd_events if kind == "metric")
     applied, _ = run(ws, run_dpd_config("dpa-200mhz", dpd.run_id))
     for record in (pa_test, dpd, applied):
         snapshot = live.load_live(ws, record.run_id)
@@ -95,6 +97,6 @@ def test_native_backbone_recipe_trains_and_previews_through_original_pipeline(tm
     record, events = run(ws, config)
     snapshot = live.load_live(ws, record.run_id)
     assert "preview_error" not in snapshot
-    assert any(p.get("split") == "validation_probe" for _, p in events)
+    assert any(p.get("split") == "val" for _, p in events)
     assert snapshot["preview"]["source"] == "final_test"
     assert snapshot["preview"]["plots"]["time"]["traces"]

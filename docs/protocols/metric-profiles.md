@@ -7,7 +7,50 @@ of these is a scientific-semantics change: bump the profile version (or add a
 profile) and keep the old one reachable. `opendpd profiles` prints the
 registry; `GET /metrics/profiles` serves it to the GUI.
 
-## `legacy-opendpd-v1` (frozen)
+## `opendpd-spectral-v2` (Studio default, frozen)
+
+Studio training and final evaluation use the same valid-sample calculation.
+Evaluation tensors may contain padding in their final segment; that padding
+is excluded **before** estimating the spectrum or error. The old padded
+segment introduces a discontinuity that can dominate adjacent-channel power
+even when the original signal has very little leakage.
+
+The PSD is a two-sided Welch estimate: periodic Hann window, dataset
+`nperseg`, 50% overlap, no detrending, density scaling. Band power is the sum
+of bins with centre frequencies in `[low, high)`, multiplied by `fs/nperseg`.
+With occupied bandwidth `B` and `N = n_sub_ch`, each carrier has width
+`W = B/N`. Left and right adjacent bands are `[-B/2-W, -B/2)` and
+`[B/2, B/2+W)`. The reference is the strongest of the `N` in-band carriers.
+`ACLR_L/R = 10 log10(P_adjacent / P_reference)` are negative dBc (lower is
+better); `ACLR_AVG` is their arithmetic mean in dB. Missing metadata,
+insufficient samples or bands outside the capture produce an unavailable
+metric, never an invented score.
+
+NMSE is pooled over valid samples. IBE is the in-band error power ratio,
+using the same definition as `general-spectral-v1`; it is not demodulated
+constellation EVM. PA checkpoints use validation NMSE; DPD checkpoints use
+validation carrier `ACLR_AVG`. Validation/test history contains full-split
+evaluations only. Short live signal excerpts do not produce metric scores.
+
+Carrier ACLR differs from `general-spectral-v1` ACPR, which integrates an
+adjacent band as wide as the **whole** occupied signal and uses the whole
+main band as its reference. These are explicit baseband protocols, not
+NR, LTE or Wi-Fi transmitter conformance measurements. Compare results
+using the same profile, bandwidth, carrier count and sample rate.
+
+`tests/unit/test_metrics_spectral_v2.py` checks known adjacent-tone powers,
+bandwidths from 5–320 MHz, carrier counts, odd FFT sizes, incomplete segments
+and an NR 20 MHz padding regression against a separately written FFT
+periodogram implementation. Historical CLI/paper reproduction scripts retain
+`legacy-opendpd-v1`; pass `--metric_profile opendpd-spectral-v2` to the legacy
+CLI to opt into the new training calculation.
+
+The general and symbol-EVM profiles remain alternative report scorers. They
+retain the historical training objective; the exported historical CLI command
+therefore names `legacy-opendpd-v1`, while final reports keep their selected
+scoring profile. The CLI training flag offers only the two training protocols.
+
+## `legacy-opendpd-v1` (frozen, historical reproduction)
 
 The historical OpenDPD numbers, computed by `utils/metrics.py` exactly as the
 trainer calls it. Values are pinned by `tests/golden/legacy_metrics_v1.json`
@@ -98,7 +141,7 @@ result of a pending profile carries the limitation "pending cross-validation".
 The worker scores the **best checkpoint over the test split** once at the end
 of a run (`opendpd.services.evaluation.evaluate_all`): predictions are computed
 once and every registered profile is stored under `runs/<id>/results/<profile>.json`;
-the configured profile (`evaluation.profile_id`, default legacy) is the
+the configured profile (`evaluation.profile_id`, default `opendpd-spectral-v2`) is the
 primary `result.json`. Under the legacy profile this reproduces the trainer's
 own `TEST_*` log values (`test_result_metrics_come_from_the_registry_and_agree_with_the_training_log`).
 `opendpd evaluate RUN --profile P` re-scores later from the same checkpoint.

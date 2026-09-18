@@ -10,6 +10,8 @@ test('one trace per split with distinct marker symbols and dashes', async () => 
     { epoch: 0, split: 'val', values: { NMSE: -10 } },
     { epoch: 1, split: 'val', values: { NMSE: -12 } },
     { epoch: 1, split: 'test', values: { NMSE: -11 } },
+    { epoch: 1, split: 'validation_probe', values: { NMSE: -40 } },
+    { epoch: 1, split: 'test_probe', values: { NMSE: -42 } },
   ]
   render(<MetricHistoryChart points={points} metric="NMSE" />)
   await vi.waitFor(() => expect(reactMock).toHaveBeenCalledTimes(1))

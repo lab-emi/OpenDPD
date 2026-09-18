@@ -77,7 +77,7 @@ def test_mp_fit_identifies_the_synthetic_pa_and_records_the_fit(ws, mp_pa):
     assert [(h.epoch, h.split) for h in history] == [(0, "val"), (0, "test")] and "NMSE" in history[0].values
     provenance = json.loads((ws.run_dir(mp_pa.run_id) / "provenance.json").read_text())
     assert provenance["legacy_equivalent_command"] is None
-    again = evaluate_run(ws, mp_pa.run_id, "legacy-opendpd-v1")          # deterministic re-evaluation
+    again = evaluate_run(ws, mp_pa.run_id, result.metric_profile_id)          # deterministic re-evaluation
     assert again.metric("NMSE").value == pytest.approx(nmse, abs=1e-6)
 
 

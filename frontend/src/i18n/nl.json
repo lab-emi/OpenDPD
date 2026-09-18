@@ -258,7 +258,7 @@
   "metric.formula": "Formule",
   "metric.aggregation": "Aggregatie",
   "form.profile": "Metric calculation",
-  "form.profile.help": "Changes score definitions, not the model. Every supported calculation is saved; use the same method when comparing runs.",
+  "form.profile.help": "Training evaluates and selects checkpoints using valid-sample metrics. The legacy protocol reproduces historical results; padded tails can inflate leakage.",
   "results.detail.metric": "Meting",
   "results.detail.unit": "Eenheid · richting",
   "form.import": "Configuratie importeren…",
@@ -691,7 +691,7 @@
   "live.probe": "Livevoorbeeld · vast segment",
   "live.signals": "Uitgang versus referentie",
   "live.finalHelp": "Opgeslagen testsetgrafieken van het geëvalueerde checkpoint en de gedeelde meetservice.",
-  "live.probeHelp": "Vast {source}-segment · {samples} I/Q-samples. Voorbeeldmetingen zijn diagnostisch; checkpointselectie gebruikt de oorspronkelijke volledige validatieronde.",
+  "live.probeHelp": "Signaalfragment uit {source} · {samples} I/Q-samples. De metingen hierboven gebruiken de volledige evaluatieset.",
   "live.waitingSignals": "Het eerste berekende signaalvoorbeeld verschijnt hier.",
   "live.unavailable": "De live-momentopname kon niet worden geladen. Voortgang en terminallogboeken blijven beschikbaar.",
   "about.title": "Over",
@@ -1291,7 +1291,7 @@
   "profile.general": "General baseband · pooled error & leakage",
   "profile.legacy": "OpenDPD legacy · segment-averaged scores",
   "profile.ofdm": "OFDM symbol EVM · reference required",
-  "profile.help": "The calculation method defines averaging, spectral bands and references. It does not change training or the waveform.",
+  "profile.help": "The protocol defines spectral bands, reference power and valid samples. Compare results using the same protocol.",
   "ilc.title": "ILC linearization",
   "ilc.help": "Learn a PA input waveform by repeated feedback through a trained PA surrogate, then fit an ILA memory-polynomial DPD. ILC is waveform control; train a forward PA model first.",
   "ilc.defaults": "Starting settings: 30 iterations, learning gain 0.5, target NMSE −45 dB, peak limit 1.5× training-input peak, 6 backtracking steps. These are conservative starting values, not universally optimal.",
@@ -1467,5 +1467,6 @@
   "datasets.downloadCsv": "CSV downloaden",
   "datasets.downloadZip": "Alles downloaden · ZIP",
   "generator.removePreset": "Voorinstelling {name} verwijderen",
-  "spectrum.paModelHelp": "Het PA-model (surrogaat) is het getrainde versterkermodel. Zonder DPD: oorspronkelijke ingang → PA-model. Met DPD: oorspronkelijke ingang → DPD → hetzelfde PA-model. De PA-modelcurven zijn voorspellingen; datasetcurven zijn als gemeten of synthetisch gemarkeerd."
+  "spectrum.paModelHelp": "Het PA-model (surrogaat) is het getrainde versterkermodel. Zonder DPD: oorspronkelijke ingang → PA-model. Met DPD: oorspronkelijke ingang → DPD → hetzelfde PA-model. De PA-modelcurven zijn voorspellingen; datasetcurven zijn als gemeten of synthetisch gemarkeerd.",
+  "profile.spectral": "OpenDPD · draaggolf-ACLR op geldige samples"
 }

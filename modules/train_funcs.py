@@ -146,7 +146,20 @@ def net_eval(log: Dict,
     return net, prediction, ground_truth
 
 
-def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction: np.ndarray, ground_truth: np.ndarray):
+def calculate_metrics(args: argparse.Namespace, stat: Dict[str, Any], prediction: np.ndarray,
+                      ground_truth: np.ndarray, *, valid_samples=None):
+    if getattr(args, 'metric_profile', 'legacy-opendpd-v1') == 'opendpd-spectral-v2':
+        from opendpd.core.metrics import evaluate
+        from opendpd.schemas.dataset import SignalSpec
+        signal = SignalSpec(sample_rate_hz=args.input_signal_fs, bandwidth_hz=args.bw_main_ch,
+                            n_sub_ch=args.n_sub_ch, nperseg=args.nperseg)
+        scores = evaluate('opendpd-spectral-v2', prediction, ground_truth, signal, valid_samples=valid_samples)
+        for score in scores:
+            if score.value is None and score.name == ('ACLR_AVG' if args.step == 'train_dpd' else 'NMSE'):
+                raise ValueError(f'{score.name}: {score.reason}')
+            if score.value is not None:
+                stat[score.name] = score.value
+        return stat
     stat['NMSE'] = metrics.NMSE(prediction, ground_truth)
     stat['EVM'] = metrics.EVM(
         prediction,

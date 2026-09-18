@@ -81,7 +81,7 @@ def test_the_report_labels_every_number_by_how_it_was_obtained(package):
     manifest, _ = package
     r = manifest.report
     names = {d.name for d in r.quality_loss}
-    assert "NMSE" in names and r.metric_profile_id == "legacy-opendpd-v1"
+    assert "NMSE" in names and r.metric_profile_id == "opendpd-spectral-v2"
     nmse = next(d for d in r.quality_loss if d.name == "NMSE")
     assert nmse.float_value is not None and nmse.fixed_value is not None and nmse.delta == pytest.approx(nmse.fixed_value - nmse.float_value)
     assert abs(nmse.delta) < 3.0                                   # 16-bit words: a fraction of a dB on a smoke model
@@ -121,8 +121,8 @@ def test_cost_ledger_keeps_float_shapes_fixed_resources_and_host_timing_distinct
     from opendpd.services import hardware_costs
     from opendpd.services.experiments import load_result
     manifest, _ = package
-    original = load_result(ws, pa.run_id, 'legacy-opendpd-v1')
-    report = hardware_costs.report(ws, [pa.run_id], 'legacy-opendpd-v1')
+    original = load_result(ws, pa.run_id, manifest.report.metric_profile_id)
+    report = hardware_costs.report(ws, [pa.run_id], manifest.report.metric_profile_id)
     stored = next(e for e in report.entries if e.source_type == 'checkpoint_shapes')
     # A one-layer PyTorch GRU has input/recurrent/out weights and two GRU biases.
     h = 23

@@ -259,15 +259,7 @@ class LiveMonitor:
         return ObservedLoader(loader, self, "evaluate", after), handle
 
     def publish(self, prediction, target, x, args, source, u=None):
-        from utils.metrics import NMSE, ACLR
-        from opendpd.core.metrics import get_profile
-        values = {"NMSE": float(NMSE(prediction, target))}
         dpd = self.resolved.task.value in ("train_dpd", "run_dpd")
-        if dpd:
-            left, right = ACLR(prediction, fs=args.input_signal_fs, nperseg=args.nperseg,
-                               bw_main_ch=args.bw_main_ch, n_sub_ch=args.n_sub_ch)
-            values.update(ACLR_L=float(left), ACLR_R=float(right), ACLR_AVG=float((left + right) / 2))
-        values = {key: value for key, value in values.items() if math.isfinite(value)}
         signals = {"Input x": x, "Linear target" if dpd else "Measured PA output": target,
                    "DPD → PA surrogate" if dpd else "PA model output": prediction}
         roles = dict(zip(signals, ("input", "reference", "primary")))
@@ -277,23 +269,19 @@ class LiveMonitor:
         spec = self.dataset.signal
         plots = {"time": time_excerpt(signals, roles),
                  "spectrum": spectrum(signals, roles, sample_rate_hz=spec.sample_rate_hz,
+                                      n_sub_ch=(spec.n_sub_ch or 1) if self.resolved.evaluation.profile_id in ("opendpd-spectral-v2", "legacy-opendpd-v1") else 1,
                                       nperseg=spec.nperseg, bandwidth_hz=spec.bandwidth_hz, input_node="dpd_input" if dpd else "pa_input")}
         for trace in plots['spectrum']['traces']:
             trace['source'] = ('synthetic dataset' if self.dataset.origin.value == 'synthetic' else 'measured dataset') if trace['role'] == 'input' or (not dpd and trace['role'] == 'reference') else 'linear target' if trace['role'] == 'reference' else 'DPD model' if trace['role'] == 'predistorted' else 'PA surrogate' if dpd else 'PA model'
         self.revision += 1
-        units = {key: get_profile("legacy-opendpd-v1").metric(key).unit for key in values}
         preview = {"revision": self.revision, "updated_at": datetime.now(timezone.utc).isoformat(),
                    "source": source, "epoch": max(0, self.epoch), "global_step": self.steps,
-                   "metrics": values, "units": units,
-                   "metric_profile": "legacy-opendpd-v1",
+                   "metrics": {}, "units": {},
                    "plots": plots, "samples": int(prediction.shape[1]),
                    "every_batches": self.every_batches}
         self.state["preview"] = preview
         self.save()
-        position = max(0, self.epoch) + self.current.get("batch", 0) / max(1, self.current.get("total_batches", 1))
-        self.emit(RunEventType.metric, {"epoch": position, "split": source, "values": values})
         self.emit(RunEventType.progress, {**self.current, "preview_revision": self.revision})
-        print(f"[OpenDPD] {source} · " + " · ".join(f"{k}={v:.4f} {units[k]}" for k, v in values.items()), flush=True)
 
     def complete(self, result):
         plots = {}

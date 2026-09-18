@@ -82,7 +82,7 @@ quant_opts=(--quant --n_bits_w "${quant_n_bits_w}" --n_bits_a "${quant_n_bits_a}
 q_pretrain=${Q_PRETRAIN:-True}
 
 run_python() {
-  "${PYTHON_BIN}" main.py "$@" || exit 1
+  "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 "$@" || exit 1
 }
 
 for i_seed in "${seed_values[@]}"; do

@@ -258,7 +258,7 @@
   "metric.formula": "수식",
   "metric.aggregation": "집계",
   "form.profile": "Metric calculation",
-  "form.profile.help": "Changes score definitions, not the model. Every supported calculation is saved; use the same method when comparing runs.",
+  "form.profile.help": "Training evaluates and selects checkpoints using valid-sample metrics. The legacy protocol reproduces historical results; padded tails can inflate leakage.",
   "results.detail.metric": "메트릭",
   "results.detail.unit": "단위 · 방향",
   "form.import": "구성 가져오기…",
@@ -691,7 +691,7 @@
   "live.probe": "실시간 미리보기 · 고정 구간",
   "live.signals": "출력과 기준 신호 비교",
   "live.finalHelp": "평가된 가중치와 공통 계산 서비스에서 생성한 테스트 데이터의 저장된 그래프입니다.",
-  "live.probeHelp": "고정 {source} 구간 · I/Q 샘플 {samples}개. 미리보기 지표는 관찰용이며 가중치 선택에는 원래의 전체 검증 과정을 사용합니다.",
+  "live.probeHelp": "{source} 신호 구간 · I/Q 샘플 {samples}개. 위 지표는 전체 평가 데이터를 사용합니다.",
   "live.waitingSignals": "처음 계산된 신호 미리보기가 여기에 표시됩니다.",
   "live.unavailable": "실시간 미리보기를 불러올 수 없습니다. 진행 상황과 터미널 로그를 확인하세요.",
   "about.title": "정보",
@@ -1291,7 +1291,7 @@
   "profile.general": "General baseband · pooled error & leakage",
   "profile.legacy": "OpenDPD legacy · segment-averaged scores",
   "profile.ofdm": "OFDM symbol EVM · reference required",
-  "profile.help": "The calculation method defines averaging, spectral bands and references. It does not change training or the waveform.",
+  "profile.help": "The protocol defines spectral bands, reference power and valid samples. Compare results using the same protocol.",
   "ilc.title": "ILC linearization",
   "ilc.help": "Learn a PA input waveform by repeated feedback through a trained PA surrogate, then fit an ILA memory-polynomial DPD. ILC is waveform control; train a forward PA model first.",
   "ilc.defaults": "Starting settings: 30 iterations, learning gain 0.5, target NMSE −45 dB, peak limit 1.5× training-input peak, 6 backtracking steps. These are conservative starting values, not universally optimal.",
@@ -1467,5 +1467,6 @@
   "datasets.downloadCsv": "CSV 다운로드",
   "datasets.downloadZip": "전체 다운로드 · ZIP",
   "generator.removePreset": "프리셋 {name} 제거",
-  "spectrum.paModelHelp": "PA 모델(surrogate, 대리 모델)은 학습된 증폭기 모델입니다. DPD 없음: 원래 입력 → PA 모델. DPD 적용: 원래 입력 → DPD → 동일한 PA 모델. PA 모델 곡선은 예측 결과이며 데이터셋 곡선은 실측 또는 합성으로 표시됩니다."
+  "spectrum.paModelHelp": "PA 모델(surrogate, 대리 모델)은 학습된 증폭기 모델입니다. DPD 없음: 원래 입력 → PA 모델. DPD 적용: 원래 입력 → DPD → 동일한 PA 모델. PA 모델 곡선은 예측 결과이며 데이터셋 곡선은 실측 또는 합성으로 표시됩니다.",
+  "profile.spectral": "OpenDPD · 유효 샘플의 반송파 ACLR"
 }

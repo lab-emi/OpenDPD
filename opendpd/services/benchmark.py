@@ -54,8 +54,11 @@ def _from_recipe(entry_id: str, recipe_id: str, pa_entry: Optional[str] = None,
                  parameters: Optional[Dict[str, object]] = None) -> BenchmarkEntry:
     recipe = get_recipe(recipe_id)
     model = recipe.model if parameters is None else ModelSpec(key=recipe.model.key, parameters=parameters)
+    # benchmark-v1 retains its registered batches when interactive defaults change.
+    training = recipe.training.model_copy(update={"batch_size": 64,
+                                                  "batch_size_eval": 256 if recipe.purpose == "smoke" else 64})
     return BenchmarkEntry(entry_id=entry_id, task=recipe.task, recipe_id=recipe_id, model=model,
-                          training=recipe.training, pa_entry=pa_entry)
+                          training=training, pa_entry=pa_entry)
 
 
 def default_entries(tier: str) -> List[BenchmarkEntry]:

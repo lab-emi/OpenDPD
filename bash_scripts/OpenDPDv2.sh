@@ -63,7 +63,7 @@ for i_seed in "${seed_values[@]}"; do
   # Train the PA model per seed with the full architecture and training config;
   # the DPD stage looks up the PA checkpoint by seed.
   printf '\033[32m==== Train PA model (seed=%s, dataset=%s, backbone=%s) ====\033[0m\n' "${i_seed}" "${dataset_name}" "${PA_backbone}"
-  "${PYTHON_BIN}" main.py \
+  "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 \
     --dataset_name "${dataset_name}" \
     --seed "${i_seed}" \
     --step train_pa \
@@ -87,7 +87,7 @@ for i_seed in "${seed_values[@]}"; do
 
   for ((i=0; i<${#DPD_backbone[@]}; i++)); do
     printf '\033[32m==== Pre-training DPD (seed=%s, backbone=%s) ====\033[0m\n' "${i_seed}" "${DPD_backbone[$i]}"
-    "${PYTHON_BIN}" main.py \
+    "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 \
       --dataset_name "${dataset_name}" \
       --seed "${i_seed}" \
       --step train_dpd \
@@ -129,7 +129,7 @@ for i_seed in "${seed_values[@]}"; do
     printf '[INFO] QAT will fine-tune from: %s\n' "${pretrained_model}"
 
     printf '\033[32m==== Quantized aware training (label %s) ====\033[0m\n' "${quant_dir_label}"
-    "${PYTHON_BIN}" main.py \
+    "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 \
       --dataset_name "${dataset_name}" \
       --seed "${i_seed}" \
       --step train_dpd \
@@ -160,7 +160,7 @@ for i_seed in "${seed_values[@]}"; do
       "${quant_opts[@]}"
 
     printf '\033[32m==== Run DPD (label %s) ====\033[0m\n' "${quant_dir_label}"
-    "${PYTHON_BIN}" main.py \
+    "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 \
       --dataset_name "${dataset_name}" \
       --seed "${i_seed}" \
       --step run_dpd \

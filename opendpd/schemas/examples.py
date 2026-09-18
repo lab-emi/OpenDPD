@@ -103,6 +103,11 @@ def general_metric_profile() -> MetricProfile:
     return PROFILE
 
 
+def spectral_metric_profile() -> MetricProfile:
+    from opendpd.core.metrics.spectral_v2 import PROFILE
+    return PROFILE
+
+
 def ofdm_metric_profile() -> MetricProfile:
     """Data-aided EVM and ACLR on captures bound to the ofdm-lte20-v1 waveform (S15); pending cross-validation."""
     from opendpd.core.metrics.ofdm_evm_v1 import PROFILE
@@ -668,6 +673,7 @@ def all_examples() -> Dict[str, object]:
             "nr-20", "nr-100", "nr-fr2", "nr-fr1-30-20-q16-c1", "nr-fr1-30-100-q16-c1",
             "nr-fr1-30-20-q64-c2", "nr-fr1-30-100-q64-c2", "wifi6-20", "wifi6-80", "wifi7-20", "wifi7-320"}],
         "virtual_pa_models": catalog(),
+        "metric_profile_spectral": spectral_metric_profile(),
         "metric_profile_legacy": legacy_metric_profile(),
         "metric_profile_general": general_metric_profile(),
         "metric_profile_ofdm_evm": ofdm_metric_profile(),

@@ -50,7 +50,7 @@ DPD_num_layers=(1 2 1 1)
 
 run_step() {
   local step=$1
-  "${PYTHON_BIN}" main.py \
+  "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 \
     --dataset_name "${dataset_name}" \
     --seed "${i_seed}" \
     --step "${step}" \

@@ -1,0 +1,1670 @@
+{
+  "protocol": "opendpd-spectral-v2",
+  "independent_estimator": "manual NumPy FFT, periodic Hann, 50% overlap; no scipy.signal.welch or production PSD helper",
+  "compute_source_manifest_sha256": "ce683001649737da6c4805f9b2ba5dcb2dab560f7b456306690174c8e4c8d5be",
+  "synthetic_and_measured_checks": [
+    {
+      "dataset": "nr-fr1-15-5-q16-c1",
+      "origin": "synthetic",
+      "raw_sha256": "c5f94a0b8260e41d1983e3c6f98e665efef9010e85468548161017739fb68c24",
+      "signal": {
+        "sample_rate_hz": 30720000.0,
+        "bandwidth_hz": 5000000.0,
+        "sub_channel_bandwidth_hz": 5000000.0,
+        "n_sub_ch": 1,
+        "nperseg": 2048,
+        "modulation": "OFDM synthetic PA input",
+        "standard": null,
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": "rapp-solid-state",
+      "generator": {
+        "version": "signal-generator-v1",
+        "preset_id": "nr-fr1-15-5-q16-c1",
+        "waveform": "ofdm",
+        "sample_rate_hz": 30720000.0,
+        "bandwidth_hz": 5000000.0,
+        "carrier_frequency_hz": 3500000000.0,
+        "length_mode": "samples",
+        "n_samples": 65536,
+        "duration_ms": 1.0,
+        "seed": 42,
+        "rms": 0.2,
+        "fft_size": 512,
+        "oversampling": 4,
+        "channel_subcarriers": [
+          300
+        ],
+        "channel_modulations": [
+          16
+        ],
+        "channel_power_db": [
+          0.0
+        ],
+        "shared_channel_settings": true,
+        "channel_gap_bins": 0,
+        "dc_null": true,
+        "pilot_mode": "comb",
+        "pilot_spacing": 12,
+        "pilot_indices": [],
+        "pilot_boost_db": 0.0,
+        "cp_mode": "nr_normal",
+        "cp_samples": 16,
+        "modulation_order": 64,
+        "samples_per_symbol": 8,
+        "rrc_rolloff": 0.25,
+        "rrc_span_symbols": 10,
+        "psk_order": 8,
+        "payload_mode": "random",
+        "payload_bits": "00110101",
+        "dft_spreading": false,
+        "fsk_deviation_hz": 1000000.0,
+        "gaussian_bt": 0.5,
+        "tone_frequency_hz": 1000000.0,
+        "tone_count": 8,
+        "multitone_phase": "random",
+        "phase_offset_deg": 0.0,
+        "phase_noise_rms_deg": 0.0,
+        "burst_on_samples": null,
+        "burst_off_samples": 1024,
+        "burst_ramp_samples": 32,
+        "frequency_offset_hz": 0.0,
+        "iq_gain_db": 0.0,
+        "iq_phase_deg": 0.0,
+        "dc_i": 0.0,
+        "dc_q": 0.0,
+        "snr_db": null,
+        "filter_enabled": true,
+        "clip_db": null
+      },
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 39014,
+          "max_oracle_error_db": 3.552713678800501e-15,
+          "metrics": {
+            "ACLR_L": -28.971104263683138,
+            "ACLR_R": -28.939628720491115,
+            "ACLR_AVG": -28.955366492087126
+          }
+        },
+        "val": {
+          "valid_samples": 13004,
+          "max_oracle_error_db": 7.105427357601002e-15,
+          "metrics": {
+            "ACLR_L": -29.13864797602523,
+            "ACLR_R": -29.54964695384701,
+            "ACLR_AVG": -29.34414746493612
+          }
+        },
+        "test": {
+          "valid_samples": 13006,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.074492250494764,
+            "ACLR_R": -29.896391898651533,
+            "ACLR_AVG": -29.98544207457315
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135222-33ccb0",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 18,
+          "metrics": {
+            "NMSE": -49.88722398710095,
+            "IBE": -52.21278204025383,
+            "ACLR_L": -30.083401573169922,
+            "ACLR_R": -29.918820798993117,
+            "ACLR_AVG": -30.00111118608152
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135222-33ccb0",
+              "weights_sha256": "c58e048b2897e9e80746c8d05c0b89c89bc212f47156c60ee94ae8bd56453f78",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -30.083401573169922,
+              "ACLR_R": -29.918820798993117,
+              "ACLR_AVG": -30.00111118608152
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135229-876168",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 28,
+          "metrics": {
+            "NMSE": -51.0425796067485,
+            "IBE": -51.62306025253913,
+            "ACLR_L": -63.56402814113907,
+            "ACLR_R": -63.321543552335925,
+            "ACLR_AVG": -63.44278584673749
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135229-876168",
+              "weights_sha256": "b6850e4ed6eeca6c59403a768037a22af42941011d0f4c7fbabb0fa9c5995fe9",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135222-33ccb0",
+              "weights_sha256": "c58e048b2897e9e80746c8d05c0b89c89bc212f47156c60ee94ae8bd56453f78",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 4.973799150320701e-14,
+            "metrics": {
+              "ACLR_L": -63.56402814113907,
+              "ACLR_R": -63.321543552335925,
+              "ACLR_AVG": -63.44278584673749
+            }
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "nr-20",
+      "origin": "synthetic",
+      "raw_sha256": "4829b6da5ae25ce239c1e000e18c9c1eaa4d22e5e55946c461c4494fd43040f6",
+      "signal": {
+        "sample_rate_hz": 122880000.0,
+        "bandwidth_hz": 20000000.0,
+        "sub_channel_bandwidth_hz": 20000000.0,
+        "n_sub_ch": 1,
+        "nperseg": 4096,
+        "modulation": "OFDM synthetic PA input",
+        "standard": null,
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": "memory-polynomial",
+      "generator": {
+        "version": "signal-generator-v1",
+        "preset_id": "nr-20",
+        "waveform": "ofdm",
+        "sample_rate_hz": 122880000.0,
+        "bandwidth_hz": 20000000.0,
+        "carrier_frequency_hz": 3500000000.0,
+        "length_mode": "samples",
+        "n_samples": 65536,
+        "duration_ms": 1.0,
+        "seed": 42,
+        "rms": 0.2,
+        "fft_size": 1024,
+        "oversampling": 4,
+        "channel_subcarriers": [
+          612
+        ],
+        "channel_modulations": [
+          64
+        ],
+        "channel_power_db": [
+          0.0
+        ],
+        "shared_channel_settings": true,
+        "channel_gap_bins": 0,
+        "dc_null": true,
+        "pilot_mode": "comb",
+        "pilot_spacing": 12,
+        "pilot_indices": [],
+        "pilot_boost_db": 0.0,
+        "cp_mode": "nr_normal",
+        "cp_samples": 16,
+        "modulation_order": 64,
+        "samples_per_symbol": 8,
+        "rrc_rolloff": 0.25,
+        "rrc_span_symbols": 10,
+        "psk_order": 8,
+        "payload_mode": "random",
+        "payload_bits": "00110101",
+        "dft_spreading": false,
+        "fsk_deviation_hz": 1000000.0,
+        "gaussian_bt": 0.5,
+        "tone_frequency_hz": 1000000.0,
+        "tone_count": 8,
+        "multitone_phase": "random",
+        "phase_offset_deg": 0.0,
+        "phase_noise_rms_deg": 0.0,
+        "burst_on_samples": null,
+        "burst_off_samples": 1024,
+        "burst_ramp_samples": 32,
+        "frequency_offset_hz": 0.0,
+        "iq_gain_db": 0.0,
+        "iq_phase_deg": 0.0,
+        "dc_i": 0.0,
+        "dc_q": 0.0,
+        "snr_db": null,
+        "filter_enabled": true,
+        "clip_db": null
+      },
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 39014,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -39.665455186106286,
+            "ACLR_R": -38.76060705495659,
+            "ACLR_AVG": -39.21303112053144
+          }
+        },
+        "val": {
+          "valid_samples": 13004,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -39.44104088714496,
+            "ACLR_R": -38.24840775771799,
+            "ACLR_AVG": -38.844724322431475
+          }
+        },
+        "test": {
+          "valid_samples": 13006,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -38.98790910644932,
+            "ACLR_R": -38.050958317944946,
+            "ACLR_AVG": -38.519433712197134
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135248-b830ba",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 19,
+          "metrics": {
+            "NMSE": -50.9096070188389,
+            "IBE": -51.929418870008554,
+            "ACLR_L": -38.97910448629004,
+            "ACLR_R": -38.12190975305883,
+            "ACLR_AVG": -38.550507119674435
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135248-b830ba",
+              "weights_sha256": "72a936775d4fc26aa3303a4f381262ff824795381d974ae6793be76afebcd934",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -38.97910448629004,
+              "ACLR_R": -38.12190975305883,
+              "ACLR_AVG": -38.550507119674435
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135255-98ba20",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 28,
+          "metrics": {
+            "NMSE": -53.370261133020406,
+            "IBE": -54.38391307484807,
+            "ACLR_L": -62.23690738594322,
+            "ACLR_R": -63.82495539582631,
+            "ACLR_AVG": -63.03093139088476
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135255-98ba20",
+              "weights_sha256": "47ec66911ebb3fd4394ff5aa625a9d2b24a3c623ec0300bc73f7b2db74c7812c",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135248-b830ba",
+              "weights_sha256": "72a936775d4fc26aa3303a4f381262ff824795381d974ae6793be76afebcd934",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 3.552713678800501e-14,
+            "metrics": {
+              "ACLR_L": -62.23690738594322,
+              "ACLR_R": -63.82495539582631,
+              "ACLR_AVG": -63.03093139088476
+            }
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "nr-fr1-30-100-q256-c1",
+      "origin": "synthetic",
+      "raw_sha256": "830163ee645fdb89e01d13306bbebf33014acf8f2134518f7d57dd2390b146c2",
+      "signal": {
+        "sample_rate_hz": 491520000.0,
+        "bandwidth_hz": 100000000.0,
+        "sub_channel_bandwidth_hz": 100000000.0,
+        "n_sub_ch": 1,
+        "nperseg": 4096,
+        "modulation": "OFDM synthetic PA input",
+        "standard": null,
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": "saleh-twta",
+      "generator": {
+        "version": "signal-generator-v1",
+        "preset_id": "nr-fr1-30-100-q256-c1",
+        "waveform": "ofdm",
+        "sample_rate_hz": 491520000.0,
+        "bandwidth_hz": 100000000.0,
+        "carrier_frequency_hz": 3500000000.0,
+        "length_mode": "samples",
+        "n_samples": 65536,
+        "duration_ms": 1.0,
+        "seed": 42,
+        "rms": 0.2,
+        "fft_size": 4096,
+        "oversampling": 4,
+        "channel_subcarriers": [
+          3276
+        ],
+        "channel_modulations": [
+          256
+        ],
+        "channel_power_db": [
+          0.0
+        ],
+        "shared_channel_settings": true,
+        "channel_gap_bins": 0,
+        "dc_null": true,
+        "pilot_mode": "comb",
+        "pilot_spacing": 12,
+        "pilot_indices": [],
+        "pilot_boost_db": 0.0,
+        "cp_mode": "nr_normal",
+        "cp_samples": 16,
+        "modulation_order": 64,
+        "samples_per_symbol": 8,
+        "rrc_rolloff": 0.25,
+        "rrc_span_symbols": 10,
+        "psk_order": 8,
+        "payload_mode": "random",
+        "payload_bits": "00110101",
+        "dft_spreading": false,
+        "fsk_deviation_hz": 1000000.0,
+        "gaussian_bt": 0.5,
+        "tone_frequency_hz": 1000000.0,
+        "tone_count": 8,
+        "multitone_phase": "random",
+        "phase_offset_deg": 0.0,
+        "phase_noise_rms_deg": 0.0,
+        "burst_on_samples": null,
+        "burst_off_samples": 1024,
+        "burst_ramp_samples": 32,
+        "frequency_offset_hz": 0.0,
+        "iq_gain_db": 0.0,
+        "iq_phase_deg": 0.0,
+        "dc_i": 0.0,
+        "dc_q": 0.0,
+        "snr_db": null,
+        "filter_enabled": true,
+        "clip_db": null
+      },
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 39014,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.12592395517037,
+            "ACLR_R": -30.223104998921695,
+            "ACLR_AVG": -30.17451447704603
+          }
+        },
+        "val": {
+          "valid_samples": 13004,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.50720671444639,
+            "ACLR_R": -30.191463404980475,
+            "ACLR_AVG": -30.349335059713432
+          }
+        },
+        "test": {
+          "valid_samples": 13006,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.258236648323347,
+            "ACLR_R": -30.443440920339494,
+            "ACLR_AVG": -30.350838784331422
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135315-314778",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 14,
+          "metrics": {
+            "NMSE": -49.8450334005076,
+            "IBE": -52.18704866130385,
+            "ACLR_L": -30.26385741118855,
+            "ACLR_R": -30.472831737205546,
+            "ACLR_AVG": -30.368344574197046
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135315-314778",
+              "weights_sha256": "db3e1a8d3464cddc5bb3db67af8b3e21c6c40067f1b2f2790b045ec9fd5e46e6",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 3.552713678800501e-15,
+            "metrics": {
+              "ACLR_L": -30.26385741118855,
+              "ACLR_R": -30.472831737205546,
+              "ACLR_AVG": -30.368344574197046
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135322-e3551f",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 29,
+          "metrics": {
+            "NMSE": -47.77849824343613,
+            "IBE": -50.03802952044079,
+            "ACLR_L": -55.06007355066046,
+            "ACLR_R": -53.853029301359726,
+            "ACLR_AVG": -54.456551426010094
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135322-e3551f",
+              "weights_sha256": "4a59b4cdc61bd35024cde1f8ca7f46955476ab319a52201d888f19d9cf0bf394",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135315-314778",
+              "weights_sha256": "db3e1a8d3464cddc5bb3db67af8b3e21c6c40067f1b2f2790b045ec9fd5e46e6",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 2.842170943040401e-14,
+            "metrics": {
+              "ACLR_L": -55.06007355066046,
+              "ACLR_R": -53.853029301359726,
+              "ACLR_AVG": -54.456551426010094
+            }
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "wifi6-20-q64-c1",
+      "origin": "synthetic",
+      "raw_sha256": "93a3746f46d5ca04fe96599c7c2098e0e203a5c3aaf2341dcc1e31419cdeccc2",
+      "signal": {
+        "sample_rate_hz": 80000000.0,
+        "bandwidth_hz": 20000000.0,
+        "sub_channel_bandwidth_hz": 20000000.0,
+        "n_sub_ch": 1,
+        "nperseg": 1024,
+        "modulation": "OFDM synthetic PA input",
+        "standard": null,
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": "rapp-am-pm",
+      "generator": {
+        "version": "signal-generator-v1",
+        "preset_id": "wifi6-20-q64-c1",
+        "waveform": "ofdm",
+        "sample_rate_hz": 80000000.0,
+        "bandwidth_hz": 20000000.0,
+        "carrier_frequency_hz": 5800000000.0,
+        "length_mode": "samples",
+        "n_samples": 65536,
+        "duration_ms": 1.0,
+        "seed": 42,
+        "rms": 0.2,
+        "fft_size": 256,
+        "oversampling": 4,
+        "channel_subcarriers": [
+          242
+        ],
+        "channel_modulations": [
+          64
+        ],
+        "channel_power_db": [
+          0.0
+        ],
+        "shared_channel_settings": true,
+        "channel_gap_bins": 0,
+        "dc_null": true,
+        "pilot_mode": "comb",
+        "pilot_spacing": 16,
+        "pilot_indices": [],
+        "pilot_boost_db": 0.0,
+        "cp_mode": "fixed",
+        "cp_samples": 16,
+        "modulation_order": 64,
+        "samples_per_symbol": 8,
+        "rrc_rolloff": 0.25,
+        "rrc_span_symbols": 10,
+        "psk_order": 8,
+        "payload_mode": "random",
+        "payload_bits": "00110101",
+        "dft_spreading": false,
+        "fsk_deviation_hz": 1000000.0,
+        "gaussian_bt": 0.5,
+        "tone_frequency_hz": 1000000.0,
+        "tone_count": 8,
+        "multitone_phase": "random",
+        "phase_offset_deg": 0.0,
+        "phase_noise_rms_deg": 0.0,
+        "burst_on_samples": null,
+        "burst_off_samples": 1024,
+        "burst_ramp_samples": 32,
+        "frequency_offset_hz": 0.0,
+        "iq_gain_db": 0.0,
+        "iq_phase_deg": 0.0,
+        "dc_i": 0.0,
+        "dc_q": 0.0,
+        "snr_db": null,
+        "filter_enabled": true,
+        "clip_db": null
+      },
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 39014,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -28.250406261594563,
+            "ACLR_R": -28.168190439403517,
+            "ACLR_AVG": -28.20929835049904
+          }
+        },
+        "val": {
+          "valid_samples": 13004,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -28.150449626776325,
+            "ACLR_R": -27.975832154119967,
+            "ACLR_AVG": -28.063140890448146
+          }
+        },
+        "test": {
+          "valid_samples": 13006,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -28.155857606710498,
+            "ACLR_R": -28.02193741601089,
+            "ACLR_AVG": -28.088897511360692
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135341-fabdd3",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 19,
+          "metrics": {
+            "NMSE": -47.74399989122281,
+            "IBE": -51.17200724735059,
+            "ACLR_L": -28.164241703920414,
+            "ACLR_R": -28.040411112502028,
+            "ACLR_AVG": -28.10232640821122
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135341-fabdd3",
+              "weights_sha256": "c70bb4fc7148dceca77971bfddd3f81c48bfeb0aa21ed32b583f0d3bcec22163",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -28.164241703920414,
+              "ACLR_R": -28.040411112502028,
+              "ACLR_AVG": -28.10232640821122
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135350-442a03",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 29,
+          "metrics": {
+            "NMSE": -51.18770358324923,
+            "IBE": -52.65873033941701,
+            "ACLR_L": -60.521649222892826,
+            "ACLR_R": -59.39520852880101,
+            "ACLR_AVG": -59.95842887584692
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135350-442a03",
+              "weights_sha256": "02409c0f49ee7fbdbd84506c49219382cdc0ca1be3266ffd17717bf2ff3a2e8a",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135341-fabdd3",
+              "weights_sha256": "c70bb4fc7148dceca77971bfddd3f81c48bfeb0aa21ed32b583f0d3bcec22163",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 3.552713678800501e-14,
+            "metrics": {
+              "ACLR_L": -60.521649222892826,
+              "ACLR_R": -59.39520852880101,
+              "ACLR_AVG": -59.95842887584692
+            }
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "wifi6-80",
+      "origin": "synthetic",
+      "raw_sha256": "0d0078f36752f9a930ff92a5a127a8357f03cc8f4a62c5bed3690be0d17ccbce",
+      "signal": {
+        "sample_rate_hz": 320000000.0,
+        "bandwidth_hz": 80000000.0,
+        "sub_channel_bandwidth_hz": 80000000.0,
+        "n_sub_ch": 1,
+        "nperseg": 4096,
+        "modulation": "OFDM synthetic PA input",
+        "standard": null,
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": "generalized-memory",
+      "generator": {
+        "version": "signal-generator-v1",
+        "preset_id": "wifi6-80",
+        "waveform": "ofdm",
+        "sample_rate_hz": 320000000.0,
+        "bandwidth_hz": 80000000.0,
+        "carrier_frequency_hz": 5800000000.0,
+        "length_mode": "samples",
+        "n_samples": 65536,
+        "duration_ms": 1.0,
+        "seed": 42,
+        "rms": 0.2,
+        "fft_size": 1024,
+        "oversampling": 4,
+        "channel_subcarriers": [
+          996
+        ],
+        "channel_modulations": [
+          1024
+        ],
+        "channel_power_db": [
+          0.0
+        ],
+        "shared_channel_settings": true,
+        "channel_gap_bins": 0,
+        "dc_null": true,
+        "pilot_mode": "comb",
+        "pilot_spacing": 16,
+        "pilot_indices": [],
+        "pilot_boost_db": 0.0,
+        "cp_mode": "fixed",
+        "cp_samples": 64,
+        "modulation_order": 64,
+        "samples_per_symbol": 8,
+        "rrc_rolloff": 0.25,
+        "rrc_span_symbols": 10,
+        "psk_order": 8,
+        "payload_mode": "random",
+        "payload_bits": "00110101",
+        "dft_spreading": false,
+        "fsk_deviation_hz": 1000000.0,
+        "gaussian_bt": 0.5,
+        "tone_frequency_hz": 1000000.0,
+        "tone_count": 8,
+        "multitone_phase": "random",
+        "phase_offset_deg": 0.0,
+        "phase_noise_rms_deg": 0.0,
+        "burst_on_samples": null,
+        "burst_off_samples": 1024,
+        "burst_ramp_samples": 32,
+        "frequency_offset_hz": 0.0,
+        "iq_gain_db": 0.0,
+        "iq_phase_deg": 0.0,
+        "dc_i": 0.0,
+        "dc_q": 0.0,
+        "snr_db": null,
+        "filter_enabled": true,
+        "clip_db": null
+      },
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 39014,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -37.100539193063106,
+            "ACLR_R": -36.76201268707055,
+            "ACLR_AVG": -36.931275940066826
+          }
+        },
+        "val": {
+          "valid_samples": 13004,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -37.327413430951246,
+            "ACLR_R": -37.05135508751689,
+            "ACLR_AVG": -37.18938425923407
+          }
+        },
+        "test": {
+          "valid_samples": 13006,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -37.454059989478225,
+            "ACLR_R": -36.898322940383466,
+            "ACLR_AVG": -37.176191464930845
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135410-325215",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 19,
+          "metrics": {
+            "NMSE": -50.04914786660144,
+            "IBE": -52.40641145170624,
+            "ACLR_L": -37.53932592328319,
+            "ACLR_R": -37.008242686361854,
+            "ACLR_AVG": -37.27378430482252
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135410-325215",
+              "weights_sha256": "bc3618550811a90fb3ce6f76ecb3c3f196d771e6c9ccbf98b9afc9fdd2c2b70c",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -37.53932592328319,
+              "ACLR_R": -37.008242686361854,
+              "ACLR_AVG": -37.27378430482252
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135416-aefb52",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 29,
+          "metrics": {
+            "NMSE": -51.366596022788045,
+            "IBE": -51.97543371500465,
+            "ACLR_L": -64.01919077784747,
+            "ACLR_R": -64.68296078405943,
+            "ACLR_AVG": -64.35107578095345
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135416-aefb52",
+              "weights_sha256": "ec6e3a0e50143791e977e05ab0c1c168b0bcac411ca1e2f53a4e60b04f13a9a8",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135410-325215",
+              "weights_sha256": "bc3618550811a90fb3ce6f76ecb3c3f196d771e6c9ccbf98b9afc9fdd2c2b70c",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 2.842170943040401e-14,
+            "metrics": {
+              "ACLR_L": -64.01919077784747,
+              "ACLR_R": -64.68296078405943,
+              "ACLR_AVG": -64.35107578095345
+            }
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "wifi7-320",
+      "origin": "synthetic",
+      "raw_sha256": "d9638c5fc73d3e0b7557b4438fab8b2356a40fc853326dabf889ffa7536e68f8",
+      "signal": {
+        "sample_rate_hz": 1280000000.0,
+        "bandwidth_hz": 320000000.0,
+        "sub_channel_bandwidth_hz": 320000000.0,
+        "n_sub_ch": 1,
+        "nperseg": 4096,
+        "modulation": "OFDM synthetic PA input",
+        "standard": null,
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": "doherty-two-path",
+      "generator": {
+        "version": "signal-generator-v1",
+        "preset_id": "wifi7-320",
+        "waveform": "ofdm",
+        "sample_rate_hz": 1280000000.0,
+        "bandwidth_hz": 320000000.0,
+        "carrier_frequency_hz": 6100000000.0,
+        "length_mode": "samples",
+        "n_samples": 65536,
+        "duration_ms": 1.0,
+        "seed": 42,
+        "rms": 0.2,
+        "fft_size": 4096,
+        "oversampling": 4,
+        "channel_subcarriers": [
+          3984
+        ],
+        "channel_modulations": [
+          4096
+        ],
+        "channel_power_db": [
+          0.0
+        ],
+        "shared_channel_settings": true,
+        "channel_gap_bins": 0,
+        "dc_null": true,
+        "pilot_mode": "comb",
+        "pilot_spacing": 16,
+        "pilot_indices": [],
+        "pilot_boost_db": 0.0,
+        "cp_mode": "fixed",
+        "cp_samples": 256,
+        "modulation_order": 64,
+        "samples_per_symbol": 8,
+        "rrc_rolloff": 0.25,
+        "rrc_span_symbols": 10,
+        "psk_order": 8,
+        "payload_mode": "random",
+        "payload_bits": "00110101",
+        "dft_spreading": false,
+        "fsk_deviation_hz": 1000000.0,
+        "gaussian_bt": 0.5,
+        "tone_frequency_hz": 1000000.0,
+        "tone_count": 8,
+        "multitone_phase": "random",
+        "phase_offset_deg": 0.0,
+        "phase_noise_rms_deg": 0.0,
+        "burst_on_samples": null,
+        "burst_off_samples": 1024,
+        "burst_ramp_samples": 32,
+        "frequency_offset_hz": 0.0,
+        "iq_gain_db": 0.0,
+        "iq_phase_deg": 0.0,
+        "dc_i": 0.0,
+        "dc_q": 0.0,
+        "snr_db": null,
+        "filter_enabled": true,
+        "clip_db": null
+      },
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 39014,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.881121845074368,
+            "ACLR_R": -30.976635264527506,
+            "ACLR_AVG": -30.92887855480094
+          }
+        },
+        "val": {
+          "valid_samples": 13004,
+          "max_oracle_error_db": 3.552713678800501e-15,
+          "metrics": {
+            "ACLR_L": -30.96710551725692,
+            "ACLR_R": -30.92328148123691,
+            "ACLR_AVG": -30.945193499246912
+          }
+        },
+        "test": {
+          "valid_samples": 13006,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.922793346238578,
+            "ACLR_R": -30.735428145504233,
+            "ACLR_AVG": -30.829110745871404
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135435-b38d77",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 19,
+          "metrics": {
+            "NMSE": -37.731146823334576,
+            "IBE": -42.34489204308203,
+            "ACLR_L": -31.18059796131113,
+            "ACLR_R": -30.91768160322456,
+            "ACLR_AVG": -31.049139782267844
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135435-b38d77",
+              "weights_sha256": "0ce29915edf96967a794972a269f0fc92f4ef4879000cc09fc9d33f9524262c7",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -31.18059796131113,
+              "ACLR_R": -30.91768160322456,
+              "ACLR_AVG": -31.049139782267844
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135442-849e77",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 4,
+          "seed": 0,
+          "selected_epoch_zero_based": 29,
+          "metrics": {
+            "NMSE": -40.11367330303166,
+            "IBE": -43.25516873881021,
+            "ACLR_L": -46.80861956217173,
+            "ACLR_R": -46.74366686315671,
+            "ACLR_AVG": -46.77614321266422
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135442-849e77",
+              "weights_sha256": "c5151d15cbc6258ef77fb465ca95711afe289e9add31e445560b33f26d892aad",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135435-b38d77",
+              "weights_sha256": "0ce29915edf96967a794972a269f0fc92f4ef4879000cc09fc9d33f9524262c7",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 13006,
+            "max_oracle_error_db": 7.105427357601002e-15,
+            "metrics": {
+              "ACLR_L": -46.80861956217173,
+              "ACLR_R": -46.74366686315671,
+              "ACLR_AVG": -46.77614321266422
+            }
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "DPA_160MHz",
+      "origin": "measured",
+      "raw_sha256": "c34a94be52e9d35eff0bd9291279302ce11c94cf67c8a7e16082ba35138ed882",
+      "signal": {
+        "sample_rate_hz": 640000000.0,
+        "bandwidth_hz": 160000000.0,
+        "sub_channel_bandwidth_hz": 40000000.0,
+        "n_sub_ch": 4,
+        "nperseg": 16384,
+        "modulation": "1024QAM",
+        "standard": null,
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": null,
+      "generator": null,
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 294912,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -35.00971348088728,
+            "ACLR_R": -33.7485481029798,
+            "ACLR_AVG": -34.379130791933534
+          }
+        },
+        "val": {
+          "valid_samples": 98304,
+          "max_oracle_error_db": 7.105427357601002e-15,
+          "metrics": {
+            "ACLR_L": -34.39346160519636,
+            "ACLR_R": -33.5980128312267,
+            "ACLR_AVG": -33.99573721821153
+          }
+        },
+        "test": {
+          "valid_samples": 98304,
+          "max_oracle_error_db": 7.105427357601002e-15,
+          "metrics": {
+            "ACLR_L": -34.52644598047336,
+            "ACLR_R": -32.81779979938725,
+            "ACLR_AVG": -33.67212288993031
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135501-6018ce",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 16,
+          "seed": 0,
+          "selected_epoch_zero_based": 16,
+          "metrics": {
+            "NMSE": -39.414745431603116,
+            "IBE": -42.46458380281233,
+            "ACLR_L": -34.896841048352215,
+            "ACLR_R": -33.19493424559639,
+            "ACLR_AVG": -34.04588764697431
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135501-6018ce",
+              "weights_sha256": "c7dac0ee63d288a9323053bdf3e0e8a51e3cb7c9019a8497c3700f8ffeae6928",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 98304,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -34.896841048352215,
+              "ACLR_R": -33.19493424559639,
+              "ACLR_AVG": -34.04588764697431
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135515-674c79",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 16,
+          "seed": 0,
+          "selected_epoch_zero_based": 28,
+          "metrics": {
+            "NMSE": -48.199915691555894,
+            "IBE": -51.32778316378024,
+            "ACLR_L": -44.25467922128029,
+            "ACLR_R": -38.63622366268572,
+            "ACLR_AVG": -41.44545144198301
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135515-674c79",
+              "weights_sha256": "e559c11bc56f4942eb9c190832791e78a3d67d8fbedf5db3f15c838051280207",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135501-6018ce",
+              "weights_sha256": "c7dac0ee63d288a9323053bdf3e0e8a51e3cb7c9019a8497c3700f8ffeae6928",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 98304,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -44.25467922128029,
+              "ACLR_R": -38.63622366268572,
+              "ACLR_AVG": -41.44545144198301
+            }
+          }
+        }
+      ]
+    },
+    {
+      "dataset": "DPA_200MHz",
+      "origin": "measured",
+      "raw_sha256": "9464a16d98426c749dec06bf65c93e4f3811b1b6a0d55c9a9d1385bebc94d9b4",
+      "signal": {
+        "sample_rate_hz": 800000000.0,
+        "bandwidth_hz": 200000000.0,
+        "sub_channel_bandwidth_hz": 20000000.0,
+        "n_sub_ch": 10,
+        "nperseg": 2560,
+        "modulation": "64QAM",
+        "standard": "LTE",
+        "amplitude_units": "normalized",
+        "waveform": null
+      },
+      "virtual_pa": null,
+      "generator": null,
+      "passed": true,
+      "baseline_checks": {
+        "train": {
+          "valid_samples": 23040,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.08949254264699,
+            "ACLR_R": -27.336372581925676,
+            "ACLR_AVG": -28.712932562286333
+          }
+        },
+        "val": {
+          "valid_samples": 7680,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -31.709399270841182,
+            "ACLR_R": -28.966351035121964,
+            "ACLR_AVG": -30.337875152981574
+          }
+        },
+        "test": {
+          "valid_samples": 7680,
+          "max_oracle_error_db": 0.0,
+          "metrics": {
+            "ACLR_L": -30.281335557625336,
+            "ACLR_R": -27.59621581839977,
+            "ACLR_AVG": -28.938775688012555
+          }
+        }
+      },
+      "runs": [
+        {
+          "role": "pa",
+          "run_id": "run-20260918-135553-ee2edb",
+          "epochs": 20,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 16,
+          "seed": 0,
+          "selected_epoch_zero_based": 19,
+          "metrics": {
+            "NMSE": -33.32248840182447,
+            "IBE": -36.17677748216017,
+            "ACLR_L": -30.775378353220923,
+            "ACLR_R": -28.06497235416162,
+            "ACLR_AVG": -29.42017535369127
+          },
+          "models": [
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135553-ee2edb",
+              "weights_sha256": "25d792cca8d0d041a134e68d58ad39e68f5f8d93e7f81bd5e3cd5adb73467d86",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 7680,
+            "max_oracle_error_db": 7.105427357601002e-15,
+            "metrics": {
+              "ACLR_L": -30.775378353220923,
+              "ACLR_R": -28.06497235416162,
+              "ACLR_AVG": -29.42017535369127
+            }
+          }
+        },
+        {
+          "role": "dpd",
+          "run_id": "run-20260918-135556-c4edb7",
+          "epochs": 30,
+          "batch_size": 16,
+          "batch_size_eval": 16,
+          "frame_length": 200,
+          "frame_stride": 16,
+          "seed": 0,
+          "selected_epoch_zero_based": 29,
+          "metrics": {
+            "NMSE": -32.92013517181493,
+            "IBE": -33.63508019886269,
+            "ACLR_L": -33.50611094556108,
+            "ACLR_R": -30.491640854620382,
+            "ACLR_AVG": -31.99887590009073
+          },
+          "models": [
+            {
+              "role": "dpd",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 15,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135556-c4edb7",
+              "weights_sha256": "88624772ef67a09748c627bbead84957849f892cf5daa22b6a8d8204d15daef1",
+              "n_parameters": 999,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient_dla"
+            },
+            {
+              "role": "pa",
+              "model": {
+                "key": "tres_gru",
+                "parameters": {
+                  "hidden_size": 27,
+                  "num_layers": 1
+                }
+              },
+              "run_id": "run-20260918-135553-ee2edb",
+              "weights_sha256": "25d792cca8d0d041a134e68d58ad39e68f5f8d93e7f81bd5e3cd5adb73467d86",
+              "n_parameters": 2751,
+              "execution_semantics": "offline_segmented",
+              "lookahead_samples": 16,
+              "training_path": "gradient"
+            }
+          ],
+          "independent_check": {
+            "valid_samples": 7680,
+            "max_oracle_error_db": 0.0,
+            "metrics": {
+              "ACLR_L": -33.50611094556108,
+              "ACLR_R": -30.491640854620382,
+              "ACLR_AVG": -31.99887590009073
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "apa": {
+    "run_id": "run-20260918-135951-6cecd1",
+    "selected_epoch_zero_based": 221,
+    "test_samples": 19662,
+    "oracle": {
+      "ACLR_L": -55.53738797455223,
+      "ACLR_R": -55.6893903363605,
+      "ACLR_AVG": -55.61338915545637
+    },
+    "stored_metrics": {
+      "NMSE": -45.38032252231887,
+      "IBE": -46.20447785154886,
+      "ACLR_L": -55.53738797455223,
+      "ACLR_R": -55.68939033636049,
+      "ACLR_AVG": -55.61338915545636
+    },
+    "profiles": {
+      "legacy-opendpd-v1": {
+        "NMSE": -45.38032150268555,
+        "EVM": -46.13133772036566,
+        "ACLR_L": -55.53738832653683,
+        "ACLR_R": -55.686698162532025,
+        "ACLR_AVG": -55.612043244534426
+      },
+      "general-spectral-v1": {
+        "NMSE": -45.38032252231887,
+        "IBE": -46.20447785154886,
+        "ACPR_L": -57.43167754324037,
+        "ACPR_R": -58.822322976642226
+      }
+    },
+    "models": [
+      {
+        "role": "dpd",
+        "model": {
+          "key": "tres_gru",
+          "parameters": {
+            "hidden_size": 15,
+            "num_layers": 1
+          }
+        },
+        "run_id": "run-20260918-135951-6cecd1",
+        "weights_sha256": "5fe1b66b99d6dcc094a35491830b8b7df17f0b91510b84f42b07ce1ef3f77a86",
+        "n_parameters": 999,
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": 16,
+        "training_path": "gradient_dla"
+      },
+      {
+        "role": "pa",
+        "model": {
+          "key": "tres_gru",
+          "parameters": {
+            "hidden_size": 27,
+            "num_layers": 1
+          }
+        },
+        "run_id": "run-20260918-135126-f8d1fd",
+        "weights_sha256": "01b0f863f2d81ce2a4fdaaf41016f3d3f6dd574f2de3dd9902dea184f221a3dc",
+        "n_parameters": 2751,
+        "execution_semantics": "offline_segmented",
+        "lookahead_samples": 16,
+        "training_path": "gradient"
+      }
+    ],
+    "max_oracle_error_db": 1.4210854715202004e-14
+  }
+}

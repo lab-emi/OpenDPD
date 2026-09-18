@@ -258,7 +258,7 @@
   "metric.formula": "公式",
   "metric.aggregation": "聚合方式",
   "form.profile": "指标计算方式",
-  "form.profile.help": "改变指标定义，不改变模型。系统保存全部支持的计算方式；比较实验时请使用相同方式。",
+  "form.profile.help": "训练使用有效样本指标评估并选择模型。旧协议仅用于复现历史结果，补零末段可能抬高泄漏值。",
   "results.detail.metric": "指标",
   "results.detail.unit": "单位 · 方向",
   "form.import": "导入配置…",
@@ -691,7 +691,7 @@
   "live.probe": "实时预览 · 固定片段",
   "live.signals": "输出与参考信号对比",
   "live.finalHelp": "展示所评估 checkpoint 的测试集图形，数据来自统一计算服务。",
-  "live.probeHelp": "固定 {source} 片段 · {samples} 个 I/Q sample。预览指标用于观察，checkpoint 仍由原有完整验证流程选择。",
+  "live.probeHelp": "{source}的信号片段 · {samples} 个 I/Q 样本。上方指标使用完整评估数据。",
   "live.waitingSignals": "首个计算完成的信号预览将在这里显示。",
   "live.unavailable": "暂时无法加载实时图形，请查看进度与 Terminal 日志。",
   "about.title": "关于",
@@ -1291,7 +1291,7 @@
   "profile.general": "通用基带 · 汇总误差与泄漏",
   "profile.legacy": "OpenDPD 传统 · 分段指标平均",
   "profile.ofdm": "OFDM 符号 EVM · 需要参考",
-  "profile.help": "计算方式规定平均方法、频带和参考信号，不改变训练或波形。",
+  "profile.help": "计算协议规定频谱积分带宽、参考功率和样本范围；比较结果时请保持协议一致。",
   "ilc.title": "ILC 线性化",
   "ilc.help": "通过已训练的 PA 代理模型反复反馈，学习 PA 输入波形，再用 ILA 拟合记忆多项式 DPD。ILC 是波形控制；请先训练前向 PA 模型。",
   "ilc.defaults": "建议起点：30 次迭代、学习增益 0.5、目标 NMSE −45 dB、峰值上限为训练输入峰值的 1.5 倍、6 次回退。这些是保守的初始值，不是适合所有 PA 的最优值。",
@@ -1467,5 +1467,6 @@
   "datasets.downloadCsv": "下载 CSV",
   "datasets.downloadZip": "下载全部 · ZIP",
   "generator.removePreset": "移除预设 {name}",
-  "spectrum.paModelHelp": "PA 模型（surrogate，替代模型）是训练得到的功放模型。无 DPD：原始输入 → PA 模型。有 DPD：原始输入 → DPD → 同一个 PA 模型。PA 模型曲线为预测结果，数据集曲线会单独标注“实测”或“合成”。"
+  "spectrum.paModelHelp": "PA 模型（surrogate，替代模型）是训练得到的功放模型。无 DPD：原始输入 → PA 模型。有 DPD：原始输入 → DPD → 同一个 PA 模型。PA 模型曲线为预测结果，数据集曲线会单独标注“实测”或“合成”。",
+  "profile.spectral": "OpenDPD · 有效样本载波 ACLR"
 }

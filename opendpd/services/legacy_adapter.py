@@ -81,6 +81,10 @@ def build_namespace(resolved: ResolvedExperimentConfig, *, dataset_dir: Path,
     ns.re_level = t.reproducibility
     ns.eval_val = int(t.eval_val)
     ns.eval_test = int(t.eval_test)
+    # General/symbol profiles are report scorers. Preserve their historical
+    # training objective; only the new Studio protocol changes that objective.
+    ns.metric_profile = ("opendpd-spectral-v2" if resolved.evaluation.profile_id == "opendpd-spectral-v2"
+                         else "legacy-opendpd-v1")
 
     e = resolved.execution
     ns.accelerator = e.device

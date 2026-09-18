@@ -43,8 +43,8 @@ class TrainingConfig(StrictModel):
     single source of defaults for every entry point."""
 
     epochs: int = Field(default=150, ge=1)
-    batch_size: int = Field(default=64, ge=1)
-    batch_size_eval: int = Field(default=64, ge=1)
+    batch_size: int = Field(default=16, ge=1)
+    batch_size_eval: int = Field(default=16, ge=1)
     learning_rate: float = Field(default=5e-3, gt=0)
     lr_end: float = Field(default=5e-5, gt=0)
     lr_schedule: bool = True
@@ -71,7 +71,7 @@ class TrainingConfig(StrictModel):
 
 
 class EvaluationConfig(StrictModel):
-    profile_id: Slug = "legacy-opendpd-v1"
+    profile_id: Slug = "opendpd-spectral-v2"
     # None = derived from the task (train_pa -> pa_modeling, train_dpd/run_dpd -> dpd_surrogate);
     # a value that contradicts the task is rejected.
     evidence_type: Optional[EvidenceType] = None

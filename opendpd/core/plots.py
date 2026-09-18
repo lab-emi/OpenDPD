@@ -31,7 +31,8 @@ def _round(values: np.ndarray, decimals: int) -> List[float]:
 
 
 def spectrum(signals: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *, sample_rate_hz: Optional[float],
-             nperseg: Optional[int], bandwidth_hz: Optional[float], valid_samples: Optional[int] = None, input_node: str = "pa_input") -> Dict:
+             nperseg: Optional[int], bandwidth_hz: Optional[float], valid_samples: Optional[int] = None,
+             input_node: str = "pa_input", n_sub_ch: int = 1) -> Dict:
     """Welch PSD (dB) of every signal on one frequency axis. Without a sample rate the axis is in
     cycles per sample and no channel bands are drawn; nothing is guessed."""
     from opendpd.core.spectrum_layout import signal_node
@@ -54,7 +55,8 @@ def spectrum(signals: Dict[str, np.ndarray], roles: Dict[str, TraceRole], *, sam
     bands = None
     if sample_rate_hz and bandwidth_hz:
         bw = float(bandwidth_hz)
-        bands = {"main": [-bw / 2, bw / 2], "adjacent": [[-3 * bw / 2, -bw / 2], [bw / 2, 3 * bw / 2]]}
+        width = bw / n_sub_ch
+        bands = {"main": [-bw / 2, bw / 2], "adjacent": [[-bw / 2 - width, -bw / 2], [bw / 2, bw / 2 + width]]}
     return {
         "version": PLOTS_VERSION, "kind": "spectrum", "axis": axis, "sample_rate_hz": sample_rate_hz, "nperseg": seg,
         "n_samples": int(n), "frequency": _round(freq, 9 if axis == "normalized" else 3) if freq is not None else [], "traces": traces, "bands": bands,

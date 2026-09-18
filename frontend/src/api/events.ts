@@ -72,6 +72,9 @@ export function reduceEvent(state: StreamState, event: RunEvent): StreamState {
       break
     }
     case 'metric': {
+      // Older runs emitted scores for one short display excerpt. They are not
+      // validation/test evaluations and must also stay out of replayed charts.
+      if (String(p['split'] ?? '').endsWith('_probe')) break
       const epoch = asNumber(p['epoch'])
       const values = p['values']
       if (epoch !== null && values && typeof values === 'object') {

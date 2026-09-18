@@ -18,7 +18,7 @@
       "checkpoint_selection_metric": null,
       "chunk_samples": null,
       "evidence_type": "dpd_measured",
-      "profile_id": "legacy-opendpd-v1"
+      "profile_id": "opendpd-spectral-v2"
     },
     "execution": {
       "cuda_graph_training": false,
@@ -74,8 +74,8 @@
     "schema_version": 1,
     "task": "evaluate_measured",
     "training": {
-      "batch_size": 64,
-      "batch_size_eval": 64,
+      "batch_size": 16,
+      "batch_size_eval": 16,
       "decay_factor": 0.5,
       "epochs": 150,
       "eval_test": true,

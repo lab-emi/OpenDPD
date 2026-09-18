@@ -37,11 +37,11 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.13** makes PA output plots easier to read: larger legends above the spectrum, clearer PA-model labels, and an explanation of predictions with and without DPD beside the plot. Studio includes 1,186 compact matrix presets, multi-preset datasets, automatic Virtual PA dataset creation, and CSV/ZIP downloads with a standalone PA replay script.
+**OpenDPD 2.2.14** fixes padded-tail ACLR measurements and removes confusing preview metrics. PA and DPD training now start with TRes-GRU and batch size 16. Nine synthetic/measured dataset checks include APA carrier ACLR of −55.61 dBc through a trained PA model.
 
 **Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input, simulate its output with one of nine Virtual PAs, or use existing input/output data. Standard presets are uncoded engineering stimuli; each capture keeps its own sample rate and length.
 
-[2.2.13 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.13/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
+[2.2.14 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.14/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)
@@ -70,7 +70,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.13" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.2.14" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 
