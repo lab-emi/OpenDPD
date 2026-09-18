@@ -686,7 +686,7 @@
   "live.waitingGeometry": "等待计算进程加载数据…",
   "live.batch": "批次 {batch} / {total}",
   "live.cadence": "信号预览：两次更新至少间隔 {batches} 个 batch 和 {seconds} 秒；根据模型计算耗时自动降频。首个 batch 立即预览。",
-  "live.surrogate": "DPD 输出通过已训练的 PA 替代模型进行评估，图中显示的是该模型链路的模拟输出。",
+  "live.surrogate": "DPD 输出通过训练好的 PA 模型（也称 surrogate 或替代模型）进行评估。图中显示的是该模型预测的信号链路。",
   "live.final": "正式测试结果",
   "live.probe": "实时预览 · 固定片段",
   "live.signals": "输出与参考信号对比",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "输入 x",
   "spectrum.trace.predistorted": "预失真信号 u",
   "spectrum.trace.target": "线性参考 g·x",
-  "spectrum.trace.surrogateWithout": "无 DPD · 代理模型",
+  "spectrum.trace.surrogateWithout": "无 DPD · PA 模型",
   "spectrum.trace.syntheticWithout": "无 DPD · 合成数据",
   "spectrum.trace.measuredWithout": "无 DPD · 实测",
-  "spectrum.trace.surrogateWith": "有 DPD · 代理模型",
+  "spectrum.trace.surrogateWith": "有 DPD · PA 模型",
   "spectrum.trace.measuredWith": "有 DPD · 实测",
   "spectrum.trace.model": "PA 模型预测",
   "spectrum.trace.synthetic": "数据集输出 · 合成",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "图表、元数据、预处理与训练使用当前子数据集。每个预设保留自身采样率和长度。ZIP 下载包含所有原始子集和 PA 复现脚本。",
   "datasets.downloadCsv": "下载 CSV",
   "datasets.downloadZip": "下载全部 · ZIP",
-  "generator.removePreset": "移除预设 {name}"
+  "generator.removePreset": "移除预设 {name}",
+  "spectrum.paModelHelp": "PA 模型（surrogate，替代模型）是训练得到的功放模型。无 DPD：原始输入 → PA 模型。有 DPD：原始输入 → DPD → 同一个 PA 模型。PA 模型曲线为预测结果，数据集曲线会单独标注“实测”或“合成”。"
 }

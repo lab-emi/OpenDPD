@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.13: clearer PA output plots
+
+Larger spectrum legends sit above the axes. With/without-DPD predictions are labeled **PA model**, and the PA output plot explains how the trained model is used. Measured and synthetic dataset curves retain their own labels.
+
+[Release notes](releases/release-notes-2.2.13.md) · [Reading signal-chain plots](guides/signal-chain-spectra.md)
+
 ## 2.2.12: reliable DeltaGRU CUDA training
 
 Fixes PA training failing when Triton cannot find a C compiler. Local installations continue with PyTorch on the same device; hosted GPU workers include the required toolchain and verify real DeltaGRU forward/backward execution before accepting jobs.

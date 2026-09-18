@@ -35,8 +35,13 @@ test('three locations retain all PA output comparisons and independent legend/zo
   expect(within(input).getByText('Input x')).toBeInTheDocument()
   expect(within(drive).getByText('Predistorted u')).toBeInTheDocument()
   expect(within(output).getByText('Without DPD · synthetic data')).toBeInTheDocument()
-  expect(within(output).getByText('With DPD · surrogate')).toBeInTheDocument()
-  expect(within(drive).queryByText('With DPD · surrogate')).not.toBeInTheDocument()
+  expect(within(output).getByText('With DPD · PA model')).toBeInTheDocument()
+  expect(within(output).getByText('Without DPD · PA model')).toBeInTheDocument()
+  expect(within(drive).queryByText('With DPD · PA model')).not.toBeInTheDocument()
+  const explanation = screen.getByTestId('pa-model-explanation')
+  expect(explanation.closest('[data-signal-node]')).toHaveAttribute('data-signal-node', 'pa_output')
+  expect(explanation).toHaveTextContent('original input → DPD → same PA model')
+  expect(explanation).toHaveTextContent('predictions')
   fireEvent.click(within(drive).getByRole('button', { name: 'Hide this position' }))
   expect(visibility).toHaveBeenCalledWith([true, false, true, true, true, true])
   fireEvent.click(within(input).getByRole('button', { name: 'Zoom this position' }))
@@ -47,6 +52,16 @@ test('PA datasets remain PA-only and unlabelled legacy probes are not guessed', 
   expect(spectrumGroups([{ name: 'PA input x', role: 'input', stage: 'x' }, { name: 'measured PA output', role: 'reference' }]).map(g => g.node)).toEqual(['pa_input', 'pa_output'])
   expect(spectrumGroups([{ name: 'unknown probe' }])[0]?.node).toBe('unknown')
   expect(spectrumLegend({ name: 'measured PA output', source: 'synthetic dataset' })).toBe('Dataset output · synthetic')
+})
+
+test('hardware measurements do not acquire a PA-model explanation', () => {
+  renderWithProviders(<SpectrumPanels frequencyHz={[-1e6, 0, 1e6]} traces={[
+    { name: 'measured PA output with DPD', role: 'primary', source: 'measured capture', psdDb: [-80, -40, -80] },
+    { name: 'measured PA output without DPD', role: 'baseline', source: 'measured capture', psdDb: [-70, -40, -70] },
+  ]} />)
+  expect(screen.getByText('With DPD · measured')).toBeInTheDocument()
+  expect(screen.getByText('Without DPD · measured')).toBeInTheDocument()
+  expect(screen.queryByTestId('pa-model-explanation')).not.toBeInTheDocument()
 })
 
 

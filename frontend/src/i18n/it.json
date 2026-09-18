@@ -686,7 +686,7 @@
   "live.waitingGeometry": "In attesa che il processo di calcolo crei i caricatori di dati…",
   "live.batch": "Batch {batch} / {total}",
   "live.cadence": "Anteprima del segnale: almeno {batches} batch e {seconds} s tra gli aggiornamenti; si adatta al costo del modello. Il primo batch viene mostrato subito.",
-  "live.surrogate": "L’uscita DPD viene valutata tramite il modello surrogato PA addestrato. Questi grafici mostrano la catena del segnale simulata.",
+  "live.surrogate": "L’uscita DPD viene valutata tramite il modello PA addestrato, detto anche surrogato. I grafici mostrano la catena del segnale prevista dal modello.",
   "live.final": "Risultato finale del test",
   "live.probe": "Anteprima in tempo reale · segmento fisso",
   "live.signals": "Uscita e riferimento",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "Input x",
   "spectrum.trace.predistorted": "Predistorted u",
   "spectrum.trace.target": "Linear target g·x",
-  "spectrum.trace.surrogateWithout": "Without DPD · surrogate",
+  "spectrum.trace.surrogateWithout": "Senza DPD · modello PA",
   "spectrum.trace.syntheticWithout": "Without DPD · synthetic data",
   "spectrum.trace.measuredWithout": "Without DPD · measured",
-  "spectrum.trace.surrogateWith": "With DPD · surrogate",
+  "spectrum.trace.surrogateWith": "Con DPD · modello PA",
   "spectrum.trace.measuredWith": "With DPD · measured",
   "spectrum.trace.model": "PA model prediction",
   "spectrum.trace.synthetic": "Dataset output · synthetic",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "Grafici, metadati, preelaborazione e addestramento usano il sottoinsieme scelto con frequenza e lunghezza proprie. Lo ZIP contiene tutte le acquisizioni originali e lo script PA.",
   "datasets.downloadCsv": "Scarica CSV",
   "datasets.downloadZip": "Scarica tutto · ZIP",
-  "generator.removePreset": "Rimuovi preset {name}"
+  "generator.removePreset": "Rimuovi preset {name}",
+  "spectrum.paModelHelp": "Il modello PA (surrogato) è il modello addestrato dell’amplificatore. Senza DPD: ingresso originale → modello PA. Con DPD: ingresso originale → DPD → stesso modello PA. Le curve del modello PA sono previsioni; le curve del dataset sono indicate come misurate o sintetiche."
 }

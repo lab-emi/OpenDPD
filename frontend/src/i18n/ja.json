@@ -686,7 +686,7 @@
   "live.waitingGeometry": "データの読み込みを待っています…",
   "live.batch": "バッチ {batch} / {total}",
   "live.cadence": "信号プレビューは少なくとも {batches} バッチ、{seconds} 秒間隔で更新します。計算時間に応じて調整し、最初のバッチはすぐに表示します。",
-  "live.surrogate": "DPD は学習済み PA モデルを通じて評価されます。図はシミュレーションの信号経路を示します。",
+  "live.surrogate": "DPD 出力は学習済み PA モデル（surrogate、代理モデル）で評価されます。図はこのモデルが予測した信号経路を示します。",
   "live.final": "最終テスト結果",
   "live.probe": "ライブプレビュー · 固定区間",
   "live.signals": "出力と参照信号の比較",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "Input x",
   "spectrum.trace.predistorted": "Predistorted u",
   "spectrum.trace.target": "Linear target g·x",
-  "spectrum.trace.surrogateWithout": "Without DPD · surrogate",
+  "spectrum.trace.surrogateWithout": "DPD なし · PA モデル",
   "spectrum.trace.syntheticWithout": "Without DPD · synthetic data",
   "spectrum.trace.measuredWithout": "Without DPD · measured",
-  "spectrum.trace.surrogateWith": "With DPD · surrogate",
+  "spectrum.trace.surrogateWith": "DPD あり · PA モデル",
   "spectrum.trace.measuredWith": "With DPD · measured",
   "spectrum.trace.model": "PA model prediction",
   "spectrum.trace.synthetic": "Dataset output · synthetic",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "グラフ、メタデータ、前処理、学習には選択したサブセット固有のサンプルレートと長さを使用します。ZIP には全元データと PA 再現スクリプトを含みます。",
   "datasets.downloadCsv": "CSV をダウンロード",
   "datasets.downloadZip": "すべてダウンロード · ZIP",
-  "generator.removePreset": "プリセット {name} を削除"
+  "generator.removePreset": "プリセット {name} を削除",
+  "spectrum.paModelHelp": "PA モデル（surrogate、代理モデル）は学習済みの増幅器モデルです。DPD なし：元の入力 → PA モデル。DPD あり：元の入力 → DPD → 同じ PA モデル。PA モデルの曲線は予測結果で、データセットの曲線は実測または合成と表示されます。"
 }

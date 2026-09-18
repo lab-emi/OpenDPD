@@ -686,7 +686,7 @@
   "live.waitingGeometry": "En attente du chargement des données…",
   "live.batch": "Lot {batch} / {total}",
   "live.cadence": "Aperçu : au moins {batches} lots et {seconds} s entre les mises à jour, selon le coût du modèle. Premier lot affiché immédiatement.",
-  "live.surrogate": "Le DPD est évalué par le modèle PA entraîné. Ces graphiques représentent la chaîne simulée.",
+  "live.surrogate": "La sortie DPD est évaluée avec le modèle PA entraîné, aussi appelé surrogate. Les graphiques montrent la chaîne du signal prédite par ce modèle.",
   "live.final": "Résultat final du test",
   "live.probe": "Aperçu en direct · segment fixe",
   "live.signals": "Sortie et référence",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "Input x",
   "spectrum.trace.predistorted": "Predistorted u",
   "spectrum.trace.target": "Linear target g·x",
-  "spectrum.trace.surrogateWithout": "Without DPD · surrogate",
+  "spectrum.trace.surrogateWithout": "Sans DPD · modèle PA",
   "spectrum.trace.syntheticWithout": "Without DPD · synthetic data",
   "spectrum.trace.measuredWithout": "Without DPD · measured",
-  "spectrum.trace.surrogateWith": "With DPD · surrogate",
+  "spectrum.trace.surrogateWith": "Avec DPD · modèle PA",
   "spectrum.trace.measuredWith": "With DPD · measured",
   "spectrum.trace.model": "PA model prediction",
   "spectrum.trace.synthetic": "Dataset output · synthetic",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "Graphiques, métadonnées, prétraitement et entraînement utilisent le sous-ensemble choisi, avec sa fréquence et sa longueur. Le ZIP contient toutes les captures originales et le script PA.",
   "datasets.downloadCsv": "Télécharger CSV",
   "datasets.downloadZip": "Tout télécharger · ZIP",
-  "generator.removePreset": "Retirer le préréglage {name}"
+  "generator.removePreset": "Retirer le préréglage {name}",
+  "spectrum.paModelHelp": "Le modèle PA (surrogate) est le modèle entraîné de l’amplificateur. Sans DPD : entrée d’origine → modèle PA. Avec DPD : entrée d’origine → DPD → même modèle PA. Les courbes du modèle PA sont des prédictions ; les courbes du jeu de données sont identifiées comme mesurées ou synthétiques."
 }
