@@ -271,7 +271,7 @@ class LiveMonitor:
                  "spectrum": spectrum(signals, roles, sample_rate_hz=spec.sample_rate_hz,
                                       n_sub_ch=(spec.n_sub_ch or 1) if self.resolved.evaluation.profile_id in ("opendpd-spectral-v2", "legacy-opendpd-v1") else 1,
                                       nperseg=spec.nperseg, bandwidth_hz=spec.bandwidth_hz, input_node="dpd_input" if dpd else "pa_input")}
-        for trace in plots['spectrum']['traces']:
+        for trace in [*plots['time']['traces'], *plots['spectrum']['traces']]:
             trace['source'] = ('synthetic dataset' if self.dataset.origin.value == 'synthetic' else 'measured dataset') if trace['role'] == 'input' or (not dpd and trace['role'] == 'reference') else 'linear target' if trace['role'] == 'reference' else 'DPD model' if trace['role'] == 'predistorted' else 'PA surrogate' if dpd else 'PA model'
         self.revision += 1
         preview = {"revision": self.revision, "updated_at": datetime.now(timezone.utc).isoformat(),

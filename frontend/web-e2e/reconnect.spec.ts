@@ -31,7 +31,10 @@ test('web polling survives a dropped connection and reload, restores plots, and 
       preview: { revision, updated_at: new Date().toISOString(), source: 'validation_probe', samples: 3,
         metrics: { NMSE: -30 - revision }, units: { NMSE: 'dB' }, plots: {
           spectrum: { frequency: [-1e6, 0, 1e6], traces: [{ name: 'Output', psd_db: [-50, -10, -50] }] },
-          time: { start: 0, traces: [{ name: 'Output', i: [0, 1, 0], q: [1, 0, -1] }] },
+          time: { start: 0, traces: [
+            { name: 'Measured PA output', role: 'reference', i: [0, 1, 0], q: [1, 0, -1] },
+            { name: 'PA model output', role: 'primary', i: [0, revision, 0], q: [revision, 0, -1] },
+          ] },
         } },
     }
     else if (path.endsWith('/history')) body = []
@@ -52,7 +55,16 @@ test('web polling survives a dropped connection and reload, restores plots, and 
   const metric = page.getByTestId('history-NMSE').locator('.js-plotly-plot')
   const latestMetric = () => metric.evaluate(node =>
     (node as HTMLElement & { data?: Array<{ y?: number[] }> }).data?.[0]?.y?.at(-1))
-  await expect(plots).toHaveCount(3)
+  const expectWaveforms = async (value: number) => {
+    await expect(plots).toHaveCount(4) // Metric history, separate I/Q and spectrum.
+    for (const component of ['i', 'q']) {
+      const plot = page.getByTestId(`output-waveform-${component}`).locator('.js-plotly-plot')
+      await expect(plot.locator('.legendtext')).toHaveText(['Measured output', 'PA model prediction'])
+      await expect.poll(() => plot.evaluate((node, c) =>
+        (node as HTMLElement & { data?: Array<{ y?: number[] }> }).data?.[1]?.y?.[c === 'i' ? 1 : 0], component)).toBe(value)
+    }
+  }
+  await expectWaveforms(1)
   await expect.poll(latestMetric).toBe(-31)
   await expect(page.getByText('-31.00 dB', { exact: true })).toHaveCount(0)
   offline = true
@@ -60,17 +72,18 @@ test('web polling survives a dropped connection and reload, restores plots, and 
   await expect(page.getByText(/disconnected/i).first()).toBeVisible({ timeout: 15_000 })
   // Already rendered experiment/plot data survives failed background reads.
   await expect(page.getByRole('heading', { name: 'Remote CUDA experiment', exact: true })).toBeVisible()
-  await expect(plots).toHaveCount(3)
+  await expectWaveforms(1)
   revision = 2
   offline = false
   await page.getByRole('button', { name: 'Resync experiment' }).click()
   await expect.poll(latestMetric).toBe(-32)
+  await expectWaveforms(2)
   await expect(page.getByText('-32.00 dB', { exact: true })).toHaveCount(0)
   expect(cursors).toContain(1)
   await page.reload()
   await expect.poll(latestMetric).toBe(-32)
   await expect(page.getByText('-32.00 dB', { exact: true })).toHaveCount(0)
-  await expect(plots).toHaveCount(3)
+  await expectWaveforms(2)
   await page.getByRole('button', { name: /Terminal.*Running/ }).click()
   const terminal = page.getByTestId('experiment-terminal')
   await expect(terminal.getByRole('log')).toContainText('CUDA worker is running')

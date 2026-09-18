@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography'
 import { useMemo } from 'react'
 import { useArtifactJson } from '@/api/hooks'
 import { message, t } from '@/i18n'
-import { IQPreview } from './IQPreview'
+import { OutputWaveforms, type OutputWaveform } from './OutputWaveforms'
 import { PlotlyChart, type PlotLayout, type PlotTrace , seriesSymbol } from './PlotlyChart'
 import { SpectrumPanels } from './SpectrumPanels'
 import { LoadingState } from './StateBlock'
@@ -28,7 +28,7 @@ interface TimeData {
   start: number
   n: number
   n_samples: number
-  traces: Array<{ name: string; role: string; i: number[]; q: number[] }>
+  traces: OutputWaveform[]
 }
 interface AmData {
   version: string
@@ -66,7 +66,6 @@ export function ResultCharts({ runId, result, onProfile }: { runId: string; resu
   const time = useArtifactJson<TimeData>(runId, 'plot-time')
   const am = useArtifactJson<AmData>(runId, 'plot-amam')
   const spectrumTraces = useMemo(() => (spectrum.data?.traces ?? []).map((tr) => ({ ...tr, psdDb: tr.psd_db })), [spectrum.data])
-  const series = useMemo(() => (time.data?.traces ?? []).map((tr) => ({ name: tr.name, i: tr.i, q: tr.q })), [time.data])
   const pending = spectrum.isPending || time.isPending || am.isPending
   const nothing = !pending && !spectrum.data && !time.data && !am.data
   return (
@@ -90,7 +89,7 @@ export function ResultCharts({ runId, result, onProfile }: { runId: string; resu
         )}
         {time.data && (
           <Grid size={{ xs: 12 }}>
-            <IQPreview start={time.data.start} series={series} />
+            <OutputWaveforms start={time.data.start} series={time.data.traces} viewKey={runId} />
           </Grid>
         )}
         {am.data && <AmPlots data={am.data} />}

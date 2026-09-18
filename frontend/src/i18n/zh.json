@@ -1468,5 +1468,13 @@
   "datasets.downloadZip": "下载全部 · ZIP",
   "generator.removePreset": "移除预设 {name}",
   "spectrum.paModelHelp": "PA 模型（surrogate，替代模型）是训练得到的功放模型。无 DPD：原始输入 → PA 模型。有 DPD：原始输入 → DPD → 同一个 PA 模型。PA 模型曲线为预测结果，数据集曲线会单独标注“实测”或“合成”。",
-  "profile.spectral": "OpenDPD · 有效样本载波 ACLR"
+  "profile.spectral": "OpenDPD · 有效样本载波 ACLR",
+  "waveform.view": "波形",
+  "waveform.individual": "单独查看信号",
+  "waveform.window": "初始显示范围",
+  "waveform.detail": "前 128 个样本",
+  "waveform.full": "完整片段（{count} 个样本）",
+  "waveform.help": "默认比较模型输出和参考信号，也可选择单个信号查看。I、Q 使用相同的幅度刻度；缩放或平移可查看细节。",
+  "waveform.inPhase": "I · 同相分量",
+  "waveform.quadrature": "Q · 正交分量"
 }

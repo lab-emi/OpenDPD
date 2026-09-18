@@ -1468,5 +1468,13 @@
   "datasets.downloadZip": "전체 다운로드 · ZIP",
   "generator.removePreset": "프리셋 {name} 제거",
   "spectrum.paModelHelp": "PA 모델(surrogate, 대리 모델)은 학습된 증폭기 모델입니다. DPD 없음: 원래 입력 → PA 모델. DPD 적용: 원래 입력 → DPD → 동일한 PA 모델. PA 모델 곡선은 예측 결과이며 데이터셋 곡선은 실측 또는 합성으로 표시됩니다.",
-  "profile.spectral": "OpenDPD · 유효 샘플의 반송파 ACLR"
+  "profile.spectral": "OpenDPD · 유효 샘플의 반송파 ACLR",
+  "waveform.view": "파형",
+  "waveform.individual": "개별 신호",
+  "waveform.window": "초기 표시 범위",
+  "waveform.detail": "처음 128개 샘플",
+  "waveform.full": "전체 구간 ({count}개 샘플)",
+  "waveform.help": "출력을 기준 신호와 비교하거나 개별 신호를 확인하세요. I와 Q는 같은 진폭 척도를 사용합니다. 확대하거나 이동하여 세부 내용을 볼 수 있습니다.",
+  "waveform.inPhase": "I · 동상 성분",
+  "waveform.quadrature": "Q · 직교 성분"
 }

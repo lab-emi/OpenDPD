@@ -1468,5 +1468,13 @@
   "datasets.downloadZip": "Download all · ZIP",
   "generator.removePreset": "Remove preset {name}",
   "spectrum.paModelHelp": "PA model (surrogate) is the trained amplifier model. Without DPD: original input → PA model. With DPD: original input → DPD → same PA model. PA-model curves are predictions; dataset curves are labeled measured or synthetic.",
-  "profile.spectral": "OpenDPD · carrier ACLR on valid samples"
+  "profile.spectral": "OpenDPD · carrier ACLR on valid samples",
+  "waveform.view": "Waveform",
+  "waveform.individual": "Individual signals",
+  "waveform.window": "Initial window",
+  "waveform.detail": "First 128 samples",
+  "waveform.full": "Full excerpt ({count} samples)",
+  "waveform.help": "Compare the output with its reference, or inspect one signal. I and Q share the same amplitude scale. Zoom or pan to see more detail.",
+  "waveform.inPhase": "I · In-phase",
+  "waveform.quadrature": "Q · Quadrature"
 }
