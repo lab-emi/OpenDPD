@@ -31,6 +31,8 @@ export function IQPreview({ start, series, title = t('chart.iq.title'), height, 
     return out
   }, [series, start])
   const xTitle = t('chart.iq.x'), yTitle = t('chart.iq.y')
-  const layout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: yTitle } }, showlegend: true }), [xTitle, yTitle])
+  const layout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: yTitle } },
+    margin: { l: 56, r: 16, t: 90, b: 50 },
+    legend: { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', font: { size: 12 }, maxheight: 64 }, showlegend: true }), [xTitle, yTitle])
   return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} viewKey={`${viewKey}:${start}`} data-testid="iq-preview" />
 }

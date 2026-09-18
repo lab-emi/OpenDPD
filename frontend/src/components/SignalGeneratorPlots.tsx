@@ -15,14 +15,14 @@ import { useState } from 'react'
 import type { GeneratedSignal } from '@/api/signalGenerator'
 import { formatNumber, t } from '@/i18n'
 import { PlotlyChart, type PlotTrace } from './PlotlyChart'
-
-const PALETTE = ['#16758C', '#C47722', '#8262BB', '#3E8754', '#BB556C', '#5580BE']
+import { useStudioColors } from '@/theme'
 
 export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSignal; stale: boolean }) {
+  const PALETTE = useStudioColors().chart
   const [tab, setTab] = useState('overview')
   const a = result.analysis
   const axis = (text: string) => ({ title: { text } })
-  const legendSpace = { margin: { l: 50, r: 12, t: 68, b: 42 }, legend: { orientation: 'h' as const, x: 0, y: 1.02, yanchor: 'bottom' as const, font: { size: 11 } } }
+  const legendSpace = { margin: { l: 50, r: 12, t: 68, b: 42 }, legend: { orientation: 'h' as const, x: 0, y: 1.02, yanchor: 'bottom' as const, font: { size: 12 } } }
   const ccdf = a.ccdf_probability.flatMap((probability, index) => probability > 0 ? [{ x: a.ccdf_db[index]!, y: Math.log10(probability) }] : [])
   const allocations: PlotTrace[] = a.allocation.flatMap((entry, index) => {
     const bins = entry.subcarriers as number[]
@@ -31,7 +31,7 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
     const data = bins.filter(bin => !selected.has(bin))
     return [
       { x: data, y: data.map(() => index + 1), mode: 'markers' as const, name: `${t('generator.channel')} ${index + 1}`, marker: { color: PALETTE[index % PALETTE.length], size: 5 } },
-      { x: pilots, y: pilots.map(() => index + 1), mode: 'markers' as const, name: `${t('generator.pilots')} ${index + 1}`, marker: { color: '#B45C21', size: 9, symbol: 'cross' as const } },
+      { x: pilots, y: pilots.map(() => index + 1), mode: 'markers' as const, name: `${t('generator.pilots')} ${index + 1}`, marker: { color: PALETTE[1], size: 9, symbol: 'cross' as const } },
     ]
   })
   const metrics = [
@@ -61,12 +61,12 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
     {stale && <Alert severity="warning">{t('generator.stale')}</Alert>}
     <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
     <Typography variant="caption" color="text.secondary">{result.config.preset_id} · {formatNumber(a.sample_count)} {t('generator.samplesUnit')} · {a.duration_ms.toPrecision(4)} ms</Typography>
-    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 1 }}>
       {[
         ['PAPR', `${a.papr_db.toFixed(2)} dB`],
         [t('generator.occupiedShort'), `${(a.occupied_bandwidth_99_hz / 1e6).toFixed(2)} MHz`],
         [t('generator.rms'), a.rms.toFixed(4)],
-      ].map(([label, value]) => <Paper key={label} sx={{ p: 1.5 }}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography sx={{ fontSize: { xs: 17, lg: 22 }, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography></Paper>)}
+      ].map(([label, value]) => <Paper key={label} sx={{ p: 1.5, display: { xs: 'flex', sm: 'block' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography sx={{ fontSize: { xs: 17, lg: 22 }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{value}</Typography></Paper>)}
     </Box>
     <Tabs value={tab} onChange={(_, value: string) => setTab(value)} variant="scrollable" scrollButtons="auto" aria-label={t('generator.visualizations')}>
       <Tab value="overview" label={t('generator.overview')} />

@@ -38,7 +38,7 @@ interface WorkflowActions {
   selectPAReference: (id: string) => void
   invalidateOutput: () => void
   resetPA: () => void
-  trackRun: (run: RunView, version: string, paRunId?: string) => void
+  trackRun: (run: RunView, version: string, paRunId?: string, dpdRunId?: string) => void
   reset: () => void
 }
 interface WorkflowContextValue extends WorkflowActions {
@@ -53,6 +53,15 @@ const fallback: WorkflowContextValue = { state: empty(), paDone: false, dpdDone:
 const Context = createContext<WorkflowContextValue>(fallback)
 export const useStudioWorkflow = () => useContext(Context)
 
+/** Inspecting a saved run restores its dataset and model lineage in the workflow. */
+export function useRunWorkflow(run?: RunView) {
+  const { trackRun } = useStudioWorkflow()
+  const config = useRunConfig(run?.run_id ?? '', !!run)
+  useEffect(() => {
+    if (run && config.data) trackRun(run, config.data.dataset.preprocessing_version ?? 'raw-v1', config.data.pa_reference?.run_id, config.data.dpd_reference?.run_id)
+  }, [run, config.data, trackRun])
+}
+
 function read(key: string): WorkflowState {
   try {
     const value = JSON.parse((WEB_MODE ? sessionStorage : localStorage).getItem(key) ?? 'null') as WorkflowState | null
@@ -60,7 +69,7 @@ function read(key: string): WorkflowState {
     if (value.inputIds && (!Array.isArray(value.inputIds) || value.inputIds.length > 16 || value.inputIds.some(id => !/^sg-[a-f0-9]{64}$/.test(id)))) return empty()
     if (value.inputConfigs && (!Array.isArray(value.inputConfigs) || value.inputConfigs.length !== value.inputIds?.length)) return empty()
     if (value.inputId && !/^sg-[a-f0-9]{64}$/.test(value.inputId)) return empty()
-    if (value.inputDatasetId && !/^sds-[a-f0-9]{64}$/.test(value.inputDatasetId)) return empty()
+    if (value.inputDatasetId && !/^(sds|sg)-[a-f0-9]{64}$/.test(value.inputDatasetId)) return empty()
     if (value.inputDatasetName && (typeof value.inputDatasetName !== 'string' || value.inputDatasetName.length > 96)) return empty()
     if (value.simulationId && !/^vpa-[a-f0-9]{64}$/.test(value.simulationId)) return empty()
     if (value.datasetId && !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value.datasetId)) return empty()
@@ -107,12 +116,14 @@ function ScopedWorkflow({ scope, children }: { scope: string; children: ReactNod
       : { ...old, simulationId: null, datasetId: null, paRunId: null, dpdRunId: null }),
     resetPA: () => set(old => ({ ...empty(), origin: old.inputId ? 'generated' : null, inputId: old.inputId, inputIds: old.inputIds, inputConfigs: old.inputConfigs, inputName: old.inputName,
       inputDatasetId: old.inputDatasetId, inputDatasetName: old.inputDatasetName })),
-    trackRun: (run, version, paRunId) => set(old => {
+    trackRun: (run, version, paRunId, dpdRunId) => set(old => {
       if (!run.dataset_id) return old
       const base = old.datasetId === run.dataset_id && old.datasetVersion === version ? old
         : { ...empty(), origin: 'existing' as const, datasetId: run.dataset_id, datasetVersion: version }
-      if (run.task === 'train_pa') return { ...base, paRunId: run.run_id, dpdRunId: null }
-      if (run.task === 'train_dpd') return { ...base, dpdRunId: run.run_id, paRunId: paRunId ?? base.paRunId }
+      if (run.task === 'train_pa') return base.paRunId === run.run_id ? base : { ...base, paRunId: run.run_id, dpdRunId: null }
+      if (run.task === 'train_dpd') return base.dpdRunId === run.run_id && (!paRunId || base.paRunId === paRunId) ? base : { ...base, dpdRunId: run.run_id, paRunId: paRunId ?? base.paRunId }
+      if (run.task === 'evaluate_pa' && paRunId) return base.paRunId === paRunId ? base : { ...base, paRunId, dpdRunId: null }
+      if (run.task === 'run_dpd' && dpdRunId) return base.dpdRunId === dpdRunId && (!paRunId || base.paRunId === paRunId) ? base : { ...base, dpdRunId, paRunId: paRunId ?? base.paRunId }
       return old
     }),
     reset: () => set(empty()),

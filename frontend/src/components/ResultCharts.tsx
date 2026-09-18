@@ -5,7 +5,8 @@ import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
 import { useMemo } from 'react'
 import { useArtifactJson } from '@/api/hooks'
-import { message, t } from '@/i18n'
+import { message, t, useLanguage } from '@/i18n'
+import { spectrumLegend, type SignalIdentity } from './spectrumNodes'
 import { OutputWaveforms, type OutputWaveform } from './OutputWaveforms'
 import { PlotlyChart, type PlotLayout, type PlotTrace , seriesSymbol } from './PlotlyChart'
 import { SpectrumPanels } from './SpectrumPanels'
@@ -36,15 +37,17 @@ interface AmData {
   n_points: number
   n_samples: number
   amp_in: number[]
-  traces: Array<{ name: string; role: string; amp_out: number[]; phase_deg: number[] }>
+  traces: Array<SignalIdentity & { name: string; role: string; amp_out: number[]; phase_deg: number[] }>
   note: string
 }
 
 const MARKER = { size: 3, opacity: 0.45 }
 
 function AmPlots({ data }: { data: AmData }) {
-  const am = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.amp_out, name: tr.name, mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data])
-  const pm = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.phase_deg, name: tr.name, mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data])
+  useLanguage()
+  const labels = JSON.stringify(data.traces.map(spectrumLegend))
+  const am = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.amp_out, name: (JSON.parse(labels) as string[])[i], mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data, labels])
+  const pm = useMemo<PlotTrace[]>(() => data.traces.map((tr, i) => ({ x: data.amp_in, y: tr.phase_deg, name: (JSON.parse(labels) as string[])[i], mode: 'markers', type: 'scatter', marker: { ...MARKER, symbol: seriesSymbol(i) } })), [data, labels])
   const xTitle = t('chart.am.x'), amTitle = t('chart.am.y'), pmTitle = t('chart.pm.y')
   const amLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: amTitle } }, showlegend: true }), [xTitle, amTitle])
   const pmLayout = useMemo<PlotLayout>(() => ({ xaxis: { title: { text: xTitle } }, yaxis: { title: { text: pmTitle } }, showlegend: true }), [xTitle, pmTitle])

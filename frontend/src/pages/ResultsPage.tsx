@@ -14,6 +14,7 @@ import { Link as RouterLink, useNavigate } from 'react-router'
 import { useRuns } from '@/api/hooks'
 import { formatDateTime, t } from '@/i18n'
 import { EvidenceBadge } from '@/components/EvidenceBadge'
+import { taskLabel } from '@/components/ExperimentTasks'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateBlock'
 
 /** Results are the succeeded runs that produced a formal result (one per run). */
@@ -59,7 +60,7 @@ export function ResultsPage() {
                     {r.name || r.run_id}
                   </Link>
                 </TableCell>
-                <TableCell>{r.task}</TableCell>
+                <TableCell>{taskLabel(r.task)}</TableCell>
                 <TableCell>{r.model_key}</TableCell>
                 <TableCell>{r.dataset_id}</TableCell>
                 <TableCell>

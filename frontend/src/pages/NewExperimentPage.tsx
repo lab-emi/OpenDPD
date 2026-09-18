@@ -160,7 +160,6 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
 
   const testing = task === 'evaluate_pa' || task === 'run_dpd'
   const ilcRequested = params.get('method') === 'ilc'
-  const displayGroup = ilcRequested && params.get('workspace') === 'pa' ? 'pa' : taskGroup(task)
   const taskRecipes = (recipes.data ?? []).filter((entry) => entry.task === task && (!ilcRequested || entry.model.key === 'ilc_dpd'))
   const sourceRunId = edits.sourceRunId || params.get('modelRun') || ''
   const source = useRunConfig(sourceRunId, testing && !!sourceRunId)
@@ -196,6 +195,9 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
     ...(task === 'evaluate_pa' ? { pa_reference: { run_id: sourceRunId } } : { dpd_reference: { run_id: sourceRunId }, ...(form.paRunId ? { pa_reference: { run_id: form.paRunId } } : {}) }),
   } : null
   const config = imported ? { ...imported.config, name: form.name.trim() || imported.config.name || null } : !fromRunId ? (testing ? testConfig : recipe && form.datasetId ? buildConfig(recipe, form, specs) : null) : null
+  const displayTask = config?.task ?? task
+  const displayTesting = displayTask === 'evaluate_pa' || displayTask === 'run_dpd'
+  const displayGroup = ilcRequested && params.get('workspace') === 'pa' ? 'pa' : taskGroup(displayTask)
   const configJson = config ? JSON.stringify(config) : ''
   const workflowDataset = config?.dataset.id ?? dataset?.dataset_id
   const workflowVersion = config?.dataset.preprocessing_version ?? (form.dataVersion || 'raw-v1')
@@ -260,7 +262,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
     e.preventDefault()
     if (!config || !canSubmit) return
     submit.mutate({ config, name: form.name.trim() || undefined, idempotency_key: idempotencyKey.current }, { onSuccess: (run) => {
-      trackRun(run, config.dataset.preprocessing_version ?? 'raw-v1', config.pa_reference?.run_id)
+      trackRun(run, config.dataset.preprocessing_version ?? 'raw-v1', config.pa_reference?.run_id, config.dpd_reference?.run_id)
       navigate(`/runs/${encodeURIComponent(run.run_id)}`)
     } })
   }
@@ -271,20 +273,20 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
         <Typography variant="h1" id="form-title">{t(`modelWorkflow.${displayGroup}`)}</Typography>
         <Button variant="outlined" size="small" onClick={() => setJsonOpen(true)} disabled={submit.isPending}>{t('json.open')}</Button>
       </Stack>
-      <ExperimentTasks active={ilcRequested && displayGroup === 'pa' ? 'train_pa' : config?.task ?? task} dataset={form.datasetId} version={form.dataVersion} compact />
-      <Tabs value={ilcRequested ? 'ilc' : testing ? 'test' : 'train'} aria-label={t('modelWorkflow.mode')}>
+      <ExperimentTasks active={ilcRequested && displayGroup === 'pa' ? 'train_pa' : displayTask} dataset={workflowDataset} version={workflowVersion} compact />
+      <Tabs value={ilcRequested ? 'ilc' : displayTesting ? 'test' : 'train'} aria-label={t('modelWorkflow.mode')}>
         {(['train', 'test'] as const).map((mode) => {
           const nextTask = displayGroup === 'pa' ? (mode === 'train' ? 'train_pa' : 'evaluate_pa') : (mode === 'train' ? 'train_dpd' : 'run_dpd')
           const query = new URLSearchParams({ task: nextTask })
-          if (form.datasetId) query.set('dataset', form.datasetId)
-          if (form.dataVersion) query.set('version', form.dataVersion)
+          if (workflowDataset) query.set('dataset', workflowDataset)
+          if (workflowVersion) query.set('version', workflowVersion)
           return <Tab key={mode} value={mode} label={t(`modelWorkflow.${mode}`)} component={RouterLink} to={`/experiments/new?${query}`} />
         })}
         <Tab value="ilc" label={t(displayGroup === 'pa' ? 'ilc.title' : 'ilc.benchmark')} component={RouterLink}
-          to={`/experiments/new?task=train_dpd&method=ilc&workspace=${displayGroup}&dataset=${encodeURIComponent(form.datasetId)}${form.dataVersion ? `&version=${encodeURIComponent(form.dataVersion)}` : ''}`} />
+          to={`/experiments/new?task=train_dpd&method=ilc&workspace=${displayGroup}&dataset=${encodeURIComponent(workflowDataset ?? '')}${workflowVersion ? `&version=${encodeURIComponent(workflowVersion)}` : ''}`} />
       </Tabs>
       {(config?.task === 'evaluate_pa' || config?.task === 'run_dpd' || testing) && <TestingSampleSummary datasetId={config?.dataset.id ?? form.datasetId} version={config?.dataset.preprocessing_version ?? (form.dataVersion || 'raw-v1')} />}
-      <WorkflowSteps active={step} labels={[t('workflow.data'), t(testing ? 'workflow.testConfigure' : 'workflow.configure'), t('workflow.review')]} completed={completed} onChange={setStep} canOpen={canOpen} />
+      <WorkflowSteps active={step} labels={[t('workflow.data'), t(displayTesting ? 'workflow.testConfigure' : 'workflow.configure'), t('workflow.review')]} completed={completed} onChange={setStep} canOpen={canOpen} />
       <Stack sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, '& .MuiButton-root': { flexShrink: 0 } }} direction="row">
         {step > 0 && <Button startIcon={<ArrowBackIcon />} onClick={() => setStep(step - 1)}>{t('workflow.back')}</Button>}
         {step < 2 && <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={next} disabled={!canNext}>{t('workflow.next')}</Button>}

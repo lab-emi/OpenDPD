@@ -87,7 +87,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const [customName, setCustomName] = useState<string | null>(() => workflow.state.inputDatasetName && workflow.state.inputDatasetName !== datasetName(initial) ? workflow.state.inputDatasetName : null)
   const name = customName ?? automaticName
   const validName = validDatasetName(name, 'in')
-  const [savedDataset, setSavedDataset] = useState(() => workflow.state.inputDatasetId && workflow.state.inputDatasetName ? { id: workflow.state.inputDatasetId, name: workflow.state.inputDatasetName } : null)
+  const [savedDataset, setSavedDataset] = useState(() => workflow.state.inputDatasetId?.startsWith('sds-') && workflow.state.inputDatasetName ? { id: workflow.state.inputDatasetId, name: workflow.state.inputDatasetName } : null)
   const [savedRequestedName, setSavedRequestedName] = useState(name)
   const [generatedIds, setGeneratedIds] = useState<Record<string, string>>(() => {
     const ids = workflow.state.inputIds ?? (saved ? [saved.signal_id] : [])
@@ -265,7 +265,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       <Typography variant="h2" sx={{ overflowWrap: 'anywhere' }}>{savedDataset ? t('generator.useDataset', { name: savedDataset.name }) : t('generator.next')}</Typography>
       <Typography variant="body2" color="text.secondary">{t('generator.batchNext')}</Typography>
       <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
-        <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale || !result || !selected.length || generate.isPending} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(workflow.state.inputId ?? result?.signal_id ?? '')}>{t('paInput.next')}</Button>
+        <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale || !result || !selected.length || generate.isPending} component={RouterLink} to={'/pa-library?' + new URLSearchParams({ input: workflow.state.inputId ?? result?.signal_id ?? '', ...(savedDataset ? { dataset: savedDataset.id } : {}) })}>{t('paInput.next')}</Button>
         <Button variant="outlined" endIcon={<ArrowForwardIcon />} disabled={stale || !result || generate.isPending} component={RouterLink} to={result ? analyzerLink('generated', result.signal_id, 'input', 'raw-v1', savedDataset?.id) : '#'}>{t('analyzer.open')}</Button>
         {savedDataset && <Button startIcon={<DownloadIcon />} disabled={stale || downloading || generate.isPending} onClick={() => download('/api/v1/signal-generator/datasets/' + savedDataset.id + '/download')}>{t('generator.downloadDataset')}</Button>}
         <Button startIcon={<DownloadIcon />} disabled={stale || !result || downloading || generate.isPending} onClick={() => result && download('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv')}>{t('paInput.csv')}</Button>

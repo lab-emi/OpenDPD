@@ -18,6 +18,9 @@ interface Props extends Omit<SpectrumPlotProps, 'traces' | 'onViewportChange'> {
  * share a legend. Each chart keeps its own zoom; initial scales match. */
 export function SpectrumPanels({ traces, views, title, dpd: dpdContext, onViewportChange, onVisibilityChange, ...props }: Props) {
   const narrow = useMediaQuery('(max-width: 600px)')
+  const medium = useMediaQuery('(min-width: 900px)')
+  const wide = useMediaQuery('(min-width: 1536px)')
+  const columns = wide ? 3 : medium ? 2 : 1
   useLanguage()
   const dpd = dpdContext ?? hasDPD(traces)
   const legendKey = JSON.stringify(traces.map(trace => trace.legendName ?? spectrumLegend(trace)))
@@ -43,7 +46,7 @@ export function SpectrumPanels({ traces, views, title, dpd: dpdContext, onViewpo
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))', xl: `repeat(${Math.min(3, groups.length)}, minmax(0, 1fr))` }, gap: 2 }}>
       {groups.map(({ node, traces: rows, drawn }, i) => <Box key={node} data-signal-node={node} sx={{ minWidth: 0, p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, gridColumn: { md: groups.length % 2 && i === groups.length - 1 ? '1 / -1' : 'auto', xl: 'auto' } }}>
         <SpectrumPlot {...props} title={`${nodeTitle(node, dpd)} · PSD`} height={narrow ? Math.max(380, props.height ?? 330) : props.height ?? 330}
-          legendRows={Math.max(...groups.map(group => group.traces.length))}
+          legendRows={Math.max(...groups.slice(Math.floor(i / columns) * columns, (Math.floor(i / columns) + 1) * columns).map(group => group.traces.length))}
           traces={drawn} onRendered={ms => { rendered.set(node, ms); const times = [...rendered.values()]; if (times.every(time => time !== undefined)) props.onRendered?.(Math.max(...times)) }}
           xRange={views?.[node]?.x_range as [number, number] | undefined ?? props.xRange}
           yRange={views?.[node]?.y_range as [number, number] | undefined ?? props.yRange ?? range}

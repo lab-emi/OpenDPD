@@ -104,8 +104,8 @@ test('a succeeded DPD run shows its lineage and can be applied through another s
 
   await userEvent.click(screen.getByRole('button', { name: 'Apply DPD to the test split…' }))
   const dialog = await screen.findByRole('dialog', { name: 'Apply this DPD to the test split' })
-  expect(within(dialog).getByText(/not a PA output/)).toBeInTheDocument()
-  await userEvent.click(within(dialog).getByLabelText('PA surrogate'))
+  expect(within(dialog).getByText(/PA model’s predicted output/)).toBeInTheDocument()
+  await userEvent.click(within(dialog).getByLabelText('PA model for this test'))
   await userEvent.click(await screen.findByRole('option', { name: /PA run-pa-0002/ }))
   await userEvent.click(within(dialog).getByRole('button', { name: 'Apply' }))
   await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true))

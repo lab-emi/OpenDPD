@@ -40,7 +40,7 @@ async def upload(request: Request, file: UploadFile):
                     if size > MAX_UPLOAD_BYTES:
                         raise _error(413, "payload_too_large", "CSV files must be at most 25 MiB.")
                     output.write(chunk)
-            return service.admit_signal_upload(request.app.state.ws, path)
+            return service.admit_signal_upload(request.app.state.ws, path, file.filename)
         except CsvUploadRejected as exc:
             raise _error(422, "csv_rejected", str(exc)) from exc
         finally:

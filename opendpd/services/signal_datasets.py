@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 
 from opendpd.schemas.signal_dataset import SignalDataset
-from opendpd.services.workspace import read_json, write_json_atomic
+from opendpd.services.workspace import WorkspaceError, read_json, write_json_atomic
 
 LOCK = threading.RLock()
 
@@ -27,6 +27,20 @@ def read_dataset(ws, identifier):
     return ws.hashed_store("signal_datasets", "sds").manifest(identifier, SignalDataset)
 
 
+def archive_dataset(ws, identifier, restore=False):
+    """Hide a named input collection without removing shared waveforms or outputs."""
+    with LOCK:
+        dataset = read_dataset(ws, identifier)
+        if dataset.kind != "pa_input":
+            raise WorkspaceError("Only PA input datasets can be removed from the PA Library.")
+        marker = ws.hashed_store("signal_datasets", "sds").directory(identifier) / ".removed"
+        if restore:
+            marker.unlink(missing_ok=True)
+        else:
+            write_json_atomic(marker, {"archived": True})
+        return dataset
+
+
 def unique_name(name, existing):
     candidate, index = name, 2
     while candidate in existing:
@@ -42,6 +56,7 @@ def save_dataset(ws, name, kind, signals):
         identifier = "sds-" + hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
         target = ws.hashed_store("signal_datasets", "sds").directory(identifier)
         if (target / "manifest.json").exists():
+            (target / ".removed").unlink(missing_ok=True)
             return read_dataset(ws, identifier)
         chosen = unique_name(name, {d.name for d in list_datasets(ws)})
         result = SignalDataset(dataset_id=identifier, name=chosen, requested_name=name, kind=kind,

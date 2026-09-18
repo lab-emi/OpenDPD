@@ -21,6 +21,18 @@ def signal_dataset(dataset_id: str, request: Request):
     return read_dataset(request.app.state.ws, dataset_id)
 
 
+@router.post("/signal-generator/datasets/{dataset_id}/archive", response_model=SignalDataset, dependencies=[Depends(require_csrf)])
+def archive_signal_dataset(dataset_id: str, request: Request):
+    from opendpd.services.signal_datasets import archive_dataset
+    return archive_dataset(request.app.state.ws, dataset_id)
+
+
+@router.post("/signal-generator/datasets/{dataset_id}/restore", response_model=SignalDataset, dependencies=[Depends(require_csrf)])
+def restore_signal_dataset(dataset_id: str, request: Request):
+    from opendpd.services.signal_datasets import archive_dataset
+    return archive_dataset(request.app.state.ws, dataset_id, restore=True)
+
+
 @router.get("/signal-generator/datasets/{dataset_id}/download", dependencies=[Depends(require_session)])
 def signal_dataset_download(dataset_id: str, request: Request):
     import shutil

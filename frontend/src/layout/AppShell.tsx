@@ -78,8 +78,11 @@ export function AppShell() {
   const resultDetail = pathname.startsWith('/results/')
   const resetDetail = datasetDetail ? t('reset.page.dataset') : runId ? t('reset.page.experiment') : resultDetail ? t('reset.page.results') : undefined
   useEffect(() => {
-    if (revision > 0) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  }, [revision])
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    // Route changes and explicit same-page resets are the viewport triggers.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies
+  }, [pathname, revision])
+  const showWorkflow = !['/settings', '/about', '/server', '/hardware', '/robustness', '/sweeps'].some(path => pathname === path || pathname.startsWith(path + '/'))
   const reset = (global: boolean) => {
     // Drop selections encoded in detail URLs as well as drafts in React state.
     // A run restarts at its task's setup, never at the old progress dashboard.
@@ -159,7 +162,7 @@ export function AppShell() {
       </AppBar>
       <Box key={revision} component="main" id="main" tabIndex={-1} sx={{ flex: 1, px: { xs: 1.5, md: 2.5 }, pb: 2, pt: { xs: WEB_MODE ? '108px' : '76px', sm: '76px' }, minWidth: 0 }}>
         <Box sx={{ maxWidth: tokens.layout.maxContent, mx: 'auto', minWidth: 0 }}>
-          <WorkflowProgress />
+          {showWorkflow && <WorkflowProgress />}
           <RouteContent />
           {(pathname.startsWith('/experiments') || pathname.startsWith('/runs/')) && <ExperimentTerminal />}
         </Box>

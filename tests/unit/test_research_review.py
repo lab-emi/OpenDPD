@@ -58,6 +58,26 @@ def test_out_of_capture_bands_are_unavailable_and_missing_metadata_is_not_guesse
     assert integration_bands("legacy-opendpd-v1", SignalSpec(sample_rate_hz=800e6, bandwidth_hz=200e6))[0] == []
 
 
+@pytest.mark.parametrize("bw,carriers,expected", [
+    (20e6, 1, [(-30e6, -10e6), (10e6, 30e6)]),
+    (200e6, 10, [(-120e6, -100e6), (100e6, 120e6)]),
+    (160e6, 4, [(-120e6, -80e6), (80e6, 120e6)]),
+])
+def test_spectral_v2_display_bands_follow_carrier_width(bw, carriers, expected):
+    bands, note = integration_bands("opendpd-spectral-v2", SignalSpec(
+        sample_rate_hz=983.04e6, bandwidth_hz=bw, n_sub_ch=carriers, nperseg=4096))
+    assert [b.edges_hz for b in bands if b.role == "adjacent"] == expected
+    assert len([b for b in bands if b.role == "subchannel"]) == carriers
+    assert all(b.available for b in bands)
+    assert "strongest in-band carrier" in note
+
+
+def test_spectral_v2_display_rejects_unrecorded_carriers_and_marks_out_of_range_bands():
+    assert integration_bands("opendpd-spectral-v2", SignalSpec(sample_rate_hz=80e6, bandwidth_hz=20e6))[0] == []
+    bands, _ = integration_bands("opendpd-spectral-v2", SignalSpec(sample_rate_hz=40e6, bandwidth_hz=20e6, n_sub_ch=1))
+    assert [b.available for b in bands if b.role == "adjacent"] == [False, False]
+
+
 def test_figures_reject_nonfinite_axes_and_foreign_references():
     trace = dict(run_id="a", trace_name="output")
     with pytest.raises(ValidationError):

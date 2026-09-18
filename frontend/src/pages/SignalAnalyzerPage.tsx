@@ -32,6 +32,7 @@ import { Link as RouterLink, useSearchParams } from 'react-router'
 import { analyzerDefaults, useAnalyzerDatasets, useAnalyzeSignal, useUploadSignal, type AnalyzerConfig, type AnalyzerDataset, type AnalyzerRequest, type AnalyzerSource, type AnalyzerSourceInfo, type SignalAnalysis } from '@/api/signalAnalyzer'
 import { PlotlyChart, type PlotTrace } from '@/components/PlotlyChart'
 import { SignalSpectrogram } from '@/components/SignalSpectrogram'
+import { SignalDatasetSelect } from '@/components/SignalDatasetSelect'
 import { downloadFile } from '@/api/client'
 import { MathFormula } from '@/components/MathFormula'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
@@ -105,11 +106,11 @@ function Analyzer({ datasets }: { datasets: AnalyzerDataset[] }) {
       <Stack spacing={1.5} component="fieldset" disabled={pending} sx={{ m: 0, p: 0, border: 0, minWidth: 0 }}>
         <Paper sx={{ p: 2 }}><Stack spacing={2}>
           <Typography variant="h2">{t('analyzer.dataset')}</Typography>
-          <TextField select fullWidth label={t('analyzer.dataset')} value={dataset?.dataset_id ?? ''} sx={{ '& .MuiSelect-select': { whiteSpace: 'normal', overflowWrap: 'anywhere' } }} onChange={e => {
-            setDatasetId(e.target.value)
-            const first = availableDatasets.find(d => d.dataset_id === e.target.value)?.signals[0]
+          <SignalDatasetSelect datasets={availableDatasets} value={dataset} label={t('analyzer.dataset')} disabled={pending} onChange={item => {
+            setDatasetId(item.dataset_id)
+            const first = item.signals[0]
             choose(first ? sourceKey(first.source) : '', first)
-          }}>{availableDatasets.map(item => <MenuItem key={item.dataset_id} value={item.dataset_id} sx={{ whiteSpace: 'normal', overflowWrap: 'anywhere', maxWidth: 600 }}>{item.name}</MenuItem>)}</TextField>
+          }} />
           <TextField select fullWidth label={t('analyzer.datasetSignal')} value={selected ? selection : ''} disabled={!dataset} onChange={e => choose(e.target.value, dataset?.signals.find(s => sourceKey(s.source) === e.target.value))}>
             {dataset?.signals.map(item => <MenuItem key={sourceKey(item.source)} value={sourceKey(item.source)} sx={{ whiteSpace: 'normal', maxWidth: 600 }}>{item.label}</MenuItem>)}
           </TextField>
@@ -123,7 +124,7 @@ function Analyzer({ datasets }: { datasets: AnalyzerDataset[] }) {
           {selected && <Stack direction="row" useFlexGap sx={{ gap: .75, flexWrap: 'wrap' }}><Chip size="small" label={selected.origin.toUpperCase()} /><Chip size="small" variant="outlined" label={`${formatNumber(selected.sample_count)} ${t('analyzer.samples')}`} /></Stack>}
           <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={!request || !finite || count < 256 || pending} onClick={() => { if (request) analyze.mutate(request) }}>{t('analyzer.analyze')}</Button>
           <Typography aria-live="polite" data-testid="analyzer-count" variant="body2">{formatNumber(count)} {t('analyzer.samples')} · {(count / config.sample_rate_hz * 1000).toPrecision(5)} ms</Typography>
-          {selected?.source.kind === 'generated' && <Button component={RouterLink} to={'/pa-library?input=' + selected.source.source_id} endIcon={<ArrowForwardIcon />}>{t('paInput.next')}</Button>}
+          {selected?.source.kind === 'generated' && <Button component={RouterLink} to={'/pa-library?' + new URLSearchParams({ input: selected.source.source_id, ...(dataset ? { dataset: dataset.dataset_id } : {}) })} endIcon={<ArrowForwardIcon />}>{t('paInput.next')}</Button>}
           {selected?.source.kind === 'dataset' && <Button component={RouterLink} to={'/datasets/' + selected.source.source_id} endIcon={<ArrowForwardIcon />}>{t('analyzer.openDataset')}</Button>}
           {!selected && <Button component={RouterLink} to="/signal-generator" endIcon={<ArrowForwardIcon />}>{t('generator.title')}</Button>}
           {pending && <LinearProgress />}
@@ -156,9 +157,15 @@ function Analyzer({ datasets }: { datasets: AnalyzerDataset[] }) {
       <Stack spacing={1.5} sx={{ minWidth: 0 }}>
         {result ? <>
           {stale && <Alert severity="warning">{t('analyzer.stale')}</Alert>}
-          <Stack direction="row" useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}><Typography variant="h2" sx={{ flex: 1 }}>{result.source.label}</Typography><Button startIcon={<DownloadIcon />} onClick={() => saveFile('signal-analysis.json', result)}>{t('analyzer.exportJson')}</Button><Button startIcon={<DownloadIcon />} onClick={() => saveFile('signal-psd.csv', 'frequency_hz,psd_dbfs_hz\n' + result.frequency_hz.map((f, i) => `${f},${result.psd_dbfs_hz[i]}`).join('\n'), true)}>{t('analyzer.exportPsd')}</Button></Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} useFlexGap sx={{ alignItems: { xs: 'stretch', sm: 'center' }, gap: 1 }}>
+            <Typography variant="h2" sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>{result.source.label}</Typography>
+            <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: .5, flexShrink: 0 }}>
+              <Button startIcon={<DownloadIcon />} onClick={() => saveFile('signal-analysis.json', result)}>{t('analyzer.exportJson')}</Button>
+              <Button startIcon={<DownloadIcon />} onClick={() => saveFile('signal-psd.csv', 'frequency_hz,psd_dbfs_hz\n' + result.frequency_hz.map((f, i) => `${f},${result.psd_dbfs_hz[i]}`).join('\n'), true)}>{t('analyzer.exportPsd')}</Button>
+            </Stack>
+          </Stack>
           <Typography variant="body2" color="text.secondary">{formatNumber(result.sample_count)} {t('analyzer.samples')} · [{result.sample_range.join(', ')}) · {result.real_signal ? t('analyzer.format.real') : t('analyzer.format.complex')}</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 1 }}>{['papr', 'obw', 'rms'].map(key => { const m = result.measurements.find(v => v.key === key); return <Paper key={key} sx={{ p: 1.5 }}><Typography variant="caption" color="text.secondary">{m?.label}</Typography><Typography sx={{ fontSize: { xs: 16, lg: 22 }, fontWeight: 700 }}>{m?.value == null ? '—' : key === 'obw' ? bandwidthText(m.value) : `${m.value.toPrecision(4)} ${m.unit}`}</Typography></Paper> })}</Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0,1fr)', sm: 'repeat(3,minmax(0,1fr))' }, gap: 1 }}>{['papr', 'obw', 'rms'].map(key => { const m = result.measurements.find(v => v.key === key); return <Paper key={key} sx={{ p: 1.5, display: { xs: 'flex', sm: 'block' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}><Typography variant="caption" color="text.secondary">{m?.label}</Typography><Typography sx={{ fontSize: { xs: 16, lg: 22 }, fontWeight: 700, whiteSpace: 'nowrap' }}>{m?.value == null ? '—' : key === 'obw' ? bandwidthText(m.value) : `${m.value.toPrecision(4)} ${m.unit}`}</Typography></Paper> })}</Box>
           <Tabs value={tab} onChange={(_, v: string) => setTab(v)} variant="scrollable" scrollButtons="auto" aria-label={t('generator.visualizations')}>{(['spectrum', 'time', 'distribution', 'eye', 'metrics'] as const).map(v => <Tab key={v} value={v} label={t(`analyzer.tab.${v}`)} />)}</Tabs>
           <AnalyzerPlots result={result} tab={tab} />
         </> : <Paper sx={{ p: 5, minHeight: 450, display: 'grid', placeContent: 'center', textAlign: 'center' }}><InsightsIcon sx={{ color: 'primary.main', fontSize: 64, mx: 'auto', mb: 2 }} /><Typography variant="h2">{t('analyzer.first')}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>{t('analyzer.intro')}</Typography></Paper>}

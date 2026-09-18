@@ -39,6 +39,7 @@ ROUTES["POST"] += [r"/signal-generator/batches", r"/pa-library/datasets", r"/sig
 ROUTES["GET"] += [r"/signal-generator/signals", r"/signal-generator/signals/sg-[a-f0-9]{64}/(input\.csv|metadata\.json)",
     r"/pa-library/models", r"/pa-library/simulations/vpa-[a-f0-9]{64}(/(output\.csv|paired\.csv|metadata\.json))?"]
 ROUTES["POST"] += [r"/signal-generator/signals/sg-[a-f0-9]{64}/(archive|restore)", r"/pa-library/simulations", r"/pa-library/simulations/vpa-[a-f0-9]{64}/dataset"]
+ROUTES["POST"] += [r"/signal-generator/datasets/sds-[a-f0-9]{64}/(archive|restore)"]
 ROUTES["GET"] += [r"/signal-analyzer/(sources|datasets)", r"/signal-generator/datasets/sds-[a-f0-9]{64}(/download)?"]
 ROUTES["POST"] += [r"/signal-analyzer/(analyze|upload)"]
 

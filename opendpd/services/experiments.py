@@ -196,6 +196,23 @@ def submission_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[Con
                                     f"frame_length {frame} exceeds the split guard of {split.guard_samples} samples, "
                                     "so frames next to a split boundary share context across train/val/test",
                                     hint=f"re-import with a guard of at least {frame} samples or use a shorter frame"))
+    # The gradient DPD trainer selects checkpoints using validation ACLR. A
+    # padded loader batch cannot supply the missing real samples for Welch.
+    from opendpd.core.registry import get_model
+    if (config.task == TaskType.train_dpd
+            and get_model(config.model.key).training_method == "gradient"
+            and config.evaluation.profile_id == "opendpd-spectral-v2"
+            and manifest.signal.nperseg):
+        from opendpd.services.signal_generator import sample_counts
+        counts = sample_counts(ws, manifest.dataset_id, version).counts
+        evaluated = [("val", "validation", config.training.eval_val), ("test", "test", config.training.eval_test)]
+        short = [f"{label}: {counts[key]:,}" for key, label, enabled in evaluated
+                 if enabled and counts[key] < manifest.signal.nperseg]
+        if short:
+            errors.append(ConfigIssue("dataset.id",
+                f"DPD training needs at least {manifest.signal.nperseg:,} real samples in each evaluated split for ACLR; "
+                f"the selected dataset has too few ({'; '.join(short)}).",
+                hint="Generate or import a longer capture, or choose an appropriate shorter PSD segment (nperseg) in Edit metadata. Padding does not add valid samples."))
     return errors, warnings
 
 

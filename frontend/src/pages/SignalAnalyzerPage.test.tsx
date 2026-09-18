@@ -24,7 +24,7 @@ test('explicit analysis, exact source handoff, range feedback and stale results'
   const button = await screen.findByRole('button', { name: 'Analyze signal' })
   expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
   expect(screen.getByTestId('analyzer-count')).toHaveTextContent('8,192 samples')
-  expect(screen.getByRole('link', { name: 'Choose Virtual PA →' })).toHaveAttribute('href', `/pa-library?input=${generated.source.source_id}`)
+  expect(screen.getByRole('link', { name: 'Choose Virtual PA' })).toHaveAttribute('href', `/pa-library?input=${generated.source.source_id}&dataset=${dataset.dataset_id}`)
   await userEvent.click(button)
   await screen.findByText('Spectrogram view')
   expect(calls.find(c => c.method === 'POST')?.body).toMatchObject({ source: generated.source, config: { sample_rate_hz: 20e6, bandwidth_hz: 5e6 }, reference: null })

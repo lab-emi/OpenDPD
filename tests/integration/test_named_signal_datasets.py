@@ -142,3 +142,19 @@ def test_named_dataset_routes_follow_public_workspace_policy():
     download = "/signal-generator/datasets/sds-" + "a" * 64 + "/download"
     assert allowed("GET", download)
     assert expensive_request("GET", download)
+
+
+def test_removing_one_dataset_preserves_aliases_waveforms_and_restore(client):
+    c, ws = client
+    original = generate(c, 'syn_pa_in_original_n2')
+    alias = generate(c, 'syn_pa_in_alias_n2')
+    identifier = original[0]['dataset_id']
+    assert c.post(f'/api/v1/signal-generator/datasets/{identifier}/archive').status_code == 200
+    groups = c.get('/api/v1/signal-analyzer/datasets').json()
+    assert [d['dataset_id'] for d in groups] == [alias[0]['dataset_id']]
+    assert c.get(f"/api/v1/signal-generator/signals/{original[0]['signal_id']}").status_code == 200
+    assert c.post(f'/api/v1/signal-generator/datasets/{identifier}/restore').status_code == 200
+    assert len(c.get('/api/v1/signal-analyzer/datasets').json()) == 2
+    c.post(f'/api/v1/signal-generator/datasets/{identifier}/archive')
+    assert generate(c, 'syn_pa_in_original_n2') == original
+    assert len(c.get('/api/v1/signal-analyzer/datasets').json()) == 2

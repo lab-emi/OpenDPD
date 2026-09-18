@@ -1,6 +1,8 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import { useGeneratedSignals, type GeneratorConfig } from '@/api/signalGenerator'
-import { datasetName, pairedDatasetName, validDatasetName } from '@/utils/datasetNames'
+import { pairedDatasetName, validDatasetName } from '@/utils/datasetNames'
+import { useAnalyzerDatasets } from '@/api/signalAnalyzer'
+import { SignalDatasetSelect } from '@/components/SignalDatasetSelect'
 import { api } from '@/api/client'
 import { MathFormula } from '@/components/MathFormula'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
@@ -13,16 +15,15 @@ import ButtonBase from '@mui/material/ButtonBase'
 import Chip from '@mui/material/Chip'
 import Grid from '@mui/material/Grid'
 import LinearProgress from '@mui/material/LinearProgress'
-import MenuItem from '@mui/material/MenuItem'
 import Paper from '@mui/material/Paper'
 import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { useCustomDatasetImports } from '@/api/hooks'
-import { paDefaults, paText, usePAInputs, useSimulateDataset, useVirtualPAs,
+import { paDefaults, paText, useSimulateDataset, useVirtualPAs,
   type PAParameter, type VirtualPA } from '@/api/virtualPA'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 import { formatNumber, t } from '@/i18n'
@@ -83,42 +84,48 @@ export function PALibraryPage() {
   const [query] = useSearchParams()
   if (models.isPending) return <LoadingState />
   if (models.isError) return <ErrorState error={models.error} onRetry={() => void models.refetch()} />
-  return <Library key={query.get('input') ?? ''} models={models.data} />
+  return <Library key={(query.get('dataset') ?? '') + ':' + (query.get('input') ?? '')} models={models.data} />
 }
 
 function Library({ models }: { models: VirtualPA[] }) {
   const colors = useStudioColors()
-  const inputs = usePAInputs()
+  const collections = useAnalyzerDatasets()
   const workflow = useStudioWorkflow()
-  const { selectInput, configurePA } = workflow
+  const { selectInputs, configurePA } = workflow
   const [query] = useSearchParams()
   const navigate = useNavigate()
   const initialModel = models.find(m => m.model_id === workflow.state.modelId) ?? models.find(m => m.model_id === 'rapp-am-pm') ?? models[0]!
   const [modelId, setModelId] = useState(initialModel.model_id)
   const [values, setValues] = useState<Record<string, number>>(() => ({ ...paDefaults(initialModel), ...(initialModel.model_id === workflow.state.modelId ? workflow.state.parameters : {}) }))
-  const [inputId, setInputId] = useState(query.get('input') ?? (workflow.state.origin === 'generated' ? workflow.state.inputId ?? '' : ''))
+  const [datasetId, setDatasetId] = useState(query.get('dataset') ?? (workflow.state.origin === 'generated' ? workflow.state.inputDatasetId ?? '' : ''))
+  const requestedInput = query.get('input') ?? (workflow.state.origin === 'generated' ? workflow.state.inputId : null)
   const [active, setActive] = useState(initialModel.parameters[0]!.key)
   const [error, setError] = useState<unknown>(null)
-  const [removed, setRemoved] = useState<string | null>(null)
+  const [removed, setRemoved] = useState<{ id: string; endpoint: string } | null>(null)
   const [removing, setRemoving] = useState(false)
   const create = useSimulateDataset()
   const allowed = useCustomDatasetImports()
   const model = models.find(m => m.model_id === modelId)!
-  const input = inputs.data?.find(entry => entry.signal_id === inputId)
-  const batchIds = workflow.state.origin === 'generated' && workflow.state.inputId === inputId && workflow.state.inputIds?.length
-    ? workflow.state.inputIds : inputId ? [inputId] : []
-  const namedBatch = workflow.state.inputId === inputId ? workflow.state.inputDatasetName : undefined
-  const savedConfigs = workflow.state.inputId === inputId && workflow.state.inputConfigs?.length === batchIds.length ? workflow.state.inputConfigs : undefined
-  const inputSignals = useGeneratedSignals(namedBatch || savedConfigs ? [] : batchIds)
+  const datasets = (collections.data ?? []).filter(d => d.kind === 'pa_input')
+  const input = datasetId ? (removed?.id === datasetId ? undefined : datasets.find(d => d.dataset_id === datasetId))
+    : datasets.find(d => d.signals.some(s => s.source.source_id === requestedInput))
+  const batchIds = useMemo(() => input?.signals.map(s => s.source.source_id) ?? [], [input])
+  const savedConfigs = workflow.state.inputDatasetId === input?.dataset_id && workflow.state.inputConfigs?.length === batchIds.length ? workflow.state.inputConfigs : undefined
+  const inputSignals = useGeneratedSignals(savedConfigs ? [] : batchIds)
   const configs = savedConfigs ?? inputSignals.flatMap(q => q.data ? [q.data.config as GeneratorConfig] : [])
   const [customName, setCustomName] = useState<string | null>(null)
-  const automaticName = namedBatch ? pairedDatasetName(namedBatch, modelId) : datasetName(configs, 'inout', modelId)
+  const automaticName = input ? pairedDatasetName(input.name, modelId) : ''
   const name = customName ?? automaticName
-  const validName = validDatasetName(name, 'inout') && (!!namedBatch || configs.length === batchIds.length)
+  const validName = validDatasetName(name, 'inout') && configs.length === batchIds.length && batchIds.length > 0
   const valid = model.parameters.every(p => validParameter(p, values[p.key]!))
   useEffect(() => {
-    if (input && valid) { selectInput(input.signal_id, input.name); configurePA(modelId, values) }
-  }, [input, modelId, valid, selectInput, configurePA, values])
+    if (input && valid && configs.length === batchIds.length) {
+      if (workflow.state.inputDatasetId !== input.dataset_id || workflow.state.inputIds?.join() !== batchIds.join()) {
+        selectInputs(batchIds, configs, { id: input.dataset_id, name: input.name })
+      }
+      configurePA(modelId, values)
+    }
+  }, [input, modelId, valid, selectInputs, configurePA, values, configs, batchIds, workflow.state.inputDatasetId, workflow.state.inputIds])
   const selectModel = (entry: VirtualPA) => { setModelId(entry.model_id); setValues(paDefaults(entry)); setActive(entry.parameters[0]!.key); setError(null); create.reset() }
   const selectVariable = (key: string) => { setActive(key) }
   const run = () => {
@@ -135,7 +142,7 @@ function Library({ models }: { models: VirtualPA[] }) {
       <Chip label={t('paLibrary.synthetic')} color="info" variant="outlined" />
     </Stack>
     {removed && <Alert severity="success" action={<Button disabled={removing} onClick={() => {
-      setRemoving(true); void api.post(`/signal-generator/signals/${removed}/restore`, {}).then(() => { setInputId(removed); setRemoved(null); return inputs.refetch() }).catch(setError).finally(() => setRemoving(false))
+      setRemoving(true); void api.post(removed.endpoint + '/restore', {}).then(async () => { await collections.refetch(); setDatasetId(removed.id); setRemoved(null) }).catch(setError).finally(() => setRemoving(false))
     }}>{t('common.undo')}</Button>}>{t('paInput.removed')}</Alert>}
     <Typography color="text.secondary" sx={{ maxWidth: 980 }}>{t('paLibrary.intro')}</Typography>
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '270px minmax(0, 1fr)' }, gap: 2.5, alignItems: 'start' }}>
@@ -153,13 +160,10 @@ function Library({ models }: { models: VirtualPA[] }) {
       <Stack spacing={2} sx={{ minWidth: 0 }}>
         <Paper sx={{ p: 2.5 }}><Stack spacing={2}>
           <Typography variant="h2">{t('paLibrary.feed')}</Typography>
-          {inputs.isPending ? <LoadingState /> : inputs.isError ? <ErrorState error={inputs.error} onRetry={() => void inputs.refetch()} /> :
-            <TextField select fullWidth label={t('paLibrary.input')} value={input ? inputId : ''} disabled={create.isPending}
-              onChange={e => { setInputId(e.target.value); setCustomName(null); create.reset() }}>
-              <MenuItem value="" disabled>{t('paLibrary.chooseInput')}</MenuItem>
-              {inputs.data.map(entry => <MenuItem key={entry.signal_id} value={entry.signal_id}>{entry.name} · {formatNumber(entry.n_samples)} I/Q · {(entry.sample_rate_hz / 1e6).toFixed(2)} MHz · {entry.signal_id.slice(3, 11)}</MenuItem>)}
-            </TextField>}
-          {input ? <Typography variant="body2" color="text.secondary">{t('paLibrary.inputSummary', { count: formatNumber(input.n_samples), duration: (1000 * input.n_samples / input.sample_rate_hz).toPrecision(5) })}</Typography>
+          {collections.isPending ? <LoadingState /> : collections.isError ? <ErrorState error={collections.error} onRetry={() => void collections.refetch()} /> :
+            <SignalDatasetSelect datasets={datasets} value={input} label={t('paLibrary.input')} disabled={create.isPending || removing}
+              onChange={entry => { setDatasetId(entry.dataset_id); setCustomName(null); create.reset() }} />}
+          {input ? <Typography variant="body2" color="text.secondary">{t('paLibrary.datasetSummary', { signals: formatNumber(batchIds.length), count: formatNumber(input.signals.reduce((n, s) => n + s.sample_count, 0)) })}</Typography>
             : <Alert severity="info">{t('paLibrary.noInput')}</Alert>}
           {batchIds.length > 1 && <Alert severity="info">{t('paLibrary.batch', { count: batchIds.length })}</Alert>}
           {!allowed && <Alert severity="info">{t('paLibrary.importDisabled')}</Alert>}
@@ -167,15 +171,17 @@ function Library({ models }: { models: VirtualPA[] }) {
           <TextField fullWidth label={t('paLibrary.datasetName')} value={name} onChange={e => setCustomName(e.target.value)} disabled={create.isPending || !input} error={!!input && !validDatasetName(name, 'inout')}
             helperText={t('paLibrary.datasetNameHelp')} slotProps={{ htmlInput: { maxLength: 96 } }} />
           {customName !== null && <Button sx={{ alignSelf: 'start' }} onClick={() => setCustomName(null)} disabled={create.isPending}>{t('generator.autoName')}</Button>}
-          <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>{t('paLibrary.outputDatasetName', { name: name.replace(/^syn_pa_inout_/, 'syn_pa_out_') })}</Typography>
+          {input && <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>{t('paLibrary.outputDatasetName', { name: name.replace(/^syn_pa_inout_/, 'syn_pa_out_') })}</Typography>}
           {inputSignals.some(q => q.isError) && <ErrorState error={inputSignals.find(q => q.isError)?.error} />}
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
             <Button variant="contained" startIcon={<PlayArrowIcon />} endIcon={<ArrowForwardIcon />} onClick={run} disabled={!input || !valid || !validName || !allowed || create.isPending}>{t(create.isPending ? 'paLibrary.simulating' : 'paLibrary.simulate')}</Button>
             <Button color="inherit" startIcon={<DeleteOutlineIcon />} disabled={!input || removing || create.isPending} onClick={() => {
               if (!input) return
-              const id = input.signal_id; setRemoving(true)
-              void api.post(`/signal-generator/signals/${id}/archive`, {}).then(() => {
-                setRemoved(id); setInputId(''); create.reset(); workflow.reset(); return inputs.refetch()
+              const id = input.dataset_id
+              const endpoint = id.startsWith('sds-') ? `/signal-generator/datasets/${id}` : `/signal-generator/signals/${batchIds[0]}`
+              setRemoving(true)
+              void api.post(endpoint + '/archive', {}).then(() => {
+                setRemoved({ id, endpoint }); setDatasetId(id); create.reset(); workflow.reset(); return collections.refetch()
               }).catch(setError).finally(() => setRemoving(false))
             }}>{t('paInput.remove')}</Button>
             <Button component={RouterLink} to="/signal-generator">{t('paLibrary.generateInput')}</Button>

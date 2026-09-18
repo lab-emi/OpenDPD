@@ -22,7 +22,7 @@ def upload_directory(ws, identifier):
     return ws.hashed_store('signal_uploads', 'sa').directory(identifier)
 
 
-def admit_signal_upload(ws, path: Path):
+def admit_signal_upload(ws, path: Path, filename: str | None = None):
     """Scan every CSV field before publishing a typed array; no executable formats."""
     temporary = None
     try:
@@ -76,8 +76,9 @@ def admit_signal_upload(ws, path: Path):
                 values[i] = [_number(v, True) for v in row]
         values.flush()
         del values
+        label = filename.replace("\\", "/").rsplit("/", 1)[-1][:160] if filename else f"CSV signal · {source_hash[:10]}"
         info = AnalyzerSourceInfo(source=AnalyzerSource(kind="upload", source_id=identifier),
-            label=f"CSV signal · {source_hash[:10]}", sample_count=count, columns=columns,
+            label=label, sample_count=count, columns=columns,
             complex_columns=sorted(complex_columns), origin="uploaded")
         write_json_atomic(temporary / "manifest.json", {"info": info.model_dump(mode="json"),
             "csv_sha256": source_hash, "array_sha256": sha256_file(temporary / "samples.npy")})
@@ -131,6 +132,8 @@ def list_datasets(ws):
     results, covered = [], set()
     for dataset in signal_datasets.list_datasets(ws):
         covered.update((s.source.kind, s.source.source_id) for s in dataset.signals)
+        if (ws.hashed_store("signal_datasets", "sds").directory(dataset.dataset_id) / ".removed").exists():
+            continue
         if dataset.kind == "pa_input" and any((signal_generator.directory(ws, s.source.source_id) / ".removed").exists() for s in dataset.signals):
             continue
         results.append(AnalyzerDataset.model_validate(dataset.model_dump(exclude={"requested_name"})))

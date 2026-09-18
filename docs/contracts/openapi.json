@@ -18011,6 +18011,48 @@
         ]
       }
     },
+    "/api/v1/signal-generator/datasets/{dataset_id}/archive": {
+      "post": {
+        "operationId": "archive_signal_dataset_api_v1_signal_generator_datasets__dataset_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalDataset"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive Signal Dataset",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
     "/api/v1/signal-generator/datasets/{dataset_id}/download": {
       "get": {
         "operationId": "signal_dataset_download_api_v1_signal_generator_datasets__dataset_id__download_get",
@@ -18046,6 +18088,48 @@
           }
         },
         "summary": "Signal Dataset Download",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/datasets/{dataset_id}/restore": {
+      "post": {
+        "operationId": "restore_signal_dataset_api_v1_signal_generator_datasets__dataset_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalDataset"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Restore Signal Dataset",
         "tags": [
           "signal generator"
         ]
