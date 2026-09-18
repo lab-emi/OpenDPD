@@ -10,7 +10,7 @@ enlarge controls. Curves at the same location remain together for comparison.
 | --- | --- | --- |
 | DPD Input | Original target x | Inputs from the selected runs |
 | DPD Output / PA Input | Predistorted drive u = DPD(x) | Predistorted drives from the selected runs |
-| PA Output | y = PA(u) | Linear output target g·x, with-DPD output, surrogate without DPD and measured or synthetic dataset output without DPD |
+| PA Output | y = PA(u) | Linear output target g·x, PA-model predictions with and without DPD, and measured or synthetic dataset output without DPD |
 
 **DPD output is the signal driving the PA.** A curve called “with DPD” that was
 computed through a PA surrogate belongs to PA Output, not DPD Output. The linear
@@ -24,11 +24,26 @@ Unspecified signal position chart.
 
 ## Legends and provenance
 
-Each chart has its own compact legend below the axes. Line color and dash distinguish
-curves without covering the spectral shoulders. Single-run views omit the run ID;
+Starting in 2.2.13, each chart has a 14 px legend above the axes, with room for wrapped
+rows and separate space for the plot toolbar. Axis labels are larger too. Line color
+and dash distinguish curves without covering the spectral shoulders. Single-run views omit the run ID;
 multi-run views use R1, R2, … and list the full run-ID key underneath. Trace controls
 and the cursor table retain the original names, source and capture identity. Synthetic
 dataset outputs are labelled synthetic; mock evidence remains marked MOCK.
+
+**PA model** means the trained model of the amplifier, also called a **surrogate**.
+The PA output plot includes this explanation whenever it shows DPD predictions through that model:
+
+| Legend | Meaning |
+| --- | --- |
+| Without DPD · PA model | Original input x → trained PA model: the predicted output without predistortion |
+| With DPD · PA model | Original input x → DPD → the same trained PA model: the predicted output with predistortion |
+| Without DPD · measured | PA output from the measured dataset, before applying DPD |
+| Without DPD · synthetic data | PA output from a synthetic dataset, before applying DPD |
+| Linear target g·x | The desired linear output under the result's gain reference |
+
+The two PA-model curves are predictions. A measured DPD result uses captured PA output
+and is labeled measured; its plot does not acquire a model-prediction explanation.
 
 Switching a legend affects only that chart. Full input/output target and baseline
 curves remain available in Trace controls. Saving a review preserves independent

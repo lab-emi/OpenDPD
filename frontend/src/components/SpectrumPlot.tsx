@@ -1,4 +1,3 @@
-import useMediaQuery from '@mui/material/useMediaQuery'
 import { useMemo } from 'react'
 import { t } from '@/i18n'
 import { useStudioColors } from '@/theme'
@@ -31,6 +30,8 @@ export interface SpectrumPlotProps {
   bands?: SpectrumBands
   title?: string
   height?: number
+  /** Shared space for wrapping legends in adjacent signal-chain panels. */
+  legendRows?: number
   onRendered?: (ms: number) => void
   viewKey?: string
   xRange?: [number, number]
@@ -41,9 +42,11 @@ export interface SpectrumPlotProps {
 }
 
 /** PSD traces on a dB axis with the ACLR integration bands shaded (UX spec §5). */
-export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = t('chart.spectrum.title'), height, onRendered, viewKey = '', xRange, yRange, cursorX, onViewportChange, onVisibilityChange }: SpectrumPlotProps) {
+export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = t('chart.spectrum.title'), height, legendRows: sharedLegendRows, onRendered, viewKey = '', xRange, yRange, cursorX, onViewportChange, onVisibilityChange }: SpectrumPlotProps) {
   const colors = useStudioColors()
-  const narrow = useMediaQuery('(max-width: 600px)')
+  // Reserve enough space for wrapped legend rows even in a narrow grid cell.
+  // Keep the legend clear of both the mode bar and frequency-axis labels.
+  const legendRows = Math.min(sharedLegendRows ?? traces.length, 6)
   const mhz = useMemo(() => Float64Array.from(frequencyHz, (f) => (axis === 'hz' ? f / 1e6 : f)), [frequencyHz, axis])
   const data = useMemo<PlotTrace[]>(
     () => traces.map((tr, i) => ({ x: tr.frequencyHz ? Float64Array.from(tr.frequencyHz, (f) => axis === 'hz' ? f / 1e6 : f) : mhz, y: tr.psdDb, name: tr.name, visible: tr.visible === false ? 'legendonly' : true, mode: 'lines', type: 'scatter', hovertemplate: `%{x:.4f} ${axis === 'hz' ? 'MHz' : 'cycles/sample'}<br>%{y:.3f} dB<extra>%{fullData.name}</extra>`, line: { width: tr.width ?? 1.2, dash: tr.dash ?? seriesDash(i), ...(tr.color ? { color: tr.color } : {}) } })),
@@ -63,7 +66,13 @@ export function SpectrumPlot({ frequencyHz, axis = 'hz', traces, bands, title = 
       for (const adj of parsed.adjacent) shade(adj, `${colors.status.warning}14`)
     }
     if (cursorX !== undefined) shapes.push({ type: 'line', x0: cursorX, x1: cursorX, y0: 0, y1: 1, yref: 'paper', line: { width: 1, dash: 'dot', color: colors.textSecondary } })
-    return { xaxis: { title: { text: xTitle }, ...(xRange ? { range: xRange } : {}) }, yaxis: { title: { text: yTitle }, ...(yRange ? { range: yRange } : {}) }, shapes, showlegend: true, margin: { l: 62, r: 12, t: narrow ? 65 : 42, b: narrow ? 125 : 105 }, legend: { orientation: 'h', x: 0, y: narrow ? -.45 : -.32, yanchor: 'top', font: { size: 10 } } }
-  }, [bandsKey, xTitle, yTitle, colors, axis, xRange, yRange, cursorX, narrow])
-  return <PlotlyChart title={title} traces={data} layout={layout} height={height} onRendered={onRendered} onViewportChange={onViewportChange} onVisibilityChange={onVisibilityChange} viewKey={`${viewKey}:${axis}`} data-testid="spectrum-plot" />
+    return {
+      xaxis: { title: { text: xTitle, font: { size: 14 } }, tickfont: { size: 13 }, ...(xRange ? { range: xRange } : {}) },
+      yaxis: { title: { text: yTitle, font: { size: 14 } }, tickfont: { size: 13 }, ...(yRange ? { range: yRange } : {}) },
+      shapes, showlegend: true,
+      margin: { l: 62, r: 16, t: 52 + 24 * legendRows, b: 56 },
+      legend: { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', maxheight: Math.max(32, 24 * legendRows + 8), font: { size: 14 } },
+    }
+  }, [bandsKey, xTitle, yTitle, colors, axis, xRange, yRange, cursorX, legendRows])
+  return <PlotlyChart title={title} traces={data} layout={layout} height={Math.max(height ?? 320, 328 + 24 * legendRows)} onRendered={onRendered} onViewportChange={onViewportChange} onVisibilityChange={onVisibilityChange} viewKey={`${viewKey}:${axis}`} data-testid="spectrum-plot" />
 }

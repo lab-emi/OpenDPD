@@ -686,7 +686,7 @@
   "live.waitingGeometry": "Wachten tot de worker de gegevensladers heeft opgebouwd…",
   "live.batch": "Batch {batch} / {total}",
   "live.cadence": "Signaalvoorbeeld: minimaal {batches} batches en {seconds} s tussen updates; past zich aan de modelkosten aan. De eerste batch wordt direct getoond.",
-  "live.surrogate": "De DPD-uitgang wordt via het getrainde PA-surrogaatmodel geëvalueerd. Deze grafieken tonen de gesimuleerde signaalketen.",
+  "live.surrogate": "De DPD-uitgang wordt geëvalueerd met het getrainde PA-model (ook surrogaat genoemd). De grafieken tonen de door dit model voorspelde signaalketen.",
   "live.final": "Definitief testresultaat",
   "live.probe": "Livevoorbeeld · vast segment",
   "live.signals": "Uitgang versus referentie",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "Input x",
   "spectrum.trace.predistorted": "Predistorted u",
   "spectrum.trace.target": "Linear target g·x",
-  "spectrum.trace.surrogateWithout": "Without DPD · surrogate",
+  "spectrum.trace.surrogateWithout": "Zonder DPD · PA-model",
   "spectrum.trace.syntheticWithout": "Without DPD · synthetic data",
   "spectrum.trace.measuredWithout": "Without DPD · measured",
-  "spectrum.trace.surrogateWith": "With DPD · surrogate",
+  "spectrum.trace.surrogateWith": "Met DPD · PA-model",
   "spectrum.trace.measuredWith": "With DPD · measured",
   "spectrum.trace.model": "PA model prediction",
   "spectrum.trace.synthetic": "Dataset output · synthetic",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "Grafieken, metadata, voorbewerking en training gebruiken de gekozen subdataset met eigen samplefrequentie en lengte. De ZIP bevat alle oorspronkelijke opnamen en het PA-script.",
   "datasets.downloadCsv": "CSV downloaden",
   "datasets.downloadZip": "Alles downloaden · ZIP",
-  "generator.removePreset": "Voorinstelling {name} verwijderen"
+  "generator.removePreset": "Voorinstelling {name} verwijderen",
+  "spectrum.paModelHelp": "Het PA-model (surrogaat) is het getrainde versterkermodel. Zonder DPD: oorspronkelijke ingang → PA-model. Met DPD: oorspronkelijke ingang → DPD → hetzelfde PA-model. De PA-modelcurven zijn voorspellingen; datasetcurven zijn als gemeten of synthetisch gemarkeerd."
 }

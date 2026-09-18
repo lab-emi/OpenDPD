@@ -686,7 +686,7 @@
   "live.waitingGeometry": "Warten auf das Laden der Daten…",
   "live.batch": "Batch {batch} / {total}",
   "live.cadence": "Signalvorschau: mindestens {batches} Batches und {seconds} s zwischen Aktualisierungen, abhängig vom Rechenaufwand. Erster Batch sofort.",
-  "live.surrogate": "Der DPD wird durch das trainierte PA-Modell bewertet. Die Diagramme zeigen die simulierte Signalkette.",
+  "live.surrogate": "Der DPD-Ausgang wird mit dem trainierten PA-Modell (auch Surrogat genannt) ausgewertet. Die Diagramme zeigen die von diesem Modell vorhergesagte Signalkette.",
   "live.final": "Endgültiges Testergebnis",
   "live.probe": "Live-Vorschau · festes Segment",
   "live.signals": "Ausgabe und Referenz",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "Input x",
   "spectrum.trace.predistorted": "Predistorted u",
   "spectrum.trace.target": "Linear target g·x",
-  "spectrum.trace.surrogateWithout": "Without DPD · surrogate",
+  "spectrum.trace.surrogateWithout": "Ohne DPD · PA-Modell",
   "spectrum.trace.syntheticWithout": "Without DPD · synthetic data",
   "spectrum.trace.measuredWithout": "Without DPD · measured",
-  "spectrum.trace.surrogateWith": "With DPD · surrogate",
+  "spectrum.trace.surrogateWith": "Mit DPD · PA-Modell",
   "spectrum.trace.measuredWith": "With DPD · measured",
   "spectrum.trace.model": "PA model prediction",
   "spectrum.trace.synthetic": "Dataset output · synthetic",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "Diagramme, Metadaten, Vorverarbeitung und Training verwenden die Auswahl mit eigener Abtastrate und Länge. Die ZIP enthält alle Originaldaten und das PA-Skript.",
   "datasets.downloadCsv": "CSV herunterladen",
   "datasets.downloadZip": "Alles herunterladen · ZIP",
-  "generator.removePreset": "Voreinstellung {name} entfernen"
+  "generator.removePreset": "Voreinstellung {name} entfernen",
+  "spectrum.paModelHelp": "Das PA-Modell (Surrogat) ist das trainierte Verstärkermodell. Ohne DPD: ursprüngliches Eingangssignal → PA-Modell. Mit DPD: ursprüngliches Eingangssignal → DPD → dasselbe PA-Modell. Die PA-Modellkurven sind Vorhersagen; Datenkurven sind als gemessen oder synthetisch gekennzeichnet."
 }

@@ -43,11 +43,14 @@ export function SpectrumPanels({ traces, views, title, dpd: dpdContext, onViewpo
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))', xl: `repeat(${Math.min(3, groups.length)}, minmax(0, 1fr))` }, gap: 2 }}>
       {groups.map(({ node, traces: rows, drawn }, i) => <Box key={node} data-signal-node={node} sx={{ minWidth: 0, p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, gridColumn: { md: groups.length % 2 && i === groups.length - 1 ? '1 / -1' : 'auto', xl: 'auto' } }}>
         <SpectrumPlot {...props} title={`${nodeTitle(node, dpd)} · PSD`} height={narrow ? Math.max(380, props.height ?? 330) : props.height ?? 330}
+          legendRows={Math.max(...groups.map(group => group.traces.length))}
           traces={drawn} onRendered={ms => { rendered.set(node, ms); const times = [...rendered.values()]; if (times.every(time => time !== undefined)) props.onRendered?.(Math.max(...times)) }}
           xRange={views?.[node]?.x_range as [number, number] | undefined ?? props.xRange}
           yRange={views?.[node]?.y_range as [number, number] | undefined ?? props.yRange ?? range}
           viewKey={`${props.viewKey ?? ''}:${node}`} onViewportChange={v => onViewportChange?.(v, node)}
           onVisibilityChange={visible => onVisibilityChange?.(traces.map(trace => rows.includes(trace) ? visible[rows.indexOf(trace)] ?? true : trace.visible !== false))} />
+        {node === 'pa_output' && dpd && rows.some(trace => /surrogate/i.test(`${trace.name} ${trace.source ?? ''}`)) &&
+          <Typography variant="body2" color="text.secondary" data-testid="pa-model-explanation" sx={{ mt: 1, px: 1, lineHeight: 1.65 }}>{t('spectrum.paModelHelp')}</Typography>}
       </Box>)}
     </Box>
     {groups.length > 1 && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>{t('spectrum.separated')}</Typography>}

@@ -686,7 +686,7 @@
   "live.waitingGeometry": "Esperando a que se carguen los datos…",
   "live.batch": "Lote {batch} / {total}",
   "live.cadence": "Vista previa: al menos {batches} lotes y {seconds} s entre actualizaciones, según el coste del modelo. El primer lote se muestra inmediatamente.",
-  "live.surrogate": "El DPD se evalúa mediante el modelo PA entrenado. Estas gráficas muestran la cadena simulada.",
+  "live.surrogate": "La salida DPD se evalúa con el modelo PA entrenado, también llamado surrogate. Las gráficas muestran la cadena de señal predicha por ese modelo.",
   "live.final": "Resultado final de prueba",
   "live.probe": "Vista previa · segmento fijo",
   "live.signals": "Salida frente a referencia",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "Input x",
   "spectrum.trace.predistorted": "Predistorted u",
   "spectrum.trace.target": "Linear target g·x",
-  "spectrum.trace.surrogateWithout": "Without DPD · surrogate",
+  "spectrum.trace.surrogateWithout": "Sin DPD · modelo PA",
   "spectrum.trace.syntheticWithout": "Without DPD · synthetic data",
   "spectrum.trace.measuredWithout": "Without DPD · measured",
-  "spectrum.trace.surrogateWith": "With DPD · surrogate",
+  "spectrum.trace.surrogateWith": "Con DPD · modelo PA",
   "spectrum.trace.measuredWith": "With DPD · measured",
   "spectrum.trace.model": "PA model prediction",
   "spectrum.trace.synthetic": "Dataset output · synthetic",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "Gráficas, metadatos, preprocesamiento y entrenamiento usan el subconjunto seleccionado con su frecuencia y longitud. El ZIP contiene todas las capturas originales y el script PA.",
   "datasets.downloadCsv": "Descargar CSV",
   "datasets.downloadZip": "Descargar todo · ZIP",
-  "generator.removePreset": "Eliminar preajuste {name}"
+  "generator.removePreset": "Eliminar preajuste {name}",
+  "spectrum.paModelHelp": "El modelo PA (surrogate) es el modelo entrenado del amplificador. Sin DPD: entrada original → modelo PA. Con DPD: entrada original → DPD → mismo modelo PA. Las curvas del modelo PA son predicciones; las curvas del conjunto de datos se identifican como medidas o sintéticas."
 }

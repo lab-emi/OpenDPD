@@ -686,7 +686,7 @@
   "live.waitingGeometry": "Waiting for the worker to build the data loaders…",
   "live.batch": "Batch {batch} / {total}",
   "live.cadence": "Signal preview: at least {batches} batches and {seconds} s between updates; adapts to model cost. First batch is shown immediately.",
-  "live.surrogate": "DPD output is evaluated through the trained PA surrogate. These plots show the simulated signal chain.",
+  "live.surrogate": "DPD output is evaluated through the trained PA model (also called a surrogate). These plots show the signal chain predicted by that model.",
   "live.final": "Final test result",
   "live.probe": "Live preview · fixed segment",
   "live.signals": "Output vs. reference",
@@ -1277,10 +1277,10 @@
   "spectrum.trace.input": "Input x",
   "spectrum.trace.predistorted": "Predistorted u",
   "spectrum.trace.target": "Linear target g·x",
-  "spectrum.trace.surrogateWithout": "Without DPD · surrogate",
+  "spectrum.trace.surrogateWithout": "Without DPD · PA model",
   "spectrum.trace.syntheticWithout": "Without DPD · synthetic data",
   "spectrum.trace.measuredWithout": "Without DPD · measured",
-  "spectrum.trace.surrogateWith": "With DPD · surrogate",
+  "spectrum.trace.surrogateWith": "With DPD · PA model",
   "spectrum.trace.measuredWith": "With DPD · measured",
   "spectrum.trace.model": "PA model prediction",
   "spectrum.trace.synthetic": "Dataset output · synthetic",
@@ -1466,5 +1466,6 @@
   "datasets.captureHelp": "Charts, metadata, preprocessing and training use the selected subdataset. Each preset retains its own sample rate and length. The collection ZIP contains all original captures and the PA replay script.",
   "datasets.downloadCsv": "Download CSV",
   "datasets.downloadZip": "Download all · ZIP",
-  "generator.removePreset": "Remove preset {name}"
+  "generator.removePreset": "Remove preset {name}",
+  "spectrum.paModelHelp": "PA model (surrogate) is the trained amplifier model. Without DPD: original input → PA model. With DPD: original input → DPD → same PA model. PA-model curves are predictions; dataset curves are labeled measured or synthetic."
 }

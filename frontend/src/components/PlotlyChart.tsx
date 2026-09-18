@@ -48,9 +48,9 @@ export interface PlotTrace {
 export interface PlotLayout {
   title?: { text: string }
   margin?: { l: number; r: number; t: number; b: number }
-  legend?: { orientation: 'h' | 'v'; x: number; y: number; yanchor?: 'top' | 'bottom'; font?: { size: number } }
-  xaxis?: { title?: { text: string }; range?: [number, number]; constrain?: 'domain' }
-  yaxis?: { title?: { text: string }; range?: [number, number]; scaleanchor?: string; scaleratio?: number }
+  legend?: { orientation: 'h' | 'v'; x: number; y: number; yanchor?: 'top' | 'bottom'; maxheight?: number; font?: { size: number } }
+  xaxis?: { title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; range?: [number, number]; constrain?: 'domain' }
+  yaxis?: { title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; range?: [number, number]; scaleanchor?: string; scaleratio?: number }
   shapes?: Array<{ type: 'rect' | 'line'; x0: number; x1: number; y0: number; y1: number; yref: 'paper'; fillcolor?: string; line: { width: number; color?: string; dash?: SeriesDash } }>
   showlegend?: boolean
   height?: number
@@ -174,7 +174,10 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
           await Plotly.react(el, renderTraces, {
             ...plotLayoutBase, ...layout, height, autosize: true,
             // Reserve separate rows for the mode bar and legend on a phone.
-            ...(coarsePointer ? { margin: { ...plotLayoutBase.margin, t: 64 }, legend: { ...plotLayoutBase.legend, y: 1 } } : {}),
+            ...(coarsePointer ? {
+              margin: { ...plotLayoutBase.margin, ...layout?.margin, t: Math.max(64, layout?.margin?.t ?? 0) },
+              legend: { ...plotLayoutBase.legend, y: 1, ...layout?.legend },
+            } : {}),
             dragmode: view?.dragmode ?? 'pan',
             uirevision: String(viewKey),
             // Recompute bounds on layout-only updates too (for example a language
