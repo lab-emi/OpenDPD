@@ -290,7 +290,7 @@ def test_export_import_and_report_through_the_cli(ws, pa_run, tmp_path, capsys):
     rc = studio_main(["import", str(out), "--workspace", str(tmp_path / "ws-cli"), "--json"])
     report = json.loads(capsys.readouterr().out)
     assert rc == 0 and report["dataset_status"] == "imported" and report["run_id"] == pa_run.run_id
-    rc = studio_main(["evaluate", pa_run.run_id, "--workspace", str(tmp_path / "ws-cli"), "--profile", "legacy-opendpd-v1", "--json"])
+    rc = studio_main(["evaluate", pa_run.run_id, "--workspace", str(tmp_path / "ws-cli"), "--profile", load_result(ws, pa_run.run_id).metric_profile_id, "--json"])
     recomputed = json.loads(capsys.readouterr().out)
     assert rc == 0 and recomputed["metrics"][0]["name"] == "NMSE"
     assert recomputed["metrics"][0]["value"] == pytest.approx(load_result(ws, pa_run.run_id).metric("NMSE").value, rel=REL, abs=ABS)

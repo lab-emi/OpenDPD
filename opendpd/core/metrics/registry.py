@@ -10,14 +10,15 @@ from opendpd.schemas.common import MetricValue
 from opendpd.schemas.dataset import SignalSpec
 from opendpd.schemas.metrics import MetricProfile
 
-from . import general_v1, legacy_v1, ofdm_evm_v1
+from . import general_v1, legacy_v1, ofdm_evm_v1, spectral_v2
 
 PROFILES: Dict[str, MetricProfile] = {
+    spectral_v2.PROFILE.profile_id: spectral_v2.PROFILE,
     legacy_v1.PROFILE.profile_id: legacy_v1.PROFILE,
     general_v1.PROFILE.profile_id: general_v1.PROFILE,
     ofdm_evm_v1.PROFILE.profile_id: ofdm_evm_v1.PROFILE,
 }
-DEFAULT_PROFILE_ID = legacy_v1.PROFILE.profile_id
+DEFAULT_PROFILE_ID = spectral_v2.PROFILE.profile_id
 
 
 def list_profiles() -> List[MetricProfile]:
@@ -42,6 +43,8 @@ def evaluate(profile_id: str, prediction: np.ndarray, reference: Optional[np.nda
     padding); the general profile excludes it.
     """
     get_profile(profile_id)
+    if profile_id == spectral_v2.PROFILE_ID:
+        return spectral_v2.compute(prediction, reference, signal, valid_samples=valid_samples)
     if profile_id == legacy_v1.PROFILE.profile_id:
         return legacy_v1.compute(prediction, reference, signal)
     if profile_id == ofdm_evm_v1.PROFILE_ID:

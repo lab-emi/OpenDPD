@@ -3776,7 +3776,7 @@
             ]
           },
           "profile_id": {
-            "default": "legacy-opendpd-v1",
+            "default": "opendpd-spectral-v2",
             "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Profile Id",
             "type": "string"
@@ -11232,7 +11232,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.13",
+            "default": "2.2.14",
             "title": "Version",
             "type": "string"
           }
@@ -13014,13 +13014,13 @@
         "description": "Defaults mirror the Studio full-training preset (arguments.py); they are the\nsingle source of defaults for every entry point.",
         "properties": {
           "batch_size": {
-            "default": 64,
+            "default": 16,
             "minimum": 1.0,
             "title": "Batch Size",
             "type": "integer"
           },
           "batch_size_eval": {
-            "default": 64,
+            "default": 16,
             "minimum": 1.0,
             "title": "Batch Size Eval",
             "type": "integer"
@@ -13768,7 +13768,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.13"
+    "version": "2.2.14"
   },
   "openapi": "3.1.0",
   "paths": {

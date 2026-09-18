@@ -3198,7 +3198,7 @@ export interface components {
             evidence_type?: components["schemas"]["EvidenceType"] | null;
             /**
              * Profile Id
-             * @default legacy-opendpd-v1
+             * @default opendpd-spectral-v2
              */
             profile_id: string;
         };
@@ -5874,7 +5874,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.13
+             * @default 2.2.14
              */
             version: string;
         };
@@ -6485,12 +6485,12 @@ export interface components {
         TrainingConfig: {
             /**
              * Batch Size
-             * @default 64
+             * @default 16
              */
             batch_size: number;
             /**
              * Batch Size Eval
-             * @default 64
+             * @default 16
              */
             batch_size_eval: number;
             /**

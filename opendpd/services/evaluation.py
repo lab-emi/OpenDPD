@@ -390,6 +390,7 @@ def write_plots(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig, 
     for name, data in (
         ("spectrum", plots.spectrum(signals, roles, sample_rate_hz=sig.sample_rate_hz, nperseg=sig.nperseg,
                                     bandwidth_hz=sig.bandwidth_hz, valid_samples=n,
+                                    n_sub_ch=(sig.n_sub_ch or 1) if resolved.evaluation.profile_id in ("opendpd-spectral-v2", "legacy-opendpd-v1") else 1,
                                     input_node="pa_input" if resolved.task in (TaskType.train_pa, TaskType.evaluate_pa) else "dpd_input")),
         ("time", plots.time_excerpt(signals, roles, valid_samples=n)),
         ("amam", plots.am_am_pm(predictions.x, outputs, roles, valid_samples=n)),

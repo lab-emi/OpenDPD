@@ -24,3 +24,13 @@ test('non-finite metric values are dropped instead of plotted as zero', () => {
   const s = reduceEvent(initial, bad)
   expect(s.metrics[0]?.values).toEqual({ EVM: -20 })
 })
+
+test('old preview metric events advance the cursor without creating misleading curves', () => {
+  let state = initial
+  for (const [i, split] of ['validation_probe', 'test_probe', 'val'].entries()) {
+    state = reduceEvent(state, { seq: i + 1, run_id: 'r', ts: '2026-09-18T00:00:00Z', type: 'metric',
+      payload: { epoch: 0, split, values: { ACLR_L: -50 } } })
+  }
+  expect(state.lastSeq).toBe(3)
+  expect(state.metrics).toEqual([{ epoch: 0, split: 'val', values: { ACLR_L: -50 } }])
+})

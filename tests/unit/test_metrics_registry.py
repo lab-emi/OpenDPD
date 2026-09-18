@@ -65,7 +65,8 @@ def test_legacy_registry_preserves_the_original_trainers_precision(dtype, flat_w
 
 
 def test_profiles_are_well_formed_and_the_default_is_the_frozen_one():
-    assert DEFAULT_PROFILE_ID == "legacy-opendpd-v1" and get_profile(DEFAULT_PROFILE_ID).frozen
+    assert DEFAULT_PROFILE_ID == "opendpd-spectral-v2" and get_profile(DEFAULT_PROFILE_ID).frozen
+    assert get_profile("legacy-opendpd-v1").frozen
     for profile in PROFILES.values():
         assert profile.version >= 1 and profile.description
         for m in profile.metrics:

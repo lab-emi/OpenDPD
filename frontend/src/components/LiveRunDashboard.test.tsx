@@ -10,6 +10,17 @@ vi.mock('plotly.js-basic-dist-min', () => ({ default: { react: vi.fn(() => Promi
 const run = runningMock.data as unknown as RunView
 const stream = { connection: 'live', metrics: [], batchProgress: { phase: 'train', batch: 25, total_batches: 100, sequences: 8, sequence_samples: 50, sample_rate_hz: 800e6 } } as unknown as StreamState
 
+test('stored preview scores from earlier releases are never shown as metric cards', async () => {
+  mockApi({ [`GET /api/v1/runs/${run.run_id}/live`]: () => ({
+    geometry: null,
+    preview: { source: 'validation_probe', samples: 2560, metrics: { NMSE: -99 }, units: { NMSE: 'dB' },
+      plots: {}, updated_at: '2026-09-18T11:00:00Z' },
+  }) })
+  renderWithProviders(<LiveRunDashboard run={run} stream={stream} metrics={[]} />)
+  await screen.findByText(/Signal excerpt from/)
+  expect(screen.queryByText('-99.00')).not.toBeInTheDocument()
+})
+
 test('displays actual last-batch geometry and preserves the worker metric units', async () => {
   mockApi({ [`GET /api/v1/runs/${run.run_id}/live`]: () => ({
     policy: { min_batches: 25, min_seconds: 2, overhead_target: .05 },

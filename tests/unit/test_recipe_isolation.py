@@ -14,6 +14,17 @@ def test_every_training_recipe_uses_the_requested_epoch_budget():
     assert ExecutionConfig().preview_every_batches is None
 
 
+def test_new_pa_and_dpd_training_start_with_tres_gru_and_batch_16():
+    from opendpd.services.recipes import list_recipes
+    from opendpd.schemas import TaskType
+    for task, hidden in ((TaskType.train_pa, 27), (TaskType.train_dpd, 15)):
+        default = next(recipe for recipe in list_recipes() if recipe.task == task)
+        assert default.model.key == 'tres_gru'
+        assert default.model.parameters['hidden_size'] == hidden
+        assert default.purpose == 'research'
+    assert all(recipe.training.batch_size == recipe.training.batch_size_eval == 16 for recipe in list_recipes())
+
+
 def test_instantiated_recipes_do_not_share_mutable_training_or_model_parameters():
     recipe = get_recipe("pa-gru-smoke-v1")
     before = recipe.to_dict()

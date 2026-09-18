@@ -51,7 +51,7 @@ echo_green() {
 }
 
 run_python() {
-  "${PYTHON_BIN}" main.py "$@" || exit 1
+  "${PYTHON_BIN}" main.py --metric_profile legacy-opendpd-v1 "$@" || exit 1
 }
 
 echo_green "==== Train PA model (dataset=${dataset_name}) ===="

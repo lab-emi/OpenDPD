@@ -44,13 +44,13 @@ def test_g1_flow_import_diagnose_pa_dpd_evaluate_export_recompute(tmp_path, caps
     dpd = _json(capsys)["run"]
     assert dpd["status"] == "succeeded", dpd.get("error")
 
-    # evaluate under another registered profile; the stored (primary) result stays the legacy one
+    # evaluate under another registered profile; the stored (primary) result stays on the valid-sample protocol
     assert studio_main(["evaluate", dpd["run_id"], "--workspace", ws, "--profile", "general-spectral-v1", "--json"]) == 0
     general = _json(capsys)
     assert general["metric_profile_id"] == "general-spectral-v1" and general["evidence_type"] == "dpd_surrogate"
     assert [s["symbol"] for s in general["signal_chain"]] == ["x", "u", "y"]
     stored = json.loads((tmp_path / "ws" / "runs" / dpd["run_id"] / "result.json").read_text())
-    assert stored["metric_profile_id"] == "legacy-opendpd-v1"
+    assert stored["metric_profile_id"] == "opendpd-spectral-v2"
 
     # export: the built-in data is not copied, the PA surrogate travels with its checkpoint hash
     out = tmp_path / "dpd-full.zip"
@@ -65,7 +65,7 @@ def test_g1_flow_import_diagnose_pa_dpd_evaluate_export_recompute(tmp_path, caps
     imported = _json(capsys)
     assert imported["dataset_status"] == "registered_builtin"
     assert set(imported["imported_runs"]) == {pa["run_id"], dpd["run_id"]}
-    assert studio_main(["evaluate", dpd["run_id"], "--workspace", ws2, "--profile", "legacy-opendpd-v1", "--json"]) == 0
+    assert studio_main(["evaluate", dpd["run_id"], "--workspace", ws2, "--profile", stored["metric_profile_id"], "--json"]) == 0
     recomputed = _json(capsys)
     _assert_metrics_close(stored["metrics"], recomputed["metrics"])
     for baseline in stored["baselines"]:

@@ -53,7 +53,7 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
   const epochPercent = totalEpochs ? completedEpochs / totalEpochs * 100 : 0
   const batchPercent = progress?.total_batches ? Math.min(100, Math.max(0, (progress.batch ?? 0) / progress.total_batches * 100)) : 0
   const general = preview?.metric_profile === 'general-spectral-v1'
-  const names = general ? (dpd ? ['ACPR_L', 'ACPR_R', 'NMSE', 'IBE'] : ['NMSE', 'IBE']) : dpd ? ['ACLR_AVG', 'NMSE', 'ACLR_L', 'ACLR_R'] : ['NMSE', 'EVM']
+  const names = general ? (dpd ? ['ACPR_L', 'ACPR_R', 'NMSE', 'IBE'] : ['NMSE', 'IBE']) : dpd ? ['ACLR_AVG', 'NMSE', 'ACLR_L', 'ACLR_R'] : ['NMSE', preview?.metric_profile === 'opendpd-spectral-v2' ? 'IBE' : 'EVM']
   const final = preview?.source === 'final_test'
   const batchSize = geometry?.batch_size
   const length = geometry?.sequence_samples
@@ -86,7 +86,7 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
     </Paper>
     {dpd && <Alert severity="info">{t('live.surrogate')}</Alert>}
     <Grid container spacing={2}>
-      {names.filter((name) => preview?.metrics[name] !== undefined).map((name) => <Grid size={{ xs: 6, md: dpd ? 3 : 6 }} key={name}>
+      {names.filter((name) => final && preview?.metrics[name] !== undefined).map((name) => <Grid size={{ xs: 6, md: dpd ? 3 : 6 }} key={name}>
         <Paper sx={{ p: 2 }}><Typography variant="body2" color="text.secondary">{name}</Typography><Typography sx={{ fontSize: 28, fontWeight: 650, mt: .5, fontVariantNumeric: 'tabular-nums' }}>{preview!.metrics[name]!.toFixed(2)} <Box component="span" sx={{ fontSize: 13 }}>{preview?.units?.[name]}</Box></Typography><Typography variant="caption" color="text.secondary">{t(final ? 'live.final' : 'live.probe')}</Typography></Paper>
       </Grid>)}
     </Grid>

@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.14: valid-sample ACLR and TRes-GRU defaults
+
+Removes validation/test preview metrics and the artificial spectral leakage caused by padded evaluation tails. The new default protocol uses real samples for training metrics, checkpoint selection and final results. PA/DPD defaults are TRes-GRU with batch size 16. Validation covers NR/Wi-Fi synthetic signals, measured DPA captures and APA at −55.61 dBc carrier ACLR through the trained PA model.
+
+[Release notes](releases/release-notes-2.2.14.md) · [Measurement validation](releases/validation-2.2.14.md)
+
 ## 2.2.13: clearer PA output plots
 
 Larger spectrum legends sit above the axes. With/without-DPD predictions are labeled **PA model**, and the PA output plot explains how the trained model is used. Measured and synthetic dataset curves retain their own labels.

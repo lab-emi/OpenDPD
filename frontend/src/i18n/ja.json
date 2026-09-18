@@ -258,7 +258,7 @@
   "metric.formula": "式",
   "metric.aggregation": "集約",
   "form.profile": "Metric calculation",
-  "form.profile.help": "Changes score definitions, not the model. Every supported calculation is saved; use the same method when comparing runs.",
+  "form.profile.help": "Training evaluates and selects checkpoints using valid-sample metrics. The legacy protocol reproduces historical results; padded tails can inflate leakage.",
   "results.detail.metric": "メトリクス",
   "results.detail.unit": "単位 · 方向",
   "form.import": "構成をインポート…",
@@ -691,7 +691,7 @@
   "live.probe": "ライブプレビュー · 固定区間",
   "live.signals": "出力と参照信号の比較",
   "live.finalHelp": "評価された重みと共通計算サービスによる、保存済みテストセットのグラフです。",
-  "live.probeHelp": "固定 {source} 区間 · {samples} I/Q サンプル。プレビュー指標は観察用で、重みの選択には元の完全な検証を使用します。",
+  "live.probeHelp": "{source} の信号区間 · {samples} I/Q サンプル。上の指標は評価データ全体を使用します。",
   "live.waitingSignals": "最初に計算された信号プレビューがここに表示されます。",
   "live.unavailable": "ライブ表示を読み込めません。進捗とターミナルのログを確認してください。",
   "about.title": "このアプリについて",
@@ -1291,7 +1291,7 @@
   "profile.general": "General baseband · pooled error & leakage",
   "profile.legacy": "OpenDPD legacy · segment-averaged scores",
   "profile.ofdm": "OFDM symbol EVM · reference required",
-  "profile.help": "The calculation method defines averaging, spectral bands and references. It does not change training or the waveform.",
+  "profile.help": "The protocol defines spectral bands, reference power and valid samples. Compare results using the same protocol.",
   "ilc.title": "ILC linearization",
   "ilc.help": "Learn a PA input waveform by repeated feedback through a trained PA surrogate, then fit an ILA memory-polynomial DPD. ILC is waveform control; train a forward PA model first.",
   "ilc.defaults": "Starting settings: 30 iterations, learning gain 0.5, target NMSE −45 dB, peak limit 1.5× training-input peak, 6 backtracking steps. These are conservative starting values, not universally optimal.",
@@ -1467,5 +1467,6 @@
   "datasets.downloadCsv": "CSV をダウンロード",
   "datasets.downloadZip": "すべてダウンロード · ZIP",
   "generator.removePreset": "プリセット {name} を削除",
-  "spectrum.paModelHelp": "PA モデル（surrogate、代理モデル）は学習済みの増幅器モデルです。DPD なし：元の入力 → PA モデル。DPD あり：元の入力 → DPD → 同じ PA モデル。PA モデルの曲線は予測結果で、データセットの曲線は実測または合成と表示されます。"
+  "spectrum.paModelHelp": "PA モデル（surrogate、代理モデル）は学習済みの増幅器モデルです。DPD なし：元の入力 → PA モデル。DPD あり：元の入力 → DPD → 同じ PA モデル。PA モデルの曲線は予測結果で、データセットの曲線は実測または合成と表示されます。",
+  "profile.spectral": "OpenDPD · 有効サンプルの搬送波 ACLR"
 }

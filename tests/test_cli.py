@@ -46,8 +46,11 @@ def test_training_defaults_match_opendpdv2_recipe(monkeypatch):
 
     args = get_arguments()
 
-    assert args.batch_size == 64
-    assert args.batch_size_eval == 64
+    assert args.batch_size == 16
+    assert args.batch_size_eval == 16
+    assert args.PA_backbone == args.DPD_backbone == 'tres_gru'
+    assert args.PA_hidden_size == 27 and args.DPD_hidden_size == 15
+    assert args.metric_profile == 'legacy-opendpd-v1'
     assert args.n_epochs == 150
     assert args.frame_length == 200
     assert args.frame_stride == 1
