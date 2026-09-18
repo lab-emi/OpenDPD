@@ -109,7 +109,9 @@ test('matrix selection keeps different preset lengths and disables stale exports
   expect(screen.getByRole('button', { name: 'Generate & preview' })).toBeDisabled()
   await userEvent.click(screen.getByRole('link', { name: 'Open Preview' }))
   expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeDisabled()
-})
+// This journey generates three times and crosses Generate/Preview repeatedly;
+// allow the slower CI jsdom runner to finish all interactions and assertions.
+}, 15000)
 
 test('advanced OFDMA channels and pilots reach the generator request', async () => {
   const { calls } = setup()
