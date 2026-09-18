@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import Field, model_validator
 
 from .common import Sha256, Slug, StrictModel
+from .signal_dataset import PairedDatasetName
 
 
 class PALocalizedText(StrictModel):
@@ -51,6 +52,8 @@ class PAInputDataset(StrictModel):
     iq_sha256: Sha256
     csv_url: str
     metadata_url: str
+    dataset_id: str | None = None
+    dataset_name: str | None = None
 
 
 class VirtualPARequest(StrictModel):
@@ -111,6 +114,7 @@ class PairedDatasetRequest(StrictModel):
 
 
 class VirtualPADatasetRequest(StrictModel):
+    dataset_name: PairedDatasetName | None = None
     input_signal_ids: list[Annotated[str, Field(pattern=r"^sg-[a-f0-9]{64}$")]] = Field(min_length=1, max_length=16)
     model_id: Slug
     parameters: dict[str, Annotated[float, Field(strict=True, allow_inf_nan=False)]] = Field(default_factory=dict, max_length=32)

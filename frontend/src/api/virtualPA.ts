@@ -29,5 +29,5 @@ export function useSimulateDataset() {
   const qc = useQueryClient()
   return useMutation({ mutationFn: (request: Schemas['VirtualPADatasetRequest']) =>
     api.post<Schemas['GeneratorDatasetResponse']>('/pa-library/datasets', request),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.datasets }) })
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: keys.datasets }); void qc.invalidateQueries({ queryKey: ['analyzer-datasets'] }) } })
 }

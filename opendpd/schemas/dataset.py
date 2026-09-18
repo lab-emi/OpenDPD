@@ -153,6 +153,6 @@ class DatasetManifest(StrictModel):
     def _synthetic_must_say_so(self) -> "DatasetManifest":
         if self.simulation is not None and self.origin != DatasetOrigin.synthetic:
             raise ValueError("simulation provenance requires synthetic origin")
-        if self.origin == DatasetOrigin.synthetic and "synthetic" not in self.display_name.lower():
-            raise ValueError("synthetic datasets must carry 'synthetic' in their display name")
+        if self.origin == DatasetOrigin.synthetic and "synthetic" not in self.display_name.lower() and not self.display_name.startswith("syn_pa_inout_"):
+            raise ValueError("synthetic datasets must use a syn_pa_inout_ name or include 'synthetic' in their display name")
         return self

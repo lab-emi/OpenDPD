@@ -11,6 +11,8 @@ export interface WorkflowState {
   origin: 'generated' | 'existing' | null
   inputIds?: string[]
   inputConfigs?: GeneratorConfig[]
+  inputDatasetId?: string
+  inputDatasetName?: string
   inputId: string | null
   inputName: string
   modelId: string | null
@@ -26,7 +28,7 @@ const empty = (): WorkflowState => ({ version: 1, origin: null, inputId: null, i
 
 interface WorkflowActions {
   selectInput: (id: string, name: string) => void
-  selectInputs: (ids: string[], configs: GeneratorConfig[]) => void
+  selectInputs: (ids: string[], configs: GeneratorConfig[], dataset?: { id: string; name: string }) => void
   completeDataset: (id: string, simulationId: string) => void
   selectCapture: (id: string, version: string) => void
   configurePA: (id: string, parameters: Record<string, number>) => void
@@ -58,6 +60,8 @@ function read(key: string): WorkflowState {
     if (value.inputIds && (!Array.isArray(value.inputIds) || value.inputIds.length > 16 || value.inputIds.some(id => !/^sg-[a-f0-9]{64}$/.test(id)))) return empty()
     if (value.inputConfigs && (!Array.isArray(value.inputConfigs) || value.inputConfigs.length !== value.inputIds?.length)) return empty()
     if (value.inputId && !/^sg-[a-f0-9]{64}$/.test(value.inputId)) return empty()
+    if (value.inputDatasetId && !/^sds-[a-f0-9]{64}$/.test(value.inputDatasetId)) return empty()
+    if (value.inputDatasetName && (typeof value.inputDatasetName !== 'string' || value.inputDatasetName.length > 96)) return empty()
     if (value.simulationId && !/^vpa-[a-f0-9]{64}$/.test(value.simulationId)) return empty()
     if (value.datasetId && !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(value.datasetId)) return empty()
     if (!value.parameters || Object.values(value.parameters).some(v => typeof v !== 'number' || !Number.isFinite(v))) return empty()
@@ -81,8 +85,9 @@ function ScopedWorkflow({ scope, children }: { scope: string; children: ReactNod
     && dpdConfig.data?.dataset.id === state.datasetId && (dpdConfig.data?.dataset.preprocessing_version ?? 'raw-v1') === state.datasetVersion
     && dpdConfig.data?.pa_reference?.run_id === state.paRunId
   const actions = useMemo<WorkflowActions>(() => ({
-    selectInputs: (ids, configs) => set(old => ({ ...empty(), origin: 'generated', inputId: ids[0] ?? null,
-      inputIds: ids, inputConfigs: configs, inputName: configs.map(c => c.preset_id).join(', '), modelId: old.modelId, parameters: old.parameters })),
+    selectInputs: (ids, configs, dataset) => set(old => ({ ...empty(), origin: 'generated', inputId: ids[0] ?? null,
+      inputIds: ids, inputConfigs: configs, inputDatasetId: dataset?.id, inputDatasetName: dataset?.name,
+      inputName: dataset?.name ?? configs.map(c => c.preset_id).join(', '), modelId: old.modelId, parameters: old.parameters })),
     selectCapture: (id, version) => set(old => old.datasetId === id && old.datasetVersion === version ? old : { ...old, datasetId: id, datasetVersion: version, paRunId: null, dpdRunId: null }),
     completeDataset: (id, simulationId) => set(old => ({ ...old, datasetId: id, simulationId, datasetVersion: 'raw-v1', paRunId: null, dpdRunId: null })),
     selectInput: (id, name) => set(old => old.origin === 'generated' && old.inputId === id ? old
@@ -100,7 +105,8 @@ function ScopedWorkflow({ scope, children }: { scope: string; children: ReactNod
     selectPAReference: id => set(old => old.paRunId === id ? old : { ...old, paRunId: id, dpdRunId: null }),
     invalidateOutput: () => set(old => !old.simulationId && !old.datasetId && !old.paRunId && !old.dpdRunId ? old
       : { ...old, simulationId: null, datasetId: null, paRunId: null, dpdRunId: null }),
-    resetPA: () => set(old => ({ ...empty(), origin: old.inputId ? 'generated' : null, inputId: old.inputId, inputIds: old.inputIds, inputConfigs: old.inputConfigs, inputName: old.inputName })),
+    resetPA: () => set(old => ({ ...empty(), origin: old.inputId ? 'generated' : null, inputId: old.inputId, inputIds: old.inputIds, inputConfigs: old.inputConfigs, inputName: old.inputName,
+      inputDatasetId: old.inputDatasetId, inputDatasetName: old.inputDatasetName })),
     trackRun: (run, version, paRunId) => set(old => {
       if (!run.dataset_id) return old
       const base = old.datasetId === run.dataset_id && old.datasetVersion === version ? old

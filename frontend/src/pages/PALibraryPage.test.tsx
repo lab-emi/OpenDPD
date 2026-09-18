@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, vi } from 'vitest'
 import { useLocation } from 'react-router'
 import fixture from '@mocks/virtual_pa_models.json'
+import generatorFixture from '@mocks/generator_presets.json'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { WorkflowProgress } from '@/components/WorkflowProgress'
 import { StudioWorkflowProvider } from '@/workflow/StudioWorkflow'
@@ -22,6 +23,7 @@ function setup() {
     'GET /api/v1/system/capabilities': () => ({ workspace: 'virtual-pa-test', custom_dataset_imports: true }),
     'GET /api/v1/pa-library/models': () => fixture.data,
     'GET /api/v1/signal-generator/signals': () => [input],
+    ['GET /api/v1/signal-generator/signals/' + inputId]: () => ({ signal_id: inputId, config: generatorFixture.data[0]!.config }),
     'GET /api/v1/datasets': () => [paired],
     'POST /api/v1/pa-library/datasets': () => ({ dataset: { ...paired, dataset_id: 'auto-created', simulation: { simulation_id: simulationId } }, test_samples: 6452 }),
   })
@@ -45,8 +47,12 @@ test('formula controls stay synchronized and one simulation opens the completed 
   fireEvent.change(saturation, { target: { value: '' } })
   expect(screen.getByRole('button', { name: 'Simulate PA output' })).toBeDisabled()
   fireEvent.change(saturation, { target: { value: '.6' } })
+  const name = screen.getByRole('textbox', { name: 'Paired dataset name' })
+  expect(name).toHaveValue('syn_pa_inout_nr_bw20M_q64_c1_n1_rapp-am-pm')
+  fireEvent.change(name, { target: { value: 'syn_pa_inout_bench_n1' } })
+  expect(screen.getByText('PA output dataset: syn_pa_out_bench_n1')).toBeVisible()
   await userEvent.click(screen.getByRole('button', { name: 'Simulate PA output' }))
-  expect(calls.find(c => c.method === 'POST')?.body).toMatchObject({ input_signal_ids: [inputId], model_id: model.model_id, parameters: { gain: 2.5, saturation: .6 } })
+  expect(calls.find(c => c.method === 'POST')?.body).toMatchObject({ input_signal_ids: [inputId], model_id: model.model_id, parameters: { gain: 2.5, saturation: .6 }, dataset_name: 'syn_pa_inout_bench_n1' })
   await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/datasets/auto-created'))
   expect(screen.getByTestId('workflow-output')).toHaveAttribute('data-complete', 'true')
   expect(screen.getByTestId('workflow-pa')).toHaveAttribute('data-complete', 'false')
@@ -56,7 +62,7 @@ test('formula controls stay synchronized and one simulation opens the completed 
 
 test('the complete selected batch is simulated with a single request', async () => {
   const ids = [inputId, 'sg-' + 'c'.repeat(64)]
-  localStorage.setItem('opendpd-workflow-v1:virtual-pa-test', JSON.stringify({ version: 1, origin: 'generated', inputId, inputIds: ids, parameters: {} }))
+  localStorage.setItem('opendpd-workflow-v1:virtual-pa-test', JSON.stringify({ version: 1, origin: 'generated', inputId, inputIds: ids, inputDatasetName: 'syn_pa_in_nr-w6_bw20-80M_q64-256_c1-4_n2', parameters: {} }))
   const { calls } = setup()
   renderWithProviders(<StudioWorkflowProvider><PALibraryPage /><Probe /></StudioWorkflowProvider>, { route: '/pa-library?input=' + inputId })
   await userEvent.click(await screen.findByRole('button', { name: 'Simulate PA output' }))

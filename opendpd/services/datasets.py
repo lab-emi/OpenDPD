@@ -620,7 +620,7 @@ def import_arrays(ws: Workspace, x: np.ndarray, y: np.ndarray, *, dataset_id: st
     ratios = dict(DEFAULT_RATIOS if ratios is None else ratios)
     contiguous_boundaries(len(x), ratios, guard_samples)
     name = display_name or dataset_id
-    if origin == DatasetOrigin.synthetic and 'synthetic' not in name.lower():
+    if origin == DatasetOrigin.synthetic and 'synthetic' not in name.lower() and not name.startswith('syn_pa_inout_'):
         name += ' (synthetic)'
     target = ws.dataset_dir(dataset_id)
     # Claim ownership atomically so a competing request cannot remove this import.

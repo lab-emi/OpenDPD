@@ -10,8 +10,25 @@ from opendpd.server.routes import require_csrf, require_session
 from opendpd.server.errors import api_error as _error
 from opendpd.services import signal_generator as service
 from opendpd.schemas.virtual_pa import PAInputDataset
+from opendpd.schemas.signal_dataset import SignalDataset
 
 router = APIRouter(tags=["signal generator"])
+
+
+@router.get("/signal-generator/datasets/{dataset_id}", response_model=SignalDataset, dependencies=[Depends(require_session)])
+def signal_dataset(dataset_id: str, request: Request):
+    from opendpd.services.signal_datasets import read_dataset
+    return read_dataset(request.app.state.ws, dataset_id)
+
+
+@router.get("/signal-generator/datasets/{dataset_id}/download", dependencies=[Depends(require_session)])
+def signal_dataset_download(dataset_id: str, request: Request):
+    import shutil
+    from starlette.background import BackgroundTask
+    from opendpd.services.signal_datasets import export_dataset
+    path, temporary = export_dataset(request.app.state.ws, dataset_id)
+    return FileResponse(path, filename=path.name, media_type="application/zip",
+        background=BackgroundTask(shutil.rmtree, temporary, ignore_errors=True))
 
 
 @router.get("/signal-generator/signals", response_model=list[PAInputDataset], dependencies=[Depends(require_session)])

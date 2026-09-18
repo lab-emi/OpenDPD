@@ -1,4 +1,5 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
+import { datasetName, validDatasetName } from '@/utils/datasetNames'
 import Checkbox from '@mui/material/Checkbox'
 import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
@@ -82,6 +83,12 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const [pilotText, setPilotText] = useState((config.pilot_indices ?? []).join(', '))
   const selected = Object.keys(configs)
   const selectedConfigs = Object.values(configs)
+  const automaticName = datasetName(selectedConfigs)
+  const [customName, setCustomName] = useState<string | null>(() => workflow.state.inputDatasetName && workflow.state.inputDatasetName !== datasetName(initial) ? workflow.state.inputDatasetName : null)
+  const name = customName ?? automaticName
+  const validName = validDatasetName(name, 'in')
+  const [savedDataset, setSavedDataset] = useState(() => workflow.state.inputDatasetId && workflow.state.inputDatasetName ? { id: workflow.state.inputDatasetId, name: workflow.state.inputDatasetName } : null)
+  const [savedRequestedName, setSavedRequestedName] = useState(name)
   const [generatedIds, setGeneratedIds] = useState<Record<string, string>>(() => {
     const ids = workflow.state.inputIds ?? (saved ? [saved.signal_id] : [])
     return Object.fromEntries(initial.flatMap((c, i) => ids[i] ? [[c.preset_id, ids[i]!]] : []))
@@ -91,7 +98,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const previewId = generatedIds[previewPresetId] ? previewPresetId : Object.keys(generatedIds)[0]
   const preview = useGeneratedSignal(previewId ? generatedIds[previewId]! : null)
   const result = preview.data ?? (saved?.config.preset_id === previewId ? saved : undefined)
-  const stale = generatedKey !== JSON.stringify(selectedConfigs)
+  const stale = generatedKey !== JSON.stringify(selectedConfigs) || savedRequestedName !== name
   const shared = config.shared_channel_settings ?? [config.channel_subcarriers, config.channel_modulations, config.channel_power_db].every(values => new Set(values).size === 1)
   const ofdm = config.waveform === 'ofdm'
   const count = config.length_mode === 'samples' ? config.n_samples : Math.floor(config.sample_rate_hz * config.duration_ms / 1000 + .5)
@@ -120,11 +127,15 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const numeric = (key: keyof GeneratorConfig, label: MessageKey, unit = '', scale = 1, help?: string) => <NumberField label={label} unit={unit} value={Number(config[key]) / scale} onChange={value => change(key, value * scale as never)} help={help} />
   const run = () => {
     setError(null)
-    generate.mutate(selectedConfigs, { onSuccess: entries => {
+    generate.mutate({ configs: selectedConfigs, dataset_name: name }, { onSuccess: entries => {
+      const first = entries[0]
+      const dataset = first?.dataset_id && first.dataset_name ? { id: first.dataset_id, name: first.dataset_name } : undefined
+      setSavedDataset(dataset ?? null)
+      setSavedRequestedName(name)
       setGeneratedIds(Object.fromEntries(entries.map(e => [e.name, e.signal_id])))
       setGeneratedKey(JSON.stringify(selectedConfigs))
       setPreviewPresetId(activeId)
-      workflow.selectInputs(entries.map(e => e.signal_id), selectedConfigs)
+      workflow.selectInputs(entries.map(e => e.signal_id), selectedConfigs, dataset)
       navigate('/signal-generator/preview')
     } })
   }
@@ -157,7 +168,9 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
     </Box>
     <Paper data-testid="generator-setup" sx={{ p: { xs: 1.5, md: 2 } }}><Stack spacing={1.5}>
       <Stack direction="row" useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
-        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validNumbers || !validLengths || !selected.length || totalSamples > 4_000_000} onClick={run}>{t(generate.isPending ? 'generator.generating' : 'generator.generate')}</Button>
+        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validName || !validNumbers || !validLengths || !selected.length || totalSamples > 4_000_000} onClick={run}>{t(generate.isPending ? 'generator.generating' : 'generator.generate')}</Button>
+        <TextField label={t('generator.datasetName')} value={name} onChange={e => setCustomName(e.target.value)} disabled={generate.isPending} error={!validName} helperText={t(validName ? 'generator.datasetNameHelp' : 'generator.datasetNameInvalid')} slotProps={{ htmlInput: { maxLength: 96 } }} sx={{ flex: '1 1 370px', minWidth: 0 }} />
+        {customName !== null && <Button size="small" onClick={() => setCustomName(null)} disabled={generate.isPending}>{t('generator.autoName')}</Button>}
         <Typography variant="body2" color="text.secondary">{t('generator.totalSamples', { count: formatNumber(totalSamples) })}</Typography>
       </Stack>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}><Typography variant="h2">{t('generator.setup')}</Typography><Chip size="small" label={t('generator.selectionCount', { count: selected.length })} /></Stack>
@@ -242,13 +255,14 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
             {config.snr_db !== null && numeric('snr_db', 'generator.snr', 'dB')}
             <FormControlLabel label={t('generator.clipping')} control={<Switch checked={config.clip_db !== null} onChange={(_, enabled) => change('clip_db', enabled ? 8 : null)} />} />
             {config.clip_db !== null && numeric('clip_db', 'generator.clipLevel', 'dB')}
-            <Button variant="contained" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validNumbers || !validLengths || selected.length === 0 || totalSamples > 4_000_000} onClick={run}>{t('generator.applyGenerate')}</Button>
+            <Button variant="contained" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validName || !validNumbers || !validLengths || selected.length === 0 || totalSamples > 4_000_000} onClick={run}>{t('generator.applyGenerate')}</Button>
           </Box></AccordionDetails>
         </Accordion>
 
       </Box>
     </> : <>
     <Paper data-testid="generator-preview-actions" sx={{ p: 2 }}><Stack spacing={1.25}>
+      {savedDataset && <Typography variant="subtitle1" sx={{ fontWeight: 650, overflowWrap: 'anywhere' }}>{savedDataset.name}</Typography>}
       {!!previewId && <TextField select size="small" label={t('generator.previewSignal')} value={previewId} onChange={e => setPreviewPresetId(e.target.value)} sx={{ maxWidth: 520 }}>
         {Object.keys(generatedIds).map(id => <MenuItem key={id} value={id}>{presets.find(p => p.preset_id === id)?.label ?? id}</MenuItem>)}
       </TextField>}
@@ -256,7 +270,8 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       <Typography variant="body2" color="text.secondary">{t('generator.batchNext')}</Typography>
       <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
         <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale || !result || !selected.length || generate.isPending} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(workflow.state.inputId ?? result?.signal_id ?? '')}>{t('paInput.next')}</Button>
-        <Button variant="outlined" endIcon={<ArrowForwardIcon />} disabled={stale || !result || generate.isPending} component={RouterLink} to={result ? analyzerLink('generated', result.signal_id) : '#'}>{t('analyzer.open')}</Button>
+        <Button variant="outlined" endIcon={<ArrowForwardIcon />} disabled={stale || !result || generate.isPending} component={RouterLink} to={result ? analyzerLink('generated', result.signal_id, 'input', 'raw-v1', savedDataset?.id) : '#'}>{t('analyzer.open')}</Button>
+        {savedDataset && <Button startIcon={<DownloadIcon />} disabled={stale || downloading || generate.isPending} onClick={() => download('/api/v1/signal-generator/datasets/' + savedDataset.id + '/download')}>{t('generator.downloadDataset')}</Button>}
         <Button startIcon={<DownloadIcon />} disabled={stale || !result || downloading || generate.isPending} onClick={() => result && download('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv')}>{t('paInput.csv')}</Button>
         <Button startIcon={<DownloadIcon />} disabled={stale || !result || downloading || generate.isPending} onClick={() => result && download('/api/v1/signal-generator/signals/' + result.signal_id + '/metadata.json')}>{t('paInput.metadata')}</Button>
         <Button component={RouterLink} to="/datasets?guide=start">{t('generator.useMeasured')}</Button>

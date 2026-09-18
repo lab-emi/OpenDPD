@@ -156,8 +156,11 @@ def simulate_dataset(ws, request: VirtualPADatasetRequest):
     """Validate captures before registration and roll back newly created data on failure."""
     import shutil
     from opendpd.core.waveforms.generator_presets import presets
+    from opendpd.core.waveforms.dataset_names import dataset_name
+    from opendpd.schemas.signal_analyzer import AnalyzerSource, AnalyzerSourceInfo
+    from opendpd.services import signal_datasets
 
-    with _LOCK:
+    with _LOCK, signal_datasets.LOCK:
         signals = [inputs.read_signal(ws, identifier) for identifier in request.input_signal_ids]
         if any(s.analysis.sample_count < 8192 for s in signals):
             raise WorkspaceError("Each preset needs at least 8,192 samples to create a training dataset.")
@@ -167,16 +170,19 @@ def simulate_dataset(ws, request: VirtualPADatasetRequest):
             raise WorkspaceError("Choose distinct presets for a multi-preset dataset.")
         simulations = [preview(ws, VirtualPARequest(input_signal_id=s.signal_id,
             model_id=request.model_id, parameters=request.parameters)) for s in signals]
-        identity = json.dumps([r.simulation_id for r in simulations], separators=(",", ":"))
+        requested_name = request.dataset_name or dataset_name([s.config for s in signals], "inout", request.model_id)
+        identity = json.dumps([requested_name, [r.simulation_id for r in simulations]], separators=(",", ":"))
         parent_id = "vpa-set-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
+        name = (ws.get_dataset(parent_id).display_name if (ws.dataset_dir(parent_id) / "manifest.json").exists()
+                else signal_datasets.unique_name(requested_name, {d.display_name for d in ws.list_datasets()}))
         identifiers = [parent_id] + [f"{parent_id}-{i+1}" for i in range(1, len(signals))]
         labels = {p.preset_id: p.label for p in presets()}
         created, results = [], []
         try:
             for identifier, signal, result in zip(identifiers, signals, simulations):
-                label = labels.get(signal.config.preset_id, signal.config.preset_id)
                 response = create_dataset(ws, result.simulation_id, PairedDatasetRequest(
-                    dataset_id=identifier, display_name=f"Synthetic · {label} · {result.model.name.en}"), _created=created)
+                    dataset_id=identifier, display_name=name if identifier == parent_id else
+                    dataset_name([signal.config], "inout", request.model_id)), _created=created)
                 results.append(response)
             captures = [DatasetCapture(dataset_id=identifier, preset_id=s.config.preset_id,
                 label=labels.get(s.config.preset_id, s.config.preset_id), n_samples=s.analysis.sample_count,
@@ -184,10 +190,12 @@ def simulate_dataset(ws, request: VirtualPADatasetRequest):
                 for identifier, s in zip(identifiers, signals)]
             for response in results[1:]:
                 ws.save_dataset(response.dataset.model_copy(update={"parent_dataset_id": parent_id}))
-            parent = results[0].dataset.model_copy(update={"captures": captures})
-            if len(captures) > 1:
-                parent = parent.model_copy(update={"display_name": f"Synthetic · {len(captures)} presets · {simulations[0].model.name.en}"})
+            parent = results[0].dataset.model_copy(update={"captures": captures, "display_name": name})
             ws.save_dataset(parent)
+            output_members = [AnalyzerSourceInfo(source=AnalyzerSource(kind="virtual_pa", source_id=r.simulation_id, role="output"),
+                label=s.config.preset_id, sample_count=r.analysis.n_samples, sample_rate_hz=s.config.sample_rate_hz,
+                bandwidth_hz=s.config.bandwidth_hz, origin="synthetic") for s, r in zip(signals, simulations)]
+            signal_datasets.save_dataset(ws, name.replace("syn_pa_inout_", "syn_pa_out_", 1), "pa_output", output_members)
             return results[0].model_copy(update={"dataset": parent})
         except Exception:
             for identifier in created:

@@ -8,6 +8,7 @@ from pydantic import Field, model_validator
 
 from .common import Sha256, Slug, StrictModel
 from .dataset import DatasetManifest
+from .signal_dataset import InputDatasetName
 
 
 class GeneratorConfig(StrictModel):
@@ -133,6 +134,7 @@ class GeneratorConfig(StrictModel):
 
 class GeneratorBatchRequest(StrictModel):
     configs: list[GeneratorConfig] = Field(min_length=1, max_length=16)
+    dataset_name: InputDatasetName | None = None
 
     @model_validator(mode="after")
     def _bounded(self):

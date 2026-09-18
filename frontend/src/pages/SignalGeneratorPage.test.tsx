@@ -29,7 +29,7 @@ function setup() {
       return configs.map((c, i) => {
         const id = 'sg-' + (i === 0 ? 'a' : 'b').repeat(64)
         signals[id] = { ...result, signal_id: id, config: c }
-        return { signal_id: id, name: c.preset_id }
+        return { signal_id: id, name: c.preset_id, dataset_id: 'sds-' + 'd'.repeat(64), dataset_name: JSON.parse(String(init.body)).dataset_name }
       })
     },
     'POST /api/v1/signal-generator/validate': (_url, init) => JSON.parse(String(init.body)),
@@ -42,6 +42,28 @@ function setup() {
 }
 
 function Probe() { const location = useLocation(); return <output data-testid="location">{location.pathname}{location.search}</output> }
+
+test('editable dataset name survives setup edits, validates its prefix, and is saved with the batch', async () => {
+  const { calls } = setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  const field = await screen.findByRole('textbox', { name: 'PA input dataset name' })
+  expect(field).toHaveValue('syn_pa_in_nr_bw20M_q64_c1_n1')
+  fireEvent.change(field, { target: { value: 'syn_pa_in_bench_n2' } })
+  await userEvent.click(screen.getByRole('button', { name: /02 ·.*Wi-Fi 6/ }))
+  await userEvent.click(screen.getByTestId('preset-wifi6-20'))
+  expect(field).toHaveValue('syn_pa_in_bench_n2')
+  await userEvent.click(screen.getByRole('button', { name: 'Use automatic name' }))
+  expect(field).toHaveValue('syn_pa_in_nr-w6_bw20M_q64-1024_c1_s30-78p125k_n2')
+  fireEvent.change(field, { target: { value: 'wrong-prefix' } })
+  expect(screen.getByRole('button', { name: 'Generate & preview' })).toBeDisabled()
+  fireEvent.change(field, { target: { value: 'syn_pa_in_bench_n2' } })
+  await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
+  await screen.findByTestId('signal-generator-results')
+  expect(calls.find(c => c.path.endsWith('/batches'))?.body).toMatchObject({ dataset_name: 'syn_pa_in_bench_n2' })
+  expect(screen.getByTestId('generator-preview-actions')).toHaveTextContent('syn_pa_in_bench_n2')
+  expect(screen.getByRole('button', { name: 'Download dataset' })).toBeEnabled()
+  expect(screen.getByRole('link', { name: 'Open in Signal Analyzer' })).toHaveAttribute('href', expect.stringContaining('dataset=sds-'))
+})
 
 test('matrix selection keeps different preset lengths and disables stale exports', async () => {
   const { calls } = setup()
@@ -81,7 +103,7 @@ test('matrix selection keeps different preset lengths and disables stale exports
   await userEvent.click(screen.getByRole('link', { name: 'Edit signal setup' }))
   await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Download PA input CSV' })).toBeEnabled())
-  expect(calls.filter(c => c.path === '/api/v1/signal-generator/batches').at(-1)?.body).toEqual({ configs: [expect.objectContaining({ preset_id: 'wifi6-20' })] })
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/batches').at(-1)?.body).toEqual({ configs: [expect.objectContaining({ preset_id: 'wifi6-20' })], dataset_name: 'syn_pa_in_w6_bw20M_q1024_c1_n1' })
   await userEvent.click(screen.getByRole('link', { name: 'Edit signal setup' }))
   fireEvent.keyUp(screen.getByTestId('selected-preset-wifi6-20'), { key: 'Delete' })
   expect(screen.getByRole('button', { name: 'Generate & preview' })).toBeDisabled()
