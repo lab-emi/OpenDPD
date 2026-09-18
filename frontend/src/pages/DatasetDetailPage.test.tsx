@@ -137,5 +137,5 @@ test('subdataset selection changes charts, metadata and training to its own samp
   await screen.findByRole('heading', { name: 'Wi-Fi capture' })
   expect(screen.getByText('320 MS/s')).toBeVisible()
   await waitFor(() => expect(calls.some(c => c.path === '/api/v1/datasets/second/analysis')).toBe(true))
-  expect(screen.getByRole('link', { name: /Configure experiment/ })).toHaveAttribute('href', '/experiments/new?dataset=second&version=raw-v1')
+  expect(screen.getByRole('link', { name: 'Train PA & DPD Models' })).toHaveAttribute('href', '/experiments/new?dataset=second&version=raw-v1')
 })

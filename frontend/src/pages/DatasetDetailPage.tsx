@@ -156,7 +156,7 @@ export function DatasetDetailPage() {
           <Button variant="outlined" onClick={() => setDialog('preprocess')}>
             {t('datasets.detail.versions.new')}
           </Button>
-          <Button variant="contained" endIcon={<ArrowForwardIcon />} component={RouterLink} to={`/experiments/new?dataset=${encodeURIComponent(datasetId)}&version=${encodeURIComponent(doctorVersion)}`} disabled={!analysis.data?.inspection_ready}>{t('inspection.configure')}</Button>
+          <Button variant="contained" size="large" sx={{ minHeight: 56, px: 3, fontSize: 16, fontWeight: 700 }} endIcon={<ArrowForwardIcon />} component={RouterLink} to={`/experiments/new?dataset=${encodeURIComponent(datasetId)}&version=${encodeURIComponent(doctorVersion)}`} disabled={!analysis.data?.inspection_ready}>{t('inspection.configure')}</Button>
           <Button variant="outlined" endIcon={<ArrowForwardIcon />} component={RouterLink} to={analyzerLink('dataset', datasetId, 'input', doctorVersion)}>{t('analyzer.open')}</Button>
         </Stack>
       </Stack>

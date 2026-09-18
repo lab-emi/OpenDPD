@@ -62,7 +62,7 @@ test('bootstrap, train the smoke recipe, read the result and export a share pack
     (el as HTMLElement & { _fullData?: Array<{ type: string }> })['_fullData']?.[0]?.type,
   )).toBe(hasWebGL ? 'scattergl' : 'scatter')
   if (hasWebGL) await expect(transfer.locator('canvas').first()).toBeVisible()
-  await page.getByRole('link', { name: 'Configure experiment' }).click()
+  await page.getByRole('link', { name: 'Train PA & DPD Models' }).click()
   await expect(page.getByText('Configuration is valid')).toBeVisible({ timeout: 20_000 })
   await page.getByRole('button', { name: 'Continue' }).click()
   await page.getByLabel('Name (optional)').fill(`live ${browserName}`)
