@@ -60,7 +60,7 @@ test('editable dataset name survives setup edits, validates its prefix, and is s
   await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
   await screen.findByTestId('signal-generator-results')
   expect(calls.find(c => c.path.endsWith('/batches'))?.body).toMatchObject({ dataset_name: 'syn_pa_in_bench_n2' })
-  expect(screen.getByTestId('generator-preview-actions')).toHaveTextContent('syn_pa_in_bench_n2')
+  expect(within(screen.getByTestId('generator-preview-actions')).getByRole('heading', { name: 'Use this Signal: syn_pa_in_bench_n2' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Download dataset' })).toBeEnabled()
   expect(screen.getByRole('link', { name: 'Open in Signal Analyzer' })).toHaveAttribute('href', expect.stringContaining('dataset=sds-'))
 })
@@ -93,7 +93,7 @@ test('matrix selection keeps different preset lengths and disables stale exports
     { preset_id: 'nr-20', n_samples: 30720, filter_enabled: true },
     { preset_id: 'wifi6-20', length_mode: 'duration', duration_ms: .25, filter_enabled: true },
   ] })
-  await userEvent.click(screen.getByRole('combobox', { name: 'Generated signal' }))
+  await userEvent.click(screen.getByRole('combobox', { name: 'Visualize a Signal in the Generated Dataset' }))
   expect(screen.getAllByRole('option')).toHaveLength(2)
   await userEvent.keyboard('{Escape}')
   await userEvent.click(screen.getByRole('link', { name: 'Edit signal setup' }))

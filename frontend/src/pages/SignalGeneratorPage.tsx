@@ -262,11 +262,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       </Box>
     </> : <>
     <Paper data-testid="generator-preview-actions" sx={{ p: 2 }}><Stack spacing={1.25}>
-      {savedDataset && <Typography variant="subtitle1" sx={{ fontWeight: 650, overflowWrap: 'anywhere' }}>{savedDataset.name}</Typography>}
-      {!!previewId && <TextField select size="small" label={t('generator.previewSignal')} value={previewId} onChange={e => setPreviewPresetId(e.target.value)} sx={{ maxWidth: 520 }}>
-        {Object.keys(generatedIds).map(id => <MenuItem key={id} value={id}>{presets.find(p => p.preset_id === id)?.label ?? id}</MenuItem>)}
-      </TextField>}
-      <Typography variant="h2">{t('generator.next')}</Typography>
+      <Typography variant="h2" sx={{ overflowWrap: 'anywhere' }}>{savedDataset ? t('generator.useDataset', { name: savedDataset.name }) : t('generator.next')}</Typography>
       <Typography variant="body2" color="text.secondary">{t('generator.batchNext')}</Typography>
       <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
         <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale || !result || !selected.length || generate.isPending} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(workflow.state.inputId ?? result?.signal_id ?? '')}>{t('paInput.next')}</Button>
@@ -280,7 +276,12 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       {generate.isPending && <LinearProgress aria-label={t('generator.generating')} />}
       {(generate.isError || !!error) && <ErrorState error={error || generate.error} />}
     </Stack></Paper>
-    <Box sx={{ minWidth: 0 }}>{preview.isError ? <ErrorState error={preview.error} onRetry={() => void preview.refetch()} /> : result ? <SignalGeneratorPlots result={result} stale={stale} /> : preview.isFetching ? <LoadingState /> : <Paper sx={{ p: 4, minHeight: 260, textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} /><Typography variant="h2">{t('generator.firstPreview')}</Typography><Button component={RouterLink} to="/signal-generator" variant="contained" sx={{ mt: 2 }}>{t('generator.editSetup')}</Button></Paper>}</Box>
+    <Stack spacing={1.5} sx={{ minWidth: 0 }}>
+      {!!previewId && <TextField select size="small" label={t('generator.previewSignal')} value={previewId} onChange={e => setPreviewPresetId(e.target.value)} sx={{ width: '100%', maxWidth: 640 }}>
+        {Object.keys(generatedIds).map(id => <MenuItem key={id} value={id}>{presets.find(p => p.preset_id === id)?.label ?? id}</MenuItem>)}
+      </TextField>}
+      {preview.isError ? <ErrorState error={preview.error} onRetry={() => void preview.refetch()} /> : result ? <SignalGeneratorPlots result={result} stale={stale} /> : preview.isFetching ? <LoadingState /> : <Paper sx={{ p: 4, minHeight: 260, textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} /><Typography variant="h2">{t('generator.firstPreview')}</Typography><Button component={RouterLink} to="/signal-generator" variant="contained" sx={{ mt: 2 }}>{t('generator.editSetup')}</Button></Paper>}
+    </Stack>
     </>}
   </Stack>
 }

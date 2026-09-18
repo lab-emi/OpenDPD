@@ -1146,7 +1146,7 @@
   "generator.importConfig": "Load configuration",
   "generator.exportConfig": "Save configuration",
   "generator.configTooLarge": "Configuration JSON must be at most 64 KiB.",
-  "generator.next": "Use this signal",
+  "generator.next": "Dieses Signal verwenden",
   "generator.createDataset": "Create synthetic PA dataset",
   "generator.createHint": "At least 8,192 samples. A simulated PA response is added for training.",
   "generator.exportIq": "Export I/Q + configuration",
@@ -1483,7 +1483,7 @@
   "generator.previewIntro": "Prüfen Sie erzeugte PA-Eingänge, laden Sie Signale herunter oder wählen Sie eine virtuelle PA.",
   "generator.editSetup": "Signaleinstellungen bearbeiten",
   "generator.openPreview": "Vorschau öffnen",
-  "generator.previewSignal": "Erzeugtes Signal",
+  "generator.previewSignal": "Ein Signal im erzeugten Datensatz visualisieren",
   "generator.datasetNameHelp": "Automatisch: Familie, bw (MHz), q/p (Modulation), c (Kanäle), s (kHz-Abstand), n (Signale). Bereiche fassen die gewählten Spezifikationen zusammen.",
   "generator.datasetNameInvalid": "Mit syn_pa_in_ beginnen; Buchstaben, Ziffern, Unterstriche, Punkte oder Bindestriche verwenden (maximal 96 Zeichen).",
   "generator.autoName": "Automatischen Namen verwenden",
@@ -1491,5 +1491,6 @@
   "paLibrary.datasetNameHelp": "Mit syn_pa_inout_ beginnen. Jedes Signal behält seine eigene Abtastrate und Bandbreite.",
   "paLibrary.outputDatasetName": "PA-Ausgangsdatensatz: {name}",
   "analyzer.dataset": "Quelldatensatz",
-  "analyzer.datasetSignal": "Signal im Datensatz"
+  "analyzer.datasetSignal": "Signal im Datensatz",
+  "generator.useDataset": "Dieses Signal verwenden: {name}"
 }

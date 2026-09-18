@@ -1483,7 +1483,7 @@
   "generator.previewIntro": "查看已生成的 PA 输入、下载信号，或继续选择虚拟 PA。",
   "generator.editSetup": "编辑信号设置",
   "generator.openPreview": "打开预览",
-  "generator.previewSignal": "已生成的信号",
+  "generator.previewSignal": "可视化已生成数据集中的一个信号",
   "generator.datasetNameHelp": "自动命名：制式、bw（MHz 带宽）、q/p（调制阶数）、c（信道数）、s（kHz 间隔）、n（信号数）。范围概括所选规格。",
   "generator.datasetNameInvalid": "以 syn_pa_in_ 开头；可用字母、数字、下划线、点或连字符，最多 96 个字符。",
   "generator.autoName": "使用自动名称",
@@ -1491,5 +1491,6 @@
   "paLibrary.datasetNameHelp": "以 syn_pa_inout_ 开头。每个信号保留各自的采样率和带宽。",
   "paLibrary.outputDatasetName": "PA 输出数据集：{name}",
   "analyzer.dataset": "源数据集",
-  "analyzer.datasetSignal": "数据集中的信号"
+  "analyzer.datasetSignal": "数据集中的信号",
+  "generator.useDataset": "使用此信号：{name}"
 }

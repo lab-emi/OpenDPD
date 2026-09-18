@@ -1146,7 +1146,7 @@
   "generator.importConfig": "Load configuration",
   "generator.exportConfig": "Save configuration",
   "generator.configTooLarge": "Configuration JSON must be at most 64 KiB.",
-  "generator.next": "Use this signal",
+  "generator.next": "Dit signaal gebruiken",
   "generator.createDataset": "Create synthetic PA dataset",
   "generator.createHint": "At least 8,192 samples. A simulated PA response is added for training.",
   "generator.exportIq": "Export I/Q + configuration",
@@ -1483,7 +1483,7 @@
   "generator.previewIntro": "Bekijk de gegenereerde PA-ingangen, download signalen of ga verder met een virtuele PA.",
   "generator.editSetup": "Signaalinstellingen bewerken",
   "generator.openPreview": "Voorbeeld openen",
-  "generator.previewSignal": "Gegenereerd signaal",
+  "generator.previewSignal": "Een signaal in de gegenereerde dataset visualiseren",
   "generator.datasetNameHelp": "Automatisch: familie, bw (MHz), q/p (modulatie), c (kanalen), s (kHz-afstand), n (signalen). Bereiken vatten de geselecteerde specificaties samen.",
   "generator.datasetNameInvalid": "Begin met syn_pa_in_; gebruik letters, cijfers, underscores, punten of koppeltekens (maximaal 96 tekens).",
   "generator.autoName": "Automatische naam",
@@ -1491,5 +1491,6 @@
   "paLibrary.datasetNameHelp": "Begin met syn_pa_inout_. Elk signaal behoudt zijn eigen samplefrequentie en bandbreedte.",
   "paLibrary.outputDatasetName": "PA-uitvoerdataset: {name}",
   "analyzer.dataset": "Brondataset",
-  "analyzer.datasetSignal": "Signaal in dataset"
+  "analyzer.datasetSignal": "Signaal in dataset",
+  "generator.useDataset": "Dit signaal gebruiken: {name}"
 }

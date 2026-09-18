@@ -1146,7 +1146,7 @@
   "generator.importConfig": "Load configuration",
   "generator.exportConfig": "Save configuration",
   "generator.configTooLarge": "Configuration JSON must be at most 64 KiB.",
-  "generator.next": "Use this signal",
+  "generator.next": "この信号を使用",
   "generator.createDataset": "Create synthetic PA dataset",
   "generator.createHint": "At least 8,192 samples. A simulated PA response is added for training.",
   "generator.exportIq": "Export I/Q + configuration",
@@ -1483,7 +1483,7 @@
   "generator.previewIntro": "生成したPA入力を確認し、信号をダウンロードするか、仮想PAの選択に進みます。",
   "generator.editSetup": "信号設定を編集",
   "generator.openPreview": "プレビューを開く",
-  "generator.previewSignal": "生成した信号",
+  "generator.previewSignal": "生成したデータセット内の信号を可視化",
   "generator.datasetNameHelp": "自動：方式、bw（MHz）、q/p（変調次数）、c（チャネル数）、s（kHz 間隔）、n（信号数）。範囲は選択した仕様を表します。",
   "generator.datasetNameInvalid": "syn_pa_in_ で始め、英数字、アンダースコア、ドット、ハイフンを使用してください（最大 96 文字）。",
   "generator.autoName": "自動名を使用",
@@ -1491,5 +1491,6 @@
   "paLibrary.datasetNameHelp": "syn_pa_inout_ で始めてください。各信号のサンプリング周波数と帯域幅は個別に保持されます。",
   "paLibrary.outputDatasetName": "PA 出力データセット：{name}",
   "analyzer.dataset": "入力データセット",
-  "analyzer.datasetSignal": "データセット内の信号"
+  "analyzer.datasetSignal": "データセット内の信号",
+  "generator.useDataset": "この信号を使用：{name}"
 }
