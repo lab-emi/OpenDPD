@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.15: focused training waveforms
+
+Output and reference now appear in separate I and Q charts, with two curves per chart, a short initial sample window and larger legends above the axes. Inputs and baselines remain available through individual signal selection. Completed results use the same view; training spectra have more room.
+
+[Release notes](releases/release-notes-2.2.15.md)
+
 ## 2.2.14: valid-sample ACLR and TRes-GRU defaults
 
 Removes validation/test preview metrics and the artificial spectral leakage caused by padded evaluation tails. The new default protocol uses real samples for training metrics, checkpoint selection and final results. PA/DPD defaults are TRes-GRU with batch size 16. Validation covers NR/Wi-Fi synthetic signals, measured DPA captures and APA at −55.61 dBc carrier ACLR through the trained PA model.

@@ -1468,5 +1468,13 @@
   "datasets.downloadZip": "すべてダウンロード · ZIP",
   "generator.removePreset": "プリセット {name} を削除",
   "spectrum.paModelHelp": "PA モデル（surrogate、代理モデル）は学習済みの増幅器モデルです。DPD なし：元の入力 → PA モデル。DPD あり：元の入力 → DPD → 同じ PA モデル。PA モデルの曲線は予測結果で、データセットの曲線は実測または合成と表示されます。",
-  "profile.spectral": "OpenDPD · 有効サンプルの搬送波 ACLR"
+  "profile.spectral": "OpenDPD · 有効サンプルの搬送波 ACLR",
+  "waveform.view": "波形",
+  "waveform.individual": "個別の信号",
+  "waveform.window": "初期表示範囲",
+  "waveform.detail": "先頭128サンプル",
+  "waveform.full": "抜粋全体（{count}サンプル）",
+  "waveform.help": "出力と基準を比較するか、信号を個別に確認できます。IとQは同じ振幅スケールです。ズームや移動で詳細を確認できます。",
+  "waveform.inPhase": "I · 同相成分",
+  "waveform.quadrature": "Q · 直交成分"
 }

@@ -13,7 +13,7 @@ import type { StreamState } from '@/api/events'
 import type { RunView } from '@/api/types'
 import { isTerminal } from '@/api/types'
 import { formatNumber, formatTime, message, phaseLabel, t } from '@/i18n'
-import { IQPreview } from './IQPreview'
+import { OutputWaveforms, type OutputWaveform } from './OutputWaveforms'
 import { SpectrumPanels } from './SpectrumPanels'
 import type { SpectrumData } from './ResultCharts'
 import { MetricHistoryChart } from './MetricHistoryChart'
@@ -29,7 +29,7 @@ interface LiveSnapshot {
   preview: {
     revision: number; updated_at: string; source: string; samples: number; metrics: Record<string, number>; interval_seconds?: number; metric_profile?: string
     units: Record<string, string>
-    plots: { spectrum?: SpectrumData; time?: { start: number; traces: Array<{ name: string; i: number[]; q: number[] }> } }
+    plots: { spectrum?: SpectrumData; time?: { start: number; traces: OutputWaveform[] } }
   } | null
 }
 
@@ -91,15 +91,15 @@ export function LiveRunDashboard({ run, stream, metrics }: { run: RunView; strea
       </Grid>)}
     </Grid>
     {training && metrics.some((point) => point.values[dpd ? 'ACLR_AVG' : 'NMSE'] !== undefined) && <Paper sx={{ p: 2 }}><MetricHistoryChart points={metrics} metric={dpd ? 'ACLR_AVG' : 'NMSE'} height={285} /></Paper>}
-    <Paper sx={{ p: 2.5 }}>
+    <Paper sx={{ p: { xs: 1.25, sm: 2.5 } }}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 1, flexWrap: 'wrap', mb: 1 }}><Typography variant="h2">{t('live.signals')}</Typography>{preview && <Typography variant="caption" color="text.secondary">{formatTime(preview.updated_at)}</Typography>}</Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{preview ? t(final ? 'live.finalHelp' : 'live.probeHelp', { samples: preview.samples, source: phaseLabel(preview.source === 'validation_probe' ? 'validation' : 'test') }) : t('live.waitingSignals')}</Typography>
       {preview?.metric_profile && <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1 }}><code>{preview.metric_profile}</code></Typography>}
       {snapshot?.preview_error && <Alert severity="warning">{message(snapshot.preview_error)}</Alert>}
       {query.isError && <Alert severity="warning">{t('live.unavailable')}</Alert>}
       <Grid container spacing={2}>
-        {time && <Grid size={{ xs: 12, xl: 6 }}><IQPreview series={series} start={time.start} viewKey={`${run.run_id}:${preview?.source}`} height={285} /></Grid>}
-        {spec && <Grid size={{ xs: 12, xl: 6 }}><SpectrumPanels frequencyHz={spec.frequency} axis={spec.axis} traces={spectra} bands={spec.bands ?? undefined} viewKey={`${run.run_id}:${preview?.source}`} height={285} /></Grid>}
+        {time && <Grid size={{ xs: 12 }}><OutputWaveforms key={run.run_id} series={series} start={time.start} viewKey={`${run.run_id}:${preview?.source}`} /></Grid>}
+        {spec && <Grid size={{ xs: 12 }}><SpectrumPanels frequencyHz={spec.frequency} axis={spec.axis} traces={spectra} bands={spec.bands ?? undefined} viewKey={`${run.run_id}:${preview?.source}`} height={285} /></Grid>}
       </Grid>
     </Paper>
   </Stack>

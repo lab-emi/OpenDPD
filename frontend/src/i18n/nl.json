@@ -1468,5 +1468,13 @@
   "datasets.downloadZip": "Alles downloaden · ZIP",
   "generator.removePreset": "Voorinstelling {name} verwijderen",
   "spectrum.paModelHelp": "Het PA-model (surrogaat) is het getrainde versterkermodel. Zonder DPD: oorspronkelijke ingang → PA-model. Met DPD: oorspronkelijke ingang → DPD → hetzelfde PA-model. De PA-modelcurven zijn voorspellingen; datasetcurven zijn als gemeten of synthetisch gemarkeerd.",
-  "profile.spectral": "OpenDPD · draaggolf-ACLR op geldige samples"
+  "profile.spectral": "OpenDPD · draaggolf-ACLR op geldige samples",
+  "waveform.view": "Golfvorm",
+  "waveform.individual": "Afzonderlijke signalen",
+  "waveform.window": "Beginvenster",
+  "waveform.detail": "Eerste 128 samples",
+  "waveform.full": "Volledig fragment ({count} samples)",
+  "waveform.help": "Vergelijk de uitgang met de referentie of bekijk één signaal. I en Q gebruiken dezelfde amplitudeschaal. Zoom of verschuif de weergave voor meer detail.",
+  "waveform.inPhase": "I · In fase",
+  "waveform.quadrature": "Q · Kwadratuur"
 }

@@ -1468,5 +1468,13 @@
   "datasets.downloadZip": "Scarica tutto · ZIP",
   "generator.removePreset": "Rimuovi preset {name}",
   "spectrum.paModelHelp": "Il modello PA (surrogato) è il modello addestrato dell’amplificatore. Senza DPD: ingresso originale → modello PA. Con DPD: ingresso originale → DPD → stesso modello PA. Le curve del modello PA sono previsioni; le curve del dataset sono indicate come misurate o sintetiche.",
-  "profile.spectral": "OpenDPD · ACLR per portante sui campioni validi"
+  "profile.spectral": "OpenDPD · ACLR per portante sui campioni validi",
+  "waveform.view": "Forma d’onda",
+  "waveform.individual": "Segnali singoli",
+  "waveform.window": "Finestra iniziale",
+  "waveform.detail": "Primi 128 campioni",
+  "waveform.full": "Estratto completo ({count} campioni)",
+  "waveform.help": "Confronta l’uscita con il riferimento oppure esamina un segnale. I e Q hanno la stessa scala di ampiezza. Ingrandisci o sposta la vista per vedere i dettagli.",
+  "waveform.inPhase": "I · In fase",
+  "waveform.quadrature": "Q · Quadratura"
 }

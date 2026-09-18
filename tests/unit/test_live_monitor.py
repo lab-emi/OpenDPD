@@ -127,3 +127,28 @@ def test_dpd_preview_captures_the_actual_pa_drive_without_changing_rng_or_traini
     import numpy as np
     np.testing.assert_allclose(call.args[0], 3 * call.kwargs['u'])
     assert model.training and not model.pa_model._forward_pre_hooks
+
+
+@pytest.mark.parametrize('task', ['train_pa', 'train_dpd'])
+@pytest.mark.parametrize('origin', ['measured', 'synthetic'])
+def test_waveforms_and_spectra_keep_matching_sources_and_original_samples(tmp_path, task, origin):
+    import numpy as np
+    from opendpd.schemas import SignalSpec
+    resolved = types.SimpleNamespace(training=types.SimpleNamespace(epochs=1),
+        evaluation=types.SimpleNamespace(profile_id='opendpd-spectral-v2'), task=types.SimpleNamespace(value=task))
+    dataset = types.SimpleNamespace(origin=types.SimpleNamespace(value=origin),
+        signal=SignalSpec(sample_rate_hz=80e6, bandwidth_hz=20e6, n_sub_ch=1, nperseg=128))
+    monitor = LiveMonitor(types.SimpleNamespace(run_dir=lambda _: tmp_path), 'run', resolved, dataset, lambda *args: None)
+    x = np.arange(512, dtype=float).reshape(1, 256, 2) / 512
+    prediction, target, u = x * 3, x * 2, x * 1.5
+    monitor.publish(prediction, target, x, None, 'validation_probe', u=u if task == 'train_dpd' else None)
+    preview = monitor.state['preview']
+    time = preview['plots']['time']['traces']
+    spectrum = preview['plots']['spectrum']['traces']
+    assert [(t['name'], t['role'], t['source']) for t in time] == [(t['name'], t['role'], t['source']) for t in spectrum]
+    assert time[0]['source'] == origin + ' dataset'
+    assert time[1]['source'] == ('linear target' if task == 'train_dpd' else origin + ' dataset')
+    for trace, expected in zip(time, [x, target, prediction, u]):
+        np.testing.assert_allclose(trace['i'], expected[0, :, 0], atol=1e-6)
+        np.testing.assert_allclose(trace['q'], expected[0, :, 1], atol=1e-6)
+    assert preview['metrics'] == {}  # Display excerpts cannot become training scores.
