@@ -39,7 +39,7 @@ def build_parser():
     parser.add_argument('--batch_size', default=16, type=int, help='Batch size for training.')
     parser.add_argument('--batch_size_eval', default=16, type=int, help='Batch size for evaluation.')
     parser.add_argument('--metric_profile', default='legacy-opendpd-v1',
-                        choices=['opendpd-spectral-v2', 'legacy-opendpd-v1', 'general-spectral-v1', 'ofdm-lte20-evm-v1'],
+                        choices=['opendpd-spectral-v2', 'legacy-opendpd-v1'],
                         help='Historical CLI defaults to legacy scores; Studio uses opendpd-spectral-v2 on valid samples.')
     parser.add_argument('--n_epochs', default=150, type=int, help='Number of epochs to train for.')
     parser.add_argument('--lr_schedule', default=1, type=int,

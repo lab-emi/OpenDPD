@@ -45,6 +45,11 @@ periodogram implementation. Historical CLI/paper reproduction scripts retain
 `legacy-opendpd-v1`; pass `--metric_profile opendpd-spectral-v2` to the legacy
 CLI to opt into the new training calculation.
 
+The general and symbol-EVM profiles remain alternative report scorers. They
+retain the historical training objective; the exported historical CLI command
+therefore names `legacy-opendpd-v1`, while final reports keep their selected
+scoring profile. The CLI training flag offers only the two training protocols.
+
 ## `legacy-opendpd-v1` (frozen, historical reproduction)
 
 The historical OpenDPD numbers, computed by `utils/metrics.py` exactly as the

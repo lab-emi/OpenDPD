@@ -43,6 +43,16 @@ def test_dpd_namespace_binds_pa_and_dpd_models(tmp_path):
     assert (ns.DPD_backbone, ns.DPD_hidden_size) == ("gru", 15)
 
 
+@pytest.mark.parametrize("profile", ["opendpd-spectral-v2", "legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-v1"])
+def test_report_profiles_round_trip_with_their_supported_training_protocol(tmp_path, profile):
+    from arguments import build_parser
+    cfg = experiment_train_pa_smoke()
+    cfg.evaluation.profile_id = profile
+    ns = build_namespace(resolve(cfg), dataset_dir=tmp_path, dataset_name="ds")
+    assert ns.metric_profile == (profile if profile == "opendpd-spectral-v2" else "legacy-opendpd-v1")
+    assert vars(build_parser().parse_args(legacy_cli_tokens(ns))) == vars(ns)
+
+
 def test_run_in_directory_restores_cwd(tmp_path):
     before = os.getcwd()
     with run_in_directory(tmp_path / "run") as run_dir:
