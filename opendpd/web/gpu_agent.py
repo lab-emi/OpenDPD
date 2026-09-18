@@ -31,7 +31,7 @@ def cleanup_containers():
         podman("rm", "-f", identifier, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def container_command(image, name, root, run_id, seconds):
+def container_options(image, name, seconds):
     if not re.fullmatch(r"sha256:[a-f0-9]{64}", image):
         raise ValueError("GPU image must be pinned by local image ID")
     return ["/usr/bin/podman", "run", "--rm", "--pull=never", "--log-driver=none", "--name", name, "--label", LABEL,
@@ -41,9 +41,17 @@ def container_command(image, name, root, run_id, seconds):
             "--ulimit=core=0:0", "--ulimit=fsize=67108864:67108864", "--shm-size=256m",
             "--timeout", str(seconds), "--stop-timeout=3",
             "--tmpfs=/tmp:rw,size=256m,nodev,nosuid,noexec,mode=1777",
+            # Only the generated Triton shared libraries need executable storage.
+            # Uploads and the ordinary temporary directory remain noexec.
+            "--tmpfs=/run/opendpd-triton:rw,size=256m,nodev,nosuid,exec,mode=1777",
+            "--env=TRITON_CACHE_DIR=/run/opendpd-triton",
             "--env=HOME=/tmp", "--env=MPLCONFIGDIR=/tmp/matplotlib", "--env=XDG_CACHE_HOME=/tmp/cache",
             "--env=OMP_NUM_THREADS=4", "--env=OPENBLAS_NUM_THREADS=4", "--env=MKL_NUM_THREADS=4",
-            "--env=PYTHONDONTWRITEBYTECODE=1", "--env=PYTHONUNBUFFERED=1",
+            "--env=PYTHONDONTWRITEBYTECODE=1", "--env=PYTHONUNBUFFERED=1"]
+
+
+def container_command(image, name, root, run_id, seconds):
+    return [*container_options(image, name, seconds),
             "--volume", f"{root}:/workspace:rw,nosuid,nodev,noexec", "--workdir=/workspace",
             "--entrypoint=python", image, "-m", "opendpd.web.gpu_container", "--workspace", "/workspace", "--run-id", run_id]
 
@@ -166,13 +174,13 @@ class Agent:
 
     def loop(self):
         cleanup_containers()
-        # Advertise CUDA only after this exact isolated image performs a real operation.
-        podman("run", "--rm", "--pull=never", "--log-driver=none", "--label", LABEL,
-               "--network=none", "--read-only", "--user=65532:65532", "--cap-drop=all",
-               "--security-opt=no-new-privileges", "--device=nvidia.com/gpu=0", "--timeout=20",
-               "--entrypoint=python", self.image, "-c",
-               "import torch; assert torch.cuda.is_available(); assert torch.ones(1,device='cuda').item()==1",
-               stdout=subprocess.DEVNULL)
+        # Probe cold-cache forward AND backward under the actual job sandbox.
+        # A tensor allocation alone cannot detect a missing Triton toolchain.
+        subprocess.run(
+            [*container_options(self.image, "opendpd-gpu-probe", 60),
+             "--entrypoint=python", self.image, "-m", "opendpd.web.gpu_probe"],
+            check=True, timeout=75, stdout=subprocess.DEVNULL,
+        )
         for path in self.root.iterdir():
             if path.is_dir() and re.fullmatch(r"[a-f0-9]{32}", path.name):
                 shutil.rmtree(path)

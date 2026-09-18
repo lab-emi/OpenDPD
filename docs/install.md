@@ -1,6 +1,6 @@
 # Installation
 
-[Use the hosted Studio](https://opendpd.com/studio/) without installation, or run OpenDPD **2.2.11** locally. Python 3.12 is the recommended starting point; the compute suite also covers 3.10–3.13.
+[Use the hosted Studio](https://opendpd.com/studio/) without installation, or run OpenDPD **2.2.12** locally. Python 3.12 is the recommended starting point; the compute suite also covers 3.10–3.13.
 
 ## Install uv
 
@@ -26,7 +26,7 @@ These commands work on macOS, Linux and Windows; activation is unnecessary becau
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.11" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.2.12" --torch-backend=auto
 uv run --no-project --python .venv opendpd doctor
 uv run --no-project --python .venv opendpd gui
 ```
@@ -52,6 +52,12 @@ uv pip install --python .venv --reinstall torch --torch-backend=auto
 
 Linux still needs a graphical session and the system libraries Qt uses (typically `libgl1`, `libegl1`, `libxcb-cursor0` and X11/XCB libraries on Debian/Ubuntu). Minimal distributions and containers may lack them. Windows needs the Microsoft WebView2 Runtime. See [pywebview platform prerequisites](https://pywebview.flowrl.com/guide/installation). OpenDPD does not silently install system packages or disable the browser sandbox. On a headless machine, use `--no-browser`; `--browser` bypasses the native window and `--window` reports a missing native backend directly.
 
+## Optional Triton acceleration
+
+DeltaGRU uses fused Triton kernels for supported NVIDIA CUDA configurations. Triton needs a C compiler and development headers for the Python interpreter in use. On Ubuntu with the distribution's default Python, install them with `sudo apt-get install gcc python3-dev`; for another Python version, use matching development headers.
+
+Starting in 2.2.12, a missing C compiler produces one warning per layer and training continues with PyTorch on the same device. To choose the PyTorch path explicitly, set `OPENDPD_DISABLE_TRITON_DELTAGRU=1` before launching Studio or the CLI. Other compiler, driver and CUDA failures still report their underlying error.
+
 ## SSH or another computer
 
 `127.0.0.1` always refers to the computer running the browser. If OpenDPD runs on a Linux server and you browse from a Mac, establish a tunnel **in a terminal on the Mac**:
@@ -76,7 +82,7 @@ A browser-open failure is nonfatal: Studio continues serving its URL. The launch
 Standard pip installs all Python dependencies too:
 
 ```sh
-python -m pip install "opendpd==2.2.11"
+python -m pip install "opendpd==2.2.12"
 opendpd gui
 ```
 

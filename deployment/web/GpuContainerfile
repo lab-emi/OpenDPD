@@ -1,8 +1,8 @@
 FROM docker.io/pytorch/pytorch:2.14.0-cuda13.2-cudnn9-runtime@sha256:773f5f0122b8d6413ff1e47559d98a3a22896434822e2d7752ba8d5b85a363d7
 WORKDIR /opt/opendpd
-# Apply Ubuntu security updates and remove build headers from the runtime.
-# Containers use the host kernel; linux-libc-dev is an unused header package.
-RUN apt-get update && apt-get upgrade -y && apt-get purge -y linux-libc-dev python3-pip python3-wheel binutils-common libctf-nobfd0 libsframe1 libc-dev-bin && rm -rf /var/lib/apt/lists/*
+# Triton compiles its CUDA driver/launchers on first use. Retain the C compiler,
+# libc headers and matching Python headers in the runtime, including cold jobs.
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends gcc python3-dev && apt-get purge -y python3-pip python3-wheel && rm -rf /var/lib/apt/lists/*
 RUN uv venv --system-site-packages --python /usr/bin/python /opt/opendpd-runtime
 ENV PATH="/opt/opendpd-runtime/bin:${PATH}"
 COPY deployment/web/requirements-gpu.lock /tmp/requirements-gpu.lock
