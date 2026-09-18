@@ -49,8 +49,12 @@ test('web polling survives a dropped connection and reload, restores plots, and 
   await page.goto(`/#/runs/${id}`)
   await expect(page.getByRole('heading', { name: 'Remote CUDA experiment', exact: true })).toBeVisible()
   const plots = page.getByTestId('live-dashboard').locator('.js-plotly-plot')
+  const metric = page.getByTestId('history-NMSE').locator('.js-plotly-plot')
+  const latestMetric = () => metric.evaluate(node =>
+    (node as HTMLElement & { data?: Array<{ y?: number[] }> }).data?.[0]?.y?.at(-1))
   await expect(plots).toHaveCount(3)
-  await expect(page.getByText('-31.00 dB', { exact: true })).toBeVisible()
+  await expect.poll(latestMetric).toBe(-31)
+  await expect(page.getByText('-31.00 dB', { exact: true })).toHaveCount(0)
   offline = true
   await page.getByRole('button', { name: 'Resync experiment' }).click()
   await expect(page.getByText(/disconnected/i).first()).toBeVisible({ timeout: 15_000 })
@@ -60,10 +64,12 @@ test('web polling survives a dropped connection and reload, restores plots, and 
   revision = 2
   offline = false
   await page.getByRole('button', { name: 'Resync experiment' }).click()
-  await expect(page.getByText('-32.00 dB', { exact: true })).toBeVisible()
+  await expect.poll(latestMetric).toBe(-32)
+  await expect(page.getByText('-32.00 dB', { exact: true })).toHaveCount(0)
   expect(cursors).toContain(1)
   await page.reload()
-  await expect(page.getByText('-32.00 dB', { exact: true })).toBeVisible()
+  await expect.poll(latestMetric).toBe(-32)
+  await expect(page.getByText('-32.00 dB', { exact: true })).toHaveCount(0)
   await expect(plots).toHaveCount(3)
   await page.getByRole('button', { name: /Terminal.*Running/ }).click()
   const terminal = page.getByTestId('experiment-terminal')
