@@ -37,11 +37,11 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.15** makes training waveforms easier to read: output and reference are compared in separate I and Q plots, with a short initial window and individual signal inspection. TRes-GRU, batch size 16 and valid-sample ACLR remain the defaults.
+**OpenDPD 2.2.16** organizes signal generation into Generate and Preview pages, adds named input/output datasets and searchable dataset selection, and improves plot clarity and workflow navigation. TRes-GRU, batch size 16 and valid-sample ACLR remain the defaults.
 
 **Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input, simulate its output with one of nine Virtual PAs, or use existing input/output data. Standard presets are uncoded engineering stimuli; each capture keeps its own sample rate and length.
 
-[2.2.15 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.15/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
+[2.2.16 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.16/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)
@@ -70,7 +70,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.15" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.2.16" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 

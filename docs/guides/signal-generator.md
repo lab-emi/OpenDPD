@@ -1,11 +1,13 @@
 # Studio Signal Generator
 
 Open **Signal Generator** in the sidebar, or choose **Get Started → Signal Generator**.
-The first visit selects a private NR 20 MHz configuration; generation starts only when requested. Choose **5G NR**, **Wi-Fi 6**, **Wi-Fi 7** or **Custom**. The **Signal setup** panel is directly below the family buttons, followed by **Use this signal**.
+The sidebar expands to **Generate** and **Preview** while Signal Generator is open. Generate is the default page. The first visit selects a private NR 20 MHz configuration; generation starts only when requested. Choose **5G NR**, **Wi-Fi 6**, **Wi-Fi 7** or **Custom**. The dataset name and **Generate & preview** action sit at the top of **Signal setup**.
 
 Select one or more compact matrix cells: bandwidth runs horizontally, QAM vertically, and each group has a different OFDMA channel count. NR numerology buttons switch FR1/FR2 and subcarrier spacing. Selected chips let you edit or preview each preset. Sample count, duration and the optional default filter apply to the highlighted preset. Press **Generate & preview** once for the whole selection.
 
-The result is explicitly a **PA Input Dataset (x)**, with no PA output. Parameter changes disable exports and the next step until regenerated. Returning to this tab restores the selected batch. Up to 16 presets can be selected, with different sample rates and lengths; they are never silently concatenated.
+Generation opens **Preview** automatically. **Use this Signal: [dataset name]** puts **Choose Virtual PA**, Analyzer and download actions above the plots. **Visualize a Signal in the Generated Dataset**, just before the visualizations, selects which member to inspect.
+
+The result is explicitly a **PA Input Dataset (x)**, with no PA output. Its editable suggested name starts with `syn_pa_in_` and summarizes the waveform/specification ranges and number of signals. Virtual PA simulation produces corresponding `syn_pa_out_` and `syn_pa_inout_` output and paired dataset names. Parameter changes disable exports and the next step until regenerated. Returning to this tab restores the selected batch. Up to 16 presets can be selected, with different sample rates and lengths; they are never silently concatenated.
 
 The onboarding dialog has exactly one highlighted action: Signal Generator. Existing
 datasets are the second choice, and CSV upload is third. PA and DPD each have one
@@ -74,6 +76,8 @@ retained to preserve the exact requested sample count and disclosed in metadata.
 **Save configuration** downloads the highlighted preset's JSON; **Load configuration** validates and selects it. **Download PA input CSV** and **Download input metadata JSON** export the currently previewed signal separately. CSV columns are `I,Q`; metadata records the signal role, actual sample rate/count, seed, filter and waveform parameters, numeric environment and hashes. Seeded byte reproduction requires the recorded implementation and environment.
 
 The waveform has **no PA output**. **Choose Virtual PA** carries all selected inputs to [PA Library](virtual-pa-library.md). Choose the mathematical PA and parameters, then click **Simulate PA output**. Studio simulates every capture independently, saves the complete dataset automatically and opens **Datasets → details**. There is no separate pairing form. Each capture requires at least 8,192 input samples. The default split is 60/20/20 with 256-sample guards; preprocessing can create a different version later.
+
+DPD training additionally requires enough real samples in each evaluated split for one PSD segment. The setup check explains any shortage before starting a job. Generate a longer capture or choose an appropriate PSD segment length in the dataset metadata; padded samples do not count. On the dataset page, **Train PA & DPD Models** continues to model setup.
 
 For multiple presets, **Visualize subdataset** switches charts, metadata, preprocessing and training to that capture's own sample rate. **Download CSV** exports the selected capture/version as `I_in,Q_in,I_out,Q_out`. **Download all · ZIP** exports every original capture, per-capture metadata and one frozen `simulate_pa.py`:
 
