@@ -1,5 +1,6 @@
 import math
 import os
+import warnings
 
 import numpy as np
 import torch
@@ -307,39 +308,22 @@ class DeltaGRULayer(nn.Module):
                 dm_nh_0: Tensor = None, dm_0: Tensor = None):
         states = (x_p_0, h_0, h_p_0, dm_nh_0, dm_0)
         if self._can_use_triton(input) and self._states_can_use_triton(input, states):
-            batch_size = input.size(0)
-            if x_p_0 is None or h_0 is None or h_p_0 is None or dm_nh_0 is None or dm_0 is None:
-                x_p_0 = input.new_zeros((self.num_layers, batch_size, self.x_p_length))
-                h_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
-                h_p_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
-                dm_nh_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
-                dm_0 = input.new_zeros((self.num_layers, batch_size, self.weight_ih_height))
-
-            collect_stats = bool(self.debug)
-            stats = torch.zeros(2, dtype=torch.int64, device=input.device) if collect_stats else torch.empty(
-                2, dtype=torch.int64, device=input.device
-            )
-            output = triton_deltagru(
-                input.contiguous(),
-                x_p_0[0, :, :self.input_size].contiguous(),
-                h_0[0].contiguous(),
-                h_p_0[0].contiguous(),
-                dm_nh_0[0].contiguous(),
-                dm_0[0].contiguous(),
-                self.x2h.weight,
-                self.h2h.weight,
-                stats,
-                self.th_x,
-                self.th_h,
-                collect_stats,
-            )
-            if collect_stats:
-                # Match the eager diagnostic counters, which use input dtype.
-                self.statistics["num_dx_zeros"] += stats[0].to(input.dtype)
-                self.statistics["num_dh_zeros"] += stats[1].to(input.dtype)
-                self.statistics["num_dx_numel"] += input.numel()
-                self.statistics["num_dh_numel"] += batch_size * input.size(1) * self.hidden_size
-            return output
+            try:
+                return self._forward_triton(input, *states)
+            except RuntimeError as error:
+                # Driver initialization fails before any kernel executes. Keep
+                # optional acceleration from making a compiler mandatory, but
+                # never hide kernel errors, OOMs or other training failures.
+                if not str(error).startswith("Failed to find C compiler."):
+                    raise
+                self.use_triton = False
+                warnings.warn(
+                    "Triton could not find a C compiler; DeltaGRU is continuing "
+                    "with PyTorch on the same device. Install a C compiler and "
+                    "Python development headers to enable Triton acceleration.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
 
         x, x_p_0, h_0, h_p_0, dm_nh_0, dm_0 = self.process_inputs_first(input, x_p_0, h_0, h_p_0, dm_nh_0, dm_0)
 
@@ -348,6 +332,41 @@ class DeltaGRULayer(nn.Module):
 
         x = x.transpose(0, 1)
         return x
+
+    def _forward_triton(self, input, x_p_0, h_0, h_p_0, dm_nh_0, dm_0):
+        batch_size = input.size(0)
+        if any(state is None for state in (x_p_0, h_0, h_p_0, dm_nh_0, dm_0)):
+            x_p_0 = input.new_zeros((self.num_layers, batch_size, self.x_p_length))
+            h_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
+            h_p_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
+            dm_nh_0 = input.new_zeros((self.num_layers, batch_size, self.hidden_size))
+            dm_0 = input.new_zeros((self.num_layers, batch_size, self.weight_ih_height))
+
+        collect_stats = bool(self.debug)
+        stats = torch.zeros(2, dtype=torch.int64, device=input.device) if collect_stats else torch.empty(
+            2, dtype=torch.int64, device=input.device
+        )
+        output = triton_deltagru(
+            input.contiguous(),
+            x_p_0[0, :, :self.input_size].contiguous(),
+            h_0[0].contiguous(),
+            h_p_0[0].contiguous(),
+            dm_nh_0[0].contiguous(),
+            dm_0[0].contiguous(),
+            self.x2h.weight,
+            self.h2h.weight,
+            stats,
+            self.th_x,
+            self.th_h,
+            collect_stats,
+        )
+        if collect_stats:
+            # Match the eager diagnostic counters, which use input dtype.
+            self.statistics["num_dx_zeros"] += stats[0].to(input.dtype)
+            self.statistics["num_dh_zeros"] += stats[1].to(input.dtype)
+            self.statistics["num_dx_numel"] += input.numel()
+            self.statistics["num_dh_numel"] += batch_size * input.size(1) * self.hidden_size
+        return output
 
     def _can_use_triton(self, input: Tensor) -> bool:
         """The fused path is for the dense-float, one-layer CUDA cell.

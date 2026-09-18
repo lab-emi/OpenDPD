@@ -3,12 +3,14 @@
 import contextlib
 import copy
 import io
+import warnings
 from types import SimpleNamespace
 
 import pytest
 import torch
 
 from models import CoreModel
+from backbones import tres_deltagru
 from backbones.tres_deltagru import DeltaGRULayer
 from backbones.triton_deltagru import triton
 from modules.paths import gen_log_stat
@@ -96,6 +98,70 @@ def test_opt_in_statistics_are_logged_and_reset():
         "num_dh_zeros": 0,
         "num_dh_numel": 0,
     }
+
+
+@pytest.mark.parametrize("custom_states", [False, True])
+@pytest.mark.parametrize("training", [False, True])
+def test_missing_compiler_falls_back_once_with_eager_results(monkeypatch, custom_states, training):
+    # Exercise the dispatch failure on CPU too, so regular CI guards issue #50.
+    monkeypatch.setattr(tres_deltagru, "can_use_triton_deltagru", lambda *_: True)
+    attempts = []
+
+    def missing_compiler(*args):
+        attempts.append(True)
+        raise RuntimeError("Failed to find C compiler. Please specify via CC environment variable or set triton.knobs.build.impl.")
+
+    monkeypatch.setattr(tres_deltagru, "triton_deltagru", missing_compiler)
+    reference = DeltaGRULayer(6, 15, 1, thx=0.01, thh=0.05)
+    reference.statistics = dict(num_dx_zeros=0, num_dh_zeros=0, num_dx_numel=0, num_dh_numel=0)
+    candidate = copy.deepcopy(reference)
+    reference.use_triton = False
+    candidate.use_triton = True
+    reference.debug = candidate.debug = 1
+    features = torch.randn(2, 17, 6, requires_grad=training)
+    candidate_features = features.detach().clone().requires_grad_(training)
+    states = [torch.randn(1, 2, width, requires_grad=training) for width in (15, 15, 15, 15, 45)] if custom_states else []
+    candidate_states = [state.detach().clone().requires_grad_(training) for state in states]
+
+    with torch.set_grad_enabled(training):
+        expected = reference(features, *states)
+        with pytest.warns(RuntimeWarning, match="continuing with PyTorch on the same device"):
+            actual = candidate(candidate_features, *candidate_states)
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+        assert not candidate.use_triton
+        assert actual.device == features.device
+        if training:
+            expected.square().mean().backward()
+            actual.square().mean().backward()
+            for left, right in zip(
+                [features, *states, *reference.parameters()],
+                [candidate_features, *candidate_states, *candidate.parameters()],
+            ):
+                torch.testing.assert_close(left.grad, right.grad, rtol=0, atol=0)
+            torch.optim.SGD(reference.parameters(), lr=0.01).step()
+            torch.optim.SGD(candidate.parameters(), lr=0.01).step()
+        # The next batch must neither retry the broken compiler nor warn again.
+        with warnings.catch_warnings(record=True) as emitted:
+            warnings.simplefilter("always")
+            torch.testing.assert_close(candidate(candidate_features, *candidate_states), reference(features, *states), rtol=0, atol=0)
+        assert not emitted
+    assert len(attempts) == 1
+    assert reference.statistics == candidate.statistics
+
+
+@pytest.mark.parametrize("message", ["CUDA out of memory", "invalid kernel configuration"])
+def test_triton_runtime_errors_are_not_hidden(monkeypatch, message):
+    monkeypatch.setattr(tres_deltagru, "can_use_triton_deltagru", lambda *_: True)
+
+    def broken_kernel(*args):
+        raise RuntimeError(message)
+
+    monkeypatch.setattr(tres_deltagru, "triton_deltagru", broken_kernel)
+    model = DeltaGRULayer(6, 15, 1)
+    model.use_triton = True
+    with pytest.raises(RuntimeError, match=message):
+        model(torch.randn(2, 3, 6))
+    assert model.use_triton
 
 
 @requires_fused_cuda
