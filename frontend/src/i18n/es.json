@@ -1476,5 +1476,12 @@
   "waveform.full": "Fragmento completo ({count} muestras)",
   "waveform.help": "Compare la salida con su referencia o examine una señal. I y Q comparten la escala de amplitud. Amplíe o desplace la vista para ver más detalles.",
   "waveform.inPhase": "I · En fase",
-  "waveform.quadrature": "Q · Cuadratura"
+  "waveform.quadrature": "Q · Cuadratura",
+  "generator.navigation": "Páginas del generador de señales",
+  "generator.page.generate": "Generar",
+  "generator.page.preview": "Vista previa",
+  "generator.previewIntro": "Revise las entradas PA generadas, descargue las señales o elija un PA virtual.",
+  "generator.editSetup": "Editar configuración",
+  "generator.openPreview": "Abrir vista previa",
+  "generator.previewSignal": "Señal generada"
 }

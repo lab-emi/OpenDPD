@@ -28,7 +28,7 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
-import { Link as RouterLink } from 'react-router'
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router'
 import { api, downloadFile } from '@/api/client'
 import { analyzerLink } from '@/api/signalAnalyzer'
 import { useGenerateBatch, useGeneratedSignal, useGeneratorPresets, type GeneratedSignal, type GeneratorConfig, type GeneratorPreset } from '@/api/signalGenerator'
@@ -61,6 +61,12 @@ export function SignalGeneratorPage() {
 }
 
 function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: GeneratedSignal }) {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const showPreview = pathname === '/signal-generator/preview'
+  useEffect(() => {
+    if (pathname.startsWith('/signal-generator')) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [pathname])
   const colors = useStudioColors()
   const workflow = useStudioWorkflow()
   const generate = useGenerateBatch()
@@ -81,8 +87,10 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
     return Object.fromEntries(initial.flatMap((c, i) => ids[i] ? [[c.preset_id, ids[i]!]] : []))
   })
   const [generatedKey, setGeneratedKey] = useState(Object.keys(generatedIds).length ? JSON.stringify(initial) : '')
-  const preview = useGeneratedSignal(generatedIds[activeId] ?? null)
-  const result = preview.data ?? (saved?.config.preset_id === activeId ? saved : undefined)
+  const [previewPresetId, setPreviewPresetId] = useState(initial[0]!.preset_id)
+  const previewId = generatedIds[previewPresetId] ? previewPresetId : Object.keys(generatedIds)[0]
+  const preview = useGeneratedSignal(previewId ? generatedIds[previewId]! : null)
+  const result = preview.data ?? (saved?.config.preset_id === previewId ? saved : undefined)
   const stale = generatedKey !== JSON.stringify(selectedConfigs)
   const shared = config.shared_channel_settings ?? [config.channel_subcarriers, config.channel_modulations, config.channel_power_db].every(values => new Set(values).size === 1)
   const ofdm = config.waveform === 'ofdm'
@@ -115,7 +123,9 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
     generate.mutate(selectedConfigs, { onSuccess: entries => {
       setGeneratedIds(Object.fromEntries(entries.map(e => [e.name, e.signal_id])))
       setGeneratedKey(JSON.stringify(selectedConfigs))
+      setPreviewPresetId(activeId)
       workflow.selectInputs(entries.map(e => e.signal_id), selectedConfigs)
+      navigate('/signal-generator/preview')
     } })
   }
   const exportConfig = () => {
@@ -133,18 +143,23 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
     } catch (e) { setError(e) }
   }
   const download = (url: string) => { setDownloading(true); void downloadFile(url).catch(setError).finally(() => setDownloading(false)) }
-  return <Stack spacing={2} sx={{ maxWidth: 1600, mx: 'auto' }}>
+  return <Stack spacing={2} sx={{ maxWidth: 1600, mx: 'auto' }} data-testid="generator-page" data-view={showPreview ? 'preview' : 'generate'}>
     <Stack direction="row" useFlexGap sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
-      <Box><Typography variant="h1">{t('generator.title')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .75 }}>{t('generator.intro')}</Typography></Box>
-      <Stack direction="row" spacing={1}><Button component="label" variant="outlined" size="small" startIcon={<UploadFileIcon />} disabled={generate.isPending}>{t('generator.importConfig')}<input type="file" hidden accept=".json,application/json" data-testid="generator-config-upload" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadConfig(file); e.target.value = '' }} /></Button><Button size="small" onClick={exportConfig} startIcon={<DownloadIcon />}>{t('generator.exportConfig')}</Button></Stack>
+      <Box><Typography variant="h1">{t('generator.title')} · {t(showPreview ? 'generator.page.preview' : 'generator.page.generate')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .75 }}>{t(showPreview ? 'generator.previewIntro' : 'generator.intro')}</Typography></Box>
+      {showPreview ? <Button component={RouterLink} to="/signal-generator" variant="outlined">{t('generator.editSetup')}</Button> : <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}><Button component="label" variant="outlined" size="small" startIcon={<UploadFileIcon />} disabled={generate.isPending}>{t('generator.importConfig')}<input type="file" hidden accept=".json,application/json" data-testid="generator-config-upload" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadConfig(file); e.target.value = '' }} /></Button><Button size="small" onClick={exportConfig} startIcon={<DownloadIcon />}>{t('generator.exportConfig')}</Button>{!!Object.keys(generatedIds).length && <Button component={RouterLink} to="/signal-generator/preview" variant="outlined">{t('generator.openPreview')}</Button>}</Stack>}
     </Stack>
+    {!showPreview ? <>
     <Box component="nav" aria-label={t('generator.choose')} sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,minmax(0,1fr))', sm: 'repeat(4,minmax(0,1fr))' }, gap: 1 }}>
       {FAMILIES.map((key, index) => <ButtonBase key={key} onClick={() => setFamily(key)} disabled={generate.isPending} aria-pressed={family === key} sx={{ textAlign: 'left', display: 'block', p: 1.5, border: 1, borderColor: family === key ? 'primary.main' : 'divider', borderRadius: 1.5, bgcolor: family === key ? colors.selected : 'background.paper', '&:hover': { borderColor: 'primary.main' }, '&.Mui-focusVisible': { outline: '3px solid', outlineColor: 'primary.main', outlineOffset: 2 } }}>
         <Typography variant="caption" color="text.secondary">0{index+1} · {t(`generator.familyHint.${key}`)}</Typography>
         <Typography sx={{ fontWeight: 750, fontSize: 17 }}>{t(`generator.family.${key}`)}</Typography>
       </ButtonBase>)}
     </Box>
-    <Paper sx={{ p: { xs: 1.5, md: 2 } }}><Stack spacing={1.5}>
+    <Paper data-testid="generator-setup" sx={{ p: { xs: 1.5, md: 2 } }}><Stack spacing={1.5}>
+      <Stack direction="row" useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validNumbers || !validLengths || !selected.length || totalSamples > 4_000_000} onClick={run}>{t(generate.isPending ? 'generator.generating' : 'generator.generate')}</Button>
+        <Typography variant="body2" color="text.secondary">{t('generator.totalSamples', { count: formatNumber(totalSamples) })}</Typography>
+      </Stack>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}><Typography variant="h2">{t('generator.setup')}</Typography><Chip size="small" label={t('generator.selectionCount', { count: selected.length })} /></Stack>
       {family === 'custom' ? <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
         {presets.filter(p => p.family === 'custom').map(entry => <Button key={entry.preset_id} aria-pressed={selected.includes(entry.preset_id)} variant={selected.includes(entry.preset_id) ? 'contained' : 'outlined'} disabled={generate.isPending} onClick={() => toggle(entry)}>{entry.label}</Button>)}
@@ -164,32 +179,15 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
         <FormControlLabel label={t('generator.idealFilter')} control={<Checkbox checked={config.filter_enabled ?? true} onChange={(_, checked) => change('filter_enabled', checked)} />} />
         <Typography variant="caption" color="text.secondary">{t('generator.filterHelp')}</Typography>
       </Stack></Box>}
-      <Stack direction="row" useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
-        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validNumbers || !validLengths || !selected.length || totalSamples > 4_000_000} onClick={run}>{t(generate.isPending ? 'generator.generating' : 'generator.generate')}</Button>
-        <Typography variant="body2" color="text.secondary">{t('generator.totalSamples', { count: formatNumber(totalSamples) })}</Typography>
-      </Stack>
       {!validLengths && <Alert severity="error">{t('generator.lengthLimit')}</Alert>}
       {(selected.length >= 16 || totalSamples > 4_000_000) && <Alert severity="info">{t('generator.selectionLimit')}</Alert>}
       {generate.isPending && <LinearProgress aria-label={t('generator.generating')} />}
       {(generate.isError || !!error) && <ErrorState error={error || generate.error} />}
     </Stack></Paper>
-    <Paper sx={{ p: 2 }}><Stack spacing={1.25}>
-      <Typography variant="h2">{t('generator.next')}</Typography>
-      <Typography variant="body2" color="text.secondary">{t('generator.batchNext')}</Typography>
-      <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
-        <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale || !result || !selected.length || generate.isPending} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(workflow.state.inputId ?? result?.signal_id ?? '')}>{t('paInput.next')}</Button>
-        <Button variant="outlined" endIcon={<ArrowForwardIcon />} disabled={stale || !result} component={RouterLink} to={result ? analyzerLink('generated', result.signal_id) : '#'}>{t('analyzer.open')}</Button>
-        <Button startIcon={<DownloadIcon />} disabled={stale || !result || downloading} onClick={() => result && download('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv')}>{t('paInput.csv')}</Button>
-        <Button startIcon={<DownloadIcon />} disabled={stale || !result || downloading} onClick={() => result && download('/api/v1/signal-generator/signals/' + result.signal_id + '/metadata.json')}>{t('paInput.metadata')}</Button>
-        <Button component={RouterLink} to="/datasets?guide=start">{t('generator.useMeasured')}</Button>
-      </Stack>
-      {stale && !!Object.keys(generatedIds).length && <Typography variant="caption" color="warning.main">{t('generator.stale')}</Typography>}
-    </Stack></Paper>
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0,1fr)', lg: '330px minmax(0,1fr)' }, alignItems: 'start', gap: 2 }}>
       <Box component="fieldset" disabled={generate.isPending || !selected.length} sx={{ m: 0, p: 0, border: 0, minWidth: 0 }}>
         <Accordion expanded={advanced} onChange={(_, value) => setAdvanced(value)} disableGutters>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 650 }}>{t('generator.advanced')}</Typography></AccordionSummary>
-          <AccordionDetails><Stack spacing={2.5}>
+          <AccordionDetails><Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0,1fr)', md: 'repeat(2,minmax(0,1fr))' }, gap: 2, alignItems: 'start', '& > .MuiTypography-root': { gridColumn: '1 / -1' }, '& > .MuiButton-root': { justifySelf: 'start' } }}>
             <Typography variant="body2" color="text.secondary">{t('generator.advancedHelp')}</Typography>
             {numeric('sample_rate_hz', 'generator.fs', 'MS/s', 1e6)}
             {numeric('bandwidth_hz', 'generator.bandwidth', 'MHz', 1e6)}
@@ -245,11 +243,29 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
             <FormControlLabel label={t('generator.clipping')} control={<Switch checked={config.clip_db !== null} onChange={(_, enabled) => change('clip_db', enabled ? 8 : null)} />} />
             {config.clip_db !== null && numeric('clip_db', 'generator.clipLevel', 'dB')}
             <Button variant="contained" startIcon={<PlayArrowIcon />} disabled={generate.isPending || !validNumbers || !validLengths || selected.length === 0 || totalSamples > 4_000_000} onClick={run}>{t('generator.applyGenerate')}</Button>
-          </Stack></AccordionDetails>
+          </Box></AccordionDetails>
         </Accordion>
 
       </Box>
-      <Box sx={{ minWidth: 0 }}>{preview.isError ? <ErrorState error={preview.error} onRetry={() => void preview.refetch()} /> : result ? <SignalGeneratorPlots result={result} stale={stale} /> : preview.isFetching ? <LoadingState /> : <Paper sx={{ p: 4, minHeight: 260, textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} /><Typography variant="h2">{t('generator.firstPreview')}</Typography></Paper>}</Box>
-    </Box>
+    </> : <>
+    <Paper data-testid="generator-preview-actions" sx={{ p: 2 }}><Stack spacing={1.25}>
+      {!!previewId && <TextField select size="small" label={t('generator.previewSignal')} value={previewId} onChange={e => setPreviewPresetId(e.target.value)} sx={{ maxWidth: 520 }}>
+        {Object.keys(generatedIds).map(id => <MenuItem key={id} value={id}>{presets.find(p => p.preset_id === id)?.label ?? id}</MenuItem>)}
+      </TextField>}
+      <Typography variant="h2">{t('generator.next')}</Typography>
+      <Typography variant="body2" color="text.secondary">{t('generator.batchNext')}</Typography>
+      <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
+        <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={stale || !result || !selected.length || generate.isPending} component={RouterLink} to={'/pa-library?input=' + encodeURIComponent(workflow.state.inputId ?? result?.signal_id ?? '')}>{t('paInput.next')}</Button>
+        <Button variant="outlined" endIcon={<ArrowForwardIcon />} disabled={stale || !result || generate.isPending} component={RouterLink} to={result ? analyzerLink('generated', result.signal_id) : '#'}>{t('analyzer.open')}</Button>
+        <Button startIcon={<DownloadIcon />} disabled={stale || !result || downloading || generate.isPending} onClick={() => result && download('/api/v1/signal-generator/signals/' + result.signal_id + '/input.csv')}>{t('paInput.csv')}</Button>
+        <Button startIcon={<DownloadIcon />} disabled={stale || !result || downloading || generate.isPending} onClick={() => result && download('/api/v1/signal-generator/signals/' + result.signal_id + '/metadata.json')}>{t('paInput.metadata')}</Button>
+        <Button component={RouterLink} to="/datasets?guide=start">{t('generator.useMeasured')}</Button>
+      </Stack>
+      {stale && !!Object.keys(generatedIds).length && <Typography variant="caption" color="warning.main">{t('generator.stale')}</Typography>}
+      {generate.isPending && <LinearProgress aria-label={t('generator.generating')} />}
+      {(generate.isError || !!error) && <ErrorState error={error || generate.error} />}
+    </Stack></Paper>
+    <Box sx={{ minWidth: 0 }}>{preview.isError ? <ErrorState error={preview.error} onRetry={() => void preview.refetch()} /> : result ? <SignalGeneratorPlots result={result} stale={stale} /> : preview.isFetching ? <LoadingState /> : <Paper sx={{ p: 4, minHeight: 260, textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} /><Typography variant="h2">{t('generator.firstPreview')}</Typography><Button component={RouterLink} to="/signal-generator" variant="contained" sx={{ mt: 2 }}>{t('generator.editSetup')}</Button></Paper>}</Box>
+    </>}
   </Stack>
 }

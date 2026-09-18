@@ -1476,5 +1476,12 @@
   "waveform.full": "Full excerpt ({count} samples)",
   "waveform.help": "Compare the output with its reference, or inspect one signal. I and Q share the same amplitude scale. Zoom or pan to see more detail.",
   "waveform.inPhase": "I · In-phase",
-  "waveform.quadrature": "Q · Quadrature"
+  "waveform.quadrature": "Q · Quadrature",
+  "generator.navigation": "Signal Generator pages",
+  "generator.page.generate": "Generate",
+  "generator.page.preview": "Preview",
+  "generator.previewIntro": "Review generated PA inputs, download signals, or continue with a Virtual PA.",
+  "generator.editSetup": "Edit signal setup",
+  "generator.openPreview": "Open Preview",
+  "generator.previewSignal": "Generated signal"
 }

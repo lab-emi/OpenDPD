@@ -1476,5 +1476,12 @@
   "waveform.full": "Gesamter Ausschnitt ({count} Abtastwerte)",
   "waveform.help": "Vergleichen Sie Ausgang und Referenz oder betrachten Sie ein einzelnes Signal. I und Q haben dieselbe Amplitudenskala. Zoomen oder verschieben Sie die Ansicht für Details.",
   "waveform.inPhase": "I · Inphase",
-  "waveform.quadrature": "Q · Quadratur"
+  "waveform.quadrature": "Q · Quadratur",
+  "generator.navigation": "Seiten des Signalgenerators",
+  "generator.page.generate": "Erzeugen",
+  "generator.page.preview": "Vorschau",
+  "generator.previewIntro": "Prüfen Sie erzeugte PA-Eingänge, laden Sie Signale herunter oder wählen Sie eine virtuelle PA.",
+  "generator.editSetup": "Signaleinstellungen bearbeiten",
+  "generator.openPreview": "Vorschau öffnen",
+  "generator.previewSignal": "Erzeugtes Signal"
 }

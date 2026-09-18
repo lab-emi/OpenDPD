@@ -1476,5 +1476,12 @@
   "waveform.full": "完整片段（{count} 个样本）",
   "waveform.help": "默认比较模型输出和参考信号，也可选择单个信号查看。I、Q 使用相同的幅度刻度；缩放或平移可查看细节。",
   "waveform.inPhase": "I · 同相分量",
-  "waveform.quadrature": "Q · 正交分量"
+  "waveform.quadrature": "Q · 正交分量",
+  "generator.navigation": "信号生成器页面",
+  "generator.page.generate": "生成",
+  "generator.page.preview": "预览",
+  "generator.previewIntro": "查看已生成的 PA 输入、下载信号，或继续选择虚拟 PA。",
+  "generator.editSetup": "编辑信号设置",
+  "generator.openPreview": "打开预览",
+  "generator.previewSignal": "已生成的信号"
 }

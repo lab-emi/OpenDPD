@@ -1476,5 +1476,12 @@
   "waveform.full": "Volledig fragment ({count} samples)",
   "waveform.help": "Vergelijk de uitgang met de referentie of bekijk één signaal. I en Q gebruiken dezelfde amplitudeschaal. Zoom of verschuif de weergave voor meer detail.",
   "waveform.inPhase": "I · In fase",
-  "waveform.quadrature": "Q · Kwadratuur"
+  "waveform.quadrature": "Q · Kwadratuur",
+  "generator.navigation": "Pagina’s van de signaalgenerator",
+  "generator.page.generate": "Genereren",
+  "generator.page.preview": "Voorbeeld",
+  "generator.previewIntro": "Bekijk de gegenereerde PA-ingangen, download signalen of ga verder met een virtuele PA.",
+  "generator.editSetup": "Signaalinstellingen bewerken",
+  "generator.openPreview": "Voorbeeld openen",
+  "generator.previewSignal": "Gegenereerd signaal"
 }

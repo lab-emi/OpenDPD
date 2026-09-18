@@ -1476,5 +1476,12 @@
   "waveform.full": "抜粋全体（{count}サンプル）",
   "waveform.help": "出力と基準を比較するか、信号を個別に確認できます。IとQは同じ振幅スケールです。ズームや移動で詳細を確認できます。",
   "waveform.inPhase": "I · 同相成分",
-  "waveform.quadrature": "Q · 直交成分"
+  "waveform.quadrature": "Q · 直交成分",
+  "generator.navigation": "信号生成器のページ",
+  "generator.page.generate": "生成",
+  "generator.page.preview": "プレビュー",
+  "generator.previewIntro": "生成したPA入力を確認し、信号をダウンロードするか、仮想PAの選択に進みます。",
+  "generator.editSetup": "信号設定を編集",
+  "generator.openPreview": "プレビューを開く",
+  "generator.previewSignal": "生成した信号"
 }

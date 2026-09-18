@@ -1476,5 +1476,12 @@
   "waveform.full": "Extrait complet ({count} échantillons)",
   "waveform.help": "Comparez la sortie à sa référence ou examinez un signal. I et Q partagent la même échelle d’amplitude. Zoomez ou déplacez la vue pour voir les détails.",
   "waveform.inPhase": "I · En phase",
-  "waveform.quadrature": "Q · Quadrature"
+  "waveform.quadrature": "Q · Quadrature",
+  "generator.navigation": "Pages du générateur de signaux",
+  "generator.page.generate": "Générer",
+  "generator.page.preview": "Aperçu",
+  "generator.previewIntro": "Examinez les entrées PA générées, téléchargez les signaux ou choisissez un PA virtuel.",
+  "generator.editSetup": "Modifier le signal",
+  "generator.openPreview": "Ouvrir l’aperçu",
+  "generator.previewSignal": "Signal généré"
 }
