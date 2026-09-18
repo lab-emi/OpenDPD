@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
 const running = JSON.parse(readFileSync(new URL('../mocks/run_running.json', import.meta.url), 'utf8')) as { data: Record<string, unknown> }
+const resolved = JSON.parse(readFileSync(new URL('../mocks/resolved_train_pa_smoke.json', import.meta.url), 'utf8')) as { data: Record<string, unknown> }
 
 test('web polling survives a dropped connection and reload, restores plots, and Stop has no shell input', async ({ page }) => {
   let offline = false
@@ -9,6 +10,8 @@ test('web polling survives a dropped connection and reload, restores plots, and 
   let status = 'running'
   const cursors: number[] = []
   const cancellations: string[] = []
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
   const id = 'web-reconnect-run'
   const record = () => ({ ...running.data, run_id: id, name: 'Remote CUDA experiment', device: 'cuda', status })
   await page.addInitScript(() => sessionStorage.setItem('opendpd-web-session:https://api.opendpd.com', 'browser-test-capability'))
@@ -22,6 +25,7 @@ test('web polling survives a dropped connection and reload, restores plots, and 
     else if (path === '/runs') body = [record()]
     else if (path === '/runs/count') body = { count: 1 }
     else if (path === `/runs/${id}`) body = record()
+    else if (path === `/runs/${id}/config`) body = resolved.data
     else if (path.endsWith('/events/list')) {
       const after = Number(url.searchParams.get('after') ?? 0)
       cursors.push(after)
@@ -92,4 +96,5 @@ test('web polling survives a dropped connection and reload, restores plots, and 
   await terminal.getByRole('button', { name: 'Stop experiment' }).click()
   await expect.poll(() => cancellations).toEqual([`/runs/${id}/cancel`])
   await expect(terminal.getByRole('button', { name: 'Stop experiment' })).toHaveCount(0)
+  expect(errors).toEqual([])
 })
