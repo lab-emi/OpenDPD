@@ -46,6 +46,7 @@ class PAInputDataset(StrictModel):
     signal_id: str = Field(pattern=r"^sg-[a-f0-9]{64}$")
     kind: Literal["pa_input"] = "pa_input"
     name: str
+    origin: Literal["synthetic", "uploaded"] = "synthetic"
     n_samples: int
     sample_rate_hz: float
     bandwidth_hz: float

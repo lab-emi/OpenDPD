@@ -1500,5 +1500,15 @@
   "signalDataset.search": "Zoek op datasetnaam",
   "inspection.datasetDetails": "Datasetdetails en delen",
   "paLibrary.datasetSummary": "Signalen: {signals} · Totaal I/Q-samples: {count}",
-  "datasets.captureCount": "{count} signalen"
+  "datasets.captureCount": "{count} signalen",
+  "signalImport.title": "Eigen signaal importeren",
+  "signalImport.summary": "Upload uw eigen golfvorm als invoer voor een virtuele PA.",
+  "signalImport.help": "CSV tot 25 MiB: aparte I/Q-kolommen, één complexe kolom (0.1+0.2j) of één reële kolom. Geef de werkelijke samplefrequentie en bandbreedte op. Amplitude en volgorde blijven behouden, zonder normalisatie, filtering of resampling.",
+  "signalImport.file": "Signaal-CSV kiezen",
+  "signalImport.nameHelp": "Begin met usr_pa_in_ en gebruik letters, cijfers, punten, underscores of koppeltekens.",
+  "signalImport.columns": "Kies verschillende reële I/Q-kolommen, of Complexe samples voor een complexe kolom.",
+  "signalImport.short": "PA-simulatie met een trainingsdataset vereist minstens 8.192 samples. Kortere signalen kunnen wel worden geïmporteerd en geanalyseerd.",
+  "signalImport.use": "Importeren en gebruiken in Virtual PA",
+  "signalImport.pairHelp": "De PA-invoer is geüpload; de uitvoer wordt gesimuleerd. De gekoppelde dataset bewaart de uploadmetadata.",
+  "signalImport.uploaded": "GEÜPLOAD"
 }

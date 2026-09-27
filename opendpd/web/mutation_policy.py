@@ -5,7 +5,7 @@ import asyncio
 from dataclasses import dataclass
 import re
 
-from opendpd.schemas.signal_generator import GeneratorConfig, GeneratorBatchRequest
+from opendpd.schemas.signal_generator import GeneratorConfig, GeneratorBatchRequest, ImportSignalRequest
 from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPADatasetRequest
 from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest, DatasetPublicationDraft
 from opendpd.services.workspace import WorkspaceError
@@ -23,6 +23,7 @@ class MutationRule:
 
 
 MUTATIONS = (
+    MutationRule(r"/signal-generator/import", ImportSignalRequest, "signal-import", 12, "signal_import"),
     MutationRule(r"/signal-generator/batches", GeneratorBatchRequest, "signal-generator", 12, "generator_batch"),
     MutationRule(r"/pa-library/datasets", VirtualPADatasetRequest, "virtual-pa-dataset", 6, "pa_dataset"),
     MutationRule(r'/signal-analyzer/analyze', None, 'signal-analysis', 36, 'none'),
@@ -38,6 +39,13 @@ MUTATIONS = (
 def estimate_storage(rule, payload, path, ws):
     from opendpd.services.signal_generator import read_signal
     from opendpd.services.virtual_pa import read_simulation
+    if rule.estimate == 'signal_import':
+        from opendpd.services.signal_analyzer import upload_directory
+        from opendpd.services.workspace import read_json
+        target = upload_directory(ws, payload.upload_id)
+        if not (target / 'manifest.json').is_file() or (target / 'manifest.json').is_symlink():
+            raise WorkspaceError("Upload this signal in the current workspace first.")
+        return read_json(target / 'manifest.json')['info']['sample_count'] * 100 + 2_000_000
     if rule.estimate == 'generator_batch':
         return sum(c.sample_count * 100 + 2_000_000 for c in payload.configs)
     if rule.estimate == 'pa_dataset':

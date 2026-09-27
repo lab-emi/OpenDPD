@@ -122,6 +122,40 @@ def test_public_signal_csv_analysis_preserves_isolation_and_upload_limits(public
     assert manager.inflight == 0 and not manager.storage_reserved
 
 
+def test_public_custom_pa_inputs_are_private_bounded_and_simulatable(public):
+    client, manager, _ = public
+    auth, other = new_session(client), new_session(client)
+    path = '/api/v1/signal-analyzer/upload?filename=custom.csv'
+    uploaded = client.post(path, content=b'I,Q\n' + b'0.2,0.3\n' * 8192,
+        headers={**auth, 'Content-Type': 'text/csv'})
+    assert uploaded.status_code == 201, uploaded.text
+    request = {'upload_id': uploaded.json()['source']['source_id'], 'dataset_name': 'usr_pa_in_custom_n1',
+        'sample_rate_hz': 20e6, 'bandwidth_hz': 5e6}
+    assert client.post('/api/v1/signal-generator/import', json=request).status_code == 401
+    assert client.post('/api/v1/signal-generator/import', json=request, headers=other).status_code == 404
+    invalid = client.post('/api/v1/signal-generator/import', json={**request, 'sample_rate_hz': 3e9}, headers=auth)
+    assert invalid.status_code == 422
+    imported = client.post('/api/v1/signal-generator/import', json=request, headers=auth)
+    assert imported.status_code == 201, imported.text
+    info = imported.json()
+    assert info['origin'] == 'uploaded'
+    assert client.get(info['csv_url'], headers=other).status_code != 200
+    simulated = client.post('/api/v1/pa-library/datasets', json={
+        'input_signal_ids': [info['signal_id']], 'model_id': 'rapp-am-pm'}, headers=auth)
+    assert simulated.status_code == 201, simulated.text
+    assert simulated.json()['dataset']['simulation']['input_origin'] == 'uploaded'
+    original_limit = manager.config.max_workspace_bytes
+    object.__setattr__(manager.config, 'max_workspace_bytes', 1024)
+    try:
+        assert client.post('/api/v1/signal-generator/import', json=request, headers=auth).status_code == 413
+    finally:
+        object.__setattr__(manager.config, 'max_workspace_bytes', original_limit)
+    for _ in range(9):
+        assert client.post('/api/v1/signal-generator/import', json=request, headers=auth).status_code == 201
+    assert client.post('/api/v1/signal-generator/import', json=request, headers=auth).status_code == 429
+    assert manager.inflight == 0 and not manager.storage_reserved
+
+
 def test_public_virtual_pa_input_output_and_pairing_are_tenant_scoped(public):
     client, manager, _ = public
     auth, other = new_session(client), new_session(client)

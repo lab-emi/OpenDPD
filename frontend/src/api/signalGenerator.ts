@@ -5,6 +5,8 @@ import type { Schemas } from './types'
 export type GeneratorConfig = Required<Schemas['GeneratorConfig']>
 export type GeneratorPreset = Schemas['GeneratorPreset']
 export type GeneratedSignal = Schemas['GeneratedSignal']
+export type PAInputConfig = GeneratorConfig | Required<Schemas['ImportedSignalConfig']>
+export const isGeneratorConfig = (config: PAInputConfig): config is GeneratorConfig => config.waveform !== 'imported'
 export const useGeneratorPresets = () => useQuery({ queryKey: ['signal-generator-presets'],
   queryFn: ({ signal }: { signal: AbortSignal }) => api.get<GeneratorPreset[]>('/signal-generator/presets', signal), staleTime: Infinity })
 export const useGeneratedSignal = (id: string | null) => useQuery({ queryKey: ['generated-signal', id],
@@ -21,4 +23,10 @@ export function useGenerateBatch() {
   const qc = useQueryClient()
   return useMutation({ mutationFn: (request: Schemas['GeneratorBatchRequest']) => api.post<Schemas['PAInputDataset'][]>('/signal-generator/batches', request),
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ['pa-inputs'] }); void qc.invalidateQueries({ queryKey: ['analyzer-datasets'] }) } })
+}
+
+export function useImportSignal() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: (request: Schemas['ImportSignalRequest']) => api.post<Schemas['PAInputDataset']>('/signal-generator/import', request),
+    onSuccess: async () => { await Promise.all([qc.invalidateQueries({ queryKey: ['pa-inputs'] }), qc.invalidateQueries({ queryKey: ['analyzer-datasets'] }), qc.invalidateQueries({ queryKey: ['analyzer-sources'] })]) } })
 }

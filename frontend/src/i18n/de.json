@@ -1500,5 +1500,15 @@
   "signalDataset.search": "Datensatznamen suchen",
   "inspection.datasetDetails": "Datensatzdetails und Freigabe",
   "paLibrary.datasetSummary": "Signale: {signals} · I/Q-Samples insgesamt: {count}",
-  "datasets.captureCount": "{count} Signale"
+  "datasets.captureCount": "{count} Signale",
+  "signalImport.title": "Eigenes Signal importieren",
+  "signalImport.summary": "Eigene Wellenform als Eingang für einen virtuellen PA hochladen.",
+  "signalImport.help": "CSV bis 25 MiB: getrennte I/Q-Spalten, eine komplexe Spalte (0.1+0.2j) oder eine reelle Spalte. Tatsächliche Abtastrate und Bandbreite angeben. Amplitude und Reihenfolge bleiben erhalten, ohne Normalisierung, Filterung oder Resampling.",
+  "signalImport.file": "Signal-CSV auswählen",
+  "signalImport.nameHelp": "Mit usr_pa_in_ beginnen; Buchstaben, Zahlen, Punkte, Unterstriche oder Bindestriche verwenden.",
+  "signalImport.columns": "Verschiedene reelle I/Q-Spalten wählen oder für eine komplexe Spalte komplexe Samples auswählen.",
+  "signalImport.short": "Eine PA-Simulation mit Trainingsdatensatz benötigt mindestens 8.192 Samples. Kürzere Signale können importiert und analysiert werden.",
+  "signalImport.use": "Importieren und in Virtual PA verwenden",
+  "signalImport.pairHelp": "Der PA-Eingang wurde hochgeladen; der Ausgang wird simuliert. Der gepaarte Datensatz enthält die Importmetadaten.",
+  "signalImport.uploaded": "HOCHGELADEN"
 }

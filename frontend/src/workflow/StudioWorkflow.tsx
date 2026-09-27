@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useCapabilities, useRun, useRunConfig } from '@/api/hooks'
 import { WEB_MODE } from '@/api/client'
 import type { RunView } from '@/api/types'
-import type { GeneratorConfig } from '@/api/signalGenerator'
+import type { PAInputConfig } from '@/api/signalGenerator'
 import { parameterKey, type PASimulation } from '@/api/virtualPA'
 import { LoadingState } from '@/components/StateBlock'
 
@@ -10,7 +10,7 @@ export interface WorkflowState {
   version: 1
   origin: 'generated' | 'existing' | null
   inputIds?: string[]
-  inputConfigs?: GeneratorConfig[]
+  inputConfigs?: PAInputConfig[]
   inputDatasetId?: string
   inputDatasetName?: string
   inputId: string | null
@@ -28,7 +28,7 @@ const empty = (): WorkflowState => ({ version: 1, origin: null, inputId: null, i
 
 interface WorkflowActions {
   selectInput: (id: string, name: string) => void
-  selectInputs: (ids: string[], configs: GeneratorConfig[], dataset?: { id: string; name: string }) => void
+  selectInputs: (ids: string[], configs: PAInputConfig[], dataset?: { id: string; name: string }) => void
   completeDataset: (id: string, simulationId: string) => void
   selectCapture: (id: string, version: string) => void
   configurePA: (id: string, parameters: Record<string, number>) => void

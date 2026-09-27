@@ -1500,5 +1500,15 @@
   "signalDataset.search": "Cerca nomi di dataset",
   "inspection.datasetDetails": "Dettagli e condivisione del dataset",
   "paLibrary.datasetSummary": "Segnali: {signals} · Campioni I/Q totali: {count}",
-  "datasets.captureCount": "{count} segnali"
+  "datasets.captureCount": "{count} segnali",
+  "signalImport.title": "Importa un segnale personalizzato",
+  "signalImport.summary": "Carica la tua forma d’onda come ingresso del PA virtuale.",
+  "signalImport.help": "CSV fino a 25 MiB: colonne I/Q separate, una colonna complessa (0.1+0.2j) o reale. Specifica frequenza di campionamento e larghezza di banda effettive. Ampiezza e ordine sono conservati, senza normalizzazione, filtraggio o ricampionamento.",
+  "signalImport.file": "Scegli il CSV del segnale",
+  "signalImport.nameHelp": "Inizia con usr_pa_in_ e usa lettere, numeri, punti, trattini o trattini bassi.",
+  "signalImport.columns": "Scegli colonne I/Q reali distinte, oppure campioni complessi per una colonna complessa.",
+  "signalImport.short": "La simulazione PA con un dataset di addestramento richiede almeno 8.192 campioni. I segnali più brevi possono essere importati e analizzati.",
+  "signalImport.use": "Importa e usa in Virtual PA",
+  "signalImport.pairHelp": "L’ingresso PA è caricato; l’uscita sarà simulata. Il dataset abbinato conserva i metadati di importazione.",
+  "signalImport.uploaded": "CARICATO"
 }

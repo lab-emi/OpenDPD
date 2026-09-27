@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from opendpd.core.waveforms.generator_presets import presets
 from opendpd.core.waveforms.generator import allocation
 from opendpd.schemas.signal_generator import (DatasetSampleCounts, GeneratedSignal, GeneratorConfig,
-    GeneratorDatasetRequest, GeneratorDatasetResponse, GeneratorPreset, GeneratorBatchRequest)
+    GeneratorDatasetRequest, GeneratorDatasetResponse, GeneratorPreset, GeneratorBatchRequest, ImportSignalRequest)
 from opendpd.server.routes import require_csrf, require_session
 from opendpd.server.errors import api_error as _error
 from opendpd.services import signal_generator as service
@@ -13,6 +13,12 @@ from opendpd.schemas.virtual_pa import PAInputDataset
 from opendpd.schemas.signal_dataset import SignalDataset
 
 router = APIRouter(tags=["signal generator"])
+
+
+@router.post("/signal-generator/import", response_model=PAInputDataset, status_code=201, dependencies=[Depends(require_csrf)])
+def import_signal(body: ImportSignalRequest, request: Request):
+    from opendpd.services.signal_import import import_signal
+    return import_signal(request.app.state.ws, body)
 
 
 @router.get("/signal-generator/datasets/{dataset_id}", response_model=SignalDataset, dependencies=[Depends(require_session)])

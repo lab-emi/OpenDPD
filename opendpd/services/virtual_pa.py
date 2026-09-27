@@ -125,6 +125,9 @@ def create_dataset(ws, identifier, request: PairedDatasetRequest, *, _created=No
             "pa_model": result.model.model_dump(mode="json"), "parameters": result.config.parameters,
             "waveform": signal.config.model_dump(mode="json"), "physical_measurement": False,
             "initial_state": "cold start", "split": {"ratios": ratios, "guard_samples": request.guard_samples}}
+        if signal.origin == "uploaded":
+            provenance["input_origin"] = "uploaded"
+            provenance["input_provenance"] = read_json(inputs.directory(ws, signal.signal_id) / "provenance.json")
         if (ws.dataset_dir(request.dataset_id) / "manifest.json").exists():
             existing = ws.get_dataset(request.dataset_id)
             if existing.simulation != provenance:
@@ -141,9 +144,11 @@ def create_dataset(ws, identifier, request: PairedDatasetRequest, *, _created=No
             origin=DatasetOrigin.synthetic, guard_samples=request.guard_samples, ratios=ratios,
             signal=SignalSpec(sample_rate_hz=config.sample_rate_hz, bandwidth_hz=config.bandwidth_hz,
                 sub_channel_bandwidth_hz=config.bandwidth_hz, n_sub_ch=1,
-                nperseg=min(4096, max(512, config.fft_size*config.oversampling)),
-                modulation=f"{config.waveform.upper()} synthetic PA input", amplitude_units="normalized"),
-            notes="SYNTHETIC paired PA input x and virtual PA output y. " + result.model.limitations.en + " " + " ".join(result.analysis.notes))
+                nperseg=1024 if signal.origin == "uploaded" else min(4096, max(512, config.fft_size*config.oversampling)),
+                modulation=f"{config.waveform.upper()} {signal.origin} PA input",
+                amplitude_units="unknown" if signal.origin == "uploaded" else "normalized"),
+            notes=("UPLOADED PA input x and SYNTHETIC virtual PA output y. " if signal.origin == "uploaded" else
+                   "SYNTHETIC paired PA input x and virtual PA output y. ") + result.model.limitations.en + " " + " ".join(result.analysis.notes))
         if _created is not None:
             _created.append(request.dataset_id)
         manifest = manifest.model_copy(update={"simulation": provenance,
@@ -163,10 +168,11 @@ def simulate_dataset(ws, request: VirtualPADatasetRequest):
     with _LOCK, signal_datasets.LOCK:
         signals = [inputs.read_signal(ws, identifier) for identifier in request.input_signal_ids]
         if any(s.analysis.sample_count < 8192 for s in signals):
-            raise WorkspaceError("Each preset needs at least 8,192 samples to create a training dataset.")
+            raise WorkspaceError("Each PA input needs at least 8,192 samples to create a training dataset.")
         if sum(s.analysis.sample_count for s in signals) > 4_000_000:
             raise WorkspaceError("Use at most 4,000,000 samples across all presets.")
-        if len({s.config.preset_id for s in signals}) != len(signals):
+        generated = [s for s in signals if s.origin == "synthetic"]
+        if len({s.config.preset_id for s in generated}) != len(generated):
             raise WorkspaceError("Choose distinct presets for a multi-preset dataset.")
         simulations = [preview(ws, VirtualPARequest(input_signal_id=s.signal_id,
             model_id=request.model_id, parameters=request.parameters)) for s in signals]

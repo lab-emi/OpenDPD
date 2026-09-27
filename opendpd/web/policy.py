@@ -42,6 +42,7 @@ ROUTES["POST"] += [r"/signal-generator/signals/sg-[a-f0-9]{64}/(archive|restore)
 ROUTES["POST"] += [r"/signal-generator/datasets/sds-[a-f0-9]{64}/(archive|restore)"]
 ROUTES["GET"] += [r"/signal-analyzer/(sources|datasets)", r"/signal-generator/datasets/sds-[a-f0-9]{64}(/download)?"]
 ROUTES["POST"] += [r"/signal-analyzer/(analyze|upload)"]
+ROUTES["POST"] += [r"/signal-generator/import"]
 
 
 def reject(status: int, code: str, message: str):

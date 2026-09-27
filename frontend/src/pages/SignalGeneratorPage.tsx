@@ -32,7 +32,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router'
 import { api, downloadFile } from '@/api/client'
 import { analyzerLink } from '@/api/signalAnalyzer'
-import { useGenerateBatch, useGeneratedSignal, useGeneratorPresets, type GeneratedSignal, type GeneratorConfig, type GeneratorPreset } from '@/api/signalGenerator'
+import { isGeneratorConfig, useGenerateBatch, useGeneratedSignal, useGeneratorPresets, type GeneratedSignal, type GeneratorConfig, type GeneratorPreset } from '@/api/signalGenerator'
+import { SignalImport } from '@/components/SignalImport'
+import { useCustomDatasetImports } from '@/api/hooks'
 import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 import { PresetMatrix } from '@/components/PresetMatrix'
 import { SignalGeneratorPlots } from '@/components/SignalGeneratorPlots'
@@ -62,6 +64,7 @@ export function SignalGeneratorPage() {
 }
 
 function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: GeneratedSignal }) {
+  const importsAllowed = useCustomDatasetImports()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const showPreview = pathname === '/signal-generator/preview'
@@ -71,8 +74,9 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const colors = useStudioColors()
   const workflow = useStudioWorkflow()
   const generate = useGenerateBatch()
-  const initial = workflow.state.origin === 'generated' && workflow.state.inputConfigs?.length
-    ? workflow.state.inputConfigs : [saved?.config ?? presets[0]!.config] as GeneratorConfig[]
+  const imported = saved?.config.waveform === 'imported' || workflow.state.inputConfigs?.some(c => !isGeneratorConfig(c))
+  const initial = !imported && workflow.state.origin === 'generated' && workflow.state.inputConfigs?.length
+    ? workflow.state.inputConfigs.filter(isGeneratorConfig) : [(!imported && saved?.config) || presets[0]!.config] as GeneratorConfig[]
   const [configs, setConfigs] = useState<Record<string, GeneratorConfig>>(() => Object.fromEntries(initial.map(c => [c.preset_id, c])))
   const [activeId, setActiveId] = useState(initial[0]!.preset_id)
   const config = configs[activeId] ?? initial[0]!
@@ -84,13 +88,13 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const selected = Object.keys(configs)
   const selectedConfigs = Object.values(configs)
   const automaticName = datasetName(selectedConfigs)
-  const [customName, setCustomName] = useState<string | null>(() => workflow.state.inputDatasetName && workflow.state.inputDatasetName !== datasetName(initial) ? workflow.state.inputDatasetName : null)
+  const [customName, setCustomName] = useState<string | null>(() => !imported && workflow.state.inputDatasetName && workflow.state.inputDatasetName !== datasetName(initial) ? workflow.state.inputDatasetName : null)
   const name = customName ?? automaticName
   const validName = validDatasetName(name, 'in')
-  const [savedDataset, setSavedDataset] = useState(() => workflow.state.inputDatasetId?.startsWith('sds-') && workflow.state.inputDatasetName ? { id: workflow.state.inputDatasetId, name: workflow.state.inputDatasetName } : null)
+  const [savedDataset, setSavedDataset] = useState(() => !imported && workflow.state.inputDatasetId?.startsWith('sds-') && workflow.state.inputDatasetName ? { id: workflow.state.inputDatasetId, name: workflow.state.inputDatasetName } : null)
   const [savedRequestedName, setSavedRequestedName] = useState(name)
   const [generatedIds, setGeneratedIds] = useState<Record<string, string>>(() => {
-    const ids = workflow.state.inputIds ?? (saved ? [saved.signal_id] : [])
+    const ids = imported ? [] : workflow.state.inputIds ?? (saved ? [saved.signal_id] : [])
     return Object.fromEntries(initial.flatMap((c, i) => ids[i] ? [[c.preset_id, ids[i]!]] : []))
   })
   const [generatedKey, setGeneratedKey] = useState(Object.keys(generatedIds).length ? JSON.stringify(initial) : '')
@@ -160,6 +164,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       {showPreview ? <Button component={RouterLink} to="/signal-generator" variant="outlined">{t('generator.editSetup')}</Button> : <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}><Button component="label" variant="outlined" size="small" startIcon={<UploadFileIcon />} disabled={generate.isPending}>{t('generator.importConfig')}<input type="file" hidden accept=".json,application/json" data-testid="generator-config-upload" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadConfig(file); e.target.value = '' }} /></Button><Button size="small" onClick={exportConfig} startIcon={<DownloadIcon />}>{t('generator.exportConfig')}</Button>{!!Object.keys(generatedIds).length && <Button component={RouterLink} to="/signal-generator/preview" variant="outlined">{t('generator.openPreview')}</Button>}</Stack>}
     </Stack>
     {!showPreview ? <>
+    {importsAllowed && <SignalImport disabled={generate.isPending} />}
     <Box component="nav" aria-label={t('generator.choose')} sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,minmax(0,1fr))', sm: 'repeat(4,minmax(0,1fr))' }, gap: 1 }}>
       {FAMILIES.map((key, index) => <ButtonBase key={key} onClick={() => setFamily(key)} disabled={generate.isPending} aria-pressed={family === key} sx={{ textAlign: 'left', display: 'block', p: 1.5, border: 1, borderColor: family === key ? 'primary.main' : 'divider', borderRadius: 1.5, bgcolor: family === key ? colors.selected : 'background.paper', '&:hover': { borderColor: 'primary.main' }, '&.Mui-focusVisible': { outline: '3px solid', outlineColor: 'primary.main', outlineOffset: 2 } }}>
         <Typography variant="caption" color="text.secondary">0{index+1} · {t(`generator.familyHint.${key}`)}</Typography>

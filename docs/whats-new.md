@@ -1,5 +1,11 @@
 # What's new
 
+## 2.2.17: custom waveforms for Virtual PA
+
+Upload a CSV waveform from Signal Generator or PA Library, select its I/Q, complex or real sample columns, and enter the actual sample rate and bandwidth. Import preserves the full capture without normalization, filtering or resampling. Virtual PA produces a paired dataset with the uploaded input’s provenance and simulated output, ready for PA/DPD training. Available locally and in hosted Studio.
+
+[Release notes](releases/release-notes-2.2.17.md)
+
 ## 2.2.16: named datasets and clearer Studio workflows
 
 Signal Generator separates Generate and Preview, with dataset naming and generation at the top of setup. Named input/output collections feed searchable Analyzer and Virtual PA selectors. Dataset pages emphasize model training; navigation, saved-run context, plot legends, dark mode and narrow-screen layouts are clearer. Short DPD captures are checked before training, and comparison plots show the correct signal traces and carrier integration bands.

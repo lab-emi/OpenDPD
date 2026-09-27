@@ -1568,6 +1568,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signal-generator/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Signal */
+        post: operations["import_signal_api_v1_signal_generator_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signal-generator/presets": {
         parameters: {
             query?: never;
@@ -3792,7 +3809,8 @@ export interface components {
         /** GeneratedSignal */
         GeneratedSignal: {
             analysis: components["schemas"]["GeneratorAnalysis"];
-            config: components["schemas"]["GeneratorConfig"];
+            /** Config */
+            config: components["schemas"]["GeneratorConfig"] | components["schemas"]["ImportedSignalConfig"];
             /**
              * Coverage
              * @enum {string}
@@ -3808,6 +3826,12 @@ export interface components {
              * @constant
              */
             kind: "pa_input";
+            /**
+             * Origin
+             * @default synthetic
+             * @enum {string}
+             */
+            origin: "synthetic" | "uploaded";
             /** Signal Id */
             signal_id: string;
         };
@@ -4492,6 +4516,69 @@ export interface components {
             /** Root Id */
             root_id: string;
         };
+        /** ImportSignalRequest */
+        ImportSignalRequest: {
+            /** Bandwidth Hz */
+            bandwidth_hz: number;
+            /**
+             * Carrier Frequency Hz
+             * @default 0
+             */
+            carrier_frequency_hz: number;
+            /** Dataset Name */
+            dataset_name: string;
+            /**
+             * I Column
+             * @default 0
+             */
+            i_column: number;
+            /**
+             * Q Column
+             * @default 1
+             */
+            q_column: number;
+            /**
+             * Sample Format
+             * @default iq
+             * @enum {string}
+             */
+            sample_format: "real" | "complex" | "iq";
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /** Upload Id */
+            upload_id: string;
+        };
+        /**
+         * ImportedSignalConfig
+         * @description Sampling metadata for uploaded samples; never a synthesis recipe.
+         */
+        ImportedSignalConfig: {
+            /** Bandwidth Hz */
+            bandwidth_hz: number;
+            /**
+             * Carrier Frequency Hz
+             * @default 0
+             */
+            carrier_frequency_hz: number;
+            /** N Samples */
+            n_samples: number;
+            /** Preset Id */
+            preset_id: string;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /**
+             * Version
+             * @default signal-import-v1
+             * @constant
+             */
+            version: "signal-import-v1";
+            /**
+             * Waveform
+             * @default imported
+             * @constant
+             */
+            waveform: "imported";
+        };
         /**
          * InitReference
          * @description Warm start (S17): the weights of a succeeded run of the same task and model start this training.
@@ -5149,6 +5236,12 @@ export interface components {
             n_samples: number;
             /** Name */
             name: string;
+            /**
+             * Origin
+             * @default synthetic
+             * @enum {string}
+             */
+            origin: "synthetic" | "uploaded";
             /** Sample Rate Hz */
             sample_rate_hz: number;
             /** Signal Id */
@@ -5981,7 +6074,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.16
+             * @default 2.2.17
              */
             version: string;
         };
@@ -9835,6 +9928,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SignalDataset"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_signal_api_v1_signal_generator_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportSignalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PAInputDataset"];
                 };
             };
             /** @description Validation Error */

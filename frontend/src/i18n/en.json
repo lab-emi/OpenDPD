@@ -1500,5 +1500,15 @@
   "signalDataset.search": "Search dataset names",
   "inspection.datasetDetails": "Dataset details & sharing",
   "paLibrary.datasetSummary": "Signals: {signals} · Total I/Q samples: {count}",
-  "datasets.captureCount": "{count} signals"
+  "datasets.captureCount": "{count} signals",
+  "signalImport.title": "Import custom signal",
+  "signalImport.summary": "Upload your own waveform and use it as a Virtual PA input.",
+  "signalImport.help": "CSV up to 25 MiB: separate I/Q columns, one complex column (0.1+0.2j), or one real column. Set the actual sample rate and bandwidth. All samples retain their amplitude and order; no normalization, filtering or resampling is applied.",
+  "signalImport.file": "Choose signal CSV",
+  "signalImport.nameHelp": "Start with usr_pa_in_ and use letters, numbers, dots, underscores or hyphens.",
+  "signalImport.columns": "Select distinct real I/Q columns, or choose Complex samples for a complex column.",
+  "signalImport.short": "PA simulation with a training dataset needs at least 8,192 samples. This shorter signal can still be imported and analyzed.",
+  "signalImport.use": "Import & use in Virtual PA",
+  "signalImport.pairHelp": "The PA input is uploaded; the output will be simulated. The paired dataset retains the upload metadata.",
+  "signalImport.uploaded": "UPLOADED"
 }

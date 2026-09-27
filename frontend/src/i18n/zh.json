@@ -1500,5 +1500,15 @@
   "signalDataset.search": "搜索数据集名称",
   "inspection.datasetDetails": "数据集详情与分享",
   "paLibrary.datasetSummary": "信号数：{signals} · I/Q 样本总数：{count}",
-  "datasets.captureCount": "{count} 个信号"
+  "datasets.captureCount": "{count} 个信号",
+  "signalImport.title": "导入自定义信号",
+  "signalImport.summary": "上传自己的波形，作为 Virtual PA 的输入。",
+  "signalImport.help": "支持最大 25 MiB 的 CSV：I/Q 双列、复数单列（0.1+0.2j）或实数单列。请填写实际采样率和带宽。保留全部样本的幅度和顺序，不做归一化、滤波或重采样。",
+  "signalImport.file": "选择信号 CSV",
+  "signalImport.nameHelp": "以 usr_pa_in_ 开头，可使用字母、数字、点、下划线或连字符。",
+  "signalImport.columns": "请为 I/Q 选择不同的实数列；复数列请选择“复数样本”。",
+  "signalImport.short": "仿真并创建训练数据集至少需要 8,192 个样本。较短信号仍可导入并分析。",
+  "signalImport.use": "导入并用于 Virtual PA",
+  "signalImport.pairHelp": "PA 输入来自上传，输出由仿真生成。配对数据集会保留上传信号的来源信息。",
+  "signalImport.uploaded": "已上传"
 }

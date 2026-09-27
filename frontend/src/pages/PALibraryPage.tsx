@@ -1,5 +1,6 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
-import { useGeneratedSignals, type GeneratorConfig } from '@/api/signalGenerator'
+import { useGeneratedSignals, type PAInputConfig } from '@/api/signalGenerator'
+import { SignalImport } from '@/components/SignalImport'
 import { pairedDatasetName, validDatasetName } from '@/utils/datasetNames'
 import { useAnalyzerDatasets } from '@/api/signalAnalyzer'
 import { SignalDatasetSelect } from '@/components/SignalDatasetSelect'
@@ -112,7 +113,7 @@ function Library({ models }: { models: VirtualPA[] }) {
   const batchIds = useMemo(() => input?.signals.map(s => s.source.source_id) ?? [], [input])
   const savedConfigs = workflow.state.inputDatasetId === input?.dataset_id && workflow.state.inputConfigs?.length === batchIds.length ? workflow.state.inputConfigs : undefined
   const inputSignals = useGeneratedSignals(savedConfigs ? [] : batchIds)
-  const configs = savedConfigs ?? inputSignals.flatMap(q => q.data ? [q.data.config as GeneratorConfig] : [])
+  const configs = savedConfigs ?? inputSignals.flatMap(q => q.data ? [q.data.config as PAInputConfig] : [])
   const [customName, setCustomName] = useState<string | null>(null)
   const automaticName = input ? pairedDatasetName(input.name, modelId) : ''
   const name = customName ?? automaticName
@@ -145,6 +146,7 @@ function Library({ models }: { models: VirtualPA[] }) {
       setRemoving(true); void api.post(removed.endpoint + '/restore', {}).then(async () => { await collections.refetch(); setDatasetId(removed.id); setRemoved(null) }).catch(setError).finally(() => setRemoving(false))
     }}>{t('common.undo')}</Button>}>{t('paInput.removed')}</Alert>}
     <Typography color="text.secondary" sx={{ maxWidth: 980 }}>{t('paLibrary.intro')}</Typography>
+    {allowed && <SignalImport disabled={create.isPending || removing} />}
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '270px minmax(0, 1fr)' }, gap: 2.5, alignItems: 'start' }}>
       <Paper variant="outlined" sx={{ p: 2 }}><Typography variant="h3" sx={{ mb: 2 }}>{t('paLibrary.chooseModel')}</Typography>
         <Stack spacing={2}>{CATEGORIES.map(category => <Box key={category}>
@@ -165,6 +167,8 @@ function Library({ models }: { models: VirtualPA[] }) {
               onChange={entry => { setDatasetId(entry.dataset_id); setCustomName(null); create.reset() }} />}
           {input ? <Typography variant="body2" color="text.secondary">{t('paLibrary.datasetSummary', { signals: formatNumber(batchIds.length), count: formatNumber(input.signals.reduce((n, s) => n + s.sample_count, 0)) })}</Typography>
             : <Alert severity="info">{t('paLibrary.noInput')}</Alert>}
+          {input?.signals.some(s => s.origin === 'uploaded') && <Alert severity="info">{t('signalImport.pairHelp')}</Alert>}
+          {input?.signals.some(s => s.sample_count < 8192) && <Alert severity="warning">{t('signalImport.short')}</Alert>}
           {batchIds.length > 1 && <Alert severity="info">{t('paLibrary.batch', { count: batchIds.length })}</Alert>}
           {!allowed && <Alert severity="info">{t('paLibrary.importDisabled')}</Alert>}
           <Typography variant="caption" color="text.secondary">{t('paLibrary.autoDataset')}</Typography>
@@ -174,7 +178,7 @@ function Library({ models }: { models: VirtualPA[] }) {
           {input && <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>{t('paLibrary.outputDatasetName', { name: name.replace(/^syn_pa_inout_/, 'syn_pa_out_') })}</Typography>}
           {inputSignals.some(q => q.isError) && <ErrorState error={inputSignals.find(q => q.isError)?.error} />}
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
-            <Button variant="contained" startIcon={<PlayArrowIcon />} endIcon={<ArrowForwardIcon />} onClick={run} disabled={!input || !valid || !validName || !allowed || create.isPending}>{t(create.isPending ? 'paLibrary.simulating' : 'paLibrary.simulate')}</Button>
+            <Button variant="contained" startIcon={<PlayArrowIcon />} endIcon={<ArrowForwardIcon />} onClick={run} disabled={!input || !valid || !validName || !allowed || create.isPending || input.signals.some(s => s.sample_count < 8192)}>{t(create.isPending ? 'paLibrary.simulating' : 'paLibrary.simulate')}</Button>
             <Button color="inherit" startIcon={<DeleteOutlineIcon />} disabled={!input || removing || create.isPending} onClick={() => {
               if (!input) return
               const id = input.dataset_id

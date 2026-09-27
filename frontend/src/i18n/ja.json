@@ -1500,5 +1500,15 @@
   "signalDataset.search": "データセット名を検索",
   "inspection.datasetDetails": "データセットの詳細と共有",
   "paLibrary.datasetSummary": "信号数：{signals} · I/Q サンプル総数：{count}",
-  "datasets.captureCount": "{count} 信号"
+  "datasets.captureCount": "{count} 信号",
+  "signalImport.title": "カスタム信号をインポート",
+  "signalImport.summary": "独自の波形をアップロードし、Virtual PA の入力として使用します。",
+  "signalImport.help": "25 MiB までの CSV：I/Q の2列、複素数の1列（0.1+0.2j）、または実数の1列。実際のサンプリングレートと帯域幅を設定してください。振幅と順序を保ち、正規化、フィルタリング、リサンプリングは行いません。",
+  "signalImport.file": "信号 CSV を選択",
+  "signalImport.nameHelp": "usr_pa_in_ で始め、英数字、ピリオド、アンダースコア、ハイフンを使用します。",
+  "signalImport.columns": "I/Q には異なる実数列を選択し、複素数列には複素数サンプルを選択してください。",
+  "signalImport.short": "訓練データセットを作成する PA シミュレーションには 8,192 サンプル以上が必要です。短い信号もインポートして解析できます。",
+  "signalImport.use": "インポートして Virtual PA で使用",
+  "signalImport.pairHelp": "PA 入力はアップロードされた信号で、出力はシミュレーションで生成されます。ペアのデータセットには入力のメタデータが保持されます。",
+  "signalImport.uploaded": "アップロード済み"
 }

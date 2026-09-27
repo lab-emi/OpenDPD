@@ -33,8 +33,8 @@ export function datasetName(configs: GeneratorConfig[], role: 'in' | 'out' | 'in
   return `syn_pa_${role}_` + parts.join('_')
 }
 
-export const validDatasetName = (name: string, role: 'in' | 'inout') => name.length <= 96 && new RegExp(`^syn_pa_${role}_[A-Za-z0-9][A-Za-z0-9_.-]*$`).test(name)
+export const validDatasetName = (name: string, role: 'in' | 'inout') => name.length <= 96 && new RegExp(`^${role === 'in' ? '(syn|usr)' : 'syn'}_pa_${role}_[A-Za-z0-9][A-Za-z0-9_.-]*$`).test(name)
 export function pairedDatasetName(inputName: string, modelId: string) {
   const suffix = '_' + modelId.slice(0, 20)
-  return inputName.replace(/^syn_pa_in_/, 'syn_pa_inout_').slice(0, 96 - suffix.length) + suffix
+  return inputName.replace(/^(syn|usr)_pa_in_/, 'syn_pa_inout_').slice(0, 96 - suffix.length) + suffix
 }
