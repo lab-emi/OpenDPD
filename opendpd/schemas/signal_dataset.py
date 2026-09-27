@@ -6,7 +6,7 @@ from pydantic import Field
 from .common import Slug, StrictModel
 from .signal_analyzer import AnalyzerSourceInfo
 
-InputDatasetName = Annotated[str, Field(pattern=r"^syn_pa_in_[A-Za-z0-9][A-Za-z0-9_.-]*$", max_length=96)]
+InputDatasetName = Annotated[str, Field(pattern=r"^(syn|usr)_pa_in_[A-Za-z0-9][A-Za-z0-9_.-]*$", max_length=96)]
 PairedDatasetName = Annotated[str, Field(pattern=r"^syn_pa_inout_[A-Za-z0-9][A-Za-z0-9_.-]*$", max_length=96)]
 
 

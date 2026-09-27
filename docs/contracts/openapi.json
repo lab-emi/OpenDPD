@@ -5133,7 +5133,15 @@
             "$ref": "#/components/schemas/GeneratorAnalysis"
           },
           "config": {
-            "$ref": "#/components/schemas/GeneratorConfig"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeneratorConfig"
+              },
+              {
+                "$ref": "#/components/schemas/ImportedSignalConfig"
+              }
+            ],
+            "title": "Config"
           },
           "coverage": {
             "enum": [
@@ -5157,6 +5165,15 @@
             "const": "pa_input",
             "default": "pa_input",
             "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "default": "synthetic",
+            "enum": [
+              "synthetic",
+              "uploaded"
+            ],
+            "title": "Origin",
             "type": "string"
           },
           "signal_id": {
@@ -5454,7 +5471,7 @@
             "anyOf": [
               {
                 "maxLength": 96,
-                "pattern": "^syn_pa_in_[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "pattern": "^(syn|usr)_pa_in_[A-Za-z0-9][A-Za-z0-9_.-]*$",
                 "type": "string"
               },
               {
@@ -6828,6 +6845,130 @@
           "exists"
         ],
         "title": "ImportRootInfo",
+        "type": "object"
+      },
+      "ImportSignalRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidth_hz": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2000000000.0,
+            "title": "Bandwidth Hz",
+            "type": "number"
+          },
+          "carrier_frequency_hz": {
+            "default": 0,
+            "maximum": 110000000000.0,
+            "minimum": 0.0,
+            "title": "Carrier Frequency Hz",
+            "type": "number"
+          },
+          "dataset_name": {
+            "maxLength": 96,
+            "pattern": "^(syn|usr)_pa_in_[A-Za-z0-9][A-Za-z0-9_.-]*$",
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "i_column": {
+            "default": 0,
+            "maximum": 7.0,
+            "minimum": 0.0,
+            "title": "I Column",
+            "type": "integer"
+          },
+          "q_column": {
+            "default": 1,
+            "maximum": 7.0,
+            "minimum": 0.0,
+            "title": "Q Column",
+            "type": "integer"
+          },
+          "sample_format": {
+            "default": "iq",
+            "enum": [
+              "real",
+              "complex",
+              "iq"
+            ],
+            "title": "Sample Format",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "maximum": 2000000000.0,
+            "minimum": 1.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "upload_id": {
+            "pattern": "^sa-[a-f0-9]{64}$",
+            "title": "Upload Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_id",
+          "dataset_name",
+          "sample_rate_hz",
+          "bandwidth_hz"
+        ],
+        "title": "ImportSignalRequest",
+        "type": "object"
+      },
+      "ImportedSignalConfig": {
+        "additionalProperties": false,
+        "description": "Sampling metadata for uploaded samples; never a synthesis recipe.",
+        "properties": {
+          "bandwidth_hz": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2000000000.0,
+            "title": "Bandwidth Hz",
+            "type": "number"
+          },
+          "carrier_frequency_hz": {
+            "default": 0,
+            "maximum": 110000000000.0,
+            "minimum": 0.0,
+            "title": "Carrier Frequency Hz",
+            "type": "number"
+          },
+          "n_samples": {
+            "maximum": 1000000.0,
+            "minimum": 256.0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "preset_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Preset Id",
+            "type": "string"
+          },
+          "sample_rate_hz": {
+            "maximum": 2000000000.0,
+            "minimum": 1.0,
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "version": {
+            "const": "signal-import-v1",
+            "default": "signal-import-v1",
+            "title": "Version",
+            "type": "string"
+          },
+          "waveform": {
+            "const": "imported",
+            "default": "imported",
+            "title": "Waveform",
+            "type": "string"
+          }
+        },
+        "required": [
+          "preset_id",
+          "sample_rate_hz",
+          "bandwidth_hz",
+          "n_samples"
+        ],
+        "title": "ImportedSignalConfig",
         "type": "object"
       },
       "InitReference": {
@@ -8952,6 +9093,15 @@
           },
           "name": {
             "title": "Name",
+            "type": "string"
+          },
+          "origin": {
+            "default": "synthetic",
+            "enum": [
+              "synthetic",
+              "uploaded"
+            ],
+            "title": "Origin",
             "type": "string"
           },
           "sample_rate_hz": {
@@ -11317,7 +11467,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.16",
+            "default": "2.2.17",
             "title": "Version",
             "type": "string"
           }
@@ -13921,7 +14071,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.16"
+    "version": "2.2.17"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -18130,6 +18280,47 @@
           }
         },
         "summary": "Restore Signal Dataset",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/import": {
+      "post": {
+        "operationId": "import_signal_api_v1_signal_generator_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportSignalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PAInputDataset"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Signal",
         "tags": [
           "signal generator"
         ]

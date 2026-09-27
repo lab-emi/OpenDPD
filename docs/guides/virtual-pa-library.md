@@ -6,8 +6,7 @@ Keeping these roles separate makes the provenance of every PA output explicit.
 
 ## Workflow
 
-1. Generate a **PA Input Dataset**, x, in Signal Generator. It is not a complete
-   training dataset. Download its I/Q CSV and metadata JSON independently.
+1. Generate a **PA Input Dataset**, x, in Signal Generator, or use **Import custom signal** in either Signal Generator or PA Library to upload your own CSV. [Set the sampling metadata and columns](signal-generator.md#import-your-own-waveform), then click **Import & use in Virtual PA**. The input contains x only; its I/Q CSV and metadata JSON can be downloaded independently.
 2. Open **PA Library** and select a mathematical model. The technology labels
    describe illustrative applications, not device calibrations or foundry models.
 3. Select a saved input. Adjust sliders or numeric fields; selecting a control

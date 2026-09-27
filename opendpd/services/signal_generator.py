@@ -29,7 +29,7 @@ _LOCK = threading.RLock()
 def input_summary(result):
     from opendpd.schemas.virtual_pa import PAInputDataset
     base = f"/api/v1/signal-generator/signals/{result.signal_id}"
-    return PAInputDataset(signal_id=result.signal_id, name=result.config.preset_id,
+    return PAInputDataset(signal_id=result.signal_id, name=result.config.preset_id, origin=result.origin,
         n_samples=result.analysis.sample_count, sample_rate_hz=result.config.sample_rate_hz,
         bandwidth_hz=result.config.bandwidth_hz, iq_sha256=result.iq_sha256,
         csv_url=base + "/input.csv", metadata_url=base + "/metadata.json")
@@ -52,16 +52,18 @@ def export_input(ws, identifier, kind):
         csv_path = target / "pa-input.csv"
         raw = np.load(target / "iq.npy", allow_pickle=False)
         temporary = target / "pa-input.csv.tmp"
-        np.savetxt(temporary, raw, delimiter=",", fmt="%.9g", header="I,Q", comments="")
+        np.savetxt(temporary, raw, delimiter=",", fmt="%.17g" if result.origin == "uploaded" else "%.9g", header="I,Q", comments="")
         temporary.replace(csv_path)
         metadata = {
             "schema": "pa-input-dataset-v1", "dataset_kind": "pa_input", "signal_role": "pa_input",
-            "signal_id": identifier, "has_pa_output": False, "origin": "synthetic",
+            "signal_id": identifier, "has_pa_output": False, "origin": result.origin,
             "n_samples": result.analysis.sample_count, "sample_rate_hz": result.config.sample_rate_hz,
             "bandwidth_hz": result.config.bandwidth_hz, "carrier_frequency_hz": result.config.carrier_frequency_hz,
-            "amplitude_units": "normalized", "columns": ["I", "Q"], "sample_format": "float32 complex I/Q pairs",
+            "amplitude_units": "sample units" if result.origin == "uploaded" else "normalized", "columns": ["I", "Q"],
+            "sample_format": f"{raw.dtype} complex I/Q pairs",
             "iq_npy_sha256": result.iq_sha256, "csv_sha256": sha256_file(csv_path),
-            "generator_config": result.config.model_dump(mode="json"),
+            "generator_config": result.config.model_dump(mode="json") if result.origin == "synthetic" else None,
+            "import_config": result.config.model_dump(mode="json") if result.origin == "uploaded" else None,
             "provenance": read_json(target / "provenance.json"),
             "pairing": "A training dataset requires both PA input x and PA output y with matching sample rate, count and alignment. Obtain y from Virtual PA simulation or a real PA capture.",
         }
@@ -77,11 +79,11 @@ def directory(ws, identifier):
 def read_signal(ws, identifier) -> GeneratedSignal:
     target = directory(ws, identifier)
     if not (target / "manifest.json").is_file() or (target / "manifest.json").is_symlink():
-        raise WorkspaceError("Generated signal not found. Generate the waveform first.")
+        raise WorkspaceError("PA input not found. Generate or import the waveform first.")
     result = GeneratedSignal.model_validate(read_json(target / "manifest.json"))
     source = target / "iq.npy"
     if source.is_symlink() or not source.is_file() or sha256_file(source) != result.iq_sha256:
-        raise WorkspaceError("Generated IQ bytes have changed. Regenerate and review the waveform.")
+        raise WorkspaceError("PA input IQ bytes have changed. Generate or import the waveform again.")
     return result
 
 
@@ -121,17 +123,18 @@ def export_signal(ws, identifier):
             return output
         iq = np.load(target / "iq.npy", allow_pickle=False)
         csv = io.StringIO()
-        np.savetxt(csv, iq, delimiter=",", fmt="%.9g", header="I,Q", comments="")
+        np.savetxt(csv, iq, delimiter=",", fmt="%.17g" if result.origin == "uploaded" else "%.9g", header="I,Q", comments="")
         with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.write(target / "iq.npy", "iq.npy")
             archive.write(target / "manifest.json", "manifest.json")
             archive.write(target / "provenance.json", "provenance.json")
             archive.writestr("iq.csv", csv.getvalue())
             archive.writestr("config.json", result.config.model_dump_json(indent=2))
-            archive.writestr("README.txt", "SYNTHETIC complex-baseband stimulus\n\n" + "\n".join(result.analysis.notes)
+            archive.writestr("README.txt", result.origin.upper() + " complex-baseband stimulus\n\n" + "\n".join(result.analysis.notes)
                 + f"\n\nSamples: {result.analysis.sample_count}\nSample rate: {result.config.sample_rate_hz} Hz\n"
                 + f"RF carrier metadata: {result.config.carrier_frequency_hz} Hz\nIQ NPY SHA256: {result.iq_sha256}\n"
-                + "\nLoad config.json in Studio Signal Generator to regenerate. The same generator implementation and NumPy version are required for byte reproduction.\n"
+                + ("\nReimport iq.csv with the sampling metadata in config.json; uploaded samples cannot be regenerated from a generator recipe.\n" if result.origin == "uploaded" else
+                   "\nLoad config.json in Studio Signal Generator to regenerate. The same generator implementation and NumPy version are required for byte reproduction.\n")
                 + "The CSV contains a stimulus only; it has no measured PA response. Create a synthetic PA dataset in Studio or capture a real response for training.\n")
         return output
 
@@ -139,6 +142,8 @@ def export_signal(ws, identifier):
 def create_dataset(ws, identifier, request: GeneratorDatasetRequest) -> GeneratorDatasetResponse:
     with _LOCK:
         result = read_signal(ws, identifier)
+        if result.origin == "uploaded":
+            raise WorkspaceError("Use PA Library to simulate an uploaded signal and create its paired dataset.")
         if result.analysis.sample_count < 8192:
             raise WorkspaceError("Generate at least 8,192 samples before creating a PA training dataset.")
         try:

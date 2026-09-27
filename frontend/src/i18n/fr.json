@@ -1500,5 +1500,15 @@
   "signalDataset.search": "Rechercher un jeu de données",
   "inspection.datasetDetails": "Détails et partage du jeu de données",
   "paLibrary.datasetSummary": "Signaux : {signals} · Échantillons I/Q au total : {count}",
-  "datasets.captureCount": "{count} signaux"
+  "datasets.captureCount": "{count} signaux",
+  "signalImport.title": "Importer un signal personnalisé",
+  "signalImport.summary": "Importez votre forme d’onde comme entrée du PA virtuel.",
+  "signalImport.help": "CSV jusqu’à 25 MiB : colonnes I/Q séparées, une colonne complexe (0.1+0.2j) ou réelle. Indiquez la fréquence d’échantillonnage et la bande passante réelles. L’amplitude et l’ordre sont conservés, sans normalisation, filtrage ni rééchantillonnage.",
+  "signalImport.file": "Choisir un CSV de signal",
+  "signalImport.nameHelp": "Commencez par usr_pa_in_ ; utilisez lettres, chiffres, points, tirets ou traits de soulignement.",
+  "signalImport.columns": "Choisissez des colonnes I/Q réelles distinctes, ou des échantillons complexes pour une colonne complexe.",
+  "signalImport.short": "La simulation avec un jeu d’entraînement nécessite au moins 8 192 échantillons. Un signal plus court peut être importé et analysé.",
+  "signalImport.use": "Importer et utiliser dans Virtual PA",
+  "signalImport.pairHelp": "L’entrée PA est importée ; la sortie sera simulée. Le jeu apparié conserve les métadonnées de l’import.",
+  "signalImport.uploaded": "IMPORTÉ"
 }

@@ -15,6 +15,21 @@ model workspace with Training and Testing tabs. Existing task URLs remain valid.
 Testing displays the selected dataset version's test split count and equivalent time,
 before any model warm-up or evaluation-edge exclusions.
 
+## Import your own waveform
+
+Open **Import custom signal** in **Signal Generator → Generate** or **PA Library**:
+
+1. Choose a CSV containing separate real `I,Q` columns, one complex column such as `0.1+0.2j` (`i` is also accepted), or one real column. A header is optional; additional numeric columns such as time can be excluded with the column selectors.
+2. Enter the actual **Sample rate (MHz)** and **Baseband bandwidth (MHz)**. Bandwidth must fit within the sample rate. Sampling metadata is supplied by you; it is not detected from the CSV.
+3. Choose the sample format and columns. Give the input dataset a name beginning with `usr_pa_in_`.
+4. Click **Import & use in Virtual PA**. The PA Library selects the new input. Choose the PA model and parameters, then **Simulate PA output** to open the paired dataset.
+
+Import accepts 256–1,000,000 samples in a UTF-8 CSV up to 25 MiB, with at most eight columns and two million numeric fields. Every selected sample is retained, including captures longer than the Analyzer's default window. Samples are converted to the framework’s float32 I/Q format, which can round decimal values. Amplitude scale and sample order are preserved without normalization, filtering, truncation or resampling. Scale the waveform to the amplitude range appropriate for the chosen PA model before uploading. Zero-power inputs are rejected.
+
+At least 8,192 samples are required to create a PA training dataset. Shorter captures can be imported, downloaded and inspected in Signal Analyzer. The PA input is marked **uploaded**; Virtual PA output and its paired dataset are **synthetic**. Metadata records the original CSV hash, selected columns, sampling settings and input hash. Paired training data uses the existing float32 storage contract. PA and DPD training remain available from the dataset page.
+
+The input remains available in the PA Library and Analyzer after reload. CSV and ZIP exports retain its metadata. Imported samples cannot be regenerated from a generator configuration JSON. This workflow runs the chosen software PA model; for a physical amplifier, download the input waveform and use your RF measurement setup, then import the measured input/output pair.
+
 ## Waveforms and coverage
 
 The generator provides synthetic engineering stimuli with standard numerologies,

@@ -1500,5 +1500,15 @@
   "signalDataset.search": "Buscar nombres de conjuntos",
   "inspection.datasetDetails": "Detalles y uso compartido del conjunto",
   "paLibrary.datasetSummary": "Señales: {signals} · Muestras I/Q totales: {count}",
-  "datasets.captureCount": "{count} señales"
+  "datasets.captureCount": "{count} señales",
+  "signalImport.title": "Importar señal personalizada",
+  "signalImport.summary": "Sube tu propia forma de onda como entrada de un PA virtual.",
+  "signalImport.help": "CSV de hasta 25 MiB: columnas I/Q separadas, una columna compleja (0.1+0.2j) o real. Indica la frecuencia de muestreo y el ancho de banda reales. Se conservan amplitud y orden, sin normalización, filtrado ni remuestreo.",
+  "signalImport.file": "Elegir CSV de señal",
+  "signalImport.nameHelp": "Empieza por usr_pa_in_ y usa letras, números, puntos, guiones o guiones bajos.",
+  "signalImport.columns": "Selecciona columnas I/Q reales distintas, o muestras complejas para una columna compleja.",
+  "signalImport.short": "La simulación PA con un conjunto de entrenamiento necesita al menos 8.192 muestras. Las señales más cortas se pueden importar y analizar.",
+  "signalImport.use": "Importar y usar en Virtual PA",
+  "signalImport.pairHelp": "La entrada PA se ha subido; la salida será simulada. El conjunto emparejado conserva los metadatos de importación.",
+  "signalImport.uploaded": "SUBIDO"
 }

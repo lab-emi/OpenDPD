@@ -1500,5 +1500,15 @@
   "signalDataset.search": "데이터셋 이름 검색",
   "inspection.datasetDetails": "데이터셋 상세 및 공유",
   "paLibrary.datasetSummary": "신호 수: {signals} · 총 I/Q 샘플 수: {count}",
-  "datasets.captureCount": "신호 {count}개"
+  "datasets.captureCount": "신호 {count}개",
+  "signalImport.title": "사용자 신호 가져오기",
+  "signalImport.summary": "직접 만든 파형을 업로드하여 Virtual PA 입력으로 사용합니다.",
+  "signalImport.help": "최대 25 MiB CSV: 별도 I/Q 열, 복소수 한 열(0.1+0.2j) 또는 실수 한 열. 실제 샘플링 속도와 대역폭을 입력하세요. 정규화, 필터링, 리샘플링 없이 모든 샘플의 진폭과 순서를 유지합니다.",
+  "signalImport.file": "신호 CSV 선택",
+  "signalImport.nameHelp": "usr_pa_in_으로 시작하고 영문자, 숫자, 점, 밑줄 또는 하이픈을 사용하세요.",
+  "signalImport.columns": "서로 다른 실수 I/Q 열을 선택하거나 복소수 열에는 복소수 샘플 형식을 선택하세요.",
+  "signalImport.short": "훈련 데이터셋을 만드는 PA 시뮬레이션에는 최소 8,192개 샘플이 필요합니다. 더 짧은 신호도 가져와 분석할 수 있습니다.",
+  "signalImport.use": "가져와서 Virtual PA에서 사용",
+  "signalImport.pairHelp": "PA 입력은 업로드된 신호이며 출력은 시뮬레이션됩니다. 쌍 데이터셋은 업로드 메타데이터를 보존합니다.",
+  "signalImport.uploaded": "업로드됨"
 }

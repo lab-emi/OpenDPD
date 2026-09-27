@@ -104,7 +104,7 @@ def list_sources(ws):
         data = GeneratedSignal.model_validate(read_json(path))
         results.append(AnalyzerSourceInfo(source=AnalyzerSource(kind="generated", source_id=data.signal_id),
             label=data.config.preset_id + " · PA input", sample_count=data.analysis.sample_count,
-            sample_rate_hz=data.config.sample_rate_hz, bandwidth_hz=data.config.bandwidth_hz, origin="synthetic"))
+            sample_rate_hz=data.config.sample_rate_hz, bandwidth_hz=data.config.bandwidth_hz, origin=data.origin))
     for path in sorted((ws.root / "signal_uploads").glob("sa-*/manifest.json"))[:16]:
         if not path.is_symlink() and not path.parent.is_symlink():
             results.append(AnalyzerSourceInfo.model_validate(read_json(path)["info"]))
@@ -174,7 +174,7 @@ def _load(ws, source):
         data = read_signal(ws, source.source_id)
         info = AnalyzerSourceInfo(source=source, label=data.config.preset_id + " · PA input",
             sample_count=data.analysis.sample_count, sample_rate_hz=data.config.sample_rate_hz,
-            bandwidth_hz=data.config.bandwidth_hz, origin="synthetic")
+            bandwidth_hz=data.config.bandwidth_hz, origin=data.origin)
         return np.load(directory(ws, source.source_id) / "iq.npy", mmap_mode="r", allow_pickle=False), info
     if source.kind == "virtual_pa":
         from opendpd.services.virtual_pa import read_simulation, directory

@@ -194,10 +194,47 @@ class GeneratorAnalysis(StrictModel):
     notes: list[str]
 
 
+class ImportedSignalConfig(StrictModel):
+    """Sampling metadata for uploaded samples; never a synthesis recipe."""
+    version: Literal["signal-import-v1"] = "signal-import-v1"
+    waveform: Literal["imported"] = "imported"
+    preset_id: str = Field(min_length=1, max_length=64)
+    sample_rate_hz: float = Field(ge=1, le=2e9, allow_inf_nan=False)
+    bandwidth_hz: float = Field(gt=0, le=2e9, allow_inf_nan=False)
+    carrier_frequency_hz: float = Field(default=0, ge=0, le=110e9, allow_inf_nan=False)
+    n_samples: int = Field(ge=256, le=1_000_000)
+
+    @model_validator(mode="after")
+    def _bandwidth(self):
+        if self.bandwidth_hz > self.sample_rate_hz:
+            raise ValueError("Baseband bandwidth must not exceed the sample rate.")
+        return self
+
+
+class ImportSignalRequest(StrictModel):
+    upload_id: str = Field(pattern=r"^sa-[a-f0-9]{64}$")
+    dataset_name: InputDatasetName
+    sample_rate_hz: float = Field(ge=1, le=2e9, allow_inf_nan=False)
+    bandwidth_hz: float = Field(gt=0, le=2e9, allow_inf_nan=False)
+    carrier_frequency_hz: float = Field(default=0, ge=0, le=110e9, allow_inf_nan=False)
+    sample_format: Literal["real", "complex", "iq"] = "iq"
+    i_column: int = Field(default=0, ge=0, le=7)
+    q_column: int = Field(default=1, ge=0, le=7)
+
+    @model_validator(mode="after")
+    def _valid(self):
+        if self.bandwidth_hz > self.sample_rate_hz:
+            raise ValueError("Baseband bandwidth must not exceed the sample rate.")
+        if self.sample_format == "iq" and self.i_column == self.q_column:
+            raise ValueError("I and Q must use different columns.")
+        return self
+
+
 class GeneratedSignal(StrictModel):
     kind: Literal["pa_input"] = "pa_input"
     signal_id: str = Field(pattern=r"^sg-[a-f0-9]{64}$")
-    config: GeneratorConfig
+    config: GeneratorConfig | ImportedSignalConfig
+    origin: Literal["synthetic", "uploaded"] = "synthetic"
     iq_sha256: Sha256
     coverage: Literal["numerology", "experimental", "custom"]
     analysis: GeneratorAnalysis

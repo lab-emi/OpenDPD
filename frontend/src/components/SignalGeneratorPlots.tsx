@@ -55,7 +55,7 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
   return <Stack spacing={1.5} data-testid="signal-generator-results">
     <Stack direction="row" useFlexGap sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
       <Typography variant="h2" sx={{ flex: 1 }}>{t('paInput.title')}</Typography>
-      <Chip size="small" variant="outlined" label="SYNTHETIC" color="warning" />
+      <Chip size="small" variant="outlined" label={result.origin === 'uploaded' ? t('signalImport.uploaded') : 'SYNTHETIC'} color="warning" />
       <Chip size="small" label={t(`generator.coverage.${result.coverage}`)} />
     </Stack>
     {stale && <Alert severity="warning">{t('generator.stale')}</Alert>}
