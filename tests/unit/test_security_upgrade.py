@@ -122,7 +122,7 @@ def test_all_torch_loads_explicitly_disable_pickle():
     sources = [p for folder in ("opendpd", "modules", "steps", "quant", "backbones", "benchmark") for p in (root / folder).rglob("*.py")]
     sources += [root / name for name in ("main.py", "models.py", "project.py")]
     for path in sources:
-        for node in ast.walk(ast.parse(path.read_text())):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "load" and isinstance(node.func.value, ast.Name) and node.func.value.id == "torch":
                 assert any(k.arg == "weights_only" and isinstance(k.value, ast.Constant) and k.value.value is True for k in node.keywords), f"{path}:{node.lineno}"
 
