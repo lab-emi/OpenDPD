@@ -21,3 +21,11 @@ test('hover templates retain line breaks while refusing links', () => {
   expect(safePlotLabels({ hovertemplate: '%{x}<br>%{y}<extra><a href="https://example.invalid">click</a></extra>' }).hovertemplate)
     .toBe('%{x}<br>%{y}<extra>&lt;a href="https://example.invalid"&gt;click&lt;/a&gt;</extra>')
 })
+
+test('responsive legend breaks remain usable without accepting attributes or links', () => {
+  const result = safePlotLabels({ name: 'With DPD · <br>PA model',
+    text: ['Line 1<br/>Line 2', '<br onclick="alert(1)">', '&lt;br&gt;', '<a href="https://example.invalid">link</a>'] })
+  expect(result.name).toBe('With DPD · <br>PA model')
+  expect(result.text).toEqual(['Line 1<br>Line 2', '&lt;br onclick="alert(1)"&gt;',
+    '&amp;lt;br&amp;gt;', '&lt;a href="https://example.invalid"&gt;link&lt;/a&gt;'])
+})

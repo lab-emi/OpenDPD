@@ -49,7 +49,7 @@ test('training compares two curves per component, including on a narrow screen',
       expect(actual.axisTitleClear).toBe(true)
       expect(actual.labelsFit).toBe(true)
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
   }
   await section.getByLabel('Waveform', { exact: true }).selectOption('signal:measured PA without DPD')
   const plot = section.getByTestId('output-waveform-i').locator('.js-plotly-plot')

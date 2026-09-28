@@ -3,6 +3,11 @@ export function escapePlotText(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+function safeLabel(value: string): string {
+  // Responsive legends use line breaks. Only bare breaks survive escaping.
+  return escapePlotText(value).replace(/&lt;br\/?&gt;/g, '<br>')
+}
+
 export function safePlotLabels<T>(value: T): T {
   if (!value || typeof value !== 'object' || ArrayBuffer.isView(value)) return value
   if (Array.isArray(value)) return value.map((item) => safePlotLabels(item)) as T
@@ -14,8 +19,8 @@ export function safePlotLabels<T>(value: T): T {
       result[key] = escapePlotText(item).replace(/&lt;(br\/?|\/?extra)&gt;/g, '<$1>')
     }
     else if (['name', 'text', 'hovertext', 'title'].includes(key)) {
-      result[key] = typeof item === 'string' ? escapePlotText(item)
-        : Array.isArray(item) ? item.map((entry) => typeof entry === 'string' ? escapePlotText(entry) : entry)
+      result[key] = typeof item === 'string' ? safeLabel(item)
+        : Array.isArray(item) ? item.map((entry) => typeof entry === 'string' ? safeLabel(entry) : entry)
           : safePlotLabels(item)
     }
     else result[key] = safePlotLabels(item)
