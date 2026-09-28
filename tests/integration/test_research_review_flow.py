@@ -81,11 +81,11 @@ def test_saved_figure_roundtrip_and_exported_replay(completed, tmp_path):
     primary = next(t for t in data["traces"] if t["role"] == "primary")
     assert [float(r["x"]) for r in rows] == data["frequency"]
     assert [float(r["y"]) for r in rows] == primary["psd_db"]
-    proc = subprocess.run([sys.executable, "-P", str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=30)
+    proc = subprocess.run([sys.executable, "-I", str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=30)
     assert proc.returncode == 0, proc.stderr
     assert (tmp_path / "replayed" / "figure.png").read_bytes() == (tmp_path / "figure.png").read_bytes()
     (tmp_path / "plot-data.json").write_text("{}")
-    proc = subprocess.run([sys.executable, "-P", str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=10)
+    proc = subprocess.run([sys.executable, "-I", str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=10)
     assert proc.returncode != 0 and "hash mismatch" in proc.stderr
 
 
@@ -177,7 +177,7 @@ def test_multiplot_sources_declarations_and_full_metric_view_reproduction(comple
         with zipfile.ZipFile(root / 'run-packages' / f'{run}.zip') as zf:
             assert json.loads(zf.read('package.json'))['dataset']['included']
             assert any(name.startswith('dataset/raw/') for name in zf.namelist())
-        command = [sys.executable, '-P', str(root / 'reproduce.py'), str(root), '--use-bundled-source', '--workspace', str(tmp_path / 'fresh')]
+        command = [sys.executable, '-I', str(root / 'reproduce.py'), str(root), '--use-bundled-source', '--workspace', str(tmp_path / 'fresh')]
         proc = subprocess.run(command, capture_output=True, text=True, timeout=60)
         assert proc.returncode == 0, proc.stderr
         checks = json.loads((root / 'reproduction-check.json').read_text())

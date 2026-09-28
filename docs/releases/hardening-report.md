@@ -4,7 +4,7 @@ Date: 2026-09-28. Baseline: `2.2.17` / `aa1746e`. Platform: Linux, Python 3.13.1
 
 | Verification | Result |
 |---|---|
-| Ordinary Python tests, including golden numerical fixtures | **2,283 cases covered and passing**, split runs and changed-test reruns; 22 extended/packaging cases excluded from this selection |
+| Ordinary Python tests, including golden numerical fixtures | **2,285 cases covered and passing**, split runs and changed-test reruns; 22 extended/packaging cases excluded from this selection |
 | Built wheel in a fresh environment | **3 passed**: import/assets, CPU experiment outside the source tree, local GUI service with authentication/training/export/shutdown |
 | Frontend tests | **282 passed** in 64 files; typecheck, lint and production build passed |
 | API schema/types and Python critical-error lint | passed; generated OpenAPI/types match source |
@@ -14,13 +14,14 @@ Date: 2026-09-28. Baseline: `2.2.17` / `aa1746e`. Platform: Linux, Python 3.13.1
 | GPU additional-dependency lockfile, pip-audit/OSV | 26 packages, **0 known vulnerabilities** |
 | Frontend npm audit, including development dependencies | **0 known vulnerabilities** |
 
-The ordinary selection combines the main 2,280-case batch (the old CSRF expectation was updated and its test passed on rerun), two documentation command tests, and the added plot-coordinate regression. A separate final 60-case import/figure/security run and the final packaging run verify late changes. Counts are not added across overlapping runs.
+The ordinary selection combines the main 2,280-case batch (the old CSRF expectation was updated and its test passed on rerun), two documentation command tests, the added plot-coordinate regression, and two figure-helper isolation regressions. A separate final 60-case import/figure/security run and the final packaging run verify late changes. Counts are not added across overlapping runs.
 
 The table records the initial local patch verification. Native pywebview, image OS packages and the broader operational work remain outside that verification; see the [2.2.18 review](security-review-2.2.18.md).
 
 ## Additional release staging checks
 
 - GitHub's Linux, macOS and Windows runners passed the default installation and package/security boundary checks. The Windows AST scan now reads source files as UTF-8 explicitly.
+- Python 3.10 uses `-I` for directly executed figure helpers; the guard accepts isolated mode as well as 3.11+ safe-path mode. Both keep the bundle directory off Python's initial import path.
 - The offline VM's Python 3.14 runtime matches all 43 locked packages. A separately installed candidate completed CSV upload, Virtual PA simulation, CPU training and result retrieval as the unprivileged worker.
 - The candidate GPU image passed a cold-cache DeltaGRU CUDA forward/backward probe under the production container options, and a waveform import/Virtual PA probe.
 - A separate API in the VM, a temporary private bridge and the candidate GPU agent/image completed PA training, DPD training and DPD inference on CUDA. Checkpoint hashes matched. Foreign-origin requests, anonymous exports, cross-workspace reads and traversal versions were refused; repeated CSV exports matched. These checks used synthetic data, and the temporary services, bridge credentials and workspaces were removed afterward.

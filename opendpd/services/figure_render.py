@@ -5,8 +5,8 @@ Only renders stored arrays and metrics; never trains, aligns or evaluates.
 """
 
 import sys
-if not __package__ and not getattr(sys.flags, "safe_path", False):
-    raise SystemExit("Use the installed command: opendpd figures replay <bundle.zip> --out <directory>; or python -P replay.py <directory>.")
+if not __package__ and not (getattr(sys.flags, "safe_path", False) or sys.flags.isolated):
+    raise SystemExit("Use the installed command: opendpd figures replay <bundle.zip> --out <directory>; or python -I replay.py <directory>.")
 
 import json
 import textwrap

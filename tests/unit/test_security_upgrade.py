@@ -50,6 +50,23 @@ def test_imported_plot_coordinates_cannot_be_html_categories():
         validate_plot(valid)
 
 
+@pytest.mark.parametrize("helper", ["figure_render", "reproduce_figure"])
+def test_figure_helpers_require_isolation_before_importing_bundle_modules(tmp_path, helper):
+    import subprocess
+    import sys
+    source = Path(__file__).resolve().parents[2] / "opendpd" / "services" / f"{helper}.py"
+    script = tmp_path / "helper.py"
+    script.write_bytes(source.read_bytes())
+    (tmp_path / "json.py").write_text("raise RuntimeError('untrusted bundle module imported')\n")
+    unsafe = subprocess.run([sys.executable, str(script), "--help"], cwd=tmp_path,
+                            capture_output=True, text=True, timeout=20)
+    assert unsafe.returncode != 0 and "opendpd figures" in unsafe.stderr
+    safe = subprocess.run([sys.executable, "-I", "-c",
+                           "import runpy, sys; runpy.run_path(sys.argv[1], run_name='bundle_probe')", str(script)], cwd=tmp_path,
+                          capture_output=True, text=True, timeout=20)
+    assert safe.returncode == 0, safe.stderr
+
+
 def test_project_refuses_spec_override_without_changing_args(tmp_path):
     from project import Project
     from types import SimpleNamespace

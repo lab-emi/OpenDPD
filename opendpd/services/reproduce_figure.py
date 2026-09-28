@@ -1,7 +1,7 @@
 """Exported as reproduce.py. Verify first, then rebuild metrics and plot coordinates."""
 import sys
-if not __package__ and not getattr(sys.flags, "safe_path", False):
-    raise SystemExit("Use opendpd figures reproduce <bundle.zip> --workspace <new-directory>; or python -P reproduce.py.")
+if not __package__ and not (getattr(sys.flags, "safe_path", False) or sys.flags.isolated):
+    raise SystemExit("Use opendpd figures reproduce <bundle.zip> --workspace <new-directory>; or python -I reproduce.py.")
 import argparse
 import copy
 import hashlib

@@ -69,7 +69,7 @@ def export_reproduction(ws, figure_id, out):
             'Extract it into an empty directory. With the matching OpenDPD source installed, run:\n\n'
             '`opendpd figures reproduce bundle.zip --workspace /path/to/a/new/empty-workspace`\n\n'
             'Alternatively, use the exact included Python source (including uncommitted changes):\n\n'
-            '`python -P reproduce.py . --workspace /path/to/a/new/empty-workspace --use-bundled-source`\n\n'
+            '`python -I reproduce.py . --workspace /path/to/a/new/empty-workspace --use-bundled-source`\n\n'
             'Hashes detect corruption, not authenticity. This option executes the included OpenDPD source; use it only for a bundle you trust. '
             'runtime-requirements.txt pins the numerical dependencies and can be installed in a separate environment.\n\n'
             'The script verifies hashes and exact Python source identity, imports each run into a separate workspace, '
