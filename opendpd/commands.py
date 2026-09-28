@@ -893,9 +893,32 @@ def cmd_leaderboard(args) -> int:
     return 2
 
 
+def cmd_figures(args) -> int:
+    from opendpd.services.figure_bundle import replay_bundle, reproduce_bundle
+    try:
+        if args.figures_command == "replay":
+            replay_bundle(Path(args.bundle), Path(args.out))
+        else:
+            reproduce_bundle(Path(args.bundle), Path(args.workspace))
+        return 0
+    except (OSError, ValueError, RuntimeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="opendpd", description="OpenDPD Studio command line")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("figures", help="read figure bundles with installed OpenDPD code")
+    fp = p.add_subparsers(dest="figures_command", required=True)
+    q = fp.add_parser("replay", help="render stored figure data without executing bundled code")
+    q.add_argument("bundle")
+    q.add_argument("--out", required=True)
+    q = fp.add_parser("reproduce", help="re-evaluate using the installed implementation")
+    q.add_argument("bundle")
+    q.add_argument("--workspace", required=True)
+    p.set_defaults(func=cmd_figures)
 
     p = sub.add_parser("models", help="list registered models and their capabilities")
     p.add_argument("--json", action="store_true")

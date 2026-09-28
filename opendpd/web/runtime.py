@@ -27,6 +27,7 @@ from opendpd.web.gpu_broker import GpuBroker
 log = logging.getLogger(__name__)
 MARKER = "OpenDPD disposable web workspaces v1\n"
 DAY = 86400
+IP_TABLE_CAPACITY = 65536
 
 
 def prepare_root(root: Path):
@@ -221,6 +222,8 @@ class TenantManager:
         self.ip_publications: dict[str, int] = {}
         self.day = int(now() // DAY)
         self.inflight = 0
+        self.ip_inflight = {}
+        self.ip_expensive = {}
         self.cleanup_healthy = True
         self.dispatch_healthy = True
         self.lock = None
@@ -253,16 +256,16 @@ class TenantManager:
 
     def ip_key(self, address: str) -> str:
         ip = ipaddress.ip_address(address)
-        # IPv6 privacy addresses in one /64 share an abuse budget. No raw IPs are
+        # IPv6 privacy addresses in one /48 share an abuse budget. No raw IPs are
         # written into folders, SQLite, application logs or browser-visible data.
-        network = str(ipaddress.ip_network(f"{ip}/64", strict=False)) if ip.version == 6 else str(ip)
+        network = str(ipaddress.ip_network(f"{ip}/48", strict=False)) if ip.version == 6 else str(ip)
         return hmac.new(self.ip_secret, network.encode(), hashlib.sha256).hexdigest()
 
     def rate_limit(self, ip_key: str, limit: int | None = None):
         minute = int(self.now() // 60)
-        if len(self.rate) >= 4096 and ip_key not in self.rate:
+        if len(self.rate) >= IP_TABLE_CAPACITY and ip_key not in self.rate:
             self.rate = {k: v for k, v in self.rate.items() if v[0] == minute}
-            if len(self.rate) >= 4096:
+            if len(self.rate) >= IP_TABLE_CAPACITY:
                 reject(429, "service_busy", "the service is busy; try again later")
         stamp, count = self.rate.get(ip_key, (minute, 0))
         count = count + 1 if stamp == minute else 1
@@ -366,7 +369,7 @@ class TenantManager:
             owner = entry.ip_key if entry else ip_key
             if self.ip_sessions.get(owner, 0) >= self.config.sessions_per_ip:
                 reject(429, "session_quota", "the daily session limit for this network has been reached")
-            if len(self.ip_sessions) >= 4096:
+            if owner not in self.ip_sessions and len(self.ip_sessions) >= IP_TABLE_CAPACITY:
                 reject(429, "service_busy", "the service is busy; try again later")
             if entry is None:
                 if len(self.admissions) >= self.config.max_waiting + self.config.max_sessions:

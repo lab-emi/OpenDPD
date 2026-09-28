@@ -86,16 +86,23 @@ def gen_log_stat(args: argparse.Namespace, elapsed_time, net, optimizer, epoch, 
 
 
 def gen_dir_paths(args: argparse.Namespace):
+    from opendpd.safe_paths import filename, contained_path
+    from pathlib import Path
+    for label in (args.dataset_name, args.step, args.quant_dir_label):
+        if label:
+            filename(label)
     if args.step == 'train_pa':
         path_dir_save = os.path.join('./save', args.dataset_name, args.step, args.quant_dir_label)
         path_dir_log_hist = os.path.join('./log', args.dataset_name, args.step, args.quant_dir_label, 'history')
         path_dir_log_best = os.path.join('./log', args.dataset_name, args.step, args.quant_dir_label, 'best')
-    elif args.step == 'train_dpd' or 'run_dpd':
+    else:  # Preserve legacy layouts for DPD, evaluation and plot callers.
         # Organize DPD files under PA model directory
         path_dir_save = os.path.join('./save', args.dataset_name, args.step, gen_pa_model_id(args), args.quant_dir_label)
         path_dir_log_hist = os.path.join('./log', args.dataset_name, args.step, gen_pa_model_id(args), args.quant_dir_label, 'history')
         path_dir_log_best = os.path.join('./log', args.dataset_name, args.step, gen_pa_model_id(args),args.quant_dir_label, 'best')
     dir_paths = (path_dir_save, path_dir_log_hist, path_dir_log_best)
+    for path in dir_paths:
+        contained_path(Path.cwd(), Path(path).as_posix())
     return dir_paths
 
 

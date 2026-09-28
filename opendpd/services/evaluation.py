@@ -15,6 +15,9 @@ split. Nothing is normalised separately.
 from __future__ import annotations
 
 import os
+from opendpd.services.csv_safety import SafeWriter
+from opendpd.safe_paths import contained_path
+
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -149,12 +152,12 @@ def _checkpoint_path(ws: Workspace, run_id: str, resolved: ResolvedExperimentCon
     """The weights under evaluation: this run's best checkpoint, or the referenced run's for run_dpd (the DPD)
     and evaluate_pa (the PA), hash verified."""
     if resolved.task not in (TaskType.run_dpd, TaskType.evaluate_pa):
-        return ws.run_dir(run_id) / manifest.by_kind(ArtifactKind.checkpoint)[0].file.path
+        return contained_path(ws.run_dir(run_id), manifest.by_kind(ArtifactKind.checkpoint)[0].file.path)
     ref = resolved.dpd_reference if resolved.task == TaskType.run_dpd else resolved.pa_reference
     ref_manifest = load_artifacts(ws, ref.run_id)
     artifact = next((a for a in (ref_manifest.artifacts if ref_manifest else [])
                      if a.artifact_id == ref.checkpoint_artifact_id), None)
-    path = ws.run_dir(ref.run_id) / artifact.file.path if artifact else None
+    path = contained_path(ws.run_dir(ref.run_id), artifact.file.path) if artifact else None
     if path is None or not path.exists() or sha256_file(path) != ref.checkpoint_sha256:
         raise FileNotFoundError(f"checkpoint of run {ref.run_id} is missing or its hash changed")
     return path
@@ -452,11 +455,10 @@ def compare_results(ws: Workspace, run_ids: List[str], profile_id: Optional[str]
 
 def comparison_csv(report: ComparisonReport, reference_id: Optional[str] = None, mode: str = "same_condition") -> str:
     """Metric rows by result columns, preceded by the provenance every number is bound to. No recomputation."""
-    import csv
     import io
 
     buf = io.StringIO()
-    w = csv.writer(buf)
+    w = SafeWriter(buf)
     cols = report.results
     reference = next((r for r in cols if (r.run_id or r.result_id) == reference_id), cols[0])
     w.writerow(["field"] + [r.run_id or r.result_id for r in cols])
@@ -481,13 +483,13 @@ def comparison_csv(report: ComparisonReport, reference_id: Optional[str] = None,
         row = [name]
         for r in cols:
             m = next((x for x in r.metrics if x.name == name), None)
-            row.append("" if m is None else (f"{m.value}" if m.value is not None else f"{m.status.value}: {m.reason}"))
+            row.append("" if m is None else (m.value if m.value is not None else f"{m.status.value}: {m.reason}"))
         w.writerow(row)
         values = [next((x for x in r.metrics if x.name == name), None) for r in cols]
         w.writerow([f"{name} unit"] + [m.unit if m else "" for m in values])
         ref = next((m for m in reference.metrics if m.name == name), None)
         w.writerow([f"{name} delta vs reference"] + [
-            str(m.value - ref.value) if m and ref and m.value is not None and ref.value is not None
+            (m.value - ref.value) if m and ref and m.value is not None and ref.value is not None
             and m.unit == ref.unit and not incompatibilities(r, reference) else "not comparable"
             for r, m in zip(cols, values)])
     for pair in report.pairs:

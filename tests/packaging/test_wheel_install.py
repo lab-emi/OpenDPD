@@ -146,7 +146,11 @@ def _train_export_through_the_packaged_service(port: int, ws: Path) -> None:
     import urllib.request
 
     lock = json.loads((ws / ".studio.lock").read_text())
-    token = urllib.parse.parse_qs(urllib.parse.urlsplit(lock["url"]).query)["token"][0]
+    assert "token=" not in lock["url"]
+    mint = urllib.request.Request(f"http://127.0.0.1:{port}/bootstrap/mint", data=b"", method="POST",
+                                  headers={"X-OpenDPD-Launcher": lock["launcher_secret"]})
+    with urllib.request.urlopen(mint, timeout=5) as response:
+        token = json.loads(response.read())["token"]
     jar = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
     base = f"http://127.0.0.1:{port}"

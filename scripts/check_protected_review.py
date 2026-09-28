@@ -6,7 +6,8 @@ import urllib.request
 
 def main():
     event = json.load(open(os.environ['GITHUB_EVENT_PATH']))
-    pr = event['pull_request']
+    pr = event.get('pull_request')
+    number = pr['number'] if pr else event['issue']['number']
     repository = os.environ['GITHUB_REPOSITORY']
     token = os.environ['GH_TOKEN']
 
@@ -17,14 +18,28 @@ def main():
             return json.load(response)
 
     # Read fresh state: reviews and new commits may arrive after this job was queued.
-    current = get(f'pulls/{pr["number"]}')
+    current = get(f'pulls/{number}')
     head = current['head']['sha']
-    if head != pr['head']['sha']:
+    if pr and head != pr['head']['sha']:
         raise SystemExit('The PR head changed; wait for the check on its new commit.')
+    protected = ('tests/golden/', 'opendpd/', 'modules/', 'steps/', 'quant/', 'utils/', 'datasets/',
+                 'backbones/', 'benchmark/', 'docs/protocols/', 'docs/leaderboard/', '.github/',
+                 'deployment/', 'scripts/', 'frontend/', 'pyproject.toml', 'project.py', 'arguments.py')
+    changed = []
+    for page in range(1, 31):
+        files = get(f'pulls/{number}/files?per_page=100&page={page}')
+        changed.extend(name for item in files for name in (item['filename'], item.get('previous_filename', '')))
+        if len(files) < 100:
+            break
+    else:
+        raise SystemExit('Too many changed files to audit; maintainer inspection is required.')
+    if not any(name.startswith(protected) for name in changed):
+        print('No protected paths changed')
+        return
     latest = {}
     page = 1
     while True:
-        reviews = get(f'pulls/{pr["number"]}/reviews?per_page=100&page={page}')
+        reviews = get(f'pulls/{number}/reviews?per_page=100&page={page}')
         for review in reviews:
             if review['commit_id'] == head:
                 latest[review['user']['login']] = review
@@ -33,8 +48,7 @@ def main():
         page += 1
     for login, review in latest.items():
         approved = review['state'] == 'APPROVED'
-        signed_comment = review['state'] == 'COMMENTED' and f'Reviewed head: {head}' in (review['body'] or '')
-        if approved or signed_comment:
+        if approved and login != current['user']['login']:
             permission = get(f'collaborators/{login}/permission')['permission']
             if permission in {'admin', 'maintain'}:
                 print(f'Maintainer review recorded for {head}')

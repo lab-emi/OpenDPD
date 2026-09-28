@@ -1,7 +1,8 @@
 [Unit]
 Description=OpenDPD private GPU container worker (host pull from isolated VM)
 After=opendpd-web-vm.service network.target opendpd-gpu-cdi.service
-Requires=opendpd-web-vm.service opendpd-gpu-cdi.service
+BindsTo=opendpd-web-vm.service
+Requires=opendpd-gpu-cdi.service
 
 [Service]
 Type=simple

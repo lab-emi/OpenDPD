@@ -26,8 +26,8 @@ class PackageFile(StrictModel):
 class PackageDataset(StrictModel):
     dataset_id: Slug
     raw_sha256: Optional[Sha256] = None
-    preprocessing_version: str
-    split_version: str
+    preprocessing_version: Slug
+    split_version: Slug
     source_kind: DatasetSourceKind
     builtin_name: Optional[str] = None
     included: bool                              # raw data and the used version travel with the package

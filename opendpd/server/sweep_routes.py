@@ -11,12 +11,12 @@ from opendpd.services.sweeps import audit_conditions, preview, report
 router = APIRouter(tags=["sweeps"])
 
 
-@router.post("/sweeps/conditions/validate", response_model=list[ConditionAudit], dependencies=[Depends(require_session)])
+@router.post("/sweeps/conditions/validate", response_model=list[ConditionAudit], dependencies=[Depends(require_csrf)])
 def conditions_validate(body: ConditionSet, request: Request):
     return audit_conditions(request.app.state.ws, body)
 
 
-@router.post("/sweeps/preview", response_model=SweepPreview, dependencies=[Depends(require_session)])
+@router.post("/sweeps/preview", response_model=SweepPreview, dependencies=[Depends(require_csrf)])
 def sweep_preview(body: SweepDraft, request: Request):
     return preview(request.app.state.ws, body)
 

@@ -28,7 +28,12 @@ def plot_artifact(ws, run_id, kind):
     digest = sha256_file(path)
     if artifact.file.sha256 and artifact.file.sha256 != digest:
         raise WorkspaceError(f"plot artifact hash mismatch: {run_id}/{kind}")
-    return read_json(path), artifact.file.path, digest
+    from opendpd.schemas.plot_input import validate_plot
+    try:
+        data = validate_plot(read_json(path))
+    except ValueError as exc:
+        raise WorkspaceError("stored plot does not match the display contract") from exc
+    return data, artifact.file.path, digest
 
 
 def save_conditions(ws, run_id, conditions: RFConditions):

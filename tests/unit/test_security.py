@@ -26,7 +26,9 @@ def test_bootstrap_token_is_single_secret_and_sessions_are_random():
     store = SessionStore("secret")
     assert store.exchange("wrong") is None
     assert store.exchange("") is None
-    a, b = store.exchange("secret"), store.exchange("secret")
+    a = store.exchange("secret")
+    assert store.exchange("secret") is None
+    b = store.exchange(store.mint(store.launcher_secret))
     assert a.session_id != b.session_id and a.csrf_token != b.csrf_token
     assert len(a.session_id) >= 40
     assert store.get(a.session_id) is a and store.get("nope") is None and store.get(None) is None
@@ -38,8 +40,8 @@ def test_local_sessions_expire_on_the_server_and_are_bounded():
     old = store.exchange('secret')
     old.created_at -= SESSION_MAX_AGE
     assert store.get(old.session_id) is None
-    first = store.exchange('secret')
+    first = store.exchange(store.mint(store.launcher_secret))
     for _ in range(128):
-        newest = store.exchange('secret')
+        newest = store.exchange(store.mint(store.launcher_secret))
     assert store.get(first.session_id) is None
     assert store.get(newest.session_id) is newest

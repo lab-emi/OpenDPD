@@ -81,11 +81,11 @@ def test_saved_figure_roundtrip_and_exported_replay(completed, tmp_path):
     primary = next(t for t in data["traces"] if t["role"] == "primary")
     assert [float(r["x"]) for r in rows] == data["frequency"]
     assert [float(r["y"]) for r in rows] == primary["psd_db"]
-    proc = subprocess.run([sys.executable, str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=30)
+    proc = subprocess.run([sys.executable, "-P", str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=30)
     assert proc.returncode == 0, proc.stderr
     assert (tmp_path / "replayed" / "figure.png").read_bytes() == (tmp_path / "figure.png").read_bytes()
     (tmp_path / "plot-data.json").write_text("{}")
-    proc = subprocess.run([sys.executable, str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=10)
+    proc = subprocess.run([sys.executable, "-P", str(tmp_path / "replay.py"), str(tmp_path)], capture_output=True, text=True, timeout=10)
     assert proc.returncode != 0 and "hash mismatch" in proc.stderr
 
 
@@ -177,7 +177,7 @@ def test_multiplot_sources_declarations_and_full_metric_view_reproduction(comple
         with zipfile.ZipFile(root / 'run-packages' / f'{run}.zip') as zf:
             assert json.loads(zf.read('package.json'))['dataset']['included']
             assert any(name.startswith('dataset/raw/') for name in zf.namelist())
-        command = [sys.executable, str(root / 'reproduce.py'), str(root), '--use-bundled-source', '--workspace', str(tmp_path / 'fresh')]
+        command = [sys.executable, '-P', str(root / 'reproduce.py'), str(root), '--use-bundled-source', '--workspace', str(tmp_path / 'fresh')]
         proc = subprocess.run(command, capture_output=True, text=True, timeout=60)
         assert proc.returncode == 0, proc.stderr
         checks = json.loads((root / 'reproduction-check.json').read_text())
@@ -185,11 +185,18 @@ def test_multiplot_sources_declarations_and_full_metric_view_reproduction(comple
         assert checks['implementation'] == 'bundled'
         assert all(p['coordinates_exact'] for r in checks['runs'] for p in r['plots'])
         assert {p['kind'] for p in checks['runs'][0]['plots']} == {'spectrum', 'amam', 'error_distribution', 'power_scan'}
+        # Installed CLI reads the ZIP as data and retains outputs after temporary extraction is removed.
+        from opendpd.commands import main
+        installed_workspace = tmp_path / 'installed-reproduction'
+        assert main(['figures', 'reproduce', str(bundle), '--workspace', str(installed_workspace)]) == 0
+        kept = installed_workspace / 'reproduction'
+        assert json.loads((kept / 'reproduction-check.json').read_text())['implementation'] == 'installed'
+        assert (kept / 'reproduced-figures' / 'figure.png').is_file()
         second = subprocess.run(command, capture_output=True, text=True, timeout=10)
         assert second.returncode != 0 and 'nonexistent workspace' in second.stderr
         (root / 'run-packages' / f'{run}.zip').write_bytes(b'tamper')
         proc = subprocess.run([*command[:-1], str(tmp_path / 'tampered')], capture_output=True, text=True, timeout=10)
-        assert proc.returncode != 0 and 'Bundle hash mismatch' in proc.stderr
+        assert proc.returncode != 0 and 'bundle hash mismatch' in proc.stderr
         assert not (tmp_path / 'tampered').exists()
     finally:
         if original is not None:

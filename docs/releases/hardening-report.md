@@ -1,3 +1,25 @@
+# Security verification — 2.2.18
+
+Date: 2026-09-28. Baseline: `2.2.17` / `aa1746e`. Platform: Linux, Python 3.13.14. A dedicated test environment points worker subprocesses at the 2.2.18 source; packaged checks install the wheel into a fresh environment outside the repository.
+
+| Verification | Result |
+|---|---|
+| Ordinary Python tests, including golden numerical fixtures | **2,283 cases covered and passing**, split runs and changed-test reruns; 22 extended/packaging cases excluded from this selection |
+| Built wheel in a fresh environment | **3 passed**: import/assets, CPU experiment outside the source tree, local GUI service with authentication/training/export/shutdown |
+| Frontend tests | **281 passed** in 64 files; typecheck, lint and production build passed |
+| API schema/types and Python critical-error lint | passed; generated OpenAPI/types match source |
+| Actual Chromium login | private file redirect → one-time bootstrap → authenticated Home; consumed-link replay and missing-CSRF write refused; isolated test context closed |
+| Same synthetic probes on 2.2.17 and 2.2.18 | six confirmed weaknesses reproduced before the patch and refused/redacted/metered after it; see the [review](security-review-2.2.18.md) |
+| VM lockfile, pip-audit/OSV | 43 packages, **0 known vulnerabilities** |
+| GPU additional-dependency lockfile, pip-audit/OSV | 26 packages, **0 known vulnerabilities** |
+| Frontend npm audit, including development dependencies | **0 known vulnerabilities** |
+
+The ordinary selection combines the main 2,280-case batch (the old CSRF expectation was updated and its test passed on rerun), two documentation command tests, and the added plot-coordinate regression. A separate final 60-case import/figure/security run and the final packaging run verify late changes. Counts are not added across overlapping runs.
+
+This is local release verification, not deployment evidence. Production services and external policies were not changed. Real Windows/macOS, native pywebview, GPU containers, image OS packages and deployed Cloudflare/GitHub settings remain outside this verification. The broader threat-model and remaining operational work are listed in the [2.2.18 review](security-review-2.2.18.md).
+
+---
+
 # Hardening report (S13)
 
 What was checked before calling the Studio a release candidate, with the

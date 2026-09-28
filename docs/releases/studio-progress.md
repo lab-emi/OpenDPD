@@ -36,7 +36,7 @@ repository; "pending human" means a maintainer decision is required;
 | `baseline-report.md` with commands, env, results, failure causes | done |
 | CLI/API compatibility cases, metric goldens, legacy checkpoint load case registered | done (`tests/golden`) |
 | Maintainer approval of G0–G2 scope, support matrix, risks, thresholds | **pending human** |
-| Protected paths cannot be changed by ordinary PRs | done (`protected-paths.yml`, CODEOWNERS) |
+| Protected paths have designated reviewers | CODEOWNERS and an advisory check are present; enforcement depends on repository rulesets and required Code Owner approval |
 | Agent scope, budget, max pending PRs, stop conditions configured | done (`AGENTS.md`) |
 
 ## S01 acceptance items

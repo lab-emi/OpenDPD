@@ -12,3 +12,19 @@
 /pyproject.toml @lab-emi/opendpd-maintainers
 /opendpd/web/ @lab-emi/opendpd-maintainers
 /scripts/check_protected_review.py @lab-emi/opendpd-maintainers
+
+# Executable code, import boundaries, UI and review evidence
+/opendpd/ @lab-emi/opendpd-maintainers
+/modules/ @lab-emi/opendpd-maintainers
+/steps/ @lab-emi/opendpd-maintainers
+/quant/ @lab-emi/opendpd-maintainers
+/utils/ @lab-emi/opendpd-maintainers
+/datasets/ @lab-emi/opendpd-maintainers
+/backbones/ @lab-emi/opendpd-maintainers
+/project.py @lab-emi/opendpd-maintainers
+/arguments.py @lab-emi/opendpd-maintainers
+/main.py @lab-emi/opendpd-maintainers
+/models.py @lab-emi/opendpd-maintainers
+/scripts/ @lab-emi/opendpd-maintainers
+/frontend/ @lab-emi/opendpd-maintainers
+/docs/leaderboard/ @lab-emi/opendpd-maintainers

@@ -2,12 +2,13 @@ __author__ = "Yizhuo Wu, Chang Gao"
 __license__ = "Apache-2.0 License"
 __email__ = "yizhuo.wu@tudelft.nl, chang.gao@tudelft.nl"
 
-import os
 import json
 from pathlib import Path
 import pandas as pd
 import numpy as np
 import torch
+from opendpd.safe_paths import contained_path
+from opendpd.schemas.legacy_spec import validate_spec
 from torch.utils.data import Dataset
 
 
@@ -46,10 +47,10 @@ def load_dataset(dataset_name=None, dataset_path=None):
         return _load_single_csv(str(path_dataset))
     
     # Check for spec.json to determine format
-    spec_path = path_dataset / 'spec.json'
+    spec_path = contained_path(path_dataset, 'spec.json')
     if spec_path.exists():
         with open(spec_path, 'r') as f:
-            spec = json.load(f)
+            spec = validate_spec(json.load(f))
         dataset_format = spec.get('dataset_format', 'split_csv')
     else:
         # Default to split CSV format if no spec.json
@@ -58,7 +59,7 @@ def load_dataset(dataset_name=None, dataset_path=None):
     if dataset_format == 'single_csv':
         # Single CSV with split info in spec.json
         csv_file = spec.get('csv_filename', 'data.csv')
-        csv_path = path_dataset / csv_file
+        csv_path = contained_path(path_dataset, csv_file)
         return _load_single_csv_with_spec(str(csv_path), spec)
     else:
         # Split CSV format (original format)
@@ -68,12 +69,12 @@ def load_dataset(dataset_name=None, dataset_path=None):
 def _load_split_csv(path_dataset):
     """Load dataset from split CSV files (original format)"""
     path_dataset = Path(path_dataset)
-    X_train = pd.read_csv(path_dataset / 'train_input.csv').to_numpy()
-    y_train = pd.read_csv(path_dataset / 'train_output.csv').to_numpy()
-    X_val = pd.read_csv(path_dataset / 'val_input.csv').to_numpy()
-    y_val = pd.read_csv(path_dataset / 'val_output.csv').to_numpy()
-    X_test = pd.read_csv(path_dataset / 'test_input.csv').to_numpy()
-    y_test = pd.read_csv(path_dataset / 'test_output.csv').to_numpy()
+    X_train = pd.read_csv(contained_path(path_dataset, 'train_input.csv'), compression=None).to_numpy()
+    y_train = pd.read_csv(contained_path(path_dataset, 'train_output.csv'), compression=None).to_numpy()
+    X_val = pd.read_csv(contained_path(path_dataset, 'val_input.csv'), compression=None).to_numpy()
+    y_val = pd.read_csv(contained_path(path_dataset, 'val_output.csv'), compression=None).to_numpy()
+    X_test = pd.read_csv(contained_path(path_dataset, 'test_input.csv'), compression=None).to_numpy()
+    y_test = pd.read_csv(contained_path(path_dataset, 'test_output.csv'), compression=None).to_numpy()
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 
@@ -83,7 +84,7 @@ def _load_single_csv(csv_path):
     Expected columns: I_in, Q_in, I_out, Q_out
     Uses default split ratios: 60% train, 20% val, 20% test
     """
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, compression=None, usecols=['I_in', 'Q_in', 'I_out', 'Q_out'])
     
     # Validate columns
     required_cols = ['I_in', 'Q_in', 'I_out', 'Q_out']
@@ -101,7 +102,7 @@ def _load_single_csv_with_spec(csv_path, spec):
     """
     Load dataset from a single CSV file with split ratios from spec.json
     """
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, compression=None, usecols=['I_in', 'Q_in', 'I_out', 'Q_out'])
     
     # Validate columns
     required_cols = ['I_in', 'Q_in', 'I_out', 'Q_out']
@@ -147,12 +148,12 @@ def prepare_segments(args):
     """
     nperseg = args.nperseg
     path_dataset = BASE_DIR / 'datasets' / args.dataset_name
-    train_input = pd.read_csv(path_dataset / 'train_input.csv')
-    train_output = pd.read_csv(path_dataset / 'train_output.csv')
-    val_input = pd.read_csv(path_dataset / 'val_input.csv')
-    val_output = pd.read_csv(path_dataset / 'val_output.csv')
-    test_input = pd.read_csv(path_dataset / 'test_input.csv')
-    test_output = pd.read_csv(path_dataset / 'test_output.csv')
+    train_input = pd.read_csv(contained_path(path_dataset, 'train_input.csv'), compression=None)
+    train_output = pd.read_csv(contained_path(path_dataset, 'train_output.csv'), compression=None)
+    val_input = pd.read_csv(contained_path(path_dataset, 'val_input.csv'), compression=None)
+    val_output = pd.read_csv(contained_path(path_dataset, 'val_output.csv'), compression=None)
+    test_input = pd.read_csv(contained_path(path_dataset, 'test_input.csv'), compression=None)
+    test_output = pd.read_csv(contained_path(path_dataset, 'test_output.csv'), compression=None)
 
     def split_segments(IQ_data):
         num_samples = IQ_data.shape[0]

@@ -4,14 +4,13 @@ import json
 import re
 import shutil
 import tempfile
-import threading
 import zipfile
 from pathlib import Path
 
 from opendpd.schemas.signal_dataset import SignalDataset
 from opendpd.services.workspace import WorkspaceError, read_json, write_json_atomic
 
-LOCK = threading.RLock()
+from opendpd.services.workspace import workspace_lock
 
 
 def list_datasets(ws):
@@ -29,7 +28,7 @@ def read_dataset(ws, identifier):
 
 def archive_dataset(ws, identifier, restore=False):
     """Hide a named input collection without removing shared waveforms or outputs."""
-    with LOCK:
+    with workspace_lock(ws):
         dataset = read_dataset(ws, identifier)
         if dataset.kind != "pa_input":
             raise WorkspaceError("Only PA input datasets can be removed from the PA Library.")
@@ -51,7 +50,7 @@ def unique_name(name, existing):
 
 
 def save_dataset(ws, name, kind, signals):
-    with LOCK:
+    with workspace_lock(ws):
         identity = {"name": name, "kind": kind, "signals": [s.source.model_dump(mode="json") for s in signals]}
         identifier = "sds-" + hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
         target = ws.hashed_store("signal_datasets", "sds").directory(identifier)

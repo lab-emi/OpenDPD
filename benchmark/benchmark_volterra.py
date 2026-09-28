@@ -615,10 +615,7 @@ def resolve_pa_checkpoint(
 
 
 def _load_state_dict(path: Path):
-    try:
-        state = torch.load(path, map_location="cpu", weights_only=True)
-    except TypeError:  # Compatibility with older supported Torch releases.
-        state = torch.load(path, map_location="cpu")
+    state = torch.load(path, map_location="cpu", weights_only=True)
     if isinstance(state, dict) and "state_dict" in state:
         state = state["state_dict"]
     if not isinstance(state, dict):

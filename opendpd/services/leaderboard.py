@@ -121,6 +121,9 @@ def recompute(card: SubmissionCard, base_dir: Path, *, by: str, kind: str, works
     if not card.packages:
         return Recomputation(by=by, kind=kind, within_tolerance=False,
                              note="no package to recompute from: the entry cites a benchmark report, not a share package")
+    package_check = next(item for item in check(card, base_dir).items if item.name == "packages")
+    if package_check.status == "fail":
+        return Recomputation(by=by, kind=kind, within_tolerance=False, note=package_check.detail)
     tmp = None
     if workspace is None:
         tmp = tempfile.mkdtemp(prefix="opendpd-recompute-")
@@ -131,7 +134,9 @@ def recompute(card: SubmissionCard, base_dir: Path, *, by: str, kind: str, works
     try:
         for ref in card.packages:
             seed = next(s for s in card.result.seeds if s.run_id == ref.run_id)
-            report = import_package(ws, Path(base_dir) / ref.path)
+            from opendpd.safe_paths import contained_path
+            report = import_package(ws, contained_path(Path(base_dir), ref.path),
+                                    expected_sha256=ref.sha256, required_kind="share")
             if report.dataset_status == "missing":
                 return Recomputation(by=by, kind=kind, within_tolerance=False,
                                      note=f"package {ref.path}: dataset '{report.dataset_id}' is not in the package and not "
@@ -166,7 +171,12 @@ def check(card: SubmissionCard, base_dir: Path, *, board: Optional[Leaderboard] 
     if card.packages:
         problems: List[str] = []
         for ref in card.packages:
-            path = Path(base_dir) / ref.path
+            from opendpd.safe_paths import contained_path
+            try:
+                path = contained_path(Path(base_dir), ref.path)
+            except ValueError:
+                problems.append(f"{ref.path}: unsafe package path")
+                continue
             if not path.is_file():
                 problems.append(f"{ref.path}: missing")
                 continue
@@ -362,9 +372,14 @@ def _order(track: str, profile_id: str) -> Tuple[str, bool]:
     return name, better == BetterDirection.lower
 
 
+def _md(value):
+    import html
+    return html.escape(str(value), quote=True).replace('\\', '\\\\').replace('|', '&#124;').replace('`', '&#96;').replace('[', '&#91;').replace(']', '&#93;').replace('\n', ' ').replace('\r', ' ')
+
+
 def board_markdown(board: Leaderboard) -> str:
     ranked = [e for e in board.entries if e.ranked]
-    lines = [f"# {board.board_id} {board.version} — {board.label}", "",
+    lines = [f"# {board.board_id} {board.version} — {_md(board.label)}", "",
              f"Track `{board.track}` ({TRACK_EVIDENCE[board.track].value} evidence), protocol `{board.protocol_id}`"
              + (f", supersedes board `{board.supersedes[:12]}`" if board.supersedes else "") + ".", ""]
     if board.community_bar_met:
@@ -397,34 +412,34 @@ def board_markdown(board: Leaderboard) -> str:
             s = e.submission.result.metrics.get(rank_metric)
             return (s is None, (s.mean if lower else -s.mean) if s else 0.0)
 
-        lines += [f"## Group: {label}", "", f"Ordered by {rank_metric} ({'lower' if lower else 'higher'} is better); "
+        lines += [f"## Group: {_md(label)}", "", f"Ordered by {rank_metric} ({'lower' if lower else 'higher'} is better); "
                   "the other columns are not a tie-break.", "",
-                  "| # | Method | Model (params) | " + " | ".join(names) + " | Wall clock (s) | Grade | Status | Submitter | Failure conditions | Traceability |",
+                  "| # | Method | Model (params) | " + " | ".join(_md(name) for name in names) + " | Wall clock (s) | Grade | Status | Submitter | Failure conditions | Traceability |",
                   "|---|---|---|" + "---|" * len(names) + "---|---|---|---|---|---|"]
         for i, e in enumerate(sorted(entries, key=sort_key), start=1):
             s = e.submission
             trace = (", ".join(f"`{p.path}` ({p.sha256[:12]})" for p in s.packages) if s.packages
                      else f"benchmark report `{s.benchmark_report_sha256[:12]}`, plan `{(s.benchmark_plan_sha256 or '')[:12]}`")
             trace += "; runs " + ", ".join(f"{x.run_id} ({(x.checkpoint_sha256 or 'no checkpoint')[:12]})" for x in s.result.seeds)
-            lines.append(f"| {i} | {s.method.name} | {s.model.model_key} ({s.model.n_parameters if s.model.n_parameters is not None else 'n/a'}) | "
+            lines.append(f"| {i} | {_md(s.method.name)} | {_md(s.model.model_key)} ({s.model.n_parameters if s.model.n_parameters is not None else 'n/a'}) | "
                          + " | ".join(_cell(s.result.metrics.get(n)) for n in names)
-                         + f" | {_fmt(s.result.resources.mean_wall_clock_s)} on {s.result.resources.device} | {e.evidence_grade} | {e.status} | "
-                         f"{s.submitter.name} ({s.submitter.kind}) | {'; '.join(s.failure_conditions) or 'none stated'} | {trace} |")
+                         + f" | {_fmt(s.result.resources.mean_wall_clock_s)} on {_md(s.result.resources.device)} | {e.evidence_grade} | {e.status} | "
+                         f"{_md(s.submitter.name)} ({s.submitter.kind}) | {_md('; '.join(s.failure_conditions) or 'none stated')} | {trace} |")
         lines.append("")
     others = [e for e in board.entries if not e.ranked]
     if others:
         lines += ["## Not ranked", "", "| Entry | Status | Grade | Submitter | Last event |", "|---|---|---|---|---|"]
         for e in others:
             last = e.history[-1] if e.history else None
-            lines.append(f"| {e.entry_id} | {e.status} | {e.evidence_grade} | {e.submission.submitter.name} ({e.submission.submitter.kind}) | "
-                         f"{(last.action + ': ' + last.reason) if last else 'none'} |")
+            lines.append(f"| {e.entry_id} | {e.status} | {e.evidence_grade} | {_md(e.submission.submitter.name)} ({e.submission.submitter.kind}) | "
+                         f"{_md(last.action + ': ' + last.reason) if last else 'none'} |")
         lines.append("")
     lines += ["## History", ""]
     for h in board.history:
-        lines.append(f"- {h.date.isoformat()} {h.action} by {h.by}: {h.reason}")
+        lines.append(f"- {h.date.isoformat()} {_md(h.action)} by {_md(h.by)}: {_md(h.reason)}")
     for e in board.entries:
         for h in e.history:
             extra = f" (previous metrics kept: {', '.join(f'{k} {v.mean:.2f}' for k, v in h.previous_metrics.items())})" if h.previous_metrics else ""
-            lines.append(f"- {h.date.isoformat()} entry {e.entry_id} {h.action} by {h.by}: {h.reason}{extra}")
+            lines.append(f"- {h.date.isoformat()} entry {e.entry_id} {_md(h.action)} by {_md(h.by)}: {_md(h.reason)}{_md(extra)}")
     lines += ["", f"Board hash: `{board.board_sha256 or 'unsealed'}`", ""]
     return "\n".join(lines)

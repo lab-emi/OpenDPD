@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 import re
 import tempfile
-import threading
 import zipfile
 
 import numpy as np
@@ -23,7 +22,7 @@ from opendpd.schemas.signal_generator import (DatasetSampleCounts, GeneratedSign
 from opendpd.services.datasets import import_arrays, load_version_arrays
 from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha256_file, write_json_atomic
 
-_LOCK = threading.RLock()
+from opendpd.services.workspace import workspace_lock
 
 
 def input_summary(result):
@@ -46,10 +45,13 @@ def export_input(ws, identifier, kind):
     """Two independent downloads, explicitly identifying an input-only dataset."""
     if kind not in ("csv", "metadata"):
         raise WorkspaceError("Unknown PA input export.")
-    with _LOCK:
+    with workspace_lock(ws):
         result = read_signal(ws, identifier)
         target = directory(ws, identifier)
         csv_path = target / "pa-input.csv"
+        metadata_path = target / "pa-input-metadata.json"
+        if csv_path.is_file() and metadata_path.is_file():
+            return csv_path if kind == "csv" else metadata_path
         raw = np.load(target / "iq.npy", allow_pickle=False)
         temporary = target / "pa-input.csv.tmp"
         np.savetxt(temporary, raw, delimiter=",", fmt="%.17g" if result.origin == "uploaded" else "%.9g", header="I,Q", comments="")
@@ -93,7 +95,7 @@ def generate(ws: Workspace, config: GeneratorConfig) -> GeneratedSignal:
         for name in ("generator.py", "modulation.py", "generator_presets.py"))).hexdigest()
     serialized = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
     identifier = "sg-" + hashlib.sha256((source_hash + np.__version__ + scipy.__version__ + serialized).encode()).hexdigest()
-    with _LOCK:
+    with workspace_lock(ws):
         target = directory(ws, identifier)
         if (target / "manifest.json").is_file():
             (target / ".removed").unlink(missing_ok=True)
@@ -115,7 +117,7 @@ def generate(ws: Workspace, config: GeneratorConfig) -> GeneratedSignal:
 
 
 def export_signal(ws, identifier):
-    with _LOCK:
+    with workspace_lock(ws):
         result = read_signal(ws, identifier)
         target = directory(ws, identifier)
         output = target / "waveform.zip"
@@ -140,7 +142,7 @@ def export_signal(ws, identifier):
 
 
 def create_dataset(ws, identifier, request: GeneratorDatasetRequest) -> GeneratorDatasetResponse:
-    with _LOCK:
+    with workspace_lock(ws):
         result = read_signal(ws, identifier)
         if result.origin == "uploaded":
             raise WorkspaceError("Use PA Library to simulate an uploaded signal and create its paired dataset.")
@@ -209,7 +211,7 @@ def sample_counts(ws, dataset_id, version):
 
 def archive_input(ws, identifier, *, restore=False):
     """Hide an input from the picker; retain bytes so simulations and Undo remain valid."""
-    with _LOCK:
+    with workspace_lock(ws):
         result = read_signal(ws, identifier)
         marker = directory(ws, identifier) / '.removed'
         if marker.is_symlink():

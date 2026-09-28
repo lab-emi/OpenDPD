@@ -26,6 +26,92 @@ SIGNAL = dict(sample_rate_hz=800e6, bandwidth_hz=200e6, n_sub_ch=10, nperseg=256
 REL, ABS = 1e-4, 1e-5          # frozen checkpoint re-evaluation tolerance (docs/protocols/acceptance-thresholds.md)
 
 
+def _rewrite_package(source, destination, transform):
+    """Re-sign attacker-controlled metadata so tests exercise trust, not ZIP damage."""
+    import hashlib
+    with zipfile.ZipFile(source) as archive:
+        members = {name: archive.read(name) for name in archive.namelist()}
+    transform(members)
+    manifest = json.loads(members["package.json"])
+    for entry in manifest["files"]:
+        content = members[entry["path"]]
+        entry.update(sha256=hashlib.sha256(content).hexdigest(), size_bytes=len(content))
+    members["package.json"] = json.dumps(manifest).encode()
+    with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:
+        for name, content in members.items():
+            archive.writestr(name, content)
+
+
+@pytest.mark.parametrize("attack", ["dataset_id", "raw_hash", "run_id", "version", "spec"])
+def test_import_metadata_cannot_override_other_data_or_paths(ws, pa_run, tmp_path, attack):
+    original, bad = tmp_path / "original.zip", tmp_path / "bad.zip"
+    export_run(ws, pa_run.run_id, original, kind="full")
+
+    def transform(members):
+        if attack in {"dataset_id", "raw_hash"}:
+            name = "dataset/manifest.json"
+            value = json.loads(members[name])
+            value["dataset_id" if attack == "dataset_id" else "raw_sha256"] = "victim" if attack == "dataset_id" else "a" * 64
+        elif attack == "run_id":
+            name = f"run/{pa_run.run_id}/run.json"
+            value = json.loads(members[name])
+            value["run_id"] = "other-run"
+        elif attack == "version":
+            name = f"run/{pa_run.run_id}/config.resolved.json"
+            value = json.loads(members[name])
+            value["dataset"]["preprocessing_version"] = "../../private"
+        else:
+            name = "dataset/versions/raw-v1/spec.json"
+            value = json.loads(members[name])
+            value["quant_dir_label"] = str(tmp_path / "outside")
+        members[name] = json.dumps(value).encode()
+
+    _rewrite_package(original, bad, transform)
+    destination = Workspace.create(tmp_path / "destination")
+    victim = ws.get_dataset("capture").model_copy(update={"dataset_id": "victim"})
+    destination.dataset_dir("victim").mkdir()
+    destination.save_dataset(victim)
+    before = (destination.dataset_dir("victim") / "manifest.json").read_bytes()
+    with pytest.raises(PackageError, match="metadata"):
+        import_package(destination, bad)
+    assert (destination.dataset_dir("victim") / "manifest.json").read_bytes() == before
+    assert list(destination.runs_dir.iterdir()) == []
+    assert not destination.dataset_dir("capture").exists()
+    assert not list(destination.root.glob(".import-*"))
+
+
+@pytest.mark.parametrize("phase", ["extract", "publish"])
+def test_failed_extraction_rolls_back_all_new_state(ws, pa_run, tmp_path, monkeypatch, phase):
+    from opendpd.services import packages
+    archive = tmp_path / "full.zip"
+    export_run(ws, pa_run.run_id, archive, kind="full")
+    destination = Workspace.create(tmp_path / "destination")
+    extract = packages._extract
+
+    def interrupted(*args, **kwargs):
+        result = extract(*args, **kwargs)
+        if args[1].startswith("run/"):
+            raise OSError("simulated write failure")
+        return result
+
+    if phase == "extract":
+        monkeypatch.setattr(packages, "_extract", interrupted)
+    else:
+        rename = Path.rename
+
+        def fail_publish(source, target):
+            if target.parent == destination.runs_dir:
+                raise OSError("simulated publication failure")
+            return rename(source, target)
+
+        monkeypatch.setattr(Path, "rename", fail_publish)
+    with pytest.raises(OSError, match="simulated"):
+        import_package(destination, archive)
+    assert not list(destination.runs_dir.iterdir())
+    assert not list(destination.datasets_dir.iterdir())
+    assert not list(destination.root.glob(".import-*"))
+
+
 @pytest.fixture(scope="module")
 def source(tmp_path_factory):
     x, y = synthesize(24000, 7, impairments=Impairments(delay_samples=0, n_outliers=0))

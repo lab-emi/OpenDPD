@@ -1,11 +1,12 @@
 name: Protected paths
 
-# Protected changes require a maintainer review bound to the current head.
+# Advisory check. Repository rulesets must require Code Owner approval.
+# Run only trusted base-branch code; never checkout or execute the PR head.
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  pull_request_review:
-    types: [submitted, edited, dismissed]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: read
@@ -13,33 +14,15 @@ permissions:
 
 jobs:
   guard:
+    if: github.event_name == 'pull_request_target' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
-
-      - name: Detect protected-path changes
-        id: detect
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          base="$BASE_SHA"
-          head="$HEAD_SHA"
-          changed="$(git diff --name-only "$base" "$head")"
-          echo "$changed"
-          protected='^(tests/golden/|opendpd/core/metrics/|opendpd/core/splits\.py|benchmark/|docs/protocols/|\.github/CODEOWNERS|\.github/workflows/|deployment/|pyproject\.toml|opendpd/web/)'
-          if echo "$changed" | grep -Eq "$protected"; then
-            echo "touched=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "touched=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Require current-head maintainer review
-        if: steps.detect.outputs.touched == 'true'
+          ref: ${{ github.event.pull_request.base.sha || github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Check changed paths and current-head maintainer approval
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/check_protected_review.py
+        run: python -I scripts/check_protected_review.py

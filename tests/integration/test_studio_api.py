@@ -77,12 +77,29 @@ def test_unauthenticated_requests_are_rejected_with_error_shape(client):
 
 def test_bootstrap_redirect_strips_token(client):
     fresh = TestClient(client.app, base_url="http://127.0.0.1:8765")
-    r = fresh.get("/bootstrap", params={"token": TOKEN}, follow_redirects=False)
+    store = client.app.state.sessions
+    token = store.mint(store.launcher_secret)
+    r = fresh.get("/bootstrap", params={"token": token}, follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/"
     assert "opendpd_session" in r.cookies
     assert "token" not in r.headers["location"]
     assert fresh.get("/api/v1/session").json()["authenticated"] is True
     assert fresh.get("/bootstrap", params={"token": "nope"}).status_code == 401
+    assert fresh.get("/bootstrap", params={"token": token}).status_code == 401
+
+
+def test_launcher_mint_requires_private_header(client):
+    store = client.app.state.sessions
+    assert client.post('/bootstrap/mint').status_code == 401
+    assert client.post('/bootstrap/mint', headers={'X-OpenDPD-Launcher': 'wrong'}).status_code == 401
+    result = client.post('/bootstrap/mint', headers={'X-OpenDPD-Launcher': store.launcher_secret})
+    assert result.status_code == 200
+    assert store.exchange(result.json()['token']) is not None
+
+
+def test_same_site_other_port_cannot_read_api(client, session):
+    response = client.get('/api/v1/session', headers={'Sec-Fetch-Site': 'same-site'})
+    assert response.status_code == 403
 
 
 def test_cross_origin_and_csrf(client, session):

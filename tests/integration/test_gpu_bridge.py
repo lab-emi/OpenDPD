@@ -32,6 +32,56 @@ def eventually(predicate):
     raise AssertionError("condition did not become true")
 
 
+def test_agent_refuses_run_link_swapped_at_container_exit(tmp_path, monkeypatch):
+    from opendpd.web import gpu_agent
+    root = tmp_path / "jobs"
+    root.mkdir()
+    outside = tmp_path / "private"
+    outside.mkdir()
+    sentinel = outside / "private.txt"
+    sentinel.write_text("private host data")
+    job = {"id": "a" * 32, "run_id": "run-a", "expires_at": time.time() + 60, "lease": "test"}
+    content = io.BytesIO()
+    with zipfile.ZipFile(content, "w") as archive:
+        for name in ("workspace.json", "runs/run-a/run.json", "runs/run-a/config.resolved.json"):
+            archive.writestr(name, "{}")
+    sent = []
+    agent = gpu_agent.Agent.__new__(gpu_agent.Agent)
+    agent.root, agent.image = root, "sha256:" + "b" * 64
+
+    def request(path, *args, **kwargs):
+        if path.endswith("/input"):
+            return content.getvalue()
+        sent.append(path)
+
+    agent.request = request
+    agent.update = lambda *_a: True
+    run = root / job["id"] / "runs" / "run-a"
+
+    class Process:
+        replaced = False
+
+        def poll(self):
+            return 0
+
+        def wait(self, **_kwargs):
+            if not self.replaced:
+                run.rename(run.with_name("old-run"))
+                run.symlink_to(outside, target_is_directory=True)
+                self.replaced = True
+            return 0
+
+    monkeypatch.setattr(gpu_agent.os, "chown", lambda *_a: None)
+    monkeypatch.setattr(gpu_agent.subprocess, "Popen", lambda *_a, **_k: Process())
+    monkeypatch.setattr(gpu_agent.subprocess, "run", lambda *_a, **_k: SimpleNamespace(returncode=0))
+    monkeypatch.setattr(gpu_agent, "podman", lambda *_a, **_k: None)
+    with pytest.raises((OSError, ValueError)):
+        agent.run(job)
+    assert not sent, "no final result may contain host files"
+    assert sentinel.read_text() == "private host data"
+    assert not (root / job["id"]).exists()
+
+
 def test_private_gpu_lease_stream_replay_and_cross_tenant_cancel(tmp_path, monkeypatch):
     # Keep session and job expiry on the same fixed daytime clock. Real
     # monotonic time still drives polling and the lost-lease assertion below.

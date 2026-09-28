@@ -221,3 +221,9 @@ opendpd/studio/static/
 site/
 
 /output/
+
+# Local agent state and frontend verification outputs
+AGENTS.md
+.codex/
+.claude/
+frontend/.cache/

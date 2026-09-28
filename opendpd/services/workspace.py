@@ -26,6 +26,7 @@ import secrets
 import shutil
 import sys
 import uuid
+import weakref
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -52,6 +53,26 @@ MIN_FREE_MB = 500
 
 
 _catalog_lock = threading.Lock()
+_workspace_locks = weakref.WeakValueDictionary()
+_workspace_locks_guard = threading.Lock()
+
+
+def workspace_lock(ws):
+    """Serialize workspace mutations without blocking unrelated tenants."""
+    key = str(ws.root.resolve())
+    with _workspace_locks_guard:
+        lock = _workspace_locks.get(key)
+        if lock is None:
+            lock = threading.RLock()
+            _workspace_locks[key] = lock
+        return lock
+
+
+def check_workspace_permissions(root):
+    if os.name != "nt":
+        info = root.stat()
+        if info.st_uid != os.getuid() or info.st_mode & 0o022:
+            raise PermissionError("workspace must be owned by the current user and not writable by other users")
 
 
 def list_builtin_datasets():
@@ -246,7 +267,8 @@ class Workspace:
         ws = cls(root)
         if ws.meta_path.exists():
             raise WorkspaceError(f"workspace already exists: {ws.root}")
-        ws.root.mkdir(parents=True, exist_ok=True)
+        ws.root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        check_workspace_permissions(ws.root)
         for d in (ws.datasets_dir, ws.runs_dir, ws.cache_dir, ws.exports_dir):
             d.mkdir(exist_ok=True)
         write_json_atomic(ws.meta_path, {
@@ -260,6 +282,9 @@ class Workspace:
     @classmethod
     def open(cls, root: Path) -> "Workspace":
         ws = cls(root)
+        if not ws.root.exists():
+            raise WorkspaceError(f"not a workspace (missing workspace.json): {ws.root}")
+        check_workspace_permissions(ws.root)
         if not ws.meta_path.exists():
             raise WorkspaceError(f"not a workspace (missing workspace.json): {ws.root}")
         meta = read_json(ws.meta_path)

@@ -1,4 +1,7 @@
 """Exported as reproduce.py. Verify first, then rebuild metrics and plot coordinates."""
+import sys
+if not __package__ and not getattr(sys.flags, "safe_path", False):
+    raise SystemExit("Use opendpd figures reproduce <bundle.zip> --workspace <new-directory>; or python -P reproduce.py.")
 import argparse
 import copy
 import hashlib
@@ -7,27 +10,27 @@ import math
 from pathlib import Path
 
 
-def reproduce(root, destination, use_bundled_source=False):
+def reproduce(root, destination, use_bundled_source=False, *, output=None):
     root, destination = Path(root).resolve(), Path(destination).resolve()
+    output = Path(output).resolve() if output is not None else root
     if destination.exists():
         raise ValueError('Choose a new, nonexistent workspace directory; existing work is never replaced.')
-    manifest = json.loads((root / 'manifest.json').read_text())
-    for name, expected in manifest['files'].items():
-        path = (root / name).resolve()
-        if not path.is_relative_to(root) or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-            raise ValueError(f'Bundle hash mismatch: {name}')
+    from opendpd.services.figure_bundle import verify_directory
+    verify_directory(root)
     if use_bundled_source:
         import sys
         sys.path.insert(0, str(root / 'runtime-source'))
     from opendpd.services import evaluation, experiments, measurements, packages, figure_render
     from opendpd.services.workspace import Workspace, PACKAGE_ROOT, read_json, software_provenance
     from opendpd.schemas import TaskType
+    from opendpd.schemas.review import SavedFigure
+    from opendpd.safe_paths import contained_path
     for name, expected in json.loads((root / 'implementation.json').read_text()).items():
-        path = (PACKAGE_ROOT / name).resolve()
+        path = contained_path(PACKAGE_ROOT, name)
         if not path.is_relative_to(PACKAGE_ROOT.resolve()) or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             raise ValueError(f'OpenDPD source differs: {name}. Install the exact recorded implementation before re-evaluation.')
     import numpy as np
-    figure = read_json(root / 'figure.json')
+    figure = SavedFigure.model_validate(read_json(root / 'figure.json')).model_dump(mode='json')
     original_plots = read_json(root / 'plot-data.json')
     rebuilt = copy.deepcopy(original_plots)
     report = {'protocol': 'metric-and-figure-reproduction-v1', 'passed': True, 'retrained': False,
@@ -96,11 +99,12 @@ def reproduce(root, destination, use_bundled_source=False):
                 next(t for t in rebuilt[key]['traces'] if t['name'] == trace['trace_name'])[y_key] = new_y
         report['runs'].append(row)
         report['passed'] &= row['passed']
-    figure_render.render_figure(figure, original_plots, root / 'replayed')
-    figure_render.render_figure(figure, rebuilt, root / 'reproduced-figures')
-    report['png_exact'] = (root / 'figure.png').read_bytes() == (root / 'reproduced-figures' / 'figure.png').read_bytes()
-    (root / 'reproduction-check.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(json.dumps({'passed': report['passed'], 'png_exact': report['png_exact'], 'report': str(root / 'reproduction-check.json')}))
+    output.mkdir(parents=True, exist_ok=True)
+    figure_render.render_figure(figure, original_plots, output / 'replayed')
+    figure_render.render_figure(figure, rebuilt, output / 'reproduced-figures')
+    report['png_exact'] = (root / 'figure.png').read_bytes() == (output / 'reproduced-figures' / 'figure.png').read_bytes()
+    (output / 'reproduction-check.json').write_text(json.dumps(report, indent=2) + '\n')
+    print(json.dumps({'passed': report['passed'], 'png_exact': report['png_exact'], 'report': str(output / 'reproduction-check.json')}))
     if not report['passed']:
         raise ValueError('Metric or display-coordinate mismatch; inspect reproduction-check.json.')
     return report

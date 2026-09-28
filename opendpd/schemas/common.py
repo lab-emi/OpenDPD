@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import math
-import posixpath
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Annotated, Optional
@@ -110,15 +109,8 @@ class FileRef(StrictModel):
     @field_validator("path")
     @classmethod
     def _relative_and_contained(cls, value: str) -> str:
-        if "\\" in value:
-            raise ValueError("use POSIX separators in FileRef.path")
-        if posixpath.isabs(value) or value.startswith("~"):
-            raise ValueError("FileRef.path must be relative")
-        parts = value.split("/")
-        if any(part in ("", ".", "..") for part in parts):
-            raise ValueError("FileRef.path must not contain empty, '.' or '..' segments")
-        if ":" in parts[0] and len(parts[0]) == 2:  # C: style drive prefix
-            raise ValueError("FileRef.path must not contain a drive prefix")
+        from opendpd.safe_paths import relative_parts
+        relative_parts(value)
         return value
 
 

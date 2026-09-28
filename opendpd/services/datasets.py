@@ -34,6 +34,8 @@ from opendpd.schemas import (
 from opendpd.services.workspace import Workspace, WorkspaceError, checked_identifier, combined_sha256, read_json, \
     sha256_file, slugify, write_json_atomic
 from opendpd.schemas.importing import CsvOptions, DatasetImportDefaults
+from opendpd.safe_paths import contained_path
+from opendpd.schemas.legacy_spec import validate_spec
 
 LOGICAL = ("I_in", "Q_in", "I_out", "Q_out")
 SUPPORTED_SUFFIXES = (".csv", ".npy", ".npz")
@@ -72,7 +74,10 @@ def resolve_in_root(ws: Workspace, root_id: str, relative: str) -> Path:
     if root_id not in roots:
         raise ImportError_(f"unknown import root '{root_id}'; available: {', '.join(sorted(roots))}")
     base = roots[root_id].resolve()
-    target = (base / relative).resolve()
+    try:
+        target = contained_path(base, relative) if relative else base
+    except ValueError as exc:
+        raise ImportError_("path escapes the import root or contains an unsafe segment") from exc
     if target != base and base not in target.parents:
         raise ImportError_("path escapes the import root")
     return target
@@ -142,13 +147,17 @@ def _count_rows(path: Path) -> int:
 def inspect_source(path: Path) -> SourceInfo:
     path = Path(path)
     if path.is_dir():
-        present = [f for f in LEGACY_SPLIT_FILES if (path / f).is_file()]
+        try:
+            present = [f for f in LEGACY_SPLIT_FILES if contained_path(path, f).is_file()]
+            spec_path = contained_path(path, "spec.json")
+        except ValueError as exc:
+            raise ImportError_("legacy dataset members must not be symbolic links") from exc
         info = SourceInfo(kind=DatasetSourceKind.legacy_dir_import, path=str(path), legacy_files=present)
         if len(present) != len(LEGACY_SPLIT_FILES):
             missing = sorted(set(LEGACY_SPLIT_FILES) - set(present))
             info.problems.append("not an OpenDPD split directory; missing " + ", ".join(missing))
-        elif (path / "spec.json").is_file():
-            info.columns = list(read_json(path / "spec.json").keys())
+        elif spec_path.is_file():
+            info.columns = list(validate_spec(read_json(spec_path)).keys())
         return info
     suffix = path.suffix.lower()
     if suffix == ".csv":
@@ -176,16 +185,11 @@ def inspect_source(path: Path) -> SourceInfo:
     if suffix in (".npy", ".npz"):
         info = SourceInfo(kind=DatasetSourceKind.numpy_import, path=str(path))
         try:
-            loaded = np.load(path, mmap_mode="r", allow_pickle=False)
-        except ValueError as err:
+            from opendpd.services.numpy_input import inspect_numpy
+            info.arrays = inspect_numpy(path)
+        except (ValueError, OSError) as err:
             info.problems.append(f"refused: {err} (object arrays are never loaded)")
             return info
-        arrays = {"array": loaded} if suffix == ".npy" else {k: loaded[k] for k in loaded.files}
-        for name, arr in arrays.items():
-            if arr.dtype.kind not in "fiuc":
-                info.problems.append(f"{name}: dtype {arr.dtype} is not numeric")
-                continue
-            info.arrays[name] = {"dtype": str(arr.dtype), "shape": list(arr.shape)}
         info.columns = list(info.arrays)
         if suffix == ".npz":
             info.suggested_mapping = {k: v for k, v in suggest_mapping(info.arrays).items()}
@@ -238,6 +242,8 @@ def _as_iq(arr: np.ndarray, name: str) -> np.ndarray:
 
 
 def _read_numpy_arrays(path: Path, mapping: Dict[str, str]) -> Tuple[np.ndarray, np.ndarray]:
+    from opendpd.services.numpy_input import inspect_numpy
+    inspect_numpy(path)
     loaded = np.load(path, mmap_mode="r", allow_pickle=False)
     if path.suffix.lower() == ".npy":
         arr = np.asarray(loaded)
@@ -386,12 +392,15 @@ def import_dataset(ws: Workspace, source: Path, *, dataset_id: Optional[str] = N
             if waveform is not None:
                 raise ImportError_("a waveform binding needs the capture file (CSV or NumPy), not a split directory")
             for name in LEGACY_SPLIT_FILES + ("spec.json",):
-                if (source / name).is_file():
-                    shutil.copy2(source / name, raw / name)
+                member = contained_path(source, name)
+                if member.is_file():
+                    shutil.copy2(member, raw / name, follow_symlinks=False)
+                    if (raw / name).is_symlink():
+                        raise ImportError_("dataset members must not be symbolic links")
                     files.append(FileRef(path=f"raw/{name}", sha256=sha256_file(raw / name),
                                          size_bytes=(raw / name).stat().st_size))
             if (source / "spec.json").is_file():
-                spec = read_json(source / "spec.json")
+                spec = validate_spec(read_json(raw / "spec.json"))
                 signal = SignalSpec(**{**dict(sample_rate_hz=spec.get("input_signal_fs"), bandwidth_hz=spec.get("bw_main_ch"),
                                               sub_channel_bandwidth_hz=spec.get("bw_sub_ch"), n_sub_ch=spec.get("n_sub_ch"),
                                               nperseg=spec.get("nperseg"), modulation=spec.get("modulation"),

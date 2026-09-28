@@ -129,6 +129,8 @@ jobs:
         run: |
           uv run --no-project --python .venv python scripts/audit_requirements.py > /tmp/opendpd-audit.txt
           uvx pip-audit --strict --no-deps --disable-pip -r /tmp/opendpd-audit.txt
+      - name: Cross-platform package and input boundary regression tests
+        run: uv run --no-project --python .venv python -m pytest tests/integration/test_packages.py tests/unit/test_security_upgrade.py -q
       - name: Real browser fallback remains reachable
         run: uv run --no-project --python .venv python -m pytest tests/integration/test_launcher_browser_fallback.py -q
 
