@@ -12,10 +12,22 @@ from opendpd.services.workspace import PACKAGE_ROOT, sha256_file, software_prove
 
 
 def implementation_files():
-    paths = [p for folder in ('opendpd', 'backbones', 'modules', 'steps', 'quant', 'utils') for p in (PACKAGE_ROOT / folder).rglob('*.py')]
-    paths += [PACKAGE_ROOT / f for f in ('arguments.py', 'project.py', 'models.py', 'main.py')]
-    paths += list((PACKAGE_ROOT / 'opendpd' / 'studio' / 'locales').glob('*.json'))
-    return {p.relative_to(PACKAGE_ROOT).as_posix(): sha256_file(p) for p in paths if p.is_file()}
+    from opendpd.safe_paths import contained_path
+    import subprocess
+    if (PACKAGE_ROOT / '.git').exists():
+        result = subprocess.run(['git', '-c', 'core.fsmonitor=false', 'ls-files', '-z'], cwd=PACKAGE_ROOT,
+                                capture_output=True, check=True, timeout=10)
+        names = result.stdout.decode('utf-8').split('\0')
+    else:
+        distribution = importlib.metadata.distribution('opendpd')
+        names = [str(name) for name in (distribution.files or [])
+                 if Path(distribution.locate_file(name)).resolve().is_relative_to(PACKAGE_ROOT.resolve())]
+    folders = ('opendpd/', 'backbones/', 'modules/', 'steps/', 'quant/', 'utils/')
+    chosen = [name for name in names if (name.endswith('.py') and name.startswith(folders))
+              or name in ('arguments.py', 'project.py', 'models.py', 'main.py')
+              or (name.startswith('opendpd/studio/locales/') and name.endswith('.json'))]
+    return {name: sha256_file(contained_path(PACKAGE_ROOT, name)) for name in chosen}
+
 
 
 def export_reproduction(ws, figure_id, out):
@@ -55,10 +67,10 @@ def export_reproduction(ws, figure_id, out):
             '# Private metric and view reproduction\n\n'
             'This bundle includes raw datasets (including built-ins), weights and private run metadata.\n'
             'Extract it into an empty directory. With the matching OpenDPD source installed, run:\n\n'
-            '`python reproduce.py . --workspace /path/to/a/new/empty-workspace`\n\n'
+            '`opendpd figures reproduce bundle.zip --workspace /path/to/a/new/empty-workspace`\n\n'
             'Alternatively, use the exact included Python source (including uncommitted changes):\n\n'
-            '`python reproduce.py . --workspace /path/to/a/new/empty-workspace --use-bundled-source`\n\n'
-            'This option executes the included OpenDPD source; use it only for a bundle you trust. '
+            '`python -I reproduce.py . --workspace /path/to/a/new/empty-workspace --use-bundled-source`\n\n'
+            'Hashes detect corruption, not authenticity. This option executes the included OpenDPD source; use it only for a bundle you trust. '
             'runtime-requirements.txt pins the numerical dependencies and can be installed in a separate environment.\n\n'
             'The script verifies hashes and exact Python source identity, imports each run into a separate workspace, '
             're-evaluates its saved profile, regenerates display arrays, and renders the saved layout with regenerated coordinates. '
@@ -69,7 +81,7 @@ def export_reproduction(ws, figure_id, out):
             'A mismatch fails the command and remains visible in the report.\n\n'
             'implementation.json identifies the required source, including uncommitted changes; version number alone is insufficient. '
             'reproduction-environment.json records the exporter dependencies and device. Install dependencies in a separate environment if needed. '
-            'The ordinary `python replay.py .` only renders saved arrays and needs Matplotlib.\n'
+            'The ordinary `opendpd figures replay bundle.zip --out replayed` only renders saved arrays and needs Matplotlib.\n'
         ).encode())
         figures.validate_sources(ws, figure)
         add('manifest.json', json.dumps({'version': 'figure-reproduction-v1', 'files': dict(hashes)}, indent=2).encode())

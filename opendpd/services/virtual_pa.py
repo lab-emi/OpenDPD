@@ -4,7 +4,6 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-import threading
 
 import numpy as np
 
@@ -17,7 +16,7 @@ from opendpd.services import signal_generator as inputs
 from opendpd.services.datasets import import_arrays
 from opendpd.services.workspace import WorkspaceError, read_json, sha256_file, write_json_atomic
 
-_LOCK = threading.RLock()
+from opendpd.services.workspace import workspace_lock
 
 
 def directory(ws, identifier):
@@ -39,7 +38,7 @@ def read_simulation(ws, identifier):
 
 
 def preview(ws, request: VirtualPARequest):
-    with _LOCK:
+    with workspace_lock(ws):
         signal = inputs.read_signal(ws, request.input_signal_id)
         try:
             model, parameters = engine.resolve(request.model_id, request.parameters)
@@ -82,7 +81,7 @@ def preview(ws, request: VirtualPARequest):
 def export(ws, identifier, kind):
     if kind not in ("output", "paired", "metadata"):
         raise WorkspaceError("Unknown PA simulation export.")
-    with _LOCK:
+    with workspace_lock(ws):
         result = read_simulation(ws, identifier)
         target = directory(ws, identifier)
         if kind == "metadata":
@@ -92,6 +91,9 @@ def export(ws, identifier, kind):
                 "amplitude_units": "normalized", "n_samples": result.analysis.n_samples,
                 "initial_state": "cold start: all envelope states zero; effective temperature at ambient",
                 "simulation": result.model_dump(mode="json")})
+            return path
+        path = target / f"{kind}.csv"
+        if path.is_file():
             return path
         output = np.load(target / "output.npy", allow_pickle=False)
         if kind == "paired":
@@ -107,7 +109,7 @@ def export(ws, identifier, kind):
 
 
 def create_dataset(ws, identifier, request: PairedDatasetRequest, *, _created=None):
-    with _LOCK:
+    with workspace_lock(ws):
         result = read_simulation(ws, identifier)
         signal = inputs.read_signal(ws, result.config.input_signal_id)
         if result.analysis.n_samples < 8192:
@@ -165,7 +167,7 @@ def simulate_dataset(ws, request: VirtualPADatasetRequest):
     from opendpd.schemas.signal_analyzer import AnalyzerSource, AnalyzerSourceInfo
     from opendpd.services import signal_datasets
 
-    with _LOCK, signal_datasets.LOCK:
+    with workspace_lock(ws):
         signals = [inputs.read_signal(ws, identifier) for identifier in request.input_signal_ids]
         if any(s.analysis.sample_count < 8192 for s in signals):
             raise WorkspaceError("Each PA input needs at least 8,192 samples to create a training dataset.")

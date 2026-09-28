@@ -3,7 +3,7 @@
 A *full* package is private: it carries the run directory, the checkpoints of
 every referenced run and, for imported data, the raw copy and the data
 version the run used. A *share* package leaves the user's PA data, worker
-logs and every machine path out and says so. Both carry the resolved
+logs and known workspace/home/host paths out and says so. Both carry the resolved
 configuration, the result under every profile, the derived plot data, the
 reports and the commands to reproduce. Every member is hashed; nothing is
 imported before every hash matches.
@@ -18,9 +18,11 @@ import shlex
 import shutil
 import stat
 import socket
+import tempfile
+import unicodedata
 import zipfile
 from datetime import datetime, timezone
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from opendpd import __version__
@@ -39,11 +41,14 @@ from opendpd.schemas import (
     TaskType,
 )
 from opendpd.services import experiments
-from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha256_file, software_provenance
+from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha256_file, software_provenance, combined_sha256
+from opendpd.safe_paths import relative_parts, contained_path
+from opendpd.schemas.experiment import ExperimentConfig, ResolvedExperimentConfig
 
 MANIFEST_NAME = "package.json"
 MAX_PACKAGE_MEMBERS = 10_000            # a package is one run, its references and one dataset
 MAX_MANIFEST_BYTES = 8 * 1024 * 1024
+MAX_PACKAGE_UNPACKED_BYTES = 2 * 1024 * 1024 * 1024
 REPORT_HTML = "report.html"
 REPORT_MD = "report.md"
 ARTIFACTS_FILE = "artifacts.json"
@@ -81,7 +86,11 @@ def _secrets(ws: Workspace) -> List[Tuple[str, str]]:
 
 def _redact_text(text: str, secrets: List[Tuple[str, str]]) -> str:
     for secret, replacement in sorted(secrets, key=lambda s: -len(s[0])):
-        text = text.replace(secret, replacement)
+        if "\\" in secret or re.match(r"^[A-Za-z]:", secret):
+            pattern = re.escape(secret.replace("\\", "/")).replace("/", r"[\\/]")
+            text = re.sub(pattern, lambda _: replacement, text, flags=re.IGNORECASE)
+        else:
+            text = text.replace(secret, replacement)
     return text
 
 
@@ -92,11 +101,22 @@ def _redacted_json(path: Path, secrets: List[Tuple[str, str]], drop_worker: bool
         data["worker"] = None
     if drop_original_path and isinstance(data, dict) and isinstance(data.get("source"), dict):
         data["source"]["original_path"] = None
-    return _redact_text(json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False), secrets).encode("utf-8")
+    def redact(value):
+        if isinstance(value, str):
+            return _redact_text(value, secrets)
+        if isinstance(value, list):
+            return [redact(v) for v in value]
+        if isinstance(value, dict):
+            return {redact(k): redact(v) for k, v in value.items()}
+        return value
+    return json.dumps(redact(data), indent=2, sort_keys=True, ensure_ascii=False).encode("utf-8")
 
 
 def _walk(root: Path) -> Iterable[Path]:
+    if root.is_symlink():
+        raise PackageError("unsafe_path", "export root must not be a symbolic link")
     for path in sorted(root.rglob("*")):
+        contained_path(root, path.relative_to(root).as_posix())
         if path.is_file():
             yield path
 
@@ -113,8 +133,9 @@ def _reference_members(ws: Workspace, run_id: str) -> Iterable[Tuple[str, Path]]
             yield f"refs/{run_id}/{name}", run_dir / name
     manifest = experiments.load_artifacts(ws, run_id)
     for artifact in manifest.artifacts if manifest else []:
-        if artifact.kind in _REFERENCE_KINDS and (run_dir / artifact.file.path).is_file():
-            yield f"refs/{run_id}/{artifact.file.path}", run_dir / artifact.file.path
+        path = contained_path(run_dir, artifact.file.path)
+        if artifact.kind in _REFERENCE_KINDS and path.is_file():
+            yield f"refs/{run_id}/{artifact.file.path}", path
 
 
 def _artifacts_in_package(path: Path, prefix: str, present: set) -> Tuple[bytes, List[str]]:
@@ -202,8 +223,9 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", la
         data_dir = ws.dataset_dir(dataset.dataset_id)
         wanted = [data_dir / "raw"]
         for version in {resolved.dataset.preprocessing_version, "raw-v1"}:
-            if (data_dir / "versions" / version).is_dir():
-                wanted.append(data_dir / "versions" / version)
+            version_dir = contained_path(data_dir, f"versions/{version}")
+            if version_dir.is_dir():
+                wanted.append(version_dir)
         for base in wanted:
             for path in _walk(base):
                 members.append((f"dataset/{path.relative_to(data_dir).as_posix()}", path))
@@ -266,8 +288,9 @@ def export_run(ws: Workspace, run_id: str, out: Path, *, kind: str = "share", la
 # --- inspect ----------------------------------------------------------------------------
 
 def _safe_member(name: str, info: Optional[zipfile.ZipInfo] = None) -> None:
-    parts = PurePosixPath(name).parts
-    if not parts or name.startswith("/") or ".." in parts or ":" in parts[0] or "\\" in name:
+    try:
+        relative_parts(name)
+    except ValueError:
         raise PackageError("unsafe_path", f"package member '{name}' would escape the workspace")
     if info is not None:
         # Unix type bits live in the high 16 bits of external_attr; entries written without them
@@ -302,6 +325,12 @@ def inspect_package(path: Path) -> PackageManifest:
         raise PackageError("not_a_package", f"{path} is not an OpenDPD experiment package (zip)")
     with zipfile.ZipFile(path) as zf:
         infos = zf.infolist()
+        if (path.stat().st_size > MAX_PACKAGE_UNPACKED_BYTES or
+                sum(i.file_size for i in infos) > MAX_PACKAGE_UNPACKED_BYTES):
+            raise PackageError("too_large", "package exceeds the 2 GiB transfer/unpacked limit")
+        canonical_names = [unicodedata.normalize("NFC", i.filename).casefold() for i in infos]
+        if len(set(canonical_names)) != len(canonical_names):
+            raise PackageError("unsafe_path", "package contains duplicate or ambiguous member names")
         if len(infos) > MAX_PACKAGE_MEMBERS:
             raise PackageError("too_many_members", f"package lists {len(infos)} members; at most {MAX_PACKAGE_MEMBERS} "
                                                    "are accepted")
@@ -326,6 +355,8 @@ def inspect_package(path: Path) -> PackageManifest:
         except Exception as err:  # noqa: BLE001 - pydantic detail is the diagnostic
             raise PackageError("manifest_invalid", f"{MANIFEST_NAME} does not match the contract: {err}") from None
         listed = {f.path for f in manifest.files}
+        if len(listed) != len(manifest.files):
+            raise PackageError("manifest_invalid", "manifest repeats a member")
         extra = names - listed - {MANIFEST_NAME}
         if extra:
             raise PackageError("unlisted_file", f"package contains files not covered by the manifest: {sorted(extra)[:5]}")
@@ -340,7 +371,66 @@ def inspect_package(path: Path) -> PackageManifest:
         needed = f"run/{manifest.run_id}/config.resolved.json"
         if needed not in names:
             raise PackageError("missing_file", f"package member '{needed}' is missing")
+        _validate_metadata(zf, manifest)
     return manifest
+
+
+def _json_member(zf, name):
+    if name not in zf.namelist():
+        raise PackageError("missing_file", f"package member '{name}' is missing")
+    if zf.getinfo(name).file_size > MAX_MANIFEST_BYTES:
+        raise PackageError("manifest_invalid", "package metadata exceeds size limit")
+    return json.loads(zf.read(name))
+
+
+def _validate_metadata(zf, manifest):
+    """Bind embedded identities to the outer manifest before any import writes."""
+    try:
+        dataset = DatasetManifest.model_validate(_json_member(zf, "dataset/manifest.json"))
+        if (dataset.dataset_id != manifest.dataset.dataset_id or
+                dataset.raw_sha256 != manifest.dataset.raw_sha256 or
+                dataset.source.kind != manifest.dataset.source_kind):
+            raise ValueError("embedded dataset identity differs from the package")
+        ids = [manifest.run_id, *(r.run_id for r in manifest.references)]
+        if len(set(ids)) != len(ids):
+            raise ValueError("package repeats a run identity")
+        prefixes = {f"run/{manifest.run_id}/", "dataset/", *(f"refs/{r.run_id}/" for r in manifest.references)}
+        for name in zf.namelist():
+            if name not in {MANIFEST_NAME, REPORT_HTML, REPORT_MD} and not any(name.startswith(p) for p in prefixes):
+                raise ValueError("unrecognised package layout")
+        for rid, prefix in [(manifest.run_id, "run"), *((r.run_id, "refs") for r in manifest.references)]:
+            base = f"{prefix}/{rid}/"
+            record = RunRecord.model_validate(_json_member(zf, base + "run.json"))
+            resolved = ResolvedExperimentConfig.model_validate(_json_member(zf, base + "config.resolved.json"))
+            ExperimentConfig.model_validate(_json_member(zf, base + "config.user.json"))
+            ArtifactManifest.model_validate(_json_member(zf, base + ARTIFACTS_FILE))
+            if record.run_id != rid or record.config_sha256 != resolved.resolution.config_sha256:
+                raise ValueError("embedded run identity differs from its configuration")
+            if prefix == "run" and (resolved.dataset.id != dataset.dataset_id or
+                    resolved.resolution.config_sha256 != manifest.config_sha256 or
+                    resolved.dataset.preprocessing_version != manifest.dataset.preprocessing_version or
+                    resolved.dataset.split_version != manifest.dataset.split_version or resolved.task != manifest.task):
+                raise ValueError("resolved configuration differs from the package")
+        from opendpd.schemas.legacy_spec import validate_spec
+        for name in zf.namelist():
+            if name.startswith("dataset/") and name.endswith("/spec.json"):
+                validate_spec(_json_member(zf, name))
+            if "/plots/" in name and name.endswith(".json"):
+                from opendpd.schemas.plot_input import validate_plot
+                validate_plot(_json_member(zf, name))
+        if manifest.dataset.included:
+            hashes = []
+            for ref in dataset.files:
+                if not ref.path.startswith("raw/") or ref.sha256 is None:
+                    raise ValueError("raw data must carry relative paths and hashes")
+                item = next((f for f in manifest.files if f.path == "dataset/" + ref.path), None)
+                if item is None or item.sha256 != ref.sha256 or (ref.size_bytes is not None and item.size_bytes != ref.size_bytes):
+                    raise ValueError("raw dataset hash differs from its manifest")
+                hashes.append(ref.sha256)
+            if not hashes or combined_sha256(hashes) != dataset.raw_sha256:
+                raise ValueError("combined raw dataset hash differs")
+    except (ValueError, TypeError, KeyError) as err:
+        raise PackageError("manifest_invalid", "package metadata is inconsistent or invalid") from err
 
 
 # --- import -----------------------------------------------------------------------------
@@ -353,7 +443,7 @@ def _extract(zf: zipfile.ZipFile, prefix: str, target: Path, sizes: Dict[str, in
         if not name.startswith(prefix) or name.endswith("/"):
             continue
         rel = name[len(prefix):]
-        dest = target / rel
+        dest = contained_path(target, rel)
         if root not in dest.resolve().parents:
             raise PackageError("unsafe_path", f"package member '{name}' would escape the workspace")
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -373,13 +463,34 @@ def _extract(zf: zipfile.ZipFile, prefix: str, target: Path, sizes: Dict[str, in
     return written
 
 
-def import_package(ws: Workspace, path: Path) -> ImportReport:
-    """Import a validated package into ``ws``. Nothing is written before every check passed."""
+def import_package(ws: Workspace, path: Path, *, expected_sha256: str | None = None, required_kind: str | None = None) -> ImportReport:
+    """Validate a private snapshot, stage all data, then publish with rollback."""
+    from opendpd.services.workspace import workspace_lock
+    if not Path(path).is_file():
+        raise PackageError("not_a_package", "package file does not exist")
+    with workspace_lock(ws), tempfile.TemporaryDirectory(prefix=".import-", dir=ws.root) as temporary:
+        staging = Path(temporary)
+        snapshot = staging / "package.zip"
+        with open(path, "rb") as source, snapshot.open("xb") as target:
+            total = 0
+            while chunk := source.read(1024 * 1024):
+                total += len(chunk)
+                if total > MAX_PACKAGE_UNPACKED_BYTES:
+                    raise PackageError("too_large", "package exceeds the transfer limit")
+                target.write(chunk)
+        if expected_sha256 is not None and sha256_file(snapshot) != expected_sha256:
+            raise PackageError("hash_mismatch", "package hash differs from the submission")
+        return _import_snapshot(ws, snapshot, staging / "content", required_kind=required_kind)
+
+
+def _import_snapshot(ws: Workspace, path: Path, staging: Path, *, required_kind=None) -> ImportReport:
     manifest = inspect_package(path)
+    if required_kind is not None and manifest.kind != required_kind:
+        raise PackageError("invalid_kind", "this operation requires a share package")
     run_id = manifest.run_id
     sizes = {f.path: f.size_bytes for f in manifest.files}
     free = shutil.disk_usage(ws.root).free
-    if sum(sizes.values()) > free:
+    if sum(sizes.values()) + 64 * 1024 * 1024 > free:
         raise PackageError("insufficient_space", f"the package unpacks to {sum(sizes.values())} bytes but the workspace "
                                                  f"volume has {free} bytes free")
     if ws.run_dir(run_id).exists():
@@ -407,23 +518,27 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
                                        f"run '{ref.run_id}' exists here with different weights than the package's "
                                        f"{ref.role} ({ref.checkpoint_sha256[:12]})")
 
-        # every check passed: write
+        staged = Workspace.create(staging)
+        # Build a complete import in private staging before changing the workspace.
         imported = [run_id]
         missing: List[str] = list(manifest.missing)
         if existing is not None:
             dataset_status = "existing"
         elif ds.source_kind == DatasetSourceKind.builtin and ds.builtin_name and not ds.included:
-            registered = ws.register_builtin_dataset(ds.builtin_name, ds.dataset_id)
+            registered = staged.register_builtin_dataset(ds.builtin_name, ds.dataset_id)
             if registered.raw_sha256 != ds.raw_sha256:
-                shutil.rmtree(ws.dataset_dir(ds.dataset_id), ignore_errors=True)
+                shutil.rmtree(staged.dataset_dir(ds.dataset_id), ignore_errors=True)
                 raise PackageError("dataset_conflict",
                                    f"built-in dataset '{ds.builtin_name}' of this install has raw sha256 "
                                    f"{registered.raw_sha256}, the package was made with {ds.raw_sha256}")
             dataset_status = "registered_builtin"
         elif ds.included:
-            target = ws.dataset_dir(ds.dataset_id)
+            target = staged.dataset_dir(ds.dataset_id)
             _extract(zf, "dataset/", target, sizes)
-            ws.save_dataset(DatasetManifest.model_validate(packaged_dataset))
+            embedded = DatasetManifest.model_validate(packaged_dataset)
+            if combined_sha256(sha256_file(contained_path(target, f.path)) for f in embedded.files) != ds.raw_sha256:
+                raise PackageError("hash_mismatch", "extracted dataset differs from the recorded raw data")
+            staged.save_dataset(embedded)
             dataset_status = "imported"
         else:
             dataset_status = "missing"
@@ -431,10 +546,22 @@ def import_package(ws: Workspace, path: Path) -> ImportReport:
                 missing.append(f"dataset '{ds.dataset_id}' (raw sha256 {ds.raw_sha256}): {ds.how_to_obtain}")
         for ref in manifest.references:
             if not ws.run_dir(ref.run_id).exists():
-                _extract(zf, f"refs/{ref.run_id}/", ws.run_dir(ref.run_id), sizes)
+                _extract(zf, f"refs/{ref.run_id}/", staged.run_dir(ref.run_id), sizes)
                 imported.append(ref.run_id)
-        _extract(zf, f"run/{run_id}/", ws.run_dir(run_id), sizes)
-    RunRecord.model_validate(read_json(ws.run_dir(run_id) / "run.json"))    # what was imported is a valid record
+        _extract(zf, f"run/{run_id}/", staged.run_dir(run_id), sizes)
+    published = []
+    try:
+        for source_root, destination_root in ((staged.datasets_dir, ws.datasets_dir), (staged.runs_dir, ws.runs_dir)):
+            for source in source_root.iterdir():
+                destination = contained_path(destination_root, source.name)
+                if destination.exists():
+                    raise PackageError("import_conflict", "an import destination already exists")
+                source.rename(destination)
+                published.append(destination)
+    except Exception:
+        for destination in reversed(published):
+            shutil.rmtree(destination)
+        raise
     evaluate = shlex.join(["opendpd", "evaluate", run_id, "--workspace", str(ws.root),
                            "--profile", manifest.metric_profile_id or "legacy-opendpd-v1"])
     if dataset_status == "missing":

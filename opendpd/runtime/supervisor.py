@@ -318,7 +318,10 @@ class Supervisor:
         return self.worker_module
 
     def worker_command(self, record: RunRecord) -> List[str]:
-        return [sys.executable, "-m", self.worker_module_for(record), "--workspace", str(self.ws.root),
+        module = self.worker_module_for(record)
+        invocation = ["-P", "-m", module] if sys.version_info >= (3, 11) else [
+            "-c", "import sys; sys.path.pop(0); import runpy; runpy.run_module(" + repr(module) + ", run_name='__main__', alter_sys=True)"]
+        return [sys.executable, *invocation, "--workspace", str(self.ws.root),
                 "--run-id", record.run_id]
 
     def _request_cancel_file(self, active: _Active) -> None:

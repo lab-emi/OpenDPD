@@ -2996,6 +2996,7 @@
           },
           "preprocessing_version": {
             "default": "raw-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Preprocessing Version",
             "type": "string"
           },
@@ -3262,11 +3263,13 @@
           },
           "preprocessing_version": {
             "default": "raw-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Preprocessing Version",
             "type": "string"
           },
           "split_version": {
             "default": "contiguous-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Split Version",
             "type": "string"
           }
@@ -9312,6 +9315,7 @@
             "type": "boolean"
           },
           "preprocessing_version": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Preprocessing Version",
             "type": "string"
           },
@@ -9331,6 +9335,7 @@
             "$ref": "#/components/schemas/DatasetSourceKind"
           },
           "split_version": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Split Version",
             "type": "string"
           }
@@ -11467,7 +11472,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.17",
+            "default": "2.2.18",
             "title": "Version",
             "type": "string"
           }
@@ -12388,6 +12393,7 @@
           },
           "version": {
             "default": "contiguous-v1",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
             "title": "Version",
             "type": "string"
           }
@@ -14071,7 +14077,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.17"
+    "version": "2.2.18"
   },
   "openapi": "3.1.0",
   "paths": {

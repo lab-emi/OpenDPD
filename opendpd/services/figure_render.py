@@ -4,15 +4,15 @@ Run ``python replay.py <bundle-directory>`` (requires matplotlib).
 Only renders stored arrays and metrics; never trains, aligns or evaluates.
 """
 
-import hashlib
+import sys
+if not __package__ and not (getattr(sys.flags, "safe_path", False) or sys.flags.isolated):
+    raise SystemExit("Use the installed command: opendpd figures replay <bundle.zip> --out <directory>; or python -I replay.py <directory>.")
+
 import json
 import textwrap
 from pathlib import Path
 
-if __package__:
-    from opendpd.core.spectrum_layout import TITLES, has_dpd, signal_node, spectrum_legend
-else:  # Standalone export bundle.
-    from spectrum_layout import TITLES, has_dpd, signal_node, spectrum_legend
+from opendpd.core.spectrum_layout import TITLES, has_dpd, signal_node, spectrum_legend
 
 
 def plot_kind(kind):
@@ -124,13 +124,8 @@ def _draw(figure, plots, output):
 
 def replay(directory):
     root = Path(directory)
-    manifest = json.loads((root / "manifest.json").read_text())
-    for name, expected in manifest["files"].items():
-        path = root / name
-        if not path.resolve().is_relative_to(root.resolve()):
-            raise ValueError("bundle member outside root")
-        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-            raise ValueError(f"hash mismatch: {name}")
+    from opendpd.services.figure_bundle import verify_directory
+    verify_directory(root)
     figure = json.loads((root / "figure.json").read_text())
     plots = json.loads((root / "plot-data.json").read_text())
     render_figure(figure, plots, root / "replayed")

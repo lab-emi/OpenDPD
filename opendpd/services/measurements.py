@@ -81,6 +81,9 @@ def read_capture(path: Path, columns: Optional[Tuple[str, str]] = None) -> np.nd
             raise MeasurementError(f"{path.name}: no I/Q columns {pair or 'I,Q'} among {list(frame.columns)}; "
                                    "name them with the capture's columns field")
         return frame[pair[0]].to_numpy(dtype=np.float64) + 1j * frame[pair[1]].to_numpy(dtype=np.float64)
+    if suffix in (".npy", ".npz"):
+        from opendpd.services.numpy_input import inspect_numpy
+        inspect_numpy(path)
     if suffix == ".npy":
         return _as_complex(np.load(path, allow_pickle=False), path.name)
     if suffix == ".npz":

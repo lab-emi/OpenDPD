@@ -1,3 +1,37 @@
+# Security verification — 2.2.18
+
+Date: 2026-09-28. Baseline: `2.2.17` / `aa1746e`. Platform: Linux, Python 3.13.14. A dedicated test environment points worker subprocesses at the 2.2.18 source; packaged checks install the wheel into a fresh environment outside the repository.
+
+| Verification | Result |
+|---|---|
+| Ordinary Python tests, including golden numerical fixtures | **2,285 cases covered and passing**, split runs and changed-test reruns; 22 extended/packaging cases excluded from this selection |
+| Built wheel in a fresh environment | **3 passed**: import/assets, CPU experiment outside the source tree, local GUI service with authentication/training/export/shutdown |
+| Frontend tests | **282 passed** in 64 files; typecheck, lint and production build passed |
+| API schema/types and Python critical-error lint | passed; generated OpenAPI/types match source |
+| Actual Chromium login | private file redirect → one-time bootstrap → authenticated Home; consumed-link replay and missing-CSRF write refused; isolated test context closed |
+| Same synthetic probes on 2.2.17 and 2.2.18 | six confirmed weaknesses reproduced before the patch and refused/redacted/metered after it; see the [review](security-review-2.2.18.md) |
+| VM lockfile, pip-audit/OSV | 43 packages, **0 known vulnerabilities** |
+| GPU additional-dependency lockfile, pip-audit/OSV | 26 packages, **0 known vulnerabilities** |
+| Frontend npm audit, including development dependencies | **0 known vulnerabilities** |
+
+The ordinary selection combines the main 2,280-case batch (the old CSRF expectation was updated and its test passed on rerun), two documentation command tests, the added plot-coordinate regression, and two figure-helper isolation regressions. A separate final 60-case import/figure/security run and the final packaging run verify late changes. Counts are not added across overlapping runs.
+
+The table records the initial local patch verification. Native pywebview, image OS packages and the broader operational work remain outside that verification; see the [2.2.18 review](security-review-2.2.18.md).
+
+## Additional release staging checks
+
+- GitHub's Linux, macOS and Windows runners passed the default installation and package/security boundary checks. The Windows AST scan now reads source files as UTF-8 explicitly.
+- Python 3.10 uses `-I` for directly executed figure helpers; the guard accepts isolated mode as well as 3.11+ safe-path mode. Both keep the bundle directory off Python's initial import path.
+- The offline VM's Python 3.14 runtime matches all 43 locked packages. A separately installed candidate completed CSV upload, Virtual PA simulation, CPU training and result retrieval as the unprivileged worker.
+- The candidate GPU image passed a cold-cache DeltaGRU CUDA forward/backward probe under the production container options, and a waveform import/Virtual PA probe.
+- A separate API in the VM, a temporary private bridge and the candidate GPU agent/image completed PA training, DPD training and DPD inference on CUDA. Checkpoint hashes matched. Foreign-origin requests, anonymous exports, cross-workspace reads and traversal versions were refused; repeated CSV exports matched. These checks used synthetic data, and the temporary services, bridge credentials and workspaces were removed afterward.
+- Chromium verified the output-waveform legends at 1366 and 390 pixels. Bare line breaks remain available after label escaping; attributes and links remain escaped. The layout regression waits for responsive resizing to complete.
+- The production reset timer was active, with the next reset at 11:59 UTC on 2026-09-28. Its configured 11:59/23:59 UTC schedule remains the independent twice-daily cleanup mechanism.
+
+The hosted rollout and final publication results are recorded with the [2.2.18 release](https://github.com/lab-emi/OpenDPD/releases/tag/v2.2.18).
+
+---
+
 # Hardening report (S13)
 
 What was checked before calling the Studio a release candidate, with the

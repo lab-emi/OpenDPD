@@ -13,7 +13,7 @@ from opendpd.core.waveforms.analyzer import inspect_signal
 from opendpd.schemas.signal_analyzer import AnalyzerConfig, AnalyzerSource, AnalyzerSourceInfo
 from opendpd.schemas.signal_generator import GeneratedSignal, GeneratorAnalysis, ImportedSignalConfig
 from opendpd.services import signal_analyzer, signal_datasets, signal_generator
-from opendpd.services.workspace import WorkspaceError, sha256_file, write_json_atomic
+from opendpd.services.workspace import WorkspaceError, sha256_file, write_json_atomic, workspace_lock
 
 
 def _analysis(x, config):
@@ -39,7 +39,7 @@ def _analysis(x, config):
 
 def import_signal(ws, request):
     # Share the generator lock so a waveform is never read before its manifest.
-    with signal_generator._LOCK:
+    with workspace_lock(ws):
         source = AnalyzerSource(kind="upload", source_id=request.upload_id)
         values, info = signal_analyzer._load(ws, source)
         selection = AnalyzerConfig(sample_rate_hz=request.sample_rate_hz, bandwidth_hz=request.bandwidth_hz,

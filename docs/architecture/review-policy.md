@@ -2,7 +2,7 @@
 
 Protected paths include scientific references and protocols, workflow definitions, deployment units, the public boundary and packaging metadata. `.github/CODEOWNERS` identifies their maintainers.
 
-The protected-path check requires an admin or maintainer review attached to the current PR head. An approval counts; a maintainer comment review can record `Reviewed head: <full commit SHA>` when the reviewer and PR author use the same account. This records the review identity and exact revision without pretending it is an independent human approval. A subsequent commit requires a fresh review. Labels never grant approval. Repository rules and code-owner review requirements remain the primary merge controls.
+The protected-path check runs trusted base-branch code and reads changed files (including previous filenames) from the GitHub API. It requires an independent admin/maintainer approval attached to the current PR head; comments and labels do not substitute for approval. After a review, rerun the check or add a PR comment to trigger a fresh check. Repository rulesets that require Code Owner approval and dismiss stale approvals are the primary controls; their settings must be verified separately from repository code.
 
 Only publishing a GitHub release starts the production PyPI workflow. Its tag must match the package version. The publisher has its own `pypi` environment and the only OIDC write permission. Maintainers should configure environment reviewers when more than one independent reviewer is available; the workflow does not assume such an approval exists. Build and publish actions are commit pinned and Dependabot proposes updates.
 

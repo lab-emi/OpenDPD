@@ -76,7 +76,7 @@ class DataCard(StrictModel):
 class PackageRef(StrictModel):
     """One share package = one run (checkpoint, result, resolved configuration); one per seed."""
 
-    path: str = Field(min_length=1)          # relative to the submission card
+    path: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.zip$")  # next to the submission card
     sha256: Sha256
     run_id: Slug
 

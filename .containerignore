@@ -1,0 +1,11 @@
+.git
+.venv
+**/__pycache__
+**/node_modules
+frontend/.cache
+.codex
+.claude
+AGENTS.md
+*.log
+dist
+build

@@ -33,6 +33,8 @@ from urllib.parse import urlsplit
 SESSION_COOKIE = "opendpd_session"
 CSRF_HEADER = "x-opendpd-csrf"
 SESSION_MAX_AGE = 7 * 24 * 3600
+BOOTSTRAP_MAX_AGE = 120
+LAUNCHER_HEADER = "x-opendpd-launcher"
 DEFAULT_MAX_BODY = 2 * 1024 * 1024
 UPLOAD_MAX_BODY = 2 * 1024 * 1024 * 1024      # /api/v1/datasets/upload streams to disk in chunks
 UPLOAD_PATHS = ("/api/v1/datasets/upload", "/api/v1/imports")
@@ -67,20 +69,35 @@ class SessionStore:
 
     def __init__(self, bootstrap_token: Optional[str] = None):
         self.bootstrap_token = bootstrap_token or secrets.token_urlsafe(32)
+        self.launcher_secret = secrets.token_urlsafe(32)
+        self._tokens = {self.bootstrap_token: time.monotonic() + BOOTSTRAP_MAX_AGE}
         self._sessions: Dict[str, Session] = {}
         self._lock = threading.Lock()
 
     def exchange(self, token: str) -> Optional[Session]:
-        if not token or not hmac.compare_digest(token, self.bootstrap_token):
-            return None
-        session = Session(session_id=secrets.token_urlsafe(32), csrf_token=secrets.token_urlsafe(32))
         with self._lock:
             now = time.monotonic()
+            expiry = self._tokens.pop(token, 0)
+            if not token or now >= expiry:
+                return None
+            session = Session(session_id=secrets.token_urlsafe(32), csrf_token=secrets.token_urlsafe(32))
             self._sessions = {key: value for key, value in self._sessions.items() if now - value.created_at < SESSION_MAX_AGE}
             if len(self._sessions) >= 128:
                 self._sessions.pop(next(iter(self._sessions)))
             self._sessions[session.session_id] = session
         return session
+
+    def mint(self, launcher_secret: str) -> Optional[str]:
+        if not launcher_secret or not launcher_secret.isascii() or not hmac.compare_digest(launcher_secret, self.launcher_secret):
+            return None
+        with self._lock:
+            now = time.monotonic()
+            self._tokens = {k: v for k, v in self._tokens.items() if v > now}
+            if len(self._tokens) >= 32:
+                self._tokens.pop(next(iter(self._tokens)))
+            token = secrets.token_urlsafe(32)
+            self._tokens[token] = now + BOOTSTRAP_MAX_AGE
+            return token
 
     def get(self, session_id: Optional[str]) -> Optional[Session]:
         if not session_id:
@@ -153,13 +170,16 @@ class LocalBoundaryMiddleware:
             await self.app(scope, receive, send)
             return
         raw_headers = [(k.decode('latin-1').lower(), v.decode('latin-1')) for k, v in scope.get('headers', [])]
-        for key in ('host', 'origin', 'referer', 'cookie', CSRF_HEADER, 'content-length'):
+        for key in ('host', 'origin', 'referer', 'cookie', CSRF_HEADER, LAUNCHER_HEADER, 'sec-fetch-site', 'content-length'):
             if sum(name == key for name, _ in raw_headers) > 1:
                 await _reject(send, 400, 'ambiguous_headers', 'duplicate security headers are refused')
                 return
         headers = dict(raw_headers)
         method = scope.get("method", "GET").upper()
         host = headers.get("host")
+        if scope.get('path', '').startswith('/api/') and headers.get('sec-fetch-site', 'none') not in {'same-origin', 'none'}:
+            await _reject(send, 403, "cross_origin_request", "API requests must originate from Studio")
+            return
         if not host_is_loopback(host):
             await _reject(send, 400, "host_not_allowed", "this server only answers loopback hosts")
             return

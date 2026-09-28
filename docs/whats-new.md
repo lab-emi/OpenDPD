@@ -1,5 +1,9 @@
 # What's new
 
+## 2.2.18: safer imports, sessions and hosted execution
+
+Validated import metadata and portable paths, transactional experiment imports, single-use desktop login links, bounded NumPy input, safer GPU transfers and per-workspace export caching. [Release notes](releases/release-notes-2.2.18.md) · [Security review](releases/security-review-2.2.18.md).
+
 ## 2.2.17: custom waveforms for Virtual PA
 
 Upload a CSV waveform from Signal Generator or PA Library, select its I/Q, complex or real sample columns, and enter the actual sample rate and bandwidth. Import preserves the full capture without normalization, filtering or resampling. Virtual PA produces a paired dataset with the uploaded input’s provenance and simulated output, ready for PA/DPD training. Available locally and in hosted Studio.

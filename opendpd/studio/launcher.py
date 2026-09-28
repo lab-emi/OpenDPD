@@ -23,6 +23,9 @@ import threading
 import time
 import urllib.request
 import webbrowser
+import tempfile
+import html
+from urllib.parse import urlsplit
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -53,7 +56,7 @@ def workspace_guard(workspace: Path):
     inode while an existing waiter still holds the old one. The OS releases
     the lock even when a server crashes before it can remove its metadata.
     """
-    fd = os.open(workspace / GUARD_FILE, os.O_RDWR | os.O_CREAT, 0o600)
+    fd = os.open(workspace / GUARD_FILE, os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0), 0o600)
     try:
         try:
             if os.name == "nt":
@@ -80,12 +83,21 @@ class Lock:
     create_time: float
     port: int
     url: str
+    launcher_secret: str = ""
 
     @classmethod
     def read(cls, path: Path) -> Optional["Lock"]:
         try:
+            if path.is_symlink():
+                return None
             data = json.loads(path.read_text(encoding="utf-8"))
-            return cls(int(data["pid"]), float(data["create_time"]), int(data["port"]), str(data["url"]))
+            port = int(data["port"])
+            url = str(data["url"])
+            parsed = urlsplit(url)
+            if (parsed.scheme != "http" or parsed.netloc != f"{HOST}:{port}" or
+                    parsed.path not in ("/", "/bootstrap")):
+                return None
+            return cls(int(data["pid"]), float(data["create_time"]), port, url, str(data.get("launcher_secret", "")))
         except (OSError, ValueError, KeyError, TypeError):
             return None
 
@@ -143,25 +155,43 @@ def wait_until_healthy(port: int, deadline_s: float = 30.0, sleep_s: float = 0.2
 def open_browser(url: str, opener: Callable[[str], bool] = webbrowser.open) -> bool:
     """Returns False (and never raises) when no browser is available, e.g. headless servers."""
     try:
+        if "/bootstrap?token=" in url:
+            if opener is webbrowser.open and (os.environ.get("SSH_CONNECTION") or os.environ.get("SSH_TTY") or
+                    (sys.platform == "linux" and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")))):
+                return False
+            # Only a private file URL reaches the browser's process arguments.
+            # The redirect must survive until the browser reads it; remove at exit.
+            import atexit
+            directory = Path(tempfile.mkdtemp(prefix="opendpd-open-"))
+            page = directory / "open.html"
+            fd = os.open(page, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                stream.write('<!doctype html><meta name="referrer" content="no-referrer">'
+                             '<meta http-equiv="refresh" content="0;url=' + html.escape(url, quote=True) + '">')
+            atexit.register(lambda: (page.unlink(missing_ok=True), directory.rmdir()))
+            return bool(opener(page.as_uri()))
         return bool(opener(url))
     except Exception:  # noqa: BLE001
         return False
 
 
-def write_lock(workspace: Path, port: int, url: str) -> Path:
+def write_lock(workspace: Path, port: int, url: str, launcher_secret: str = "") -> Path:
     from opendpd.runtime.procs import process_identity
     pid, create_time = process_identity(os.getpid())
     path = workspace / LOCK_FILE
-    payload = json.dumps({"pid": pid, "create_time": create_time, "port": port, "url": url})
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    payload = json.dumps({"pid": pid, "create_time": create_time, "port": port, "url": url,
+                          "launcher_secret": launcher_secret})
+    fd, temporary = tempfile.mkstemp(prefix=".studio-lock-", dir=workspace)
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(payload)
+    os.replace(temporary, path)
     return path
 
 
 def existing_instance(workspace: Path) -> Optional[Lock]:
     lock = Lock.read(workspace / LOCK_FILE)
     if lock is None:
+        (workspace / LOCK_FILE).unlink(missing_ok=True)
         return None
     if lock.alive():
         # A live server may still be starting or temporarily unresponsive.
@@ -274,7 +304,9 @@ def launch(workspace: Path, *, port: Optional[int] = None, mode: Mode = "auto", 
         _flush(out)
     window_runner = window_runner or (lambda url, active: _default_window_runner(url, active, workspace))
     try:
-        workspace.mkdir(parents=True, exist_ok=True)
+        workspace.mkdir(mode=0o700, parents=True, exist_ok=True)
+        from opendpd.services.workspace import check_workspace_permissions
+        check_workspace_permissions(workspace)
         with workspace_guard(workspace):
             return _launch_locked(workspace, port=port, surface=surface, out=out, serve=serve, opener=opener,
                                   window_runner=window_runner, background_server=background_server or BackgroundServer)
@@ -292,6 +324,17 @@ def launch(workspace: Path, *, port: Optional[int] = None, mode: Mode = "auto", 
 
 
 def _reuse_instance(workspace: Path, running: Lock, surface: str, out, opener, window_runner) -> int:
+    if running.launcher_secret:
+        try:
+            from opendpd.server.security import LAUNCHER_HEADER
+            request = urllib.request.Request(f"http://{HOST}:{running.port}/bootstrap/mint", data=b"",
+                headers={LAUNCHER_HEADER: running.launcher_secret}, method="POST")
+            with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(request, timeout=3) as response:
+                token = json.loads(response.read(4096))["token"]
+            running.url = f"http://{HOST}:{running.port}/bootstrap?token={token}"
+        except (OSError, ValueError, KeyError):
+            print("error: could not authenticate the existing Studio launcher; restart Studio", file=sys.stderr)
+            return 2
     print(f"OpenDPD Studio is already running for {workspace} (pid {running.pid}) at {running.url}", file=out)
     if surface == "window":
         try:
@@ -334,7 +377,7 @@ def _launch_locked(workspace: Path, *, port: Optional[int], surface: str, out, s
         print(f"warning: {status['problem']} - the page will show a diagnostic instead of the workbench", file=out)
 
     app = create_app(workspace, bootstrap_token=token)
-    lock_path = write_lock(workspace, chosen, url)
+    lock_path = write_lock(workspace, chosen, f"http://{HOST}:{chosen}/", app.state.sessions.launcher_secret)
 
     if surface == "window":
         return _serve_with_window(app, chosen, url, lock_path, out=out, opener=opener,
@@ -403,6 +446,9 @@ def _serve_with_window(app, port: int, url: str, lock_path: Path, *, out, opener
             window_runner(url, lambda: _active_run_count(app))
         except Exception as err:  # noqa: BLE001 - toolkit failure after the probe said it would work
             print(f"warning: the native window failed ({err}); opening the browser instead", file=out)
+            token = app.state.sessions.mint(app.state.sessions.launcher_secret)
+            url = f"http://{HOST}:{port}/bootstrap?token={token}"
+            _print_ready(port, url, out, stop_hint="Press Ctrl+C to stop.")
             if not open_browser(url, opener):
                 print("could not open a browser; open the URL above yourself", file=out)
             _block_until_interrupted()

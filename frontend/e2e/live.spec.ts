@@ -7,11 +7,13 @@ import { expect, test, type Page } from '@playwright/test'
  * already serve the built frontend; nothing is mocked here.
  *
  * Optional env:
+ *   OPENDPD_LIVE_LOCK     private launcher lock file; mints a fresh link for each test
  *   OPENDPD_PERF_OUT      path of a JSON file to write the timings into (chromium only)
  *   OPENDPD_LIVE_BIG_LOG  id of a run whose worker log has tens of thousands of lines
  *   OPENDPD_LIVE_SAMPLES  interaction samples per metric (default 100)
  */
 const LIVE = process.env['OPENDPD_LIVE_URL']
+const LIVE_LOCK = process.env['OPENDPD_LIVE_LOCK']
 const PERF_OUT = process.env['OPENDPD_PERF_OUT']
 const BIG_LOG = process.env['OPENDPD_LIVE_BIG_LOG']
 const SAMPLES = Number(process.env['OPENDPD_LIVE_SAMPLES'] ?? 100)
@@ -21,6 +23,19 @@ test.describe.configure({ mode: 'serial' })
 test.setTimeout(10 * 60_000)
 
 const origin = LIVE ? new URL(LIVE).origin : ''
+async function openStudio(page: Page) {
+  if (!LIVE_LOCK) {
+    await page.goto(LIVE!)
+    return
+  }
+  const lock = JSON.parse(readFileSync(LIVE_LOCK, 'utf-8')) as { url: string; launcher_secret: string }
+  const url = new URL(lock.url)
+  if (url.origin !== origin || url.hostname !== '127.0.0.1' || url.protocol !== 'http:') throw new Error('Launcher lock must match the local test server')
+  const response = await page.request.post(`${origin}/bootstrap/mint`, { headers: { 'X-OpenDPD-Launcher': lock.launcher_secret } })
+  expect(response.status()).toBe(200)
+  const body = await response.json() as { token: string }
+  await page.goto(`${origin}/bootstrap?token=${encodeURIComponent(body.token)}`)
+}
 const stats = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b)
   const at = (q: number) => s[Math.min(s.length - 1, Math.floor(q * (s.length - 1)))] ?? NaN
@@ -41,7 +56,7 @@ const perf: Record<string, unknown> = {}
 
 test('bootstrap, train the smoke recipe, read the result and export a share package', async ({ page, browserName }) => {
   const problems = watchConsole(page)
-  await page.goto(LIVE!)
+  await openStudio(page)
   await expect(page).toHaveURL(`${origin}/`)
   await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible()
   await page.getByRole('link', { name: 'Get Started' }).click()
@@ -90,7 +105,7 @@ test('bootstrap, train the smoke recipe, read the result and export a share pack
 
 test('timings: page load, tab switching, chart re-render, DOM size, heap growth', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'timings are recorded from Chromium only')
-  await page.goto(LIVE!)
+  await openStudio(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible()
 
   const loads: number[] = []
@@ -155,7 +170,7 @@ test('timings: page load, tab switching, chart re-render, DOM size, heap growth'
 
 test('a very long worker log stays windowed and searchable', async ({ page }) => {
   test.skip(!BIG_LOG, 'OPENDPD_LIVE_BIG_LOG is not set')
-  await page.goto(LIVE!)
+  await openStudio(page)
   await page.goto(`${origin}/runs/${encodeURIComponent(BIG_LOG!)}?tab=logs`)
   const viewer = page.getByTestId('log-viewer')
   await expect(viewer).toBeVisible()

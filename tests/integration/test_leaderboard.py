@@ -171,7 +171,7 @@ def test_non_comparable_entries_are_grouped_apart_and_the_rendering_carries_unce
     board = lb.review_entry(board, "small-budget", Review(reviewer="Maintainer", kind="maintainer", decision="accepted", notes="ok"))
     md = lb.board_markdown(board.sealed())
     groups = [line for line in md.splitlines() if line.startswith("## Group: ")]
-    assert len(groups) == 2 and any("budget params<=2000" in g for g in groups) and any("budget unbounded" in g for g in groups)
+    assert len(groups) == 2 and any("budget params&lt;=2000" in g for g in groups) and any("budget unbounded" in g for g in groups)
     assert "Ordered by NMSE (lower is better); the other columns are not a tie-break." in md
     assert "± " in md and "(n=3)" in md and "(n=2)" in md and "on cpu" in md and "not tried on other data" in md
     assert "cpu_regression tier" in md and "self_reported" in md and "reviewed" in md

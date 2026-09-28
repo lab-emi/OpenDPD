@@ -23,6 +23,7 @@ import { languageInfo, message, phaseLabel, t, useLanguage } from '@/i18n'
 import { plotLayoutFor, useStudioColors } from '@/theme'
 import { attachPlotInteractions, readViewport, viewportUpdate, type PlotElement, type PlotInteractionApi, type PlotViewport } from './plotInteractions'
 import { DEFAULT_PLOT_RECOVERY, PLOT_RECOVERY_IDLE_MS, type PlotRecoverySettings, type PlotRecoveryState } from './plotRecovery'
+import { safePlotLabels } from './plotText'
 
 export type SeriesDash = 'solid' | 'dash' | 'dot' | 'dashdot' | 'longdash'
 export type SeriesSymbol = 'circle' | 'triangle-up' | 'square' | 'diamond' | 'cross'
@@ -171,7 +172,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
         const renderTraces = traces.map<PlotTrace>((trace) => ({ ...trace, name: traceName(trace.name), type: accelerated && trace.mode === 'markers' ? 'scattergl' : 'scatter' }))
         const plotLayoutBase = plotLayoutFor(colors)
         try {
-          await Plotly.react(el, renderTraces, {
+          await Plotly.react(el, safePlotLabels(renderTraces), safePlotLabels({
             ...plotLayoutBase, ...layout, height, autosize: true,
             // Reserve separate rows for the mode bar and legend on a phone.
             ...(coarsePointer ? {
@@ -185,7 +186,7 @@ function Plot({ traces: incomingTraces, layout: incomingLayout, height, title, o
             datarevision: ++revision.current,
             xaxis: { ...plotLayoutBase.xaxis, ...layout?.xaxis, ...(view ? { range: [...view.x], autorange: view.autoX } : {}) },
             yaxis: { ...plotLayoutBase.yaxis, ...layout?.yaxis, ...(view ? { range: [...view.y], autorange: view.autoY } : {}) },
-          }, {
+          }), {
             displaylogo: false, responsive: false, scrollZoom: false,
             locale: languageInfo(language).tag,
             locales: { [languageInfo(language).tag]: { dictionary: Object.fromEntries(MODEBAR_TEXT.map((text) => [text, message(text)])) } },

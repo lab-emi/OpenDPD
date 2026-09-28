@@ -32,6 +32,53 @@ def new_session(client):
     return {"Authorization": "Bearer " + response.json()["access_token"]}
 
 
+def test_full_network_table_keeps_existing_networks_usable(public, monkeypatch):
+    from opendpd.web import runtime
+    client, manager, _ = public
+    monkeypatch.setattr(runtime, "IP_TABLE_CAPACITY", 2)
+    owner = manager.ip_key("203.0.113.10")
+    manager.ip_sessions = {owner: 0, "another-network": 1}
+    assert client.post("/api/v1/web/sessions", json={}).status_code == 201
+    assert client.post("/api/v1/web/sessions", json={}, headers={"CF-Connecting-IP": "203.0.113.11"}).status_code == 429
+    assert manager.ip_key("2001:db8:1234:1::1") == manager.ip_key("2001:db8:1234:ffff::2")
+    assert manager.ip_key("2001:db8:1235::1") != manager.ip_key("2001:db8:1234::1")
+
+
+@pytest.mark.parametrize("path", ["/signal-generator/signals/sg-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/input.csv", "/signal-generator/signals/sg-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata.json",
+    "/signal-generator/signals/sg-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/download", "/pa-library/simulations/vpa-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/output.csv",
+    "/pa-library/simulations/vpa-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/paired.csv", "/pa-library/simulations/vpa-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/metadata.json"])
+def test_every_generated_export_consumes_heavy_capacity(public, path):
+    client, manager, _ = public
+    auth = new_session(client)
+    manager.expensive_requests = manager.config.max_expensive_requests
+    response = client.get("/api/v1" + path, headers=auth)
+    assert response.status_code == 429
+    assert response.json()["error"]["code"] == "compute_busy"
+    assert manager.expensive_requests == manager.config.max_expensive_requests
+    assert not manager.ip_inflight and not manager.ip_expensive
+
+
+def test_export_csv_is_cached_and_workspace_locks_are_independent(public, monkeypatch):
+    from opendpd.services import signal_generator
+    from opendpd.services.workspace import workspace_lock
+    client, manager, _ = public
+    auth = new_session(client)
+    other = new_session(client)
+    presets = client.get('/api/v1/signal-generator/presets', headers=auth).json()
+    generated = client.post('/api/v1/signal-generator/signals', json={**presets[0]['config'], 'n_samples': 8192}, headers=auth)
+    signal_id = generated.json()['signal_id']
+    first, second = [t.app.state.ws for t in manager.tenants.values()]
+    first_lock = workspace_lock(first)
+    with first_lock:
+        assert workspace_lock(second) is not first_lock
+        assert workspace_lock(first) is first_lock
+    base = '/api/v1/signal-generator/signals/' + signal_id
+    assert client.get(base + '/input.csv', headers=auth).status_code == 200
+    monkeypatch.setattr(signal_generator.np, 'savetxt', lambda *_a, **_k: pytest.fail('cached CSV was rendered again'))
+    assert client.get(base + '/input.csv', headers=auth).status_code == 200
+    assert client.get(base + '/metadata.json', headers=auth).status_code == 200
+
+
 def test_no_auth_and_no_origin_bypass(public):
     client, manager, _ = public
     assert client.get("/api/v1/runs").status_code == 401

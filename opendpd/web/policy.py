@@ -130,7 +130,7 @@ def allowed(method: str, path: str) -> bool:
 def expensive_request(method: str, path: str) -> bool:
     """Bound in-process numeric/file work separately from lightweight status and cancellation."""
     if method == 'GET':
-        return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/(sources|datasets)|/signal-generator/datasets/[^/]+/download|/datasets/[^/]+/(analysis|download)|/results/compare|/results/[^/]+(/(report|review))?', path))
+        return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/(sources|datasets)|/signal-generator/datasets/[^/]+/download|/signal-generator/signals/[^/]+/(input.csv|metadata.json|download)|/pa-library/simulations/[^/]+/(output.csv|paired.csv|metadata.json)|/datasets/[^/]+/(analysis|download)|/results/compare|/results/[^/]+(/(report|review))?', path))
     return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/')))
 
 

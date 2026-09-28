@@ -43,7 +43,7 @@ The API normally retains only token hashes in memory. During admission it tempor
   service-tmp/                      # shared library temporary files
 ```
 
-During the trial, **two hours without foreground user activity expires every temporary workspace in the creation-IP group**. Groups use the existing ephemeral IP HMAC (IPv6 /64); they never grant access to another workspace. A valid session remains in its original group when its client changes network. Session creation and authenticated `POST /api/v1/web/activity` initialize or renew the group. Reads, waiting-room polling and running jobs do not renew it. An expired group is revoked before a new admission can initialize another lease, so later activity cannot revive old credentials. The browser coalesces foreground events to one report per minute and sends no periodic keepalive for untouched tabs.
+During the trial, **two hours without foreground user activity expires every temporary workspace in the creation-IP group**. Groups use the existing ephemeral IP HMAC (IPv6 /48); they never grant access to another workspace. A valid session remains in its original group when its client changes network. Session creation and authenticated `POST /api/v1/web/activity` initialize or renew the group. Reads, waiting-room polling and running jobs do not renew it. An expired group is revoked before a new admission can initialize another lease, so later activity cannot revive old credentials. The browser coalesces foreground events to one report per minute and sends no periodic keepalive for untouched tabs.
 
 All sessions also expire at the next **11:55 or 23:55 UTC** hard cutoff. New sessions pause until 12:00 or 00:00 UTC, respectively.
 Every five seconds the API stops expired workspaces and deletes their files.
@@ -129,7 +129,7 @@ Cloudflare response header for `/studio/` because a meta CSP cannot enforce it.
 | Storage | 256 MiB/session with bounded route checks and rotating background scans (16 workspaces every five seconds, up to 80 seconds per full pass); **2 GiB hard limit globally**; heavy writers reserve capacity before receiving data, retaining 64 MiB free headroom |
 | Files/processes | 64 MiB/file, 256 tasks, 4 CPU equivalents, 6 GiB API cgroup RAM |
 
-IPv6 addresses share a /64 rate-limit bucket. IP quotas use an ephemeral HMAC
+IPv6 addresses share a /48 rate-limit bucket. IP quotas use an ephemeral HMAC
 key and reset at the UTC day boundary or a service restart, including the twice-daily reset. Thus the production budget interval is at most 12 hours. They discourage abuse but do not identify
 people or stop distributed clients. Global concurrency, memory, disk and job
 budgets bound the effect of IP rotation. There is no Turnstile implementation;
@@ -341,7 +341,7 @@ References: [GitHub Pages custom workflows](https://docs.github.com/en/pages/get
 ### Installing the GPU agent
 
 Install Podman and [NVIDIA Container Toolkit with CDI](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html) on the host. Build the reviewed source with
-`podman build --network=host -f deployment/web/GpuContainerfile -t localhost/opendpd-gpu:studio .`.
+`podman build -f deployment/web/GpuContainerfile -t localhost/opendpd-gpu:studio .`.
 Network access here is for dependency installation during the build; experiment
 containers always use `--network=none`. Record the resulting local `sha256:`
 image ID in `/etc/opendpd-web/gpu-agent.env` as `OPENDPD_GPU_IMAGE`.
@@ -418,3 +418,9 @@ Deploy the same reviewed 2.2.11 commit to the API, GPU agent/container and stati
 The GPU image retains GCC, libc development headers and matching Python development headers because Triton compiles its driver and kernel launchers on first use. A per-container 256 MiB tmpfs at `/run/opendpd-triton`, writable by the unprivileged worker with sticky mode 1777, is executable and supplies `TRITON_CACHE_DIR`. It contains generated libraries and disappears with the container. `/tmp` and `/workspace` remain `noexec`; containers retain disabled networking, a read-only root, no capabilities and the existing resource limits.
 
 Before polling for jobs, the agent runs `python -m opendpd.web.gpu_probe` in the same sandbox with an empty cache. The probe requires Triton acceleration and finite DeltaGRU outputs, input gradients and weight gradients. A missing toolchain or unusable executable cache fails startup instead of advertising unusable GPU capacity. Allow up to 60 seconds for this cold probe. Deploy the updated agent together with the matching 2.2.12 image.
+
+### 2.2.18 resource and transfer limits
+
+Export GET routes share the heavy-work budget. JSON bodies are bounded and read before reserving compute/storage; CSV uploads retain a timeout and one heavy request per network. Each network has at most six in-flight requests and one heavy request. Export files are cached and workspace locks do not serialize different tenants. The 65,536-entry session-budget table refuses only new networks when full; IPv6 addresses share a /48 budget. A distributed attacker can still consume finite service capacity; edge rate limiting remains necessary.
+
+GPU inputs accept only data/artifact layouts. Container entry points use Python safe-path mode from `/`; live reads and final output walks anchor every untrusted path component to directory descriptors. The container is removed before output collection. The host agent remains rootful, so this boundary still requires operational defense in depth.

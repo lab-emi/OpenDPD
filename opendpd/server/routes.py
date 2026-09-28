@@ -262,7 +262,7 @@ def import_root_files(root_id: str, request: Request, path: str = Query("", max_
     return [FileEntryInfo(**vars(e)) for e in datasets_service.list_files(_ws(request), root_id, path)]
 
 
-@router.post("/datasets/inspect", response_model=SourceInfoOut, tags=["datasets"], dependencies=[Depends(require_session)])
+@router.post("/datasets/inspect", response_model=SourceInfoOut, tags=["datasets"], dependencies=[Depends(require_csrf)])
 def dataset_inspect(body: SourceRef, request: Request):
     target = datasets_service.resolve_in_root(_ws(request), body.root_id, body.path)
     if not target.exists():
@@ -301,7 +301,7 @@ async def dataset_upload(request: Request, file: UploadFile):
 
 
 @router.post("/datasets/csv/preview", response_model=CsvInspection, tags=["datasets"],
-             dependencies=[Depends(require_session)])
+             dependencies=[Depends(require_csrf)])
 def dataset_csv_preview(body: CsvPreviewRequest, request: Request):
     from opendpd.services.csv_import import inspect_csv
     target = datasets_service.resolve_in_root(_ws(request), body.source.root_id, body.source.path)
@@ -353,7 +353,7 @@ def dataset_diagnostics_run(dataset_id: str, request: Request, version: str = Qu
 
 
 @router.post("/datasets/{dataset_id}/preprocess/preview", response_model=PreprocessPreview, tags=["datasets"],
-             dependencies=[Depends(require_session)])
+             dependencies=[Depends(require_csrf)])
 def dataset_preprocess_preview(dataset_id: str, body: PreprocessRequest, request: Request):
     return datasets_service.preview_preprocess(_ws(request), dataset_id, body.params, body.base_version)
 
@@ -377,7 +377,7 @@ def dataset_import_builtin(body: ImportBuiltinRequest, request: Request):
 
 
 
-@router.post("/experiments/validate", tags=["experiments"], dependencies=[Depends(require_session)])
+@router.post("/experiments/validate", tags=["experiments"], dependencies=[Depends(require_csrf)])
 def experiments_validate(body: ValidateRequest, request: Request) -> Dict[str, Any]:
     """Resolve and bind without starting anything; config problems are data, not 4xx."""
     return experiments.validate_experiment(_ws(request), body.config).to_dict()

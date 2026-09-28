@@ -29,8 +29,8 @@ class TaskType(str, Enum):
 
 class DatasetRef(StrictModel):
     id: Slug
-    preprocessing_version: str = "raw-v1"
-    split_version: str = "contiguous-v1"
+    preprocessing_version: Slug = "raw-v1"
+    split_version: Slug = "contiguous-v1"
 
 
 class ModelSpec(StrictModel):

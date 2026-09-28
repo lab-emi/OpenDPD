@@ -132,7 +132,9 @@ def test_api_previews_and_writes_use_existing_session_csrf_boundary(tmp_path):
         client.get("/bootstrap?token=sweep-test", follow_redirects=False)
         session = client.get("/api/v1/session").json()
         body = draft(seeds=[0]).model_dump(mode="json")
-        assert client.post("/api/v1/sweeps/preview", json=body).status_code == 200
+        assert client.post("/api/v1/sweeps/preview", json=body).status_code == 403
+        assert client.post("/api/v1/sweeps/preview", json=body,
+                           headers={"X-OpenDPD-CSRF": session["csrf_token"]}).status_code == 200
         assert client.post("/api/v1/sweeps", json=body).status_code == 403
         created = client.post("/api/v1/sweeps", json=body, headers={"X-OpenDPD-CSRF": session["csrf_token"]})
         assert created.status_code == 200, created.text

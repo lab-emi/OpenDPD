@@ -90,10 +90,10 @@ class PublicBoundary:
         peer = request.client.host if request.client else ""
         if peer not in {"127.0.0.1", "::1", "10.0.2.2"}:
             reject(403, "untrusted_peer", "requests must arrive through the configured tunnel")
-        if request.url.path.startswith("/_gpu/"):
+        if scope["path"].startswith("/_gpu/"):
             await self.gpu_request(request, scope, receive, send)
             return
-        if request.url.path == "/healthz" and headers.get("host") in {"127.0.0.1", "localhost"}:
+        if scope["path"] == "/healthz" and headers.get("host") in {"127.0.0.1", "localhost"}:
             code = 200 if (self.manager.cleanup_healthy and self.manager.dispatch_healthy) else 503
             await JSONResponse({"status": "ok" if code == 200 else "cleanup_failed"}, status_code=code)(scope, receive, send)
             return
@@ -110,7 +110,7 @@ class PublicBoundary:
             reject(403, "client_ip_required", "a verified Cloudflare client address is required")
         ip_key = self.manager.ip_key(address)
         self.manager.rate_limit(ip_key + (":preflight" if request.method == "OPTIONS" else ""))
-        path = request.url.path
+        path = scope["path"]
         if not path.startswith(PREFIX + "/") or len(path) > 512 or len(scope.get("query_string", b"")) > 4096:
             reject(404, "not_found", "unknown public API route")
         path = path[len(PREFIX):]
@@ -146,29 +146,41 @@ class PublicBoundary:
         if tenant:
             self.manager.rate_limit("session:" + tenant.identifier, self.config.requests_per_session_minute)
             tenant.last_activity = self.manager.now()
-        if self.manager.inflight >= self.config.max_requests or (tenant and tenant.inflight >= 3):
+        if (self.manager.inflight >= self.config.max_requests or (tenant and tenant.inflight >= 3)
+                or self.manager.ip_inflight.get(ip_key, 0) >= 6):
             reject(429, "service_busy", "too many simultaneous requests; try again later")
         mutation = tenant is not None and method in {'POST', 'PUT'} and not path.endswith('/cancel') and path != '/web/activity'
         expensive = expensive_request(method, path)
         if mutation and tenant.mutating:
             reject(429, 'workspace_busy', 'Wait for the current workspace change to finish; cancellation remains available.')
-        if expensive and self.manager.expensive_requests >= self.config.max_expensive_requests:
-            reject(429, 'compute_busy', 'Shared analysis capacity is busy; try again shortly.')
-        storage = self.config.max_workspace_bytes if expensive and mutation and path != '/signal-analyzer/analyze' else 0
-        if storage:
-            # Reserve a whole bounded workspace before receiving a writer's
-            # body; concurrent tenants cannot each spend the same free tmpfs.
-            self.manager.reserve_storage(storage)
-        # Reserve before receiving the body, including chunked and slow requests.
+        storage = 0
+        counted_expensive = False
+
+        def reserve_heavy():
+            nonlocal storage, counted_expensive
+            if not expensive:
+                return
+            if (self.manager.expensive_requests >= self.config.max_expensive_requests
+                    or self.manager.ip_expensive.get(ip_key, 0) >= 1):
+                reject(429, 'compute_busy', 'Shared analysis capacity is busy; try again shortly.')
+            amount = self.config.max_workspace_bytes if mutation and path != '/signal-analyzer/analyze' else 0
+            if amount:
+                self.manager.reserve_storage(amount)
+                storage = amount
+            self.manager.expensive_requests += 1
+            self.manager.ip_expensive[ip_key] = self.manager.ip_expensive.get(ip_key, 0) + 1
+            counted_expensive = True
+
+        # Only bounded ingress slots are held while waiting for a JSON body.
         self.manager.inflight += 1
+        self.manager.ip_inflight[ip_key] = self.manager.ip_inflight.get(ip_key, 0) + 1
         if mutation:
             tenant.mutating = True
-        if expensive:
-            self.manager.expensive_requests += 1
         if tenant:
             tenant.inflight += 1
         try:
             if path in ('/datasets/upload', '/signal-analyzer/upload') and method == 'POST':
+                reserve_heavy()
                 await self.upload_csv(request, tenant, scope, receive, send)
                 return
             data = b""
@@ -193,6 +205,7 @@ class PublicBoundary:
                 reject(422, "invalid_json", "invalid JSON body")
             except asyncio.TimeoutError:
                 reject(408, "request_timeout", "request body took too long")
+            reserve_heavy()
             if path in {"/web/sessions", "/web/queue/cancel", "/web/sessions/end", "/web/activity"}:
                 if body != {}:
                     reject(422, "invalid_request", "session creation takes an empty JSON object")
@@ -301,10 +314,16 @@ class PublicBoundary:
             await tenant.app(child_scope, child_receive, send)
         finally:
             self.manager.inflight -= 1
+            self.manager.ip_inflight[ip_key] -= 1
+            if not self.manager.ip_inflight[ip_key]:
+                del self.manager.ip_inflight[ip_key]
             if mutation:
                 tenant.mutating = False
-            if expensive:
+            if counted_expensive:
                 self.manager.expensive_requests -= 1
+                self.manager.ip_expensive[ip_key] -= 1
+                if not self.manager.ip_expensive[ip_key]:
+                    del self.manager.ip_expensive[ip_key]
             if storage:
                 self.manager.release_storage(storage)
             if tenant:
@@ -312,7 +331,7 @@ class PublicBoundary:
 
     async def upload_csv(self, request, tenant, scope, receive, send):
         from opendpd.services.csv_upload import MAX_UPLOAD_BYTES, CsvUploadRejected, admit_upload, check_filename, quarantine_path
-        signal_upload = request.url.path.endswith('/signal-analyzer/upload')
+        signal_upload = scope["path"].endswith('/signal-analyzer/upload')
         if signal_upload:
             from opendpd.services.signal_analyzer import admit_signal_upload
         if tenant.uploading:
@@ -383,10 +402,10 @@ class PublicBoundary:
         for key in ('content-length', 'x-opendpd-lease', 'x-opendpd-exit'):
             if len(headers.getlist(key)) > 1:
                 reject(400, 'ambiguous_headers', 'duplicate security headers are refused')
-        path = request.url.path.split("/")
+        path = scope["path"].split("/")
         broker = self.manager.gpu
         if request.method == "POST":
-            limit = (4096 if request.url.path in {'/_gpu/resources', '/_gpu/poll'} else
+            limit = (4096 if scope["path"] in {'/_gpu/resources', '/_gpu/poll'} else
                      MAX_BYTES if path[-1] == "result" else 24 * 1024 * 1024 if path[-1] == 'checkpoint' else 4 * 1024 * 1024)
             length = headers.get('content-length')
             if length is not None and (not length.isdecimal() or int(length) > limit):
@@ -405,10 +424,10 @@ class PublicBoundary:
         else:
             raw = b""
         try:
-            if request.url.path == '/_gpu/resources' and request.method == 'POST':
+            if scope["path"] == '/_gpu/resources' and request.method == 'POST':
                 broker.record_resources(json.loads(raw))
                 result = {'ok': True}
-            elif request.url.path == "/_gpu/poll" and request.method == "POST":
+            elif scope["path"] == "/_gpu/poll" and request.method == "POST":
                 body = json.loads(raw)
                 result = {"job": broker.poll(body["name"])}
             else:

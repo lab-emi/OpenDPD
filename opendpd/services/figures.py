@@ -1,6 +1,7 @@
 """Save hash-bound review views and export plots/data with a standalone replay."""
 
-import csv
+from opendpd.services.csv_safety import SafeWriter
+
 import hashlib
 import io
 import json
@@ -153,7 +154,7 @@ def _export(figure, plots):
     members["spectrum_layout.py"] = Path(spectrum_layout.__file__).read_bytes()
     members["requirements.txt"] = f"matplotlib=={matplotlib.__version__}\n".encode()
     data = io.StringIO()
-    writer = csv.writer(data)
+    writer = SafeWriter(data)
     writer.writerow(["panel", "run_id", "trace", "role", "visible", "x", "x_unit", "y", "y_unit"])
     for i, panel in enumerate(figure.spec.panels):
         for trace in panel.traces:
@@ -165,7 +166,7 @@ def _export(figure, plots):
                 writer.writerow([i, trace.run_id, trace.trace_name, tr["role"], trace.visible, xv, xunit, yv, yunit])
     members["chart-data.csv"] = data.getvalue().encode()
     data = io.StringIO()
-    writer = csv.writer(data)
+    writer = SafeWriter(data)
     writer.writerow(["run_id", "result_id", "profile", "profile_version", "evidence", "mock", "metric", "value", "unit", "status", "reason"])
     for b in figure.bindings:
         r = b.review.result
@@ -189,8 +190,8 @@ def _export(figure, plots):
             caption += [f"Incompatible {a.run_id} / {b.run_id}: {s}" for s in incompatibilities(a.review.result, b.review.result)]
     members["caption.md"] = ("\n".join(caption) + "\n").encode()
     members["replay.py"] = Path(figure_render.__file__).read_bytes()
-    members["README.md"] = ("Extract this bundle, install matplotlib, then run `python replay.py .`.\n"
-                             "The command verifies all packaged hashes and writes PNG, SVG and PDF to replayed/.\n"
+    members["README.md"] = ("Use `opendpd figures replay bundle.zip --out replayed` with the matching OpenDPD installed.\n"
+                             "Hashes detect corruption, not authenticity. Do not execute Python files from an untrusted bundle.\n"
                              "It replays saved plot data; it does not re-evaluate raw IQ. Use the Studio full run package\n"
                              "and its recorded evaluation command to independently reproduce formal metrics.\n"
                              "figure.json includes full result/model/data/config hashes, software, profiles, conditions and view state.\n").encode()

@@ -65,7 +65,7 @@ class SplitSpec(StrictModel):
     """Contiguous train/val/test split performed *before* framing, with an
     optional guard band so overlapping frames never straddle a boundary."""
 
-    version: str = "contiguous-v1"
+    version: Slug = "contiguous-v1"
     method: Literal["contiguous"] = "contiguous"
     ratios: Dict[Literal["train", "val", "test"], float]
     guard_samples: int = Field(default=0, ge=0)
@@ -136,7 +136,7 @@ class DatasetManifest(StrictModel):
     split: SplitSpec
     captures: List[DatasetCapture] = Field(default_factory=list, max_length=16)
     parent_dataset_id: Optional[Slug] = None
-    preprocessing_version: str = "raw-v1"
+    preprocessing_version: Slug = "raw-v1"
     raw_sha256: Optional[Sha256] = None
     versions: List[DatasetVersion] = Field(default_factory=list)   # empty for built-ins: raw/ is the split dir
     notes: Optional[str] = None

@@ -17,6 +17,7 @@ from opendpd.schemas import ArtifactKind, EvaluationResult, MetricValue
 from opendpd.services import experiments
 from opendpd.services.evaluation import available_profiles
 from opendpd.services.workspace import Workspace, read_json
+from opendpd.safe_paths import contained_path
 
 
 def _metric_text(m: MetricValue) -> str:
@@ -86,7 +87,7 @@ class _Report:
         self.spectrum = None
         for a in manifest.by_kind(ArtifactKind.plot) if manifest else []:
             if a.artifact_id == "plot-spectrum":
-                self.spectrum = read_json(ws.run_dir(run_id) / a.file.path)
+                self.spectrum = read_json(contained_path(ws.run_dir(run_id), a.file.path))
         self.dataset = ws.get_dataset(self.resolved.dataset.id)
 
     @property

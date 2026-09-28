@@ -54,7 +54,8 @@ def test_browser_opens_only_after_health_check_with_bootstrap_url(tmp_path, monk
                          opener=lambda url: (opened.append(url), order.append("browser"))[1] is None)
     assert rc == 0
     assert order == ["serve", "browser"], order
-    assert opened and opened[0].startswith("http://127.0.0.1:") and "/bootstrap?token=" in opened[0]
+    assert opened and opened[0].startswith("file:")
+    assert "token=" not in opened[0]
     out = capsys.readouterr().out
     assert "warning: frontend assets are not built/installed" in out
     assert not (ws / launcher.LOCK_FILE).exists(), "lock released on exit"
@@ -72,7 +73,8 @@ def test_running_instance_is_reused_not_duplicated(tmp_path, monkeypatch):
     served = []
     # browser mode explicitly: on a desktop with the extra installed, 'auto' would open a real window
     rc = launcher.launch(ws, mode="browser", serve=lambda *a: served.append(a), opener=lambda u: opened.append(u) or True)
-    assert rc == 0 and served == [] and opened == ["http://127.0.0.1:8790/bootstrap?token=abc"]
+    assert rc == 0 and served == [] and len(opened) == 1
+    assert opened[0].startswith("file:") and "token=" not in opened[0]
 
 
 def test_stale_lock_is_removed(tmp_path):

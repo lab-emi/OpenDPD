@@ -102,7 +102,10 @@ class Server:
         self.jar = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
         self.headers = {"Content-Type": "application/json"}
-        token = urllib.parse.parse_qs(urllib.parse.urlsplit(self.bootstrap_url).query)["token"][0]
+        request = urllib.request.Request(self.base + "/bootstrap/mint", data=b"", method="POST",
+                                         headers={"X-OpenDPD-Launcher": lock["launcher_secret"]})
+        with self.opener.open(request, timeout=5) as response:
+            token = json.loads(response.read())["token"]
         status, body, _ = self.api("POST", "/api/v1/session/bootstrap", {"token": token})
         assert status == 200, body
         self.headers["X-OpenDPD-CSRF"] = body["csrf_token"]
@@ -504,7 +507,7 @@ def run_browser(server: Server, big_log: str, log_dir: Path, samples: int) -> Di
     perf_out = log_dir / "live-perf.json"
     perf_out.unlink(missing_ok=True)
     env = dict(os.environ, OPENDPD_LIVE_URL=server.bootstrap_url, OPENDPD_PERF_OUT=str(perf_out), OPENDPD_LIVE_BIG_LOG=big_log,
-               OPENDPD_LIVE_SAMPLES=str(samples))
+               OPENDPD_LIVE_SAMPLES=str(samples), OPENDPD_LIVE_LOCK=str(server.workspace / ".studio.lock"))
     results = {}
     for project in ("chromium-1366", "firefox-1366"):
         proc = subprocess.run(["npx", "playwright", "test", "e2e/live.spec.ts", f"--project={project}", "--reporter=line"],

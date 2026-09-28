@@ -150,6 +150,14 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         payload = {"ready": not problems, "problems": problems, "version": __version__, "frontend": static}
         return JSONResponse(payload, status_code=200 if not problems else 503)
 
+    @app.post("/bootstrap/mint", include_in_schema=False)
+    async def mint_bootstrap(request: Request):
+        from opendpd.server.security import LAUNCHER_HEADER
+        token = request.app.state.sessions.mint(request.headers.get(LAUNCHER_HEADER, ""))
+        if token is None:
+            return JSONResponse({"error": "launcher authentication required"}, status_code=401)
+        return JSONResponse({"token": token})
+
     @app.get("/bootstrap", include_in_schema=False)
     async def bootstrap(request: Request, token: str = ""):
         session = request.app.state.sessions.exchange(token)

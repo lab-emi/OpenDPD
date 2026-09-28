@@ -47,13 +47,13 @@ def container_options(image, name, seconds):
             "--env=TRITON_CACHE_DIR=/run/opendpd-triton",
             "--env=HOME=/tmp", "--env=MPLCONFIGDIR=/tmp/matplotlib", "--env=XDG_CACHE_HOME=/tmp/cache",
             "--env=OMP_NUM_THREADS=4", "--env=OPENBLAS_NUM_THREADS=4", "--env=MKL_NUM_THREADS=4",
-            "--env=PYTHONDONTWRITEBYTECODE=1", "--env=PYTHONUNBUFFERED=1"]
+            "--env=PYTHONDONTWRITEBYTECODE=1", "--env=PYTHONUNBUFFERED=1", "--env=PYTHONSAFEPATH=1", "--workdir=/"]
 
 
 def container_command(image, name, root, run_id, seconds):
     return [*container_options(image, name, seconds),
-            "--volume", f"{root}:/workspace:rw,nosuid,nodev,noexec", "--workdir=/workspace",
-            "--entrypoint=python", image, "-m", "opendpd.web.gpu_container", "--workspace", "/workspace", "--run-id", run_id]
+            "--volume", f"{root}:/workspace:rw,nosuid,nodev,noexec",
+            "--entrypoint=python", image, "-P", "-m", "opendpd.web.gpu_container", "--workspace", "/workspace", "--run-id", run_id]
 
 
 class Agent:
@@ -96,23 +96,25 @@ class Agent:
             return json.loads(data) if response.headers.get_content_type() == "application/json" else data
 
     def update(self, job, root, offsets):
+        def read(name, offset=0, limit=64 * 1024 * 1024):
+            return read_regular(root, f"runs/{job['run_id']}/{name}", offset, limit)
         self.publish_resources()
         payload = dict(offsets)
         for key, name in [("log", "logs/worker.log"), ("events", "events.jsonl")]:
-            data = read_regular(root, name, offsets.get(key + "_offset", 0), 256 * 1024)
+            data = read(name, offsets.get(key + "_offset", 0), 256 * 1024)
             payload[key] = base64.b64encode(data).decode()
-        live = read_regular(root, "live.json", limit=2 * 1024 * 1024)
+        live = read("live.json", limit=2 * 1024 * 1024)
         if live:
             payload["live"] = base64.b64encode(live).decode()
         result = self.request(f"/jobs/{job['id']}/update", payload, job)
         offsets.update({k: result[k] for k in ("log_offset", "events_offset") if k in result})
         if result['continue']:
             from opendpd.services.model_download import MAX_MODEL_BYTES, MODEL_FILE, MODEL_META
-            metadata = read_regular(root, MODEL_META, limit=4096)
+            metadata = read(MODEL_META, limit=4096)
             if metadata:
                 info = json.loads(metadata)
                 if info['sha256'] != offsets.get('checkpoint_sha256'):
-                    model = read_regular(root, MODEL_FILE, limit=MAX_MODEL_BYTES + 1)
+                    model = read(MODEL_FILE, limit=MAX_MODEL_BYTES + 1)
                     if len(model) <= MAX_MODEL_BYTES and hashlib.sha256(model).hexdigest() == info['sha256']:
                         result = self.request(f"/jobs/{job['id']}/checkpoint", {
                             'sha256': info['sha256'], 'epoch': info['epoch'], 'data': base64.b64encode(model).decode(),
@@ -133,20 +135,20 @@ class Agent:
         root.mkdir(mode=0o700)
         process = None
         try:
-            unpack(self.request(f"/jobs/{job['id']}/input", job=job), root)
+            unpack(self.request(f"/jobs/{job['id']}/input", job=job), root, input_run_id=job['run_id'])
             run = root / "runs" / job["run_id"]
             (run / "logs").mkdir(exist_ok=True)
             for path in [root, *root.rglob("*")]:
                 os.chown(path, 65532, 65532)
             offsets = {"log_offset": 0, "events_offset": 0}
-            if not self.update(job, run, offsets):
+            if not self.update(job, root, offsets):
                 return
             with (run / "logs" / "worker.log").open("wb") as log:
                 command = container_command(self.image, name, root, job["run_id"], seconds)
                 process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
                 cancelled = False
                 while process.poll() is None:
-                    if stopping or time.time() >= job["expires_at"] or not self.update(job, run, offsets):
+                    if stopping or time.time() >= job["expires_at"] or not self.update(job, root, offsets):
                         cancelled = True
                         podman("kill", name, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         break
@@ -160,7 +162,8 @@ class Agent:
                     time.sleep(2)
                 code = process.wait(timeout=15)
             # Full final logs/events are an atomic extension of their streamed prefix.
-            data = pack(run, run.rglob("*"))
+            podman("rm", "--ignore", "-f", name, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            data = pack(root, subtree=f"runs/{job['run_id']}")
             self.request(f"/jobs/{job['id']}/result", data, job, 3 if cancelled else 0 if code == 0 else 1)
         finally:
             subprocess.run(["/usr/bin/podman", "rm", "-f", name], timeout=20,
@@ -178,7 +181,7 @@ class Agent:
         # A tensor allocation alone cannot detect a missing Triton toolchain.
         subprocess.run(
             [*container_options(self.image, "opendpd-gpu-probe", 60),
-             "--entrypoint=python", self.image, "-m", "opendpd.web.gpu_probe"],
+             "--entrypoint=python", self.image, "-P", "-m", "opendpd.web.gpu_probe"],
             check=True, timeout=75, stdout=subprocess.DEVNULL,
         )
         for path in self.root.iterdir():

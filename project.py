@@ -45,7 +45,7 @@ class Project:
 
         # Load Hyperparameters
         self.args = get_arguments() if args is None else args
-        self.hparams = vars(self.args)
+        self.hparams = dict(vars(self.args))
         for k, v in self.hparams.items():
             setattr(self, k, v)
 
@@ -174,9 +174,9 @@ class Project:
             raise FileNotFoundError(f"spec.json not found for dataset: {self.dataset_name}")
         
         if spec:
-            for k, v in spec.items():
-                setattr(self, k, v)
-                self.hparams[k] = v
+            from opendpd.schemas.legacy_spec import validate_spec
+            for k, v in validate_spec(spec).items():
+                self.add_arg(k, v)
 
     def add_arg(self, key: str, value: Any):
         setattr(self, key, value)

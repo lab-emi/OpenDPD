@@ -158,6 +158,7 @@ const uiText = new Map(Object.entries(en).map(([key, value]) => [value as string
 export function message(value: string | null | undefined): string {
   if (!value) return ''
   const text = value.trim()
+  if (text.length > 1024) return value
   const table = messages[current] ?? enMessages as Messages
   if (table[text] !== undefined) return table[text]!
   const key = uiText.get(text)

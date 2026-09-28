@@ -21,4 +21,5 @@ RUN uv pip install --python /opt/opendpd-runtime --no-cache --no-deps --no-build
 # Remove installers and their bundled dependencies after building the app.
 RUN uv pip uninstall --system --break-system-packages pip setuptools wheel uv
 USER 65532:65532
-ENTRYPOINT ["python", "-m", "opendpd.web.gpu_container"]
+WORKDIR /
+ENTRYPOINT ["python", "-P", "-m", "opendpd.web.gpu_container"]
