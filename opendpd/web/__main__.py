@@ -32,7 +32,9 @@ def main():
                        tunnel_host=os.environ["OPENDPD_WEB_TUNNEL_HOST"],
                        gpu_token=(Path(os.environ["OPENDPD_GPU_TOKEN_FILE"]).read_text().strip()
                                   if os.environ.get("OPENDPD_GPU_TOKEN_FILE") else os.environ.get("OPENDPD_GPU_TOKEN")),
-                       dataset_publications=os.environ.get("OPENDPD_WEB_DATASET_PUBLICATIONS") == "1")
+                       dataset_publications=os.environ.get("OPENDPD_WEB_DATASET_PUBLICATIONS") == "1",
+                       backbone_publications=os.environ.get("OPENDPD_WEB_BACKBONE_PUBLICATIONS") == "1",
+                       arena_submissions=os.environ.get("OPENDPD_WEB_ARENA_SUBMISSIONS") == "1")
     uvicorn.run(create_web_app(config), host=args.host, port=args.port, proxy_headers=False,
                 access_log=False, limit_concurrency=128, timeout_keep_alive=5)
 

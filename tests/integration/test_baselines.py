@@ -91,6 +91,32 @@ def test_gmp_fit_with_a_cutoff_reports_the_retained_rank_and_its_lookahead(ws):
     assert any("cutoff rcond=0.001" in lim for lim in result.limitations)
 
 
+def test_current_pa_fit_history_uses_the_same_protocol_as_its_final_result(ws):
+    profile = "opendpd-spectral-v2"
+    config = _with_params(instantiate("pa-mp-studio-v1", "capture"), {"K": 3, "Q": 3, "rcond": 1e-4})
+    config.evaluation.profile_id = profile
+    record = _run(ws, config)
+    result = load_result(ws, record.run_id)
+    history = next(h for h in training_history(ws, record.run_id) if h.split == "test")
+    for name in ("NMSE", "ACLR_L", "ACLR_R", "ACLR_AVG"):
+        assert history.values[name] == pytest.approx(result.metric(name).value, abs=1e-5)
+    assert ("IBE" in history.values) == (profile == "opendpd-spectral-v2")
+    fit = json.loads((ws.run_dir(record.run_id) / "fit.json").read_text())
+    assert fit["history_metric_profile"] == profile
+    assert 0 < fit["training_samples"] <= 32768
+
+
+def test_frozen_legacy_pa_fit_history_is_unchanged(ws):
+    config = _with_params(instantiate("pa-mp-studio-v1", "capture"), {"K": 3, "Q": 3, "rcond": 1e-4})
+    config.evaluation.profile_id = "legacy-opendpd-v1"
+    record = _run(ws, config)
+    history = next(h for h in training_history(ws, record.run_id) if h.split == "test")
+    # Recorded before the current-profile history fix. Legacy histories score
+    # flat valid arrays; formal legacy evaluation retains padded segment means.
+    assert history.values["NMSE"] == pytest.approx(-59.7994946323, abs=1e-3)
+    assert "EVM" in history.values and "IBE" not in history.values
+
+
 def test_ila_dpd_is_scored_through_the_gradient_surrogate_and_states_its_path(ws, gru_pa, mp_dpd):
     result = load_result(ws, mp_dpd.run_id)
     assert result.evidence_type.value == "dpd_surrogate"

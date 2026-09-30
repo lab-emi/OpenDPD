@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from backbones.finite_iq import amplitude, phase_denominator
 
 
 class RRU(nn.Module):
@@ -77,10 +78,10 @@ class APNRRU(nn.Module):
 
         last_I = windows[:,:,-1,0]  # (batch_size, seq_len)
         last_Q = windows[:,:,-1,1]
-        last_magnitudes = torch.sqrt(last_I**2 + last_Q**2)
+        last_magnitudes = amplitude(last_I**2 + last_Q**2)
 
          # Calculate r using only the last step of each window
-        r = torch.complex(last_I, -last_Q) / (last_magnitudes)  # r(k) = x(k)/|x(k)|
+        r = torch.complex(last_I, -last_Q) / phase_denominator(last_magnitudes)  # r(k) = x(k)/|x(k)|
         
         # Phase normalization for entire windows using the last step's r
         r_real = r.real.unsqueeze(-1)  # Add dimension for broadcasting

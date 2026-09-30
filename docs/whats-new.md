@@ -1,5 +1,29 @@
 # What's new
 
+## 2.3.0: DPD Arena on APA_200MHz_b
+
+Arena compares DPD configurations through one frozen TRes-GRU PA per condition.
+The published benchmark uses only the **APA_200MHz_b** measured dataset, with 23 model entries and 233 test cases.
+It now uses complete-symbol EVM, actual output ACLR and fixed-reference FoM:
+`Q − 5 log10(P/1000) − 5 log10(OPs/2000)`. Every size uses the same costs;
+seed variability is shown separately. PA and DPD inputs come only from the original measured captures. APA is
+repartitioned before PA/DPD training to retain complete held-out symbols.
+PA and neural DPD configurations now receive 240 full-window epochs with
+batch 64. DPD checkpoints use validation in-band error and worse-side ACLR;
+final FoM uses complete-symbol test EVM and output ACLR. Training
+loads only train/validation arrays, and all checkpoints are frozen before test
+evaluation. ILC entries are excluded; MP/GMP use training-only PA feedback,
+without ILC-generated data.
+
+Rank adds a configuration table and four EVM/ACLR-versus-parameters/operations
+plots with separate Pareto fronts and seed error bars. PA parameter count,
+validation NMSE and test NMSE are visible. GRU/GMP remain DPD competitors;
+additional learned PA judges no longer determine scores.
+
+Safe backbone templates, classical PA fitting and hosted Arena execution are
+also included. [Arena guide](guides/dpd-arena.md) ·
+[Protocol](protocols/dpd-arena-v6.md) · [Validation record](releases/2.3.0.md)
+
 ## 2.2.18: safer imports, sessions and hosted execution
 
 Validated import metadata and portable paths, transactional experiment imports, single-use desktop login links, bounded NumPy input, safer GPU transfers and per-workspace export caching. [Release notes](releases/release-notes-2.2.18.md) · [Security review](releases/security-review-2.2.18.md).

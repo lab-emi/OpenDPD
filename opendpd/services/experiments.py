@@ -441,6 +441,7 @@ def _prepare_inputs(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentCo
         params = pa.parameters
         net = CoreModel(input_size=2, hidden_size=int(params.get("hidden_size", 0) or ns.PA_hidden_size),
                         num_layers=int(params.get("num_layers", 1)), backbone_type=ns.PA_backbone,
+                        user_definition=getattr(ns, 'PA_user_definition', None),
                         window_size=ns.window_size, num_dvr_units=ns.num_dvr_units, thx=ns.thx, thh=ns.thh)
         return f"PA_S_{ns.seed}_M_{ns.PA_backbone.upper()}_H_{ns.PA_hidden_size:d}_F_{ns.frame_length:d}" \
                f"_P_{count_net_params(net):d}"

@@ -98,7 +98,7 @@ def test_action_references_are_immutable_and_publish_is_release_only():
     import re
     root = Path(__file__).resolve().parents[2]
     for file in (root / '.github/workflows').glob('*.yml'):
-        for ref in re.findall(r'uses:\s+(\S+)', file.read_text()):
+        for ref in re.findall(r'(?m)^\s*(?:-\s*)?uses:\s+(\S+)', file.read_text()):
             assert re.fullmatch(r'[\w./-]+@[0-9a-f]{40}', ref), ref
     publish = (root / '.github/workflows/publish.yml').read_text()
     assert 'workflow_dispatch' not in publish

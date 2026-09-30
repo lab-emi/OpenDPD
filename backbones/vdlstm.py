@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from backbones.finite_iq import amplitude, phase_denominator
 
 
 class VDLSTM(nn.Module):
@@ -60,7 +61,7 @@ class VDLSTM(nn.Module):
         i_x = x[..., 0]
         q_x = x[..., 1]
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
-        amp = torch.sqrt(amp2)  # Dim: (batch_size, frame_length, 1)
+        amp = amplitude(amp2)  # Dim: (batch_size, frame_length, 1)
 
         # for (i_x_sample, q_x_sample, amp_sample) in zip(i_x, q_x, amp):  # sample Dim: (frame_length, 1)
         pad = i_x[:, -self.pad_size:]
@@ -72,8 +73,9 @@ class VDLSTM(nn.Module):
         pad = amp[:, -self.pad_size:]
         amp = torch.cat((pad, amp), dim=1)
         amp = amp.unfold(dimension=1, size=self.window_length, step=self.stride)
-        cos = i_x / amp  # Dim: (batch, n_windows, window_length)
-        sin = q_x / amp  # Dim: (batch, n_windows, window_length)
+        denominator = phase_denominator(amp)
+        cos = i_x / denominator  # Dim: (batch, n_windows, window_length)
+        sin = q_x / denominator  # Dim: (batch, n_windows, window_length)
         rnn_out, _ = self.rnn(amp)  # Dim: (batch, n_windows, hidden_size)
         lambda_1 = self.fc_lambda_1(rnn_out)  # Dim: (batch, n_windows, hidden_size)
         lambda_2 = self.fc_lambda_2(rnn_out)  # Dim: (batch, n_windows, hidden_size)

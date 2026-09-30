@@ -4,6 +4,7 @@ Reproduced from: https://ieeexplore.ieee.org/document/10896855/
 
 import torch
 from torch import nn
+from backbones.finite_iq import amplitude
 
 
 class MCLDNN(nn.Module):
@@ -107,7 +108,7 @@ class MCLDNN(nn.Module):
         i_x = torch.unsqueeze(x[..., 0], dim=-1)
         q_x = torch.unsqueeze(x[..., 1], dim=-1)
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
-        amp = torch.sqrt(amp2)
+        amp = amplitude(amp2)
         amp3 = torch.pow(amp, 3)
         x = torch.cat((i_x, q_x, amp, amp2, amp3), dim=-1)
         feature_size = x.size(2)

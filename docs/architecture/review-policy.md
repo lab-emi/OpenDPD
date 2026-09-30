@@ -4,6 +4,11 @@ Protected paths include scientific references and protocols, workflow definition
 
 The protected-path check runs trusted base-branch code and reads changed files (including previous filenames) from the GitHub API. It requires an independent admin/maintainer approval attached to the current PR head; comments and labels do not substitute for approval. After a review, rerun the check or add a PR comment to trigger a fresh check. Repository rulesets that require Code Owner approval and dismiss stale approvals are the primary controls; their settings must be verified separately from repository code.
 
+User backbone contributions have a stricter, separate gate: only an independent
+human maintainer's `APPROVED` review of the exact head counts; the comment mechanism
+above is not sufficient. Studio refuses contributions until the required no-bypass
+repository rules are enabled. See [user backbone templates](user-backbones.md).
+
 Only publishing a GitHub release starts the production PyPI workflow. Its tag must match the package version. The publisher has its own `pypi` environment and the only OIDC write permission. Maintainers should configure environment reviewers when more than one independent reviewer is available; the workflow does not assume such an approval exists. Build and publish actions are commit pinned and Dependabot proposes updates.
 
 For a release: run the regression suites and packaging checks, review the exact head, merge under the repository's configured permissions, build the pinned runtime, wait for active jobs to drain, deploy with rollback copies, then verify the real hosted workflow and installed wheel. Never alter branch protection to make a release pass.

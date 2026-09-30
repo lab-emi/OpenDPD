@@ -154,7 +154,7 @@ def pack(root: Path, paths=None, *, subtree: str | None = None) -> bytes:
                 walk(directory)
             else:
                 for path in paths:
-                    relative = path.relative_to(root).as_posix()
+                    relative = path.relative_to(root / subtree if subtree else root).as_posix()
                     parts = relative_parts(relative)
                     if any(p.startswith(".gpu-") for p in parts):
                         continue

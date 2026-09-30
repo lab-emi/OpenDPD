@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from fastapi import HTTPException
 
 from opendpd.core.registry import get_model
+from opendpd.runtime.arena_limits import ARENA_MAX_RUNTIME_SECONDS
 from opendpd.schemas import ExperimentConfig
 
 from opendpd.schemas.common import SLUG_PATTERN as SLUG, FILE_ID_PATTERN as FILE_ID
@@ -42,6 +43,12 @@ ROUTES["POST"] += [r"/signal-generator/signals/sg-[a-f0-9]{64}/(archive|restore)
 ROUTES["POST"] += [r"/signal-generator/datasets/sds-[a-f0-9]{64}/(archive|restore)"]
 ROUTES["GET"] += [r"/signal-analyzer/(sources|datasets)", r"/signal-generator/datasets/sds-[a-f0-9]{64}(/download)?"]
 ROUTES["POST"] += [r"/signal-analyzer/(analyze|upload)"]
+ROUTES["GET"] += [r"/backbones/(template|capability|uploads|catalog)"]
+ROUTES["GET"] += [r"/backbones/uploads/bbpr-[a-f0-9]{64}/source"]
+ROUTES["POST"] += [r"/backbones/uploads", r"/backbones/catalog/refresh", r"/backbones/uploads/bbpr-[a-f0-9]{64}/submit"]
+ROUTES["GET"] += [r"/arena", r"/arena/boards/apa-200mhz-b",
+                  r"/arena/submissions", r"/arena/submissions/arena-[a-f0-9]{32}"]
+ROUTES["POST"] += [r"/arena/submissions"]
 ROUTES["POST"] += [r"/signal-generator/import"]
 
 
@@ -73,6 +80,7 @@ class WebConfig:
     max_pending: int = 2
     max_parallel: int = 1
     max_runtime_seconds: int = 1800
+    arena_max_runtime_seconds: int = ARENA_MAX_RUNTIME_SECONDS
     max_workspace_bytes: int = 256 * 1024 * 1024
     max_body: int = 64 * 1024
     max_requests: int = 32
@@ -80,6 +88,8 @@ class WebConfig:
     # Hosted publication uses the operator's dedicated GitHub CLI identity and
     # must be explicitly enabled. Browser users never supply a GitHub token.
     dataset_publications: bool = False
+    backbone_publications: bool = False
+    arena_submissions: bool = False
     publications_per_ip: int = 2
     publications_per_day: int = 20
     sweep_seconds: float = 5.0
@@ -90,6 +100,9 @@ class WebConfig:
     drain_seconds: int = 300
 
     def __post_init__(self):
+        if (type(self.arena_max_runtime_seconds) is not int
+                or not 1 <= self.arena_max_runtime_seconds <= ARENA_MAX_RUNTIME_SECONDS):
+            raise ValueError("Arena runtime guard must be between one second and 7 days")
         for name in ('max_sessions', 'sessions_per_ip', 'max_waiting', 'waiting_per_ip',
                      'queue_lease_seconds', 'max_pending_global', 'max_requests', 'quota_checks_per_sweep'):
             if not 1 <= getattr(self, name) <= 65536:
@@ -131,7 +144,7 @@ def expensive_request(method: str, path: str) -> bool:
     """Bound in-process numeric/file work separately from lightweight status and cancellation."""
     if method == 'GET':
         return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/(sources|datasets)|/signal-generator/datasets/[^/]+/download|/signal-generator/signals/[^/]+/(input.csv|metadata.json|download)|/pa-library/simulations/[^/]+/(output.csv|paired.csv|metadata.json)|/datasets/[^/]+/(analysis|download)|/results/compare|/results/[^/]+(/(report|review))?', path))
-    return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/')))
+    return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/', '/backbones/')))
 
 
 def check_slug(value, field: str):
@@ -170,6 +183,13 @@ def check_config(config: ExperimentConfig):
     if config.evaluation.chunk_samples and config.evaluation.chunk_samples > 65536:
         reject(422, "compute_limit", "chunk_samples must be at most 65536")
     model = get_model(config.model.key)
+    if model.key == "user_template":
+        from opendpd.core.registry import RegistryError, validate_parameters
+        try:
+            validate_parameters(model.key, config.model.parameters, "pa" if config.task.value in ("train_pa", "evaluate_pa") else "dpd")
+        except RegistryError as exc:
+            reject(422, "invalid_backbone", exc.message)
+        return
     if model.key == "ilc_dpd":
         from opendpd.core.registry import validate_parameters
         params = validate_parameters(model.key, config.model.parameters, "dpd")
@@ -177,8 +197,23 @@ def check_config(config: ExperimentConfig):
             if params[name] > maximum:
                 reject(422, "compute_limit", f"ILC {name} must be at most {maximum} in the public app")
         return
+    if model.key in {"mp_ls", "gmp_ls"}:
+        from opendpd.core.polynomial import coefficient_count
+        from opendpd.core.registry import validate_parameters
+        if config.task.value not in {"train_pa", "evaluate_pa"}:
+            reject(422, "compute_limit", "public polynomial fits currently support forward PA modeling only")
+        params = validate_parameters(model.key, config.model.parameters, "pa")
+        # At most 256 MiB for a complex128 training basis. The worker also
+        # has a memory/runtime limit; SVD work arrays require additional RAM.
+        if coefficient_count(model.key, params) > 512:
+            reject(422, "compute_limit", "public PA fits support at most 512 complex coefficients")
+        if config.task.value == "train_pa" and (t.train_samples is None or t.train_samples > 32768):
+            reject(422, "compute_limit", "set training.train_samples to at most 32768 for a public PA fit")
+        if config.execution.device != "cpu":
+            reject(422, "compute_limit", "polynomial PA fitting and testing use CPU")
+        return
     if model.status != "supported" or model.training_method != "gradient":
-        reject(422, "compute_limit", "the public demo currently supports reviewed neural models only")
+        reject(422, "compute_limit", "this model is unavailable in the public demo")
     params = {**model.defaults(), **config.model.parameters}
     for name, value in params.items():
         if isinstance(value, (float, int)) and (not math.isfinite(value) or abs(value) > 128):

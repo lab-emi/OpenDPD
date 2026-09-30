@@ -1,5 +1,6 @@
 """Amplitude-feature variant of the shared quantized GRU backbone."""
 import torch
+from backbones.finite_iq import amplitude
 from backbones.qgru import QGRU as BaseQGRU
 
 
@@ -10,7 +11,7 @@ class QGRU(BaseQGRU):
         q_x = torch.unsqueeze(x[..., 1], dim=-1)
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
         # amp2 = self.pow2(i_x) + self.pow2(q_x)
-        amp = torch.sqrt(amp2)
+        amp = amplitude(amp2)
         # amp = self.sqrt(amp2)
         amp3 = torch.pow(amp, 3)
         # amp3 = self.pow3(amp)
