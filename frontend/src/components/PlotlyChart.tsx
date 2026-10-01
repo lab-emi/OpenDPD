@@ -42,6 +42,8 @@ export interface PlotTrace {
   type?: 'scatter' | 'scattergl'
   line?: { width?: number; dash?: SeriesDash; color?: string }
   marker?: { size?: number; opacity?: number; color?: string; symbol?: SeriesSymbol }
+  error_y?: { type: 'data'; array: number[]; visible: boolean; thickness?: number; width?: number }
+  text?: string[]
   hoverinfo?: 'x+y+name' | 'skip'
   visible?: boolean | 'legendonly'
   hovertemplate?: string
@@ -50,7 +52,7 @@ export interface PlotLayout {
   title?: { text: string }
   margin?: { l: number; r: number; t: number; b: number }
   legend?: { orientation: 'h' | 'v'; x: number; y: number; yanchor?: 'top' | 'bottom'; maxheight?: number; font?: { size: number } }
-  xaxis?: { title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; range?: [number, number]; constrain?: 'domain' }
+  xaxis?: { type?: 'linear' | 'log'; title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; tickmode?: 'auto' | 'array'; tickvals?: number[]; ticktext?: string[]; range?: [number, number]; constrain?: 'domain' }
   yaxis?: { title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; range?: [number, number]; scaleanchor?: string; scaleratio?: number }
   shapes?: Array<{ type: 'rect' | 'line'; x0: number; x1: number; y0: number; y1: number; yref: 'paper'; fillcolor?: string; line: { width: number; color?: string; dash?: SeriesDash } }>
   showlegend?: boolean

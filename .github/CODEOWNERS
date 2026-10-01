@@ -13,6 +13,19 @@
 /opendpd/web/ @lab-emi/opendpd-maintainers
 /scripts/check_protected_review.py @lab-emi/opendpd-maintainers
 
+# Uploaded graphs and their execution/review boundary require independent human review.
+/backbones/user_uploaded/ @lab-emi/opendpd-maintainers
+/opendpd/core/backbone_template.py @lab-emi/opendpd-maintainers
+/opendpd/core/template_network.py @lab-emi/opendpd-maintainers
+/opendpd/services/user_backbones.py @lab-emi/opendpd-maintainers
+/opendpd/server/backbone_routes.py @lab-emi/opendpd-maintainers
+/scripts/check_user_backbone_review.py @lab-emi/opendpd-maintainers
+/opendpd/core/backbone_builders.py @lab-emi/opendpd-maintainers
+/opendpd/core/registry.py @lab-emi/opendpd-maintainers
+/opendpd/services/dataset_publication.py @lab-emi/opendpd-maintainers
+/opendpd/services/legacy_adapter.py @lab-emi/opendpd-maintainers
+/models.py @lab-emi/opendpd-maintainers
+
 # Executable code, import boundaries, UI and review evidence
 /opendpd/ @lab-emi/opendpd-maintainers
 /modules/ @lab-emi/opendpd-maintainers

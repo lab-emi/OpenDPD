@@ -34,6 +34,7 @@ const HardwareCostsPage = lazy(() => import('@/pages/HardwareCostsPage').then(m 
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
 const AboutPage = lazy(() => import('@/pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const ServerStatusPage = lazy(() => import('@/pages/ServerStatusPage').then(m => ({ default: m.ServerStatusPage })))
+const ArenaPage = lazy(() => import('@/pages/ArenaPage').then(m => ({ default: m.ArenaPage })))
 
 function createQueryClient(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 10_000, refetchOnWindowFocus: true } } })
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="results" element={<ResultsPage />} />
         <Route path="results/compare" element={<ComparePage />} />
         <Route path="results/:runId" element={<ResultDetailPage />} />
+        <Route path="arena/*" element={<ArenaPage />} />
         <Route path="robustness" element={<RobustnessPage />} />
         <Route path="sweeps" element={<SweepBoardPage />} />
         <Route path="sweeps/:sweepId" element={<SweepBoardPage />} />

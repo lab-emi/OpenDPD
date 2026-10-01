@@ -7,7 +7,7 @@ import torch.nn as nn
 
 
 class CoreModel(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, backbone_type, window_size=None, num_dvr_units=None, thx=0, thh=0):
+    def __init__(self, input_size, hidden_size, num_layers, backbone_type, window_size=None, num_dvr_units=None, thx=0, thh=0, user_definition=None):
         super(CoreModel, self).__init__()
         self.output_size = 2  # PA outputs: I & Q
         self.input_size = input_size
@@ -18,6 +18,7 @@ class CoreModel(nn.Module):
         self.thh = thh
         self.window_size = window_size
         self.num_dvr_units = num_dvr_units
+        self.user_definition = user_definition
         self.batch_first = True  # Force batch first
         self.bidirectional = False
         self.bias = True
@@ -30,7 +31,7 @@ class CoreModel(nn.Module):
     def forward(self, x, h_0=None):
         batch_size = x.size(0)  # NOTE: dim of x must be (batch, time, feat)/(N, T, F)
 
-        if h_0 is None and self.backbone_type != 'tres_deltagru':
+        if h_0 is None and self.backbone_type not in ('tres_deltagru', 'user_template'):
             # Create directly on the input device.  TRes-DeltaGRU owns five
             # recurrent states internally and historically discarded this one.
             h_0 = torch.zeros(

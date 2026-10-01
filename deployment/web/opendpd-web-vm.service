@@ -40,6 +40,9 @@ DevicePolicy=closed
 DeviceAllow=/dev/kvm rw
 TimeoutStopSec=90
 Restart=on-failure
+# Spaced retries never reach the start limit, so a transient failure while the
+# host is still booting (for example /dev/kvm not ready) cannot disable the VM.
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

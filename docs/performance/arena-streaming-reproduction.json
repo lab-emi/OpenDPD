@@ -1,0 +1,706 @@
+{
+  "comparison_chunk_samples": 137,
+  "dpd_chunk_iq_tolerance": 0.0001,
+  "dpd_chunk_max_abs_iq": 2.384185791015625e-07,
+  "metric_tolerance_db": 0.001,
+  "original_chunk_samples": 200,
+  "protocol_id": "dpd-arena-v6-apa-b",
+  "protocol_sha256": "646c31e0546b6a6754e0ad06c381aed21989dcf4ffa2c52bbb6321db67065b51",
+  "rows": [
+    {
+      "backbone": "gmp_stream",
+      "budget": 500,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 0.0,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 0.0,
+      "seed": 0,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gmp_stream",
+      "budget": 500,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 0.0,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 0.0,
+      "seed": 1,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gmp_stream",
+      "budget": 500,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 0.0,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 0.0,
+      "seed": 2,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 250,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.1920928955078125e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 3.698895874038044e-06,
+            "aclr_r_db": 3.5217978933133054e-06,
+            "aer_l_db": 3.7010990752150974e-06,
+            "aer_r_db": 3.5195667464904545e-06,
+            "evm_db": 8.01387592730407e-07,
+            "ib_error_db": 2.052103127425653e-07,
+            "nmse_db": 4.6499617667450366e-07,
+            "power_error_db": 1.25890779138077e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 3.7010990752150974e-06,
+      "seed": 0,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 250,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.7881393432617188e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 1.9956362891093704e-06,
+            "aclr_r_db": 2.118900695791126e-06,
+            "aer_l_db": 1.986081457516775e-06,
+            "aer_r_db": 2.1093318309794995e-06,
+            "evm_db": 5.969962657559336e-07,
+            "ib_error_db": 9.772762865623008e-08,
+            "nmse_db": 3.07118540376905e-07,
+            "power_error_db": 3.6907187922138873e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 2.118900695791126e-06,
+      "seed": 1,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 250,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.4901161193847656e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 4.828430924419536e-06,
+            "aclr_r_db": 7.011952831703638e-07,
+            "aer_l_db": 4.8355762274354674e-06,
+            "aer_r_db": 6.940609438288448e-07,
+            "evm_db": 1.1499390879521343e-06,
+            "ib_error_db": 1.1238049850703646e-06,
+            "nmse_db": 1.819272199554689e-07,
+            "power_error_db": 1.2139752351807143e-08,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 4.8355762274354674e-06,
+      "seed": 2,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 500,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.1920928955078125e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 1.5985911474558634e-06,
+            "aclr_r_db": 2.87482897931568e-06,
+            "aer_l_db": 1.598310561234939e-06,
+            "aer_r_db": 2.8751770244639374e-06,
+            "evm_db": 4.886156190764268e-07,
+            "ib_error_db": 4.044747186071618e-07,
+            "nmse_db": 2.585440554980778e-07,
+            "power_error_db": 2.0901525243661317e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 2.8751770244639374e-06,
+      "seed": 0,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 500,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.1920928955078125e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 4.308079930126496e-06,
+            "aclr_r_db": 5.180873749566217e-06,
+            "aer_l_db": 4.305138048721346e-06,
+            "aer_r_db": 5.183860544377694e-06,
+            "evm_db": 4.3084640566348753e-07,
+            "ib_error_db": 3.199965306066588e-07,
+            "nmse_db": 7.712596996611865e-07,
+            "power_error_db": 7.521884067863971e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 5.183860544377694e-06,
+      "seed": 1,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 500,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.1920928955078125e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 2.068104279828731e-06,
+            "aclr_r_db": 3.8128854171759485e-06,
+            "aer_l_db": 2.0571933632140826e-06,
+            "aer_r_db": 3.80228924967696e-06,
+            "evm_db": 2.889597752187001e-07,
+            "ib_error_db": 1.2613456590315764e-07,
+            "nmse_db": 3.354231807861652e-07,
+            "power_error_db": 1.1894023282980014e-08,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 3.8128854171759485e-06,
+      "seed": 2,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 1000,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.1920928955078125e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 6.580037634762448e-07,
+            "aclr_r_db": 3.580579793549532e-06,
+            "aer_l_db": 6.922524562469334e-07,
+            "aer_r_db": 3.6144874755450473e-06,
+            "evm_db": 2.673643081152477e-06,
+            "ib_error_db": 2.2035233229189544e-06,
+            "nmse_db": 4.334602294875367e-07,
+            "power_error_db": 9.713569226553866e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 3.6144874755450473e-06,
+      "seed": 0,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 1000,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 1.1920928955078125e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 4.3336636394997186e-06,
+            "aclr_r_db": 9.779270087051373e-06,
+            "aer_l_db": 4.337754262451199e-06,
+            "aer_r_db": 9.775043125159755e-06,
+            "evm_db": 5.706709345076888e-07,
+            "ib_error_db": 2.9614405505640207e-06,
+            "nmse_db": 1.2537424396441565e-06,
+            "power_error_db": 3.501067572138361e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 9.779270087051373e-06,
+      "seed": 1,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 1000,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 2.384185791015625e-07,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 7.704426010946008e-06,
+            "aclr_r_db": 9.54495229876784e-06,
+            "aer_l_db": 7.736443834005513e-06,
+            "aer_r_db": 9.576946112588303e-06,
+            "evm_db": 3.445985036876209e-06,
+            "ib_error_db": 1.1501518599743576e-06,
+            "nmse_db": 5.065794042025118e-07,
+            "power_error_db": 2.8212117946695495e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 9.576946112588303e-06,
+      "seed": 2,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 2000,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 5.960464477539063e-08,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 6.142665142760961e-06,
+            "aclr_r_db": 2.8383499568462867e-06,
+            "aer_l_db": 6.146951271546186e-06,
+            "aer_r_db": 2.84217758661498e-06,
+            "evm_db": 4.1824181664651405e-06,
+            "ib_error_db": 4.313598040539546e-06,
+            "nmse_db": 2.4831262379620966e-06,
+            "power_error_db": 7.646043958999676e-09,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 6.146951271546186e-06,
+      "seed": 0,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 2000,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 5.960464477539063e-08,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 6.776552268661362e-06,
+            "aclr_r_db": 6.020590170408013e-06,
+            "aer_l_db": 6.790450441940266e-06,
+            "aer_r_db": 6.0348204016236195e-06,
+            "evm_db": 2.9783427777374527e-06,
+            "ib_error_db": 3.3537169628061747e-06,
+            "nmse_db": 3.34714464145236e-07,
+            "power_error_db": 1.6869102425695615e-10,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 6.790450441940266e-06,
+      "seed": 1,
+      "stored_metric_max_abs_delta_db": 0.0
+    },
+    {
+      "backbone": "gru_stream",
+      "budget": 2000,
+      "comparison_chunk_samples": 137,
+      "condition_id": "apa-200mhz-b",
+      "device_basis": "official matrix recorded evaluation device",
+      "dpd_chunk_iq_tolerance": 0.0001,
+      "dpd_chunk_max_abs_iq": 8.940696716308594e-08,
+      "dpd_device": "cpu",
+      "dpd_threads": 4,
+      "judge_device": "cuda",
+      "judges": [
+        {
+          "chunk_deltas_db": {
+            "aclr_l_db": 1.6093275405637542e-06,
+            "aclr_r_db": 1.8297791868349123e-06,
+            "aer_l_db": 1.6439626335795765e-06,
+            "aer_r_db": 1.8644364914166545e-06,
+            "evm_db": 7.397780265705478e-06,
+            "ib_error_db": 7.1687925640162575e-06,
+            "nmse_db": 1.9841624236960342e-06,
+            "power_error_db": 9.033391489259718e-10,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          },
+          "judge_id": "pa",
+          "reproduction_deltas_db": {
+            "aclr_l_db": 0.0,
+            "aclr_r_db": 0.0,
+            "aer_l_db": 0.0,
+            "aer_r_db": 0.0,
+            "evm_db": 0.0,
+            "ib_error_db": 0.0,
+            "nmse_db": 0.0,
+            "power_error_db": 0.0,
+            "reference_aclr_l_db": 0.0,
+            "reference_aclr_r_db": 0.0
+          }
+        }
+      ],
+      "metric_tolerance_db": 0.001,
+      "original_chunk_samples": 200,
+      "same_device_chunk_max_abs_metric_delta_db": 7.397780265705478e-06,
+      "seed": 2,
+      "stored_metric_max_abs_delta_db": 0.0
+    }
+  ],
+  "same_device_chunk_max_abs_metric_delta_db": 9.779270087051373e-06,
+  "source": "benchmark.audit_arena_baselines: complete_matrix",
+  "stored_metric_max_abs_delta_db": 0.0,
+  "streaming_cases_replayed": 15,
+  "training_sha256": "71294fba81c968d2762f5349178cba8f23a38a8aad942b530269c783b9d9bf94"
+}

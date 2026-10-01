@@ -13,6 +13,9 @@ import ScienceIcon from '@mui/icons-material/Science'
 import SettingsIcon from '@mui/icons-material/Settings'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import DnsOutlinedIcon from '@mui/icons-material/DnsOutlined'
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined'
+import PublishOutlinedIcon from '@mui/icons-material/PublishOutlined'
+import RuleOutlinedIcon from '@mui/icons-material/RuleOutlined'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
@@ -51,6 +54,7 @@ const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
   { to: '/datasets', key: 'nav.datasets', Icon: DatasetIcon },
   { to: '/experiments', key: 'nav.experiments', Icon: ScienceIcon },
   { to: '/results', key: 'nav.results', Icon: InsightsIcon },
+  { to: '/arena', key: 'arena.title', Icon: EmojiEventsOutlinedIcon },
   { to: '/server', key: 'server.title', Icon: DnsOutlinedIcon },
   { to: '/settings', key: 'nav.settings', Icon: SettingsIcon },
   { to: '/about', key: 'about.title', Icon: InfoOutlinedIcon },
@@ -75,6 +79,8 @@ export function AppShell() {
   const datasetDetail = pathname.startsWith('/datasets/')
   const generatorActive = pathname === '/signal-generator' || pathname.startsWith('/signal-generator/')
   const generatorPreview = pathname === '/signal-generator/preview'
+  const arenaActive = pathname === '/arena' || pathname.startsWith('/arena/')
+  const arenaBoard = arenaActive ? new URLSearchParams(search).get('board') : null
   const resultDetail = pathname.startsWith('/results/')
   const resetDetail = datasetDetail ? t('reset.page.dataset') : runId ? t('reset.page.experiment') : resultDetail ? t('reset.page.results') : undefined
   useEffect(() => {
@@ -82,7 +88,7 @@ export function AppShell() {
     // Route changes and explicit same-page resets are the viewport triggers.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [pathname, revision])
-  const showWorkflow = !['/settings', '/about', '/server', '/hardware', '/robustness', '/sweeps'].some(path => pathname === path || pathname.startsWith(path + '/'))
+  const showWorkflow = !['/settings', '/about', '/server', '/hardware', '/robustness', '/sweeps', '/arena'].some(path => pathname === path || pathname.startsWith(path + '/'))
   const reset = (global: boolean) => {
     // Drop selections encoded in detail URLs as well as drafts in React state.
     // A run restarts at its task's setup, never at the old progress dashboard.
@@ -116,16 +122,17 @@ export function AppShell() {
         <List component="nav" aria-label={t('nav.primary')} sx={{ px: 1, pt: 1 }}>
           {NAV.map(({ to, key, Icon }) => <Box key={to}>
             <Tooltip title={t(key)} placement="right" disableHoverListener={wideNavigation}>
-              <ListItemButton component={Link} to={to} selected={active(to)} aria-current={active(to) && to !== '/signal-generator' ? 'page' : undefined} aria-label={t(key)}
-                aria-expanded={to === '/signal-generator' ? generatorActive : undefined} aria-controls={to === '/signal-generator' && generatorActive ? 'generator-navigation' : undefined} sx={{
+              <ListItemButton component={Link} to={to} selected={active(to)} aria-current={active(to) && !['/signal-generator', '/arena'].includes(to) ? 'page' : undefined} aria-label={t(key)}
+                aria-expanded={to === '/signal-generator' ? generatorActive : to === '/arena' ? arenaActive : undefined} aria-controls={to === '/signal-generator' && generatorActive ? 'generator-navigation' : to === '/arena' && arenaActive ? 'arena-navigation' : undefined} sx={{
                 minHeight: 44, px: 1.5, mb: .75, borderRadius: 1, color: 'inherit', position: 'relative',
                 ...(to === '/settings' ? { mt: 3 } : {}),
                 '&:hover': { bgcolor: colors.surfaceMuted },
                 '&.Mui-selected': { bgcolor: colors.selected, color: 'primary.main', '&:hover': { bgcolor: colors.selectedHover }, '&::before': { content: '""', position: 'absolute', width: 3, height: 22, left: 0, borderRadius: 2, bgcolor: 'primary.main' } },
               }}>
-                <ListItemIcon sx={{ minWidth: { xs: 24, md: to === '/signal-generator' ? 24 : 32 }, color: active(to) ? 'primary.main' : 'inherit' }}><Icon fontSize="small" /></ListItemIcon>
+                <ListItemIcon sx={{ minWidth: { xs: 24, md: ['/signal-generator', '/arena'].includes(to) ? 24 : 32 }, color: active(to) ? 'primary.main' : 'inherit' }}><Icon fontSize="small" /></ListItemIcon>
                 <ListItemText primary={t(key)} sx={{ display: { xs: 'none', md: 'block' } }} slotProps={{ primary: { sx: { fontSize: 14, fontWeight: active(to) ? 650 : 450 } } }} />
                 {to === '/signal-generator' && (generatorActive ? <ExpandMoreIcon sx={{ fontSize: 16, display: { xs: 'none', md: 'block' } }} /> : <ChevronRightIcon sx={{ fontSize: 16, display: { xs: 'none', md: 'block' } }} />)}
+                {to === '/arena' && (arenaActive ? <ExpandMoreIcon sx={{ fontSize: 16, display: { xs: 'none', md: 'block' } }} /> : <ChevronRightIcon sx={{ fontSize: 16, display: { xs: 'none', md: 'block' } }} />)}
               </ListItemButton>
             </Tooltip>
             {to === '/signal-generator' && generatorActive && <List id="generator-navigation" component="div" role="group" aria-label={t('generator.navigation')} disablePadding sx={{ mb: 1, ml: { xs: 0, md: 2 }, borderLeft: { md: '1px solid' }, borderColor: 'divider' }}>
@@ -133,6 +140,17 @@ export function AppShell() {
                 { path: '/signal-generator', label: 'generator.page.generate' as const, ChildIcon: PlayArrowIcon, selected: !generatorPreview },
                 { path: '/signal-generator/preview', label: 'generator.page.preview' as const, ChildIcon: PreviewIcon, selected: generatorPreview },
               ].map(({ path, label, ChildIcon, selected }) => <ListItemButton key={path} component={Link} to={path} selected={selected} aria-current={selected ? 'page' : undefined} aria-label={t(label)}
+                sx={{ minHeight: 44, px: { xs: .25, md: 1.25 }, py: .75, mb: .5, borderRadius: 1, flexDirection: { xs: 'column', md: 'row' }, gap: { xs: .25, md: 1 }, color: selected ? 'primary.main' : 'inherit', '&.Mui-selected': { bgcolor: colors.selected }, '&:hover': { bgcolor: colors.surfaceMuted } }}>
+                <ChildIcon sx={{ fontSize: 18 }} />
+                <Typography component="span" sx={{ fontSize: { xs: 9, md: 13 }, lineHeight: 1.4, fontWeight: selected ? 650 : 450 }}>{t(label)}</Typography>
+              </ListItemButton>)}
+            </List>}
+            {to === '/arena' && arenaActive && <List id="arena-navigation" component="div" role="group" aria-label={t('arena.navigation')} disablePadding sx={{ mb: 1, ml: { xs: 0, md: 2 }, borderLeft: { md: '1px solid' }, borderColor: 'divider' }}>
+              {[
+                { path: '/arena', label: 'arena.rank' as const, ChildIcon: EmojiEventsOutlinedIcon, selected: !['/arena/submit', '/arena/rules'].includes(pathname) },
+                { path: '/arena/submit', label: 'arena.submit' as const, ChildIcon: PublishOutlinedIcon, selected: pathname === '/arena/submit' },
+                { path: '/arena/rules', label: 'arena.rules' as const, ChildIcon: RuleOutlinedIcon, selected: pathname === '/arena/rules' },
+              ].map(({ path, label, ChildIcon, selected }) => <ListItemButton key={path} component={Link} to={arenaBoard ? `${path}?${new URLSearchParams({ board: arenaBoard })}` : path} selected={selected} aria-current={selected ? 'page' : undefined} aria-label={t(label)}
                 sx={{ minHeight: 44, px: { xs: .25, md: 1.25 }, py: .75, mb: .5, borderRadius: 1, flexDirection: { xs: 'column', md: 'row' }, gap: { xs: .25, md: 1 }, color: selected ? 'primary.main' : 'inherit', '&.Mui-selected': { bgcolor: colors.selected }, '&:hover': { bgcolor: colors.surfaceMuted } }}>
                 <ChildIcon sx={{ fontSize: 18 }} />
                 <Typography component="span" sx={{ fontSize: { xs: 9, md: 13 }, lineHeight: 1.4, fontWeight: selected ? 650 : 450 }}>{t(label)}</Typography>

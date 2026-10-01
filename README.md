@@ -37,11 +37,11 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.2.18** hardens dataset and experiment imports, desktop login, hosted exports and the GPU worker boundary. It retains the custom-waveform workflow introduced in 2.2.17.
+**OpenDPD 2.3.0** adds **DPD Arena** on **APA_200MHz_b**: compare 23 DPD model entries across parameter budgets using test EVM, output ACLR, arithmetic cost and Pareto fronts. Results are predictions through one frozen PA model, not new hardware measurements. It includes the import, session and GPU security improvements from 2.2.18.
 
 **Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input, simulate its output with one of nine Virtual PAs, or use existing input/output data. Standard presets are uncoded engineering stimuli; each capture keeps its own sample rate and length.
 
-[2.2.18 release notes](https://lab-emi.github.io/OpenDPD/releases/release-notes-2.2.18/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
+[2.3.0 release notes](https://lab-emi.github.io/OpenDPD/releases/2.3.0/) · [Signal Generator](https://lab-emi.github.io/OpenDPD/guides/signal-generator/) · [Signal Analyzer](https://lab-emi.github.io/OpenDPD/guides/signal-analyzer/). During the hosted trial, **2 hours of inactivity clears that IP’s temporary workspaces**; the top bar shows the expiry time.
 <!-- --8<-- [end:studio-features] -->
 
 [Feature history](docs/whats-new.md) · [Verified platform status](docs/releases/support-matrix.md)
@@ -70,13 +70,15 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.18" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.3.0" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 
 PyTorch, Studio and pywebview install together; no Node.js is needed. uv selects a PyTorch backend for the detected platform/drivers. Studio prefers available CUDA or Apple MPS, then CPU. Keep the terminal running. **A `127.0.0.1` link opens on the computer running OpenDPD**; for SSH, use the [port-forwarding instructions](docs/install.md#ssh-or-another-computer).
 
 Click **Get Started → Signal Generator**, or **Use an existing dataset**. See [Installation](docs/install.md) for drivers, Linux system libraries, native-window troubleshooting and pip; [Studio walkthrough](docs/tutorials/gui-quickstart.md) for your first experiment.
+
+Studio 2.3 adds **[DPD Arena](docs/guides/dpd-arena.md)** with Rank, Submit and Rules pages. The benchmark uses only **APA_200MHz_b**. Compare individual DPD configurations through one frozen TRes-GRU PA, using complete-symbol EVM, output ACLR and fixed-reference complexity FoM across a 250–2,000-parameter sweep. Inspect PA validation/test accuracy, actual parameter and operation counts, and four Pareto plots, or evaluate a validated custom backbone in your workspace. PA and DPD training, validation and test inputs come only from original measured captures; cascade outputs are PA-model predictions.
 
 <details>
 <summary>Develop from source (Git and Node.js 22.22+ required)</summary>

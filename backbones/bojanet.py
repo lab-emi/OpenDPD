@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from backbones.finite_iq import amplitude
 
 
 class BOJANET(nn.Module):
@@ -29,7 +30,7 @@ class BOJANET(nn.Module):
 
     def vd_module(self, I, Q):
         # Vector Demodulator implementation
-        magnitude = torch.sqrt(torch.pow(I, 2) + torch.pow(Q, 2))
+        magnitude = amplitude(torch.pow(I, 2) + torch.pow(Q, 2))
         # Add epsilon to prevent division by zero
         epsilon = 1e-8
         magnitude = magnitude + epsilon

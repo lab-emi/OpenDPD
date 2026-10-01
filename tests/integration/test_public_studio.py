@@ -32,6 +32,16 @@ def new_session(client):
     return {"Authorization": "Bearer " + response.json()["access_token"]}
 
 
+def test_public_pa_fits_offer_only_bounded_forward_presets(public):
+    client, _, _ = public
+    auth = new_session(client)
+    models = client.get('/api/v1/models', headers=auth).json()
+    recipes = client.get('/api/v1/recipes', headers=auth).json()
+    assert {'mp_ls', 'gmp_ls'} <= {m['key'] for m in models}
+    fits = [r for r in recipes if r['model']['key'] in {'mp_ls', 'gmp_ls'}]
+    assert {r['recipe_id'] for r in fits} == {'pa-mp-studio-v1', 'pa-gmp-studio-v1'}
+    assert all(r['task'] == 'train_pa' and r['training']['train_samples'] == 32768 for r in fits)
+
 def test_full_network_table_keeps_existing_networks_usable(public, monkeypatch):
     from opendpd.web import runtime
     client, manager, _ = public
@@ -447,12 +457,13 @@ def test_startup_cleans_orphans_and_refuses_shared_root(tmp_path):
     assert (ordinary / "keep").read_text() == "user file"
 
 
-def test_real_training_is_private_and_global_dispatch_is_serial(public):
+@pytest.mark.parametrize("recipe", ["pa-gru-smoke-v1", "pa-mp-studio-v1", "pa-gmp-studio-v1"])
+def test_real_training_is_private_and_global_dispatch_is_serial(public, recipe):
     client, manager, _ = public
     a, b = new_session(client), new_session(client)
     for auth in [a, b]:
         assert client.post("/api/v1/datasets/import-builtin", json={"name": "MyCustomPA"}, headers=auth).status_code == 201
-    cfg = json.loads(instantiate("pa-gru-smoke-v1", "mycustompa").model_dump_json())
+    cfg = json.loads(instantiate(recipe, "mycustompa").model_dump_json())
     cfg["training"]["epochs"] = 1
     cfg["execution"]["num_threads"] = 1
     # All supervisors share the same semaphore, independent of selected device.

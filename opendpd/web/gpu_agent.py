@@ -16,9 +16,19 @@ import urllib.request
 from pathlib import Path
 
 from opendpd.web.gpu_archive import MAX_BYTES, pack, unpack, read_regular
+from opendpd.runtime.arena_limits import ARENA_MAX_RUNTIME_SECONDS
 
 LABEL = "opendpd.gpu-worker=true"
 stopping = False
+
+
+def container_timeout_seconds(kind, expires_at, now=None):
+    if kind not in {"run", "arena"}:
+        raise ValueError("invalid GPU job kind")
+    if not math.isfinite(expires_at):
+        raise ValueError("invalid GPU job runtime")
+    ceiling = ARENA_MAX_RUNTIME_SECONDS if kind == "arena" else 1800
+    return int(min(ceiling, expires_at - (time.time() if now is None else now)))
 
 
 def podman(*args, **kwargs):
@@ -50,10 +60,34 @@ def container_options(image, name, seconds):
             "--env=PYTHONDONTWRITEBYTECODE=1", "--env=PYTHONUNBUFFERED=1", "--env=PYTHONSAFEPATH=1", "--workdir=/"]
 
 
-def container_command(image, name, root, run_id, seconds):
-    return [*container_options(image, name, seconds),
+def container_command(image, name, root, run_id, seconds, kind="run"):
+    seconds = container_timeout_seconds(kind, seconds, now=0)
+    if seconds <= 0:
+        raise ValueError("GPU container runtime must be positive")
+    if kind not in {"run", "arena"}:
+        raise ValueError("invalid GPU job kind")
+    command = [*container_options(image, name, seconds),
             "--volume", f"{root}:/workspace:rw,nosuid,nodev,noexec",
             "--entrypoint=python", image, "-P", "-m", "opendpd.web.gpu_container", "--workspace", "/workspace", "--run-id", run_id]
+    if kind == "arena":
+        command.extend(["--kind", "arena"])
+    return command
+
+
+def arena_capability(image):
+    """An old or incomplete pinned image keeps ordinary training available."""
+    try:
+        result = subprocess.run(
+            [*container_options(image, "opendpd-arena-probe", 60), "--entrypoint=python", image,
+             "-m", "opendpd.web.gpu_container", "--arena-capability"],
+            check=True, timeout=75, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        payload = json.loads(result.stdout)
+        value = payload.get("protocol_sha256") if isinstance(payload, dict) else None
+        if isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value):
+            return value
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    return None
 
 
 class Agent:
@@ -100,15 +134,23 @@ class Agent:
             return read_regular(root, f"runs/{job['run_id']}/{name}", offset, limit)
         self.publish_resources()
         payload = dict(offsets)
-        for key, name in [("log", "logs/worker.log"), ("events", "events.jsonl")]:
+        arena = job.get("kind", "run") == "arena"
+        streams = [("log", "logs/worker.log")] if arena else [("log", "logs/worker.log"), ("events", "events.jsonl")]
+        for key, name in streams:
             data = read(name, offsets.get(key + "_offset", 0), 256 * 1024)
             payload[key] = base64.b64encode(data).decode()
-        live = read("live.json", limit=2 * 1024 * 1024)
+        live = b"" if arena else read("live.json", limit=2 * 1024 * 1024)
         if live:
             payload["live"] = base64.b64encode(live).decode()
+        if arena:
+            progress = read("result.progress.json", limit=4097)
+            if len(progress) > 4096:
+                raise ValueError("Arena progress exceeds limit")
+            if progress:
+                payload["arena_progress"] = base64.b64encode(progress).decode()
         result = self.request(f"/jobs/{job['id']}/update", payload, job)
         offsets.update({k: result[k] for k in ("log_offset", "events_offset") if k in result})
-        if result['continue']:
+        if result['continue'] and not arena:
             from opendpd.services.model_download import MAX_MODEL_BYTES, MODEL_FILE, MODEL_META
             metadata = read(MODEL_META, limit=4096)
             if metadata:
@@ -123,11 +165,13 @@ class Agent:
         return result["continue"]
 
     def run(self, job):
-        if (not re.fullmatch(r"[a-f0-9]{32}", job["id"])
+        kind = job.get("kind", "run")
+        if (kind not in {"run", "arena"}
+                or not re.fullmatch(r"[a-f0-9]{32}", job["id"])
                 or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}", job["run_id"])
                 or not math.isfinite(job["expires_at"])):
             raise ValueError("invalid GPU job")
-        seconds = int(min(1800, job["expires_at"] - time.time()))
+        seconds = container_timeout_seconds(kind, job["expires_at"])
         if seconds <= 0:
             return
         name = "opendpd-gpu-" + job["id"]
@@ -135,7 +179,7 @@ class Agent:
         root.mkdir(mode=0o700)
         process = None
         try:
-            unpack(self.request(f"/jobs/{job['id']}/input", job=job), root, input_run_id=job['run_id'])
+            unpack(self.request(f"/jobs/{job['id']}/input", job=job), root, input_run_id=job['run_id'], kind=kind)
             run = root / "runs" / job["run_id"]
             (run / "logs").mkdir(exist_ok=True)
             for path in [root, *root.rglob("*")]:
@@ -144,7 +188,7 @@ class Agent:
             if not self.update(job, root, offsets):
                 return
             with (run / "logs" / "worker.log").open("wb") as log:
-                command = container_command(self.image, name, root, job["run_id"], seconds)
+                command = container_command(self.image, name, root, job["run_id"], seconds, kind)
                 process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
                 cancelled = False
                 while process.poll() is None:
@@ -163,7 +207,10 @@ class Agent:
                 code = process.wait(timeout=15)
             # Full final logs/events are an atomic extension of their streamed prefix.
             podman("rm", "--ignore", "-f", name, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            data = pack(root, subtree=f"runs/{job['run_id']}")
+            outputs = ([run / "result.json", run / "result.progress.json", run / "logs" / "worker.log"]
+                       if kind == "arena" else None)
+            # A container stopped before it wrote its result must still return its worker log.
+            data = pack(root, outputs, subtree=f"runs/{job['run_id']}", missing_ok=kind == "arena")
             self.request(f"/jobs/{job['id']}/result", data, job, 3 if cancelled else 0 if code == 0 else 1)
         finally:
             subprocess.run(["/usr/bin/podman", "rm", "-f", name], timeout=20,
@@ -184,6 +231,7 @@ class Agent:
              "--entrypoint=python", self.image, "-P", "-m", "opendpd.web.gpu_probe"],
             check=True, timeout=75, stdout=subprocess.DEVNULL,
         )
+        arena_protocol_sha256 = arena_capability(self.image)
         for path in self.root.iterdir():
             if path.is_dir() and re.fullmatch(r"[a-f0-9]{32}", path.name):
                 shutil.rmtree(path)
@@ -193,7 +241,8 @@ class Agent:
                 gpu = subprocess.run(["nvidia-smi", "--query-gpu=name,memory.free", "--format=csv,noheader,nounits", "--id=0"], check=True, capture_output=True, text=True, timeout=10).stdout.strip()
                 name, free = gpu.rsplit(",", 1)
                 if int(free.strip()) >= 4096:
-                    job = self.request("/poll", {"name": name})["job"]
+                    job = self.request("/poll", {"name": name,
+                                                "arena_protocol_sha256": arena_protocol_sha256})["job"]
                     if job:
                         self.run(job)
             except Exception as error:

@@ -1,4 +1,5 @@
 import torch
+from backbones.finite_iq import amplitude
 import torch.nn as nn
 
 
@@ -77,7 +78,7 @@ class TResGRU(nn.Module):
         i_last = last_step[..., 0].unsqueeze(-1)
         q_last = last_step[..., 1].unsqueeze(-1)
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
-        amp = torch.sqrt(amp2)
+        amp = amplitude(amp2)
         amp3 = torch.pow(amp, 3)
         feat = torch.cat((i_x, q_x, amp, amp3, i_last, q_last), dim=-1)
         out, _ = self.rnn(feat, h_0)

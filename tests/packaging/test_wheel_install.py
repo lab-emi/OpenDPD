@@ -31,7 +31,8 @@ def installed_python(tmp_path_factory):
     work = tmp_path_factory.mktemp("pkg")
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env.update(MPLBACKEND="Agg", TQDM_DISABLE="1", PIP_DISABLE_PIP_VERSION_CHECK="1")
-    _run([sys.executable, "-m", "build", "--wheel", "--outdir", str(work / "dist"), str(REPO_ROOT)], work, env)
+    # Build the wheel from an isolated sdist, including its manifest rules.
+    _run([sys.executable, "-m", "build", "--outdir", str(work / "dist"), str(REPO_ROOT)], work, env)
     wheel = next((work / "dist").glob("opendpd-*.whl"))
     venv = work / "venv"
     _run([sys.executable, "-m", "venv", str(venv)], work, env)
@@ -64,6 +65,33 @@ def test_wheel_imports_without_gui_deps_and_ships_datasets(installed_python):
     )
     proc = _run([str(python), "-c", check], work, env)
     assert proc.stdout.startswith("ok")
+
+
+def test_wheel_ships_only_current_measured_arena_assets(installed_python):
+    python, work, env = installed_python
+    check = """
+import sys
+from opendpd.core import arena
+
+assert str(arena.ASSETS).startswith(sys.prefix)
+assert {board.dataset for board in arena.protocol().boards} == {
+    'APA_200MHz_b'}
+expected = {arena.CALIBRATION_FILE, arena.RESULTS_FILE}
+for condition in arena.active_calibration().values():
+    for name, digest in (
+        (condition['data_file'], condition['data_sha256']),
+        (condition['source_capture_file'], condition['source_capture_sha256']),
+        (condition['teacher']['file'], condition['teacher']['sha256']),
+    ):
+        assert arena.file_hash(arena.ASSETS / name) == digest
+        expected.add(name)
+assert len(expected) == 5  # APA B capture, partition, PA, and two manifests.
+assert {p.name for p in arena.ASSETS.iterdir() if p.is_file()} == expected
+rows = arena.load_official_rows()
+assert len(rows) == 23 and sum(row.completed_cases for row in rows) == 233
+assert all(row.status == 'succeeded' for row in rows)
+"""
+    _run([str(python), "-c", check], work, env)
 
 
 def test_wheel_runs_headless_from_external_workspace(installed_python):

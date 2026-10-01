@@ -9,6 +9,9 @@ recursive-include datasets *.json *.csv
 recursive-include dataset *.json *.csv *.md
 recursive-include backbones *
 
+# Keep cached sdist manifests from retaining historical Arena experiments.
+recursive-exclude opendpd/arena_assets syn-* *-judge-*.npz *-teacher.npz *-stimuli-*.npz *-pa-v[2345].npz calibration-v[12345].json reference-results-v[12345].json
+
 # Include the built Studio frontend when present (release builds)
 recursive-include opendpd/studio/static *
 include opendpd/studio/icon.png
@@ -43,3 +46,6 @@ prune benchmark
 prune pics
 exclude CODE_REVIEW_REPORT.md
 exclude *Plan*.md
+
+# APA_200MHz_b is the sole published Arena dataset.
+recursive-exclude opendpd/arena_assets dpa-* apa-200mhz-data.npz apa-200mhz-measured-v4.npz apa-200mhz-pa-v6.npz reference-results-v6.json

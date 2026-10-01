@@ -329,6 +329,18 @@ MODELS += (
     ),
 )
 
+from opendpd.core.backbone_template import DEFAULT_DEFINITION
+
+MODELS += (ModelDescriptor(
+    key="user_template", display_name="Uploaded backbone template", family="user_uploaded",
+    legacy_backbone="user_template", training_method="gradient", roles=("pa", "dpd"),
+    params=(ParamSpec("definition", "str", DEFAULT_DEFINITION, "Validated template v1 network graph (JSON).",
+                      legacy_arg={"pa": "PA_user_definition", "dpd": "DPD_user_definition"}),),
+    status="experimental", devices_tested=("cpu", "cuda"), lookahead_samples=0, lookahead_note=CAUSAL,
+    constraints="Only bounded template v1 graphs; uploaded Python is never executed. Each design needs scientific validation.",
+    evidence="tests/unit/test_backbone_template.py; tests/integration/test_user_backbones.py",
+),)
+
 _BY_KEY: Dict[str, ModelDescriptor] = {m.key: m for m in MODELS}
 
 
@@ -374,4 +386,10 @@ def validate_parameters(key: str, parameters: Mapping[str, ParamValue], role: st
             resolved[spec.name] = spec.coerce(value)
         except RegistryError as err:
             raise RegistryError(f"model.parameters.{spec.name}", err.message, err.hint) from None
+    if key == "user_template":
+        from opendpd.core.backbone_template import TemplateError, canonical_definition, parse_definition
+        try:
+            resolved["definition"] = canonical_definition(parse_definition(resolved["definition"]))
+        except TemplateError as err:
+            raise RegistryError("model.parameters.definition", str(err)) from None
     return resolved

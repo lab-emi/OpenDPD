@@ -184,6 +184,8 @@ class LocalBoundaryMiddleware:
             await _reject(send, 400, "host_not_allowed", "this server only answers loopback hosts")
             return
         limit = UPLOAD_MAX_BODY if scope.get("path") in UPLOAD_PATHS else self.max_body
+        if scope.get("path") == "/api/v1/backbones/uploads":
+            limit = 64 * 1024
         if scope.get('path') in ('/api/v1/datasets/upload', '/api/v1/signal-analyzer/upload'):
             limit = 26 * 1024 * 1024  # 25 MiB CSV plus bounded multipart framing
         if scope.get('path') == '/api/v1/hardware/reports/upload':

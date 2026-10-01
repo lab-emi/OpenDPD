@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+from backbones.finite_iq import amplitude, phase_denominator
 
 class TCN(nn.Module):
     def __init__(self, hidden_channels):
@@ -84,14 +85,14 @@ class TCN(nn.Module):
         i_x = torch.unsqueeze(x[..., 0], dim=-1)
         q_x = torch.unsqueeze(x[..., 1], dim=-1)
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
-        amp = torch.sqrt(amp2)
+        amp = amplitude(amp2)
         amp3 = torch.pow(amp, 3)
-        cos = i_x / amp
-        sin = q_x / amp
+        denominator = phase_denominator(amp)
+        cos = i_x / denominator
+        sin = q_x / denominator
         input = torch.cat((i_x, q_x), dim=-1)
         x = torch.cat((i_x, q_x, amp, amp3, sin, cos), dim=-1)
         x_1 = x.transpose(1,2)
         out = self.network(x_1) 
         out = out.transpose(1,2)
         return out + input
-

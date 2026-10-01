@@ -30,6 +30,7 @@ import { TestingSampleSummary } from '@/components/TestingSampleSummary'
 import { JsonConfigDialog, importableConfig } from '@/components/JsonConfigDialog'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
+import { BackbonePicker, type BackboneEntry } from '@/components/BackbonePicker'
 
 interface FormState {
   recipeId: string
@@ -63,6 +64,14 @@ function num(s: string, fallback: number): number {
 
 type ParamSpec = ModelInfo['params'][number]
 
+function uploadedName(model?: ExperimentConfigInput['model']): string | undefined {
+  if (model?.key !== 'user_template' || typeof model.parameters?.definition !== 'string') return
+  try {
+    const value = JSON.parse(model.parameters.definition) as { name?: unknown }
+    return typeof value.name === 'string' && value.name.length <= 64 ? value.name : undefined
+  } catch { return }
+}
+
 /** Coerces a text edit by the registry's declared type; empty or unparsable edits keep the recipe value. */
 function coerceParam(spec: ParamSpec, raw: string): number | boolean | string | undefined {
   const s = raw.trim()
@@ -95,7 +104,7 @@ function buildConfig(recipe: RecipeInfo, f: FormState, specs: ParamSpec[]): Expe
   const config: ExperimentConfigInput = {
     task: recipe.task,
     recipe_id: recipe.recipe_id,
-    name: f.name.trim() || null,
+    name: f.name.trim() || (uploadedName(recipe.model) ? `${uploadedName(recipe.model)} · ${recipe.task === 'train_pa' ? 'PA' : 'DPD'}` : null),
     dataset: f.dataVersion ? { id: f.datasetId, preprocessing_version: f.dataVersion } : { id: f.datasetId },
     model: { key: recipe.model.key, parameters },
     training,
@@ -132,7 +141,7 @@ export function NewExperimentPage() {
   const [params] = useSearchParams()
   const requested = params.get('task')
   const task = isExperimentTask(requested) ? requested : 'train_pa'
-  return <ExperimentForm key={task} task={task} />
+  return <ExperimentForm key={`${task}:${params.get('method') === 'ilc'}`} task={task} />
 }
 
 function ExperimentForm({ task }: { task: ExperimentTask }) {
@@ -150,6 +159,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const fromRun = useRunConfig(fromRunId, fromRunId !== '')
   const [importedFile, setImportedFile] = useState<{ config: ExperimentConfigInput; source: string } | null>(null)
   const [jsonOpen, setJsonOpen] = useState(false)
+  const [selectedBackbone, setSelectedBackbone] = useState<BackboneEntry | null>(null)
   const idempotencyKey = useRef(crypto.randomUUID())
   const [edits, setEdits] = useState<FormState>({ recipeId: '', datasetId: '', dataVersion: '', paRunId: '', device: '', seed: '', name: '', epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', params: {}, profileId: '', sourceRunId: '', variantKey: '', numThreads: '', chunkSamples: '', optimizer: '', loss: '', previewMode: 'epoch', previewBatches: '' })
   // The report is stored with the config it validated, so "checking" is derived, not duplicated state.
@@ -159,8 +169,9 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const [confirmed, setConfirmed] = useState<Record<number, string>>({})
 
   const testing = task === 'evaluate_pa' || task === 'run_dpd'
-  const ilcRequested = params.get('method') === 'ilc'
-  const taskRecipes = (recipes.data ?? []).filter((entry) => entry.task === task && (!ilcRequested || entry.model.key === 'ilc_dpd'))
+  const ilcRequested = task === 'train_dpd' && params.get('method') === 'ilc'
+  const taskRecipes = (recipes.data ?? []).filter((entry) => entry.task === task
+    && (ilcRequested ? entry.model.key === 'ilc_dpd' : entry.model.key !== 'ilc_dpd'))
   const sourceRunId = edits.sourceRunId || params.get('modelRun') || ''
   const source = useRunConfig(sourceRunId, testing && !!sourceRunId)
   const sourceRuns = (succeeded.data ?? []).filter((run) => run.task === (task === 'evaluate_pa' ? 'train_pa' : 'train_dpd'))
@@ -176,14 +187,20 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   // user chooses one; later refetches must never overwrite that explicit choice.
   const defaultDevice = ['cuda', 'mps', 'cpu'].find(device => caps.data?.devices.some(d => d.device === device && d.detected)) ?? 'cpu'
   const form: FormState = { ...edits, paRunId: edits.paRunId || params.get('paRun') || '', device: edits.device || defaultDevice, recipeId: edits.recipeId || taskRecipes[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(requestedVersion) ? requestedVersion : '' }
-  const recipe = taskRecipes.find((r) => r.recipe_id === form.recipeId) ?? null
+  const baseRecipe = taskRecipes.find((r) => r.recipe_id === form.recipeId) ?? null
+  const recipe = baseRecipe?.model.key === 'user_template' && selectedBackbone ? { ...baseRecipe, model: selectedBackbone.model } : baseRecipe
 
-  const paRuns = (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === datasetId)
+  const paRuns = (succeeded.data ?? []).filter((r) => r.task === 'train_pa' && r.dataset_id === datasetId
+    && models.data?.some(m => m.key === r.model_key && m.training_method === 'gradient'))
   const modelKey = testing ? (form.variantKey || source.data?.model.key) : recipe?.model.key
   const model = models.data?.find((m) => m.key === modelKey)
   const leastSquares = model?.training_method === 'least_squares'
+  const polynomialPA = (task === 'train_pa' || task === 'evaluate_pa') && leastSquares
+  if (polynomialPA) form.device = 'cpu'
+  const architectureRecipes = task === 'train_pa' ? taskRecipes.filter(r =>
+    (models.data?.find(m => m.key === r.model.key)?.training_method === 'least_squares') === !!leastSquares) : taskRecipes
   const streaming = model?.execution_semantics === 'streaming_stateful'
-  const specs = model?.params ?? []
+  const specs = model?.params.filter(spec => model.key !== 'user_template' || spec.name !== 'definition') ?? []
   // An imported configuration (file or `?from=<run>`) is derived during render, never copied into form state.
   const imported = importedFile ?? (fromRunId && fromRun.data ? { config: importableConfig(fromRun.data), source: fromRunId } : null)
   const testConfig: ExperimentConfigInput | null = testing && source.data && sourceRunId && form.datasetId ? {
@@ -197,7 +214,8 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const config = imported ? { ...imported.config, name: form.name.trim() || imported.config.name || null } : !fromRunId ? (testing ? testConfig : recipe && form.datasetId ? buildConfig(recipe, form, specs) : null) : null
   const displayTask = config?.task ?? task
   const displayTesting = displayTask === 'evaluate_pa' || displayTask === 'run_dpd'
-  const displayGroup = ilcRequested && params.get('workspace') === 'pa' ? 'pa' : taskGroup(displayTask)
+  const displayGroup = taskGroup(displayTask)
+  const displayLeastSquares = models.data?.some(m => m.key === config?.model.key && m.training_method === 'least_squares')
   const configJson = config ? JSON.stringify(config) : ''
   const workflowDataset = config?.dataset.id ?? dataset?.dataset_id
   const workflowVersion = config?.dataset.preprocessing_version ?? (form.dataVersion || 'raw-v1')
@@ -246,7 +264,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
     setConfirmed({}); setStep(0)
     if (fromRunId) setParams({ task })
   }
-  const selectStartingPoint = (entry: RecipeInfo) => setEdits((old) => ({ ...old, recipeId: entry.recipe_id, params: {}, epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', seed: '', optimizer: '', loss: '' }))
+  const selectStartingPoint = (entry: RecipeInfo) => setEdits((old) => ({ ...old, recipeId: entry.recipe_id, params: {}, epochs: '', batchSize: '', learningRate: '', frameLength: '', frameStride: '', seed: '', optimizer: '', loss: '', previewMode: 'epoch', previewBatches: '' }))
   const purposeLabel = (purpose: string) => t(purpose === 'smoke' ? 'tasks.quick' : purpose === 'research' ? 'tasks.full' : 'tasks.fit')
   const dataSignature = JSON.stringify(config && { dataset: config.dataset, recipe: config.recipe_id, task: config.task, model: testing && !imported ? source.data?.model.key : config.model.key, pa: config.pa_reference, dpd: config.dpd_reference })
   const signatures = [dataSignature, JSON.stringify(config && { dataSignature, training: config.training, model: config.model, execution: config.execution, evaluation: config.evaluation })]
@@ -273,7 +291,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
         <Typography variant="h1" id="form-title">{t(`modelWorkflow.${displayGroup}`)}</Typography>
         <Button variant="outlined" size="small" onClick={() => setJsonOpen(true)} disabled={submit.isPending}>{t('json.open')}</Button>
       </Stack>
-      <ExperimentTasks active={ilcRequested && displayGroup === 'pa' ? 'train_pa' : displayTask} dataset={workflowDataset} version={workflowVersion} compact />
+      <ExperimentTasks active={displayTask} dataset={workflowDataset} version={workflowVersion} compact />
       <Tabs value={ilcRequested ? 'ilc' : displayTesting ? 'test' : 'train'} aria-label={t('modelWorkflow.mode')}>
         {(['train', 'test'] as const).map((mode) => {
           const nextTask = displayGroup === 'pa' ? (mode === 'train' ? 'train_pa' : 'evaluate_pa') : (mode === 'train' ? 'train_dpd' : 'run_dpd')
@@ -282,9 +300,15 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
           if (workflowVersion) query.set('version', workflowVersion)
           return <Tab key={mode} value={mode} label={t(`modelWorkflow.${mode}`)} component={RouterLink} to={`/experiments/new?${query}`} />
         })}
-        <Tab value="ilc" label={t(displayGroup === 'pa' ? 'ilc.title' : 'ilc.benchmark')} component={RouterLink}
-          to={`/experiments/new?task=train_dpd&method=ilc&workspace=${displayGroup}&dataset=${encodeURIComponent(workflowDataset ?? '')}${workflowVersion ? `&version=${encodeURIComponent(workflowVersion)}` : ''}`} />
+        {displayGroup === 'dpd' && <Tab value="ilc" label={t('ilc.title')} component={RouterLink}
+          to={`/experiments/new?task=train_dpd&method=ilc&dataset=${encodeURIComponent(workflowDataset ?? '')}${workflowVersion ? `&version=${encodeURIComponent(workflowVersion)}` : ''}`} />}
       </Tabs>
+      {displayGroup === 'pa' && <Typography variant="body2" color="text.secondary">
+        {t('paMethod.ilcHelp')}{' '}
+        <Button size="small" component={RouterLink} to={`/experiments/new?task=train_dpd&method=ilc&dataset=${encodeURIComponent(workflowDataset ?? '')}&version=${encodeURIComponent(workflowVersion)}`}>
+          {t('ilc.title')}
+        </Button>
+      </Typography>}
       {(config?.task === 'evaluate_pa' || config?.task === 'run_dpd' || testing) && <TestingSampleSummary datasetId={config?.dataset.id ?? form.datasetId} version={config?.dataset.preprocessing_version ?? (form.dataVersion || 'raw-v1')} />}
       <WorkflowSteps active={step} labels={[t('workflow.data'), t(displayTesting ? 'workflow.testConfigure' : 'workflow.configure'), t('workflow.review')]} completed={completed} onChange={setStep} canOpen={canOpen} />
       <Stack sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1, '& .MuiButton-root': { flexShrink: 0 } }} direction="row">
@@ -335,16 +359,35 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
             </TextField>
           </Grid>
           {!testing && <>
+            {task === 'train_pa' && <Grid size={{ xs: 12, md: 6 }}>
+              <TextField select fullWidth label={t('paMethod.label')} value={leastSquares ? 'polynomial' : 'neural'} onChange={event => {
+                const polynomial = event.target.value === 'polynomial'
+                const entry = taskRecipes.find(r => r.recipe_id === (polynomial ? 'pa-mp-studio-v1' : 'pa-tres_gru-research-v1'))
+                  ?? taskRecipes.find(r => (models.data.find(m => m.key === r.model.key)?.training_method === 'least_squares') === polynomial)
+                if (entry) { setSelectedBackbone(null); selectStartingPoint(entry) }
+              }} helperText={t(leastSquares ? 'paMethod.polynomialHelp' : 'paMethod.neuralHelp')}>
+                <MenuItem value="neural">{t('paMethod.neural')}</MenuItem>
+                <MenuItem value="polynomial" disabled={!taskRecipes.some(r => models.data.find(m => m.key === r.model.key)?.training_method === 'least_squares')}>{t('paMethod.polynomial')}</MenuItem>
+              </TextField>
+            </Grid>}
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField select fullWidth required label={t('tasks.model')} value={recipe?.model.key ?? ''} onChange={(event) => { const entry = taskRecipes.find((r) => r.model.key === event.target.value && r.purpose === recipe?.purpose) ?? taskRecipes.find((r) => r.model.key === event.target.value); if (entry) selectStartingPoint(entry) }} helperText={errorText('recipeId') || t('tasks.model.help')} error={issuesFor('recipeId').length > 0}>
-                {[...new Set(taskRecipes.map((entry) => entry.model.key))].map((key) => <MenuItem key={key} value={key}>{message(models.data.find((entry) => entry.key === key)?.display_name ?? key)}</MenuItem>)}
+              <TextField select fullWidth required label={t('tasks.model')} value={recipe?.model.key ?? ''} onChange={(event) => { if (event.target.value === 'user_template') return; const entry = taskRecipes.find((r) => r.model.key === event.target.value && r.purpose === recipe?.purpose) ?? taskRecipes.find((r) => r.model.key === event.target.value); if (entry) { setSelectedBackbone(null); selectStartingPoint(entry) } }} helperText={errorText('recipeId') || t('tasks.model.help')} error={issuesFor('recipeId').length > 0}>
+                {[...new Set(architectureRecipes.filter(entry => entry.model.key !== 'user_template').map((entry) => entry.model.key))].map((key) => <MenuItem key={key} value={key}>{message(models.data.find((entry) => entry.key === key)?.display_name ?? key)}</MenuItem>)}
+                {selectedBackbone && <MenuItem value="user_template">{selectedBackbone.name}</MenuItem>}
               </TextField>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField select fullWidth label={t('tasks.startingSettings')} value={form.recipeId} onChange={(event) => { const entry = taskRecipes.find((r) => r.recipe_id === event.target.value); if (entry) selectStartingPoint(entry) }} helperText={t('tasks.startingSettings.help')}>
-                {taskRecipes.filter((entry) => entry.model.key === recipe?.model.key).map((entry) => <MenuItem key={entry.recipe_id} value={entry.recipe_id}>{purposeLabel(entry.purpose)}</MenuItem>)}
+                {taskRecipes.filter((entry) => entry.model.key === recipe?.model.key).map((entry) => <MenuItem key={entry.recipe_id} value={entry.recipe_id}>{leastSquares ? message(entry.title) : purposeLabel(entry.purpose)}</MenuItem>)}
               </TextField>
             </Grid>
+            {polynomialPA && <Grid size={{ xs: 12 }}><Alert severity="info">{t('paMethod.fitHelp', { samples: recipe?.training.train_samples ?? t('paMethod.allSamples') })}</Alert></Grid>}
+            {!leastSquares && models.data.some(m => m.key === 'user_template') && <Grid size={{ xs: 12 }}><BackbonePicker selected={selectedBackbone} onSelect={entry => {
+              setSelectedBackbone(entry)
+              const key = entry ? 'user_template' : 'tres_gru'
+              const point = taskRecipes.find(r => r.model.key === key && r.purpose === (recipe?.purpose ?? 'research')) ?? taskRecipes.find(r => r.model.key === key)
+              if (point) selectStartingPoint(point)
+            }} /></Grid>}
           </>}
           {versions.length > 1 && (
             <Grid size={{ xs: 12, md: 6 }}>
@@ -377,7 +420,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
       <Paper sx={{ p: 2.5, mb: 1.5 }}><Grid container spacing={2}>
           {!imported && <>
           <Grid size={{ xs: 12, md: testing || leastSquares ? 6 : 4 }}>
-            <TextField select fullWidth label={t('form.device')} value={form.device} onChange={set('device')} error={issuesFor('device').length > 0} helperText={errorText('device') || (untested ? t('form.device.untested', { device: form.device }) : ' ')}>
+            <TextField select fullWidth label={t('form.device')} value={form.device} onChange={set('device')} disabled={polynomialPA} error={issuesFor('device').length > 0} helperText={errorText('device') || (polynomialPA ? t('paMethod.cpuHelp') : untested ? t('form.device.untested', { device: form.device }) : ' ')}>
               {(caps.data?.devices ?? [{ device: 'cpu', detected: true, count: 1, tested_models: [] }]).map((d) => (
                 <MenuItem key={d.device} value={d.device} disabled={!d.detected}>
                   {d.device}
@@ -492,9 +535,10 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
         <Box component="dl" sx={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 3, rowGap: 1, m: 0, '& dt': { color: 'text.secondary' }, '& dd': { m: 0, overflowWrap: 'anywhere' } }}>
           <dt>{t('form.dataset')}</dt><dd>{config?.dataset.id} · {config?.dataset.preprocessing_version || 'raw-v1'}</dd>
           <dt>{t('tasks.task')}</dt><dd>{taskLabel(config?.task ?? task)}</dd>
-          <dt>{t('tasks.model')}</dt><dd>{message(models.data.find((entry) => entry.key === config?.model.key)?.display_name ?? config?.model.key)}</dd>
+          <dt>{t('tasks.model')}</dt><dd>{uploadedName(config?.model) ?? message(models.data.find((entry) => entry.key === config?.model.key)?.display_name ?? config?.model.key)}</dd>
           <dt>{t('form.device')}</dt><dd>{config?.execution?.device}</dd>
-          {(config?.task === 'train_pa' || config?.task === 'train_dpd') && <>
+          {displayLeastSquares && <><dt>{t('paMethod.label')}</dt><dd>{t(config?.model.key === 'ilc_dpd' ? 'ilc.title' : 'tasks.fit')}</dd></>}
+          {!displayLeastSquares && (config?.task === 'train_pa' || config?.task === 'train_dpd') && <>
             <dt>{t('form.epochs')}</dt><dd>{config?.training?.epochs}</dd>
             <dt>{t('form.batchSize')}</dt><dd>{config?.training?.batch_size}</dd>
             <dt>{t('form.learningRate')}</dt><dd>{config?.training?.learning_rate}</dd>

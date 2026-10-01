@@ -1,0 +1,43 @@
+name: User backbone review
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  merge_group:
+    types: [checks_requested]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to recheck after a human review
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: backbone-review-${{ github.event.merge_group.head_sha || github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name != 'issue_comment' || (github.event.issue.pull_request && github.event.comment.body == '/backbone-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Never check out the PR head. In particular pull_request_target may carry
+      # a write token; every executable here comes from the trusted base.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.merge_group.base_sha || github.event.pull_request.base.sha || 'main' }}
+          persist-credentials: false
+      - name: Publish a head-bound template and human-review status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/check_user_backbone_review.py

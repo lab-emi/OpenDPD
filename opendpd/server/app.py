@@ -56,8 +56,10 @@ def static_status(static_dir: Path = STATIC_DIR) -> dict:
 
 def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, static_dir: Path = STATIC_DIR,
                supervisor_kwargs: Optional[dict] = None, shutdown_timeout: float = 10.0,
-               allow_custom_datasets: bool = True, allow_dataset_publications: bool = True, supervisor_factory=Supervisor,
-               monitor_resources: bool = True, start_sweeps: bool = True) -> FastAPI:
+               allow_custom_datasets: bool = True, allow_dataset_publications: bool = True, allow_backbone_publications: bool = True,
+               supervisor_factory=Supervisor,
+               monitor_resources: bool = True, start_sweeps: bool = True,
+               allow_arena_submissions: bool = True, arena_factory=None) -> FastAPI:
     sessions = SessionStore(bootstrap_token)
 
     @asynccontextmanager
@@ -74,6 +76,11 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         app.state.sweeps = sweeps
         from opendpd.services.dataset_publication import PublicationController
         app.state.dataset_publications = PublicationController(ws)
+        from opendpd.services.user_backbones import BackboneController
+        app.state.user_backbones = BackboneController(ws)
+        from opendpd.services.arena import ArenaController
+        app.state.arena = (arena_factory(ws, app.state.user_backbones, supervisor) if arena_factory else
+                           ArenaController(ws, app.state.user_backbones, enabled=allow_arena_submissions))
         from opendpd.services.server_status import ResourceSampler
         app.state.resources = ResourceSampler(include_gpu=True)
         if monitor_resources:
@@ -86,6 +93,8 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
                     app.state.resources.stop()
                     sweeps.stop()
                     app.state.dataset_publications.stop()
+                    app.state.user_backbones.stop()
+                    app.state.arena.stop()
                     supervisor.stop(timeout=shutdown_timeout)
                 finally:
                     store.close()
@@ -98,6 +107,7 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
     app.state.sessions = sessions
     app.state.static_dir = Path(static_dir)
     app.state.allow_custom_datasets = allow_custom_datasets
+    app.state.allow_backbone_publications = allow_backbone_publications
     app.state.allow_dataset_publications = allow_dataset_publications
     app.add_middleware(DatasetImportBoundary, enabled=allow_custom_datasets)
     app.add_middleware(LocalBoundaryMiddleware)
@@ -176,6 +186,10 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
     app.include_router(sweep_router, prefix=API_PREFIX)
     from opendpd.server.dataset_research_routes import router as dataset_research_router
     app.include_router(dataset_research_router, prefix=API_PREFIX)
+    from opendpd.server.backbone_routes import router as backbone_router
+    app.include_router(backbone_router, prefix=API_PREFIX)
+    from opendpd.server.arena_routes import router as arena_router
+    app.include_router(arena_router, prefix=API_PREFIX)
     from opendpd.server.hardware_routes import router as hardware_router
     app.include_router(hardware_router, prefix=API_PREFIX)
     from opendpd.server.figure_routes import router as figure_router

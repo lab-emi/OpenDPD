@@ -62,6 +62,8 @@ def build_parser():
     parser.add_argument('--K', default=5, type=int, help='Degree of GMP model')
     parser.add_argument('--gmp_memory_length', default=11, type=int, help='Memory length of GMP model')
     # Power Amplifier Model Settings
+    parser.add_argument('--PA_user_definition', default=None, help='Template v1 network JSON; never Python source')
+    parser.add_argument('--DPD_user_definition', default=None, help='Template v1 network JSON; never Python source')
     parser.add_argument('--PA_backbone', default='tres_gru',
                         choices=legacy_choices('pa'),
                         help='Modeling PA Recurrent layer type')

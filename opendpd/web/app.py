@@ -218,6 +218,7 @@ class PublicBoundary:
                 if path == '/web/sessions/end':
                     tenant.closing = True
                     tenant.app.state.supervisor.stop_accepting()
+                    tenant.app.state.arena.stop_accepting()
                     await Response(status_code=204)(scope, receive, send)
                     return
                 if path == '/web/activity':
@@ -248,31 +249,42 @@ class PublicBoundary:
             if path in {"/models", "/recipes"}:
                 from opendpd.core.registry import list_models
                 from opendpd.services.recipes import list_recipes
-                models = [m for m in list_models() if (m.status == "supported" and m.training_method == "gradient") or m.key == "ilc_dpd"]
+                models = [m for m in list_models() if (m.status == "supported" and m.training_method == "gradient") or m.key in {"ilc_dpd", "user_template", "mp_ls", "gmp_ls"}]
                 keys = {m.key for m in models}
-                payload = [m.to_dict() for m in models] if path == "/models" else [r.to_dict() for r in list_recipes() if r.model.key in keys]
+                payload = [m.to_dict() for m in models] if path == "/models" else [
+                    r.to_dict() for r in list_recipes() if r.model.key in keys
+                    and (r.model.key not in {"mp_ls", "gmp_ls"}
+                         or r.recipe_id in {"pa-mp-studio-v1", "pa-gmp-studio-v1"})]
                 await JSONResponse(payload)(scope, receive, send)
                 return
             if method in {"POST", "PUT"}:
                 check_body(path, body)
+            if path == '/arena/submissions' and method == 'POST' and not self.config.arena_submissions:
+                reject(403, 'feature_unavailable', 'Hosted Arena submissions are disabled on this service.')
             if method == 'POST':
                 from opendpd.web.mutation_policy import enforce_mutation_budget
                 await enforce_mutation_budget(self.manager, tenant, path, body)
-            if path.startswith('/dataset-publications/') and path.endswith('/submit') and method == 'POST':
-                if not self.config.dataset_publications:
-                    reject(403, 'publication_unavailable', 'Public dataset submissions are disabled on this Studio host.')
+            if (path.startswith('/dataset-publications/') or path.startswith('/backbones/uploads/')) and path.endswith('/submit') and method == 'POST':
+                backbone = path.startswith('/backbones/')
+                enabled = self.config.backbone_publications if backbone else self.config.dataset_publications
+                if not enabled:
+                    reject(403, 'publication_unavailable', 'Public contributions of this kind are disabled on this Studio host.')
                 from opendpd.schemas.dataset_catalog import PublicationConsent
+                from opendpd.schemas.user_backbones import BackboneConsent
                 try:
-                    permission = PublicationConsent.model_validate(body)
+                    permission = (BackboneConsent if backbone else PublicationConsent).model_validate(body)
                 except ValueError:
                     reject(422, 'publication_consent', 'Confirm public disclosure and rights for the reviewed package.')
                 from opendpd.services.workspace import WorkspaceError
                 try:
-                    publication = tenant.app.state.dataset_publications.get(path.split('/')[-2])
+                    controller = tenant.app.state.user_backbones if backbone else tenant.app.state.dataset_publications
+                    publication = controller.get(path.split('/')[-2])
                 except WorkspaceError:
                     reject(404, 'publication_not_found', 'Publication is unavailable in this temporary workspace.')
                 if permission.package_sha256 != publication.package_sha256:
                     reject(409, 'publication_changed', 'Consent does not match the reviewed package.')
+                if backbone and permission.source_sha256 != publication.source_sha256:
+                    reject(409, 'publication_changed', 'Consent does not match the uploaded source.')
                 with self.manager.budget_lock:
                     key = (tenant.identifier, publication.publication_id)
                     if key not in self.manager.publication_reservations:
@@ -429,7 +441,7 @@ class PublicBoundary:
                 result = {'ok': True}
             elif scope["path"] == "/_gpu/poll" and request.method == "POST":
                 body = json.loads(raw)
-                result = {"job": broker.poll(body["name"])}
+                result = {"job": broker.poll(body["name"], arena_protocol_sha256=body.get("arena_protocol_sha256"))}
             else:
                 if len(path) != 5 or path[2] != "jobs":
                     raise ValueError("unknown GPU operation")
