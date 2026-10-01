@@ -37,7 +37,7 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
-**OpenDPD 2.3.0** adds **DPD Arena** on **APA_200MHz_b**: compare 23 DPD model entries across parameter budgets using test EVM, output ACLR, arithmetic cost and Pareto fronts. It includes the import, session and GPU security improvements from 2.2.18.
+**OpenDPD 2.3.0** adds **DPD Arena** on **APA_200MHz_b**: compare 23 DPD model entries across parameter budgets using test EVM, output ACLR, arithmetic cost and Pareto fronts. Results are predictions through one frozen PA model, not new hardware measurements. It includes the import, session and GPU security improvements from 2.2.18.
 
 **Signal Generator → PA Library → PA training → DPD training/testing.** Generate a PA input, simulate its output with one of nine Virtual PAs, or use existing input/output data. Standard presets are uncoded engineering stimuli; each capture keeps its own sample rate and length.
 
@@ -70,7 +70,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.2.18" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.3.0" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 

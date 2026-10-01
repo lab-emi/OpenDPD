@@ -2,25 +2,25 @@
 
 ## 2.3.0: DPD Arena on APA_200MHz_b
 
-Arena compares DPD configurations through one frozen TRes-GRU PA per condition.
-The published benchmark uses only the **APA_200MHz_b** measured dataset, with 23 model entries and 233 test cases.
-It now uses complete-symbol EVM, actual output ACLR and fixed-reference FoM:
+DPD Arena compares DPD configurations through one frozen TRes-GRU PA on the **APA_200MHz_b** measured dataset:
+23 model entries and 233 test cases (83 configurations from 218 fitted checkpoints; the two streaming entries re-evaluate fitted weights).
+Quality is complete-symbol EVM and actual output ACLR, and the score is a fixed-reference FoM:
 `Q − 5 log10(P/1000) − 5 log10(OPs/2000)`. Every size uses the same costs;
-seed variability is shown separately. PA and DPD inputs come only from the original measured captures. APA is
+seed variability is shown separately. PA and DPD inputs come only from the original measured capture, which is
 repartitioned before PA/DPD training to retain complete held-out symbols.
-PA and neural DPD configurations now receive 240 full-window epochs with
-batch 64. DPD checkpoints use validation in-band error and worse-side ACLR;
-final FoM uses complete-symbol test EVM and output ACLR. Training
+PA and neural DPD configurations receive 240 full-window epochs with
+batch 64. DPD checkpoints are chosen on validation in-band error and worse-side ACLR;
+final scores use complete-symbol test EVM and output ACLR. Training
 loads only train/validation arrays, and all checkpoints are frozen before test
 evaluation. ILC entries are excluded; MP/GMP use training-only PA feedback,
 without ILC-generated data.
 
-Rank adds a configuration table and four EVM/ACLR-versus-parameters/operations
-plots with separate Pareto fronts and seed error bars. PA parameter count,
-validation NMSE and test NMSE are visible. GRU/GMP remain DPD competitors;
-additional learned PA judges no longer determine scores.
+Rank shows a configuration table and four EVM/ACLR-versus-parameters/operations
+plots with separate Pareto fronts and seed error bars, alongside the PA's parameter count,
+validation NMSE and test NMSE. Cascade outputs are predictions from the frozen PA, not new
+predistorted hardware measurements.
 
-Safe backbone templates, classical PA fitting and hosted Arena execution are
+Safe backbone templates, classical PA fitting and hosted Arena execution (off by default) are
 also included. [Arena guide](guides/dpd-arena.md) ·
 [Protocol](protocols/dpd-arena-v6.md) · [Validation record](releases/2.3.0.md)
 

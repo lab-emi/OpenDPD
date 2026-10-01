@@ -45,7 +45,14 @@ def read_regular(root: Path, relative: str, offset=0, limit=MAX_FILE) -> bytes:
         os.close(directory)
 
 
-def unpack(data: bytes, root: Path, *, input_run_id: str | None = None) -> None:
+def unpack(data: bytes, root: Path, *, input_run_id: str | None = None, kind: str = "run") -> None:
+    """Validate, then write, an archive. ``input_run_id`` enables the strict worker-input rules.
+
+    An ordinary run needs its workspace and run metadata. An Arena worker receives exactly
+    its canonical ``request.json``: the broker sends nothing else and the agent accepts nothing else.
+    """
+    if kind not in {"run", "arena"} or (kind != "run" and input_run_id is None):
+        raise ValueError("invalid GPU job kind")
     if len(data) > MAX_BYTES:
         raise ValueError("GPU transfer exceeds storage limit")
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
@@ -75,8 +82,13 @@ def unpack(data: bytes, root: Path, *, input_run_id: str | None = None) -> None:
             # Reject links already on disk as well as links in the archive.
             if any(p.is_symlink() for p in [target, *target.parents]):
                 raise ValueError("GPU transfer cannot follow links")
-        if input_run_id is not None and not {"workspace.json", f"runs/{input_run_id}/config.resolved.json", f"runs/{input_run_id}/run.json"} <= seen:
-            raise ValueError("GPU input is missing job metadata")
+        if input_run_id is not None:
+            required = ({f"runs/{input_run_id}/request.json"} if kind == "arena" else
+                        {"workspace.json", f"runs/{input_run_id}/config.resolved.json", f"runs/{input_run_id}/run.json"})
+            if not required <= seen:
+                raise ValueError("GPU input is missing job metadata")
+            if kind == "arena" and seen != required:
+                raise ValueError("invalid GPU input layout")
         if archive.testzip() is not None:
             raise ValueError("GPU archive checksum failed")
         for item in members:
@@ -88,11 +100,13 @@ def unpack(data: bytes, root: Path, *, input_run_id: str | None = None) -> None:
             os.replace(temporary, target)
 
 
-def pack(root: Path, paths=None, *, subtree: str | None = None) -> bytes:
+def pack(root: Path, paths=None, *, subtree: str | None = None, missing_ok: bool = False) -> bytes:
     """Read through directory descriptors, including the root and all parents.
 
     Container output must be collected only after the container has been removed.
     No path-based stat/write can race a directory replacement into host files.
+    ``missing_ok`` skips requested files that do not exist, for a container that
+    was stopped before it wrote them; links and other invalid files still raise.
     """
     output = io.BytesIO()
     total = count = entries_seen = 0
@@ -167,6 +181,9 @@ def pack(root: Path, paths=None, *, subtree: str | None = None) -> bytes:
                         info = os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)
                         if not stat.S_ISDIR(info.st_mode):
                             add(parent, parts[-1], relative)
+                    except FileNotFoundError:
+                        if not missing_ok:
+                            raise
                     finally:
                         os.close(parent)
     finally:

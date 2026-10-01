@@ -179,7 +179,7 @@ class Agent:
         root.mkdir(mode=0o700)
         process = None
         try:
-            unpack(self.request(f"/jobs/{job['id']}/input", job=job), root, input_run_id=job['run_id'])
+            unpack(self.request(f"/jobs/{job['id']}/input", job=job), root, input_run_id=job['run_id'], kind=kind)
             run = root / "runs" / job["run_id"]
             (run / "logs").mkdir(exist_ok=True)
             for path in [root, *root.rglob("*")]:
@@ -209,7 +209,8 @@ class Agent:
             podman("rm", "--ignore", "-f", name, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             outputs = ([run / "result.json", run / "result.progress.json", run / "logs" / "worker.log"]
                        if kind == "arena" else None)
-            data = pack(root, outputs, subtree=f"runs/{job['run_id']}")
+            # A container stopped before it wrote its result must still return its worker log.
+            data = pack(root, outputs, subtree=f"runs/{job['run_id']}", missing_ok=kind == "arena")
             self.request(f"/jobs/{job['id']}/result", data, job, 3 if cancelled else 0 if code == 0 else 1)
         finally:
             subprocess.run(["/usr/bin/podman", "rm", "-f", name], timeout=20,

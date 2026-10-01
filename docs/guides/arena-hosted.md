@@ -59,16 +59,18 @@ cleanup. A hosted submission does not publish a global leaderboard record.
 
 ## Isolated container smoke test
 
-The current release is validated on APA_200MHz_b. A fresh four-configuration MP
-submission was fitted and evaluated inside the unprivileged, network-isolated
-container, including the transfer of only its selected output files. The pinned
-image also passed its exact-protocol capability check and a cold CUDA probe.
-See the [release record](../releases/2.3.0.md).
+Hosted submissions are off by default. Before enabling them on a deployment, run one
+real four-configuration MP submission through the pinned GPU image and confirm that
+it completes: the host agent unpacks the broker's input, the unprivileged,
+network-isolated container writes its result, and only the selected output files
+are transferred back. At startup the agent already runs the pinned image's
+exact-protocol capability check and a cold CUDA probe. Automated tests cover the
+agent and broker transfer contract with the container stubbed
+(`tests/unit/test_arena_gpu_adapter.py`); they do not start a container or use a GPU.
 
 The v6 local and hosted runners prefer CUDA when available, including
 zero-threshold Delta cells with reviewed dense training equivalents. The
 distributed reference launcher may assign selected fits to CPU and records the
 actual host/device. TF32 is disabled. These execution paths have dedicated
-forward, gradient, optimizer and inference checks. The container smoke validates
-the execution boundary; the complete 218-fit reference has a separate independent
-audit.
+forward, gradient, optimizer and inference checks. The container smoke checks the
+execution boundary; the complete 218-fit reference has a separate independent audit.

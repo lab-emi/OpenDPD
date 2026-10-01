@@ -2,9 +2,11 @@
 import base64
 import io
 import json
+import os
 import subprocess
 import time
 import zipfile
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -94,6 +96,128 @@ def test_arena_input_contains_only_canonical_request(arena_job):
     with zipfile.ZipFile(io.BytesIO(broker.input(job))) as data:
         assert data.namelist() == ["runs/arena-test/request.json"]
         assert data.read(data.namelist()[0]) == b'{"canonical":true}'
+
+
+def test_agent_input_rules_accept_exactly_the_canonical_arena_request(arena_job, tmp_path):
+    from opendpd.web.gpu_archive import unpack
+    broker, job = arena_job
+    data = broker.input(job)
+    unpack(data, tmp_path / "accepted", input_run_id=job.run_id, kind="arena")
+    files = sorted(p.relative_to(tmp_path / "accepted").as_posix() for p in (tmp_path / "accepted").rglob("*") if p.is_file())
+    assert files == ["runs/arena-test/request.json"]
+    # Ordinary runs keep their stricter metadata requirement; the kind must be known.
+    with pytest.raises(ValueError, match="missing job metadata"):
+        unpack(data, tmp_path / "plain", input_run_id=job.run_id)
+    with pytest.raises(ValueError, match="kind"):
+        unpack(data, tmp_path / "unknown", input_run_id=job.run_id, kind="shell")
+    with pytest.raises(ValueError, match="kind"):
+        unpack(data, tmp_path / "unscoped", kind="arena")
+    with pytest.raises(ValueError, match="missing job metadata"):
+        unpack(archive({"runs/arena-test/run.json": "{}"}), tmp_path / "missing", input_run_id=job.run_id, kind="arena")
+    for extra in ("workspace.json", "runs/arena-test/run.json", "datasets/other/data.csv", "runs/other/request.json"):
+        with pytest.raises(ValueError, match="input layout"):
+            unpack(archive({"runs/arena-test/request.json": "{}", extra: "{}"}), tmp_path / "extra",
+                   input_run_id=job.run_id, kind="arena")
+    assert not (tmp_path / "extra").exists() and not (tmp_path / "missing").exists()
+
+
+def test_pack_skips_requested_outputs_that_were_never_written_only_on_request(tmp_path):
+    from opendpd.web.gpu_archive import pack
+    run = tmp_path / "runs" / "arena-test"
+    (run / "logs").mkdir(parents=True)
+    (run / "logs" / "worker.log").write_text("log")
+    wanted = [run / "result.json", run / "result.progress.json", run / "logs" / "worker.log"]
+    with pytest.raises(FileNotFoundError):
+        pack(tmp_path, wanted, subtree="runs/arena-test")
+    with zipfile.ZipFile(io.BytesIO(pack(tmp_path, wanted, subtree="runs/arena-test", missing_ok=True))) as data:
+        assert data.namelist() == ["logs/worker.log"]
+    (run / "logs" / "worker.log").unlink()
+    (run / "logs").rmdir()
+    with zipfile.ZipFile(io.BytesIO(pack(tmp_path, wanted, subtree="runs/arena-test", missing_ok=True))) as data:
+        assert data.namelist() == []
+    # Only absence is forgiven: links and other invalid files are still refused.
+    (run / "result.json").symlink_to(tmp_path)
+    with pytest.raises((OSError, ValueError)):
+        pack(tmp_path, wanted, subtree="runs/arena-test", missing_ok=True)
+    (run / "result.json").unlink()
+    (tmp_path / "private.json").write_text("host file")
+    os.link(tmp_path / "private.json", run / "result.json")
+    with pytest.raises(ValueError, match="invalid GPU output"):
+        pack(tmp_path, wanted, subtree="runs/arena-test", missing_ok=True)
+    (run / "result.json").unlink()
+    (run / "logs").symlink_to(tmp_path, target_is_directory=True)
+    with pytest.raises(OSError):
+        pack(tmp_path, wanted, subtree="runs/arena-test", missing_ok=True)
+
+
+def run_agent(broker, job, tmp_path, monkeypatch, container):
+    """Drive the real Agent.run against the real broker; only podman and root-only calls are stubbed."""
+    lease = broker.poll("GPU", PROTOCOL)
+    assert lease["id"] == job.id and lease["kind"] == "arena"
+    jobs = tmp_path / "agent-jobs"
+    jobs.mkdir()
+    agent = gpu_agent.Agent.__new__(gpu_agent.Agent)
+    agent.root, agent.image = jobs, IMAGE
+    agent.publish_resources = lambda: None
+
+    def request(path, body=None, lease_job=None, code=None, **kwargs):
+        action = path.rsplit("/", 1)[1]
+        if action == "input":
+            return broker.input(job)
+        if action == "update":
+            return broker.update(job, body)
+        assert action == "result"
+        broker.result(job, body, code)
+
+    class Process:
+        def __init__(self, command):
+            volume = next(part for part in command if part.endswith(":/workspace:rw,nosuid,nodev,noexec"))
+            self.code = container(Path(volume.split(":", 1)[0]) / "runs" / "arena-test")
+
+        def poll(self):
+            return self.code
+
+        def wait(self, **kwargs):
+            return self.code
+
+    agent.request = request
+    monkeypatch.setattr(gpu_agent.os, "chown", lambda *args: None)
+    monkeypatch.setattr(gpu_agent.subprocess, "Popen", lambda command, **kwargs: Process(command))
+    monkeypatch.setattr(gpu_agent.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=0))
+    monkeypatch.setattr(gpu_agent, "podman", lambda *args, **kwargs: None)
+    agent.run(lease)
+    assert not list(jobs.iterdir()), "the agent workspace is always removed"
+
+
+def test_agent_runs_an_arena_job_through_the_real_broker(arena_job, tmp_path, monkeypatch):
+    broker, job = arena_job
+
+    def container(run):
+        assert (run / "request.json").read_text() == '{"canonical":true}'
+        assert not (run / "submission.json").exists()
+        (run / "result.json").write_text('{"status":"complete"}')
+        (run / "result.progress.json").write_text('{"phase":"complete","completed_cases":4,"expected_cases":4}')
+        return 0
+
+    run_agent(broker, job, tmp_path, monkeypatch, container)
+    assert job.done and json.loads((job.root / ".gpu-result").read_text())["exit_code"] == 0
+    assert (job.root / "result.json").read_text() == '{"status":"complete"}'
+    assert json.loads((job.root / "result.progress.json").read_text())["phase"] == "complete"
+    assert (job.root / "request.json").read_text() == '{"canonical":true}'
+    assert (job.root / "submission.json").read_text() == "must never transfer"
+
+
+def test_agent_returns_the_worker_log_of_a_container_that_stopped_early(arena_job, tmp_path, monkeypatch):
+    broker, job = arena_job
+
+    def container(run):
+        (run / "logs" / "worker.log").write_text("killed: out of memory\n")
+        return 137
+
+    run_agent(broker, job, tmp_path, monkeypatch, container)
+    assert job.done and json.loads((job.root / ".gpu-result").read_text())["exit_code"] == 1
+    assert not (job.root / "result.json").exists()
+    assert "out of memory" in (job.root / "logs" / "worker.log").read_text()
 
 
 @pytest.mark.parametrize("filename", ["request.json", "submission.json", "evaluation/weights.npz", "../result.json", ".gpu-result"])
