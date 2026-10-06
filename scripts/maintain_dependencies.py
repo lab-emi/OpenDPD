@@ -19,7 +19,7 @@ from dependency_github import GitHub
 from dependency_policy import dependabot_pr
 
 WORKFLOWS = {
-    "ci.yml": {"Lint (critical errors)", "Build & check distribution",
+    "ci.yml": {"Lint (critical errors)", "Build & check distribution", "Release dependency readiness",
                "Frontend (types, lint, unit, build, browser journeys)",
                *{f"Tests (Python {v})" for v in ("3.10", "3.11", "3.12", "3.13")},
                *{f"Default install ({os})" for os in ("ubuntu-latest", "macos-latest", "windows-latest")}},
@@ -146,8 +146,8 @@ def reconcile(api):
     return report
 
 
-def release_check(api, release_sha=None):
-    pending = [pr["number"] for pr in api.pulls() if dependency_pr(pr)]
+def release_check(api, release_sha=None, exclude_pr=None):
+    pending = [pr["number"] for pr in api.pulls() if dependency_pr(pr) and pr["number"] != exclude_pr]
     if pending:
         raise ValueError("Unresolved dependency PRs: " + ", ".join(f"#{n}" for n in pending)
                          + ". Run Dependency maintenance; resolve failed/major updates before creating the release.")
@@ -178,9 +178,42 @@ def release_check(api, release_sha=None):
     return "No unresolved dependency PRs; release source and checks are current."
 
 
+def version_change_check(api, event, event_name, sha):
+    """Block a version promotion before merging, while allowing dependency PRs to clear the queue."""
+    pull = event.get("pull_request")
+    if pull:
+        before, after, exclude = pull["base"]["sha"], pull["head"]["sha"], pull["number"]
+    elif event_name == "push":
+        before, after, exclude = event["before"], event["after"], None
+    else:
+        before = api.request("git/ref/heads/main")["object"]["sha"]
+        after, exclude = sha, None
+    if before == after:
+        return "No version promotion in this dispatch."
+    patterns = {
+        "opendpd/__init__.py": r'^__version__ = "([^"]+)"',
+        "pyproject.toml": r'^version = "([^"]+)"',
+    }
+    def versions(ref):
+        values = []
+        for path, pattern in patterns.items():
+            match = re.search(pattern, api.source(ref, path), re.M)
+            if not match:
+                raise ValueError("Cannot determine package version")
+            values.append(match[1])
+        values.append(json.loads(api.source(ref, "frontend/package.json"))["version"])
+        return values
+    if versions(before) == versions(after):
+        return "Package versions are unchanged; dependency maintenance may proceed."
+    release_check(api, exclude_pr=exclude)
+    return "Version promotion has no unresolved dependency PRs."
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", help="read-only release gate")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="read-only release gate")
+    mode.add_argument("--version-change", action="store_true", help="read-only gate before merging a version PR")
     parser.add_argument("--sha", help="release commit (required for publication)")
     parser.add_argument("--wait", type=int, default=0, choices=range(0, 121), metavar="MINUTES",
                         help="finish routine updates before a release; at most 120 minutes")
@@ -188,7 +221,10 @@ def main(argv=None):
     api = GitHub()
     output = []
     try:
-        if args.check:
+        if args.version_change:
+            event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+            output.append(version_change_check(api, event, os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_SHA"]))
+        elif args.check:
             output.append(release_check(api, args.sha))
         else:
             deadline = time.monotonic() + args.wait * 60

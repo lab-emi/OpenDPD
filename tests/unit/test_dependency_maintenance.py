@@ -330,6 +330,35 @@ def test_release_is_blocked_by_any_remaining_dependency_pr():
     assert "No unresolved" in maintenance.release_check(api)
 
 
+def version_api(old="2.3.1", new="2.3.2", pending=True):
+    api = Checks()
+    api.pulls = lambda: [pr()] if pending else []
+    def source(ref, path):
+        version = old if ref == BASE else new
+        if path == "frontend/package.json":
+            return json.dumps({"version": version})
+        return f'{"__version__" if path.endswith("__init__.py") else "version"} = "{version}"\n'
+    api.source = source
+    return api
+
+
+def test_version_pr_is_blocked_before_merge_but_dependency_pr_is_not():
+    event = {"pull_request": {**pr(), "number": 11}}
+    with pytest.raises(ValueError, match="#10"):
+        maintenance.version_change_check(version_api(), event, "pull_request", HEAD)
+    assert "unchanged" in maintenance.version_change_check(version_api(new="2.3.1"), event, "pull_request", HEAD)
+    assert "no unresolved" in maintenance.version_change_check(version_api(pending=False), event, "pull_request", HEAD)
+
+
+def test_version_pr_does_not_block_itself_if_labelled_dependencies():
+    assert "no unresolved" in maintenance.version_change_check(version_api(), {"pull_request": pr()}, "pull_request", HEAD)
+
+
+def test_push_version_bump_is_also_checked():
+    with pytest.raises(ValueError, match="#10"):
+        maintenance.version_change_check(version_api(), {"before": BASE, "after": HEAD}, "push", HEAD)
+
+
 def test_release_tag_must_include_current_maintenance_commits():
     api = Checks()
     api.pulls = lambda: []

@@ -17,6 +17,22 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  release-readiness:
+    name: Release dependency readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Resolve dependency PRs before a version promotion can merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -I scripts/maintain_dependencies.py --version-change
+
   lint:
     name: Lint (critical errors)
     runs-on: ubuntu-latest

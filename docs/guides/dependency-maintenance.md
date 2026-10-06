@@ -55,6 +55,10 @@ the preparation with the affected PR numbers and check links. Resolve those
 items and rerun preparation before continuing.
 
 Then prepare the version/release-notes PR, wait for its checks, and merge it.
+The required **Release dependency readiness** CI job detects changes to the
+Python package and frontend version fields and blocks that version PR while
+other dependency PRs remain open. Ordinary dependency PRs can still merge to
+clear the queue, so the gate cannot deadlock its own preparation.
 Publish the tag from that resulting `main` commit. Both the package build and the
 final PyPI upload independently check that:
 
@@ -87,6 +91,6 @@ Apply the reviewed `deployment/dependency-status-ruleset.json` template as an ac
 repository ruleset. The automation reads effective rules using metadata access;
 it does not need an administrator token.
 
-The required branch checks are the ten CI jobs declared in
+The required branch checks are the eleven CI jobs declared in
 `scripts/maintain_dependencies.py`, plus `Build site` and `audit`, with strict
 up-to-date checking. Keep that list aligned when changing the CI matrix.
