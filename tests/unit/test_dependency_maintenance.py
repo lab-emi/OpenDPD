@@ -1,8 +1,10 @@
 """Release and write-token boundaries are tested without contacting GitHub."""
 import copy
+import io
 import json
 from pathlib import Path
 import sys
+import urllib.error
 
 import pytest
 
@@ -331,6 +333,44 @@ def test_rebased_head_does_not_reuse_previous_green_checks(monkeypatch):
     assert "waiting" in maintenance.reconcile(api)[0]
     assert not any(path.endswith("/merge") for path, _, _ in api.calls)
     assert any(path.endswith("/dispatches") for path, _, _ in api.calls)
+
+
+@pytest.mark.parametrize("closed", [False, True])
+def test_conflicting_or_concurrently_closed_update_does_not_crash_maintenance(closed):
+    api = Reconciler()
+    api.behind = 1
+    request = api.request
+    def conflict(path, payload=None, method=None):
+        if path.endswith("/update-branch"):
+            if closed:
+                api.pull["state"] = "closed"
+            raise urllib.error.HTTPError("https://api.github.com/test", 422, "Unprocessable Entity", {},
+                                         io.BytesIO(b'{"message":"Update branch has a merge conflict"}'))
+        return request(path, payload, method)
+    api.request = conflict
+    report = maintenance.reconcile(api)
+    assert ("already closed" if closed else "waiting: GitHub 422") in report[0]
+    assert not any(path.endswith("/merge") for path, _, _ in api.calls)
+
+
+def test_base_race_at_merge_is_deferred_without_forcing_or_bypassing_rules():
+    api = Reconciler()
+    request = api.request
+    def conflict(path, payload=None, method=None):
+        if path.endswith("/merge"):
+            raise urllib.error.HTTPError("https://api.github.com/test", 409, "Conflict", {},
+                                         io.BytesIO(b'{"message":"Head changed\nwhile merging"}'))
+        return request(path, payload, method)
+    api.request = conflict
+    assert "waiting: GitHub 409" in maintenance.reconcile(api)[0]
+    assert not any(path.endswith("/dispatches") for path, _, _ in api.calls)
+
+
+def test_authentication_failures_are_not_disguised_as_pending_updates():
+    api = Reconciler()
+    error = urllib.error.HTTPError("https://api.github.com/test", 403, "Forbidden", {}, io.BytesIO(b"{}"))
+    with pytest.raises(urllib.error.HTTPError):
+        maintenance.deferred_update(api, 10, error)
 
 
 def test_ruleset_template_matches_required_jobs_and_has_no_bypass():

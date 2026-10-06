@@ -99,6 +99,22 @@ def require_strict_checks(api):
     raise ValueError("main must require up-to-date branches and the documented GitHub Actions checks in an active ruleset")
 
 
+def deferred_update(api, number, error):
+    """A conflict or concurrent update cannot authorize a merge or stop other PRs."""
+    if error.code not in {405, 409, 422}:
+        raise error
+    fresh = api.request(f"pulls/{number}")
+    if fresh["state"] != "open":
+        return f"#{number}: already closed while maintenance was running"
+    try:
+        detail = json.loads(error.read(4096)).get("message", error.reason)
+    except (ValueError, OSError):
+        detail = error.reason
+    detail = " ".join(str(detail).split())[:240]
+    return (f"#{number}: waiting: GitHub {error.code}: {detail}. "
+            "Dependabot can refresh the branch; conflicts and repository rules remain enforced.")
+
+
 def reconcile(api):
     require_strict_checks(api)
     report = []
@@ -119,7 +135,11 @@ def reconcile(api):
         if api.comparison(pr)["behind_by"]:
             # Keep updates small and validate them together with the current main.
             old = pr["head"]["sha"]
-            api.request(f"pulls/{number}/update-branch", {"expected_head_sha": old}, method="PUT")
+            try:
+                api.request(f"pulls/{number}/update-branch", {"expected_head_sha": old}, method="PUT")
+            except urllib.error.HTTPError as error:
+                report.append(deferred_update(api, number, error))
+                continue
             for _ in range(15):
                 time.sleep(2)
                 pr = api.request(f"pulls/{number}")
@@ -145,7 +165,11 @@ def reconcile(api):
         if fresh["state"] != "open" or fresh["head"]["sha"] != sha or api.comparison(fresh)["behind_by"]:
             report.append(f"#{number}: source changed during checks; retry later")
             continue
-        result = api.request(f"pulls/{number}/merge", {"sha": sha, "merge_method": "squash"}, method="PUT")
+        try:
+            result = api.request(f"pulls/{number}/merge", {"sha": sha, "merge_method": "squash"}, method="PUT")
+        except urllib.error.HTTPError as error:
+            report.append(deferred_update(api, number, error))
+            continue
         if not result.get("merged"):
             raise ValueError(f"#{number}: GitHub refused the merge")
         report.append(f"#{number}: merged {result['sha']}")
