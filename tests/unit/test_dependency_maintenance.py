@@ -339,6 +339,9 @@ def version_api(old="2.3.1", new="2.3.2", pending=True):
             return json.dumps({"version": version})
         return f'{"__version__" if path.endswith("__init__.py") else "version"} = "{version}"\n'
     api.source = source
+    request = api.request
+    api.request = lambda path, *a, **kw: ({"object": {"sha": BASE}} if path == "git/ref/heads/main"
+                                        else request(path, *a, **kw))
     return api
 
 
@@ -357,6 +360,14 @@ def test_version_pr_does_not_block_itself_if_labelled_dependencies():
 def test_push_version_bump_is_also_checked():
     with pytest.raises(ValueError, match="#10"):
         maintenance.version_change_check(version_api(), {"before": BASE, "after": HEAD}, "push", HEAD)
+
+
+def test_inherited_main_version_is_not_mistaken_for_a_new_release():
+    api = version_api()
+    current = "c" * 40
+    api.request = lambda _path: {"object": {"sha": current}}
+    # source() returns the new version for current/main and the refreshed head.
+    assert "unchanged" in maintenance.version_change_check(api, {"pull_request": pr()}, "pull_request", HEAD)
 
 
 def test_release_tag_must_include_current_maintenance_commits():

@@ -182,7 +182,10 @@ def version_change_check(api, event, event_name, sha):
     """Block a version promotion before merging, while allowing dependency PRs to clear the queue."""
     pull = event.get("pull_request")
     if pull:
-        before, after, exclude = pull["base"]["sha"], pull["head"]["sha"], pull["number"]
+        # A refreshed dependency PR inherits version changes from main; those
+        # are not a new release. PR.base.sha may still name the original base.
+        before = api.request("git/ref/heads/main")["object"]["sha"]
+        after, exclude = pull["head"]["sha"], pull["number"]
     elif event_name == "push":
         before, after, exclude = event["before"], event["after"], None
     else:
