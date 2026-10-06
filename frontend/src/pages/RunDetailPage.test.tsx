@@ -45,6 +45,14 @@ test('running run: live stream updates progress; refresh never submits anything'
   expect(calls.every((c) => c.method === 'GET')).toBe(true)
 })
 
+test.each(['cuda', 'cuda:0', 'cuda:2'])('queued %s run explains its GPU queue', async device => {
+  installFakeEventSource()
+  const queued: RunView = { ...running, status: 'queued', device, started_at: null, worker: null }
+  mockApi(routes(queued))
+  renderWithProviders(<RunDetailPage />, { route: `/runs/${queued.run_id}`, path: '/runs/:runId' })
+  expect(await screen.findByText(/The selected GPU runs one experiment at a time/)).toBeVisible()
+})
+
 test('lost stream shows the disconnected state with a refresh action', async () => {
   const ES = installFakeEventSource()
   mockApi(routes(running))

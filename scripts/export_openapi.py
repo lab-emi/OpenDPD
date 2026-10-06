@@ -13,6 +13,9 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Direct script execution otherwise prefers an older installed opendpd over
+# this checkout, silently generating a contract for the wrong application.
+sys.path.insert(0, str(ROOT))
 TARGET = ROOT / "docs" / "contracts" / "openapi.json"
 
 

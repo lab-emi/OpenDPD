@@ -933,6 +933,1265 @@
         "title": "AnalyzerSourceInfo",
         "type": "object"
       },
+      "ArenaBackbone": {
+        "additionalProperties": false,
+        "properties": {
+          "deterministic": {
+            "default": false,
+            "title": "Deterministic",
+            "type": "boolean"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          },
+          "key": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "family"
+        ],
+        "title": "ArenaBackbone",
+        "type": "object"
+      },
+      "ArenaBoard": {
+        "additionalProperties": false,
+        "properties": {
+          "board_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Board Id",
+            "type": "string"
+          },
+          "conditions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "dataset": {
+            "title": "Dataset",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "evidence_label": {
+            "title": "Evidence Label",
+            "type": "string"
+          },
+          "evidence_type": {
+            "enum": [
+              "synthetic_simulation",
+              "measured_data_simulation"
+            ],
+            "title": "Evidence Type",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "board_id",
+          "title",
+          "description",
+          "evidence_type",
+          "evidence_label",
+          "dataset",
+          "conditions"
+        ],
+        "title": "ArenaBoard",
+        "type": "object"
+      },
+      "ArenaBudgetResult": {
+        "additionalProperties": false,
+        "description": "One point of the parameter sweep: its configuration, analytic cost and gated scores.",
+        "properties": {
+          "add": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Add"
+          },
+          "arithmetic_efficiency_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arithmetic Efficiency Db"
+          },
+          "available": {
+            "default": true,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "budget": {
+            "minimum": 1.0,
+            "title": "Budget",
+            "type": "integer"
+          },
+          "completed_cases": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Completed Cases",
+            "type": "integer"
+          },
+          "expected_cases": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Expected Cases",
+            "type": "integer"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArenaMetricSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model_parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Parameters"
+          },
+          "mul": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mul"
+          },
+          "nonlinear": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Nonlinear",
+            "type": "object"
+          },
+          "nonlinear_add": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nonlinear Add"
+          },
+          "nonlinear_mul": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nonlinear Mul"
+          },
+          "operation_items": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              "type": "object"
+            },
+            "title": "Operation Items",
+            "type": "array"
+          },
+          "operation_ratio": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Ratio"
+          },
+          "ops": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ops"
+          },
+          "parameter_efficiency_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Efficiency Db"
+          },
+          "parameter_ratio": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Ratio"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "qualified": {
+            "default": false,
+            "title": "Qualified",
+            "type": "boolean"
+          },
+          "quality_conservative_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Conservative Db"
+          },
+          "quality_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Db"
+          },
+          "quality_std_db": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Std Db"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "required": [
+          "budget"
+        ],
+        "title": "ArenaBudgetResult",
+        "type": "object"
+      },
+      "ArenaCatalog": {
+        "additionalProperties": false,
+        "properties": {
+          "backbones": {
+            "items": {
+              "$ref": "#/components/schemas/ArenaBackbone"
+            },
+            "title": "Backbones",
+            "type": "array"
+          },
+          "protocol": {
+            "$ref": "#/components/schemas/ArenaProtocol"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          },
+          "submission_unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submission Unavailable Reason"
+          },
+          "submissions_available": {
+            "default": true,
+            "title": "Submissions Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "protocol",
+          "backbones",
+          "scope_note"
+        ],
+        "title": "ArenaCatalog",
+        "type": "object"
+      },
+      "ArenaCoverage": {
+        "additionalProperties": false,
+        "properties": {
+          "evaluated": {
+            "minimum": 0.0,
+            "title": "Evaluated",
+            "type": "integer"
+          },
+          "expected": {
+            "minimum": 0.0,
+            "title": "Expected",
+            "type": "integer"
+          },
+          "failed": {
+            "minimum": 0.0,
+            "title": "Failed",
+            "type": "integer"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "succeeded": {
+            "minimum": 0.0,
+            "title": "Succeeded",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected",
+          "evaluated",
+          "succeeded",
+          "failed"
+        ],
+        "title": "ArenaCoverage",
+        "type": "object"
+      },
+      "ArenaLeaderboard": {
+        "additionalProperties": false,
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/ArenaBoard"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/ArenaCoverage"
+          },
+          "protocol_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Protocol Sha256",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ArenaRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "scope_note": {
+            "title": "Scope Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "board",
+          "protocol_sha256",
+          "rows",
+          "coverage",
+          "scope_note"
+        ],
+        "title": "ArenaLeaderboard",
+        "type": "object"
+      },
+      "ArenaMetricSummary": {
+        "additionalProperties": false,
+        "description": "Means over conditions and seeds of one configuration under one frozen PA.\nSymbol EVM and output ACLR determine quality; AER and NMSE are diagnostics.\nEVM percent is converted from mean dB (a geometric mean), not pooled across seeds.",
+        "properties": {
+          "aclr_db": {
+            "title": "Aclr Db",
+            "type": "number"
+          },
+          "aclr_improvement_db": {
+            "title": "Aclr Improvement Db",
+            "type": "number"
+          },
+          "aer_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aer Db"
+          },
+          "aer_improvement_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aer Improvement Db"
+          },
+          "baseline_aclr_db": {
+            "title": "Baseline Aclr Db",
+            "type": "number"
+          },
+          "baseline_aer_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Aer Db"
+          },
+          "baseline_evm_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Evm Db"
+          },
+          "baseline_evm_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Evm Pct"
+          },
+          "baseline_nmse_db": {
+            "title": "Baseline Nmse Db",
+            "type": "number"
+          },
+          "evm_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evm Db"
+          },
+          "evm_improvement_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evm Improvement Db"
+          },
+          "evm_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evm Pct"
+          },
+          "ib_error_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ib Error Db"
+          },
+          "nmse_db": {
+            "title": "Nmse Db",
+            "type": "number"
+          },
+          "nmse_improvement_db": {
+            "title": "Nmse Improvement Db",
+            "type": "number"
+          }
+        },
+        "required": [
+          "nmse_db",
+          "aclr_db",
+          "baseline_nmse_db",
+          "baseline_aclr_db",
+          "nmse_improvement_db",
+          "aclr_improvement_db"
+        ],
+        "title": "ArenaMetricSummary",
+        "type": "object"
+      },
+      "ArenaPA": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Checkpoint Sha256",
+            "type": "string"
+          },
+          "hidden_size": {
+            "title": "Hidden Size",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "parameters": {
+            "title": "Parameters",
+            "type": "integer"
+          },
+          "test_nmse_db": {
+            "title": "Test Nmse Db",
+            "type": "number"
+          },
+          "validation_nmse_db": {
+            "title": "Validation Nmse Db",
+            "type": "number"
+          }
+        },
+        "required": [
+          "model",
+          "hidden_size",
+          "parameters",
+          "validation_nmse_db",
+          "test_nmse_db",
+          "checkpoint_sha256"
+        ],
+        "title": "ArenaPA",
+        "type": "object"
+      },
+      "ArenaProgress": {
+        "additionalProperties": false,
+        "properties": {
+          "completed_cases": {
+            "default": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Completed Cases",
+            "type": "integer"
+          },
+          "epoch": {
+            "default": 0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Epoch",
+            "type": "integer"
+          },
+          "epochs": {
+            "default": 0,
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Epochs",
+            "type": "integer"
+          },
+          "expected_cases": {
+            "default": 0,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Expected Cases",
+            "type": "integer"
+          },
+          "message": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Message",
+            "type": "string"
+          },
+          "phase": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Phase",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phase"
+        ],
+        "title": "ArenaProgress",
+        "type": "object"
+      },
+      "ArenaProtocol": {
+        "additionalProperties": false,
+        "properties": {
+          "boards": {
+            "items": {
+              "$ref": "#/components/schemas/ArenaBoard"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Boards",
+            "type": "array"
+          },
+          "budgets": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Budgets",
+            "type": "array"
+          },
+          "cost_model": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Cost Model",
+            "type": "object"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "pa_models": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ArenaPA"
+            },
+            "title": "Pa Models",
+            "type": "object"
+          },
+          "protocol_id": {
+            "title": "Protocol Id",
+            "type": "string"
+          },
+          "protocol_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Protocol Sha256",
+            "type": "string"
+          },
+          "rankings": {
+            "items": {
+              "$ref": "#/components/schemas/ArenaRanking"
+            },
+            "minItems": 1,
+            "title": "Rankings",
+            "type": "array"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/ArenaRule"
+            },
+            "title": "Rules",
+            "type": "array"
+          },
+          "score_formula": {
+            "title": "Score Formula",
+            "type": "string"
+          },
+          "scoring": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Scoring",
+            "type": "object"
+          },
+          "seeds": {
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 1,
+            "title": "Seeds",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "training": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Training",
+            "type": "object"
+          },
+          "training_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Training Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "protocol_id",
+          "protocol_sha256",
+          "training_sha256",
+          "title",
+          "description",
+          "boards",
+          "seeds",
+          "budgets",
+          "rules",
+          "rankings",
+          "score_formula",
+          "training",
+          "scoring",
+          "cost_model"
+        ],
+        "title": "ArenaProtocol",
+        "type": "object"
+      },
+      "ArenaRankEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "rank": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "title": "ArenaRankEntry",
+        "type": "object"
+      },
+      "ArenaRanking": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "ranking_id": {
+            "pattern": "^[a-z][a-z0-9_-]{0,39}$",
+            "title": "Ranking Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ranking_id",
+          "title",
+          "description",
+          "unit"
+        ],
+        "title": "ArenaRanking",
+        "type": "object"
+      },
+      "ArenaRow": {
+        "additionalProperties": false,
+        "properties": {
+          "available_budgets": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Available Budgets",
+            "type": "integer"
+          },
+          "backbone": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Backbone",
+            "type": "string"
+          },
+          "best_budget": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Budget"
+          },
+          "board_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Board Id",
+            "type": "string"
+          },
+          "budgets": {
+            "items": {
+              "$ref": "#/components/schemas/ArenaBudgetResult"
+            },
+            "title": "Budgets",
+            "type": "array"
+          },
+          "cases": {
+            "items": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              "type": "object"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "completed_cases": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Completed Cases",
+            "type": "integer"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "eligibility_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Eligibility Reasons",
+            "type": "array"
+          },
+          "eligible": {
+            "default": false,
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "entry_id": {
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "evidence_type": {
+            "enum": [
+              "synthetic_simulation",
+              "measured_data_simulation"
+            ],
+            "title": "Evidence Type",
+            "type": "string"
+          },
+          "execution_semantics": {
+            "default": "offline_segmented",
+            "title": "Execution Semantics",
+            "type": "string"
+          },
+          "expected_cases": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Expected Cases",
+            "type": "integer"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArenaMetricSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ops_per_parameter": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ops Per Parameter"
+          },
+          "origin": {
+            "enum": [
+              "official",
+              "workspace"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "protocol_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Protocol Sha256",
+            "type": "string"
+          },
+          "provenance": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Provenance",
+            "type": "object"
+          },
+          "qualified_budgets": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Qualified Budgets",
+            "type": "integer"
+          },
+          "quality_conservative_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Conservative Db"
+          },
+          "quality_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality Db"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "rankings": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ArenaRankEntry"
+            },
+            "title": "Rankings",
+            "type": "object"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "seeds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Seeds",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "interrupted"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_id",
+          "board_id",
+          "backbone",
+          "display_name",
+          "origin",
+          "status",
+          "protocol_sha256",
+          "evidence_type"
+        ],
+        "title": "ArenaRow",
+        "type": "object"
+      },
+      "ArenaRule": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description"
+        ],
+        "title": "ArenaRule",
+        "type": "object"
+      },
+      "ArenaSubmission": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArenaProgress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "protocol_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Protocol Sha256",
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/ArenaSubmissionRequest"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArenaRow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "default": "queued",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "interrupted"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "submission_id": {
+            "pattern": "^arena-[a-f0-9]{32}$",
+            "title": "Submission Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "submission_id",
+          "request",
+          "protocol_sha256"
+        ],
+        "title": "ArenaSubmission",
+        "type": "object"
+      },
+      "ArenaSubmissionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted_protocol_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Accepted Protocol Sha256",
+            "type": "string"
+          },
+          "backbone": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Backbone",
+            "type": "string"
+          },
+          "backbone_id": {
+            "anyOf": [
+              {
+                "pattern": "^ub-[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backbone Id"
+          },
+          "board_id": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Board Id",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "board_id",
+          "backbone",
+          "display_name",
+          "accepted_protocol_sha256"
+        ],
+        "title": "ArenaSubmissionRequest",
+        "type": "object"
+      },
       "Artifact": {
         "additionalProperties": false,
         "properties": {
@@ -1025,6 +2284,428 @@
           "run_id"
         ],
         "title": "ArtifactManifest",
+        "type": "object"
+      },
+      "BackboneCapability": {
+        "additionalProperties": false,
+        "properties": {
+          "max_source_bytes": {
+            "const": 32768,
+            "default": 32768,
+            "title": "Max Source Bytes",
+            "type": "integer"
+          },
+          "publication_available": {
+            "default": false,
+            "title": "Publication Available",
+            "type": "boolean"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "repository": {
+            "const": "lab-emi/OpenDPD",
+            "default": "lab-emi/OpenDPD",
+            "title": "Repository",
+            "type": "string"
+          },
+          "template_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Template Version",
+            "type": "integer"
+          },
+          "uploads_available": {
+            "default": true,
+            "title": "Uploads Available",
+            "type": "boolean"
+          }
+        },
+        "title": "BackboneCapability",
+        "type": "object"
+      },
+      "BackboneCatalog": {
+        "additionalProperties": false,
+        "properties": {
+          "commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/BackboneEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "title": "BackboneCatalog",
+        "type": "object"
+      },
+      "BackboneConsent": {
+        "additionalProperties": false,
+        "properties": {
+          "package_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Package Sha256",
+            "type": "string"
+          },
+          "publish_publicly": {
+            "const": true,
+            "title": "Publish Publicly",
+            "type": "boolean"
+          },
+          "rights_confirmed": {
+            "const": true,
+            "title": "Rights Confirmed",
+            "type": "boolean"
+          },
+          "source_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Source Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_sha256",
+          "package_sha256",
+          "publish_publicly",
+          "rights_confirmed"
+        ],
+        "title": "BackboneConsent",
+        "type": "object"
+      },
+      "BackboneEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "backbone_id": {
+            "pattern": "^ub-[a-f0-9]{64}$",
+            "title": "Backbone Id",
+            "type": "string"
+          },
+          "definition_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Definition Sha256",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "license": {
+            "const": "Apache-2.0",
+            "default": "Apache-2.0",
+            "title": "License",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelSpec"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "node_count": {
+            "title": "Node Count",
+            "type": "integer"
+          },
+          "origin": {
+            "default": "private",
+            "enum": [
+              "private",
+              "community"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "parameter_count": {
+            "title": "Parameter Count",
+            "type": "integer"
+          },
+          "source_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Commit"
+          },
+          "source_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Source Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "backbone_id",
+          "name",
+          "description",
+          "author",
+          "source_sha256",
+          "definition_sha256",
+          "parameter_count",
+          "node_count",
+          "model"
+        ],
+        "title": "BackboneEntry",
+        "type": "object"
+      },
+      "BackboneUpload": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "backbone_id": {
+            "pattern": "^ub-[a-f0-9]{64}$",
+            "title": "Backbone Id",
+            "type": "string"
+          },
+          "branch": {
+            "title": "Branch",
+            "type": "string"
+          },
+          "commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Sha"
+          },
+          "consent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "definition_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Definition Sha256",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "directory": {
+            "title": "Directory",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/FileRef"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "license": {
+            "const": "Apache-2.0",
+            "default": "Apache-2.0",
+            "title": "License",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelSpec"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "node_count": {
+            "title": "Node Count",
+            "type": "integer"
+          },
+          "origin": {
+            "default": "private",
+            "enum": [
+              "private",
+              "community"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "package_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Package Sha256",
+            "type": "string"
+          },
+          "parameter_count": {
+            "title": "Parameter Count",
+            "type": "integer"
+          },
+          "publication_id": {
+            "pattern": "^bbpr-[a-f0-9]{64}$",
+            "title": "Publication Id",
+            "type": "string"
+          },
+          "pull_request_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pull Request State"
+          },
+          "pull_request_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pull Request Url"
+          },
+          "repository": {
+            "const": "lab-emi/OpenDPD",
+            "default": "lab-emi/OpenDPD",
+            "title": "Repository",
+            "type": "string"
+          },
+          "source_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Commit"
+          },
+          "source_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "status": {
+            "default": "prepared",
+            "enum": [
+              "prepared",
+              "queued",
+              "branch",
+              "push",
+              "pull_request",
+              "submitted",
+              "failed",
+              "interrupted"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "backbone_id",
+          "name",
+          "description",
+          "author",
+          "source_sha256",
+          "definition_sha256",
+          "parameter_count",
+          "node_count",
+          "model",
+          "publication_id",
+          "package_sha256",
+          "branch",
+          "directory",
+          "files"
+        ],
+        "title": "BackboneUpload",
+        "type": "object"
+      },
+      "BackboneUploadRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "filename": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 32768,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "source"
+        ],
+        "title": "BackboneUploadRequest",
         "type": "object"
       },
       "BaselineScore": {
@@ -3641,6 +5322,13 @@
             "title": "Device",
             "type": "string"
           },
+          "instances": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceInstance"
+            },
+            "title": "Instances",
+            "type": "array"
+          },
           "name": {
             "anyOf": [
               {
@@ -3665,6 +5353,26 @@
           "detected"
         ],
         "title": "DeviceInfo",
+        "type": "object"
+      },
+      "DeviceInstance": {
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "minimum": 0.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "name"
+        ],
+        "title": "DeviceInstance",
         "type": "object"
       },
       "DiagnosticItem": {
@@ -4228,6 +5936,7 @@
           },
           "device_index": {
             "default": 0,
+            "description": "Logical CUDA device index, as visible to the Studio process.",
             "minimum": 0.0,
             "title": "Device Index",
             "type": "integer"
@@ -7579,6 +9288,7 @@
         "title": "InstrumentRecord",
         "type": "object"
       },
+      "JsonValue": {},
       "LineageLink": {
         "additionalProperties": false,
         "properties": {
@@ -11472,7 +13182,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.2.18",
+            "default": "2.3.1",
             "title": "Version",
             "type": "string"
           }
@@ -14077,7 +15787,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.2.18"
+    "version": "2.3.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -14164,6 +15874,175 @@
         ]
       }
     },
+    "/api/v1/arena": {
+      "get": {
+        "operationId": "catalog_api_v1_arena_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArenaCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Catalog",
+        "tags": [
+          "DPD Arena"
+        ]
+      }
+    },
+    "/api/v1/arena/boards/{board_id}": {
+      "get": {
+        "operationId": "leaderboard_api_v1_arena_boards__board_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArenaLeaderboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Leaderboard",
+        "tags": [
+          "DPD Arena"
+        ]
+      }
+    },
+    "/api/v1/arena/submissions": {
+      "get": {
+        "operationId": "submissions_api_v1_arena_submissions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ArenaSubmission"
+                  },
+                  "title": "Response Submissions Api V1 Arena Submissions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Submissions",
+        "tags": [
+          "DPD Arena"
+        ]
+      },
+      "post": {
+        "operationId": "submit_api_v1_arena_submissions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArenaSubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArenaSubmission"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit",
+        "tags": [
+          "DPD Arena"
+        ]
+      }
+    },
+    "/api/v1/arena/submissions/{submission_id}": {
+      "get": {
+        "operationId": "submission_api_v1_arena_submissions__submission_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "submission_id",
+            "required": true,
+            "schema": {
+              "title": "Submission Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArenaSubmission"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submission",
+        "tags": [
+          "DPD Arena"
+        ]
+      }
+    },
     "/api/v1/artifacts/{run_id}/{artifact_id}": {
       "get": {
         "description": "Download by *registered id* only; paths are never accepted from clients.",
@@ -14211,6 +16090,244 @@
         "summary": "Artifact Download",
         "tags": [
           "artifacts"
+        ]
+      }
+    },
+    "/api/v1/backbones/capability": {
+      "get": {
+        "operationId": "capability_api_v1_backbones_capability_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackboneCapability"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capability",
+        "tags": [
+          "user backbones"
+        ]
+      }
+    },
+    "/api/v1/backbones/catalog": {
+      "get": {
+        "operationId": "catalog_api_v1_backbones_catalog_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackboneCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Catalog",
+        "tags": [
+          "user backbones"
+        ]
+      }
+    },
+    "/api/v1/backbones/catalog/refresh": {
+      "post": {
+        "operationId": "refresh_api_v1_backbones_catalog_refresh_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackboneCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Refresh",
+        "tags": [
+          "user backbones"
+        ]
+      }
+    },
+    "/api/v1/backbones/template": {
+      "get": {
+        "operationId": "template_api_v1_backbones_template_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Template",
+        "tags": [
+          "user backbones"
+        ]
+      }
+    },
+    "/api/v1/backbones/uploads": {
+      "get": {
+        "operationId": "uploads_api_v1_backbones_uploads_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BackboneUpload"
+                  },
+                  "title": "Response Uploads Api V1 Backbones Uploads Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Uploads",
+        "tags": [
+          "user backbones"
+        ]
+      },
+      "post": {
+        "operationId": "upload_api_v1_backbones_uploads_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackboneUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackboneUpload"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload",
+        "tags": [
+          "user backbones"
+        ]
+      }
+    },
+    "/api/v1/backbones/uploads/{publication_id}/source": {
+      "get": {
+        "operationId": "source_api_v1_backbones_uploads__publication_id__source_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publication_id",
+            "required": true,
+            "schema": {
+              "title": "Publication Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Source",
+        "tags": [
+          "user backbones"
+        ]
+      }
+    },
+    "/api/v1/backbones/uploads/{publication_id}/submit": {
+      "post": {
+        "operationId": "submit_api_v1_backbones_uploads__publication_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publication_id",
+            "required": true,
+            "schema": {
+              "title": "Publication Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackboneConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackboneUpload"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit",
+        "tags": [
+          "user backbones"
         ]
       }
     },

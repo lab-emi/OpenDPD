@@ -44,6 +44,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/arena": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["catalog_api_v1_arena_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/arena/boards/{board_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Leaderboard */
+        get: operations["leaderboard_api_v1_arena_boards__board_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/arena/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Submissions */
+        get: operations["submissions_api_v1_arena_submissions_get"];
+        put?: never;
+        /** Submit */
+        post: operations["submit_api_v1_arena_submissions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/arena/submissions/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Submission */
+        get: operations["submission_api_v1_arena_submissions__submission_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/artifacts/{run_id}/{artifact_id}": {
         parameters: {
             query?: never;
@@ -58,6 +127,126 @@ export interface paths {
         get: operations["artifact_download_api_v1_artifacts__run_id___artifact_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backbones/capability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capability */
+        get: operations["capability_api_v1_backbones_capability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backbones/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["catalog_api_v1_backbones_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backbones/catalog/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh */
+        post: operations["refresh_api_v1_backbones_catalog_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backbones/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Template */
+        get: operations["template_api_v1_backbones_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backbones/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uploads */
+        get: operations["uploads_api_v1_backbones_uploads_get"];
+        put?: never;
+        /** Upload */
+        post: operations["upload_api_v1_backbones_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backbones/uploads/{publication_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Source */
+        get: operations["source_api_v1_backbones_uploads__publication_id__source_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backbones/uploads/{publication_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit */
+        post: operations["submit_api_v1_backbones_uploads__publication_id__submit_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2305,6 +2494,435 @@ export interface components {
             sample_rate_hz?: number | null;
             source: components["schemas"]["AnalyzerSource"];
         };
+        /** ArenaBackbone */
+        ArenaBackbone: {
+            /**
+             * Deterministic
+             * @default false
+             */
+            deterministic: boolean;
+            /** Display Name */
+            display_name: string;
+            /** Family */
+            family: string;
+            /** Key */
+            key: string;
+        };
+        /** ArenaBoard */
+        ArenaBoard: {
+            /** Board Id */
+            board_id: string;
+            /** Conditions */
+            conditions: string[];
+            /** Dataset */
+            dataset: string;
+            /** Description */
+            description: string;
+            /** Evidence Label */
+            evidence_label: string;
+            /**
+             * Evidence Type
+             * @enum {string}
+             */
+            evidence_type: "synthetic_simulation" | "measured_data_simulation";
+            /** Title */
+            title: string;
+        };
+        /**
+         * ArenaBudgetResult
+         * @description One point of the parameter sweep: its configuration, analytic cost and gated scores.
+         */
+        ArenaBudgetResult: {
+            /** Add */
+            add?: number | null;
+            /** Arithmetic Efficiency Db */
+            arithmetic_efficiency_db?: number | null;
+            /**
+             * Available
+             * @default true
+             */
+            available: boolean;
+            /** Budget */
+            budget: number;
+            /**
+             * Completed Cases
+             * @default 0
+             */
+            completed_cases: number;
+            /**
+             * Expected Cases
+             * @default 0
+             */
+            expected_cases: number;
+            metrics?: components["schemas"]["ArenaMetricSummary"] | null;
+            /** Model Parameters */
+            model_parameters?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+            /** Mul */
+            mul?: number | null;
+            /** Nonlinear */
+            nonlinear?: {
+                [key: string]: number;
+            };
+            /** Nonlinear Add */
+            nonlinear_add?: number | null;
+            /** Nonlinear Mul */
+            nonlinear_mul?: number | null;
+            /** Operation Items */
+            operation_items?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            }[];
+            /** Operation Ratio */
+            operation_ratio?: number | null;
+            /** Ops */
+            ops?: number | null;
+            /** Parameter Efficiency Db */
+            parameter_efficiency_db?: number | null;
+            /** Parameter Ratio */
+            parameter_ratio?: number | null;
+            /** Parameters */
+            parameters?: number | null;
+            /**
+             * Qualified
+             * @default false
+             */
+            qualified: boolean;
+            /** Quality Conservative Db */
+            quality_conservative_db?: number | null;
+            /** Quality Db */
+            quality_db?: number | null;
+            /** Quality Std Db */
+            quality_std_db?: number | null;
+            /** Reasons */
+            reasons?: string[];
+            /** Score */
+            score?: number | null;
+        };
+        /** ArenaCatalog */
+        ArenaCatalog: {
+            /** Backbones */
+            backbones: components["schemas"]["ArenaBackbone"][];
+            protocol: components["schemas"]["ArenaProtocol"];
+            /** Scope Note */
+            scope_note: string;
+            /** Submission Unavailable Reason */
+            submission_unavailable_reason?: string | null;
+            /**
+             * Submissions Available
+             * @default true
+             */
+            submissions_available: boolean;
+        };
+        /** ArenaCoverage */
+        ArenaCoverage: {
+            /** Evaluated */
+            evaluated: number;
+            /** Expected */
+            expected: number;
+            /** Failed */
+            failed: number;
+            /** Missing */
+            missing?: string[];
+            /** Succeeded */
+            succeeded: number;
+        };
+        /** ArenaLeaderboard */
+        ArenaLeaderboard: {
+            board: components["schemas"]["ArenaBoard"];
+            coverage: components["schemas"]["ArenaCoverage"];
+            /** Protocol Sha256 */
+            protocol_sha256: string;
+            /** Rows */
+            rows: components["schemas"]["ArenaRow"][];
+            /** Scope Note */
+            scope_note: string;
+        };
+        /**
+         * ArenaMetricSummary
+         * @description Means over conditions and seeds of one configuration under one frozen PA.
+         *     Symbol EVM and output ACLR determine quality; AER and NMSE are diagnostics.
+         *     EVM percent is converted from mean dB (a geometric mean), not pooled across seeds.
+         */
+        ArenaMetricSummary: {
+            /** Aclr Db */
+            aclr_db: number;
+            /** Aclr Improvement Db */
+            aclr_improvement_db: number;
+            /** Aer Db */
+            aer_db?: number | null;
+            /** Aer Improvement Db */
+            aer_improvement_db?: number | null;
+            /** Baseline Aclr Db */
+            baseline_aclr_db: number;
+            /** Baseline Aer Db */
+            baseline_aer_db?: number | null;
+            /** Baseline Evm Db */
+            baseline_evm_db?: number | null;
+            /** Baseline Evm Pct */
+            baseline_evm_pct?: number | null;
+            /** Baseline Nmse Db */
+            baseline_nmse_db: number;
+            /** Evm Db */
+            evm_db?: number | null;
+            /** Evm Improvement Db */
+            evm_improvement_db?: number | null;
+            /** Evm Pct */
+            evm_pct?: number | null;
+            /** Ib Error Db */
+            ib_error_db?: number | null;
+            /** Nmse Db */
+            nmse_db: number;
+            /** Nmse Improvement Db */
+            nmse_improvement_db: number;
+        };
+        /** ArenaPA */
+        ArenaPA: {
+            /** Checkpoint Sha256 */
+            checkpoint_sha256: string;
+            /** Hidden Size */
+            hidden_size: number;
+            /** Model */
+            model: string;
+            /** Parameters */
+            parameters: number;
+            /** Test Nmse Db */
+            test_nmse_db: number;
+            /** Validation Nmse Db */
+            validation_nmse_db: number;
+        };
+        /** ArenaProgress */
+        ArenaProgress: {
+            /**
+             * Completed Cases
+             * @default 0
+             */
+            completed_cases: number;
+            /**
+             * Epoch
+             * @default 0
+             */
+            epoch: number;
+            /**
+             * Epochs
+             * @default 0
+             */
+            epochs: number;
+            /**
+             * Expected Cases
+             * @default 0
+             */
+            expected_cases: number;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Phase */
+            phase: string;
+        };
+        /** ArenaProtocol */
+        ArenaProtocol: {
+            /** Boards */
+            boards: components["schemas"]["ArenaBoard"][];
+            /** Budgets */
+            budgets: number[];
+            /** Cost Model */
+            cost_model: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Description */
+            description: string;
+            /** Pa Models */
+            pa_models?: {
+                [key: string]: components["schemas"]["ArenaPA"];
+            };
+            /** Protocol Id */
+            protocol_id: string;
+            /** Protocol Sha256 */
+            protocol_sha256: string;
+            /** Rankings */
+            rankings: components["schemas"]["ArenaRanking"][];
+            /** Rules */
+            rules: components["schemas"]["ArenaRule"][];
+            /** Score Formula */
+            score_formula: string;
+            /** Scoring */
+            scoring: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Seeds */
+            seeds: number[];
+            /** Title */
+            title: string;
+            /** Training */
+            training: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /** Training Sha256 */
+            training_sha256: string;
+        };
+        /** ArenaRankEntry */
+        ArenaRankEntry: {
+            /** Rank */
+            rank?: number | null;
+            /** Score */
+            score?: number | null;
+        };
+        /** ArenaRanking */
+        ArenaRanking: {
+            /** Description */
+            description: string;
+            /** Ranking Id */
+            ranking_id: string;
+            /** Title */
+            title: string;
+            /** Unit */
+            unit: string;
+        };
+        /** ArenaRow */
+        ArenaRow: {
+            /**
+             * Available Budgets
+             * @default 0
+             */
+            available_budgets: number;
+            /** Backbone */
+            backbone: string;
+            /** Best Budget */
+            best_budget?: number | null;
+            /** Board Id */
+            board_id: string;
+            /** Budgets */
+            budgets?: components["schemas"]["ArenaBudgetResult"][];
+            /** Cases */
+            cases?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            }[];
+            /**
+             * Completed Cases
+             * @default 0
+             */
+            completed_cases: number;
+            /** Created At */
+            created_at?: string | null;
+            /** Display Name */
+            display_name: string;
+            /** Eligibility Reasons */
+            eligibility_reasons?: string[];
+            /**
+             * Eligible
+             * @default false
+             */
+            eligible: boolean;
+            /** Entry Id */
+            entry_id: string;
+            /** Error */
+            error?: string | null;
+            /**
+             * Evidence Type
+             * @enum {string}
+             */
+            evidence_type: "synthetic_simulation" | "measured_data_simulation";
+            /**
+             * Execution Semantics
+             * @default offline_segmented
+             */
+            execution_semantics: string;
+            /**
+             * Expected Cases
+             * @default 0
+             */
+            expected_cases: number;
+            metrics?: components["schemas"]["ArenaMetricSummary"] | null;
+            /** Ops Per Parameter */
+            ops_per_parameter?: number | null;
+            /**
+             * Origin
+             * @enum {string}
+             */
+            origin: "official" | "workspace";
+            /** Parameters */
+            parameters?: number | null;
+            /** Protocol Sha256 */
+            protocol_sha256: string;
+            /** Provenance */
+            provenance?: {
+                [key: string]: components["schemas"]["JsonValue"];
+            };
+            /**
+             * Qualified Budgets
+             * @default 0
+             */
+            qualified_budgets: number;
+            /** Quality Conservative Db */
+            quality_conservative_db?: number | null;
+            /** Quality Db */
+            quality_db?: number | null;
+            /** Rank */
+            rank?: number | null;
+            /** Rankings */
+            rankings?: {
+                [key: string]: components["schemas"]["ArenaRankEntry"];
+            };
+            /** Score */
+            score?: number | null;
+            /** Seeds */
+            seeds?: number[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed" | "interrupted";
+        };
+        /** ArenaRule */
+        ArenaRule: {
+            /** Description */
+            description: string;
+            /** Title */
+            title: string;
+        };
+        /** ArenaSubmission */
+        ArenaSubmission: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Error */
+            error?: string | null;
+            progress?: components["schemas"]["ArenaProgress"] | null;
+            /** Protocol Sha256 */
+            protocol_sha256: string;
+            request: components["schemas"]["ArenaSubmissionRequest"];
+            result?: components["schemas"]["ArenaRow"] | null;
+            /**
+             * Status
+             * @default queued
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed" | "interrupted";
+            /** Submission Id */
+            submission_id: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+        };
+        /** ArenaSubmissionRequest */
+        ArenaSubmissionRequest: {
+            /** Accepted Protocol Sha256 */
+            accepted_protocol_sha256: string;
+            /** Backbone */
+            backbone: string;
+            /** Backbone Id */
+            backbone_id?: string | null;
+            /** Board Id */
+            board_id: string;
+            /** Display Name */
+            display_name: string;
+        };
         /** Artifact */
         Artifact: {
             /** Artifact Id */
@@ -2345,6 +2963,182 @@ export interface components {
              * @default 1
              */
             schema_version: number;
+        };
+        /** BackboneCapability */
+        BackboneCapability: {
+            /**
+             * Max Source Bytes
+             * @default 32768
+             * @constant
+             */
+            max_source_bytes: 32768;
+            /**
+             * Publication Available
+             * @default false
+             */
+            publication_available: boolean;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Repository
+             * @default lab-emi/OpenDPD
+             * @constant
+             */
+            repository: "lab-emi/OpenDPD";
+            /**
+             * Template Version
+             * @default 1
+             * @constant
+             */
+            template_version: 1;
+            /**
+             * Uploads Available
+             * @default true
+             */
+            uploads_available: boolean;
+        };
+        /** BackboneCatalog */
+        BackboneCatalog: {
+            /** Commit */
+            commit?: string | null;
+            /** Entries */
+            entries: components["schemas"]["BackboneEntry"][];
+            /** Warning */
+            warning?: string | null;
+        };
+        /** BackboneConsent */
+        BackboneConsent: {
+            /** Package Sha256 */
+            package_sha256: string;
+            /**
+             * Publish Publicly
+             * @constant
+             */
+            publish_publicly: true;
+            /**
+             * Rights Confirmed
+             * @constant
+             */
+            rights_confirmed: true;
+            /** Source Sha256 */
+            source_sha256: string;
+        };
+        /** BackboneEntry */
+        BackboneEntry: {
+            /** Author */
+            author: string;
+            /** Backbone Id */
+            backbone_id: string;
+            /** Definition Sha256 */
+            definition_sha256: string;
+            /** Description */
+            description: string;
+            /**
+             * License
+             * @default Apache-2.0
+             * @constant
+             */
+            license: "Apache-2.0";
+            model: components["schemas"]["ModelSpec"];
+            /** Name */
+            name: string;
+            /** Node Count */
+            node_count: number;
+            /**
+             * Origin
+             * @default private
+             * @enum {string}
+             */
+            origin: "private" | "community";
+            /** Parameter Count */
+            parameter_count: number;
+            /** Source Commit */
+            source_commit?: string | null;
+            /** Source Sha256 */
+            source_sha256: string;
+        };
+        /** BackboneUpload */
+        BackboneUpload: {
+            /** Author */
+            author: string;
+            /** Backbone Id */
+            backbone_id: string;
+            /** Branch */
+            branch: string;
+            /** Commit Sha */
+            commit_sha?: string | null;
+            /** Consent At */
+            consent_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Definition Sha256 */
+            definition_sha256: string;
+            /** Description */
+            description: string;
+            /** Directory */
+            directory: string;
+            /** Error */
+            error?: string | null;
+            /** Files */
+            files: components["schemas"]["FileRef"][];
+            /**
+             * License
+             * @default Apache-2.0
+             * @constant
+             */
+            license: "Apache-2.0";
+            model: components["schemas"]["ModelSpec"];
+            /** Name */
+            name: string;
+            /** Node Count */
+            node_count: number;
+            /**
+             * Origin
+             * @default private
+             * @enum {string}
+             */
+            origin: "private" | "community";
+            /** Package Sha256 */
+            package_sha256: string;
+            /** Parameter Count */
+            parameter_count: number;
+            /** Publication Id */
+            publication_id: string;
+            /** Pull Request State */
+            pull_request_state?: string | null;
+            /** Pull Request Url */
+            pull_request_url?: string | null;
+            /**
+             * Repository
+             * @default lab-emi/OpenDPD
+             * @constant
+             */
+            repository: "lab-emi/OpenDPD";
+            /** Source Commit */
+            source_commit?: string | null;
+            /** Source Sha256 */
+            source_sha256: string;
+            /**
+             * Status
+             * @default prepared
+             * @enum {string}
+             */
+            status: "prepared" | "queued" | "branch" | "push" | "pull_request" | "submitted" | "failed" | "interrupted";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+        };
+        /** BackboneUploadRequest */
+        BackboneUploadRequest: {
+            /** Filename */
+            filename: string;
+            /** Source */
+            source: string;
         };
         /**
          * BaselineScore
@@ -3248,10 +4042,19 @@ export interface components {
             detected: boolean;
             /** Device */
             device: string;
+            /** Instances */
+            instances?: components["schemas"]["DeviceInstance"][];
             /** Name */
             name?: string | null;
             /** Tested Models */
             tested_models?: string[];
+        };
+        /** DeviceInstance */
+        DeviceInstance: {
+            /** Index */
+            index: number;
+            /** Name */
+            name: string;
         };
         /** DiagnosticItem */
         DiagnosticItem: {
@@ -3449,6 +4252,7 @@ export interface components {
             device: "cpu" | "cuda" | "mps";
             /**
              * Device Index
+             * @description Logical CUDA device index, as visible to the Studio process.
              * @default 0
              */
             device_index: number;
@@ -4765,6 +5569,7 @@ export interface components {
             /** Serial */
             serial?: string | null;
         };
+        JsonValue: unknown;
         /** LineageLink */
         LineageLink: {
             /** Checkpoint Sha256 */
@@ -6074,7 +6879,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.2.18
+             * @default 2.3.1
              */
             version: string;
         };
@@ -7111,6 +7916,141 @@ export interface operations {
             };
         };
     };
+    catalog_api_v1_arena_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaCatalog"];
+                };
+            };
+        };
+    };
+    leaderboard_api_v1_arena_boards__board_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaLeaderboard"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submissions_api_v1_arena_submissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaSubmission"][];
+                };
+            };
+        };
+    };
+    submit_api_v1_arena_submissions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArenaSubmissionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaSubmission"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submission_api_v1_arena_submissions__submission_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaSubmission"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     artifact_download_api_v1_artifacts__run_id___artifact_id__get: {
         parameters: {
             query?: never;
@@ -7130,6 +8070,205 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capability_api_v1_backbones_capability_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackboneCapability"];
+                };
+            };
+        };
+    };
+    catalog_api_v1_backbones_catalog_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackboneCatalog"];
+                };
+            };
+        };
+    };
+    refresh_api_v1_backbones_catalog_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackboneCatalog"];
+                };
+            };
+        };
+    };
+    template_api_v1_backbones_template_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    uploads_api_v1_backbones_uploads_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackboneUpload"][];
+                };
+            };
+        };
+    };
+    upload_api_v1_backbones_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackboneUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackboneUpload"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_api_v1_backbones_uploads__publication_id__source_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publication_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_api_v1_backbones_uploads__publication_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publication_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackboneConsent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackboneUpload"];
                 };
             };
             /** @description Validation Error */

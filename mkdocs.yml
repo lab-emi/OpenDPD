@@ -54,6 +54,9 @@ nav:
       - Signal Analyzer: guides/signal-analyzer.md
       - Virtual PA Library: guides/virtual-pa-library.md
       - ILC and ILA DPD: guides/ilc-dpd.md
+      - DPD Arena: guides/dpd-arena.md
+      - Arena evaluation protocol: protocols/dpd-arena-v6.md
+      - Hosted Arena setup: guides/arena-hosted.md
       - Server load and cleanup: guides/server-load.md
       - Headless CLI: tutorials/headless-cli.md
       - Python examples & Colab: examples.md
@@ -84,6 +87,7 @@ nav:
       - FAQ: faq.md
       - Testing and CI: testing.md
       - Review policy: architecture/review-policy.md
+      - Dependencies before a release: guides/dependency-maintenance.md
       - Maintaining documentation: documentation.md
       - Hosting the public Studio: architecture/public-studio.md
 
@@ -140,6 +144,8 @@ not_in_nav: |
   performance/studio-2.2.6.md
   performance/studio-2.2.7.md
   performance/studio-2.2.8.md
+  performance/arena-*.md
+  performance/pa-identification-comparison.md
   architecture/**
   community/**
   design/**

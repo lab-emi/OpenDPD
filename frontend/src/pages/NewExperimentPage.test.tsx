@@ -39,6 +39,69 @@ const model = {
 }
 const caps = { version: 'x', workspace: '/ws', note: '', devices: [{ device: 'cpu', detected: true, count: 1, tested_models: ['gru'] }, { device: 'cuda', detected: false, count: 0, tested_models: ['gru'] }] }
 
+const mpRecipe = { ...recipe, recipe_id: 'pa-mp-studio-v1', title: 'MP · compact fit', purpose: 'baseline',
+  model: { key: 'mp_ls', parameters: { K: 7, Q: 15, rcond: 0.0001 } },
+  training: { ...recipe.training, epochs: 1, train_samples: 32768 } }
+const mpModel = { ...model, key: 'mp_ls', display_name: 'MP (least squares)', training_method: 'least_squares',
+  devices_tested: ['cpu'], params: [{ name: 'K', type: 'int', default: 7, description: 'Envelope orders', minimum: 1, maximum: 15, choices: null, legacy_arg: {} }] }
+
+test('PA fitting is a separate CPU method and review does not imply iterative training', async () => {
+  const { calls } = mockApi({
+    'GET /api/v1/recipes': () => [recipe, mpRecipe],
+    'GET /api/v1/datasets': () => [datasetMock.data],
+    'GET /api/v1/models': () => [model, mpModel],
+    'GET /api/v1/system/capabilities': () => ({ ...caps, devices: caps.devices.map(d => ({ ...d, detected: true, count: 1 })) }),
+    'GET /api/v1/runs': () => [],
+    'POST /api/v1/experiments/validate': () => ({ ok: true, errors: [], warnings: [], resolved: null }),
+    'POST /api/v1/runs': () => ({ status: 201, body: runQueued.data }),
+  })
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  expect(screen.getByRole('combobox', { name: 'PA modeling method' })).toHaveTextContent('Neural network training')
+  await userEvent.click(screen.getByRole('combobox', { name: 'Model architecture' }))
+  expect(screen.queryByRole('option', { name: 'MP (least squares)' })).not.toBeInTheDocument()
+  await userEvent.keyboard('{Escape}')
+  await userEvent.click(screen.getByRole('combobox', { name: 'PA modeling method' }))
+  await userEvent.click(screen.getByRole('option', { name: 'Polynomial least-squares fit' }))
+  expect(screen.getByRole('combobox', { name: 'Model architecture' })).toHaveTextContent('MP (least squares)')
+  expect(screen.getByText(/cannot currently be used as a DPD training surrogate/)).toBeVisible()
+  await continueStep()
+  expect(screen.getByRole('combobox', { name: 'Device' })).toHaveTextContent('cpu')
+  expect(screen.getByRole('combobox', { name: 'Device' })).toHaveAttribute('aria-disabled', 'true')
+  expect(screen.queryByLabelText('Epochs')).not.toBeInTheDocument()
+  await continueStep()
+  expect(screen.queryByText('Epochs')).not.toBeInTheDocument()
+  expect(screen.queryByText('Learning rate')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
+  await waitFor(() => expect(calls.find(c => c.path === '/api/v1/runs' && c.method === 'POST')?.body).toMatchObject({ config: {
+    task: 'train_pa', model: { key: 'mp_ls' }, execution: { device: 'cpu', preview_every_batches: null }, training: { train_samples: 32768 },
+  } }))
+})
+
+test('ILC opens DPD modeling even from a legacy PA workspace link', async () => {
+  mockApi({
+    'GET /api/v1/recipes': () => [{ ...mpRecipe, task: 'train_dpd', recipe_id: 'dpd-ilc-ila-v1', model: { key: 'ilc_dpd', parameters: {} } }],
+    'GET /api/v1/datasets': () => [datasetMock.data],
+    'GET /api/v1/models': () => [{ ...mpModel, key: 'ilc_dpd', display_name: 'ILC-DPD' }],
+    'GET /api/v1/system/capabilities': () => caps,
+    'GET /api/v1/runs': () => [],
+    'POST /api/v1/experiments/validate': () => ({ ok: true, errors: [], warnings: [], resolved: null }),
+  })
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new?task=train_dpd&method=ilc&workspace=pa', path: '/experiments/new' })
+  expect(await screen.findByRole('heading', { name: 'DPD Model' })).toBeVisible()
+  expect(screen.getByRole('tab', { name: 'ILC linearization' })).toHaveAttribute('aria-selected', 'true')
+  expect(screen.queryByRole('heading', { name: 'PA Model' })).not.toBeInTheDocument()
+})
+
+test('PA page explains ILC and links to the DPD workflow instead of presenting it as PA training', async () => {
+  base(() => ({ ok: true, errors: [], warnings: [], resolved: null }))
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new', path: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  expect(screen.queryByRole('tab', { name: 'ILC linearization' })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'ILC linearization' })).toHaveAttribute('href', expect.stringContaining('task=train_dpd&method=ilc'))
+  expect(screen.getByText(/does not identify a forward PA model/)).toBeVisible()
+})
+
 function base(validate: (config: Record<string, unknown>) => unknown, availableDatasets: unknown[] = [datasetMock.data], availableCaps = caps) {
   return mockApi({
     'GET /api/v1/recipes': () => [recipe],
@@ -74,6 +137,56 @@ test('prefers detected CUDA for a new experiment and keeps an explicit CPU choic
   await screen.findByText('Configuration is valid'); await continueStep()
   await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
   await waitFor(() => expect(calls.find((c) => c.path === '/api/v1/runs' && c.method === 'POST')?.body).toMatchObject({ config: { execution: { device: 'cpu' } } }))
+})
+
+const multiGpuCaps = { ...caps, devices: [caps.devices[0]!, {
+  device: 'cuda', detected: true, count: 3, tested_models: ['gru'],
+  instances: [{ index: 0, name: 'RTX 4090' }, { index: 1, name: 'RTX 3090' }, { index: 2, name: 'RTX 4090' }],
+}] }
+
+test.each(['train_pa', 'train_dpd', 'evaluate_pa', 'run_dpd'] as const)('%s submits the selected GPU index', async task => {
+  const sourceId = task === 'run_dpd' ? 'dpd-trained' : 'pa-trained'
+  const trainingTask = task === 'run_dpd' ? 'train_dpd' : 'train_pa'
+  const { calls } = mockApi({
+    'GET /api/v1/recipes': () => [recipe, { ...recipe, task: 'train_dpd', recipe_id: 'dpd-gru-smoke-v1' }],
+    'GET /api/v1/models': () => [model],
+    'GET /api/v1/datasets': () => [datasetMock.data],
+    'GET /api/v1/system/capabilities': () => multiGpuCaps,
+    'GET /api/v1/runs': () => [{ ...runQueued.data, run_id: sourceId, task: trainingTask, status: 'succeeded', name: 'Trained model', dataset_id: datasetMock.data.dataset_id, model_key: 'gru' }],
+    [`GET /api/v1/runs/${sourceId}/config`]: () => ({ task: trainingTask, model: recipe.model, dataset: { id: datasetMock.data.dataset_id }, training: recipe.training, execution: { device: 'cuda', device_index: 0 } }),
+    'POST /api/v1/experiments/validate': () => ({ ok: true, errors: [], warnings: [], resolved: null }),
+    'POST /api/v1/runs': () => ({ status: 201, body: { ...runQueued.data, task } }),
+  })
+  renderWithProviders(<NewExperimentPage />, { route: `/experiments/new?task=${task}&paRun=pa-trained&modelRun=${sourceId}` })
+  await screen.findByText('Configuration is valid')
+  await continueStep()
+  expect(screen.getByRole('combobox', { name: 'Device' })).toHaveTextContent('GPU 0 (cuda:0)')
+  await userEvent.click(screen.getByRole('combobox', { name: 'Device' }))
+  expect(screen.getByRole('option', { name: 'GPU 1 (cuda:1) · RTX 3090' })).toBeVisible()
+  await userEvent.click(screen.getByRole('option', { name: 'GPU 2 (cuda:2) · RTX 4090' }))
+  await screen.findByText('Configuration is valid')
+  await continueStep()
+  expect(screen.getByRole('tabpanel', { name: /Review/ })).toHaveTextContent('cuda:2')
+  await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
+  await waitFor(() => expect(calls.find(c => c.path === '/api/v1/runs' && c.method === 'POST')?.body)
+    .toMatchObject({ config: { task, execution: { device: 'cuda', device_index: 2 } } }))
+  const validations = calls.filter(c => c.path === '/api/v1/experiments/validate')
+  expect(validations.at(-1)?.body).toMatchObject({ config: { execution: { device: 'cuda', device_index: 2 } } })
+})
+
+test('an imported configuration keeps its GPU index through review and submission', async () => {
+  const { calls } = base(() => ({ ok: true, errors: [], warnings: [], resolved: null }), [datasetMock.data], multiGpuCaps)
+  renderWithProviders(<NewExperimentPage />, { route: '/experiments/new' })
+  await screen.findByText('Configuration is valid')
+  await importConfiguration({ task: 'train_pa', dataset: { id: datasetMock.data.dataset_id }, model: recipe.model,
+    execution: { device: 'cuda', device_index: 1 } })
+  await screen.findByText('Configuration is valid')
+  await continueStep()
+  await continueStep()
+  expect(screen.getByRole('tabpanel', { name: /Review/ })).toHaveTextContent('cuda:1')
+  await userEvent.click(screen.getByRole('button', { name: 'Start run' }))
+  await waitFor(() => expect(calls.find(c => c.path === '/api/v1/runs' && c.method === 'POST')?.body)
+    .toMatchObject({ config: { execution: { device: 'cuda', device_index: 1 } } }))
 })
 
 test('defaults to epoch plots and requires an explicit warned batch cadence', async () => {

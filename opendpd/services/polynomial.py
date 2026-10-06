@@ -131,10 +131,15 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
 
     row: Dict[str, float] = {"EPOCH": 0, "N_EPOCH": 1, "TRAIN_LOSS": diag.train_nmse_db}
     if role == "pa":
+        # Keep frozen legacy histories reproducible. Current Studio fits must
+        # use the same valid-sample spectral protocol as their final result.
+        profile = ("opendpd-spectral-v2" if resolved.evaluation.profile_id == "opendpd-spectral-v2"
+                   else "legacy-opendpd-v1")
+        names = ("NMSE", "IBE", "ACLR_L", "ACLR_R", "ACLR_AVG") if profile == "opendpd-spectral-v2" else LEGACY_METRICS
         for split, xs, ys in (("VAL", x_va, y_va), ("TEST", x_te, y_te)):
             pred = _apply(model, xs, nperseg)
-            scores = {m.name: m.value for m in evaluate("legacy-opendpd-v1", pred, ys, dataset.signal)}
-            for name in LEGACY_METRICS:
+            scores = {m.name: m.value for m in evaluate(profile, pred, ys, dataset.signal)}
+            for name in names:
                 if scores.get(name) is not None:
                     row[f"{split}_{name}"] = float(scores[name])
     else:
@@ -148,6 +153,7 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
         "schema_version": 1, "model": resolved.model.model_dump(mode="json"), "role": role,
         "method": "direct least squares on the train split" if role == "pa" else (ILC_STATEMENT if key == "ilc_dpd" else ILA_STATEMENT),
         "segment_length": nperseg, "reference_gain": gain if role == "dpd" else None,
+        "training_samples": len(x_tr), "history_metric_profile": profile if role == "pa" else None,
         "n_real_parameters": 2 * int(w.size), "diagnostics": diag.to_dict(), "checkpoint": str(save),
     })
     if on_epoch is not None:

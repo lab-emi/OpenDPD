@@ -2,7 +2,10 @@
 Description=OpenDPD private GPU container worker (host pull from isolated VM)
 After=opendpd-web-vm.service network.target opendpd-gpu-cdi.service
 BindsTo=opendpd-web-vm.service
-Requires=opendpd-gpu-cdi.service
+# Wants=, not Requires=: one failed CDI refresh during boot would otherwise
+# fail this start job for good. The refresh is re-run before every (re)start,
+# and the agent's own CUDA probe decides whether the specification is usable.
+Wants=opendpd-gpu-cdi.service
 
 [Service]
 Type=simple
@@ -28,6 +31,8 @@ TemporaryFileSystem=/run/opendpd-gpu:rw,size=2G,mode=0700,nodev,nosuid,noexec
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
+# Every path here must exist before the first start after a reboot, when /run is
+# empty; opendpd-gpu.tmpfiles.conf creates the Podman and runc runtime directories.
 ReadWritePaths=/var/lib/containers /run/containers /run/libpod /run/lock /run/runc
 # Podman needs namespaces and device setup here. Every experiment container
 # drops all capabilities, runs as UID 65532 and has no network or host sockets.

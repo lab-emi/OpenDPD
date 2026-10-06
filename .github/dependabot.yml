@@ -3,12 +3,27 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
+    groups:
+      actions-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
   - package-ecosystem: pip
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
+    groups:
+      python-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
   - package-ecosystem: npm
     directory: /frontend
     schedule:
-      interval: weekly
+      interval: daily
+    groups:
+      frontend-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      frontend-security:
+        applies-to: security-updates
+        patterns: ["*"]

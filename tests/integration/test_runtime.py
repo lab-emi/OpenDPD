@@ -49,6 +49,45 @@ def smoke(epochs=3):
     return cfg.model_copy(update={"training": cfg.training.model_copy(update={"epochs": epochs})})
 
 
+def test_different_gpus_dispatch_together_and_same_gpu_waits(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from opendpd.services import capabilities
+
+    monkeypatch.setattr(capabilities, "detect_devices",
+                        lambda: {"cuda": {"detected": True, "count": 2}})
+    ws = Workspace.create(tmp_path / "ws")
+    ws.register_builtin_dataset("DPA_200MHz")
+    store = RunStore(ws.root / "metadata.sqlite")
+    sup = Supervisor(ws, store)
+    dispatched = []
+
+    def spawn(record):
+        dispatched.append(record.run_id)
+        store.transition(record.run_id, RunStatus.running)
+        sup._active[record.run_id] = SimpleNamespace(device_key=sup._device_key(record))
+
+    monkeypatch.setattr(sup, "_spawn", spawn)
+    try:
+        records = []
+        for index in (0, 0, 1):
+            config = smoke()
+            config.execution.device = "cuda"
+            config.execution.device_index = index
+            record = experiments.create_run(ws, config)
+            store.upsert_run(record)
+            records.append(record)
+        assert [r.device for r in records] == ["cuda:0", "cuda:0", "cuda:1"]
+        sup._accepting = True
+        sup._dispatch()
+        assert dispatched == [records[0].run_id, records[2].run_id]
+        assert store.get_run(records[1].run_id).status == RunStatus.queued
+        sup._active.pop(records[0].run_id)
+        sup._dispatch()
+        assert dispatched[-1] == records[1].run_id
+    finally:
+        store.close()
+
+
 def test_run_completes_through_worker_with_events(runtime):
     ws, store, sup = runtime
     record = sup.submit(smoke(), idempotency_key="k1")

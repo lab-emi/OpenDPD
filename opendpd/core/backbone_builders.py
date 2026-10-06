@@ -103,10 +103,15 @@ BACKBONE_BUILDERS = {'gmp': ('backbones.gmp', 'GMP', {}),
                'num_layers': 'num_layers',
                'bias': 'bias'}),
  'tcn': ('backbones.tcn', 'TCN', {'hidden_channels': 'hidden_size'}),
- 'mcldnn': ('backbones.mcldnn', 'MCLDNN', {'hidden_size': 'hidden_size'})}
+ 'mcldnn': ('backbones.mcldnn', 'MCLDNN', {'hidden_size': 'hidden_size'}),
+ 'user_template': ('opendpd.core.template_network', 'TemplateNetwork', {})}
 
 
 def build_backbone(name, context):
+    if name == 'user_template':
+        from opendpd.core.template_network import TemplateNetwork
+        from opendpd.core.backbone_template import DEFAULT_DEFINITION
+        return TemplateNetwork(context.get('user_definition') or DEFAULT_DEFINITION)
     try:
         module, symbol, fields = BACKBONE_BUILDERS[name]
     except KeyError:

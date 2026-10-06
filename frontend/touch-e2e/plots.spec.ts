@@ -8,14 +8,27 @@ test('English and CUDA defaults in a non-English mobile browser', async ({ page 
   const state = await installFakeApi(page)
   state.datasets.push(dataset.data)
   await page.route('**/api/v1/system/capabilities', (route) => route.fulfill({ json: {
-    version: 'x', workspace: 'test', devices: [{ device: 'cpu', detected: true }, { device: 'cuda', detected: true, name: 'GPU' }],
+    version: 'x', workspace: 'test', devices: [
+      { device: 'cpu', detected: true, count: 1 },
+      { device: 'cuda', detected: true, name: 'GPU', count: 2,
+        instances: [{ index: 0, name: 'GPU' }, { index: 1, name: 'GPU' }] },
+    ],
   } }))
   await page.goto('/experiments/new')
   await expect(page.getByRole('heading', { name: 'PA Model', exact: true })).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   await expect(page.getByText('Configuration is valid', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await expect(page.getByRole('combobox', { name: 'Device', exact: true })).toContainText('cuda')
+  const device = page.getByRole('combobox', { name: 'Device', exact: true })
+  await expect(device).toContainText('GPU 0 (cuda:0)')
+  await device.click()
+  await page.getByRole('option', { name: 'GPU 1 (cuda:1) · GPU', exact: true }).click()
+  await expect(page.getByText('Configuration is valid', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await expect(page.getByRole('tabpanel')).toContainText('cuda:1')
+  await page.getByRole('button', { name: 'Start run', exact: true }).click()
+  await expect.poll(() => state.submitted.length).toBe(1)
+  expect(state.submitted[0]?.['config']).toMatchObject({ execution: { device: 'cuda', device_index: 1 } })
 })
 
 test('two-finger zoom follows its midpoint; touch controls and full-screen fit a phone', async ({ page, context, browserName }) => {

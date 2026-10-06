@@ -39,6 +39,7 @@ def main(proj: Project):
                              hidden_size=proj.PA_hidden_size,
                              num_layers=proj.PA_num_layers,
                              backbone_type=proj.PA_backbone,
+                             user_definition=getattr(proj, 'PA_user_definition', None),
                              num_dvr_units=proj.num_dvr_units,
                              thx=proj.thx,
                              thh=proj.thh)
@@ -49,6 +50,7 @@ def main(proj: Project):
                               hidden_size=proj.DPD_hidden_size,
                               num_layers=proj.DPD_num_layers,
                               backbone_type=proj.DPD_backbone,
+                              user_definition=getattr(proj, 'DPD_user_definition', None),
                               window_size=proj.window_size,
                               num_dvr_units=proj.num_dvr_units,
                               thx=proj.thx,

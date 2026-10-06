@@ -412,6 +412,39 @@ def test_undetected_device_is_refused_never_switched(client, session, monkeypatc
 
 # --- S16: measured captures through the service ---------------------------------------------
 
+def test_capabilities_include_gpu_names_and_indices(client, session, monkeypatch):
+    from opendpd.services import capabilities
+
+    instances = [{"index": 0, "name": "RTX 4090"}, {"index": 1, "name": "RTX 3090"}]
+    monkeypatch.setattr(capabilities, "detect_devices", lambda: {
+        "cuda": {"detected": True, "count": 2, "name": "RTX 4090", "instances": instances},
+        "mps": {"detected": False},
+    })
+    devices = client.get("/api/v1/system/capabilities").json()["devices"]
+    cuda = next(device for device in devices if device["device"] == "cuda")
+    assert cuda["instances"] == instances and cuda["count"] == 2
+    assert "gru" in cuda["tested_models"]
+
+
+def test_gpu_index_validated_before_submission(client, session, monkeypatch):
+    from opendpd.services import capabilities
+
+    monkeypatch.setattr(capabilities, "detect_devices",
+                        lambda: {"cuda": {"detected": True, "count": 2}})
+    config = smoke_config()
+    config["execution"] = {"device": "cuda", "device_index": 1}
+    valid = client.post("/api/v1/experiments/validate", json={"config": config}).json()
+    assert valid["ok"], valid
+    assert valid["resolved"]["execution"]["device_index"] == 1
+    config["execution"]["device_index"] = 2
+    invalid = client.post("/api/v1/experiments/validate", json={"config": config}).json()
+    assert not invalid["ok"]
+    assert any("cuda:2" in issue["message"] for issue in invalid["errors"])
+    response = client.post("/api/v1/runs", json={"config": config})
+    assert response.status_code == 422 and "cuda:2" in response.text
+    config["execution"]["device_index"] = -1
+    assert client.post("/api/v1/runs", json={"config": config}).status_code == 422
+
 def test_measured_captures_are_uploaded_bound_and_scored_as_dpd_measured(client, session):
     import numpy as np
 

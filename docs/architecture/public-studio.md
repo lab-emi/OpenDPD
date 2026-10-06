@@ -268,6 +268,30 @@ timer. A failed cleanup disables session admission and makes health return
 timer running so data is still purged. Source updates require restarting the
 guest API, which intentionally invalidates all existing sessions.
 
+### Host reboot recovery
+
+Everything restarts unattended after a host reboot; no login is needed.
+`opendpd-web-vm.service`, `opendpd-tunnel-guard.service`, the connector and
+`opendpd-gpu.service` are enabled system units, and the guest enables
+`opendpd-web.service` and its reset timer. Temporary sessions do not survive,
+by design. Three details keep that path reliable:
+
+- `/run` is empty after a reboot. `opendpd-gpu.service` lists Podman and runc
+  runtime directories in `ReadWritePaths=`, and systemd refuses to start a unit
+  when one is missing (`status=226/NAMESPACE`), so
+  `/etc/tmpfiles.d/opendpd-gpu.conf` creates them during early boot.
+- The agent only `Wants=` the CDI refresh. A `Requires=` dependency on a
+  one-shot fails the agent's start job permanently after a single failure.
+  The refresh is re-run before every agent restart, and the agent's CUDA probe
+  exits non-zero until the GPU is usable, so the pair retries every five seconds.
+- `poweroff.py` waits for QEMU to exit. systemd terminates remaining processes as
+  soon as `ExecStop=` returns, which would otherwise cut the guest's power during
+  its shutdown on every host reboot.
+
+After a reboot, check `systemctl is-active opendpd-web-vm opendpd-gpu
+opendpd-tunnel-guard cloudflared-opendpd-remote` and the local health command
+above. The guest API needs roughly a minute after the VM unit reports active.
+
 ### DNS migration and connection failures
 
 A healthy Tunnel does not prove that visitors can resolve the API hostname.
@@ -352,7 +376,9 @@ and point `OPENDPD_GPU_TOKEN_FILE` at it in the host environment file. Set the
 same value as `OPENDPD_GPU_TOKEN` in the guest's root-only API environment file.
 Never place this value in Git, frontend variables or deployment output.
 
-Install `opendpd-gpu-cdi.service` and `opendpd-gpu.service`, refresh systemd and
+Install `opendpd-gpu-cdi.service` and `opendpd-gpu.service`, and copy
+`opendpd-gpu.tmpfiles.conf` to `/etc/tmpfiles.d/opendpd-gpu.conf` (then run
+`systemd-tmpfiles --create /etc/tmpfiles.d/opendpd-gpu.conf`). Refresh systemd and
 enable the GPU agent. Restart the guest API only after draining existing runs,
 since that operation expires all sessions. The CDI service regenerates the
 device specification on startup; rebuild or reprobe after driver/image changes.

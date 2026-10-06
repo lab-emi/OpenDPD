@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opendpd"
-version = "2.2.18"
+version = "2.3.1"
 description = "An end-to-end learning framework for modeling power amplifiers and digital pre-distortion"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -32,6 +32,7 @@ dependencies = [
     "torch>=2.13.0",
     "numpy>=2.0.0",
     "scipy>=1.10.0",
+    "threadpoolctl>=3.1",  # Arena pins BLAS and PyTorch inference to one CPU thread.
     "pandas>=1.3.0",
     "matplotlib>=3.4.0",
     # Pillow is imported directly for the v2.1 GIF-animation feature
@@ -105,11 +106,48 @@ include = [
 ]
 
 [tool.setuptools.package-data]
+opendpd = ["arena_assets/calibration-v6-apa-b.json", "arena_assets/reference-results-v6-apa-b.json", "arena_assets/apa-200mhz-b-data-v3.npz", "arena_assets/apa-200mhz-b-measured-v4.npz", "arena_assets/apa-200mhz-b-pa-v6.npz"]
+"opendpd.arena_assets" = ["calibration-v6-apa-b.json", "reference-results-v6-apa-b.json", "apa-200mhz-b-data-v3.npz", "apa-200mhz-b-measured-v4.npz", "apa-200mhz-b-pa-v6.npz"]
+backbones = ["user_uploaded/*/*.py", "user_uploaded/*/manifest.json", "user_uploaded/README.md"]
 datasets = ["*/spec.json", "*/*.csv"]
 dataset = ["**/*.json", "**/*.csv", "**/*.md", "README.md"]
 # Built frontend (frontend/ -> opendpd/studio/static via `npm run build`); the
 # release workflow builds it before `python -m build` so wheels are self-contained.
 "opendpd.studio" = ["static/*", "static/assets/*", "locales/*.json", "icon.png", "icon.ico"]
+
+[tool.setuptools.exclude-package-data]
+# Historical Arena inputs stay in the source checkout for reproduction. The
+# installed Arena ships only APA_200MHz_b inputs and results; the calibration
+# metadata contains only APA_200MHz_b.
+opendpd = [
+    "arena_assets/syn-*",
+    "arena_assets/dpa-*",
+    "arena_assets/apa-200mhz-data.npz",
+    "arena_assets/apa-200mhz-measured-v4.npz",
+    "arena_assets/apa-200mhz-pa-v6.npz",
+    "arena_assets/reference-results-v6.json",
+    "arena_assets/*-judge-*.npz",
+    "arena_assets/*-teacher.npz",
+    "arena_assets/calibration-v[12345].json",
+    "arena_assets/reference-results-v[12345].json",
+    "arena_assets/*-stimuli-*.npz",
+    "arena_assets/*-pa-v[2345].npz",
+]
+# Namespace discovery also treats the data directory as its own package.
+"opendpd.arena_assets" = [
+    "syn-*",
+    "dpa-*",
+    "apa-200mhz-data.npz",
+    "apa-200mhz-measured-v4.npz",
+    "apa-200mhz-pa-v6.npz",
+    "reference-results-v6.json",
+    "*-judge-*.npz",
+    "*-teacher.npz",
+    "calibration-v[12345].json",
+    "reference-results-v[12345].json",
+    "*-stimuli-*.npz",
+    "*-pa-v[2345].npz",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

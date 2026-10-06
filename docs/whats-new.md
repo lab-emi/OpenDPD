@@ -1,5 +1,40 @@
 # What's new
 
+## 2.3.1: Select individual local GPUs
+
+PA and DPD Training and Testing now list each detected NVIDIA GPU by index and
+name. Select `cuda:0`, `cuda:1`, or another available card per run. Jobs on
+different local GPUs run concurrently; jobs on the same card keep their queue.
+Validation rejects unavailable indices, and run records and reports identify
+the selected GPU. Existing JSON configurations remain compatible.
+
+[GPU selection guide](tutorials/gui-quickstart.md#select-a-gpu-on-your-computer) ·
+[2.3.1 release notes](releases/2.3.1.md)
+
+## 2.3.0: DPD Arena on APA_200MHz_b
+
+DPD Arena compares DPD configurations through one frozen TRes-GRU PA on the **APA_200MHz_b** measured dataset:
+23 model entries and 233 test cases (83 configurations from 218 fitted checkpoints; the two streaming entries re-evaluate fitted weights).
+Quality is complete-symbol EVM and actual output ACLR, and the score is a fixed-reference FoM:
+`Q − 5 log10(P/1000) − 5 log10(OPs/2000)`. Every size uses the same costs;
+seed variability is shown separately. PA and DPD inputs come only from the original measured capture, which is
+repartitioned before PA/DPD training to retain complete held-out symbols.
+PA and neural DPD configurations receive 240 full-window epochs with
+batch 64. DPD checkpoints are chosen on validation in-band error and worse-side ACLR;
+final scores use complete-symbol test EVM and output ACLR. Training
+loads only train/validation arrays, and all checkpoints are frozen before test
+evaluation. ILC entries are excluded; MP/GMP use training-only PA feedback,
+without ILC-generated data.
+
+Rank shows a configuration table and four EVM/ACLR-versus-parameters/operations
+plots with separate Pareto fronts and seed error bars, alongside the PA's parameter count,
+validation NMSE and test NMSE. Cascade outputs are predictions from the frozen PA, not new
+predistorted hardware measurements.
+
+Safe backbone templates, classical PA fitting and hosted Arena execution (off by default) are
+also included. [Arena guide](guides/dpd-arena.md) ·
+[Protocol](protocols/dpd-arena-v6.md) · [Validation record](releases/2.3.0.md)
+
 ## 2.2.18: safer imports, sessions and hosted execution
 
 Validated import metadata and portable paths, transactional experiment imports, single-use desktop login links, bounded NumPy input, safer GPU transfers and per-workspace export caching. [Release notes](releases/release-notes-2.2.18.md) · [Security review](releases/security-review-2.2.18.md).

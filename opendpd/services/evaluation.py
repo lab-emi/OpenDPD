@@ -132,8 +132,9 @@ def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
 
     proj.studio_strict_quantization = bool(resolved.quantization and resolved.quantization.enabled)
 
-    def core(hidden: int, layers: int, backbone: str):
+    def core(hidden: int, layers: int, backbone: str, role="PA"):
         return model.CoreModel(input_size=input_size, hidden_size=hidden, num_layers=layers, backbone_type=backbone,
+                               user_definition=getattr(proj, f'{role}_user_definition', None),
                                window_size=proj.window_size, num_dvr_units=proj.num_dvr_units, thx=proj.thx, thh=proj.thh)
 
     least_squares = is_least_squares(resolved.model.key)
@@ -144,7 +145,7 @@ def _build_net(proj, resolved: ResolvedExperimentConfig, input_size: int):
     pa_id = proj.gen_pa_model_id(count_net_params(pa))
     pa.load_state_dict(load_checkpoint(os.path.join("save", proj.dataset_name, "train_pa", pa_id + ".pt")))
     dpd = polynomial_module(resolved.model) if least_squares \
-        else get_quant_model(proj, core(proj.DPD_hidden_size, proj.DPD_num_layers, proj.DPD_backbone))
+        else get_quant_model(proj, core(proj.DPD_hidden_size, proj.DPD_num_layers, proj.DPD_backbone, "DPD"))
     return model.CascadedModel(dpd_model=dpd, pa_model=pa)
 
 

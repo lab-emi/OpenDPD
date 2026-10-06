@@ -1,7 +1,12 @@
 """Require a maintainer review tied to the current PR head for protected changes."""
 import json
 import os
+from pathlib import Path
+import sys
 import urllib.request
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from dependency_github import automatic_dependency_review
 
 
 def main():
@@ -33,6 +38,9 @@ def main():
             break
     else:
         raise SystemExit('Too many changed files to audit; maintainer inspection is required.')
+    if automatic_dependency_review(current):
+        print('Routine Dependabot version-only update; full CI remains required for merging.')
+        return
     if not any(name.startswith(protected) for name in changed):
         print('No protected paths changed')
         return

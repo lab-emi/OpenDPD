@@ -54,12 +54,17 @@ class SessionInfo(StrictModel):
     csrf_token: Optional[str] = None
     version: str = __version__
 
+class DeviceInstance(StrictModel):
+    index: int = Field(ge=0)
+    name: str
+
 class DeviceInfo(StrictModel):
     device: str
     detected: bool
     name: Optional[str] = None
     count: int = 0
     tested_models: List[str] = Field(default_factory=list)
+    instances: List[DeviceInstance] = Field(default_factory=list)
 
 class Capabilities(StrictModel):
     version: str

@@ -68,9 +68,41 @@ class GitHubPublisher:
             "Sign in on the Studio host with gh auth login --hostname github.com, then refresh. Data remains private until you submit.")
 
     def _existing_pr(self, head):
-        prs = json.loads(self.gh("pr", "list", "--repo", self.repository, "--head", head, "--state", "all",
-            "--json", "url,state") or "[]")
-        return prs[0] if prs else None
+        # `gh pr list --head` does NOT support owner:branch. The REST head
+        # filter does, so a lost PR-create response can recover fork PRs too.
+        label = head if ":" in head else f"{self.repository.split('/')[0]}:{head}"
+        prs = json.loads(self.gh("api", f"repos/{self.repository}/pulls", "--method", "GET",
+            "-f", "state=all", "-f", f"head={label}", "-f", "per_page=100") or "[]")
+        owner, branch = label.split(":", 1)
+        for pr in prs:
+            found_owner, separator, found_branch = (pr.get("head", {}).get("label") or "").partition(":")
+            if separator and found_owner.lower() == owner.lower() and found_branch == branch:
+                return {"url": pr["html_url"], "state": "MERGED" if pr.get("merged_at") else pr["state"].upper()}
+        return None
+
+    def commit_message(self, record):
+        return f"Add dataset {record.dataset_id}\n\nDataset package SHA256: {record.package_sha256}"
+
+    def validate_checkout(self, record, checkout, base):
+        """Contribution-specific checks before push or recovery of an old PR."""
+
+    def validate_base(self, base):
+        """Contribution-specific target branch policy."""
+
+    def pr_title(self, record):
+        return f"Dataset: {record.dataset_id} ({record.catalog.origin.value})"
+
+    def pr_body(self, record):
+        return (
+            f"Adds a {record.catalog.origin.value} dataset with {record.catalog.n_samples} paired IQ samples "
+            f"under `{record.directory}`.\n\n"
+            "The data contributor confirmed public disclosure and the license/attribution stored in `dataset.json`. "
+            "The package includes canonical finite numeric CSV, declared signal/split metadata and full hashes. "
+            "Local paths, private workspace notes and executables are excluded.\n\n"
+            f"Package SHA256: `{record.package_sha256}`.\n\n"
+            "Human review of data provenance, rights, format and scientific claims is required before merge. "
+            "Synthetic datasets demonstrate software behavior; measured labels are contributor declarations. "
+            "No automatic merge is requested. Questions: emi.lab@outlook.com.\n")
 
     def publish(self, record: DatasetPublication, package: Path, progress):
         user = json.loads(self.gh("api", "user"))
@@ -79,6 +111,7 @@ class GitHubPublisher:
             raise WorkspaceError("GitHub returned an invalid account identity.")
         repo = json.loads(self.gh("repo", "view", self.repository, "--json", "nameWithOwner,viewerPermission,defaultBranchRef"))
         base = repo["defaultBranchRef"]["name"]
+        self.validate_base(base)
         if self.command(["git", "check-ref-format", "--branch", base], optional=True) is None:
             raise WorkspaceError("The repository's default branch is not valid.")
         push_repo = self.repository
@@ -122,6 +155,8 @@ class GitHubPublisher:
                     raise WorkspaceError("This dataset directory already exists upstream. Review the existing catalog entry.")
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(package, destination)
+                for ref in record.files:
+                    checked_file(destination, ref)
                 self.git(checkout, "add", "--", record.directory)
                 staged = set((self.git(checkout, "diff", "--cached", "--name-only") or "").splitlines())
                 if staged != {f"{record.directory}/{f.path}" for f in record.files}:
@@ -131,27 +166,20 @@ class GitHubPublisher:
                     if self.git(checkout, "hash-object", "--no-filters", "--", filename) != self.git(checkout, "rev-parse", f":{filename}"):
                         raise WorkspaceError("A Git filter changed the staged data. Review Git attributes before retrying publication.")
                 self.git(checkout, "-c", f"user.name={login}", "-c", f"user.email={user['id']}+{login}@users.noreply.github.com",
-                    "commit", "-m", f"Add dataset {record.dataset_id}\n\nDataset package SHA256: {record.package_sha256}")
+                    "commit", "-m", self.commit_message(record))
                 commit = self.git(checkout, "rev-parse", "HEAD")
+                self.validate_checkout(record, checkout, base)
                 progress("push", commit_sha=commit)
                 self.git(checkout, "push", "publication", f"HEAD:refs/heads/{record.branch}")
+            self.validate_checkout(record, checkout, base)
             progress("pull_request", commit_sha=commit)
             existing = self._existing_pr(head)
             if existing:
                 return existing
             body = Path(temporary) / "body.md"
-            body.write_text(
-                f"Adds a {record.catalog.origin.value} dataset with {record.catalog.n_samples} paired IQ samples "
-                f"under `{record.directory}`.\n\n"
-                "The data contributor confirmed public disclosure and the license/attribution stored in `dataset.json`. "
-                "The package includes canonical finite numeric CSV, declared signal/split metadata and full hashes. "
-                "Local paths, private workspace notes and executables are excluded.\n\n"
-                f"Package SHA256: `{record.package_sha256}`.\n\n"
-                "Human review of data provenance, rights, format and scientific claims is required before merge. "
-                "Synthetic datasets demonstrate software behavior; measured labels are contributor declarations. "
-                "No automatic merge is requested. Questions: emi.lab@outlook.com.\n", encoding="utf-8")
+            body.write_text(self.pr_body(record), encoding="utf-8")
             url = self.gh("pr", "create", "--repo", self.repository, "--head", head, "--base", base,
-                "--title", f"Dataset: {record.dataset_id} ({record.catalog.origin.value})", "--body-file", str(body), cwd=checkout)
+                "--title", self.pr_title(record), "--body-file", str(body), cwd=checkout)
             return {"url": url, "state": "OPEN"}
 
 

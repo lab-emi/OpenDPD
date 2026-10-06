@@ -1,0 +1,67 @@
+{
+  "passed": true,
+  "version": "2.3.0",
+  "build": "python -m build: wheel built from an isolated sdist",
+  "install": "pip install --no-deps into a new venv; executed outside the source checkout",
+  "protocol_sha256": "646c31e0546b6a6754e0ad06c381aed21989dcf4ffa2c52bbb6321db67065b51",
+  "training_sha256": "71294fba81c968d2762f5349178cba8f23a38a8aad942b530269c783b9d9bf94",
+  "reference_bundle_seal": "1a85036a51aa66e2a14b1e6a899bb7183039f133f8b0a03abf1d3aaf541b4408",
+  "official_rows": 23,
+  "completed_cases": 233,
+  "eligible_rows": 23,
+  "verified_calibration_assets": 3,
+  "final_ui_bytes_verified": true,
+  "lightweight_catalogue_import": true,
+  "source_tree_not_used": true,
+  "package_files_unchanged": true,
+  "legacy_synthetic_assets_excluded": true,
+  "wheel_file": "opendpd-2.3.0-py3-none-any.whl",
+  "wheel_sha256": "cb2326ba1c8fff3cbcc49962dc689c23575b2becc8f851413ea4b39d0fa6fd40",
+  "verification_run": "/home/cgao/opendpd-arena-2.3-apa-b-release/release-runs/verification-rrv3m14h",
+  "fresh_mp_cache": true,
+  "wheel_mp_smoke": {
+    "status": "succeeded",
+    "cases": 4,
+    "expected_cases": 4,
+    "seeds": [
+      0
+    ],
+    "eligible": true,
+    "score": 22.88093090511941,
+    "seconds": 14.52965913398657,
+    "budgets": [
+      {
+        "budget": 250,
+        "parameters": 250,
+        "mul": 513,
+        "add": 500,
+        "quality_db": 18.393528196961093,
+        "qualified": true
+      },
+      {
+        "budget": 500,
+        "parameters": 490,
+        "mul": 999,
+        "add": 980,
+        "quality_db": 17.875972470916444,
+        "qualified": true
+      },
+      {
+        "budget": 1000,
+        "parameters": 1000,
+        "mul": 2028,
+        "add": 2000,
+        "quality_db": 17.76877608290662,
+        "qualified": true
+      },
+      {
+        "budget": 2000,
+        "parameters": 1500,
+        "mul": 3043,
+        "add": 3000,
+        "quality_db": 17.797235755312492,
+        "qualified": true
+      }
+    ]
+  }
+}

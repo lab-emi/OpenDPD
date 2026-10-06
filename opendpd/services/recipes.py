@@ -92,6 +92,21 @@ _LS = dict(epochs=1, frame_length=200, frame_stride=1)      # not used by a leas
 _GMP_PA = {"Ka": 5, "La": 30, "Kb": 4, "Lb": 30, "Mb": 5, "Kc": 4, "Lc": 30, "Mc": 5, "rcond": 1e-4}
 _GMP_DPD = {"Ka": 5, "La": 20, "Kb": 4, "Lb": 20, "Mb": 3, "Kc": 4, "Lc": 20, "Mc": 2, "rcond": 0.0}
 RECIPES += [
+    Recipe("pa-mp-studio-v1", "MP · compact fit", "baseline", TaskType.train_pa,
+           ModelSpec(key="mp_ls", parameters={"K": 7, "Q": 15, "rcond": 1e-4}),
+           TrainingConfig(**_LS, train_samples=32768),
+           "Fit a forward memory-polynomial PA model directly from paired input/output samples on CPU.",
+           "Uses at most the first 32,768 training samples and 105 complex coefficients. No epochs or random seed. "
+           "A compact starting point; test NMSE measures PA prediction accuracy. Not a gradient DPD surrogate.",
+           "seconds on CPU"),
+    Recipe("pa-gmp-studio-v1", "GMP · compact fit", "baseline", TaskType.train_pa,
+           ModelSpec(key="gmp_ls", parameters={"Ka": 7, "La": 15, "Kb": 3, "Lb": 8, "Mb": 3,
+                                              "Kc": 3, "Lc": 8, "Mc": 3, "rcond": 1e-4}),
+           TrainingConfig(**_LS, train_samples=32768),
+           "Fit a forward generalised memory-polynomial PA model with cross-envelope terms on CPU.",
+           "Uses at most the first 32,768 training samples and 249 complex coefficients, with 3 future samples. "
+           "A compact starting point, not the parameter-matched benchmark. Not a gradient DPD surrogate.",
+           "seconds on CPU"),
     Recipe("pa-mp-ls-v1", "PA model, MP, least squares (benchmark baseline)", "baseline", TaskType.train_pa,
            ModelSpec(key="mp_ls", parameters={"K": 9, "Q": 150, "rcond": 0.0}), TrainingConfig(**_LS),
            "Memory polynomial identified by direct least squares on the train split: the classical PA-modeling "

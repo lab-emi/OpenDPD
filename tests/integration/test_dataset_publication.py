@@ -144,13 +144,17 @@ class LocalGitHub(GitHubPublisher):
             return json.dumps({"isFork": True, "parent": {"nameWithOwner": self.repository}})
         if args[:2] == ("pr", "list"):
             return json.dumps(self.prs)
+        if args[:2] == ("api", f"repos/{self.repository}/pulls"):
+            return json.dumps([{"html_url": pr["url"], "state": pr["state"].lower(), "head": {"label": pr["head"]}} for pr in self.prs])
         if args[:2] == ("pr", "create"):
             body = Path(args[args.index("--body-file") + 1]).read_text()
             assert "Human review" in body and "emi.lab@outlook.com" in body
             if self.fail_after_push:
                 self.fail_after_push = False
                 raise WorkspaceError("Simulated network failure after push")
-            self.prs.append({"url": "https://github.com/lab-emi/OpenDPD/pull/123", "state": "OPEN"})
+            head = args[args.index("--head") + 1]
+            self.prs.append({"url": "https://github.com/lab-emi/OpenDPD/pull/123", "state": "OPEN",
+                             "head": head if ":" in head else f"lab-emi:{head}"})
             return self.prs[0]["url"]
         raise AssertionError(f"unexpected GitHub call: {args}")
 

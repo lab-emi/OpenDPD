@@ -1,6 +1,8 @@
 # ILC and ILA DPD
 
-Studio 2.2.5 exposes **ILC linearization** beside PA Training/Testing and **ILC-DPD / Ideal benchmark** beside DPD Training/Testing. First train a usable forward PA surrogate on the paired dataset. ILC is an input-waveform controller, not an alternative forward PA identifier.
+Open **DPD Model → ILC linearization**. The PA page also links here and explains the distinction. First train a usable forward PA surrogate on the paired dataset. ILC is an input-waveform controller, not an alternative forward PA identifier. Older links with `workspace=pa` now open the DPD workflow too.
+
+For forward PA identification, **PA Model → Training → PA modeling method** offers neural training (TRes-GRU by default) or MP/GMP least-squares fitting. Both fit paired input/output training data and predict held-out PA output. The compact CPU fits use at most 32,768 training samples; the larger, unchanged benchmark presets remain available locally. Polynomial PA runs can be tested, but their current NumPy implementation is not differentiable and cannot act as a DPD training surrogate. See the [PA identification comparison](../performance/pa-identification-comparison.md) for the fitting methods and the APA_200MHz_b frozen PA.
 
 ## The two outputs
 

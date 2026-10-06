@@ -130,12 +130,12 @@ class WebSupervisor(Supervisor):
             super().stop(timeout=timeout)
 
     def worker_module_for(self, record):
-        return ('opendpd.web.gpu_proxy' if record.device == 'cuda' and self.manager.config.gpu_token
+        return ('opendpd.web.gpu_proxy' if record.device in {'cuda', 'cuda:0'} and self.manager.config.gpu_token
                 else super().worker_module_for(record))
 
     def _spawn(self, record):
         super()._spawn(record)
-        if record.device == "cuda" and self.manager.config.gpu_token and record.run_id in self._active:
+        if record.device in {"cuda", "cuda:0"} and self.manager.config.gpu_token and record.run_id in self._active:
             self.manager.gpu.enqueue(self, record)
 
     def _dispatch(self):
@@ -170,9 +170,11 @@ class WebSupervisor(Supervisor):
             if existing is not None:
                 return existing
             records = self.store.list_runs(limit=10000)
-            if len(records) >= self.manager.config.runs_per_session:
+            arena = getattr(self, "arena_controller", None)
+            if len(records) + (arena.admitted_units if arena else 0) >= self.manager.config.runs_per_session:
                 reject(429, "run_quota", "this temporary workspace has reached its run limit")
-            if sum(r.status not in TERMINAL_STATUSES for r in records) >= self.manager.config.max_pending:
+            if (sum(r.status not in TERMINAL_STATUSES for r in records)
+                    + (arena.pending_count() if arena else 0) >= self.manager.config.max_pending):
                 reject(429, "queue_full", "finish or cancel an existing run before submitting another")
             pending = sum(len(s.store.list_runs(status=RunStatus.queued, limit=1000)) + len(s._active)
                           for s in self.manager.scheduled)
@@ -315,6 +317,7 @@ class TenantManager:
             if tenant.ip_key == ip_key:
                 tenant.closing = True
                 tenant.app.state.supervisor.stop_accepting()
+                tenant.app.state.arena.stop_accepting()
 
     def is_live(self, tenant: Tenant) -> bool:
         if self.now() >= self.idle_deadline(tenant.ip_key):
@@ -424,8 +427,11 @@ class TenantManager:
             def factory(ws, store, **kwargs):
                 return WebSupervisor(ws, store, manager=self, ip_key=ip_key, expires_at=expires_at, **kwargs)
 
+            from opendpd.web.arena import HostedArenaController
             app = await asyncio.to_thread(create_app, root / "workspace", supervisor_factory=factory, shutdown_timeout=0,
-                             allow_dataset_publications=self.config.dataset_publications, monitor_resources=False, start_sweeps=False)
+                             allow_dataset_publications=self.config.dataset_publications,
+                             allow_backbone_publications=self.config.backbone_publications, monitor_resources=False,
+                             start_sweeps=False, allow_arena_submissions=False, arena_factory=HostedArenaController)
             if self.config.gpu_token:
                 app.state.device_detector = self.gpu.devices
             app.state.workspace_label = "Temporary workspace"
@@ -434,7 +440,8 @@ class TenantManager:
             try:
                 await context.__aenter__()
                 if self.config.gpu_token:
-                    app.state.ws.device_available = lambda device: device == "cpu" or bool(self.gpu.devices().get(device, {}).get("detected"))
+                    from opendpd.services.capabilities import device_available
+                    app.state.ws.device_available = lambda device: device_available(device, detected=self.gpu.devices())
             except BaseException:
                 shutil.rmtree(root)
                 raise
@@ -454,6 +461,7 @@ class TenantManager:
     async def remove(self, tenant: Tenant):
         tenant.closing = True
         tenant.app.state.supervisor.stop_accepting()
+        tenant.app.state.arena.stop_accepting()
         if tenant.inflight:
             # No directory deletion underneath an analysis request or download.
             # The independent systemd cgroup reset bounds a wedged request.

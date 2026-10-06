@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from backbones.finite_iq import amplitude, phase
 
 
 class PGJANET(nn.Module):
@@ -37,10 +38,10 @@ class PGJANET(nn.Module):
             # Extract I/Q components
             i_x = x_t[:, 0].unsqueeze(-1)
             q_x = x_t[:, 1].unsqueeze(-1)
-            amp_x = torch.sqrt(i_x**2 + q_x**2)
+            amp_x = amplitude(i_x**2 + q_x**2)
             
             # Calculate phase
-            theta = torch.atan2(q_x, i_x)
+            theta = phase(i_x, q_x)
             cos_theta = torch.cos(theta)
             sin_theta = torch.sin(theta)
 

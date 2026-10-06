@@ -27,7 +27,7 @@ def training_waveform(ws, run_dir, resolved, x, gain, nperseg, on_epoch):
     peak_limit = _fitted_peak(ws, resolved.pa_reference.run_id) * p['peak_factor']
     x = x[:int(p['fit_samples'])]
     loaded = trained_model(ws, resolved.pa_reference.run_id)
-    plant = torch_plant(loaded.net, nperseg, resolved.execution.device)
+    plant = torch_plant(loaded.net, nperseg, resolved.execution.device_spec)
     y0 = plant(x)
     g = np.vdot(x, y0) / np.vdot(x, x)
     if not np.isfinite(g) or abs(g) < 1e-8:
@@ -54,7 +54,7 @@ def ideal_test(ws, run_dir, resolved, plant_model, x, gain, nperseg, *, save=Fal
     source = resolved.dpd_reference.run_id if resolved.task.value == 'run_dpd' else run_dir.name
     record = read_json(ws.run_dir(source) / 'ilc.json')
     # Recompute when testing through another surrogate; do not reuse the old plant's inverse.
-    plant = torch_plant(plant_model, nperseg, resolved.execution.device)
+    plant = torch_plant(plant_model, nperseg, resolved.execution.device_spec)
     inverse = complex(*record['inverse_gain'])
     if resolved.pa_reference.checkpoint_sha256 != record['plant_sha256']:
         from opendpd.services.datasets import load_version_arrays

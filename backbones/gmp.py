@@ -23,7 +23,7 @@ class GMP(nn.Module):
 
         # Split a frame into memory windows
         x = torch.complex(x[..., 0], x[..., 1])  # Dim: (batch_size, frame_length)
-        zero_pad = torch.zeros((batch_size, self.memory_length - 1)).to(x.device)
+        zero_pad = torch.zeros((batch_size, self.memory_length - 1), device=x.device)
         x = torch.cat((zero_pad, x), dim=1)
         windows_x = x.unfold(dimension=-1, size=self.memory_length,
                              step=1)

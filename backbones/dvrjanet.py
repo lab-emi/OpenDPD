@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from backbones.finite_iq import amplitude, phase
 
 
 class DVRJANET(nn.Module):
@@ -43,7 +44,7 @@ class DVRJANET(nn.Module):
     def forward(self, x, h_0):
         # x shape: (batch_size, seq_len, 2)
         # h_0 shape: (2, batch_size, hidden_size) - for I/Q components
-        
+
         batch_size, seq_len, _ = x.shape
         h_I = h_0.squeeze(0) # I component hidden state
         h_Q = h_0.squeeze(0) # Q component hidden state
@@ -55,14 +56,14 @@ class DVRJANET(nn.Module):
             x_t = x[:, t, :]
             i_x = x_t[:, 0].unsqueeze(-1)
             q_x = x_t[:, 1].unsqueeze(-1)
-            
+
             # Calculate magnitude and phase
-            magnitude = torch.sqrt(i_x**2 + q_x**2)
-            theta = torch.atan2(q_x, i_x)
+            magnitude = amplitude(i_x**2 + q_x**2)
+            theta = phase(i_x, q_x)
 
             # Phase Recurrent Filter
             θ_tilde = self.W_pθ(theta) + self.W_ph(h_I + h_Q)
-            
+
             # Magnitude Recurrent Filter with DVR
             a_tilde = self.dvr_block(
                 self.W_ax(magnitude) + self.W_ah(h_I + h_Q),
@@ -90,7 +91,7 @@ class DVRJANET(nn.Module):
             # Calculate outputs
             y_I = self.W_o1(h_I)
             y_Q = self.W_o2(h_Q)
-            
+
             outputs_I.append(y_I)
             outputs_Q.append(y_Q)
 
@@ -102,12 +103,12 @@ class DVRJANET(nn.Module):
         return outputs
 
     def reset_parameters(self):
-        for module in [self.W_ph, self.W_pθ, self.W_ah, self.W_ax, 
-                      self.W_f, self.W_ccos, self.W_csin, 
+        for module in [self.W_ph, self.W_pθ, self.W_ah, self.W_ax,
+                      self.W_f, self.W_ccos, self.W_csin,
                       self.W_o1, self.W_o2]:
             if hasattr(module, 'weight'):
                 nn.init.xavier_uniform_(module.weight)
             if hasattr(module, 'bias') and module.bias is not None:
                 nn.init.constant_(module.bias, 0)
-        
-        
+
+

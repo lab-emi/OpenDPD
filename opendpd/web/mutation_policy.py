@@ -8,6 +8,7 @@ import re
 from opendpd.schemas.signal_generator import GeneratorConfig, GeneratorBatchRequest, ImportSignalRequest
 from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPADatasetRequest
 from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest, DatasetPublicationDraft
+from opendpd.schemas.user_backbones import BackboneUploadRequest
 from opendpd.services.workspace import WorkspaceError
 from opendpd.web.policy import reject
 from opendpd.web.runtime import directory_bytes
@@ -23,6 +24,9 @@ class MutationRule:
 
 
 MUTATIONS = (
+    MutationRule(r"/backbones/uploads", BackboneUploadRequest, "backbone-upload", 6, "backbone"),
+    MutationRule(r"/backbones/catalog/refresh", None, "backbone-catalog", 2, "none"),
+
     MutationRule(r"/signal-generator/import", ImportSignalRequest, "signal-import", 12, "signal_import"),
     MutationRule(r"/signal-generator/batches", GeneratorBatchRequest, "signal-generator", 12, "generator_batch"),
     MutationRule(r"/pa-library/datasets", VirtualPADatasetRequest, "virtual-pa-dataset", 6, "pa_dataset"),
@@ -37,6 +41,8 @@ MUTATIONS = (
 
 
 def estimate_storage(rule, payload, path, ws):
+    if rule.estimate == 'backbone':
+        return 128 * 1024
     from opendpd.services.signal_generator import read_signal
     from opendpd.services.virtual_pa import read_simulation
     if rule.estimate == 'signal_import':

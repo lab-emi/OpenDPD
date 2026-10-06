@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from torch import nn
+from backbones.finite_iq import amplitude, phase_denominator
 
 
 class DeltaGRU(nn.Module):
@@ -61,11 +62,12 @@ class DeltaGRU(nn.Module):
         i_x = torch.unsqueeze(x[..., 0], dim=-1)
         q_x = torch.unsqueeze(x[..., 1], dim=-1)
         amp2 = torch.pow(i_x, 2) + torch.pow(q_x, 2)
-        amp = torch.sqrt(amp2)
+        amp = amplitude(amp2)
         amp3 = torch.pow(amp, 3)
-        sin = torch.div(q_x, amp)
+        denominator = phase_denominator(amp)
+        sin = torch.div(q_x, denominator)
         # sin_diff = (sin-torch.roll(sin, shifts=-1, dims=1))
-        cos = torch.div(i_x, amp)
+        cos = torch.div(i_x, denominator)
         # cos_diff = (cos-torch.roll(cos, shifts=-1, dims=1))
         # phase = torch.atan2(q_x, i_x)
         # phase_diff = (phase-torch.roll(phase, shifts=-1, dims=1))/6

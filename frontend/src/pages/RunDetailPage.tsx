@@ -179,7 +179,7 @@ export function RunDetailPage() {
         </Alert>
       )}
       {nextStep && !r.error && <Alert severity={r.status === 'succeeded' ? 'success' : 'info'}>{t(nextStep)}</Alert>}
-      {r.status === 'queued' && r.device === 'cuda' && <Alert severity="info">{t('run.gpuQueue')}</Alert>}
+      {r.status === 'queued' && (r.device === 'cuda' || r.device?.startsWith('cuda:')) && <Alert severity="info">{t('run.gpuQueue')}</Alert>}
       {r.status_reason && r.status !== 'succeeded' && !r.error && <Typography color="text.secondary">{message(r.status_reason)}</Typography>}
       <Tabs variant="scrollable" scrollButtons="auto" value={tab} onChange={(_, v: TabKey) => setParams(v === 'overview' ? {} : { tab: v })} aria-label={t('run.title')}>
         <Tab value="overview" label={t('run.tabs.overview')} id="tab-overview" aria-controls="panel-overview" />
