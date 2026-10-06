@@ -44,6 +44,11 @@ documentation and evidence land together. The PR template asks for:
 Keep unrelated formatting, dependency swaps and seed changes out of feature PRs.
 Pure refactors must show unchanged behaviour on frozen inputs.
 
+Dependency maintenance has its own [release preparation workflow](docs/guides/dependency-maintenance.md).
+Run it before each version bump. Routine Dependabot updates are grouped,
+validated and merged automatically; failed or non-routine updates remain explicit
+release blockers until resolved.
+
 ## Protected scientific paths
 
 Metric definitions, data splits, golden references, acceptance thresholds and

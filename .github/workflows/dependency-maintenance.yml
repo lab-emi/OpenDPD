@@ -1,0 +1,52 @@
+name: Dependency maintenance
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - pyproject.toml
+      - opendpd/__init__.py
+      - frontend/package.json
+  workflow_run:
+    workflows: [CI, Docs, Deployment dependency audit]
+    types: [completed]
+  schedule:
+    - cron: '37 3 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      prepare_release:
+        description: 'Resolve routine updates before preparing a release; block on updates needing review'
+        type: boolean
+        default: false
+
+concurrency:
+  group: dependency-maintenance
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    steps:
+      # The write token is never exposed to a PR checkout or dependency install.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Resolve reviewed, tested dependency updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREPARE_RELEASE: ${{ inputs.prepare_release || false }}
+        run: |
+          if [ "$PREPARE_RELEASE" = "true" ]; then
+            python -I scripts/maintain_dependencies.py --wait 120
+            python -I scripts/maintain_dependencies.py --check
+          else
+            python -I scripts/maintain_dependencies.py
+          fi
