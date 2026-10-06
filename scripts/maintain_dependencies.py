@@ -89,6 +89,7 @@ def require_strict_checks(api):
 
 
 def reconcile(api):
+    require_strict_checks(api)
     report = []
     for item in sorted(api.pulls(), key=lambda pr: pr["number"]):
         if not dependency_pr(item):

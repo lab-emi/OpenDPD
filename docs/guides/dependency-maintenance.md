@@ -31,6 +31,8 @@ on that exact commit. Required jobs must run successfully, not merely be skipped
 An active GitHub ruleset must require up-to-date branches and all of those
 checks; otherwise automatic merging refuses to run. This also closes the race
 between checking the base revision and merging. Merges use an expected head SHA.
+Additional repository review rules remain effective; the automation never
+bypasses them.
 After a token-created merge, the workflow explicitly dispatches main's validation
 workflows. Empty refreshed dependency PRs are closed as already included.
 
