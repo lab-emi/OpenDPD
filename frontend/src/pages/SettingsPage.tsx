@@ -4,6 +4,7 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { useCapabilities } from '@/api/hooks'
+import { deviceOptions } from '@/api/devices'
 import { t } from '@/i18n'
 import { LanguageMenu } from '@/components/LanguageMenu'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
@@ -39,12 +40,12 @@ export function SettingsPage() {
           {t('settings.devices.note')}
         </Typography>
         <Grid container spacing={2}>
-          {c.devices.map((d) => (
-            <Grid key={d.device} size={{ xs: 12, md: 4 }}>
-              <Paper sx={{ p: 2 }} data-device={d.device}>
+          {deviceOptions(c.devices).map((d) => (
+            <Grid key={d.value} size={{ xs: 12, md: 4 }}>
+              <Paper sx={{ p: 2 }} data-device={d.value}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
                   <Typography variant="h3" component="h3">
-                    {d.device}
+                    {d.label}
                   </Typography>
                   <Chip size="small" color={d.detected ? 'success' : 'default'} variant="outlined" label={d.detected ? t('settings.devices.detected') : t('settings.devices.notDetected')} />
                 </Stack>

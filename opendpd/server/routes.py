@@ -176,6 +176,7 @@ def capabilities(request: Request):
         d = detected.get(dev, {})
         devices.append(DeviceInfo(device=dev, detected=bool(d.get("detected")), name=d.get("name"),
                                   count=int(d.get("count", 1 if d.get("detected") else 0)),
+                                  instances=d.get("instances", []),
                                   tested_models=[m.key for m in models if dev in m.devices_tested]))
     return Capabilities(version=__version__, devices=devices,
                         workspace=getattr(request.app.state, "workspace_label", None) or str(request.app.state.ws.root),

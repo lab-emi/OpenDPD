@@ -119,7 +119,7 @@ class _Report:
                  ("Dataset", f"{self.dataset.dataset_id} · version {self.resolved.dataset.preprocessing_version} · "
                              f"split {self.resolved.dataset.split_version} · raw sha256 {self.dataset.raw_sha256}"),
                  ("Seed / reproducibility", f"{self.resolved.training.seed} / {self.resolved.training.reproducibility}"),
-                 ("Device", self.resolved.execution.device)]
+                 ("Device", self.resolved.execution.device_spec)]
         if r is not None:
             from opendpd.services.review import review_result
             context = review_result(self.ws, self.run_id)

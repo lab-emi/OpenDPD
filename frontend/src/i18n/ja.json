@@ -763,7 +763,7 @@
   "terminal.readOnly": "出力は読み取り専用です。「実験を停止」でこの実行を終了できます。",
   "logs.refresh": "出力を更新",
   "run.reconnect": "実験を再同期",
-  "run.gpuQueue": "共有 GPU は一度に一つの実験を実行します。実験は待機中です。このページを離れても、後から戻れます。",
+  "run.gpuQueue": "選択した GPU は一度に一つの実験を実行します。実験は待機中です。このページを離れても、後から戻れます。",
   "chart.controls.touch": "2本指で拡大・縮小と移動、1本指でページをスクロール。",
   "datasets.upload.limit": "UTF-8 CSV のみ：最大 25 MiB、1,000,000 組のサンプル。",
   "datasets.upload.checking": "プレビュー前にファイル形式と CSV 全行を検証しています…",

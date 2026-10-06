@@ -763,7 +763,7 @@
   "terminal.readOnly": "终端仅显示输出；可用“停止实验”终止该任务。",
   "logs.refresh": "刷新输出",
   "run.reconnect": "重新同步实验",
-  "run.gpuQueue": "共享 GPU 每次执行一个实验。你的实验正在排队，离开此页面后仍可返回查看。",
+  "run.gpuQueue": "所选 GPU 每次执行一个实验。你的实验正在排队，离开此页面后仍可返回查看。",
   "chart.controls.touch": "双指缩放和平移图表，单指滚动页面。",
   "datasets.upload.limit": "仅限 UTF-8 CSV，最大 25 MiB、1,000,000 对样本。",
   "datasets.upload.checking": "正在校验文件类型和全部 CSV 行，通过后才能预览…",

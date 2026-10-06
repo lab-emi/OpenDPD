@@ -172,7 +172,7 @@ def submission_issues(ws: Workspace, config: ExperimentConfig) -> Tuple[List[Con
 
     errors: List[ConfigIssue] = []
     warnings: List[ConfigIssue] = []
-    device = config.execution.device
+    device = config.execution.device_spec
     if not getattr(ws, "device_available", capabilities.device_available)(device):
         errors.append(ConfigIssue("execution.device", f"device '{device}' is not available on this machine",
                                   hint="choose cpu or a detected device; OpenDPD never switches devices silently"))
@@ -411,7 +411,7 @@ def create_run(ws: Workspace, config: ExperimentConfig, *, name: Optional[str] =
         run_id=run_id, task=resolved.task, name=name or config.name or config.recipe_id,
         dataset_id=resolved.dataset.id, model_key=resolved.model.key, status=RunStatus.queued,
         created_at=_now(), config_sha256=resolved.resolution.config_sha256,
-        device=resolved.execution.device, idempotency_key=idempotency_key, parent_run_id=parent_run_id,
+        device=resolved.execution.device_spec, idempotency_key=idempotency_key, parent_run_id=parent_run_id,
         progress_total_epochs=resolved.training.epochs if resolved.task in (TaskType.train_pa, TaskType.train_dpd) else None,
     )
     save_run(ws, record)
@@ -906,7 +906,7 @@ def build_result(ws: Workspace, run_id: str, resolved: ResolvedExperimentConfig,
         valid_sample_range=(measurement.captures[0].valid_sample_range or (0, n_valid)) if measurement else (0, n_valid),
         n_segments=n_segments, nperseg=nperseg,
         metrics=metrics, selected_epoch=selected_epoch, history=history,
-        software=software_provenance(), device=resolved.execution.device, seed=resolved.training.seed,
+        software=software_provenance(), device=resolved.execution.device_spec, seed=resolved.training.seed,
         numeric_mode=f"float32 / reproducibility={resolved.training.reproducibility}",
         limitations=limitations, signal_chain=signal_chain or [], baselines=baselines or [],
         surrogate_coverage=surrogate_coverage, scaling=scaling, measurement=measurement,

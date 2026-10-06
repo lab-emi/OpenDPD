@@ -26,6 +26,30 @@ The experiment form offers models from the shared registry. Advanced parameters 
 
 During training, watch the **NMSE curve**, progress and signal comparisons. The view reports the configured and actual batch sizes, I/Q samples per sequence and sample rate. Live probe scores are previews; the final test result is identified separately.
 
+### Select a GPU on your computer
+
+In local Studio, **Device** lists each detected NVIDIA GPU separately, for example
+**GPU 0 (cuda:0) · NVIDIA GeForce RTX 4090** and **GPU 1 (cuda:1) · NVIDIA GeForce RTX 4090**,
+alongside CPU and detected Apple MPS. The same selector is available in PA and DPD
+Training and Testing. **Settings → Devices** also lists the individual cards.
+
+Select a different GPU for each independent job and start both runs. Local Studio
+runs jobs on different GPUs concurrently; jobs assigned to the same GPU wait for
+that GPU's current Studio job to finish. Each run's configuration, device label
+and report retain the selected index. An unavailable index is rejected before
+submission; Studio never moves the job to another device silently.
+
+For JSON configurations, choose GPU 1 with
+`"execution": {"device": "cuda", "device_index": 1}`.
+Existing configurations that omit `device_index` still select GPU 0.
+Indices follow PyTorch's visible-device order: if you set `CUDA_VISIBLE_DEVICES`
+before launching Studio, the selected physical cards are renumbered starting at
+`cuda:0`. Restart Studio after changing that environment or the installed GPUs.
+
+The hosted Studio at opendpd.com lists the server's devices and keeps its shared
+compute queue. To use the GPUs on your own computer, install and launch local
+Studio with `opendpd gui`.
+
 ## 3. Train and test DPD
 
 Choose a DPD training recipe and select a **successful PA run on the same dataset** as its surrogate. The service checks checkpoint compatibility, including seed and frame length, before starting.

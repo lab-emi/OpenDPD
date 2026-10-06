@@ -763,7 +763,7 @@
   "terminal.readOnly": "Nur Ausgabe. Mit „Experiment stoppen“ beenden Sie diesen Lauf.",
   "logs.refresh": "Ausgabe aktualisieren",
   "run.reconnect": "Experiment synchronisieren",
-  "run.gpuQueue": "Die gemeinsame GPU führt jeweils ein Experiment aus. Ihr Experiment wartet; Sie können diese Seite verlassen und später zurückkehren.",
+  "run.gpuQueue": "Die ausgewählte GPU führt jeweils ein Experiment aus. Ihr Experiment wartet; Sie können diese Seite verlassen und später zurückkehren.",
   "chart.controls.touch": "Zwei Finger: zoomen und verschieben. Ein Finger: Seite scrollen.",
   "datasets.upload.limit": "Nur UTF-8-CSV: höchstens 25 MiB und 1.000.000 Probenpaare.",
   "datasets.upload.checking": "Dateityp und alle CSV-Zeilen werden vor der Vorschau geprüft…",

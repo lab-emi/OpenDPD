@@ -5322,6 +5322,13 @@
             "title": "Device",
             "type": "string"
           },
+          "instances": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceInstance"
+            },
+            "title": "Instances",
+            "type": "array"
+          },
           "name": {
             "anyOf": [
               {
@@ -5346,6 +5353,26 @@
           "detected"
         ],
         "title": "DeviceInfo",
+        "type": "object"
+      },
+      "DeviceInstance": {
+        "additionalProperties": false,
+        "properties": {
+          "index": {
+            "minimum": 0.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "name"
+        ],
+        "title": "DeviceInstance",
         "type": "object"
       },
       "DiagnosticItem": {
@@ -5909,6 +5936,7 @@
           },
           "device_index": {
             "default": 0,
+            "description": "Logical CUDA device index, as visible to the Studio process.",
             "minimum": 0.0,
             "title": "Device Index",
             "type": "integer"
@@ -13154,7 +13182,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.3.0",
+            "default": "2.3.1",
             "title": "Version",
             "type": "string"
           }
@@ -15759,7 +15787,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.3.0"
+    "version": "2.3.1"
   },
   "openapi": "3.1.0",
   "paths": {
