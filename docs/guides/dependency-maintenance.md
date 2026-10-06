@@ -35,6 +35,10 @@ Additional repository review rules remain effective; the automation never
 bypasses them.
 After a token-created merge, the workflow explicitly dispatches main's validation
 workflows. Empty refreshed dependency PRs are closed as already included.
+Concurrent closures, stale-head responses and merge conflicts are re-read and
+reported per PR. A conflicting branch waits for Dependabot's normal refresh;
+other PRs continue to be checked. Preparation stays blocked if a conflict or
+repository review rule is still unresolved when its wait limit expires.
 
 These dispatches account for [GitHub's token-triggering rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow);
 they require no personal access token, stored maintainer credential or automatic
