@@ -44,7 +44,8 @@ def latest_run(api, workflow, sha):
     # We explicitly dispatch the same read-only checks; an unstarted PR event is
     # not a test result. Real failed runs are never filtered out.
     if any(run["event"] == "workflow_dispatch" for run in runs):
-        runs = [run for run in runs if run.get("conclusion") != "action_required" and run["status"] != "waiting"]
+        runs = [run for run in runs if not (run["event"] == "pull_request"
+                and (run.get("conclusion") == "action_required" or run["status"] == "waiting"))]
     return max(runs, key=lambda run: run["id"]) if runs else None
 
 
@@ -57,14 +58,24 @@ def validation(api, sha, ref=None):
                 api.request(f"actions/workflows/{workflow}/dispatches", {"ref": ref})
             waiting = True
             continue
-        if run["status"] != "completed":
+        if (ref is not None and run["event"] == "pull_request"
+                and (run.get("conclusion") == "action_required" or run["status"] == "waiting")):
+            api.request(f"actions/workflows/{workflow}/dispatches", {"ref": ref})
             waiting = True
             continue
-        if run["conclusion"] != "success":
+        if run["status"] == "completed" and run["conclusion"] != "success":
             return "failed", run["html_url"]
         jobs = api.request(f"actions/runs/{run['id']}/jobs?filter=latest&per_page=100")
         if jobs.get("total_count", 0) > 100:
             raise ValueError("incomplete workflow job list")
+        if any(job["status"] == "completed"
+               and (job["conclusion"] not in {"success", "skipped"}
+                    or (job["name"] in required and job["conclusion"] == "skipped"))
+               for job in jobs["jobs"]):
+            return "failed", run["html_url"]
+        if run["status"] != "completed":
+            waiting = True
+            continue
         passed = {job["name"] for job in jobs["jobs"]
                   if job["status"] == "completed" and job["conclusion"] == "success"}
         if not required <= passed:

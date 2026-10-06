@@ -212,6 +212,27 @@ def test_missing_checks_are_dispatched_but_never_considered_passed():
     assert any(path == "actions/workflows/ci.yml/dispatches" for path, _, _ in api.calls)
 
 
+def test_token_created_pr_checks_get_an_explicit_dispatch():
+    api = Checks()
+    api.runs["ci.yml"]["conclusion"] = "action_required"
+    assert maintenance.validation(api, HEAD, "dependabot/npm/group")[0] == "waiting"
+    assert any(path == "actions/workflows/ci.yml/dispatches" for path, _, _ in api.calls)
+
+
+def test_failed_jobs_are_not_hidden_by_an_overall_running_workflow():
+    api = Checks()
+    api.runs["ci.yml"]["status"] = "in_progress"
+    api.jobs[1][0]["conclusion"] = "failure"
+    assert maintenance.validation(api, HEAD)[0] == "failed"
+
+
+def test_a_dispatched_run_waiting_for_approval_is_not_redispatched():
+    api = Checks()
+    api.runs["ci.yml"].update(event="workflow_dispatch", status="waiting", conclusion=None)
+    assert maintenance.validation(api, HEAD, "dependabot/npm/group")[0] == "waiting"
+    assert not any(path.endswith("/dispatches") for path, _, _ in api.calls)
+
+
 def test_checks_on_another_head_or_repository_are_not_reused():
     api = Checks()
     api.runs["ci.yml"]["head_sha"] = BASE
