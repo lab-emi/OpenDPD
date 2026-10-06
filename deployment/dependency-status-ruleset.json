@@ -1,0 +1,73 @@
+{
+  "name": "OpenDPD validated dependency maintenance",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/main"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "Build & check distribution",
+            "integration_id": 15368
+          },
+          {
+            "context": "Build site",
+            "integration_id": 15368
+          },
+          {
+            "context": "Default install (macos-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Default install (ubuntu-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Default install (windows-latest)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Frontend (types, lint, unit, build, browser journeys)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Lint (critical errors)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Tests (Python 3.10)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Tests (Python 3.11)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Tests (Python 3.12)",
+            "integration_id": 15368
+          },
+          {
+            "context": "Tests (Python 3.13)",
+            "integration_id": 15368
+          },
+          {
+            "context": "audit",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ]
+}

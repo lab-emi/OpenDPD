@@ -15,6 +15,8 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from dependency_github import automatic_dependency_review
 from opendpd.core.backbone_template import MAX_SOURCE_BYTES, scan_source, source_sha256
 
 CONTEXT = "user-backbone-review"
@@ -79,6 +81,8 @@ def evaluate(pr, files, get, get_source):
     protected = any(f["filename"].startswith(PROTECTED) or f.get("previous_filename", "").startswith(PROTECTED) for f in files)
     if not protected:
         return True, "No backbone security or catalog changes."
+    if automatic_dependency_review(pr):
+        return True, "Routine Dependabot version pins verified; full CI remains required."
     validate_changed_templates(files, get_source)
     if not reviewed(pr, get):
         return False, "Independent human maintainer approval of this exact head is required."

@@ -87,6 +87,7 @@ nav:
       - FAQ: faq.md
       - Testing and CI: testing.md
       - Review policy: architecture/review-policy.md
+      - Dependencies before a release: guides/dependency-maintenance.md
       - Maintaining documentation: documentation.md
       - Hosting the public Studio: architecture/public-studio.md
 
