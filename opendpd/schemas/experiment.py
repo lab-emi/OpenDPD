@@ -83,12 +83,17 @@ class EvaluationConfig(StrictModel):
 
 class ExecutionConfig(StrictModel):
     device: Literal["cpu", "cuda", "mps"] = "cpu"
-    device_index: int = Field(default=0, ge=0)
+    device_index: int = Field(default=0, ge=0, description="Logical CUDA device index, as visible to the Studio process.")
     num_threads: Optional[int] = Field(default=None, ge=1)
     cuda_graph_training: bool = False
     # Display only: None reuses validation predictions once per epoch. A
     # positive interval explicitly opts into extra inference during training.
     preview_every_batches: Optional[int] = Field(default=None, ge=1, le=1_000_000)
+
+    @property
+    def device_spec(self) -> str:
+        """Concrete PyTorch device for execution, queueing and run provenance."""
+        return f"cuda:{self.device_index}" if self.device == "cuda" else self.device
 
 
 class QuantizationConfig(StrictModel):

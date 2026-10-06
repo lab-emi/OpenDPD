@@ -130,12 +130,12 @@ class WebSupervisor(Supervisor):
             super().stop(timeout=timeout)
 
     def worker_module_for(self, record):
-        return ('opendpd.web.gpu_proxy' if record.device == 'cuda' and self.manager.config.gpu_token
+        return ('opendpd.web.gpu_proxy' if record.device in {'cuda', 'cuda:0'} and self.manager.config.gpu_token
                 else super().worker_module_for(record))
 
     def _spawn(self, record):
         super()._spawn(record)
-        if record.device == "cuda" and self.manager.config.gpu_token and record.run_id in self._active:
+        if record.device in {"cuda", "cuda:0"} and self.manager.config.gpu_token and record.run_id in self._active:
             self.manager.gpu.enqueue(self, record)
 
     def _dispatch(self):
@@ -440,7 +440,8 @@ class TenantManager:
             try:
                 await context.__aenter__()
                 if self.config.gpu_token:
-                    app.state.ws.device_available = lambda device: device == "cpu" or bool(self.gpu.devices().get(device, {}).get("detected"))
+                    from opendpd.services.capabilities import device_available
+                    app.state.ws.device_available = lambda device: device_available(device, detected=self.gpu.devices())
             except BaseException:
                 shutil.rmtree(root)
                 raise

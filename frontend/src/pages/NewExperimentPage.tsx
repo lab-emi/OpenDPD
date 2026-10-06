@@ -20,9 +20,10 @@ import Tab from '@mui/material/Tab'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router'
 import { versionNames } from '@/api/datasets'
+import { deviceOptions, deviceSpec, executionDevice } from '@/api/devices'
 import { useCapabilities, useDatasets, useMetricProfiles, useModels, useRecipes, useRunConfig, useRuns, useSubmitRun, validateConfig } from '@/api/hooks'
 import { offeredProfiles, profileLabel } from '@/api/profiles'
-import type { ConfigIssue, Device, ExperimentConfigInput, ModelInfo, RecipeInfo, ValidationReport } from '@/api/types'
+import type { ConfigIssue, ExperimentConfigInput, ModelInfo, RecipeInfo, ValidationReport } from '@/api/types'
 import { datasetLabel, message, phaseLabel, t } from '@/i18n'
 import { WorkflowSteps } from '@/components/WorkflowSteps'
 import { ExperimentTasks, isExperimentTask, taskGroup, taskLabel, type ExperimentTask } from '@/components/ExperimentTasks'
@@ -108,7 +109,7 @@ function buildConfig(recipe: RecipeInfo, f: FormState, specs: ParamSpec[]): Expe
     dataset: f.dataVersion ? { id: f.datasetId, preprocessing_version: f.dataVersion } : { id: f.datasetId },
     model: { key: recipe.model.key, parameters },
     training,
-    execution: { device: f.device as Device, ...(f.numThreads.trim() ? { num_threads: num(f.numThreads, 0) } : {}),
+    execution: { ...executionDevice(f.device), ...(f.numThreads.trim() ? { num_threads: num(f.numThreads, 0) } : {}),
       preview_every_batches: f.previewMode === 'batch' ? num(f.previewBatches, 100) : null },
   }
   if (recipe.task === 'train_dpd' && f.paRunId) config.pa_reference = { run_id: f.paRunId }
@@ -128,6 +129,7 @@ const FIELD_MAP: Record<string, keyof FormState> = {
   'pa_reference': 'paRunId',
   'pa_reference.run_id': 'paRunId',
   'execution.device': 'device',
+  'execution.device_index': 'device',
   'model.key': 'recipeId',
   'evaluation.profile_id': 'profileId',
   'execution.num_threads': 'numThreads',
@@ -185,7 +187,8 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const requestedVersion = edits.dataVersion || (datasetId === params.get('dataset') ? params.get('version') : '') || (testing && source.data?.dataset.id === datasetId ? source.data.dataset.preprocessing_version : '') || ''
   // Capability discovery is asynchronous. Derive the initial device until the
   // user chooses one; later refetches must never overwrite that explicit choice.
-  const defaultDevice = ['cuda', 'mps', 'cpu'].find(device => caps.data?.devices.some(d => d.device === device && d.detected)) ?? 'cpu'
+  const devices = deviceOptions(caps.data?.devices ?? [{ device: 'cpu', detected: true, count: 1, tested_models: [], instances: [] }])
+  const defaultDevice = ['cuda', 'mps', 'cpu'].map(device => devices.find(d => d.device === device && d.detected)?.value).find(Boolean) ?? 'cpu'
   const form: FormState = { ...edits, paRunId: edits.paRunId || params.get('paRun') || '', device: edits.device || defaultDevice, recipeId: edits.recipeId || taskRecipes[0]?.recipe_id || '', datasetId, dataVersion: versions.includes(requestedVersion) ? requestedVersion : '' }
   const baseRecipe = taskRecipes.find((r) => r.recipe_id === form.recipeId) ?? null
   const recipe = baseRecipe?.model.key === 'user_template' && selectedBackbone ? { ...baseRecipe, model: selectedBackbone.model } : baseRecipe
@@ -207,7 +210,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
     task, name: form.name.trim() || null,
     dataset: { id: form.datasetId, ...(form.dataVersion ? { preprocessing_version: form.dataVersion } : {}) },
     model: { ...source.data.model, key: modelKey! },
-    execution: { device: form.device as Device, ...(form.numThreads.trim() ? { num_threads: num(form.numThreads, 0) } : {}) },
+    execution: { ...executionDevice(form.device), ...(form.numThreads.trim() ? { num_threads: num(form.numThreads, 0) } : {}) },
     evaluation: { ...(form.profileId ? { profile_id: form.profileId } : {}), ...(streaming && form.chunkSamples.trim() ? { chunk_samples: num(form.chunkSamples, 0) } : {}) },
     ...(task === 'evaluate_pa' ? { pa_reference: { run_id: sourceRunId } } : { dpd_reference: { run_id: sourceRunId }, ...(form.paRunId ? { pa_reference: { run_id: form.paRunId } } : {}) }),
   } : null
@@ -258,7 +261,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
   const paramIssues = (name: string) => (report?.errors ?? []).filter((e) => e.field === `model.parameters.${name}`)
   const set = (key: keyof FormState) => (e: { target: { value: string } }) => setEdits((f) => ({ ...f, [key]: e.target.value }))
   const setParam = (name: string) => (e: { target: { value: string } }) => setEdits((f) => ({ ...f, params: { ...f.params, [name]: e.target.value } }))
-  const untested = model && !model.devices_tested.includes(form.device)
+  const untested = model && !model.devices_tested.includes(executionDevice(form.device).device ?? 'cpu')
   const discardImport = () => {
     setImportedFile(null)
     setConfirmed({}); setStep(0)
@@ -421,9 +424,9 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
           {!imported && <>
           <Grid size={{ xs: 12, md: testing || leastSquares ? 6 : 4 }}>
             <TextField select fullWidth label={t('form.device')} value={form.device} onChange={set('device')} disabled={polynomialPA} error={issuesFor('device').length > 0} helperText={errorText('device') || (polynomialPA ? t('paMethod.cpuHelp') : untested ? t('form.device.untested', { device: form.device }) : ' ')}>
-              {(caps.data?.devices ?? [{ device: 'cpu', detected: true, count: 1, tested_models: [] }]).map((d) => (
-                <MenuItem key={d.device} value={d.device} disabled={!d.detected}>
-                  {d.device}
+              {devices.map((d) => (
+                <MenuItem key={d.value} value={d.value} disabled={!d.detected}>
+                  {d.label}
                   {d.name ? ` · ${d.name}` : ''}
                   {!d.detected ? ` (${t('settings.devices.notDetected')})` : ''}
                 </MenuItem>
@@ -536,7 +539,7 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
           <dt>{t('form.dataset')}</dt><dd>{config?.dataset.id} · {config?.dataset.preprocessing_version || 'raw-v1'}</dd>
           <dt>{t('tasks.task')}</dt><dd>{taskLabel(config?.task ?? task)}</dd>
           <dt>{t('tasks.model')}</dt><dd>{uploadedName(config?.model) ?? message(models.data.find((entry) => entry.key === config?.model.key)?.display_name ?? config?.model.key)}</dd>
-          <dt>{t('form.device')}</dt><dd>{config?.execution?.device}</dd>
+          <dt>{t('form.device')}</dt><dd>{deviceSpec(config?.execution)}</dd>
           {displayLeastSquares && <><dt>{t('paMethod.label')}</dt><dd>{t(config?.model.key === 'ilc_dpd' ? 'ilc.title' : 'tasks.fit')}</dd></>}
           {!displayLeastSquares && (config?.task === 'train_pa' || config?.task === 'train_dpd') && <>
             <dt>{t('form.epochs')}</dt><dd>{config?.training?.epochs}</dd>

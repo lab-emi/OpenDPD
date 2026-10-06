@@ -1,5 +1,16 @@
 # What's new
 
+## 2.3.1: Select individual local GPUs
+
+PA and DPD Training and Testing now list each detected NVIDIA GPU by index and
+name. Select `cuda:0`, `cuda:1`, or another available card per run. Jobs on
+different local GPUs run concurrently; jobs on the same card keep their queue.
+Validation rejects unavailable indices, and run records and reports identify
+the selected GPU. Existing JSON configurations remain compatible.
+
+[GPU selection guide](tutorials/gui-quickstart.md#select-a-gpu-on-your-computer) ·
+[2.3.1 release notes](releases/2.3.1.md)
+
 ## 2.3.0: DPD Arena on APA_200MHz_b
 
 DPD Arena compares DPD configurations through one frozen TRes-GRU PA on the **APA_200MHz_b** measured dataset:

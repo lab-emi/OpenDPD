@@ -110,6 +110,9 @@ def test_private_gpu_lease_stream_replay_and_cross_tenant_cancel(tmp_path, monke
         cfg["execution"]["device"] = "cuda"
         response = client.post("/api/v1/runs", json={"config": cfg}, headers=auth[0])
         assert response.status_code == 201, response.text
+        assert response.json()["device"] == "cuda:0"
+        invalid = {**cfg, "execution": {**cfg["execution"], "device_index": 1}}
+        assert client.post("/api/v1/runs", json={"config": invalid}, headers=auth[0]).status_code == 422
         rid = response.json()["run_id"]
         job = eventually(lambda: client.post("/_gpu/poll", json={"name": "CUDA test device"}, headers=private).json()["job"])
         lease = {**private, "X-OpenDPD-Lease": job["lease"]}

@@ -4042,10 +4042,19 @@ export interface components {
             detected: boolean;
             /** Device */
             device: string;
+            /** Instances */
+            instances?: components["schemas"]["DeviceInstance"][];
             /** Name */
             name?: string | null;
             /** Tested Models */
             tested_models?: string[];
+        };
+        /** DeviceInstance */
+        DeviceInstance: {
+            /** Index */
+            index: number;
+            /** Name */
+            name: string;
         };
         /** DiagnosticItem */
         DiagnosticItem: {
@@ -4243,6 +4252,7 @@ export interface components {
             device: "cpu" | "cuda" | "mps";
             /**
              * Device Index
+             * @description Logical CUDA device index, as visible to the Studio process.
              * @default 0
              */
             device_index: number;
@@ -6869,7 +6879,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.3.0
+             * @default 2.3.1
              */
             version: string;
         };

@@ -284,7 +284,8 @@ class Supervisor:
 
     @staticmethod
     def _device_key(record: RunRecord) -> str:
-        return record.device or "cpu"
+        # Older runs recorded only the accelerator; CUDA's default is logical GPU 0.
+        return "cuda:0" if record.device == "cuda" else record.device or "cpu"
 
     def _spawn(self, record: RunRecord) -> None:
         run_dir = self.ws.run_dir(record.run_id)

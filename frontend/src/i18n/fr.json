@@ -763,7 +763,7 @@
   "terminal.readOnly": "Sortie en lecture seule. Utilisez « Arrêter l’expérience » pour arrêter cette exécution.",
   "logs.refresh": "Actualiser la sortie",
   "run.reconnect": "Resynchroniser l’expérience",
-  "run.gpuQueue": "Le GPU partagé exécute une expérience à la fois. Votre expérience est en attente ; vous pouvez quitter cette page et y revenir.",
+  "run.gpuQueue": "Le GPU sélectionné exécute une expérience à la fois. Votre expérience est en attente ; vous pouvez quitter cette page et y revenir.",
   "chart.controls.touch": "Deux doigts : zoomer et déplacer. Un doigt : faire défiler la page.",
   "datasets.upload.limit": "CSV UTF-8 uniquement : 25 MiB et 1 000 000 de paires maximum.",
   "datasets.upload.checking": "Vérification du type de fichier et de chaque ligne CSV avant aperçu…",

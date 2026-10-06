@@ -763,7 +763,7 @@
   "terminal.readOnly": "Read-only output. Use Stop experiment to terminate this run.",
   "logs.refresh": "Refresh output",
   "run.reconnect": "Resync experiment",
-  "run.gpuQueue": "The shared GPU runs one experiment at a time. Your experiment is queued; you can leave this page and return to it.",
+  "run.gpuQueue": "The selected GPU runs one experiment at a time. Your experiment is queued; you can leave this page and return to it.",
   "chart.controls.touch": "Two fingers: zoom and pan. One finger: scroll the page.",
   "datasets.upload.limit": "CSV only: UTF-8, at most 25 MiB and 1,000,000 paired samples.",
   "datasets.upload.checking": "Validating file type and every CSV row before preview…",
