@@ -129,10 +129,12 @@ r = struct();
 r.default = acprValues(y, fs, struct());
 r.aligned = struct();
 r.pwelch = struct();
+r.enclosing_rule_replica = struct();
 for n = nperseg(:).'
     key = "n" + string(n);
     r.aligned.(key) = acprValues(y, fs, struct('nperseg', n));
     r.pwelch.(key) = pwelchValues(y, fs, n);
+    r.enclosing_rule_replica.(key) = pwelchValues(y, fs, n, true);
 end
 end
 
@@ -150,12 +152,20 @@ value = acpr(y);
 v = struct('left_dB', value(1), 'right_dB', value(2));
 end
 
-function v = pwelchValues(y, fs, nperseg)
-% Diagnostic: Signal Processing Toolbox Welch with the settings and the band rule of the OpenDPD profile
-% (bins whose centre frequency lies in [lo, hi), times the bin width).
+function v = pwelchValues(y, fs, nperseg, enclosing)
+% Diagnostic: Signal Processing Toolbox Welch with the settings of the OpenDPD profile. By default the band rule is
+% the profile's (bins whose centre frequency lies in [lo, hi), times the bin width). With ENCLOSING true the rule is
+% the one comm.ACPR's code applies: from the last bin at or below lo through the first bin at or above hi.
+if nargin < 4
+    enclosing = false;
+end
 [p, f] = pwelch(y, hann(nperseg, 'periodic'), nperseg / 2, nperseg, fs, 'centered', 'psd');
 width = fs / nperseg;
-band = @(lo, hi) sum(p(f >= lo & f < hi)) * width;
+if enclosing
+    band = @(lo, hi) sum(p(find(f <= lo, 1, 'last') : find(f >= hi, 1))) * width;
+else
+    band = @(lo, hi) sum(p(f >= lo & f < hi)) * width;
+end
 main = band(-9e6, 9e6);
 v = struct('left_dB', 10 * log10(band(-29e6, -11e6) / main), 'right_dB', 10 * log10(band(11e6, 29e6) / main));
 end

@@ -60,11 +60,11 @@ def fft_interpolate(x: np.ndarray, factor: int) -> np.ndarray:
     return np.fft.ifft(padded) * factor
 
 
-def capture(y: np.ndarray, fs: float, factor: int) -> np.ndarray:
+def capture(y: np.ndarray, fs: float, factor: int, cfo_hz: float = INJECTED_CFO_HZ) -> np.ndarray:
     """Start the capture SHIFT_SUBFRAMES into the waveform, then apply the complex gain and the frequency offset."""
     shifted = np.roll(y, -SHIFT_SUBFRAMES * SAMPLES_PER_SUBFRAME_30 * factor)
     n = np.arange(shifted.size)
-    return GAIN * shifted * np.exp(2j * math.pi * INJECTED_CFO_HZ / fs * n)
+    return GAIN * shifted * np.exp(2j * math.pi * cfo_hz / fs * n)
 
 
 def build_signals(work: Path) -> Dict[str, Any]:
@@ -91,9 +91,12 @@ def build_signals(work: Path) -> Dict[str, Any]:
     doubles["S7"] = doubles["S4"] + noise
     doubles["S8"] = memory_polynomial_pa(0.35 * up8)
     doubles["S9"] = capture(up4, fs122, 4)
+    doubles["S6b"] = capture(doubles["S4"], fs122, 4, CFO_AMENDED_HZ)       # amendment 1
+    doubles["S9b"] = capture(up4, fs122, 4, CFO_AMENDED_HZ)
 
-    rates = {"S0": fs30, "S8": fs245, **{k: fs122 for k in ("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S9")}}
-    inputs = {"S0": x30, "S8": up8, **{k: up4 for k in ("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S9")}}
+    at122 = ("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S9", "S6b", "S9b")
+    rates = {"S0": fs30, "S8": fs245, **{k: fs122 for k in at122}}
+    inputs = {"S0": x30, "S8": up8, **{k: up4 for k in at122}}
     nperseg = {k: [] if rates[k] < 58e6 else list(NPERSEG_245 if k == "S8" else NPERSEG_122) for k in doubles}
     signals = {}
     for name, y in doubles.items():
@@ -149,6 +152,21 @@ def opendpd_values(built: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def timing_peak_table() -> Dict[str, Any]:
+    """Amendment A1-3 (OpenDPD only): normalised timing peak against an injected static carrier offset."""
+    from opendpd.core.waveforms import ofdm
+    from opendpd.schemas.waveform import WaveformSpec
+
+    offsets = (0, 10, 30, 50, 100, 350, 1000)
+    table: Dict[str, Any] = {"offsets_hz": list(offsets)}
+    for subframes in (1, 10):
+        wf = ofdm.generate(WaveformSpec(seed=1, n_subframes=subframes))
+        n = np.arange(wf.x.size)
+        table[f"{subframes}_subframes"] = [
+            float(ofdm.synchronize(wf.x * np.exp(2j * math.pi * f / ofdm.FS * n), wf)[1]) for f in offsets]
+    return table
+
+
 # --- MATLAB side -------------------------------------------------------------------------------------------------
 
 def write_matlab_inputs(work: Path, built: Dict[str, Any], opendpd: Dict[str, Any]) -> Path:
@@ -161,7 +179,7 @@ def write_matlab_inputs(work: Path, built: Dict[str, Any], opendpd: Dict[str, An
         if sig["fs"] != 30.72e6:
             arrays[name + "_baseband"] = opendpd[name]["baseband"].reshape(-1, 1)
         description.append({"id": name, "sample_rate_hz": sig["fs"], "nperseg": sig["nperseg"],
-                            "toolbox_frequency_offset": name == "S6"})
+                            "toolbox_frequency_offset": name in ("S6", "S6b")})
     path = work / "signals.mat"
     savemat(path, arrays, do_compression=True)
     path.with_suffix(".json").write_text(json.dumps({"signals": description}, indent=2))
@@ -208,6 +226,10 @@ def compare(opendpd: Dict[str, Any], matlab: Dict[str, Any], built: Dict[str, An
                 key = f"n{nperseg}"
                 for side, label in (("left_dB", "ACLR_L"), ("right_dB", "ACLR_R")):
                     reference = orow["aclr"][str(nperseg)][side]
+                    replica = mrow["aclr"]["enclosing_rule_replica"][key][side]
+                    items.append(item("P2", f"{sid} {label} nperseg={nperseg} vs enclosing-rule replica of comm.ACPR aligned",
+                                      "diagnostic", mrow["aclr"]["aligned"][key][side], replica,
+                                      replica - mrow["aclr"]["aligned"][key][side], None, None))
                     for mode, values in (("comm.ACPR default", mrow["aclr"]["default"]),
                                          ("comm.ACPR aligned", mrow["aclr"]["aligned"][key]),
                                          ("pwelch (OpenDPD settings)", mrow["aclr"]["pwelch"][key])):
@@ -226,9 +248,10 @@ def compare(opendpd: Dict[str, Any], matlab: Dict[str, Any], built: Dict[str, An
         if refusal:
             for name_, budget in ((f"{sid} EVM_RMS (percent)", f"<= {BUDGET_EVM_PP} points"), (f"{sid} integer timing", "exact")):
                 items.append(item("P3", name_, "scored", None, None, None, budget, None, refusal))
-            if sid in ("S9",):
+            if sid.startswith("S9"):
                 for who in ("OpenDPD", "MATLAB"):
-                    items.append(item("P3", f"{sid} frequency offset, {who}", "scored", INJECTED_CFO_HZ, None, None,
+                    items.append(item("P3", f"{sid} frequency offset, {who}", "scored",
+                                      INJECTED_CFO_HZ if sid == "S9" else CFO_AMENDED_HZ, None, None,
                                       f"<= {BUDGET_CFO_HZ} Hz of the injected value", None, refusal))
             continue
         evm_m = mev["evm_rms_percent"]
@@ -343,6 +366,13 @@ def render(report: Dict[str, Any]) -> str:
     lines += table("P3", "", ["item", "kind", "OpenDPD", "MATLAB", "difference", "budget", "within"],
                    [[i["item"], i["kind"], fmt(i["opendpd"], 6), fmt(i["matlab"], 6), fmt(i["difference"], 4), i["budget"] or "—",
                      fmt(i["pass"])] for i in p3])
+    peak = report.get("timing_peak")
+    if peak:
+        lines += ["", "### A1-3 — timing peak against carrier offset (OpenDPD only)", ""]
+        lines += table("A1-3", "", ["waveform"] + [f"{f} Hz" for f in peak["offsets_hz"]],
+                       [[name.replace("_", " ")] + [f"{v:.3f}" for v in peak[name]]
+                        for name in ("1_subframes", "10_subframes")])
+        lines += ["", "The profile reports `missing_reference` below a peak of 0.3."]
     return "\n".join(lines) + "\n"
 
 
@@ -389,7 +419,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                               "nperseg": s["nperseg"]} for k, s in built["signals"].items()},
               "budgets": {"aclr_db": BUDGET_ACLR_DB, "evm_percentage_points": BUDGET_EVM_PP, "waveform_relative_rms": BUDGET_WAVEFORM,
                           "frequency_offset_hz": BUDGET_CFO_HZ},
-              "items": items, "verdict": verdict(items)}
+              "items": items, "verdict": verdict(items), "timing_peak": timing_peak_table()}
     print(render(report))
     if args.write_report:
         write_report(report, args.report_json, update_doc=not args.no_doc)
