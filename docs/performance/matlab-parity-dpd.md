@@ -1,6 +1,6 @@
 # OpenDPD ↔ MATLAB parity: the memory-polynomial DPD
 
-Status: **pre-registered, not run** (2026-10-09). The registration (rules, data, MathWorks configuration, budgets
+Status: **pre-registered; run 1 done — the memory-polynomial parity passes as registered** (2026-10-09). The registration (rules, data, MathWorks configuration, budgets
 and the scored/diagnostic split) is committed before any comparison script exists or is run. The commits that
 follow change only this status line, the run log and the Results section; they do not edit the registration. If
 the registration itself must change, that is a dated amendment appended below, never an edit in place.
@@ -168,7 +168,8 @@ below is generated from it. Exit status 1 means the parity did not pass as regis
 
 | run | date | change since the previous run | outcome |
 |---|---|---|---|
-| — | — | — | not run |
+| — | 2026-10-09 | plumbing checks on the first 60 000 samples of each record (`--smoke`; not the registered data, no report can be written from them) | no registered number. They showed that the service refuses a least-squares baseline as a DPD run's PA reference, which led to amendment 1 |
+| 1 | 2026-10-09 | none after amendment 1 | **21 of 21 scored items within budget.** Record: `matlab-parity-dpd.json` |
 
 ## Amendment 1 (2026-10-09, before run 1)
 
@@ -182,4 +183,126 @@ surrogate does not enter the coefficients that Q6 and D4 compare. No item, budge
 
 ## Results
 
-Not run yet.
+**Verdict: the registered memory-polynomial parity passes** — 21 of 21 scored items are within budget, with
+margins of several orders of magnitude (the largest scored difference relative to its budget is Q5, 2.5·10⁻⁸
+against 1·10⁻⁶, which is the float32 interface). Run on MATLAB R2026a Update 5 (Communications Toolbox 26.1),
+Linux. The working tree had uncommitted changes in documentation files under `Matlab/toolbox` only; no code
+under test, no script and no `.m` file was modified.
+
+What the scored items show:
+
+* **The two tools define the same polynomial.** `comm.DPD` with the true coefficients reproduces the
+  independently constructed input to 6·10⁻¹⁶ relative (Q3), in all four cases.
+* **Both estimators recover a known answer in the same layout.** From the constructed exact problem the MathWorks
+  estimator returns `c_true` with relative error at most 4.7·10⁻¹³ (Q1) and OpenDPD's fit at most 8.9·10⁻¹⁴
+  (Q2), including the cases whose unscaled condition number is 1.4·10⁵ and 3.1·10⁵. The layout is
+  `Coef = reshape(w, Q, K)` with `Degree = K` and `MemoryDepth = Q`; an asymmetric `c_true` rules out a
+  transposed or reordered layout agreeing by accident.
+* **On the plant data they give the same predistorter.** With the complete-memory rows and
+  `DesiredAmplitudeGaindB = 10·log10(G)`, the coefficient vectors agree to at most 3.9·10⁻¹³ (D1) and the
+  predistorter outputs to at most 4.8·10⁻¹³ relative (Q4).
+* **`comm.DPD` can run OpenDPD's coefficients.** Through the `PolynomialModel` module's float32 interface the
+  outputs differ by 2.5·10⁻⁸ relative (Q5), which is float32 rounding.
+* **The run service stores what the compute core computes.** The coefficients in the checkpoint of the SDK-trained
+  `mp_ls` DPD run are identical to the fit recomputed from the run's stored train split (Q6: difference 0).
+
+What the diagnostics add (no budget, so no verdict, but they are the practical content for a MATLAB user):
+
+* **The gain setting must be `10·log10(G)`.** Reading `DesiredAmplitudeGaindB` as `20·log10(G)` (D3) gives
+  coefficients that differ from OpenDPD's by 83 % to 97 %. The estimator divides `PA_output` by
+  `10^(DesiredAmplitudeGaindB/10)`; to reproduce OpenDPD's `G = max|y| / max|x|` the property is `10·log10(G)`.
+* **An OpenDPD run and the MathWorks estimator differ by the zero-filled rows, and by nothing else we could
+  find.** OpenDPD includes the first `Q-1` rows of every `nperseg` segment, with delays filled by zeros, because
+  the model is evaluated with exactly that state reset; MathWorks uses only rows with complete memory (D2). With
+  `nperseg` = 2048 the coefficient vectors differ by 0.6 % and 0.9 % for `K = 5`, `Q = 3`, and by 11 % and 19 %
+  for `K = 7`, `Q = 5`, where the basis is worse conditioned; the predistorter outputs on the same signal differ
+  by 0.12 % to 0.70 % relative (0.03 % to 0.54 % when the segmented coefficients are applied continuously). The
+  residual of the segmented fit on the complete-memory rows is at most 0.11 dB worse than that of the
+  complete-memory fit (below 0.01 dB for `K = 5`, `Q = 3` on S5). Through the product path (D4, `K = 5`, `Q = 3`) the MathWorks estimator differs from the checkpoint by
+  0.624 %, and the segmented fit differs from the complete-memory fit by 0.623 % on the same split: the difference
+  is accounted for by the zero-filled rows.
+
+Limits of this evidence:
+
+* One MATLAB release on one platform; a synthetic memory-polynomial amplifier; degrees up to 7 and memory depths
+  up to 5, in a conditioning range of about 4·10³ to 3·10⁵. Nothing here says how the two behave on a rank-deficient
+  or much worse conditioned basis, where OpenDPD's column scaling and `rcond` cutoff and MathWorks' unscaled QR
+  solve would be expected to diverge.
+* The scored items of the OpenDPD side call the compute-core functions the run service calls. Q6 ties them to one
+  SDK-trained run; it does not test every model configuration the service accepts.
+* Only the memory polynomial is compared. OpenDPD's GMP and the cross-term memory polynomial of MathWorks have
+  different bases; the GRU family has no `comm.*` counterpart.
+
+What this run does **not** do: it does not change how `mp_ls` is fitted. Whether to offer a complete-memory-rows
+option for MATLAB-comparable coefficients is a decision for the maintainers; it would not change the frozen
+Arena baselines, which are fitted as they are.
+
+Reproduce: `python scripts/matlab_parity_dpd.py --work /tmp/parity-dpd --matlab <path to matlab> --write-report`
+(about two minutes; needs the Communications Toolbox and an OpenDPD checkout). Exit status 1 means the parity did
+not pass as registered.
+
+<!-- parity-dpd-results:begin -->
+Run 1 — 2026-10-09. MATLAB 26.1.0.3346908 (R2026a) Update 5; Communications Toolbox 26.1. Python 3.13.14, NumPy 2.4.4, SciPy 1.18.0, PyTorch 2.13.0+cu132. OpenDPD commit `cc5b90792613` with local modifications.
+
+**Scored items: 21 of 21 within budget, 0 outside budget, 0 not evaluable — the registered memory-polynomial parity passes.**
+
+### Scored items
+
+| id | item | difference | budget | within |
+|---|---|---|---|---|
+| Q1 | C1 (S4, K=5, Q=3): MATLAB estimator on the exact problem vs c_true | 1.779e-14 | 1e-06 | yes |
+| Q2 | C1 (S4, K=5, Q=3): OpenDPD fit on the exact problem vs c_true | 5.46e-15 | 1e-06 | yes |
+| Q3 | C1 (S4, K=5, Q=3): comm.DPD(c_true) on y/G vs the constructed input | 2.263e-16 | 1e-09 | yes |
+| Q4 | C1 (S4, K=5, Q=3): predistorter outputs, each tool with its own coefficients | 1.554e-14 | 1e-06 | yes |
+| Q5 | C1 (S4, K=5, Q=3): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32) | 2.535e-08 | 1e-06 | yes |
+| Q1 | C2 (S4, K=7, Q=5): MATLAB estimator on the exact problem vs c_true | 4.745e-13 | 1e-06 | yes |
+| Q2 | C2 (S4, K=7, Q=5): OpenDPD fit on the exact problem vs c_true | 8.316e-14 | 1e-06 | yes |
+| Q3 | C2 (S4, K=7, Q=5): comm.DPD(c_true) on y/G vs the constructed input | 3.179e-16 | 1e-09 | yes |
+| Q4 | C2 (S4, K=7, Q=5): predistorter outputs, each tool with its own coefficients | 2.956e-14 | 1e-06 | yes |
+| Q5 | C2 (S4, K=7, Q=5): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32) | 2.537e-08 | 1e-06 | yes |
+| Q1 | C3 (S5, K=5, Q=3): MATLAB estimator on the exact problem vs c_true | 3.164e-14 | 1e-06 | yes |
+| Q2 | C3 (S5, K=5, Q=3): OpenDPD fit on the exact problem vs c_true | 1.211e-14 | 1e-06 | yes |
+| Q3 | C3 (S5, K=5, Q=3): comm.DPD(c_true) on y/G vs the constructed input | 3.335e-16 | 1e-09 | yes |
+| Q4 | C3 (S5, K=5, Q=3): predistorter outputs, each tool with its own coefficients | 2.556e-14 | 1e-06 | yes |
+| Q5 | C3 (S5, K=5, Q=3): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32) | 2.531e-08 | 1e-06 | yes |
+| Q1 | C4 (S5, K=7, Q=5): MATLAB estimator on the exact problem vs c_true | 1.246e-13 | 1e-06 | yes |
+| Q2 | C4 (S5, K=7, Q=5): OpenDPD fit on the exact problem vs c_true | 8.935e-14 | 1e-06 | yes |
+| Q3 | C4 (S5, K=7, Q=5): comm.DPD(c_true) on y/G vs the constructed input | 5.918e-16 | 1e-09 | yes |
+| Q4 | C4 (S5, K=7, Q=5): predistorter outputs, each tool with its own coefficients | 4.76e-13 | 1e-06 | yes |
+| Q5 | C4 (S5, K=7, Q=5): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32) | 2.537e-08 | 1e-06 | yes |
+| Q6 | C1 data through the SDK: DPD run checkpoint vs the segmented fit recomputed from the run's train split | 0 | 1e-06 | yes |
+
+The difference of Q1–Q6 is relative: `‖a − b‖ / ‖b‖` over the flattened complex vectors.
+
+### Diagnostics (no budget)
+
+| id | item | value | note |
+|---|---|---|---|
+| D1 | C1 (S4, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows) | 9.527e-15 | unscaled condition number 4.27e+03; OpenDPD fit residual -44.69 dB; rank 15 |
+| D2 | C1 (S4, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048) | 0.005697 | residual on complete-memory rows (dB): MATLAB -44.69, OpenDPD complete-memory -44.69, OpenDPD segmented -44.68 |
+| D2 | C1 (S4, K=5, Q=3): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment | 0.001221 | applied continuously instead: 0.000314 |
+| D3 | C1 (S4, K=5, Q=3): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD | 0.8269 | — |
+| D1 | C2 (S4, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows) | 1.702e-13 | unscaled condition number 1.37e+05; OpenDPD fit residual -47.96 dB; rank 35 |
+| D2 | C2 (S4, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048) | 0.111 | residual on complete-memory rows (dB): MATLAB -47.96, OpenDPD complete-memory -47.96, OpenDPD segmented -47.87 |
+| D2 | C2 (S4, K=7, Q=5): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment | 0.001357 | applied continuously instead: 0.000774 |
+| D3 | C2 (S4, K=7, Q=5): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD | 0.93 | — |
+| D1 | C3 (S5, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows) | 1.494e-14 | unscaled condition number 6.65e+03; OpenDPD fit residual -27.11 dB; rank 15 |
+| D2 | C3 (S5, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048) | 0.008705 | residual on complete-memory rows (dB): MATLAB -27.11, OpenDPD complete-memory -27.11, OpenDPD segmented -27.11 |
+| D2 | C3 (S5, K=5, Q=3): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment | 0.002114 | applied continuously instead: 0.000776 |
+| D3 | C3 (S5, K=5, Q=3): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD | 0.9166 | — |
+| D1 | C4 (S5, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows) | 3.925e-13 | unscaled condition number 3.08e+05; OpenDPD fit residual -28.00 dB; rank 35 |
+| D2 | C4 (S5, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048) | 0.1852 | residual on complete-memory rows (dB): MATLAB -28.00, OpenDPD complete-memory -28.00, OpenDPD segmented -27.89 |
+| D2 | C4 (S5, K=7, Q=5): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment | 0.007003 | applied continuously instead: 0.00541 |
+| D3 | C4 (S5, K=7, Q=5): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD | 0.9712 | — |
+| D4 | MATLAB estimator on the run's train split vs the checkpoint | 0.00624 | — |
+| D4 | segmented fit minus complete-memory fit on the same split (what the zero-filled rows change) | 0.006233 | — |
+
+### Cases
+
+| case | record | K | Q | G | unscaled condition number | OpenDPD fit residual (dB) | rank |
+|---|---|---|---|---|---|---|---|
+| C1 | S4 | 5 | 3 | 0.567423 | 4.27e+03 | -44.69 | 15 |
+| C2 | S4 | 7 | 5 | 0.567423 | 1.37e+05 | -47.96 | 35 |
+| C3 | S5 | 5 | 3 | 0.403027 | 6.65e+03 | -27.11 | 15 |
+| C4 | S5 | 7 | 5 | 0.403027 | 3.08e+05 | -28.00 | 35 |
+<!-- parity-dpd-results:end -->
