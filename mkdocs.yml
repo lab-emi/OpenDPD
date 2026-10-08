@@ -148,6 +148,7 @@ not_in_nav: |
   performance/arena-*.md
   performance/pa-identification-comparison.md
   performance/matlab-parity.md
+  performance/matlab-parity-dpd.md
   architecture/**
   community/**
   design/**
