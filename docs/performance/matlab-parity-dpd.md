@@ -170,6 +170,16 @@ below is generated from it. Exit status 1 means the parity did not pass as regis
 |---|---|---|---|
 | — | — | — | not run |
 
+## Amendment 1 (2026-10-09, before run 1)
+
+The registration of Q6 says that an `mp_ls` PA run and an `mp_ls` DPD run are trained. The service refuses a
+least-squares baseline as the PA reference of a DPD run ("a PA-modeling reference, not a DPD surrogate"), which a
+plumbing check on truncated data (60 000 samples per record, not the registered data, no report written) showed
+before any registered run. The harness therefore trains a small gradient-trained GRU surrogate (`hidden_size` 6, one
+epoch, CPU) as the DPD run's PA reference; the DPD run is the `mp_ls` run with `K = 5`, `Q = 3` as registered. The
+platform identifies the postdistorter on measured data and uses the surrogate only for evaluation, so the
+surrogate does not enter the coefficients that Q6 and D4 compare. No item, budget or case changes.
+
 ## Results
 
 Not run yet.
