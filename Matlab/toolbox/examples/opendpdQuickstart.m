@@ -23,8 +23,9 @@ ds = opendpd.importIQ(p, x, y, SampleRate=fs, Bandwidth=bw, ...
 training = struct('epochs', 2, 'frame_length', 32, 'frame_stride', 32, ...
     'batch_size', 16, 'batch_size_eval', 16);
 parameters = struct('hidden_size', 8);
-pa = opendpd.wait(opendpd.trainPA(p, ds, ModelParameters=parameters, Training=training));
-dpd = opendpd.wait(opendpd.trainDPD(p, ds, PA=pa, ModelParameters=parameters, Training=training));
+% Device="cpu" keeps this tiny run quick and reproducible; the default Device="auto" uses a detected GPU.
+pa = opendpd.wait(opendpd.trainPA(p, ds, ModelParameters=parameters, Training=training, Device="cpu"));
+dpd = opendpd.wait(opendpd.trainDPD(p, ds, PA=pa, ModelParameters=parameters, Training=training, Device="cpu"));
 
 % Manifest boundaries are zero-based, half-open; MATLAB indices are one-based.
 range = ds.split.boundaries.test;

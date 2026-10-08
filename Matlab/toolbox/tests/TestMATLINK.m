@@ -7,6 +7,15 @@ classdef TestMATLINK < matlab.unittest.TestCase
         function environment(testCase)
             executable = string(getenv('OPENDPD_MATLAB_PYTHON'));
             testCase.assertNotEmpty(char(executable));
+            % opendpd.studio remembers its workspace, Python and source in the user's MATLAB preferences. The tests
+            % point those at temporary locations, so put the developer's own values back when the class is done.
+            group = 'OpenDPDToolbox';
+            existed = ispref(group);
+            saved = struct();
+            if existed
+                saved = getpref(group);
+            end
+            testCase.addTeardown(@() restorePreferences(group, existed, saved));
             opendpd.setup(PythonExecutable=executable);
             testCase.Project = opendpd.openProject(string(tempname) + " MATLINK workspace");
             testCase.addTeardown(@() opendpd.closeProject(testCase.Project, StopService=true));
@@ -32,6 +41,31 @@ classdef TestMATLINK < matlab.unittest.TestCase
             testCase.verifyEqual(transfer.status, 'failed');
             info = p.Backend.studio_info();
             testCase.verifyTrue(logical(info.get('ready')) || ~isempty(info.get('problems')));
+        end
+
+        function vanishedVariableIsNeverEvaluatedAsAFunction(testCase)
+            % The browser queued an import of variables that existed in the last heartbeat. One is cleared before
+            % MATLAB runs the request, and its name is also a function: evalin must not call that function.
+            link = opendpd.studio(testCase.Project, OpenBrowser=false);
+            testCase.addTeardown(@() delete(link));
+            n = 512;
+            assignin('base', 'pi', complex(single(randn(n, 1)), single(randn(n, 1))) / 8);   % shadows the function
+            assignin('base', 'opendpdPaOutput', complex(single(randn(n, 1)), single(randn(n, 1))) / 8);
+            testCase.addTeardown(@() evalin('base', 'clear pi opendpdPaOutput'));
+            link.poll();
+            [~, suffix] = fileparts(tempname);
+            payload = struct('input', 'pi', 'output', 'opendpdPaOutput', 'name', ['gone-' suffix(1:10)], ...
+                'sample_rate_mhz', 80, 'bandwidth_mhz', 20, 'segment_samples', 128, 'origin', 'synthetic');
+            request = testCase.request(link, 'import_iq', payload, 'vanished-once');
+            evalin('base', 'clear pi');
+            testCase.assertFalse(any(strcmp(evalin('base', 'who'), 'pi')), 'The variable pi must be gone; the function remains.');
+            link.poll();
+            transfer = testCase.transfer(request.request_id);
+            testCase.verifyEqual(transfer.status, 'failed');
+            testCase.verifySubstring(transfer.error, 'no longer in the MATLAB base workspace');
+            datasets = testCase.api('GET', '/datasets');
+            testCase.verifyTrue(isempty(datasets) || ~any(strcmp({datasets.dataset_id}, payload.name)), ...
+                'No dataset may be created.');
         end
 
         function signalsAndAutomaticReportDelivery(testCase)
@@ -64,7 +98,7 @@ classdef TestMATLINK < matlab.unittest.TestCase
             training = struct('epochs', 2, 'frame_length', 32, 'frame_stride', 32, ...
                 'batch_size', 16, 'batch_size_eval', 16);
             job = opendpd.trainPA(testCase.Project, string(dataset), ...
-                ModelParameters=struct('hidden_size', 4), Training=training);
+                ModelParameters=struct('hidden_size', 4), Training=training, Device="cpu");
             sentinel = matlab.lang.makeValidName(['pa_gru_' dataset]);
             testCase.assertFalse(any(strcmp(evalin('base', 'who'), sentinel)));
             assignin('base', sentinel, single(123));
@@ -219,4 +253,16 @@ classdef TestMATLINK < matlab.unittest.TestCase
             value = state.transfers(strcmp({state.transfers.request_id}, id));
         end
     end
+end
+
+function restorePreferences(group, existed, saved)
+if ispref(group)
+    rmpref(group);
+end
+if existed
+    names = fieldnames(saved);
+    for k = 1:numel(names)
+        setpref(group, names{k}, saved.(names{k}));
+    end
+end
 end

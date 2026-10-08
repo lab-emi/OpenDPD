@@ -1,4 +1,5 @@
-% OpenDPD Toolbox for MATLAB - development preview for OpenDPD 2.4.
+% OpenDPD Toolbox for MATLAB - for the unreleased OpenDPD 2.4.0.
+% Version 2.4.0
 %
 % GUI:         studio, disconnect, help, openStudio (also Apps > OpenDPDStudio).
 % Environment: setup, doctor, openProject, closeProject.

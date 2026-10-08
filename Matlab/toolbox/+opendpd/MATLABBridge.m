@@ -182,13 +182,15 @@ classdef MATLABBridge < handle
                     if strcmp(xName, yName)
                         error('opendpd:SignalPair', 'Choose different PA input and output variables.');
                     end
-                    x = evalin('base', xName);
-                    y = evalin('base', yName);
+                    x = obj.baseVariable(xName);
+                    y = obj.baseVariable(yName);
                     sampleRate = obj.positive(payload, 'sample_rate_mhz') * 1e6;
                     bandwidth = obj.positive(payload, 'bandwidth_mhz') * 1e6;
+                    segment = obj.positive(payload, 'segment_samples');
                     name = obj.field(payload, 'name', '');
                     dataset = opendpd.importIQ(obj.Project, x, y, SampleRate=sampleRate, ...
-                        Bandwidth=bandwidth, Name=string(name), Origin=string(obj.field(payload, 'origin', 'unknown')));
+                        Bandwidth=bandwidth, SegmentSamples=segment, Name=string(name), ...
+                        Origin=string(obj.field(payload, 'origin', 'unknown')));
                     result = struct('dataset_id', dataset.dataset_id, 'display_name', dataset.display_name, ...
                         'n_samples', dataset.n_samples);
                 case "import_result"
@@ -298,11 +300,21 @@ classdef MATLABBridge < handle
             assignin('base', inputName, x);
             assignin('base', outputName, y);
             result = struct('input', inputName, 'output', outputName, 'sample_rate_mhz', 80, ...
-                'bandwidth_mhz', 20, 'origin', 'synthetic', 'n_samples', n, ...
+                'bandwidth_mhz', 20, 'segment_samples', 256, 'origin', 'synthetic', 'n_samples', n, ...
                 'name', ['matlab-demo-' char(datetime('now', 'Format', 'yyyyMMdd-HHmmssSSS'))]);
         end
     end
     methods (Static, Access = private)
+        function value = baseVariable(name)
+            % evalin on a name that is not a workspace variable would call a function of that name, so the
+            % variable must exist now, not only in the last heartbeat that the browser saw.
+            if ~ismember(name, evalin('base', 'who'))
+                error('opendpd:VariableMissing', ...
+                    'Variable %s is no longer in the MATLAB base workspace. Refresh MATLINK and select it again.', name);
+            end
+            value = evalin('base', name);
+        end
+
         function value = field(payload, name, fallback)
             if ~isfield(payload, name) || isempty(payload.(name)), value = fallback; return; end
             value = payload.(name);

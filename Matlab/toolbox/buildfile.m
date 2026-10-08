@@ -23,7 +23,7 @@ if ~isfolder(out)
 end
 opts = matlab.addons.toolbox.ToolboxOptions(root, 'a58c7792-3536-49ae-9663-04fb04bcc350');
 opts.ToolboxName = 'OpenDPD Toolbox for MATLAB';
-opts.ToolboxVersion = '0.4.0';
+opts.ToolboxVersion = '2.4.0';      % follows the OpenDPD release it ships with
 opts.AuthorName = 'OpenDPD contributors';
 opts.AuthorCompany = 'Lab of Efficient Machine Intelligence, TU Delft';
 opts.Summary = 'OpenDPD Studio with MATLINK: MATLAB signals and reports in one web GUI.';
@@ -42,6 +42,6 @@ if isprop(opts, 'Readme')
 elseif isprop(opts, 'Description')
     opts.Description = fileread(fullfile(root, 'README.md'));
 end
-opts.OutputFile = fullfile(out, 'OpenDPD-0.4.0.mltbx');
+opts.OutputFile = fullfile(out, ['OpenDPD-' char(opts.ToolboxVersion) '.mltbx']);
 matlab.addons.toolbox.packageToolbox(opts);
 end
