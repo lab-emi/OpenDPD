@@ -1,8 +1,9 @@
 # OpenDPD ↔ MATLAB parity
 
-Status: **pre-registered, not run** (2026-10-08). This section was committed before any comparison script
-existed or was run. Results are added by a later commit under "Results"; nothing above that heading is edited
-by it.
+Status: **pre-registered, not run** (2026-10-08). The registration (rules, signals, procedures, budgets and
+the scored/diagnostic split) was committed before any comparison script existed or was run. The commits that
+follow change only this status line, the run log and the Results section; they do not edit the registration. If
+the registration itself must change, that is a dated amendment appended below, never an edit in place.
 
 OpenDPD's EVM and ACLR numbers are only as useful to MATLAB users as they are checkable against the tools they
 already trust. This document fixes **what is compared, with which MathWorks functions and which error budgets,
