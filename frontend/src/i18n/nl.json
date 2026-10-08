@@ -1773,5 +1773,6 @@
   "matlink.transfer.import_dataset": "Studio signals → MATLAB",
   "matlink.experimentReady": "Signal selected. Sample rate, bandwidth and spectral segment length come from this dataset. Training defaults come from the selected recipe and detected device. Review before starting.",
   "matlink.collectionReady": "All {n} captures are saved in MATLAB. This experiment starts with the first capture; select another dataset to train a different capture.",
-  "matlink.generateExperiment": "Generate & prepare experiment"
+  "matlink.generateExperiment": "Generate & prepare experiment",
+  "matlink.segmentHelp": "Samples per PSD-segment. Bij de evaluatie wordt de toestand van het model ook met dit interval gereset. Door Studio gegenereerde signalen gebruiken 512–4096."
 }

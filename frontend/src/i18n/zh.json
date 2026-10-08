@@ -1773,5 +1773,6 @@
   "matlink.transfer.import_dataset": "Studio 信号 → MATLAB",
   "matlink.experimentReady": "信号已自动选中。采样率、带宽及频谱分段长度来自数据集；训练默认值来自所选配方及检测到的设备。确认后即可启动实验。",
   "matlink.collectionReady": "全部 {n} 组信号已保存到 MATLAB。此实验默认使用第一组，可切换数据集训练其他信号。",
-  "matlink.generateExperiment": "生成信号并准备实验"
+  "matlink.generateExperiment": "生成信号并准备实验",
+  "matlink.segmentHelp": "每个 PSD 段的采样点数。评估时模型状态也按此间隔重置。Studio 生成的信号使用 512–4096。"
 }

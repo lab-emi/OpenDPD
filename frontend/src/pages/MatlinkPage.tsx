@@ -51,6 +51,7 @@ function LocalMatlinkPage() {
   const [name, setName] = useState('')
   const [sampleRate, setSampleRate] = useState('')
   const [bandwidth, setBandwidth] = useState('')
+  const [segment, setSegment] = useState('')
   const [origin, setOrigin] = useState('unknown')
   const [importRequest, setImportRequest] = useState('')
   const handled = useRef(new Set<string>())
@@ -64,7 +65,8 @@ function LocalMatlinkPage() {
   const inputVar = variables.find(item => item.name === input)
   const outputVar = variables.find(item => item.name === output)
   const pairValid = !!inputVar && !!outputVar && input !== output && inputVar.n_samples === outputVar.n_samples
-  const metadataValid = (name.trim() === '' || /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(name.trim())) && Number.isFinite(Number(sampleRate)) && Number(sampleRate) > 0 && Number.isFinite(Number(bandwidth)) && Number(bandwidth) > 0 && Number(bandwidth) <= Number(sampleRate)
+  const segmentValid = /^\d+$/.test(segment) && Number(segment) >= 2 && Number(segment) <= 1_048_576
+  const metadataValid = segmentValid && (name.trim() === '' || /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(name.trim())) && Number.isFinite(Number(sampleRate)) && Number(sampleRate) > 0 && Number.isFinite(Number(bandwidth)) && Number(bandwidth) > 0 && Number(bandwidth) <= Number(sampleRate)
   const latestImport = transfers.find(item => item.action === 'import_iq' && item.status === 'succeeded' && item.result?.dataset_id)
   const uncertain = request.isError && (!(request.error instanceof ApiError) || request.error.status >= 500)
   const actionPending = (action: MatlinkAction) => request.isPending || transfers.some(item => item.action === action && pending(item))
@@ -153,15 +155,16 @@ function LocalMatlinkPage() {
               {variables.map(item => <MenuItem value={item.name} key={item.name}>{item.name} · {item.size.join(' × ')} · {item.class_name}{item.complex ? ' · complex' : ''}</MenuItem>)}
             </TextField>
           </Grid>)}
-          <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('matlink.datasetName')} helperText={t('matlink.datasetNameHelp')} slotProps={{ htmlInput: { maxLength: 128 } }} value={name} disabled={!connected} onChange={event => setName(event.target.value)} /></Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.5 }}><TextField fullWidth label={t('matlink.sampleRate')} type="number" value={sampleRate} disabled={!connected} onChange={event => setSampleRate(event.target.value)} slotProps={{ htmlInput: { min: 0, step: 'any' } }} /></Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.5 }}><TextField fullWidth label={t('matlink.bandwidth')} type="number" value={bandwidth} disabled={!connected} onChange={event => setBandwidth(event.target.value)} slotProps={{ htmlInput: { min: 0, step: 'any' } }} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><TextField fullWidth select label={t('matlink.origin')} value={origin} disabled={!connected} onChange={event => setOrigin(event.target.value)}><MenuItem value="unknown">{t('matlink.unknown')}</MenuItem><MenuItem value="measured">{t('matlink.measured')}</MenuItem><MenuItem value="synthetic">{t('matlink.synthetic')}</MenuItem></TextField></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><TextField fullWidth label={t('matlink.datasetName')} helperText={t('matlink.datasetNameHelp')} slotProps={{ htmlInput: { maxLength: 128 } }} value={name} disabled={!connected} onChange={event => setName(event.target.value)} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}><TextField fullWidth label={t('matlink.sampleRate')} type="number" value={sampleRate} disabled={!connected} onChange={event => setSampleRate(event.target.value)} slotProps={{ htmlInput: { min: 0, step: 'any' } }} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}><TextField fullWidth label={t('matlink.bandwidth')} type="number" value={bandwidth} disabled={!connected} onChange={event => setBandwidth(event.target.value)} slotProps={{ htmlInput: { min: 0, step: 'any' } }} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2.5 }}><TextField fullWidth label={t('signal.nperseg')} type="number" required value={segment} disabled={!connected} onChange={event => setSegment(event.target.value)} error={segment !== '' && !segmentValid} helperText={t('matlink.segmentHelp')} slotProps={{ htmlInput: { min: 2, max: 1048576, step: 1 } }} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2.5 }}><TextField fullWidth select label={t('matlink.origin')} value={origin} disabled={!connected} onChange={event => setOrigin(event.target.value)}><MenuItem value="unknown">{t('matlink.unknown')}</MenuItem><MenuItem value="measured">{t('matlink.measured')}</MenuItem><MenuItem value="synthetic">{t('matlink.synthetic')}</MenuItem></TextField></Grid>
         </Grid>
         {inputVar && outputVar && !pairValid && <Alert severity="warning">{t('matlink.mismatch')}</Alert>}
         {pairValid && !metadataValid && <Typography variant="body2" color="text.secondary">{t('matlink.metadataInvalid')}</Typography>}
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-          <Button variant="contained" startIcon={<ArrowDownwardIcon />} disabled={!connected || !pairValid || !metadataValid || actionPending('import_iq')} onClick={() => send('import_iq', { input, output, name: name.trim(), sample_rate_mhz: Number(sampleRate), bandwidth_mhz: Number(bandwidth), origin })}>{t(actionPending('import_iq') && !request.isPending ? 'matlink.importBusy' : 'matlink.import')}</Button>
+          <Button variant="contained" startIcon={<ArrowDownwardIcon />} disabled={!connected || !pairValid || !metadataValid || actionPending('import_iq')} onClick={() => send('import_iq', { input, output, name: name.trim(), sample_rate_mhz: Number(sampleRate), bandwidth_mhz: Number(bandwidth), segment_samples: Number(segment), origin })}>{t(actionPending('import_iq') && !request.isPending ? 'matlink.importBusy' : 'matlink.import')}</Button>
           <Typography color="text.secondary" variant="caption">{t('matlink.signalHint')}</Typography>
         </Stack>
         </>}
