@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="guide.css"></head><body>
 <a class="skip" href="#content">Skip to content</a>
 <header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
-<span class="version">0.4.0 PREVIEW</span></header>
+<span class="version">2.4.0</span></header>
 <nav aria-label="Guide"><a href="index.html">Get started</a>
 <a href="gui.html" aria-current="page">MATLINK walkthrough</a>
 <a href="workflow.html">Script workflow</a>
@@ -82,9 +82,11 @@ The script API uses <strong>Hz</strong>. An optional unique dataset name can be 
 <p>Click <strong>Use these variables in an experiment</strong>. After MATLAB validates and
 imports the pair, Studio opens experiment setup with the imported data selected.
 Import preserves sample order and amplitude, stores float32 I/Q, and performs
-no normalization or alignment. This path uses 256-sample evaluation segments,
-256-sample split guards and one subchannel; use <code>opendpd.importIQ</code> for other
-settings. Invalid values, unequal lengths and duplicate IDs are reported.</p>
+no normalization or alignment. You enter the PSD segment length (<code>nperseg</code>): the Welch
+segment of every spectral metric and the interval at which evaluation restarts a model's
+state. It has no default because it depends on your signal; Studio's generated signals use
+512-4096. This path uses 256-sample split guards and one subchannel; use <code>opendpd.importIQ</code>
+for other settings. Invalid values, unequal lengths and duplicate IDs are reported.</p>
 <h2 id="3-train-in-studio">3. Train in Studio</h2>
 <p>Use Studio's normal experiment flow. PA training creates a surrogate; DPD
 training references a successful PA experiment. Model choices, configuration,
@@ -138,5 +140,5 @@ opendpd.closeProject(p, StopService=true);
 </code></pre>
 <p>This stops the workspace's service and jobs. Stop a service launched through
 Studio's own launcher using that launcher.</p></main>
-<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
 </body></html>

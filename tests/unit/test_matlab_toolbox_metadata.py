@@ -63,3 +63,46 @@ def test_segment_length_has_no_default_anywhere():
         assert "SegmentSamples (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.SegmentSamples, 2)} =" not in text
     sdk = (ROOT / "opendpd" / "sdk" / "client.py").read_text(encoding="utf-8")
     assert not re.search(r"nperseg\s*=\s*\d", sdk)
+
+
+def _public_functions():
+    """Function files a user can call as ``opendpd.<name>`` or ``opendpd.metrics.<name>`` (classes are documented apart)."""
+    classes = {"Job", "Project", "MATLABBridge"}
+    top = [p.stem for p in (TOOLBOX / "+opendpd").glob("*.m") if p.stem not in classes]
+    return sorted(top), sorted(p.stem for p in (TOOLBOX / "+opendpd" / "+metrics").glob("*.m"))
+
+
+def test_every_public_function_is_documented_and_listed():
+    top, metrics = _public_functions()
+    assert {"apply", "waveform"} <= set(top) and {"evm", "aclr", "evaluate"} <= set(metrics)
+    reference, contents = _text("docs", "reference.md"), _text("Contents.m")
+    for name in top:
+        assert f"opendpd.{name}(" in reference, f"{name} is not in the function reference"
+        assert re.search(rf"\b{name}\b", contents), f"{name} is not listed in Contents.m"
+    for name in metrics:
+        assert f"opendpd.metrics.{name}(" in reference, f"metrics.{name} is not in the function reference"
+        assert f"metrics.{name}" in contents
+
+
+def test_shared_helpers_have_one_implementation():
+    # a private folder is invisible to the +metrics sub-package, so the helpers live in opendpd.internal
+    assert (TOOLBOX / "+opendpd" / "+internal" / "bridge.m").is_file()
+    assert (TOOLBOX / "+opendpd" / "+internal" / "asPythonIQ.m").is_file()
+    for name in ("bridge", "asPythonIQ"):
+        delegate = _text("+opendpd", "private", f"{name}.m")
+        assert f"opendpd.internal.{name}(" in delegate and len(delegate.splitlines()) <= 5, name
+
+
+def test_the_packaged_guide_is_current_and_carries_the_toolbox_version():
+    markdown = pytest.importorskip("markdown")        # noqa: F841  (the generator needs it)
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("build_matlab_docs", ROOT / "scripts" / "build_matlab_docs.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    version = re.search(r"ToolboxVersion = '(\d+\.\d+\.\d+)'", _text("buildfile.m")).group(1)
+    assert module.toolbox_version() == version
+    module.build(check=True)                           # raises SystemExit if a packaged page is stale
+    for page in (TOOLBOX / "resources" / "docs").glob("*.html"):
+        text = page.read_text(encoding="utf-8")
+        assert f'<span class="version">{version}</span>' in text and "PREVIEW" not in text, page.name

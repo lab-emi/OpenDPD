@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import re
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -57,9 +58,15 @@ def validate_links(pages):
         raise SystemExit("Broken MATLAB documentation links:\n" + "\n".join(failures))
 
 
+def toolbox_version():
+    """The one version the toolbox carries (Contents.m, checked against the build file and README by a test)."""
+    return re.search(r"^% Version (\d+\.\d+\.\d+)$", (ROOT / "Contents.m").read_text(encoding="utf-8"), re.M).group(1)
+
+
 def build(check=False):
     stale = []
     pages = {}
+    version = toolbox_version()
     for slug, title in PAGES.items():
         source = (ROOT / "docs" / f"{slug}.md").read_text(encoding="utf-8")
         body = markdown.markdown(source, extensions=["tables", "fenced_code", "toc"])
@@ -72,10 +79,10 @@ def build(check=False):
 <link rel="stylesheet" href="guide.css"></head><body>
 <a class="skip" href="#content">Skip to content</a>
 <header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
-<span class="version">0.4.0 PREVIEW</span></header>
+<span class="version">{version}</span></header>
 <nav aria-label="Guide">{nav}</nav>
 <main id="content">{body}</main>
-<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+<footer>OpenDPD Toolbox for MATLAB {version} · Apache-2.0</footer>
 </body></html>
 '''
         target = ROOT / "resources" / "docs" / f"{slug}.html"

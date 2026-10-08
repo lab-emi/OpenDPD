@@ -4,10 +4,10 @@ Run PA and DPD experiments from MATLAB using the same workspace, queue and
 results as OpenDPD Studio. Training runs in Python/PyTorch. MATLAB receives
 ordinary structs and complex signal vectors.
 
-This is toolbox preview **0.4.0**, SDK protocol **1**, developed on the OpenDPD
-2.4 branch. Install the Python code from this checkout: the released 2.3
-package does not contain this SDK. Package version metadata remains at the
-2.3 branch baseline until the coordinated 2.4 prerelease.
+This is the toolbox for the unreleased OpenDPD **2.4.0** (SDK protocol **1**). The
+toolbox version follows the OpenDPD release it ships with. Install the Python code from
+this checkout: the released 2.3 package does not contain this SDK. The Python package
+metadata is still the 2.3 baseline until the release is cut.
 
 ## What works in this preview
 
@@ -17,18 +17,20 @@ package does not contain this SDK. Package version metadata remains at the
   when training finishes. Destination variable names are generated automatically.
 - Read six bundled offline guides with `opendpd.help()`.
 - Start a local service or connect to a workspace already open in Studio.
-- Import paired complex I/Q vectors or named numeric variables in MAT v7 files.
+- Import paired complex I/Q vectors or named numeric variables from MAT files of any version (v7.3 included).
 - Submit PA/DPD training, query progress, cancel, and reconnect by run ID.
 - Read stored evaluation results and queue the standard DPD waveform export.
-- Apply a trained, unquantized **GRU** to a supplied waveform on CPU, with the
-  same **offline segment boundaries** used by the Python evaluator.
+- Apply a trained PA or DPD (`gru`, `tres_gru`, `gmp`, `mp_ls`, `gmp_ls`) to a supplied
+  waveform on CPU, with the **offline segment boundaries** of the Python evaluator, or as
+  a **stream** for the models that have a registered streaming variant (`gru`, `gmp`).
 - Build a source-only `.mltbx` using MATLAB, after running the MATLAB tests.
 
-Training uses the existing model registry. The `apply` preview supports only
-ordinary GRU models; it reports an error for other models, quantization or
-streaming execution. `runDPD` follows the existing supported export workflow.
-The Python integration tests exercise real training workers and compare
-inference with the existing evaluator. The MATLAB workflow has also been
+Training uses the existing model registry. `apply` supports the five models above
+and refuses any other model, quantization-aware runs and streaming for models without
+a registered streaming variant, with the reason. A model joins the list together with
+a test that compares its output with the Python evaluator. `runDPD` follows the
+existing supported export workflow. The Python integration tests exercise real
+training workers and compare inference with the existing evaluator. The MATLAB workflow has also been
 run locally with **MATLAB R2026a, Python 3.13.14 and CPU execution on Linux**.
 
 ## Studio GUI and MATLINK
@@ -155,13 +157,14 @@ opendpd.closeProject(p, StopService=true);
 ## Use your own paired I/Q data
 
 `x` is the PA input and `y` is the corresponding PA output. Supply aligned
-vectors, the sample rate and occupied signal bandwidth explicitly.
+vectors, the sample rate, the occupied signal bandwidth and the segment length
+explicitly.
 
 ```matlab
 p = opendpd.openProject("my-pa-workspace");
 ds = opendpd.importIQ(p, x, y, ...
     Name="capture-001", SampleRate=491.52e6, Bandwidth=200e6, ...
-    Origin="measured", SegmentSamples=256);
+    Origin="measured", SegmentSamples=2048);   % PSD segment length, see below
 
 training = struct('epochs', 150, 'frame_length', 200, 'seed', 0);
 paJob = opendpd.trainPA(p, ds, Model="gru", Training=training);
@@ -183,14 +186,17 @@ requires a separate capture and measured-evaluation workflow.
 `ModelParameters` and `Training` are structs using the existing OpenDPD schema,
 such as `struct('hidden_size', 8)` and `struct('epochs', 5, 'frame_stride', 16)`.
 `opendpd.submit(p, config)` accepts a complete `ExperimentConfig` struct.
-Use `Device="cuda"` only when that device and model are supported locally.
+`Device="auto"` (the default) takes Studio's own default: the first detected of
+`cuda`, `mps`, `cpu`, and `cpu` for least-squares models. Pass `Device="cpu"` for a
+reproducible small run, or `Device="cuda"` with `DeviceIndex=1` to pick a GPU.
+`NumThreads=0` (the default) lets the service decide.
 
 To register the standard test-split waveform and surrogate evaluation in the
 workspace, use `exported = opendpd.wait(opendpd.runDPD(dpd))`. Its artifacts
 are available through Studio and `opendpd.result(exported)` reads its report.
 The baseline `runDPD` exporter carries state over the whole test waveform;
-`apply` resets at segment boundaries. Read the export sidecar for its execution
-semantics. The example saves the segmented training-run report with `apply`'s
+`apply` resets at segment boundaries unless you ask for `Execution="streaming"`.
+Read the export sidecar for its execution semantics. The example saves the segmented training-run report with `apply`'s
 waveform and records the separate export run ID.
 
 ### MAT files
@@ -198,13 +204,17 @@ waveform and records the separate export run ID.
 ```matlab
 ds = opendpd.importMAT(p, "capture.mat", ...
     InputVariable="tx", OutputVariable="rx", Name="capture-002", ...
-    SampleRate=491.52e6, Bandwidth=200e6, Origin="measured");
+    SampleRate=491.52e6, Bandwidth=200e6, SegmentSamples=2048, Origin="measured");
 ```
 
-Use dense numeric `single`/`double` variables saved with `save(..., '-v7')`.
-Complex row and column vectors are accepted. Real MAT vectors are I-only
-signals; real matrices with two columns represent I/Q. MAT v7.3, cells,
-structs, sparse arrays and missing variables produce an actionable error.
+MATLAB reads the file, so any MAT-file version works, v7.3 included. Variables are dense
+numeric `single`/`double`. Complex row and column vectors are accepted. Real MAT vectors
+are I-only signals; real matrices with two columns represent I/Q. Cells, structs, sparse
+arrays, integer classes and missing variables produce an actionable error.
+
+`SegmentSamples` has no default. It is the PSD (Welch) segment length of every spectral metric and the
+interval at which evaluation restarts a model's state, so choose it for your signal; Studio's generated
+signals use 512-4096.
 
 ### Data and execution rules
 
@@ -216,17 +226,26 @@ structs, sparse arrays and missing variables produce an actionable error.
 - Import uses the existing contiguous split with a default 256-sample guard.
   The guard must cover the training frame context. Dataset names must be
   unique IDs, for example `capture-001`.
-- `apply` resets GRU state at the run's frozen `SegmentSamples` boundary,
-  pads the final segment with zeros and trims the padding from its result.
-  It does not carry state between calls. Each call loads the recorded model
-  in an isolated CPU process; it is intended for whole waveforms.
-- Inference metadata includes checkpoint and sample hashes, output role,
-  sample count, segment length, sample rate and preprocessing version.
-  Later edits to dataset metadata do not change these inference settings.
-  A checkpoint whose hash changed is refused.
-- The first MAT adapter records the source file hash and variable names, and
-  retains the converted I/Q source in the workspace. Keep the original MAT
-  file if its other variables are part of your experiment record.
+- `apply(..., Execution="offline_segmented")` (the default) is how the run was scored. It
+  restarts the model's state at the run's frozen `SegmentSamples` boundary, pads the final
+  segment with zeros and trims the padding from its result. A model that reads future
+  samples (`tres_gru` reads 16) sees zero padding within that distance of a segment end.
+  `info.limitations` says so. It does not carry state between calls.
+- `apply(..., Execution="streaming")` (alias of `"streaming_stateful"`) carries one state across
+  the waveform in chunks of `ChunkSamples`. It exists only for `gru` and `gmp`, whose
+  registered streaming variants are `gru_stream` and `gmp_stream`; other models are refused
+  rather than approximated. The output is a different signal from the one the stored report
+  scored, and `info.streaming` carries the measured warm-up, look-ahead and chunk
+  consistency. Choose it deliberately for a waveform that will run continuously.
+- Each call loads the recorded model in an isolated CPU process; it is intended for whole
+  waveforms.
+- Inference metadata includes checkpoint and sample hashes, output role, sample count,
+  execution semantics, segment length, sample rate and preprocessing version. Later edits
+  to dataset metadata do not change these inference settings. A checkpoint whose hash
+  changed is refused.
+- MAT import records the file name, its SHA-256 and the variable names (class, complexity,
+  size), and retains the converted I/Q source in the workspace. Keep the original MAT file
+  if its other variables are part of your experiment record.
 
 ## Jobs and service lifetime
 
@@ -274,17 +293,20 @@ buildtool test
 buildtool package
 ```
 
-The package task runs tests first and writes `dist/OpenDPD-0.4.0.mltbx`.
+The package task runs tests first and writes `dist/OpenDPD-2.4.0.mltbx`.
 The archive contains MATLAB source, tests, examples, help and the Apache-2.0
 license; Python and model weights remain in the selected environment/workspace.
 Install it with `matlab.addons.toolbox.installToolbox`, then select Python
 with `opendpd.setup`. Uninstalling it leaves Python environments and experiment
 workspaces intact.
 
-The manual **MATLAB toolbox preview** GitHub workflow runs MATLAB tests and
-builds the package on the selected release, then installs it and runs the
-example in a fresh MATLAB session. It uploads a workflow artifact;
-it does not publish a release or submit anything to File Exchange.
+The **MATLAB toolbox** GitHub workflow runs on pull requests that touch the toolbox,
+SDK, MATLINK or `apply`, and can be started by hand for another MATLAB release. It runs
+the Python SDK tests (including the `apply` parity tests), the MATLAB tests, builds the
+package, then installs it and runs the example in a fresh MATLAB session, on Linux and
+on Windows (Windows reports without blocking until it has been seen to pass). It
+uploads a workflow artifact; it does not publish a release or submit anything to File
+Exchange.
 
 ## Verification status
 

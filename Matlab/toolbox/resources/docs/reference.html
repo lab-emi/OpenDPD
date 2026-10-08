@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="guide.css"></head><body>
 <a class="skip" href="#content">Skip to content</a>
 <header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
-<span class="version">0.4.0 PREVIEW</span></header>
+<span class="version">2.4.0</span></header>
 <nav aria-label="Guide"><a href="index.html">Get started</a>
 <a href="gui.html">MATLINK walkthrough</a>
 <a href="workflow.html">Script workflow</a>
@@ -95,12 +95,13 @@ Command Window.</p>
 opendpd.openStudio(p, Page=&quot;result&quot;, RunID=job.ID);
 </code></pre>
 <h2 id="import">Import</h2>
-<pre><code class="language-matlab">ds = opendpd.importIQ(p, x, y, SampleRate=80e6, Bandwidth=20e6);
-ds = opendpd.importMAT(p, &quot;capture.mat&quot;, SampleRate=80e6, Bandwidth=20e6);
+<pre><code class="language-matlab">ds = opendpd.importIQ(p, x, y, SampleRate=80e6, Bandwidth=20e6, SegmentSamples=2048);
+ds = opendpd.importMAT(p, &quot;capture.mat&quot;, SampleRate=80e6, Bandwidth=20e6, SegmentSamples=2048);
 </code></pre>
 <p><code>ds</code> is a dataset struct including <code>dataset_id</code>, sample count and provenance.
 <code>importIQ</code> accepts dense MATLAB single/double vectors; rows and columns are
-equivalent. <code>importMAT</code> additionally accepts real N×2 I/Q matrices.</p>
+equivalent. <code>importMAT</code> reads a MAT file of any version in MATLAB and additionally accepts
+real N×2 I/Q matrices.</p>
 <table>
 <thead>
 <tr>
@@ -114,12 +115,12 @@ equivalent. <code>importMAT</code> additionally accepts real N×2 I/Q matrices.<
 <td>Required, finite and positive, in Hz; backend validates the signal specification.</td>
 </tr>
 <tr>
-<td><code>Name</code></td>
-<td><code>""</code> for an automatic ID; otherwise a unique dataset slug such as <code>capture-001</code>.</td>
+<td><code>SegmentSamples</code></td>
+<td>Required, integer at least 2, no default. PSD segment length of every spectral metric and the interval at which evaluation restarts a model's state. Studio's generated signals use 512-4096.</td>
 </tr>
 <tr>
-<td><code>SegmentSamples</code></td>
-<td><code>256</code>, integer at least 2. Frozen offline evaluation segment length.</td>
+<td><code>Name</code></td>
+<td><code>""</code> for an automatic ID; otherwise a unique dataset slug such as <code>capture-001</code>.</td>
 </tr>
 <tr>
 <td><code>GuardSamples</code></td>
@@ -140,6 +141,10 @@ equivalent. <code>importMAT</code> additionally accepts real N×2 I/Q matrices.<
 <tr>
 <td><code>InputVariable</code>, <code>OutputVariable</code></td>
 <td>MAT adapter only; defaults <code>"x"</code>, <code>"y"</code>.</td>
+</tr>
+<tr>
+<td><code>Source</code></td>
+<td><code>importIQ</code> only; a struct recorded as the dataset's provenance (<code>importMAT</code> fills it).</td>
 </tr>
 </tbody>
 </table>
@@ -205,11 +210,15 @@ equivalent. <code>importMAT</code> additionally accepts real N×2 I/Q matrices.<
 </tr>
 <tr>
 <td><code>Device</code></td>
-<td><code>"cpu"</code>; <code>"cuda"</code> and <code>"mps"</code> require locally supported hardware and model.</td>
+<td><code>"auto"</code>: Studio's default (first detected of <code>cuda</code>, <code>mps</code>, <code>cpu</code>; <code>cpu</code> for least-squares models). Or <code>"cpu"</code>, <code>"cuda"</code>, <code>"mps"</code>, which require locally supported hardware and model.</td>
+</tr>
+<tr>
+<td><code>DeviceIndex</code></td>
+<td><code>0</code>; the logical CUDA device when <code>Device</code> resolves to <code>"cuda"</code>.</td>
 </tr>
 <tr>
 <td><code>NumThreads</code></td>
-<td><code>1</code></td>
+<td><code>0</code>: the service decides. A positive integer sets the CPU thread count.</td>
 </tr>
 <tr>
 <td><code>Profile</code></td>
@@ -219,6 +228,42 @@ equivalent. <code>importMAT</code> additionally accepts real N×2 I/Q matrices.<
 </table>
 <p><code>job.ID</code> and <code>job.Project.Workspace</code> identify a run for reconnection. Complete
 settings, artifacts and logs remain in the workspace and Studio.</p>
+<h2 id="metrics-without-a-run">Metrics without a run</h2>
+<p>These need no project, workspace or server: they call the code that Studio and the run service use, so a number
+computed here equals the one in a Studio result for the same signal and settings. Metadata that changes a number
+has no default (<code>SegmentSamples</code>, <code>SampleRate</code>); a metric that cannot be computed is returned with a <code>Status</code> and a
+<code>Reason</code>, never a guess.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w = opendpd.waveform(Seed=1, Subframes=10)</code></td>
+<td>The <code>ofdm-lte20-v1</code> test waveform with known symbols, regenerated from its seed: <code>w.x</code> (complex column, 30.72 MS/s, unit power), <code>w.Symbols</code> (symbols × 1200), <code>w.SampleRate</code>, <code>w.Seed</code>, <code>w.Subframes</code>, <code>w.SHA256</code>. A test signal, not a conformance signal.</td>
+</tr>
+<tr>
+<td><code>m = opendpd.metrics.evm(y, w, SampleRate=fs)</code></td>
+<td>Data-aided EVM of a capture of <code>w</code>: <code>m.EVM_RMS</code> (percent), <code>m.EVM_dB</code>, <code>m.Status</code>, <code>m.Reason</code>. <code>fs</code> must convert to 30.72 MS/s with a small exact ratio. <code>m.Status</code> is <code>"missing_reference"</code> when <code>y</code> does not correlate with <code>w</code> (wrong seed or length, or a carrier offset above about 75 Hz for 10 subframes).</td>
+</tr>
+<tr>
+<td><code>m = opendpd.metrics.aclr(y, SampleRate=fs, SegmentSamples=n, Waveform=w)</code></td>
+<td>Adjacent-channel leakage in negative dBc: <code>m.ACLR_L</code>, <code>m.ACLR_R</code>, <code>m.Status</code>, <code>m.Reason</code>. <code>Profile="ofdm-lte20-evm-v1"</code> (default; needs <code>Waveform</code> and <code>fs</code> of at least 58 MS/s) or <code>"opendpd-spectral-v2"</code> (needs <code>Bandwidth</code>, <code>Subchannels</code>). <code>SegmentSamples</code> is the Welch segment length and moves the ratio.</td>
+</tr>
+<tr>
+<td><code>t = opendpd.metrics.evaluate(y, SampleRate=fs, SegmentSamples=n, Waveform=w, ...)</code></td>
+<td>Every metric of a profile as a table (<code>Name</code>, <code>Value</code>, <code>Unit</code>, <code>Status</code>, <code>Reason</code>). Also <code>Profile="general-spectral-v1"</code>, <code>Reference=</code> (target signal for reference-based metrics), <code>Bandwidth</code>, <code>Subchannels</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>How these compare with MathWorks functions is measured, not assumed: EVM agrees with an independent
+<code>lteOFDMDemodulate</code>/<code>lteEVM</code> chain to better than 1e-8 percentage points on the registered signals, and the
+profile's ACLR differs from <code>comm.ACPR</code> by up to 0.2 dB because <code>comm.ACPR</code> integrates the bins that enclose a band
+edge while OpenDPD sums the bins whose centre lies inside it. The numbers, budgets and the cases that do not agree
+are in <code>docs/performance/matlab-parity.md</code> of the OpenDPD repository.</p>
 <h2 id="inference-and-export">Inference and export</h2>
 <table>
 <thead>
@@ -230,7 +275,7 @@ settings, artifacts and logs remain in the workspace and Studio.</p>
 <tbody>
 <tr>
 <td><code>[y, info] = opendpd.apply(job, x, ...)</code></td>
-<td>Complex single column vector plus metadata. <code>Execution="offline_segmented"</code>, <code>Timeout=120</code> seconds. CPU, ordinary unquantized GRU only.</td>
+<td>Complex single column vector plus metadata. <code>Execution="offline_segmented"</code> (default, how the run was scored) or <code>"streaming_stateful"</code> / <code>"streaming"</code> (one state across chunks; <code>gru</code> and <code>gmp</code> only), <code>ChunkSamples=0</code> (the default chunk), <code>Timeout=120</code> seconds. CPU, unquantized <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code>. <code>info.execution</code>, <code>info.limitations</code> and <code>info.streaming</code> state what produced <code>y</code>.</td>
 </tr>
 <tr>
 <td><code>exported = opendpd.runDPD(dpd)</code></td>
@@ -242,5 +287,5 @@ settings, artifacts and logs remain in the workspace and Studio.</p>
 and applied waveforms. <code>apply</code> uses stored sample-rate metadata and assumes the
 supplied samples have the corresponding physical rate; vectors do not carry
 their own time base.</p></main>
-<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
 </body></html>

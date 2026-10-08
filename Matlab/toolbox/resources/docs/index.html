@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="guide.css"></head><body>
 <a class="skip" href="#content">Skip to content</a>
 <header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
-<span class="version">0.4.0 PREVIEW</span></header>
+<span class="version">2.4.0</span></header>
 <nav aria-label="Guide"><a href="index.html" aria-current="page">Get started</a>
 <a href="gui.html">MATLINK walkthrough</a>
 <a href="workflow.html">Script workflow</a>
@@ -96,11 +96,12 @@ PA → DPD → inference script example, follow the <a href="workflow.html">scri
 delivery. The workspace service and training jobs continue. Reconnect and send
 a completed report again when ready.</p>
 <p>Training uses the existing OpenDPD model registry. MATLAB <code>apply</code> supports
-<strong>ordinary, unquantized GRU models on CPU</strong>, using offline segments. MATLINK
+unquantized <strong><code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code> and <code>gmp_ls</code> on CPU</strong>, using offline
+segments by default or one continuous state for <code>gru</code> and <code>gmp</code>. MATLINK
 returns saved report structs; use the script API for waveform inference and
 export. DPD reports evaluate a learned PA surrogate. Hardware performance
 requires a separate measured capture and evaluation. This preview runs on the
-local desktop; MATLAB Online, remote services, Simulink and streaming execution
-are outside its current scope.</p></main>
-<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+local desktop; MATLAB Online, remote services and Simulink are outside its current
+scope.</p></main>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
 </body></html>

@@ -68,12 +68,12 @@ Engine 的方向和安装要求见 [MATLAB Engine 文档](https://www.mathworks.
 
 ### 目标使用体验
 
-以下基本接口已有开发实现。示例的 `x`/`y` 为同次采集的 PA 输入/输出，`xTest` 为独立测试波形。当前 `apply` 支持普通 GRU 的 CPU 离线分段推理。
+以下基本接口已有开发实现。示例的 `x`/`y` 为同次采集的 PA 输入/输出，`xTest` 为独立测试波形。当前 `apply` 支持 `gru`、`tres_gru`、`gmp`、`mp_ls`、`gmp_ls` 的 CPU 离线分段推理（与评估器逐样本一致），`gru` 与 `gmp` 另有有状态流式执行。
 
 ```matlab
 opendpd.setup(PythonExecutable="/path/to/python");
 p = opendpd.openProject("lab-pa");
-ds = opendpd.importIQ(p, x, y, SampleRate=fs, Bandwidth=bw);
+ds = opendpd.importIQ(p, x, y, SampleRate=fs, Bandwidth=bw, SegmentSamples=2048);  % 无默认值
 
 pa = opendpd.wait(opendpd.trainPA(p, ds, Model="gru"));
 dpd = opendpd.wait(opendpd.trainDPD(p, ds, PA=pa, Model="gru"));
@@ -99,7 +99,7 @@ opendpd.openStudio(p);
 - 离线分段或流式执行、分段长度、状态重置、预热、前视样本和输出有效范围。
 - 评估 profile 及版本，结果的仿真/实测来源。
 
-第一阶段支持 MATLAB `save -v7` 写出的数值变量，并明确变量映射。v7.3 走后续专门的 HDF5 适配；SciPy `loadmat` 本身不实现 v7.3 读取。[SciPy MAT 文件支持范围](https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.loadmat.html)
+MAT 文件由 MATLAB 自己读取（`whos`/`load`），因此任意 MAT 版本（含 v7.3/HDF5）都支持，并明确变量映射；此前基于 SciPy `loadmat` 的方案不能读取 v7.3。[SciPy MAT 文件支持范围](https://docs.scipy.org/doc/scipy/reference/generated/scipy.io.loadmat.html)
 
 ### 模型与结果
 
@@ -159,10 +159,9 @@ opendpd/sdk/        Python 公共接口
 - 已从 `7418ba3` 建立 `codex/studio-2.4` 和独立 worktree。
 - 2.3 工作目录的未提交 Arena 修改未进入此起点；在 2.3 收尾提交稳定后，再合入相关提交并复核受影响的 API 与协议。
 - 已实现 `opendpd.sdk` 与 `Matlab/toolbox`：环境诊断、共享服务、I/Q/MAT v7 导入、训练与任务管理、GRU 推理、标准 DPD 导出和示例。
-- Python 包版本暂沿用 `2.3.0` 基线；SDK 协议版本为 1，Toolbox 预览版本为 `0.1.0`。发布前统一调整 2.4 prerelease 元数据；使用者目前必须安装此工作树的 Python 代码。
-- 已完成 62 项 Python SDK/启动器检查及 wheel/sdist 内容检查；普通 GRU 的 PA/DPD 推理与既有评估器一致。
-- 随后在用户安装目录发现了未加入 `PATH` 的 MATLAB R2026a。已通过 6 项真实 MATLAB 测试，并生成 `.mltbx`。
-- 已在新的 MATLAB 会话中安装工具箱、完成示例的 PA/DPD 训练、导出 718 个复数采样点，再成功卸载。验证使用 Linux、Python 3.13.14 和 CPU。
-- 已增加手动 MATLAB CI，包含测试、打包、临时目录安装、示例与卸载。其他 MATLAB 版本、Windows/macOS 和 CUDA 桥接仍需对应环境的验证。
+- Python 包版本暂沿用 2.3 基线；SDK 协议版本为 1，Toolbox 版本随发布，当前为 `2.4.0`（未发布）。发布前统一调整 2.4 元数据；使用者目前必须安装此工作树的 Python 代码。
+- `apply` 经 `trained_model` 重建与评估器相同的网络；五个模型的 PA/DPD 离线推理、分段独立性、`gru`/`gmp` 流式契约与评估器的一致性由 `tests/integration/test_apply_parity.py` 逐项验证。最新的验证记录见 `docs/releases/2.4.0.md`。
+- MATLAB R2026a（Linux）上的真实测试、`.mltbx` 打包、在新会话中的安装/示例/卸载均已执行，详细数字见 `docs/releases/2.4.0.md`，不在此重复。
+- MATLAB CI 现在随涉及工具箱的 PR 触发（Linux 为门禁，Windows 先只报告）。其他 MATLAB 版本、Windows/macOS 和 CUDA 桥接仍需对应环境的验证。
 
 **下一步：扩展兼容性验证。** 以已通过的 R2026a/Linux/CPU 为基础，验证 R2024b/Python 3.11、Windows 和 CUDA，再扩展模型支持。

@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="guide.css"></head><body>
 <a class="skip" href="#content">Skip to content</a>
 <header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
-<span class="version">0.4.0 PREVIEW</span></header>
+<span class="version">2.4.0</span></header>
 <nav aria-label="Guide"><a href="index.html">Get started</a>
 <a href="gui.html">MATLINK walkthrough</a>
 <a href="workflow.html">Script workflow</a>
@@ -59,8 +59,8 @@ connect again before requesting imports or report delivery.</p>
 <li>Confirm units: <strong>MHz in MATLINK, Hz in scripts</strong>.</li>
 <li>Use enough samples for train/validation/test splits and their guards.</li>
 <li>Choose a unique dataset ID. Imports never replace an existing dataset.</li>
-<li>For MAT v7.3 sources, load the numeric variables into MATLAB or save a new
-  file with <code>save('capture-v7.mat', 'tx', 'rx', '-v7')</code> for <code>importMAT</code>.</li>
+<li><code>importMAT</code> reads any MAT-file version, v7.3 included. It needs full single/double
+  variables; cells, structs, sparse arrays and integer classes are refused.</li>
 </ul>
 <p>If an import loses its connection, inspect Studio's dataset list before retrying.
 The server may still finish. The SDK retains staged input under <code>imports/</code> and
@@ -83,11 +83,16 @@ or <code>opendpd.cancel(job)</code> to cancel a particular job. To stop an SDK-s
 and its jobs, use <code>opendpd.closeProject(p, StopService=true)</code>. Stop a service
 launched by Studio through its original launcher.</p>
 <h2 id="apply-rejects-a-model-or-differs-from-rundpd">apply rejects a model or differs from runDPD</h2>
-<p>Preview inference supports ordinary unquantized GRU models on CPU, and only
-<code>offline_segmented</code> execution. Segments use frozen run settings. The baseline
-test-split exporter carries recurrent state across the waveform, so it can
-differ from segmented <code>apply</code>. Check execution metadata and compare equivalent
-modes. A changed checkpoint hash is rejected; restore the original artifact.</p>
+<p><code>apply</code> supports unquantized <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code> and <code>gmp_ls</code> on CPU. Any
+other model, a quantization-aware run, or <code>Execution="streaming"</code> for a model without a
+registered streaming variant (only <code>gru</code> and <code>gmp</code> have one) is refused with the reason;
+the output is never approximated. Offline segments use frozen run settings. The baseline
+test-split exporter carries recurrent state across the waveform, so it can differ from
+segmented <code>apply</code>; ask <code>apply</code> for <code>Execution="streaming"</code> to compare like with like. Check
+<code>info.execution</code>, <code>info.limitations</code> and <code>info.streaming</code>. A changed checkpoint hash is
+rejected; restore the original artifact.</p>
+<p>A missing <code>SegmentSamples</code> error from <code>importIQ</code> or <code>importMAT</code> is deliberate: see the
+import options in the reference.</p>
 <h2 id="documentation-is-blank">Documentation is blank</h2>
 <p><code>opendpd.help()</code> opens the bundled guide without Python or an internet connection.
 Check that <code>resources/docs</code> was included in the installation, and reinstall the
@@ -97,5 +102,5 @@ preview requires desktop MATLAB.</p>
 <p>Choose a writable Add-Ons installation folder in MATLAB Settings. A fresh batch
 profile may have no installation folder set. The installation smoke test uses
 a temporary folder for its own session.</p></main>
-<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
 </body></html>

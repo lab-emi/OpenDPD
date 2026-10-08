@@ -87,9 +87,11 @@ The script API uses **Hz**. An optional unique dataset name can be supplied.
 Click **Use these variables in an experiment**. After MATLAB validates and
 imports the pair, Studio opens experiment setup with the imported data selected.
 Import preserves sample order and amplitude, stores float32 I/Q, and performs
-no normalization or alignment. This path uses 256-sample evaluation segments,
-256-sample split guards and one subchannel; use `opendpd.importIQ` for other
-settings. Invalid values, unequal lengths and duplicate IDs are reported.
+no normalization or alignment. You enter the PSD segment length (`nperseg`): the Welch
+segment of every spectral metric and the interval at which evaluation restarts a model's
+state. It has no default because it depends on your signal; Studio's generated signals use
+512-4096. This path uses 256-sample split guards and one subchannel; use `opendpd.importIQ`
+for other settings. Invalid values, unequal lengths and duplicate IDs are reported.
 
 ## 3. Train in Studio
 

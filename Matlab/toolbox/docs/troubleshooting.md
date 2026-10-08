@@ -62,8 +62,8 @@ connect again before requesting imports or report delivery.
 - Confirm units: **MHz in MATLINK, Hz in scripts**.
 - Use enough samples for train/validation/test splits and their guards.
 - Choose a unique dataset ID. Imports never replace an existing dataset.
-- For MAT v7.3 sources, load the numeric variables into MATLAB or save a new
-  file with `save('capture-v7.mat', 'tx', 'rx', '-v7')` for `importMAT`.
+- `importMAT` reads any MAT-file version, v7.3 included. It needs full single/double
+  variables; cells, structs, sparse arrays and integer classes are refused.
 
 If an import loses its connection, inspect Studio's dataset list before retrying.
 The server may still finish. The SDK retains staged input under `imports/` and
@@ -94,11 +94,17 @@ launched by Studio through its original launcher.
 
 ## apply rejects a model or differs from runDPD
 
-Preview inference supports ordinary unquantized GRU models on CPU, and only
-`offline_segmented` execution. Segments use frozen run settings. The baseline
-test-split exporter carries recurrent state across the waveform, so it can
-differ from segmented `apply`. Check execution metadata and compare equivalent
-modes. A changed checkpoint hash is rejected; restore the original artifact.
+`apply` supports unquantized `gru`, `tres_gru`, `gmp`, `mp_ls` and `gmp_ls` on CPU. Any
+other model, a quantization-aware run, or `Execution="streaming"` for a model without a
+registered streaming variant (only `gru` and `gmp` have one) is refused with the reason;
+the output is never approximated. Offline segments use frozen run settings. The baseline
+test-split exporter carries recurrent state across the waveform, so it can differ from
+segmented `apply`; ask `apply` for `Execution="streaming"` to compare like with like. Check
+`info.execution`, `info.limitations` and `info.streaming`. A changed checkpoint hash is
+rejected; restore the original artifact.
+
+A missing `SegmentSamples` error from `importIQ` or `importMAT` is deliberate: see the
+import options in the reference.
 
 ## Documentation is blank
 

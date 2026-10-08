@@ -1,6 +1,24 @@
-name: MATLAB toolbox preview
+name: MATLAB toolbox
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - Matlab/**
+      - opendpd/sdk/**
+      - opendpd/services/inference.py
+      - opendpd/services/matlink.py
+      - opendpd/schemas/matlink.py
+      - opendpd/server/matlink_routes.py
+      - frontend/src/pages/MatlinkPage*
+      - scripts/build_matlab_docs.py
+      - tests/unit/test_sdk_iq.py
+      - tests/unit/test_studio_navigation.py
+      - tests/unit/test_matlink.py
+      - tests/integration/test_matlink_*.py
+      - tests/integration/test_sdk_matlab.py
+      - tests/integration/test_apply_parity.py
+      - .github/workflows/matlab-toolbox.yml
   workflow_dispatch:
     inputs:
       release:
@@ -13,36 +31,63 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   toolbox:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    name: Toolbox (${{ matrix.os }}, ${{ inputs.release || 'R2026a' }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    # Windows has not been seen green yet: its result is reported but does not block until it has been, then flip
+    # `experimental` below. The Linux job is the gate. Release compatibility other than R2026a is checked by
+    # starting this workflow by hand with another release.
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            experimental: false
+          - os: windows-2022
+            experimental: true
     env:
       # Optional for public repositories; required by MathWorks for private CI.
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
       MPLBACKEND: Agg
+      TQDM_DISABLE: "1"
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: Build Studio
         run: |
           npm --prefix frontend ci
           npm --prefix frontend run build
+      - name: Install PyTorch (CPU)
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Install and verify Python SDK
         run: |
           python -m pip install -e ".[dev]"
           python -m pip install Markdown
           python scripts/build_matlab_docs.py --check
-          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py -q
+          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_apply_parity.py -q
           python -c 'import os, sys; open(os.environ["GITHUB_ENV"], "a").write("OPENDPD_MATLAB_PYTHON=" + sys.executable + "\n")'
       - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
         with:
-          release: ${{ inputs.release }}
+          release: ${{ inputs.release || 'R2026a' }}
       - name: Run MATLAB tests and build toolbox
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         with:
@@ -51,7 +96,9 @@ jobs:
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         with:
           command: >-
-            packageFile = fullfile(pwd,'Matlab','toolbox','dist','OpenDPD-0.4.0.mltbx');
+            packages = dir(fullfile(pwd,'Matlab','toolbox','dist','*.mltbx'));
+            assert(isscalar(packages), 'Expected exactly one packaged toolbox');
+            packageFile = fullfile(packages.folder, packages.name);
             cd(tempdir);
             addonRoot = [tempname '-addons']; mkdir(addonRoot);
             s = settings; s.matlab.addons.InstallationFolder.TemporaryValue = addonRoot;
@@ -69,9 +116,9 @@ jobs:
             opendpdQuickstart;
             clear cleanup;
             assert(isempty(matlab.addons.toolbox.installedToolboxes));
-      - name: Upload preview package
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - name: Upload package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: OpenDPD-toolbox-${{ inputs.release }}
+          name: OpenDPD-toolbox-${{ runner.os }}-${{ inputs.release || 'R2026a' }}
           path: Matlab/toolbox/dist/*.mltbx
           if-no-files-found: error

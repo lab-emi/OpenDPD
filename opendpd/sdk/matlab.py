@@ -40,3 +40,16 @@ def file_sha256(path):
 def apply(job, x, execution="offline_segmented", timeout=120.0, chunk_samples=0):
     y, metadata = job.apply(x, execution=execution, chunk_samples=int(chunk_samples) or None, timeout=float(timeout))
     return y, encode(metadata)
+
+
+def lte_waveform(seed, n_subframes):
+    from .metrics import lte_waveform as build
+
+    waveform = build(int(seed), int(n_subframes))
+    return waveform["iq"], waveform["symbols_iq"], encode(waveform["metadata"])
+
+
+def evaluate_metrics(y, reference, options):
+    from .metrics import evaluate
+
+    return encode(evaluate(y, reference=reference, **json.loads(options)))

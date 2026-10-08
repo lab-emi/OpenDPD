@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="guide.css"></head><body>
 <a class="skip" href="#content">Skip to content</a>
 <header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
-<span class="version">0.4.0 PREVIEW</span></header>
+<span class="version">2.4.0</span></header>
 <nav aria-label="Guide"><a href="index.html">Get started</a>
 <a href="gui.html">MATLINK walkthrough</a>
 <a href="workflow.html" aria-current="page">Script workflow</a>
@@ -32,26 +32,29 @@ link = opendpd.studio(p);
 </code></pre>
 <h2 id="import-your-capture">Import your capture</h2>
 <p>Let <code>x</code> be the PA input and <code>y</code> its aligned output, recorded at the same sample
-rate. Provide occupied signal bandwidth explicitly, in Hz.</p>
+rate. Provide occupied signal bandwidth explicitly, in Hz, and the segment length.</p>
 <pre><code class="language-matlab">p = opendpd.openProject(&quot;my-pa-workspace&quot;);
 ds = opendpd.importIQ(p, x, y, Name=&quot;capture-001&quot;, ...
     SampleRate=491.52e6, Bandwidth=200e6, Origin=&quot;measured&quot;, ...
-    SegmentSamples=256, GuardSamples=256);
+    SegmentSamples=2048, GuardSamples=256);
 </code></pre>
+<p><code>SegmentSamples</code> has no default. It is the PSD (Welch) segment length of every spectral metric and the
+interval at which evaluation restarts a model's state, so choose it for your signal; Studio's generated
+signals use 512-4096.</p>
 <p>Rows and columns are accepted. Backend storage uses float32; source precision
 and shape are recorded. No delay correction, normalization or gain fitting is
 performed at the bridge boundary. Nonfinite values and float32 overflow are
 rejected. Import uses the existing contiguous train/validation/test split; set
 the guard to cover your training frame context.</p>
-<p>For a MAT v7 file with numeric variables:</p>
+<p>For a MAT file with numeric variables:</p>
 <pre><code class="language-matlab">ds = opendpd.importMAT(p, &quot;capture.mat&quot;, ...
     InputVariable=&quot;tx&quot;, OutputVariable=&quot;rx&quot;, Name=&quot;capture-002&quot;, ...
-    SampleRate=491.52e6, Bandwidth=200e6, Origin=&quot;measured&quot;);
+    SampleRate=491.52e6, Bandwidth=200e6, SegmentSamples=2048, Origin=&quot;measured&quot;);
 </code></pre>
-<p>The MAT adapter accepts dense single/double complex vectors and real N×2 I/Q
-matrices. Real vectors are I-only. Save selected variables with <code>save(...,
-'-v7')</code> for v7.3 sources. Source file hash and variable names are recorded;
-keep the original MAT file if its other variables matter to your experiment.</p>
+<p>MATLAB reads the file, so every MAT-file version works, v7.3 included. The MAT adapter
+accepts dense single/double complex vectors and real N×2 I/Q matrices. Real vectors are
+I-only. The source file name, SHA-256 and variable names are recorded; keep the original
+MAT file if its other variables matter to your experiment.</p>
 <h2 id="train-the-pa-and-dpd">Train the PA and DPD</h2>
 <pre><code class="language-matlab">training = struct('epochs', 150, 'frame_length', 200, ...
     'frame_stride', 100, 'seed', 0);
@@ -63,8 +66,10 @@ dpd = opendpd.wait(dpdJob, Timeout=3600);
 report = opendpd.result(dpd);
 </code></pre>
 <p><code>ModelParameters</code> and <code>Training</code> use the existing OpenDPD schema, for example
-<code>struct('hidden_size', 8)</code> and <code>struct('epochs', 5)</code>. CPU is the default. A
-complete experiment configuration can be sent with <code>opendpd.submit(p, config)</code>.
+<code>struct('hidden_size', 8)</code> and <code>struct('epochs', 5)</code>. <code>Device="auto"</code> is the default: the
+first detected of <code>cuda</code>, <code>mps</code>, <code>cpu</code> (least-squares models stay on <code>cpu</code>), which is also
+Studio's default. Pass <code>Device="cpu"</code> for a small reproducible run. A complete experiment
+configuration can be sent with <code>opendpd.submit(p, config)</code>.
 Training remains in Python/PyTorch and uses the model registry and validation
 already used by Studio.</p>
 <h2 id="apply-the-dpd">Apply the DPD</h2>
@@ -76,11 +81,19 @@ save(&quot;predistorted-input.mat&quot;, &quot;u&quot;, &quot;info&quot;, &quot;
 <p><code>u</code> is a complex single column vector with the same sample count as <code>xTest</code>.
 For a DPD run it is the <strong>predistorted PA input</strong>, before a physical or simulated
 PA. Applying a PA run instead produces the modeled PA output.</p>
-<p>The preview supports ordinary, unquantized GRU models on CPU. It resets state
-at the trained run's frozen segment boundaries, zero-pads the final segment and
-trims padding from the returned vector. Calls do not share hidden state. Each
-call loads the recorded model in an isolated process, so pass a whole waveform
-rather than repeatedly calling it for individual samples.</p>
+<p><code>apply</code> supports <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code> and <code>gmp_ls</code> on CPU, unquantized. Each
+has a test that compares its output with the Python evaluator. By default
+(<code>Execution="offline_segmented"</code>) it is how the run was scored: state resets at the trained
+run's frozen segment boundaries, the final segment is zero padded and the padding is trimmed
+from the returned vector. <code>tres_gru</code> reads 16 future samples, so within 16 samples of a
+segment end it sees zero padding rather than the waveform; <code>info.limitations</code> says so.
+Calls do not share hidden state. Each call loads the recorded model in an isolated process,
+so pass a whole waveform rather than repeatedly calling it for individual samples.</p>
+<p>For a waveform that will run continuously, <code>Execution="streaming"</code> carries one state across
+chunks (<code>ChunkSamples</code>) for <code>gru</code> and <code>gmp</code>, whose registered streaming variants are
+<code>gru_stream</code> and <code>gmp_stream</code>. Other models are refused rather than approximated. Streaming
+output is a different signal from the one the stored report scored; <code>info.streaming</code> records
+the measured warm-up, look-ahead and chunk consistency of that execution.</p>
 <p>Inference metadata includes checkpoint and sample hashes, execution mode,
 sample count, segment length, sample rate, preprocessing version and output
 role. Later edits to dataset metadata do not alter frozen inference settings.
@@ -91,11 +104,23 @@ exportReport = opendpd.result(exported);
 opendpd.openStudio(p, Page=&quot;run&quot;, RunID=exported.ID);
 </code></pre>
 <p>The existing <code>runDPD</code> exporter carries state across the whole test waveform;
-<code>apply</code> resets at segment boundaries. These outputs can differ. Read the export
+<code>apply</code> resets at segment boundaries by default. These outputs can differ. Read the export
 sidecar for its execution semantics. The quickstart saves the segmented
 training-run report alongside <code>apply</code>'s waveform and separately records the
 export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
 to <code>apply</code> does not update that stored report or establish hardware performance.</p>
+<h2 id="score-a-capture-without-training">Score a capture without training</h2>
+<p>Metrics need no project or server. Play <code>opendpd.waveform</code> through your amplifier, capture its output and score it
+with the code Studio uses:</p>
+<pre><code class="language-matlab">w = opendpd.waveform(Seed=1, Subframes=10);       % the waveform to play (loop it); w.x is 30.72 MS/s
+% ... play w (resampled to your generator's rate), capture the PA output as y at SampleRate fs ...
+evm  = opendpd.metrics.evm(y, w, SampleRate=fs);                                  % evm.EVM_RMS in percent
+aclr = opendpd.metrics.aclr(y, SampleRate=fs, SegmentSamples=2048, Waveform=w);   % aclr.ACLR_L, aclr.ACLR_R in dBc
+</code></pre>
+<p><code>SegmentSamples</code> has no default because the ratio depends on it: it is the Welch segment length, and a longer
+segment resolves the band edges better. Report it with the number. If <code>Status</code> is not <code>"ok"</code>, read <code>Reason</code>; for
+example <code>"missing_reference"</code> means the capture does not correlate with <code>w</code>. See the
+<a href="reference.html#metrics-without-a-run">function reference</a> for all options.</p>
 <h2 id="reconnect-cancel-and-stop">Reconnect, cancel and stop</h2>
 <p>MATLINK report delivery does not require script IDs. Use its <strong>Send to MATLAB</strong>
 or <strong>Send when ready</strong> actions, then select <strong>Open in MATLAB</strong> to inspect the
@@ -122,5 +147,5 @@ job running. Cancellation remains <code>cancel_requested</code> until the worker
 jobs in that workspace, including after reconnecting. Stop externally launched
 Studio through its original launcher. Uninstalling the toolbox leaves Python
 environments and experiment workspaces intact.</p></main>
-<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
 </body></html>

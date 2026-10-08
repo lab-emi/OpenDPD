@@ -28,14 +28,18 @@ link = opendpd.studio(p);
 ## Import your capture
 
 Let `x` be the PA input and `y` its aligned output, recorded at the same sample
-rate. Provide occupied signal bandwidth explicitly, in Hz.
+rate. Provide occupied signal bandwidth explicitly, in Hz, and the segment length.
 
 ```matlab
 p = opendpd.openProject("my-pa-workspace");
 ds = opendpd.importIQ(p, x, y, Name="capture-001", ...
     SampleRate=491.52e6, Bandwidth=200e6, Origin="measured", ...
-    SegmentSamples=256, GuardSamples=256);
+    SegmentSamples=2048, GuardSamples=256);
 ```
+
+`SegmentSamples` has no default. It is the PSD (Welch) segment length of every spectral metric and the
+interval at which evaluation restarts a model's state, so choose it for your signal; Studio's generated
+signals use 512-4096.
 
 Rows and columns are accepted. Backend storage uses float32; source precision
 and shape are recorded. No delay correction, normalization or gain fitting is
@@ -43,18 +47,18 @@ performed at the bridge boundary. Nonfinite values and float32 overflow are
 rejected. Import uses the existing contiguous train/validation/test split; set
 the guard to cover your training frame context.
 
-For a MAT v7 file with numeric variables:
+For a MAT file with numeric variables:
 
 ```matlab
 ds = opendpd.importMAT(p, "capture.mat", ...
     InputVariable="tx", OutputVariable="rx", Name="capture-002", ...
-    SampleRate=491.52e6, Bandwidth=200e6, Origin="measured");
+    SampleRate=491.52e6, Bandwidth=200e6, SegmentSamples=2048, Origin="measured");
 ```
 
-The MAT adapter accepts dense single/double complex vectors and real N×2 I/Q
-matrices. Real vectors are I-only. Save selected variables with `save(...,
-'-v7')` for v7.3 sources. Source file hash and variable names are recorded;
-keep the original MAT file if its other variables matter to your experiment.
+MATLAB reads the file, so every MAT-file version works, v7.3 included. The MAT adapter
+accepts dense single/double complex vectors and real N×2 I/Q matrices. Real vectors are
+I-only. The source file name, SHA-256 and variable names are recorded; keep the original
+MAT file if its other variables matter to your experiment.
 
 ## Train the PA and DPD
 
@@ -70,8 +74,10 @@ report = opendpd.result(dpd);
 ```
 
 `ModelParameters` and `Training` use the existing OpenDPD schema, for example
-`struct('hidden_size', 8)` and `struct('epochs', 5)`. CPU is the default. A
-complete experiment configuration can be sent with `opendpd.submit(p, config)`.
+`struct('hidden_size', 8)` and `struct('epochs', 5)`. `Device="auto"` is the default: the
+first detected of `cuda`, `mps`, `cpu` (least-squares models stay on `cpu`), which is also
+Studio's default. Pass `Device="cpu"` for a small reproducible run. A complete experiment
+configuration can be sent with `opendpd.submit(p, config)`.
 Training remains in Python/PyTorch and uses the model registry and validation
 already used by Studio.
 
@@ -89,11 +95,20 @@ save("predistorted-input.mat", "u", "info", "xTest", "-v7");
 For a DPD run it is the **predistorted PA input**, before a physical or simulated
 PA. Applying a PA run instead produces the modeled PA output.
 
-The preview supports ordinary, unquantized GRU models on CPU. It resets state
-at the trained run's frozen segment boundaries, zero-pads the final segment and
-trims padding from the returned vector. Calls do not share hidden state. Each
-call loads the recorded model in an isolated process, so pass a whole waveform
-rather than repeatedly calling it for individual samples.
+`apply` supports `gru`, `tres_gru`, `gmp`, `mp_ls` and `gmp_ls` on CPU, unquantized. Each
+has a test that compares its output with the Python evaluator. By default
+(`Execution="offline_segmented"`) it is how the run was scored: state resets at the trained
+run's frozen segment boundaries, the final segment is zero padded and the padding is trimmed
+from the returned vector. `tres_gru` reads 16 future samples, so within 16 samples of a
+segment end it sees zero padding rather than the waveform; `info.limitations` says so.
+Calls do not share hidden state. Each call loads the recorded model in an isolated process,
+so pass a whole waveform rather than repeatedly calling it for individual samples.
+
+For a waveform that will run continuously, `Execution="streaming"` carries one state across
+chunks (`ChunkSamples`) for `gru` and `gmp`, whose registered streaming variants are
+`gru_stream` and `gmp_stream`. Other models are refused rather than approximated. Streaming
+output is a different signal from the one the stored report scored; `info.streaming` records
+the measured warm-up, look-ahead and chunk consistency of that execution.
 
 Inference metadata includes checkpoint and sample hashes, execution mode,
 sample count, segment length, sample rate, preprocessing version and output
@@ -109,11 +124,28 @@ opendpd.openStudio(p, Page="run", RunID=exported.ID);
 ```
 
 The existing `runDPD` exporter carries state across the whole test waveform;
-`apply` resets at segment boundaries. These outputs can differ. Read the export
+`apply` resets at segment boundaries by default. These outputs can differ. Read the export
 sidecar for its execution semantics. The quickstart saves the segmented
 training-run report alongside `apply`'s waveform and separately records the
 export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
 to `apply` does not update that stored report or establish hardware performance.
+
+## Score a capture without training
+
+Metrics need no project or server. Play `opendpd.waveform` through your amplifier, capture its output and score it
+with the code Studio uses:
+
+```matlab
+w = opendpd.waveform(Seed=1, Subframes=10);       % the waveform to play (loop it); w.x is 30.72 MS/s
+% ... play w (resampled to your generator's rate), capture the PA output as y at SampleRate fs ...
+evm  = opendpd.metrics.evm(y, w, SampleRate=fs);                                  % evm.EVM_RMS in percent
+aclr = opendpd.metrics.aclr(y, SampleRate=fs, SegmentSamples=2048, Waveform=w);   % aclr.ACLR_L, aclr.ACLR_R in dBc
+```
+
+`SegmentSamples` has no default because the ratio depends on it: it is the Welch segment length, and a longer
+segment resolves the band edges better. Report it with the number. If `Status` is not `"ok"`, read `Reason`; for
+example `"missing_reference"` means the capture does not correlate with `w`. See the
+[function reference](reference.html#metrics-without-a-run) for all options.
 
 ## Reconnect, cancel and stop
 

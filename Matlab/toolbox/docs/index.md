@@ -108,9 +108,10 @@ delivery. The workspace service and training jobs continue. Reconnect and send
 a completed report again when ready.
 
 Training uses the existing OpenDPD model registry. MATLAB `apply` supports
-**ordinary, unquantized GRU models on CPU**, using offline segments. MATLINK
+unquantized **`gru`, `tres_gru`, `gmp`, `mp_ls` and `gmp_ls` on CPU**, using offline
+segments by default or one continuous state for `gru` and `gmp`. MATLINK
 returns saved report structs; use the script API for waveform inference and
 export. DPD reports evaluate a learned PA surrogate. Hardware performance
 requires a separate measured capture and evaluation. This preview runs on the
-local desktop; MATLAB Online, remote services, Simulink and streaming execution
-are outside its current scope.
+local desktop; MATLAB Online, remote services and Simulink are outside its current
+scope.
