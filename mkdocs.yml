@@ -147,6 +147,7 @@ not_in_nav: |
   performance/studio-2.2.8.md
   performance/arena-*.md
   performance/pa-identification-comparison.md
+  performance/matlab-parity.md
   architecture/**
   community/**
   design/**
