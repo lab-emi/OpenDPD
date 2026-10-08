@@ -1,6 +1,6 @@
 # OpenDPD ↔ MATLAB parity
 
-Status: **pre-registered; run 1 done, amendment 1 registered, run 2 pending** (2026-10-08). The registration (rules, signals, procedures, budgets and
+Status: **pre-registered; runs 1 and 2 done — the LTE cross-validation does not pass as registered** (2026-10-08). The registration (rules, signals, procedures, budgets and
 the scored/diagnostic split) was committed before any comparison script existed or was run. The commits that
 follow change only this status line, the run log and the Results section; they do not edit the registration. If
 the registration itself must change, that is a dated amendment appended below, never an edit in place.
@@ -177,7 +177,7 @@ that comparison is run.
 |---|---|---|---|
 | 0 | 2026-10-08 | first execution of the harness | no result. The OpenDPD stage stopped because `demodulate()` returned `None` for S6 (synchronisation refused); the harness was changed to record a refusal as a result instead of stopping |
 | 1 | 2026-10-08 | harness records refusals. The MATLAB chain was corrected to apply the protocol's rule that a normalised timing peak below 0.3 means `missing_reference` (§2 step 2): the chain description above omitted it, which is a defect of the check, not a difference between the tools | registered signals S0–S9: **96 of 109 scored items within budget, 7 outside, 6 not evaluable**. Record: `matlab-parity-run1.json` |
-| 2 | — | amendment 1 items added to the harness | pending |
+| 2 | 2026-10-08 | amendment 1 items added to the harness (S6b, S9b, rule-replica diagnostic, timing-peak table) | registered items unchanged from run 1; 6 added scored items all within budget: **102 of 115 within budget, 7 outside, 6 not evaluable**. Record: `matlab-parity.json` |
 
 ## Amendment 1 (2026-10-08, after run 1 and before run 2)
 
@@ -214,4 +214,209 @@ registered ACLR items.
 
 ## Results
 
-Run 2 pending.
+**Verdict: the registered LTE cross-validation does not pass as registered.** Of 115 scored items 102 are within
+budget, 7 are outside it, and 6 cannot be evaluated because both tools refuse the signal. The reasons are
+specific and, except for the refusals, understood; none of them is a defect found in the EVM or waveform code.
+
+What agrees:
+
+* **Waveform generation (P1).** `lteOFDMModulate` of the package symbols equals the package waveform to 2.9·10⁻⁸
+  relative RMS after one real scale factor (59.12; MathWorks normalises differently), same length, lag 0.
+* **EVM (P3).** On the ten evaluable signals (S0–S5, S7, S8 and the added S6b, S9b) the independent MATLAB chain
+  and OpenDPD differ by at most 2.1·10⁻⁹ percentage points against a budget of 0.05, except S0 (4·10⁻⁷, where
+  the EVM itself, 2·10⁻⁶ %, is the float32 quantisation floor of the package), with the same integer
+  timing. The same chain fed with OpenDPD's own rate-converted signal gives the same numbers, and `resample`
+  and `resample_poly` agree to better than 10⁻¹⁵ relative at every rate (6·10⁻¹⁶ at most), so the two
+  resamplers are not a source of difference here. On the clean S9b both tools recover the injected +30 Hz to 4·10⁻⁵ Hz.
+* **ACLR estimator.** A Signal Processing Toolbox `pwelch` computation with OpenDPD's settings and band rule
+  reproduces OpenDPD's ACLR to 10⁻¹⁴ dB on every signal and resolution.
+
+What does not, and why:
+
+* **F2 — `comm.ACPR` vs OpenDPD ACLR (7 scored values outside 0.1 dB, up to 0.21 dB, all on the low-distortion
+  S2 and S3).** The two tools integrate a band differently when its edge is not a bin centre. OpenDPD sums the
+  bins whose centre lies in [lo, hi); `comm.ACPR` sums the enclosing range from the last bin at or below lo to
+  the first bin at or above hi (`ACPR.m`, `freqRange`). At 60 kHz resolution that is 302 bins in each adjacent
+  channel against OpenDPD's 300, and the extra bins sit at the steep near edge. Diagnostic A1-2 shows this is the
+  whole difference: a `pwelch` PSD integrated with `comm.ACPR`'s rule reproduces `comm.ACPR` to at most
+  2.5·10⁻⁴ dB in all 66 comparisons (11 signals × 3 resolutions × 2 sides). The effect scales with the bin width and with how much of the
+  adjacent power is skirt (largest for S1, S2, S9; 0.02–0.09 dB for S5). It is a definitional difference between
+  the two tools, not an estimator error; the registered budget was nevertheless exceeded and stays exceeded.
+* **F1 — the 350 Hz signals S6 and S9 are refused by both tools.** The timing step does not compensate a carrier
+  offset, so the correlation peak of the 10 ms waveform is 0.09 at 350 Hz (below the protocol's 0.3 rule); it is
+  0.86 at 30 Hz and 0.009 at 100 Hz (table below), and follows |sinc(f·T)|, which reaches 0.3 at about 75 Hz.
+  A capture whose offset exceeds that is reported as `missing_reference`, however good the signal. Whether that matters depends on the lab setup (a shared
+  reference clock keeps the offset to a few Hz). Both tools agree on the refusal, which is why it is reported
+  as agreement on a status and as not evaluable for the numeric items. The added S6b/S9b at +30 Hz exercise the
+  offset estimation, timing and gain handling that S6/S9 were meant to, and pass.
+* **F3 — the reference waveform's own ACLR is about −42 dBc** (S1, no PA; −42.2 dBc at 60 kHz resolution). The
+  protocol specifies the test waveform without windowing or filtering, which is consistent with this level
+  (the cause was not isolated further here). An ideally linearised PA reproduces the input's own skirt, so the
+  profile cannot show an ACLR better than about −42 dBc with this waveform, and the adjacent power of the
+  low-distortion S2 is mostly that skirt. This is recorded, not changed.
+
+Limits of this evidence:
+
+* One MATLAB release (R2026a Update 5) on Linux, and one machine. Other releases and Windows/macOS were not run.
+* The MATLAB EVM chain is an independent *implementation of the documented procedure*, written with MathWorks
+  functions, by the same author who had read OpenDPD's implementation. Agreement shows that the two
+  implementations compute the same thing; it does not show that the procedure equals 3GPP TS 36.104 Annex E,
+  which the protocol lists as deviations and which this run does not quantify.
+* The signals are synthetic (a short-memory polynomial PA); no measured data and no hardware are involved.
+* The 6 not-evaluable items are not counted as agreement.
+
+What this run does **not** do: it does not change the `validation` flag of `opendpd/core/metrics/ofdm_evm_v1.py`
+(protected path, science review), and it does not edit `docs/protocols/`. The maintainers decide whether the
+profile should keep its band rule (document the expected ≤ 0.2 dB difference to `comm.ACPR` at resolutions of
+60 kHz and coarser), state the carrier-offset capture range, and state the waveform's ACLR floor.
+
+Reproduce: `python scripts/matlab_parity.py --work /tmp/parity --matlab <path to matlab> --write-report` (about
+two minutes; needs the Communications, LTE and Signal Processing Toolboxes). Exit status 1 means the registered
+cross-validation did not pass.
+
+<!-- parity-results:begin -->
+Run 2 — 2026-10-08. MATLAB 26.1.0.3346908 (R2026a) Update 5; Communications Toolbox 26.1, LTE Toolbox 26.1, Signal Processing Toolbox 26.1. Python 3.13.14, NumPy 2.4.4, SciPy 1.18.0. OpenDPD commit `314b3ced7e85` with local modifications.
+
+**Scored items: 102 of 115 within budget, 7 outside budget, 6 not evaluable — the registered cross-validation does not pass as registered.**
+
+Outside budget:
+
+* P2 S2 ACLR_L nperseg=1024 vs comm.ACPR aligned: difference 0.15335180894727074 (budget <= 0.1 dB)
+* P2 S2 ACLR_R nperseg=1024 vs comm.ACPR default: difference 0.1617750901145243 (budget <= 0.1 dB)
+* P2 S2 ACLR_R nperseg=1024 vs comm.ACPR aligned: difference 0.15779905304619035 (budget <= 0.1 dB)
+* P2 S2 ACLR_L nperseg=2048 vs comm.ACPR default: difference -0.20636538612878041 (budget <= 0.1 dB)
+* P2 S2 ACLR_L nperseg=4096 vs comm.ACPR default: difference -0.1292434422656754 (budget <= 0.1 dB)
+* P2 S3 ACLR_L nperseg=1024 vs comm.ACPR aligned: difference 0.11454800855568692 (budget <= 0.1 dB)
+* P2 S3 ACLR_R nperseg=1024 vs comm.ACPR aligned: difference 0.11386556206630871 (budget <= 0.1 dB)
+
+Not evaluable (a tool refused the signal, so no difference exists to compare):
+
+* P3 S6 EVM_RMS (percent): not evaluable: OpenDPD missing_reference (normalised peak 0.090); MATLAB chain missing_reference (normalised peak 0.090); the two tools agree on the refusal
+* P3 S6 integer timing: not evaluable: OpenDPD missing_reference (normalised peak 0.090); MATLAB chain missing_reference (normalised peak 0.090); the two tools agree on the refusal
+* P3 S9 EVM_RMS (percent): not evaluable: OpenDPD missing_reference (normalised peak 0.090); MATLAB chain missing_reference (normalised peak 0.090); the two tools agree on the refusal
+* P3 S9 integer timing: not evaluable: OpenDPD missing_reference (normalised peak 0.090); MATLAB chain missing_reference (normalised peak 0.090); the two tools agree on the refusal
+* P3 S9 frequency offset, OpenDPD: not evaluable: OpenDPD missing_reference (normalised peak 0.090); MATLAB chain missing_reference (normalised peak 0.090); the two tools agree on the refusal
+* P3 S9 frequency offset, MATLAB: not evaluable: OpenDPD missing_reference (normalised peak 0.090); MATLAB chain missing_reference (normalised peak 0.090); the two tools agree on the refusal
+
+### P1 — waveform generation
+
+| item | kind | OpenDPD package | MATLAB | difference | budget | within |
+|---|---|---|---|---|---|---|
+| sample count | scored | 307200 | 307200 | 0 | exact | yes |
+| first-sample alignment (peak lag) | scored | 0 | 0 | 0 | exact | yes |
+| relative RMS difference after one real scale | scored | — | 2.85483e-08 | 2.85483e-08 | <= 1e-06 | yes |
+| scale factor | diagnostic | — | 59.1207 | — | — | — |
+
+### P2 — ACLR against `comm.ACPR`
+
+Worst absolute difference over both sides and all `nperseg` values (full list in `matlab-parity.json`); budget 0.1 dB for scored rows.
+
+| signal | MATLAB comparator | kind | values compared | worst difference (dB) | all within |
+|---|---|---|---|---|---|
+| S1 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | -0.000157 | — |
+| S1 | comm.ACPR default | diagnostic | 6 | -0.25 | — |
+| S1 | comm.ACPR aligned | diagnostic | 6 | 0.175 | — |
+| S1 | pwelch (OpenDPD settings) | diagnostic | 6 | 0 | — |
+| S2 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 8.95e-05 | — |
+| S2 | comm.ACPR default | scored | 6 | -0.206 | no |
+| S2 | comm.ACPR aligned | scored | 6 | 0.158 | no |
+| S2 | pwelch (OpenDPD settings) | diagnostic | 6 | -7.11e-15 | — |
+| S3 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 9.81e-05 | — |
+| S3 | comm.ACPR default | scored | 6 | -0.0892 | yes |
+| S3 | comm.ACPR aligned | scored | 6 | 0.115 | no |
+| S3 | pwelch (OpenDPD settings) | diagnostic | 6 | 7.11e-15 | — |
+| S4 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 0.000115 | — |
+| S4 | comm.ACPR default | scored | 6 | -0.0398 | yes |
+| S4 | comm.ACPR aligned | scored | 6 | 0.0972 | yes |
+| S4 | pwelch (OpenDPD settings) | diagnostic | 6 | 0 | — |
+| S5 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 0.000104 | — |
+| S5 | comm.ACPR default | scored | 6 | -0.0247 | yes |
+| S5 | comm.ACPR aligned | scored | 6 | 0.0906 | yes |
+| S5 | pwelch (OpenDPD settings) | diagnostic | 6 | 7.11e-15 | — |
+| S6 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 0.000106 | — |
+| S6 | comm.ACPR default | scored | 6 | 0.0334 | yes |
+| S6 | comm.ACPR aligned | scored | 6 | 0.0973 | yes |
+| S6 | pwelch (OpenDPD settings) | diagnostic | 6 | 7.11e-15 | — |
+| S7 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 8.59e-05 | — |
+| S7 | comm.ACPR default | scored | 6 | -0.0395 | yes |
+| S7 | comm.ACPR aligned | scored | 6 | 0.0847 | yes |
+| S7 | pwelch (OpenDPD settings) | diagnostic | 6 | 7.11e-15 | — |
+| S8 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 5.79e-05 | — |
+| S8 | comm.ACPR default | scored | 6 | -0.0384 | yes |
+| S8 | comm.ACPR aligned | scored | 6 | 0.0942 | yes |
+| S8 | pwelch (OpenDPD settings) | diagnostic | 6 | -7.11e-15 | — |
+| S9 | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | -0.000243 | — |
+| S9 | comm.ACPR default | diagnostic | 6 | 0.272 | — |
+| S9 | comm.ACPR aligned | diagnostic | 6 | 0.175 | — |
+| S9 | pwelch (OpenDPD settings) | diagnostic | 6 | 0 | — |
+| S6b | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | 0.000106 | — |
+| S6b | comm.ACPR default | diagnostic | 6 | 0.033 | — |
+| S6b | comm.ACPR aligned | diagnostic | 6 | 0.0974 | — |
+| S6b | pwelch (OpenDPD settings) | diagnostic | 6 | -7.11e-15 | — |
+| S9b | enclosing-rule replica of comm.ACPR aligned | diagnostic | 6 | -0.000243 | — |
+| S9b | comm.ACPR default | diagnostic | 6 | 0.272 | — |
+| S9b | comm.ACPR aligned | diagnostic | 6 | 0.175 | — |
+| S9b | pwelch (OpenDPD settings) | diagnostic | 6 | 7.11e-15 | — |
+
+### P3 — EVM against the independent MATLAB chain
+
+| item | kind | OpenDPD | MATLAB | difference | budget | within |
+|---|---|---|---|---|---|---|
+| S0 EVM_RMS (percent) | scored | 1.93006e-06 | 2.33372e-06 | 4.037e-07 | <= 0.05 points | yes |
+| S0 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S1 EVM_RMS (percent) | scored | 0.0298635 | 0.0298635 | 6.89e-10 | <= 0.05 points | yes |
+| S1 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S1 EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 0.0298635 | 0.0298635 | 6.89e-10 | — | — |
+| S1 relative difference of the two rate converters | diagnostic | — | 3.94603e-16 | — | — | — |
+| S2 EVM_RMS (percent) | scored | 0.983657 | 0.983657 | -1.073e-09 | <= 0.05 points | yes |
+| S2 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S2 EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 0.983657 | 0.983657 | -1.073e-09 | — | — |
+| S2 relative difference of the two rate converters | diagnostic | — | 3.94576e-16 | — | — | — |
+| S3 EVM_RMS (percent) | scored | 2.72583 | 2.72583 | -1.05e-09 | <= 0.05 points | yes |
+| S3 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S3 EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 2.72583 | 2.72583 | -1.05e-09 | — | — |
+| S3 relative difference of the two rate converters | diagnostic | — | 3.93994e-16 | — | — | — |
+| S4 EVM_RMS (percent) | scored | 5.31525 | 5.31525 | -9.998e-10 | <= 0.05 points | yes |
+| S4 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S4 EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 5.31525 | 5.31525 | -9.998e-10 | — | — |
+| S4 relative difference of the two rate converters | diagnostic | — | 3.94593e-16 | — | — | — |
+| S5 EVM_RMS (percent) | scored | 10.6382 | 10.6382 | -9.036e-10 | <= 0.05 points | yes |
+| S5 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S5 EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 10.6382 | 10.6382 | -9.036e-10 | — | — |
+| S5 relative difference of the two rate converters | diagnostic | — | 4.00223e-16 | — | — | — |
+| S6 EVM_RMS (percent) | scored | — | — | — | <= 0.05 points | — |
+| S6 integer timing | scored | — | — | — | exact | — |
+| S7 EVM_RMS (percent) | scored | 5.44974 | 5.44974 | -1.28e-09 | <= 0.05 points | yes |
+| S7 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S7 EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 5.44974 | 5.44974 | -1.28e-09 | — | — |
+| S7 relative difference of the two rate converters | diagnostic | — | 3.93829e-16 | — | — | — |
+| S8 EVM_RMS (percent) | scored | 5.3213 | 5.3213 | -9.74e-10 | <= 0.05 points | yes |
+| S8 integer timing | scored | 0 | 0 | 0 | exact | yes |
+| S8 EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 5.3213 | 5.3213 | -9.74e-10 | — | — |
+| S8 relative difference of the two rate converters | diagnostic | — | 5.62099e-16 | — | — | — |
+| S9 EVM_RMS (percent) | scored | — | — | — | <= 0.05 points | — |
+| S9 integer timing | scored | — | — | — | exact | — |
+| S9 frequency offset, OpenDPD | scored | 350 | — | — | <= 0.01 Hz of the injected value | — |
+| S9 frequency offset, MATLAB | scored | 350 | — | — | <= 0.01 Hz of the injected value | — |
+| S6b EVM_RMS (percent) | scored | 5.31521 | 5.31521 | -9.933e-10 | <= 0.05 points | yes |
+| S6b integer timing | scored | 92160 | 92160 | 0 | exact | yes |
+| S6b EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 5.31521 | 5.31521 | -9.934e-10 | — | — |
+| S6b relative difference of the two rate converters | diagnostic | — | 3.92053e-16 | — | — | — |
+| S6b frequency offset, OpenDPD vs MATLAB estimate | diagnostic | 30.0002 | 30.0002 | 9.962e-12 | — | — |
+| S6b frequency offset, lteFrequencyOffset (cyclic prefix, no guard) | diagnostic | 30.0002 | 30.0046 | 0.00443 | — | — |
+| S9b EVM_RMS (percent) | scored | 0.0264295 | 0.0264295 | 2.02e-09 | <= 0.05 points | yes |
+| S9b integer timing | scored | 92160 | 92160 | 0 | exact | yes |
+| S9b EVM_RMS, MATLAB chain on OpenDPD's baseband (isolates the resamplers) | diagnostic | 0.0264295 | 0.0264295 | 2.02e-09 | — | — |
+| S9b relative difference of the two rate converters | diagnostic | — | 3.95442e-16 | — | — | — |
+| S9b frequency offset, OpenDPD | scored | 30 | 30 | 3.939e-05 | <= 0.01 Hz of the injected value | yes |
+| S9b frequency offset, MATLAB | scored | 30 | 30 | 3.939e-05 | <= 0.01 Hz of the injected value | yes |
+
+### A1-3 — timing peak against carrier offset (OpenDPD only)
+
+| waveform | 0 Hz | 10 Hz | 30 Hz | 50 Hz | 100 Hz | 350 Hz | 1000 Hz |
+|---|---|---|---|---|---|---|---|
+| 1 subframes | 1.000 | 1.000 | 0.999 | 0.996 | 0.984 | 0.811 | 0.025 |
+| 10 subframes | 1.000 | 0.984 | 0.859 | 0.637 | 0.009 | 0.091 | 0.009 |
+
+The profile reports `missing_reference` below a peak of 0.3.
+<!-- parity-results:end -->
