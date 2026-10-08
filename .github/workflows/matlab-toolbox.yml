@@ -1,0 +1,77 @@
+name: MATLAB toolbox preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: MATLAB release to test and package
+        required: true
+        default: R2026a
+        type: choice
+        options: [R2024b, R2025b, R2026a, R2026b]
+
+permissions:
+  contents: read
+
+jobs:
+  toolbox:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      # Optional for public repositories; required by MathWorks for private CI.
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+      - name: Build Studio
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+      - name: Install and verify Python SDK
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip install Markdown
+          python scripts/build_matlab_docs.py --check
+          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py -q
+          python -c 'import os, sys; open(os.environ["GITHUB_ENV"], "a").write("OPENDPD_MATLAB_PYTHON=" + sys.executable + "\n")'
+      - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
+        with:
+          release: ${{ inputs.release }}
+      - name: Run MATLAB tests and build toolbox
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
+        with:
+          command: cd(fullfile('Matlab','toolbox')); buildtool package
+      - name: Install package and run example in a fresh MATLAB session
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
+        with:
+          command: >-
+            packageFile = fullfile(pwd,'Matlab','toolbox','dist','OpenDPD-0.4.0.mltbx');
+            cd(tempdir);
+            addonRoot = [tempname '-addons']; mkdir(addonRoot);
+            s = settings; s.matlab.addons.InstallationFolder.TemporaryValue = addonRoot;
+            installed = matlab.addons.toolbox.installToolbox(packageFile);
+            cleanup = onCleanup(@() matlab.addons.toolbox.uninstallToolbox(installed));
+            opendpd.setup(PythonExecutable=string(getenv('OPENDPD_MATLAB_PYTHON')));
+            toolboxRoot = fileparts(fileparts(which('opendpd.setup')));
+            assert(startsWith(toolboxRoot,addonRoot));
+            assert(isfile(opendpd.help(OpenBrowser=false)));
+            p = opendpd.openProject(string(tempname));
+            link = opendpd.studio(p,OpenBrowser=false);
+            assert(link.Connected); opendpd.disconnect(link);
+            opendpd.closeProject(p,StopService=true);
+            addpath(fullfile(toolboxRoot,'examples'));
+            opendpdQuickstart;
+            clear cleanup;
+            assert(isempty(matlab.addons.toolbox.installedToolboxes));
+      - name: Upload preview package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: OpenDPD-toolbox-${{ inputs.release }}
+          path: Matlab/toolbox/dist/*.mltbx
+          if-no-files-found: error

@@ -16,6 +16,7 @@ import DnsOutlinedIcon from '@mui/icons-material/DnsOutlined'
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined'
 import PublishOutlinedIcon from '@mui/icons-material/PublishOutlined'
 import RuleOutlinedIcon from '@mui/icons-material/RuleOutlined'
+import LinkIcon from '@mui/icons-material/Link'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
@@ -54,6 +55,7 @@ const NAV: Array<{ to: string; key: MessageKey; Icon: typeof HomeIcon }> = [
   { to: '/datasets', key: 'nav.datasets', Icon: DatasetIcon },
   { to: '/experiments', key: 'nav.experiments', Icon: ScienceIcon },
   { to: '/results', key: 'nav.results', Icon: InsightsIcon },
+  ...(!WEB_MODE ? [{ to: '/matlink', key: 'matlink.title' as const, Icon: LinkIcon }] : []),
   { to: '/arena', key: 'arena.title', Icon: EmojiEventsOutlinedIcon },
   { to: '/server', key: 'server.title', Icon: DnsOutlinedIcon },
   { to: '/settings', key: 'nav.settings', Icon: SettingsIcon },
@@ -88,7 +90,7 @@ export function AppShell() {
     // Route changes and explicit same-page resets are the viewport triggers.
     // oxlint-disable-next-line react/exhaustive-effect-dependencies
   }, [pathname, revision])
-  const showWorkflow = !['/settings', '/about', '/server', '/hardware', '/robustness', '/sweeps', '/arena'].some(path => pathname === path || pathname.startsWith(path + '/'))
+  const showWorkflow = !['/settings', '/about', '/server', '/hardware', '/robustness', '/sweeps', '/arena', '/matlink'].some(path => pathname === path || pathname.startsWith(path + '/'))
   const reset = (global: boolean) => {
     // Drop selections encoded in detail URLs as well as drafts in React state.
     // A run restarts at its task's setup, never at the old progress dashboard.

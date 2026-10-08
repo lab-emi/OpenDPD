@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Script workflow · OpenDPD for MATLAB</title>
+<link rel="stylesheet" href="guide.css"></head><body>
+<a class="skip" href="#content">Skip to content</a>
+<header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
+<span class="version">0.4.0 PREVIEW</span></header>
+<nav aria-label="Guide"><a href="index.html">Get started</a>
+<a href="gui.html">MATLINK walkthrough</a>
+<a href="workflow.html" aria-current="page">Script workflow</a>
+<a href="reference.html">Function reference</a>
+<a href="architecture.html">Integration design</a>
+<a href="troubleshooting.html">Troubleshooting</a></nav>
+<main id="content"><h1 id="script-workflow">Script workflow</h1>
+<p>Scripts and MATLINK use the same workspace service as Studio. Script workflows
+can save workspace paths and run IDs for reproducible reconnection; the MATLINK
+GUI selects experiments by name.</p>
+<h2 id="run-the-complete-synthetic-example">Run the complete synthetic example</h2>
+<p>After <a href="index.html#install-and-select-python">setup</a>:</p>
+<pre><code class="language-matlab">toolboxRoot = fileparts(fileparts(which('opendpd.setup')));
+addpath(fullfile(toolboxRoot, &quot;examples&quot;));
+summary = opendpdQuickstart();
+</code></pre>
+<p>The example creates a fresh workspace and a synthetic nonlinear PA capture,
+trains small PA and DPD GRUs for two epochs on CPU, checks inference, exports a
+waveform and writes <code>matlab-dpd-output.mat</code>. It closes its service when finished.
+The MAT file includes <code>xTest</code>, <code>u</code>, <code>info</code>, <code>fs</code> and <code>report</code>. This is a workflow
+check, not a model benchmark. Reopen it with:</p>
+<pre><code class="language-matlab">p = opendpd.openProject(summary.workspace);
+link = opendpd.studio(p);
+</code></pre>
+<h2 id="import-your-capture">Import your capture</h2>
+<p>Let <code>x</code> be the PA input and <code>y</code> its aligned output, recorded at the same sample
+rate. Provide occupied signal bandwidth explicitly, in Hz.</p>
+<pre><code class="language-matlab">p = opendpd.openProject(&quot;my-pa-workspace&quot;);
+ds = opendpd.importIQ(p, x, y, Name=&quot;capture-001&quot;, ...
+    SampleRate=491.52e6, Bandwidth=200e6, Origin=&quot;measured&quot;, ...
+    SegmentSamples=256, GuardSamples=256);
+</code></pre>
+<p>Rows and columns are accepted. Backend storage uses float32; source precision
+and shape are recorded. No delay correction, normalization or gain fitting is
+performed at the bridge boundary. Nonfinite values and float32 overflow are
+rejected. Import uses the existing contiguous train/validation/test split; set
+the guard to cover your training frame context.</p>
+<p>For a MAT v7 file with numeric variables:</p>
+<pre><code class="language-matlab">ds = opendpd.importMAT(p, &quot;capture.mat&quot;, ...
+    InputVariable=&quot;tx&quot;, OutputVariable=&quot;rx&quot;, Name=&quot;capture-002&quot;, ...
+    SampleRate=491.52e6, Bandwidth=200e6, Origin=&quot;measured&quot;);
+</code></pre>
+<p>The MAT adapter accepts dense single/double complex vectors and real N×2 I/Q
+matrices. Real vectors are I-only. Save selected variables with <code>save(...,
+'-v7')</code> for v7.3 sources. Source file hash and variable names are recorded;
+keep the original MAT file if its other variables matter to your experiment.</p>
+<h2 id="train-the-pa-and-dpd">Train the PA and DPD</h2>
+<pre><code class="language-matlab">training = struct('epochs', 150, 'frame_length', 200, ...
+    'frame_stride', 100, 'seed', 0);
+paJob = opendpd.trainPA(p, ds, Model=&quot;gru&quot;, Training=training);
+opendpd.status(paJob)
+pa = opendpd.wait(paJob, Timeout=3600);
+dpdJob = opendpd.trainDPD(p, ds, PA=pa, Model=&quot;gru&quot;, Training=training);
+dpd = opendpd.wait(dpdJob, Timeout=3600);
+report = opendpd.result(dpd);
+</code></pre>
+<p><code>ModelParameters</code> and <code>Training</code> use the existing OpenDPD schema, for example
+<code>struct('hidden_size', 8)</code> and <code>struct('epochs', 5)</code>. CPU is the default. A
+complete experiment configuration can be sent with <code>opendpd.submit(p, config)</code>.
+Training remains in Python/PyTorch and uses the model registry and validation
+already used by Studio.</p>
+<h2 id="apply-the-dpd">Apply the DPD</h2>
+<p>Use an independent <code>xTest</code> waveform with the training sample rate and
+preprocessing:</p>
+<pre><code class="language-matlab">[u, info] = opendpd.apply(dpd, xTest);
+save(&quot;predistorted-input.mat&quot;, &quot;u&quot;, &quot;info&quot;, &quot;xTest&quot;, &quot;-v7&quot;);
+</code></pre>
+<p><code>u</code> is a complex single column vector with the same sample count as <code>xTest</code>.
+For a DPD run it is the <strong>predistorted PA input</strong>, before a physical or simulated
+PA. Applying a PA run instead produces the modeled PA output.</p>
+<p>The preview supports ordinary, unquantized GRU models on CPU. It resets state
+at the trained run's frozen segment boundaries, zero-pads the final segment and
+trims padding from the returned vector. Calls do not share hidden state. Each
+call loads the recorded model in an isolated process, so pass a whole waveform
+rather than repeatedly calling it for individual samples.</p>
+<p>Inference metadata includes checkpoint and sample hashes, execution mode,
+sample count, segment length, sample rate, preprocessing version and output
+role. Later edits to dataset metadata do not alter frozen inference settings.
+A checkpoint whose hash changed is refused.</p>
+<p>To queue the standard test-split waveform export:</p>
+<pre><code class="language-matlab">exported = opendpd.wait(opendpd.runDPD(dpd));
+exportReport = opendpd.result(exported);
+opendpd.openStudio(p, Page=&quot;run&quot;, RunID=exported.ID);
+</code></pre>
+<p>The existing <code>runDPD</code> exporter carries state across the whole test waveform;
+<code>apply</code> resets at segment boundaries. These outputs can differ. Read the export
+sidecar for its execution semantics. The quickstart saves the segmented
+training-run report alongside <code>apply</code>'s waveform and separately records the
+export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
+to <code>apply</code> does not update that stored report or establish hardware performance.</p>
+<h2 id="reconnect-cancel-and-stop">Reconnect, cancel and stop</h2>
+<p>MATLINK report delivery does not require script IDs. Use its <strong>Send to MATLAB</strong>
+or <strong>Send when ready</strong> actions, then select <strong>Open in MATLAB</strong> to inspect the
+saved report. For scripts, keep Job handles during a session and save IDs for
+later reconnection:</p>
+<pre><code class="language-matlab">savedRunID = dpd.ID;
+savedWorkspace = p.Workspace;
+opendpd.disconnect(p.Workspace); % if MATLINK is attached
+opendpd.closeProject(p);  % disconnect; service and jobs continue
+p = opendpd.openProject(savedWorkspace);
+job = opendpd.getRun(p, savedRunID);
+opendpd.status(job)
+opendpd.cancel(job);      % explicit cancellation request, when applicable
+</code></pre>
+<p>If MATLINK is attached, <code>opendpd.disconnect(p.Workspace)</code> detaches that bridge
+without stopping training or closing a caller-owned Project. Calling
+<code>opendpd.disconnect()</code> detaches all MATLINK bridges in this MATLAB process.
+Disconnecting ends pending report delivery; reconnect and request a saved report
+again when needed.</p>
+<p>Save paths and run IDs as strings; MATLAB handles containing Python objects
+are not portable model artifacts. A timeout or Ctrl+C during <code>wait</code> leaves the
+job running. Cancellation remains <code>cancel_requested</code> until the worker stops.</p>
+<p><code>opendpd.closeProject(p, StopService=true)</code> stops an SDK-started service and all
+jobs in that workspace, including after reconnecting. Stop externally launched
+Studio through its original launcher. Uninstalling the toolbox leaves Python
+environments and experiment workspaces intact.</p></main>
+<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+</body></html>

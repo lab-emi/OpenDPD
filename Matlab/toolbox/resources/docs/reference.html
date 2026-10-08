@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Function reference · OpenDPD for MATLAB</title>
+<link rel="stylesheet" href="guide.css"></head><body>
+<a class="skip" href="#content">Skip to content</a>
+<header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
+<span class="version">0.4.0 PREVIEW</span></header>
+<nav aria-label="Guide"><a href="index.html">Get started</a>
+<a href="gui.html">MATLINK walkthrough</a>
+<a href="workflow.html">Script workflow</a>
+<a href="reference.html" aria-current="page">Function reference</a>
+<a href="architecture.html">Integration design</a>
+<a href="troubleshooting.html">Troubleshooting</a></nav>
+<main id="content"><h1 id="function-reference">Function reference</h1>
+<p>All functions live in the <code>opendpd</code> namespace. MATLAB's <code>help opendpd.function</code>
+also shows each function's short reference. Numeric sample rate and bandwidth
+arguments use <strong>Hz</strong>; MATLINK displays <strong>MHz</strong>.</p>
+<h2 id="environment-and-matlink">Environment and MATLINK</h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Purpose and options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>info = opendpd.setup(...)</code></td>
+<td>Select Python. <code>PythonExecutable=""</code>, <code>SourceDirectory=""</code>, <code>ExecutionMode="OutOfProcess"</code>. SourceDirectory is an optional development checkout. Does not install packages or terminate Python.</td>
+</tr>
+<tr>
+<td><code>info = opendpd.doctor()</code></td>
+<td>Dependency checks, Python/OpenDPD versions, SDK protocol and supported inference models.</td>
+</tr>
+<tr>
+<td><code>p = opendpd.openProject(workspace, ...)</code></td>
+<td>Open or attach a local workspace. <code>StartService=true</code>, <code>Timeout=30</code> seconds. <code>p.Workspace</code> is the resolved path.</td>
+</tr>
+<tr>
+<td><code>opendpd.closeProject(p, ...)</code></td>
+<td>Disconnect a Project. <code>StopService=false</code>; true explicitly stops an SDK-started service and its jobs. Use <code>disconnect</code> to detach MATLINK.</td>
+</tr>
+<tr>
+<td><code>link = opendpd.studio(...)</code></td>
+<td>Connect MATLAB and open Studio at MATLINK. Uses remembered workspace, Python and source settings when omitted. Options: <code>PythonExecutable=""</code>, <code>SourceDirectory=""</code>, <code>OpenBrowser=true</code>, <code>Label</code> defaulting to the MATLAB release.</td>
+</tr>
+<tr>
+<td><code>link = opendpd.studio(workspace, ...)</code></td>
+<td>Connect a specified workspace; reuse its active bridge in this MATLAB process.</td>
+</tr>
+<tr>
+<td><code>link = opendpd.studio(p, ...)</code></td>
+<td>Connect MATLINK through an existing Project. That Project remains caller-owned and usable after MATLINK disconnects.</td>
+</tr>
+<tr>
+<td><code>opendpd.disconnect()</code></td>
+<td>Disconnect every MATLINK bridge in the current MATLAB process; leave services and jobs running.</td>
+</tr>
+<tr>
+<td><code>opendpd.disconnect(link)</code></td>
+<td>Disconnect one returned MATLABBridge.</td>
+</tr>
+<tr>
+<td><code>opendpd.disconnect(workspace)</code></td>
+<td>Disconnect the bridge for one workspace.</td>
+</tr>
+<tr>
+<td><code>opendpd.openStudio(p, ...)</code></td>
+<td>Open a Studio page in the system browser. <code>Page="home"</code>, <code>RunID=""</code>, <code>OpenBrowser=true</code>. This alone does not create a MATLAB bridge.</td>
+</tr>
+<tr>
+<td><code>opendpd.help(topic)</code></td>
+<td>Open a bundled guide. Topics: <code>index</code> (default), <code>gui</code>, <code>workflow</code>, <code>reference</code>, <code>architecture</code>, <code>troubleshooting</code>. <code>OpenBrowser=false</code> returns the local filename without opening it.</td>
+</tr>
+</tbody>
+</table>
+<p><code>studio</code> returns an <code>opendpd.MATLABBridge</code> and retains it for the MATLAB session,
+so calling without an output keeps MATLINK active. Use <code>disconnect</code> for lifecycle
+control. Internal request messages and timer state are implementation details,
+not a stable public automation API. When MATLAB is blocked, requests and the
+heartbeat wait until callbacks can run again.</p>
+<pre><code class="language-matlab">link = opendpd.studio(&quot;my-pa-workspace&quot;, Label=&quot;PA capture session&quot;);
+opendpd.help(&quot;gui&quot;);
+opendpd.disconnect(link);
+</code></pre>
+<p><code>OpenBrowser=false</code> connects the bridge without launching a browser. Studio pages
+supported by <code>openStudio</code> are <code>home</code>, <code>matlink</code>, <code>datasets</code>, <code>experiments</code>,
+<code>new-experiment</code>, <code>results</code>, <code>run</code> and <code>result</code>. The last two require <code>RunID</code>,
+which is useful in scripts; the MATLINK GUI uses named experiment selection.
+Only supported local routes are accepted. A returned URL from <code>openStudio</code> is a
+<strong>private bootstrap link</strong>; keep it local. Normal use prints no token in the
+Command Window.</p>
+<pre><code class="language-matlab">opendpd.openStudio(p, Page=&quot;datasets&quot;);
+opendpd.openStudio(p, Page=&quot;result&quot;, RunID=job.ID);
+</code></pre>
+<h2 id="import">Import</h2>
+<pre><code class="language-matlab">ds = opendpd.importIQ(p, x, y, SampleRate=80e6, Bandwidth=20e6);
+ds = opendpd.importMAT(p, &quot;capture.mat&quot;, SampleRate=80e6, Bandwidth=20e6);
+</code></pre>
+<p><code>ds</code> is a dataset struct including <code>dataset_id</code>, sample count and provenance.
+<code>importIQ</code> accepts dense MATLAB single/double vectors; rows and columns are
+equivalent. <code>importMAT</code> additionally accepts real N×2 I/Q matrices.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default / requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SampleRate</code>, <code>Bandwidth</code></td>
+<td>Required, finite and positive, in Hz; backend validates the signal specification.</td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td><code>""</code> for an automatic ID; otherwise a unique dataset slug such as <code>capture-001</code>.</td>
+</tr>
+<tr>
+<td><code>SegmentSamples</code></td>
+<td><code>256</code>, integer at least 2. Frozen offline evaluation segment length.</td>
+</tr>
+<tr>
+<td><code>GuardSamples</code></td>
+<td><code>256</code>, nonnegative integer. Must cover the training frame context.</td>
+</tr>
+<tr>
+<td><code>Subchannels</code></td>
+<td><code>1</code>, positive integer.</td>
+</tr>
+<tr>
+<td><code>Origin</code></td>
+<td><code>"unknown"</code>; also <code>"measured"</code>, <code>"synthetic"</code>.</td>
+</tr>
+<tr>
+<td><code>AmplitudeUnits</code></td>
+<td><code>"unknown"</code>; also <code>"normalized"</code>, <code>"volts"</code>. Describes input units, does not transform amplitudes.</td>
+</tr>
+<tr>
+<td><code>InputVariable</code>, <code>OutputVariable</code></td>
+<td>MAT adapter only; defaults <code>"x"</code>, <code>"y"</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="jobs">Jobs</h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>job = opendpd.trainPA(p, ds, ...)</code></td>
+<td>Queue PA training. <code>ds</code> may be a dataset struct or ID.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.trainDPD(p, ds, PA=pa, ...)</code></td>
+<td>Queue DPD training using a succeeded PA Job from the same workspace.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.submit(p, config)</code></td>
+<td>Submit a complete ExperimentConfig struct; server validates it.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.getRun(p, runID)</code></td>
+<td>Create a handle for a saved run.</td>
+</tr>
+<tr>
+<td><code>record = opendpd.status(job)</code></td>
+<td>Read status and error information as a struct.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.wait(job, ...)</code></td>
+<td>Wait for success; <code>Timeout=600</code>, <code>PollInterval=0.5</code>, in seconds. Errors on failure or timeout; timeout does not cancel.</td>
+</tr>
+<tr>
+<td><code>record = opendpd.cancel(job)</code></td>
+<td>Request cancellation through the shared service.</td>
+</tr>
+<tr>
+<td><code>report = opendpd.result(job)</code></td>
+<td>Read the stored result struct. Requires a saved result.</td>
+</tr>
+</tbody>
+</table>
+<p>Training options shared by <code>trainPA</code> and <code>trainDPD</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Model</code></td>
+<td><code>"gru"</code></td>
+</tr>
+<tr>
+<td><code>ModelParameters</code>, <code>Training</code></td>
+<td>Empty structs; use existing OpenDPD schema fields.</td>
+</tr>
+<tr>
+<td><code>Device</code></td>
+<td><code>"cpu"</code>; <code>"cuda"</code> and <code>"mps"</code> require locally supported hardware and model.</td>
+</tr>
+<tr>
+<td><code>NumThreads</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>Profile</code></td>
+<td><code>"opendpd-spectral-v2"</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>job.ID</code> and <code>job.Project.Workspace</code> identify a run for reconnection. Complete
+settings, artifacts and logs remain in the workspace and Studio.</p>
+<h2 id="inference-and-export">Inference and export</h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[y, info] = opendpd.apply(job, x, ...)</code></td>
+<td>Complex single column vector plus metadata. <code>Execution="offline_segmented"</code>, <code>Timeout=120</code> seconds. CPU, ordinary unquantized GRU only.</td>
+</tr>
+<tr>
+<td><code>exported = opendpd.runDPD(dpd)</code></td>
+<td>Job handle for standard test-split waveform export and surrogate evaluation. Wait for completion before reading its report/artifacts.</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="workflow.html#apply-the-dpd">execution semantics</a> before comparing exported
+and applied waveforms. <code>apply</code> uses stored sample-rate metadata and assumes the
+supplied samples have the corresponding physical rate; vectors do not carry
+their own time base.</p></main>
+<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+</body></html>

@@ -58,6 +58,7 @@ function ExportPanel({ runId }: { runId: string }) {
         <Button variant="outlined" size="small" disabled={exportRun.isPending} onClick={() => exportRun.mutate({ run_id: runId, kind: 'full' })}>
           {t('results.export.full')}
         </Button>
+        {!WEB_MODE && <Button component={RouterLink} to={`/matlink?run=${encodeURIComponent(runId)}`} variant="outlined" size="small">{t('matlink.send')}</Button>}
         <DownloadLink button size="small"  href={`${API}/results/${encodeURIComponent(runId)}/report?format=html${getLanguage() === 'en' ? '' : `&language=${getLanguage()}`}`} download>
           {t('results.report.html')}
         </DownloadLink>

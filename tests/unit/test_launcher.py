@@ -30,6 +30,25 @@ def test_open_browser_never_raises():
     assert launcher.open_browser("http://127.0.0.1:1/x", opener=lambda u: True) is True
 
 
+def test_sdk_listener_stays_reserved_while_its_lock_is_published(tmp_path, monkeypatch):
+    from io import StringIO
+
+    monkeypatch.setattr(launcher, "wait_until_healthy", lambda *args: True)
+    monkeypatch.setattr(launcher, "probe", lambda *args: {"ready": True})
+    with socket.create_server((launcher.HOST, 0)) as listener:
+        reserved = listener.getsockname()[1]
+
+        def serve(app, host, port):
+            assert port == reserved and not launcher.port_is_free(port)
+            assert launcher.Lock.read(tmp_path / launcher.LOCK_FILE).port == reserved
+            with socket.socket() as competitor, pytest.raises(OSError):
+                competitor.bind((host, port))
+
+        assert launcher.launch(tmp_path, mode="none", serve=serve, out=StringIO(),
+                               reserved_listener=listener) == 0
+        assert not (tmp_path / launcher.LOCK_FILE).exists()
+
+
 def test_browser_opens_only_after_health_check_with_bootstrap_url(tmp_path, monkeypatch, capsys):
     opened, order = [], []
     healthy = threading.Event()

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Get started · OpenDPD for MATLAB</title>
+<link rel="stylesheet" href="guide.css"></head><body>
+<a class="skip" href="#content">Skip to content</a>
+<header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
+<span class="version">0.4.0 PREVIEW</span></header>
+<nav aria-label="Guide"><a href="index.html" aria-current="page">Get started</a>
+<a href="gui.html">MATLINK walkthrough</a>
+<a href="workflow.html">Script workflow</a>
+<a href="reference.html">Function reference</a>
+<a href="architecture.html">Integration design</a>
+<a href="troubleshooting.html">Troubleshooting</a></nav>
+<main id="content"><h1 id="opendpd-for-matlab">OpenDPD for MATLAB</h1>
+<p><strong>Toolbox preview 0.4.0 · OpenDPD 2.4 development · SDK protocol 1</strong></p>
+<p>Use OpenDPD Studio as the toolbox GUI. Prepare signals in MATLAB, import them
+from Studio's <strong>MATLINK</strong> tab, train with the existing Studio workflow, and send
+saved reports back to MATLAB by selecting an experiment. Both applications
+share one local workspace, dataset collection and job queue.</p>
+<h2 id="start-here">Start here</h2>
+<pre><code class="language-matlab">opendpd.studio()
+</code></pre>
+<p>This connects MATLAB and opens Studio's <strong>MATLINK</strong> tab in your system browser.
+The MATLAB session keeps the connection alive even when you do not save the
+returned handle. After installing the package, <strong>Apps → OpenDPDStudio</strong> opens
+the same workflow. <code>opendpd.help()</code> opens this bundled offline guide.</p>
+<ul>
+<li><a href="gui.html">MATLINK walkthrough</a>: import signals, train, and send reports back.</li>
+<li><a href="workflow.html">Script workflow</a>: reproducible PA and DPD experiments.</li>
+<li><a href="reference.html">Function reference</a>: arguments, outputs and defaults.</li>
+<li><a href="architecture.html">Integration architecture</a>: how Studio and MATLAB connect.</li>
+<li><a href="troubleshooting.html">Troubleshooting</a>: environment, connection and data issues.</li>
+</ul>
+<h2 id="install-and-select-python">Install and select Python</h2>
+<p>Use desktop MATLAB and a compatible CPython environment containing OpenDPD and
+PyTorch. Base MATLAB is sufficient for the synthetic example. The earlier 0.2
+integration was exercised on Linux with MATLAB R2026a and Python 3.13.14 using
+CPU. MATLINK adds a new browser-to-MATLAB path; see the development validation
+record for its current checks. R2024b is the candidate minimum. Other releases,
+operating systems and CUDA bridge workflows need their own execution checks.
+Consult the <a href="https://www.mathworks.com/support/requirements/python-compatibility.html">MathWorks Python compatibility table</a>
+for your MATLAB release.</p>
+<p>Install the <code>.mltbx</code> by opening it in MATLAB, or:</p>
+<pre><code class="language-matlab">matlab.addons.toolbox.installToolbox(&quot;/path/to/OpenDPD-0.4.0.mltbx&quot;);
+opendpd.studio(&quot;/path/to/experiment-workspace&quot;, ...
+    PythonExecutable=&quot;/path/to/python&quot;);
+</code></pre>
+<p>The package includes MATLAB source, this offline
+guide, tests, examples and the Apache-2.0 license. Install Python dependencies
+separately. The released OpenDPD 2.3 package does not contain this SDK: install
+Python code from the <strong>2.4 development checkout</strong>. Its package version still
+reflects the 2.3 baseline until the coordinated prerelease.</p>
+<p>From the checkout root, create an environment, install dependencies and build
+Studio. These are terminal commands; choose a Python version supported by your
+MATLAB release (3.11 is a candidate for the planned release matrix).</p>
+<pre><code class="language-bash">python3.11 -m venv .venv
+.venv/bin/python -m pip install -e &quot;.[dev]&quot;
+npm --prefix frontend ci
+npm --prefix frontend run build
+</code></pre>
+<p>On Windows, use <code>py -3.11 -m venv .venv</code> and
+<code>.venv\Scripts\python.exe -m pip install -e ".[dev]"</code>.</p>
+<p>For development without installing the toolbox package:</p>
+<pre><code class="language-matlab">repo = &quot;/absolute/path/to/OpenDPD&quot;;
+addpath(fullfile(repo, &quot;Matlab&quot;, &quot;toolbox&quot;));
+opendpd.studio(&quot;/path/to/experiment-workspace&quot;, ...
+    PythonExecutable=&quot;/path/to/python&quot;, SourceDirectory=repo);
+</code></pre>
+<p><code>SourceDirectory</code> selects development source in this MATLAB Python session.
+The workspace is where experiment data is stored; it is a separate choice from
+the source checkout. Setup uses an existing Python environment and never
+installs packages. Finish work in an already loaded incompatible Python session
+before restarting or switching it.</p>
+<h2 id="try-matlink">Try MATLINK</h2>
+<ol>
+<li>Confirm MATLINK shows your connected MATLAB session.</li>
+<li>Choose <strong>OpenDPD Signal Generator</strong> or <strong>MATLAB workspace</strong>.</li>
+<li>For generated signals, configure the waveform and virtual PA, then click
+   <strong>Generate &amp; prepare experiment</strong>. The complete paired signals are saved to
+   MATLAB before Studio opens experiment setup with the dataset selected.</li>
+<li>Review the model and training settings. Start a small PA experiment; two
+   epochs suffice for a workflow check, without establishing model performance.</li>
+<li>Return to MATLINK, select the experiment, inspect its metrics and spectrum,
+   then <strong>Save to MATLAB</strong>. The suggested destination is editable and existing
+   variables are preserved. <strong>Send when ready</strong> also works during training.</li>
+</ol>
+<p>See the <a href="gui.html">MATLINK walkthrough</a> for both signal sources, automatic
+parameter selection, batch captures and the saved struct fields. For a complete
+PA → DPD → inference script example, follow the <a href="workflow.html">script workflow</a>.</p>
+<h2 id="closing-and-supported-scope">Closing and supported scope</h2>
+<p>Closing the browser leaves MATLAB connected. To detach MATLAB:</p>
+<pre><code class="language-matlab">opendpd.disconnect()
+</code></pre>
+<p>Disconnecting or closing MATLAB ends MATLINK interaction and pending report
+delivery. The workspace service and training jobs continue. Reconnect and send
+a completed report again when ready.</p>
+<p>Training uses the existing OpenDPD model registry. MATLAB <code>apply</code> supports
+<strong>ordinary, unquantized GRU models on CPU</strong>, using offline segments. MATLINK
+returns saved report structs; use the script API for waveform inference and
+export. DPD reports evaluate a learned PA surrogate. Hardware performance
+requires a separate measured capture and evaluation. This preview runs on the
+local desktop; MATLAB Online, remote services, Simulink and streaming execution
+are outside its current scope.</p></main>
+<footer>OpenDPD Toolbox · Local desktop preview · Apache-2.0</footer>
+</body></html>
