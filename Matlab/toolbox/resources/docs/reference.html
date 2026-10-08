@@ -291,7 +291,8 @@ their own time base.</p>
 <p><code>opendpd.export</code> writes a trained PA or DPD as an <code>opendpd-model-v1</code> package: a zip of data (<code>manifest.json</code>,
 <code>weights.mat</code> and <code>weights.npz</code> with the same arrays, <code>golden/</code> with a test input and the outputs OpenDPD produced for it,
 a README). It holds no code. <code>opendpd.load</code> reads it back as an <code>opendpd.Model</code> that runs in plain MATLAB: no Python,
-no project, no server, no other toolbox.</p>
+no project, no server, no other toolbox. A run trained in Studio can be exported from a terminal with
+<code>opendpd export-model RUN_ID --workspace WORKSPACE --out file.opendpd.zip</code>; it writes the same bytes.</p>
 <table>
 <thead>
 <tr>

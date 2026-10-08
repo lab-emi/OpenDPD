@@ -51,6 +51,19 @@ by the preceding commands. `apply` exports the PA **input** `u = DPD(x)` and
 scores the cascade through the PA surrogate. The exported I/Q file itself is
 not a measured linearized PA output.
 
+To use a trained model outside OpenDPD, write it as a data-only package that the
+[OpenDPD toolbox for MATLAB](matlab-toolbox.md) runs in plain MATLAB, without Python:
+
+```bash
+opendpd export-model <dpd_run_id> --workspace ./my-workspace --out apa-dpd.opendpd.zip
+```
+
+The package holds the weights, the execution semantics (`offline_segmented`, and `streaming_stateful` where the
+model has a registered streaming variant), the signal metadata the run was scored with, and a golden test vector
+made of OpenDPD's own outputs. It is supported for `gru`, `tres_gru`, `gmp`, `mp_ls` and `gmp_ls`; other models
+are refused with the reason. The same run always gives the same bytes. In MATLAB:
+`model = opendpd.load("apa-dpd.opendpd.zip"); opendpd.verify(model); u = opendpd.apply(model, x);`.
+
 ## 3. Write your own configuration
 
 ```bash

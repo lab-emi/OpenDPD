@@ -229,3 +229,27 @@ def test_export_refuses_what_it_cannot_prove(project, dataset, runs, tmp_path):
     assert not (tmp_path / "no.zip").exists() and not list(tmp_path.glob("*.partial"))
     with pytest.raises(ValueError, match="file path"):
         runs["gru"][1].export(tmp_path)
+
+
+def test_the_cli_writes_the_same_package_as_the_sdk(project, runs, tmp_path, capsys):
+    from opendpd.commands import main
+
+    job = runs["gmp"][1]
+    out = tmp_path / "cli.opendpd.zip"
+    assert main(["export-model", job.run_id, "--workspace", str(project.workspace), "--out", str(out), "--json"]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["model"] == "gmp" and summary["run_id"] == job.run_id and summary["path"] == str(out)
+    job.export(tmp_path / "sdk.opendpd.zip")
+    assert out.read_bytes() == (tmp_path / "sdk.opendpd.zip").read_bytes()          # one exporter, one answer
+    # default destination: <workspace>/exports/<run_id>.opendpd.zip, and the text form says what to do next
+    assert main(["export-model", job.run_id, "--workspace", str(project.workspace)]) == 0
+    text = capsys.readouterr().out
+    default = Workspace.open(project.workspace).exports_dir / f"{job.run_id}.opendpd.zip"
+    assert default.read_bytes() == out.read_bytes() and "opendpd.load" in text and "streaming_stateful available" in text
+
+
+def test_the_cli_refuses_with_a_reason_and_exit_code_2(project, tmp_path, capsys):
+    from opendpd.commands import main
+
+    assert main(["export-model", "run-does-not-exist", "--workspace", str(project.workspace), "--out", str(tmp_path / "x.zip")]) == 2
+    assert "error:" in capsys.readouterr().err and not (tmp_path / "x.zip").exists()
