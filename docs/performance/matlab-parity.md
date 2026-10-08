@@ -1,6 +1,6 @@
 # OpenDPD ↔ MATLAB parity
 
-Status: **pre-registered, not run** (2026-10-08). The registration (rules, signals, procedures, budgets and
+Status: **pre-registered; run 1 done, amendment 1 registered, run 2 pending** (2026-10-08). The registration (rules, signals, procedures, budgets and
 the scored/diagnostic split) was committed before any comparison script existed or was run. The commits that
 follow change only this status line, the run log and the Results section; they do not edit the registration. If
 the registration itself must change, that is a dated amendment appended below, never an edit in place.
@@ -175,8 +175,43 @@ that comparison is run.
 
 | run | date | change since the previous run | outcome |
 |---|---|---|---|
-| — | — | — | not run |
+| 0 | 2026-10-08 | first execution of the harness | no result. The OpenDPD stage stopped because `demodulate()` returned `None` for S6 (synchronisation refused); the harness was changed to record a refusal as a result instead of stopping |
+| 1 | 2026-10-08 | harness records refusals. The MATLAB chain was corrected to apply the protocol's rule that a normalised timing peak below 0.3 means `missing_reference` (§2 step 2): the chain description above omitted it, which is a defect of the check, not a difference between the tools | registered signals S0–S9: **96 of 109 scored items within budget, 7 outside, 6 not evaluable**. Record: `matlab-parity-run1.json` |
+| 2 | — | amendment 1 items added to the harness | pending |
+
+## Amendment 1 (2026-10-08, after run 1 and before run 2)
+
+Run 1 showed two things the registration did not anticipate. Nothing registered above is changed; this amendment
+only adds items, and it is committed before the harness gains them.
+
+**F1 — timing range.** The timing step (protocol §2 step 2) is a circular cross-correlation without
+frequency-offset compensation, so with the 10-subframe package (T = 10 ms) its normalised peak falls as
+|sinc(f·T)| with the carrier offset f. Measured with OpenDPD alone, before any MATLAB comparison of these
+signals: 0.98 at 10 Hz, 0.86 at 30 Hz, 0.64 at 50 Hz, 0.009 at 100 Hz, 0.09 at 350 Hz; with a 1 ms waveform
+(which the repository's ±350 Hz unit test uses) 0.81 at 350 Hz. Below 0.3 the profile reports
+`missing_reference`. S6 and S9 (+350 Hz) are therefore refused by both OpenDPD and the MATLAB chain (peak
+0.090 in both), so their scored EVM, timing and frequency-offset items have no value to compare.
+
+**F2 — band integration.** The registration assumed that the band edges fall on bin boundaries or centres "in the
+same way for both tools". They do not: ±9 MHz are bin centres at the registered resolutions, but ±11 and ±29 MHz
+fall 1/3 of a bin from a centre (183.33 and 483.33 bins at 60 kHz), and the two tools treat such edges
+differently. OpenDPD sums the bins whose centre lies in [lo, hi); `comm.ACPR` sums the enclosing range (the last
+bin at or below lo through the first bin at or above hi), which at 60 kHz is 302 bins in each adjacent channel
+against OpenDPD's 300, and 301 against 300 in the main channel. Run 1 reports 7 ACLR values outside the 0.1 dB
+budget (all on S2, S3; the largest 0.21 dB).
+
+Added items:
+
+| id | item | budget | kind |
+|---|---|---|---|
+| A1-1 | Signals **S6b** and **S9b**: S6 and S9 with a carrier frequency offset of **+30 Hz** instead of +350 Hz (every other step unchanged). 30 Hz is the largest round offset whose OpenDPD-only timing peak (0.86) is well above the 0.3 rule; it was read from the OpenDPD-only exploration above. EVM_RMS: difference ≤ 0.05 percentage points; integer timing: equal; S9b frequency offset: each tool within 0.01 Hz of +30 Hz; S6b offset: difference between the tools reported | as for S6, S9 | scored (diagnostic for the S6b offset difference) |
+| A1-2 | `comm.ACPR` (aligned mode) against a `pwelch` PSD integrated with `comm.ACPR`'s documented-in-code rule (enclosing bin range, true bin frequencies), for every signal and `nperseg`: worst absolute difference | reported | diagnostic (tests the explanation F2; it does not replace the registered comparison) |
+| A1-3 | Normalised timing peak against injected offset (0, 10, 30, 50, 100, 350, 1000 Hz) for 1 and 10 subframes, OpenDPD only | reported | diagnostic (documents F1) |
+
+The verdict rule is unchanged: the cross-validation passes only if every scored item, registered or added, is
+within its budget. The explanation of F2 is a hypothesis until A1-2 shows it; A1-2 cannot change the verdict of the
+registered ACLR items.
 
 ## Results
 
-Not run yet.
+Run 2 pending.
