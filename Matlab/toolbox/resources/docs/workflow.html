@@ -121,6 +121,21 @@ aclr = opendpd.metrics.aclr(y, SampleRate=fs, SegmentSamples=2048, Waveform=w); 
 segment resolves the band edges better. Report it with the number. If <code>Status</code> is not <code>"ok"</code>, read <code>Reason</code>; for
 example <code>"missing_reference"</code> means the capture does not correlate with <code>w</code>. See the
 <a href="reference.html#metrics-without-a-run">function reference</a> for all options.</p>
+<h2 id="take-a-trained-model-out-of-opendpd">Take a trained model out of OpenDPD</h2>
+<p>A trained PA or DPD can leave the Python environment as a package of data and run in plain MATLAB, on a machine
+that has no Python:</p>
+<pre><code class="language-matlab">opendpd.export(dpd, &quot;apa-dpd.opendpd.zip&quot;);       % needs the Python SDK; the same run always gives the same bytes
+model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);      % plain MATLAB from here on
+report = opendpd.verify(model)                    % golden test: OpenDPD's outputs vs this MATLAB release, within 1e-5
+u = opendpd.apply(model, xTest);                  % offline_segmented, like opendpd.apply(dpd, xTest)
+y = model(chunk); reset(model);                   % streaming, for gru and gmp
+</code></pre>
+<p>Use the training dataset's sample rate and amplitude units: nothing is normalised or aligned
+(<code>model.Manifest.signal</code>, <code>model.Manifest.scaling</code>). For an <code>mp_ls</code> model, <code>model.commCoefficients()</code> returns the matrix
+for <code>comm.DPD</code>, so a memory polynomial fitted by OpenDPD can be run by MathWorks code; one <code>nperseg</code> segment of OpenDPD
+and one <code>comm.DPD</code> stream from a zero state agree. See the <a href="reference.html#model-packages-run-a-trained-model-without-python">function
+reference</a> for what a package contains, what <code>verify</code>
+shows and what it does not, and how a package from elsewhere is read.</p>
 <h2 id="reconnect-cancel-and-stop">Reconnect, cancel and stop</h2>
 <p>MATLINK report delivery does not require script IDs. Use its <strong>Send to MATLAB</strong>
 or <strong>Send when ready</strong> actions, then select <strong>Open in MATLAB</strong> to inspect the

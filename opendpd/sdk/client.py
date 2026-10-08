@@ -462,6 +462,33 @@ class Job:
             return (np.load(directory / "output.npy", allow_pickle=False),
                     json.loads((directory / "metadata.json").read_text()))
 
+    def export(self, destination, *, timeout=300.0):
+        """Write this run as an ``opendpd-model-v1`` package (weights, manifest, golden test vector; no executable code).
+
+        ``destination`` is the ``.zip`` file to create. The MATLAB toolbox loads it with ``opendpd.load`` and runs it with
+        plain MATLAB code. Returns a summary dict. The export is deterministic: the same run gives the same bytes.
+        """
+        timeout = _positive(timeout, "timeout")
+        if self.status()["status"] != "succeeded":
+            raise SDKError("run_not_finished", f"Run {self.run_id} must succeed before export")
+        destination = Path(destination).expanduser().resolve()
+        if destination.exists() and destination.is_dir():
+            raise ValueError("destination must be a file path, not a folder")
+        with tempfile.TemporaryDirectory(prefix="opendpd-export-") as directory:
+            directory = Path(directory)
+            completed = subprocess.run([sys.executable, "-m", "opendpd.sdk._export",
+                "--workspace", str(self.project.workspace), "--run-id", self.run_id,
+                "--destination", str(destination), "--directory", str(directory)], stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=_python_environment(),
+                cwd=Path(__file__).resolve().parents[2], timeout=timeout)
+            if completed.returncode:
+                error_path = directory / "error.json"
+                if error_path.is_file():
+                    error = json.loads(error_path.read_text())
+                    raise SDKError(error["code"], error["message"])
+                raise SDKError("export_failed", completed.stdout.decode("utf-8", errors="replace")[-2000:])
+            return json.loads((directory / "summary.json").read_text())
+
 
 def open_project(workspace, *, start=True, timeout=30.0) -> Project:
     return Project(workspace, start=start, timeout=timeout)

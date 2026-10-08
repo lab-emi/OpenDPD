@@ -286,6 +286,68 @@ are in <code>docs/performance/matlab-parity.md</code> of the OpenDPD repository.
 <p>See <a href="workflow.html#apply-the-dpd">execution semantics</a> before comparing exported
 and applied waveforms. <code>apply</code> uses stored sample-rate metadata and assumes the
 supplied samples have the corresponding physical rate; vectors do not carry
-their own time base.</p></main>
+their own time base.</p>
+<h2 id="model-packages-run-a-trained-model-without-python">Model packages: run a trained model without Python</h2>
+<p><code>opendpd.export</code> writes a trained PA or DPD as an <code>opendpd-model-v1</code> package: a zip of data (<code>manifest.json</code>,
+<code>weights.mat</code> and <code>weights.npz</code> with the same arrays, <code>golden/</code> with a test input and the outputs OpenDPD produced for it,
+a README). It holds no code. <code>opendpd.load</code> reads it back as an <code>opendpd.Model</code> that runs in plain MATLAB: no Python,
+no project, no server, no other toolbox.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>s = opendpd.export(job, file, ...)</code></td>
+<td>Write a succeeded PA or DPD run to <code>file</code> (<code>*.opendpd.zip</code>). Needs the Python SDK. <code>Timeout=300</code> seconds. Models: <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code> (those <code>apply</code> supports), unquantized. The same run always gives the same bytes. <code>s</code> has <code>path</code>, <code>sha256</code>, <code>model</code>, <code>role</code>, <code>run_id</code>, <code>files</code>, <code>golden_samples</code>, <code>execution</code>.</td>
+</tr>
+<tr>
+<td><code>model = opendpd.load(file)</code></td>
+<td>Read a package as data and return an <code>opendpd.Model</code>. Properties: <code>Manifest</code> (model, signal, scaling, execution semantics, evidence, provenance), <code>Source</code>, <code>SHA256</code> of the file.</td>
+</tr>
+<tr>
+<td><code>report = opendpd.verify(model)</code></td>
+<td>Run the package's golden test vector on this MATLAB release. <code>report.passed</code>, <code>report.offline_max_abs_error</code>, <code>report.streaming_max_abs_error</code> (<code>NaN</code> for a model without a streaming variant), <code>report.tolerance_abs</code> (at most <code>1e-5</code>; a package can ask for a stricter test, never a looser one). A non-finite output never passes.</td>
+</tr>
+<tr>
+<td><code>[y, info] = opendpd.apply(model, x, ...)</code></td>
+<td>Same options and result as for a job (<code>Execution</code>, <code>ChunkSamples</code>), computed by <code>opendpd.runtime</code> in MATLAB. <code>Timeout</code> does not apply. Input is rounded to single first, as the Python evaluator does.</td>
+</tr>
+<tr>
+<td><code>y = model(chunk)</code>, <code>reset(model)</code></td>
+<td>The model as a System object for streaming (<code>gru</code>, <code>gmp</code>): one state across calls, any chunk size. <code>reset</code> returns to the start of a stream.</td>
+</tr>
+<tr>
+<td><code>[C, info] = model.commCoefficients()</code></td>
+<td><code>mp_ls</code> only: <code>C = reshape(w, Q, K)</code>, the <code>Coefficients</code> of <code>comm.DPD('PolynomialType', 'Memory polynomial')</code>. Other models: error <code>opendpd:NoMathWorksEquivalent</code>.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-matlab">opendpd.export(dpd, &quot;apa-dpd.opendpd.zip&quot;);           % where the model was trained (Python SDK)
+model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);          % anywhere: plain MATLAB
+assert(opendpd.verify(model).passed)                  % this release computes the model as OpenDPD did
+u = opendpd.apply(model, xTest);                      % the predistorted PA input, like opendpd.apply(dpd, xTest)
+</code></pre>
+<p>What <code>verify</code> shows and what it does not: a pass means this MATLAB release computes the package's model on the
+golden input to within <code>1e-5</code> of what OpenDPD's <code>apply</code> produced. It does not show that the model is good for your
+amplifier, and it does not make a package from an unknown source trustworthy: the golden vector comes from the
+same file. Compare <code>model.SHA256</code> with the value published by whoever gave you the package.</p>
+<p>Reading a package is deliberately narrow. Only the six known file names are accepted (nothing else is extracted, no
+path from the archive is used), every file must match the SHA-256 in the manifest, entries are copied out with a hard
+size limit, and the arrays are read from the <code>.npz</code> files by a strict parser that only ever interprets bytes as float32,
+float64, complex64 or complex128 numbers. The <code>.mat</code> files are for your own code and are never opened by the toolbox:
+<code>load</code> and <code>whos -file</code> both call <code>loadobj</code> for classes on the MATLAB path, so opening a MAT file from an untrusted
+source can itself run code. The golden test input is synthetic noise with the training input's amplitude statistics,
+never a slice of your data, so a package can be shared without sharing a measurement.</p>
+<p>Execution and numerics: <code>opendpd.apply(model, x)</code> uses the same two semantics as for a job (<code>offline_segmented</code>, the
+default, restarts state every <code>Manifest.signal.nperseg</code> samples and zero pads the last segment; <code>tres_gru</code> reads 16
+future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
+about <code>1e-7</code>, which is what the golden test measures. Speed on a development machine (R2026a, Linux, no GPU, one MATLAB
+process) is roughly 0.3 us per sample for <code>mp_ls</code>, 1 us for <code>gmp_ls</code>, 2-5 us for a two-layer <code>gru</code> or <code>tres_gru</code> of
+hidden size 6-64, and 13 us for a <code>gmp</code> of 495 terms; it is for evaluating waveforms, not a real-time implementation.
+Not verified: MATLAB Coder, a Simulink MATLAB System block, HDL generation, other MATLAB releases or operating systems.</p></main>
 <footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
 </body></html>

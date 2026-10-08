@@ -147,6 +147,26 @@ segment resolves the band edges better. Report it with the number. If `Status` i
 example `"missing_reference"` means the capture does not correlate with `w`. See the
 [function reference](reference.html#metrics-without-a-run) for all options.
 
+## Take a trained model out of OpenDPD
+
+A trained PA or DPD can leave the Python environment as a package of data and run in plain MATLAB, on a machine
+that has no Python:
+
+```matlab
+opendpd.export(dpd, "apa-dpd.opendpd.zip");       % needs the Python SDK; the same run always gives the same bytes
+model = opendpd.load("apa-dpd.opendpd.zip");      % plain MATLAB from here on
+report = opendpd.verify(model)                    % golden test: OpenDPD's outputs vs this MATLAB release, within 1e-5
+u = opendpd.apply(model, xTest);                  % offline_segmented, like opendpd.apply(dpd, xTest)
+y = model(chunk); reset(model);                   % streaming, for gru and gmp
+```
+
+Use the training dataset's sample rate and amplitude units: nothing is normalised or aligned
+(`model.Manifest.signal`, `model.Manifest.scaling`). For an `mp_ls` model, `model.commCoefficients()` returns the matrix
+for `comm.DPD`, so a memory polynomial fitted by OpenDPD can be run by MathWorks code; one `nperseg` segment of OpenDPD
+and one `comm.DPD` stream from a zero state agree. See the [function
+reference](reference.html#model-packages-run-a-trained-model-without-python) for what a package contains, what `verify`
+shows and what it does not, and how a package from elsewhere is read.
+
 ## Reconnect, cancel and stop
 
 MATLINK report delivery does not require script IDs. Use its **Send to MATLAB**

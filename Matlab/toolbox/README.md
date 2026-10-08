@@ -23,6 +23,11 @@ metadata is still the 2.3 baseline until the release is cut.
 - Apply a trained PA or DPD (`gru`, `tres_gru`, `gmp`, `mp_ls`, `gmp_ls`) to a supplied
   waveform on CPU, with the **offline segment boundaries** of the Python evaluator, or as
   a **stream** for the models that have a registered streaming variant (`gru`, `gmp`).
+- Score a capture with the metrics Studio uses, without a project or server: `opendpd.waveform`,
+  `opendpd.metrics.evm`, `aclr` and `evaluate`.
+- Export a trained PA or DPD as an `opendpd-model-v1` package (`opendpd.export`) and run it in plain
+  MATLAB with no Python (`opendpd.load`, `opendpd.verify`, `opendpd.apply(model, x)`, streaming as a
+  System object); for `mp_ls`, `model.commCoefficients()` gives the `comm.DPD` coefficients.
 - Build a source-only `.mltbx` using MATLAB, after running the MATLAB tests.
 
 Training uses the existing model registry. `apply` supports the five models above

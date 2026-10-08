@@ -128,3 +128,48 @@ See [execution semantics](workflow.html#apply-the-dpd) before comparing exported
 and applied waveforms. `apply` uses stored sample-rate metadata and assumes the
 supplied samples have the corresponding physical rate; vectors do not carry
 their own time base.
+
+## Model packages: run a trained model without Python
+
+`opendpd.export` writes a trained PA or DPD as an `opendpd-model-v1` package: a zip of data (`manifest.json`,
+`weights.mat` and `weights.npz` with the same arrays, `golden/` with a test input and the outputs OpenDPD produced for it,
+a README). It holds no code. `opendpd.load` reads it back as an `opendpd.Model` that runs in plain MATLAB: no Python,
+no project, no server, no other toolbox.
+
+| Call | Returns / behavior |
+| --- | --- |
+| `s = opendpd.export(job, file, ...)` | Write a succeeded PA or DPD run to `file` (`*.opendpd.zip`). Needs the Python SDK. `Timeout=300` seconds. Models: `gru`, `tres_gru`, `gmp`, `mp_ls`, `gmp_ls` (those `apply` supports), unquantized. The same run always gives the same bytes. `s` has `path`, `sha256`, `model`, `role`, `run_id`, `files`, `golden_samples`, `execution`. |
+| `model = opendpd.load(file)` | Read a package as data and return an `opendpd.Model`. Properties: `Manifest` (model, signal, scaling, execution semantics, evidence, provenance), `Source`, `SHA256` of the file. |
+| `report = opendpd.verify(model)` | Run the package's golden test vector on this MATLAB release. `report.passed`, `report.offline_max_abs_error`, `report.streaming_max_abs_error` (`NaN` for a model without a streaming variant), `report.tolerance_abs` (at most `1e-5`; a package can ask for a stricter test, never a looser one). A non-finite output never passes. |
+| `[y, info] = opendpd.apply(model, x, ...)` | Same options and result as for a job (`Execution`, `ChunkSamples`), computed by `opendpd.runtime` in MATLAB. `Timeout` does not apply. Input is rounded to single first, as the Python evaluator does. |
+| `y = model(chunk)`, `reset(model)` | The model as a System object for streaming (`gru`, `gmp`): one state across calls, any chunk size. `reset` returns to the start of a stream. |
+| `[C, info] = model.commCoefficients()` | `mp_ls` only: `C = reshape(w, Q, K)`, the `Coefficients` of `comm.DPD('PolynomialType', 'Memory polynomial')`. Other models: error `opendpd:NoMathWorksEquivalent`. |
+
+```matlab
+opendpd.export(dpd, "apa-dpd.opendpd.zip");           % where the model was trained (Python SDK)
+model = opendpd.load("apa-dpd.opendpd.zip");          % anywhere: plain MATLAB
+assert(opendpd.verify(model).passed)                  % this release computes the model as OpenDPD did
+u = opendpd.apply(model, xTest);                      % the predistorted PA input, like opendpd.apply(dpd, xTest)
+```
+
+What `verify` shows and what it does not: a pass means this MATLAB release computes the package's model on the
+golden input to within `1e-5` of what OpenDPD's `apply` produced. It does not show that the model is good for your
+amplifier, and it does not make a package from an unknown source trustworthy: the golden vector comes from the
+same file. Compare `model.SHA256` with the value published by whoever gave you the package.
+
+Reading a package is deliberately narrow. Only the six known file names are accepted (nothing else is extracted, no
+path from the archive is used), every file must match the SHA-256 in the manifest, entries are copied out with a hard
+size limit, and the arrays are read from the `.npz` files by a strict parser that only ever interprets bytes as float32,
+float64, complex64 or complex128 numbers. The `.mat` files are for your own code and are never opened by the toolbox:
+`load` and `whos -file` both call `loadobj` for classes on the MATLAB path, so opening a MAT file from an untrusted
+source can itself run code. The golden test input is synthetic noise with the training input's amplitude statistics,
+never a slice of your data, so a package can be shared without sharing a measurement.
+
+Execution and numerics: `opendpd.apply(model, x)` uses the same two semantics as for a job (`offline_segmented`, the
+default, restarts state every `Manifest.signal.nperseg` samples and zero pads the last segment; `tres_gru` reads 16
+future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
+about `1e-7`, which is what the golden test measures. Speed on a development machine (R2026a, Linux, no GPU, one MATLAB
+process) is roughly 0.3 us per sample for `mp_ls`, 1 us for `gmp_ls`, 2-5 us for a two-layer `gru` or `tres_gru` of
+hidden size 6-64, and 13 us for a `gmp` of 495 terms; it is for evaluating waveforms, not a real-time implementation.
+Not verified: MATLAB Coder, a Simulink MATLAB System block, HDL generation, other MATLAB releases or operating systems.
+

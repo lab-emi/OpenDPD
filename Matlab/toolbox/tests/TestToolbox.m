@@ -83,6 +83,30 @@ classdef TestToolbox < matlab.unittest.TestCase
             testCase.verifyTrue(streamInfo.streaming.consistency.within_tolerance);
             testCase.verifyGreaterThan(max(abs(s(129:end) - u(129:end))), 1e-6);
             testCase.verifyError(@() opendpd.apply(dpd, xTest.', Execution="realtime"), 'MATLAB:validators:mustBeMember');
+            % Take the trained models out of OpenDPD: export, then run the packages in plain MATLAB (no Python) and compare
+            % with the Python evaluator on these samples, for both semantics and for a PA and a DPD run.
+            folder = string(tempname);
+            testCase.addTeardown(@() rmdir(folder, 's'));
+            file = fullfile(folder, "dpd.opendpd.zip");
+            summary = opendpd.export(dpd, file);
+            testCase.verifyEqual(summary.model, 'gru');
+            testCase.verifyEqual(string(summary.run_id), dpd.ID);
+            testCase.verifyEqual(summary.role, 'dpd');
+            model = opendpd.load(file);
+            testCase.verifyTrue(opendpd.verify(model).passed);
+            testCase.verifyEqual(model.SHA256, string(summary.sha256));
+            testCase.verifyEqual(opendpd.apply(model, xTest.'), u, AbsTol=single(1e-5));
+            testCase.verifyEqual(opendpd.apply(model, xTest.', Execution="streaming", ChunkSamples=50), s, AbsTol=single(1e-5));
+            again = fullfile(folder, "again.opendpd.zip");
+            opendpd.export(dpd, again);
+            testCase.verifyEqual(opendpd.internal.sha256(again), opendpd.internal.sha256(file));     % same run, same bytes
+            opendpd.export(pa, fullfile(folder, "pa.opendpd.zip"));
+            paModel = opendpd.load(fullfile(folder, "pa.opendpd.zip"));
+            testCase.verifyTrue(opendpd.verify(paModel).passed);
+            testCase.verifyEqual(opendpd.apply(paModel, xTest.'), opendpd.apply(pa, xTest.'), AbsTol=single(1e-5));
+            [~, paInfo] = opendpd.apply(paModel, xTest.');
+            testCase.verifyEqual(paInfo.output_role, 'modeled_pa_output');
+            testCase.verifyError(@() opendpd.export(dpd, folder), ?MException);          % a directory is not a package file
             resumed = opendpd.getRun(p, dpd.ID);
             record = opendpd.status(resumed);
             testCase.verifyEqual(record.status, 'succeeded');

@@ -67,14 +67,14 @@ def test_segment_length_has_no_default_anywhere():
 
 def _public_functions():
     """Function files a user can call as ``opendpd.<name>`` or ``opendpd.metrics.<name>`` (classes are documented apart)."""
-    classes = {"Job", "Project", "MATLABBridge"}
+    classes = {"Job", "Project", "MATLABBridge", "Model"}
     top = [p.stem for p in (TOOLBOX / "+opendpd").glob("*.m") if p.stem not in classes]
     return sorted(top), sorted(p.stem for p in (TOOLBOX / "+opendpd" / "+metrics").glob("*.m"))
 
 
 def test_every_public_function_is_documented_and_listed():
     top, metrics = _public_functions()
-    assert {"apply", "waveform"} <= set(top) and {"evm", "aclr", "evaluate"} <= set(metrics)
+    assert {"apply", "waveform", "export", "load", "verify"} <= set(top) and {"evm", "aclr", "evaluate"} <= set(metrics)
     reference, contents = _text("docs", "reference.md"), _text("Contents.m")
     for name in top:
         assert f"opendpd.{name}(" in reference, f"{name} is not in the function reference"
@@ -82,6 +82,7 @@ def test_every_public_function_is_documented_and_listed():
     for name in metrics:
         assert f"opendpd.metrics.{name}(" in reference, f"metrics.{name} is not in the function reference"
         assert f"metrics.{name}" in contents
+    assert "`opendpd.Model`" in reference and re.search(r"\bModel\b", contents)
 
 
 def test_shared_helpers_have_one_implementation():
@@ -106,3 +107,24 @@ def test_the_packaged_guide_is_current_and_carries_the_toolbox_version():
     for page in (TOOLBOX / "resources" / "docs").glob("*.html"):
         text = page.read_text(encoding="utf-8")
         assert f'<span class="version">{version}</span>' in text and "PREVIEW" not in text, page.name
+
+
+def test_the_model_runtime_runs_no_python_and_loads_nothing():
+    """The pure-MATLAB runtime and the package reader never call Python and never call anything that can run code.
+
+    ``TestPackageSecurity`` checks the same in MATLAB; this copy fails in the Python CI too. ``whos -file`` and ``load`` are
+    on the list because both call ``loadobj`` for classes on the MATLAB path (shown by ``TestPackageSecurity``)."""
+    forbidden = re.compile(r"(?<![A-Za-z0-9_.])(load|whos|matfile|eval|evalc|evalin|feval|str2func|unzip|run|system|dos|unix|"
+                           r"urlread|webread)\s*\(")
+    files = [TOOLBOX / "+opendpd" / name for name in ("Model.m", "verify.m", "load.m")]
+    files += [TOOLBOX / "+opendpd" / "+internal" / name
+              for name in ("readPackage.m", "readNpz.m", "readNpy.m", "copyZipEntry.m", "sha256.m")]
+    files += sorted((TOOLBOX / "+opendpd" / "+runtime").glob("*.m"))
+    assert len(files) >= 16
+    for path in files:
+        text = path.read_text(encoding="utf-8")
+        if path.name == "load.m":
+            text = text.replace("function model = load(", "")
+        assert not forbidden.search(text), f"{path.name} calls something that can run code"
+        assert not re.search(r"(?<![A-Za-z0-9_.])py\.", text), f"{path.name} refers to Python"
+        assert not re.search(r"(?<![A-Za-z0-9_.])bridge\s*\(", text), f"{path.name} calls the bridge"

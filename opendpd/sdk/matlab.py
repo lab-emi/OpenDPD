@@ -42,6 +42,10 @@ def apply(job, x, execution="offline_segmented", timeout=120.0, chunk_samples=0)
     return y, encode(metadata)
 
 
+def export_model(job, destination, timeout=300.0):
+    return encode(job.export(destination, timeout=float(timeout)))
+
+
 def lte_waveform(seed, n_subframes):
     from .metrics import lte_waveform as build
 

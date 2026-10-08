@@ -160,3 +160,72 @@ def test_metadata_is_json_serialisable_and_names_its_evidence(runs, waveform):
     _, meta = runs["mp_ls"][1].apply(waveform[:300])
     json.dumps(meta, allow_nan=False)
     assert meta["evidence"].startswith("model inference") and meta["apply_version"] == 2
+
+
+# --- model packages (opendpd-model-v1): the exported weights and golden vector equal the evaluator ----------------------
+
+def _package(path):
+    import io
+    import zipfile
+
+    with zipfile.ZipFile(path) as archive:
+        contents = {info.filename: archive.read(info.filename) for info in archive.infolist()}
+    arrays = lambda name: dict(np.load(io.BytesIO(contents[name]), allow_pickle=False))
+    return contents, json.loads(contents["manifest.json"]), arrays("weights.npz"), arrays("golden/golden.npz")
+
+
+@pytest.mark.parametrize("role", [0, 1], ids=["pa", "dpd"])
+@pytest.mark.parametrize("key", APPLY_MODELS)
+def test_exported_package_carries_the_weights_and_reproduces_apply(project, runs, tmp_path, key, role):
+    from opendpd.services import model_export as export
+
+    job = runs[key][role]
+    ws = Workspace.open(project.workspace)
+    summary = export.export_model(ws, job.run_id, tmp_path / "model.opendpd.zip")
+    contents, manifest, weights, golden = _package(tmp_path / "model.opendpd.zip")
+    assert summary["model"] == key and summary["run_id"] == job.run_id and manifest["run"]["role"] == ("dpd" if role else "pa")
+    assert manifest["evidence"]["type"] == "simulation"
+    assert PARAMETERS[key].items() <= manifest["model"]["parameters"].items()      # resolved: defaults filled in
+    # the weights are the checkpoint's, bit for bit
+    core = trained_model(ws, job.run_id).evaluated
+    expected, _, _ = export.extract_weights(key, core)
+    assert set(weights) == set(expected)
+    for name, values in expected.items():
+        np.testing.assert_array_equal(weights[name], values)
+    # the golden outputs are apply's, and a module rebuilt from the package alone reproduces them
+    offline, _ = job.apply(golden["input"])
+    np.testing.assert_allclose(golden["output_offline_segmented"], offline, rtol=0, atol=1e-6)
+    rebuilt = export.core_from_weights(key, manifest["model"]["parameters"], manifest["model"]["architecture"], weights)
+    from opendpd.services.inference import _offline
+    again = _offline(rebuilt, golden["input"], NPERSEG, batch_segments=8)
+    np.testing.assert_allclose(again, golden["output_offline_segmented"], rtol=0, atol=export.TOLERANCE_ABS)
+    assert ("output_streaming_stateful" in golden) == (streaming_variant_of(key) is not None)
+    if "output_streaming_stateful" in golden:
+        streamed, _ = job.apply(golden["input"], execution="streaming", chunk_samples=manifest["golden"]["streaming_chunk_samples"])
+        np.testing.assert_allclose(golden["output_streaming_stateful"], streamed, rtol=0, atol=1e-6)
+
+
+def test_export_is_deterministic_and_the_sdk_entry_gives_the_same_package(runs, tmp_path):
+    job = runs["gru"][1]
+    first, second = tmp_path / "a" / "x.zip", tmp_path / "b" / "y.zip"
+    job.export(first)
+    summary = job.export(second)
+    assert first.read_bytes() == second.read_bytes() and summary["sha256"] == __import__("hashlib").sha256(first.read_bytes()).hexdigest()
+    assert summary["model"] == "gru" and summary["execution"] == {"offline_segmented": True, "streaming_stateful": True}
+
+
+def test_export_refuses_what_it_cannot_prove(project, dataset, runs, tmp_path):
+    from opendpd.services import model_export as export
+    from opendpd.services.inference import InferenceError
+
+    lstm = project.train_pa(dataset["dataset_id"], model="lstm", parameters={"hidden_size": 4}, training=TRAINING,
+                            device="cpu").wait(timeout=180)
+    with pytest.raises(SDKError, match="unsupported_model"):
+        lstm.export(tmp_path / "no.zip")
+    ws = Workspace.open(project.workspace)
+    with pytest.raises(InferenceError) as refused:
+        export.export_model(ws, lstm.run_id, tmp_path / "no.zip")
+    assert refused.value.code == "unsupported_model"
+    assert not (tmp_path / "no.zip").exists() and not list(tmp_path.glob("*.partial"))
+    with pytest.raises(ValueError, match="file path"):
+        runs["gru"][1].export(tmp_path)
