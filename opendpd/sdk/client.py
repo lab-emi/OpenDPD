@@ -252,10 +252,14 @@ class Project:
     def datasets(self):
         return self._request("GET", "/datasets")
 
-    def import_iq(self, x, y, *, dataset_id=None, sample_rate_hz, bandwidth_hz,
-                  nperseg=256, n_sub_ch=1, guard_samples=256, origin="unknown",
+    def import_iq(self, x, y, *, dataset_id=None, sample_rate_hz, bandwidth_hz, nperseg,
+                  n_sub_ch=1, guard_samples=256, origin="unknown",
                   amplitude_units="unknown", display_name=None, source=None):
-        """Import paired I/Q without normalization. Source precision is recorded."""
+        """Import paired I/Q without normalization. Source precision is recorded.
+
+        ``nperseg`` has no default on purpose: it is the PSD segment length of every spectral metric and the interval
+        at which evaluation restarts a model's state. Studio's generated signals use 512-4096.
+        """
         import numpy as np
         from opendpd.core.splits import contiguous_boundaries
         from opendpd.schemas import SignalSpec, DatasetOrigin
@@ -325,19 +329,38 @@ class Project:
             "idempotency_key": idempotency_key or uuid.uuid4().hex})
         return Job(self, record["run_id"])
 
+    def default_device(self, model="gru"):
+        """Studio's own default: the first detected of cuda, mps, cpu. Least-squares models always run on cpu."""
+        from opendpd.core.registry import RegistryError, get_model
+
+        try:
+            if get_model(model).training_method == "least_squares":
+                return "cpu"
+        except RegistryError:
+            return "cpu"        # the service reports an unknown model with its field details
+        detected = {d["device"] for d in self._request("GET", "/system/capabilities")["devices"] if d["detected"]}
+        return next((d for d in ("cuda", "mps", "cpu") if d in detected), "cpu")
+
+    def _execution(self, model, device, device_index, num_threads):
+        device = self.default_device(model) if device == "auto" else device
+        execution = {"device": device, "device_index": int(device_index) if device == "cuda" else 0}
+        if num_threads is not None:       # unset: the service decides
+            execution["num_threads"] = int(num_threads)
+        return execution
+
     def train_pa(self, dataset_id, *, model="gru", parameters=None, training=None,
-                 device="cpu", num_threads=1, profile="opendpd-spectral-v2"):
+                 device="auto", device_index=0, num_threads=None, profile="opendpd-spectral-v2"):
         return self.submit({"task": "train_pa", "dataset": {"id": dataset_id},
             "model": {"key": model, "parameters": parameters or {}}, "training": training or {},
-            "execution": {"device": device, "num_threads": num_threads},
+            "execution": self._execution(model, device, device_index, num_threads),
             "evaluation": {"profile_id": profile}})
 
     def train_dpd(self, dataset_id, pa, *, model="gru", parameters=None, training=None,
-                  device="cpu", num_threads=1, profile="opendpd-spectral-v2"):
+                  device="auto", device_index=0, num_threads=None, profile="opendpd-spectral-v2"):
         self._same_project(pa)
         return self.submit({"task": "train_dpd", "dataset": {"id": dataset_id},
             "model": {"key": model, "parameters": parameters or {}}, "training": training or {},
-            "execution": {"device": device, "num_threads": num_threads},
+            "execution": self._execution(model, device, device_index, num_threads),
             "evaluation": {"profile_id": profile}, "pa_reference": {"run_id": pa.run_id}})
 
     def run_dpd(self, dpd):
@@ -401,18 +424,23 @@ class Job:
                 raise TimeoutError(f"Run {self.run_id} is still {record['status']}; it was not cancelled")
             time.sleep(min(interval, remaining))
 
-    def apply(self, x, *, execution="offline_segmented", timeout=120.0):
-        """Apply a succeeded, unquantized GRU on CPU; return (Nx2 float32, metadata).
+    def apply(self, x, *, execution="offline_segmented", chunk_samples=None, timeout=120.0):
+        """Apply a succeeded run on CPU; return ``(Nx2 float32, metadata)``.
 
-        Each call resets state at the stored dataset's segment boundaries and
-        zero-pads its final segment. This is offline inference, not a stream.
+        ``offline_segmented`` (default) is how the run was scored: state resets at the stored segment length and the
+        last segment is zero padded. ``streaming_stateful`` (alias ``streaming``) carries one state across chunks
+        and exists only for models with a registered streaming variant. The metadata says which one produced the
+        output, with its limitations. Nothing is normalised.
         """
         import numpy as np
+        from opendpd.services.inference import normalise_execution
         from .iq import as_iq
 
         timeout = _positive(timeout, "timeout")
-        if execution != "offline_segmented":
-            raise ValueError("This preview supports only offline_segmented apply")
+        execution = normalise_execution(execution)
+        if chunk_samples is not None and (isinstance(chunk_samples, bool) or int(chunk_samples) != chunk_samples
+                                          or chunk_samples < 1):
+            raise ValueError("chunk_samples must be a positive integer")
         if self.status()["status"] != "succeeded":
             raise SDKError("run_not_finished", f"Run {self.run_id} must succeed before apply")
         x = as_iq(x)
@@ -421,7 +449,8 @@ class Job:
             np.save(directory / "input.npy", x, allow_pickle=False)
             completed = subprocess.run([sys.executable, "-m", "opendpd.sdk._infer",
                 "--workspace", str(self.project.workspace), "--run-id", self.run_id,
-                "--directory", str(directory)], stdin=subprocess.DEVNULL,
+                "--directory", str(directory), "--execution", execution,
+                "--chunk-samples", str(int(chunk_samples or 0))], stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=_python_environment(),
                 cwd=Path(__file__).resolve().parents[2], timeout=timeout)
             if completed.returncode:

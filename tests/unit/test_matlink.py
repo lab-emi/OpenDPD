@@ -131,12 +131,12 @@ def test_explicit_disconnect_fails_pending_and_cannot_revive(broker):
 
 def test_import_requires_available_equal_length_pair(broker):
     connection = connect(broker, [variable("x"), variable("y", 2048)])
-    payload = dict(input="x", output="y", name="capture-one", sample_rate_mhz=80, bandwidth_mhz=20)
+    payload = dict(input="x", output="y", name="capture-one", sample_rate_mhz=80, bandwidth_mhz=20, segment_samples=256)
     with pytest.raises(MatlinkError, match="same number"):
         broker.request(request(connection, "import_iq", payload))
     broker.heartbeat(connection.client_id, connection.bridge_token, MatlinkHeartbeat(variables=[variable("x"), variable("y")]))
     transfer = broker.request(request(connection, "import_iq", payload))
-    assert transfer.payload["origin"] == "unknown"
+    assert transfer.payload["origin"] == "unknown" and transfer.payload["segment_samples"] == 256
     with pytest.raises(MatlinkError, match="available I/Q"):
         broker.request(request(connection, "import_iq", {**payload, "input": "missing"}, "missing"))
 
@@ -161,11 +161,17 @@ def test_pending_queue_and_history_are_bounded(broker, monkeypatch):
     ("eval", {"code": "quit"}), ("create_demo", {"code": "quit"}),
     ("open_variable", {"variable": "x);quit"}), ("open_variable", {"variable": "end"}),
     ("import_result", {"run_id": "../secret"}),
-    ("import_iq", dict(input="x", output="x", name="a", sample_rate_mhz=80, bandwidth_mhz=20)),
-    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=20, bandwidth_mhz=80)),
-    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=float("nan"), bandwidth_mhz=20)),
-    ("import_iq", dict(input="x", output="y", name="spaces not allowed", sample_rate_mhz=80, bandwidth_mhz=20)),
-    ("import_iq", dict(input="x", output="y", origin="MATLAB", sample_rate_mhz=80, bandwidth_mhz=20)),
+    ("import_iq", dict(input="x", output="x", name="a", sample_rate_mhz=80, bandwidth_mhz=20, segment_samples=256)),
+    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=20, bandwidth_mhz=80, segment_samples=256)),
+    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=float("nan"), bandwidth_mhz=20, segment_samples=256)),
+    ("import_iq", dict(input="x", output="y", name="spaces not allowed", sample_rate_mhz=80, bandwidth_mhz=20,
+                       segment_samples=256)),
+    ("import_iq", dict(input="x", output="y", origin="MATLAB", sample_rate_mhz=80, bandwidth_mhz=20, segment_samples=256)),
+    # the segment length is the PSD segment and the evaluation reset interval: it has no default and a bounded range
+    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=80, bandwidth_mhz=20)),
+    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=80, bandwidth_mhz=20, segment_samples=1)),
+    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=80, bandwidth_mhz=20, segment_samples=2_000_000)),
+    ("import_iq", dict(input="x", output="y", name="a", sample_rate_mhz=80, bandwidth_mhz=20, segment_samples=256.5)),
 ])
 def test_no_arbitrary_code_or_invalid_rf_payload(action, payload):
     with pytest.raises(ValidationError):

@@ -200,7 +200,7 @@ def test_result_bundle_uses_saved_report_settings_and_verified_plots(project, br
     import numpy as np
     n = 4096
     x = (.2 * np.exp(2j*np.pi*.123*np.arange(n))).astype(np.complex64)
-    dataset = project.import_iq(x, .8*x, sample_rate_hz=80e6, bandwidth_hz=20e6)
+    dataset = project.import_iq(x, .8*x, sample_rate_hz=80e6, bandwidth_hz=20e6, nperseg=128)
     job = project.train_pa(dataset['dataset_id'], parameters={'hidden_size': 4},
         training={'epochs': 1, 'frame_length': 32, 'frame_stride': 32, 'batch_size': 16}, device='cpu')
     job.wait(timeout=120)

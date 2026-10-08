@@ -81,7 +81,10 @@ def test_diagnostics_can_cross_json_boundary():
 
     info = json.loads(diagnostics())
     assert info["api_version"] == 1 and info["ok"], info
-    assert info["apply_models"] == ["gru"]
+    # what apply() accepts is whatever has a parity test against the evaluator; streaming only where a variant is registered
+    assert info["apply_models"] == ["gru", "tres_gru", "gmp", "mp_ls", "gmp_ls"]
+    assert info["apply_execution"] == ["offline_segmented", "streaming_stateful"]
+    assert info["apply_streaming_models"] == ["gmp", "gru"]
 
 
 def test_wait_timeout_does_not_request_cancellation():
@@ -114,7 +117,7 @@ def test_uncertain_import_retains_source_for_the_running_server(tmp_path):
     project._request = disconnected
     with pytest.raises(SDKError, match="import_uncertain.*may still finish"):
         project.import_iq(np.zeros((1024, 2), np.float32), np.zeros((1024, 2), np.float32),
-                          sample_rate_hz=80e6, bandwidth_hz=20e6)
+                          sample_rate_hz=80e6, bandwidth_hz=20e6, nperseg=256)
     sources = list((tmp_path / "imports").glob("sdk-*.npz"))
     assert len(sources) == 1
     with np.load(sources[0]) as archive:

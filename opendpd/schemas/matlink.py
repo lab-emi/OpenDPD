@@ -82,6 +82,8 @@ class ImportIQPayload(StrictModel):
     name: Slug | Literal[""] = ""
     sample_rate_mhz: float = Field(gt=0, allow_inf_nan=False)
     bandwidth_mhz: float = Field(gt=0, allow_inf_nan=False)
+    # PSD segment length and the evaluation reset interval; deliberately without a default.
+    segment_samples: int = Field(ge=2, le=1_048_576)
     origin: Literal["unknown", "measured", "synthetic"] = "unknown"
 
     _identifier = field_validator("input", "output")(matlab_identifier)

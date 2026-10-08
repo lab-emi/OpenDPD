@@ -33,8 +33,10 @@ def trained(project):
     dataset = json.loads(bridge.import_iq(project, x.astype(np.float64), y, json.dumps({
         "dataset_id": "synthetic-matlab", "sample_rate_hz": 80e6, "bandwidth_hz": 20e6,
         "nperseg": 128, "origin": "synthetic"})))
-    pa = project.train_pa(dataset["dataset_id"], parameters={"hidden_size": 4}, training=TRAINING).wait(timeout=120)
-    dpd = project.train_dpd(dataset["dataset_id"], pa, parameters={"hidden_size": 4}, training=TRAINING).wait(timeout=120)
+    pa = project.train_pa(dataset["dataset_id"], parameters={"hidden_size": 4}, training=TRAINING,
+                          device="cpu").wait(timeout=120)
+    dpd = project.train_dpd(dataset["dataset_id"], pa, parameters={"hidden_size": 4}, training=TRAINING,
+                            device="cpu").wait(timeout=120)
     return dataset, pa, dpd
 
 
@@ -130,8 +132,8 @@ def test_apply_resets_segments_and_trims_partial_tail(project, trained):
     tail, _ = job.apply(x[128:])
     np.testing.assert_allclose(full, np.concatenate([first, tail]), rtol=1e-5, atol=1e-6)
     assert full.shape == (257, 2)
-    with pytest.raises(ValueError, match="offline_segmented"):
-        job.apply(x, execution="streaming_stateful")
+    with pytest.raises(ValueError, match="execution must be one of"):
+        job.apply(x, execution="realtime")
 
 
 def test_apply_uses_frozen_run_metadata_after_dataset_edit(project, trained):
@@ -188,9 +190,9 @@ def test_modified_checkpoint_is_refused(project, trained):
 
 def test_queue_cancel_and_reconnect(project, trained):
     ds, _, _ = trained
-    first = project.train_pa(ds["dataset_id"], parameters={"hidden_size": 8},
+    first = project.train_pa(ds["dataset_id"], parameters={"hidden_size": 8}, device="cpu",
                             training={**TRAINING, "epochs": 100, "frame_stride": 1})
-    second = project.train_pa(ds["dataset_id"], parameters={"hidden_size": 8}, training=TRAINING)
+    second = project.train_pa(ds["dataset_id"], parameters={"hidden_size": 8}, training=TRAINING, device="cpu")
     try:
         assert second.status()["status"] == "queued"
         assert second.cancel()["status"] == "cancelled"

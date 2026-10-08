@@ -27,6 +27,16 @@ def submit(project, config):
     return project.submit(json.loads(config))
 
 
-def apply(job, x, execution="offline_segmented", timeout=120.0):
-    y, metadata = job.apply(x, execution=execution, timeout=float(timeout))
+def default_device(project, model):
+    return str(project.default_device(str(model)))
+
+
+def file_sha256(path):
+    from opendpd.services.workspace import sha256_file
+
+    return sha256_file(path)
+
+
+def apply(job, x, execution="offline_segmented", timeout=120.0, chunk_samples=0):
+    y, metadata = job.apply(x, execution=execution, chunk_samples=int(chunk_samples) or None, timeout=float(timeout))
     return y, encode(metadata)
