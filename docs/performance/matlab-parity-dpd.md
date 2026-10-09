@@ -170,6 +170,7 @@ below is generated from it. Exit status 1 means the parity did not pass as regis
 |---|---|---|---|
 | — | 2026-10-09 | plumbing checks on the first 60 000 samples of each record (`--smoke`; not the registered data, no report can be written from them) | no registered number. They showed that the service refuses a least-squares baseline as a DPD run's PA reference, which led to amendment 1 |
 | 1 | 2026-10-09 | none after amendment 1 | **21 of 21 scored items within budget.** Record: `matlab-parity-dpd.json` |
+| 2 | 2026-10-09 | amendment 2 only (items R1-R4; nothing of run 1 changes) | first attempt stopped by an error of the script, which looked for the fixture one folder too high (a bug of the check, not a result; no number was produced); second attempt: **every item within budget**, see Results of amendment 2 |
 
 ## Amendment 1 (2026-10-09, before run 1)
 
@@ -345,3 +346,28 @@ The difference of Q1–Q6 is relative: `‖a − b‖ / ‖b‖` over the flatte
 | C3 | S5 | 5 | 3 | 0.403027 | 6.65e+03 | -27.11 | 15 |
 | C4 | S5 | 7 | 5 | 0.403027 | 3.08e+05 | -28.00 | 35 |
 <!-- parity-dpd-results:end -->
+
+## Results of amendment 2: `rf.PAmemory` (run 2, 2026-10-09)
+
+**Verdict: every registered item is within its budget** on MATLAB R2026a Update 5 (RF Toolbox 26.1, Communications Toolbox
+26.1), Linux, from `parityPAmemory` in `Matlab/toolbox/examples/parity` (it prints this table and computes the verdict from the
+registered budgets).
+
+| Item | Cases | Worst relative difference (case) | Budget |
+|---|---|---|---|
+| R1 `rf.PAmemory` on `[zeros(Q-1,1); x]` against `comm.DPD` on `x` | 36 | 4.2·10⁻¹⁶ (Q = 4, K = 5, seed 13) | 1·10⁻¹² |
+| R2 first Q − 1 outputs against `comm.DPD` on `x` preceded by Q − 1 copies of `x(1)` | 27 | 1.3·10⁻¹⁶ (Q = 7, K = 1, seed 12) | 1·10⁻¹² |
+| R3 `opendpd.apply` of the `mp_ls-dpd` fixture against `rf.PAmemory` with `commCoefficients()` | 3 | 4.5·10⁻⁸ (seed 11) | 1·10⁻⁶ |
+| R4 a second call on the same object against one call on the whole signal | 36 | 0 (all 36 identical) | 1·10⁻¹² |
+
+What this shows, for the `rf.PAmemory` System object of this release and the memory-polynomial model: the coefficient matrix has the
+layout of `comm.DPD`, so the matrix OpenDPD's `commCoefficients()` returns can be given to `rf.PAmemory` unchanged (R1, R3); the
+delay line of `rf.PAmemory` starts filled with the **first input sample**, not with zeros, which is the only difference from
+`comm.DPD` and from OpenDPD's evaluation of a segment (R2); to reproduce OpenDPD's zero-history segment, prepend Q − 1 zeros and
+drop the first Q − 1 outputs (R1, R3); and the delay line carries across calls, so a stream can be fed in chunks (R4).
+
+What it does not show: the RF Blockset amplifier block, the other nonlinearity models of `rf.PAmemory`, the `UnitDelay`
+property at values other than its default, other releases, or anything about an amplifier. Two notes on the registration, made here
+and not edited into it: the phrase "complex row-independent test signal" means independent identically distributed complex
+Gaussian samples (`0.3·(randn + 1j·randn)`), and the registration did not fix how the coefficient matrix is drawn, so the script
+draws it from the seed 1000 + 10·Q + K; neither was changed after seeing a number.
