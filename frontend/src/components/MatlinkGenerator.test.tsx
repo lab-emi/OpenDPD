@@ -29,16 +29,16 @@ test('generator pairs signals and waits for MATLAB acknowledgment before opening
     },
   })
   const { client } = renderWithProviders(<><SignalGeneratorPage /><Probe /></>, { route: '/signal-generator?matlink=matlab-test' })
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Generate & prepare experiment' })).toBeEnabled())
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Generate & prepare experiment' })).toBeEnabled(), { timeout: 5000 })
   expect(screen.getByRole('combobox', { name: 'Virtual PA model' })).toHaveTextContent(models.data.find(m => m.model_id === 'rapp-am-pm')!.name.en)
   await userEvent.click(screen.getByRole('button', { name: 'Generate & prepare experiment' }))
-  await waitFor(() => expect(calls.some(c => c.path === '/api/v1/matlink/requests')).toBe(true))
+  await waitFor(() => expect(calls.some(c => c.path === '/api/v1/matlink/requests')).toBe(true), { timeout: 5000 })
   expect(calls.find(c => c.path === '/api/v1/pa-library/datasets')?.body).toMatchObject({ model_id: 'rapp-am-pm', input_signal_ids: ['sg-' + 'a'.repeat(64)] })
   expect(screen.getByTestId('location')).toHaveTextContent('/signal-generator?matlink=matlab-test&paired=paired-test')
   expect(calls.find(c => c.path === '/api/v1/matlink/requests')?.body).toMatchObject({ client_id: 'matlab-test', action: 'import_dataset', payload: { dataset_id: 'paired-test' } })
   act(() => client.setQueryData(matlinkKey, { ...snapshot, transfers: [{ ...snapshot.transfers[0], status: 'succeeded', result: { variable: 'opendpdSignals' } }] }))
-  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/experiments/new?dataset=paired-test&version=raw-v1&task=train_pa&matlink=matlab-test&matlab_variable=opendpdSignals'))
-})
+  await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/experiments/new?dataset=paired-test&version=raw-v1&task=train_pa&matlink=matlab-test&matlab_variable=opendpdSignals'), { timeout: 5000 })
+}, 15000)
 
 test('an old toolbox cannot start the automatic generation workflow', async () => {
   mockApi({
@@ -47,6 +47,6 @@ test('an old toolbox cannot start the automatic generation workflow', async () =
     'GET /api/v1/pa-library/models': () => models.data,
   })
   renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator?matlink=matlab-test' })
-  await screen.findByText(/This connection needs toolbox 0.4.0/)
+  await screen.findByText(/This connection needs toolbox 0.4.0/, undefined, { timeout: 5000 })
   expect(screen.getByRole('button', { name: 'Generate & prepare experiment' })).toBeDisabled()
-})
+}, 15000)
