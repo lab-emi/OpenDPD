@@ -18,6 +18,8 @@ on:
       - tests/unit/test_model_export.py
       - tests/unit/test_matlab_toolbox_metadata.py
       - scripts/make_matlab_model_fixtures.py
+      - scripts/make_matlab_fixed_fixture.py
+      - tests/unit/test_fixed_point_package.py
       - tests/unit/test_studio_navigation.py
       - tests/unit/test_matlink.py
       - tests/integration/test_matlink_*.py
@@ -89,7 +91,7 @@ jobs:
           python -m pip install -e ".[dev]"
           python -m pip install Markdown
           python scripts/build_matlab_docs.py --check
-          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
+          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_fixed_point_package.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
           python -c 'import os, sys; open(os.environ["GITHUB_ENV"], "a").write("OPENDPD_MATLAB_PYTHON=" + sys.executable + "\n")'
       - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
         with:
@@ -117,6 +119,8 @@ jobs:
             assert(~strcmp(char(pyenv().Status),'Loaded'), 'running a model package must not load Python');
             generated = opendpd.generateCode(model, fullfile(tempname,'generated'), Name='CiDpd', Execution='streaming');
             addpath(generated.Folder); assert(CiDpdCheck().passed); rmpath(generated.Folder);
+            fixed = opendpd.load(fullfile(toolboxRoot,'tests','data','gru-pa.fixed-point-v1.zip'));
+            assert(strcmp(opendpd.verify(fixed).status,'bit_exact'));
             rng(12); x = complex(single(randn(4096,1)), single(randn(4096,1)))/8; y = x - single(0.2)*x.*abs(x).^2;
             [dpd, pa] = opendpd.fit(x, y, Workspace=fullfile(tempname,'fit'), SampleRate=80e6, Bandwidth=20e6, SegmentSamples=128, PAParameters=struct('hidden_size',4), Training=struct('epochs',1,'frame_length',32,'frame_stride',32,'batch_size',16,'batch_size_eval',16), Device='cpu', PythonExecutable=string(getenv('OPENDPD_MATLAB_PYTHON')), Verbose=false);
             assert(opendpd.verify(dpd).passed && opendpd.verify(pa).passed);

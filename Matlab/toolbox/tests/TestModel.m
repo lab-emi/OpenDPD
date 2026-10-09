@@ -197,6 +197,24 @@ classdef TestModel < matlab.unittest.TestCase
                 'one OpenDPD segment equals one comm.DPD stream with a zero initial state', AbsTol=2e-6);
         end
 
+        function memoryPolynomialCoefficientsRunInAnRfPAmemoryOnAZeroPaddedSegment(testCase)
+            model = opendpd.load(PackageTools.path('mp_ls-dpd'));
+            [coefficients, info] = model.commCoefficients();
+            testCase.verifySubstring(info.rf_pamemory, 'zeros(Q-1,1)');
+            testCase.assumeTrue(license('test', 'RF_Toolbox') && ~isempty(which('rf.PAmemory')), 'RF Toolbox not available');
+            Q = info.memory_depth;
+            x = PackageTools.signal(model.Manifest.signal.nperseg, 9);
+            pa = rf.PAmemory(Model='Memory polynomial', CoefficientMatrix=coefficients);
+            y = pa([zeros(Q - 1, 1); double(single(x))]);
+            reference = double(opendpd.apply(model, x));
+            testCase.verifyLessThan(max(abs(y(Q:end) - reference)) / max(abs(reference)), 1e-6, ...
+                'rf.PAmemory on a zero-padded segment equals the OpenDPD segment (registered budget: 1e-6, single interface)');
+            % the delay line of rf.PAmemory starts with the first sample, so without the pad the first Q-1 outputs differ
+            bare = rf.PAmemory(Model='Memory polynomial', CoefficientMatrix=coefficients);
+            first = bare(double(single(x)));
+            testCase.verifyGreaterThan(max(abs(first(1:Q - 1) - reference(1:Q - 1))), 1e-3);
+        end
+
         function otherModelsHaveNoCommDPDEquivalent(testCase, notMemoryPolynomial)
             model = opendpd.load(PackageTools.path(notMemoryPolynomial));
             testCase.verifyError(@() model.commCoefficients(), 'opendpd:NoMathWorksEquivalent');

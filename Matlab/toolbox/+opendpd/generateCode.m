@@ -16,12 +16,17 @@ function result = generateCode(model, folder, options)
 %   The result has Name, Folder, Files, Execution, Model and PackageSHA256. The same package, name and execution always give
 %   the same bytes. The arithmetic is double precision (single-rounded inputs), not fixed-point and not HDL-ready.
 arguments
-    model (1,1) opendpd.Model
+    model (1,1) {mustBeA(model, ["opendpd.Model", "opendpd.FixedModel"])}
     folder (1,1) string {mustBeNonzeroLengthText}
     options.Name (1,1) string = ""
     options.Execution (1,1) string {mustBeMember(options.Execution, ...
         ["offline_segmented", "streaming_stateful", "streaming"])} = "offline_segmented"
     options.Overwrite (1,1) logical = false
+end
+if isa(model, 'opendpd.FixedModel')
+    error('opendpd:CodegenFixedPoint', ['opendpd.generateCode writes classes for opendpd-model-v1 packages. A fixed-point-v1 ' ...
+        'package already carries its generated C99 reference under c/, verified against the golden vectors; a MATLAB ' ...
+        'fixed-point or HDL design is not provided.']);
 end
 data = model.codegenInputs();
 execution = options.Execution;

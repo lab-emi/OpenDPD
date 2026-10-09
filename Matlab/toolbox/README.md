@@ -33,6 +33,10 @@ metadata is still the 2.3 baseline until the release is cut.
 - Write a loaded model as a standalone class for Simulink (MATLAB System block) and MATLAB Coder:
   `opendpd.generateCode`. The class needs no toolbox or Python; checked on R2026a with Coder MEX builds and a Simulink
   DPD-then-PA chain (`examples/opendpdSimulink.m`); not fixed-point, not for HDL.
+- Check a `fixed-point-v1` deployment package (`opendpd deploy`) bit for bit in plain MATLAB: `opendpd.load` returns an
+  `opendpd.FixedModel`, `opendpd.verify` replays the six golden vectors (outputs and the state after every sample), and
+  `model.runInteger` gives integers in and out. Integers are held exactly in double precision; no Fixed-Point Designer, no
+  compiler, no Python.
 - Supervise a measurement made by your own instrument code with `opendpd.lab.Session`: RF off until a named person arms it, limits
   checked before anything is sent, every abnormal path switches RF off and trips the session, and a record with the hash of every
   played and captured signal goes into the dataset. Exercised only on a dry-run mock; no instrument chain has been tested.
@@ -313,8 +317,8 @@ Install it with `matlab.addons.toolbox.installToolbox`, then select Python
 with `opendpd.setup`. Uninstalling it leaves Python environments and experiment
 workspaces intact.
 
-The tests of `opendpd.generateCode` that need MATLAB Coder with a C compiler, or Simulink (the MEX and MATLAB System
-block checks), are skipped, not failed, where those products are missing. The GitHub workflow below installs base
+The tests of `opendpd.generateCode` and of the fixed-point kernel that need MATLAB Coder with a C compiler, or Simulink
+(the MEX and MATLAB System block checks), are skipped, not failed, where those products are missing. The GitHub workflow below installs base
 MATLAB only, so it skips them; they ran on a development machine that has the products (R2026a, Linux).
 
 The **MATLAB toolbox** GitHub workflow runs on pull requests that touch the toolbox,

@@ -390,7 +390,7 @@ no project, no server, no other toolbox. A run trained in Studio can be exported
 </tr>
 <tr>
 <td><code>model = opendpd.load(file)</code></td>
-<td>Read a package as data and return an <code>opendpd.Model</code>. Properties: <code>Manifest</code> (model, signal, scaling, execution semantics, evidence, provenance), <code>Source</code>, <code>SHA256</code> of the file.</td>
+<td>Read a package as data and return an <code>opendpd.Model</code>. Properties: <code>Manifest</code> (model, signal, scaling, execution semantics, evidence, provenance), <code>Source</code>, <code>SHA256</code> of the file. A <code>fixed-point-v1</code> deployment package is recognised by its entry names and returned as an <code>opendpd.FixedModel</code> (<a href="#fixed-point-deployment-packages-check-an-implementation-bit-for-bit">below</a>).</td>
 </tr>
 <tr>
 <td><code>report = opendpd.verify(model)</code></td>
@@ -406,7 +406,7 @@ no project, no server, no other toolbox. A run trained in Studio can be exported
 </tr>
 <tr>
 <td><code>[C, info] = model.commCoefficients()</code></td>
-<td><code>mp_ls</code> only: <code>C = reshape(w, Q, K)</code>, the <code>Coefficients</code> of <code>comm.DPD('PolynomialType', 'Memory polynomial')</code>. Other models: error <code>opendpd:NoMathWorksEquivalent</code>.</td>
+<td><code>mp_ls</code> only: <code>C = reshape(w, Q, K)</code>, the <code>Coefficients</code> of <code>comm.DPD('PolynomialType', 'Memory polynomial')</code> and the <code>CoefficientMatrix</code> of <code>rf.PAmemory</code>. <code>info.rf_pamemory</code> says how to use it there. Other models: error <code>opendpd:NoMathWorksEquivalent</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -415,6 +415,14 @@ model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);          % anywhere: plai
 assert(opendpd.verify(model).passed)                  % this release computes the model as OpenDPD did
 u = opendpd.apply(model, xTest);                      % the predistorted PA input, like opendpd.apply(dpd, xTest)
 </code></pre>
+<p><strong><code>mp_ls</code> in an <code>rf.PAmemory</code> (RF Toolbox).</strong> The matrix from <code>commCoefficients()</code> is the <code>CoefficientMatrix</code> of
+<code>rf.PAmemory(Model='Memory polynomial', CoefficientMatrix=C)</code>. The only difference from <code>comm.DPD</code> is the initial delay line:
+<code>rf.PAmemory</code> fills it with the first input sample, not with zeros. To reproduce an OpenDPD segment (zero history) apply it to
+<code>[zeros(Q-1,1); x]</code> and drop the first <code>Q-1</code> outputs; the delay line then carries across calls, so a stream can be fed in chunks.
+Checked on R2026a (RF Toolbox 26.1) against <code>comm.DPD</code> on 36 coefficient/signal cases (largest relative difference
+4·10⁻¹⁶) and against <code>opendpd.apply</code> on 3 (4.5·10⁻⁸, the single-precision interface); registered and recorded in
+<code>docs/performance/matlab-parity-dpd.md</code> (amendment 2). Not checked: the RF Blockset amplifier block, the other nonlinearity
+models of <code>rf.PAmemory</code>, other releases.</p>
 <p>What <code>verify</code> shows and what it does not: a pass means this MATLAB release computes the package's model on the
 golden input to within <code>1e-5</code> of what OpenDPD's <code>apply</code> produced. It does not show that the model is good for your
 amplifier, and it does not make a package from an unknown source trustworthy: the golden vector comes from the
@@ -489,6 +497,68 @@ character-restricted provenance text from the package into them, never anything 
 a package with a weight that is not finite or with more than 250 000 numbers (use <code>opendpd.apply</code> for those). A package
 from an unknown source is still a download from an unknown source: compare <code>model.SHA256</code> with the value you were given
 before you generate code from it.</p>
+<h2 id="fixed-point-deployment-packages-check-an-implementation-bit-for-bit">Fixed-point deployment packages: check an implementation bit for bit</h2>
+<p><code>opendpd deploy RUN_ID --workspace WORKSPACE --out deploy.zip</code> (or the Studio's Deployment panel) writes a <code>fixed-point-v1</code>
+package for a one-layer <code>gru</code> run: quantised integer weights, six golden vectors (inputs, outputs and the state after every
+sample) and a C99 reference that was replayed against them. <code>opendpd.load</code> reads it as an <code>opendpd.FixedModel</code>, which executes
+the specification's GRU (<code>docs/protocols/fixed-point-v1.md</code>) in plain MATLAB. The integers are held exactly in double
+precision, so there is no Python, no compiler and no Fixed-Point Designer in the loop. Its purpose is to be a second,
+independent implementation to check against, and a source of expected values for your own implementation (HLS, RTL, firmware).</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model = opendpd.load(file)</code></td>
+<td>An <code>opendpd.FixedModel</code>. Properties: <code>Manifest</code> (specification, run, golden index, the package's own verification and report), <code>Source</code>, <code>SHA256</code>.</td>
+</tr>
+<tr>
+<td><code>report = opendpd.verify(model)</code></td>
+<td>Replay the six golden vectors and compare every output sample and every state step. <code>report.status</code> is <code>"bit_exact"</code> or <code>"mismatch"</code>; <code>passed</code>, <code>cases_checked</code>, <code>samples_checked</code>; for a mismatch <code>mismatch_case</code>, <code>mismatch_sample</code> (1-based) and <code>mismatch_signal</code> (<code>"h"</code>, the state, is compared before <code>"y"</code> at the same sample, because the output is computed from it); <code>package_c99_status</code> is the verdict the package recorded for its own C99 reference.</td>
+</tr>
+<tr>
+<td><code>[yq, state, trace] = model.runInteger(xq, ...)</code></td>
+<td>Integers in, integers out. <code>xq</code> is N-by-2 in the input format (larger values saturate, as in the Python reference; the C99 reference expects inputs already in range); <code>yq</code> is an integer class wide enough for the output format (<code>int16</code> for 16 bits); <code>state</code> is the final state and <code>trace</code> the state after every sample. <code>State=</code> starts from a given state, <code>ResetAt=</code> lists 1-based samples before which the state is zeroed.</td>
+</tr>
+<tr>
+<td><code>[y, info] = opendpd.apply(model, x)</code></td>
+<td>A waveform through the integer model: the input is rounded to single, multiplied by <code>2^frac</code> of the input format, rounded half away from zero and saturated; the output integers are divided by <code>2^frac</code> of the output format. The state starts at zero. The streaming reference is the only execution a fixed-point model has (<code>Execution="offline_segmented"</code> is refused, <code>ChunkSamples</code> does not change the result).</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-matlab">model = opendpd.load(&quot;deploy.zip&quot;);
+report = opendpd.verify(model)                      % status &quot;bit_exact&quot;: this MATLAB release computes the package's integers
+[yq, state, trace] = model.runInteger(xq);          % expected outputs and states for your own implementation
+y = opendpd.apply(model, xTest);                    % float in, float out: what the quantised model does to a waveform
+</code></pre>
+<p>What a pass shows and what it does not: this MATLAB release reproduces, bit for bit, every output and state of the six golden
+vectors that the package carries and that Python computed, and <code>package_c99_status</code> says that the C99 reference did too. It
+does not show that the specification is right, that the quantised model is good for your amplifier (the package's report
+lists the quality loss on the test split), or that a hardware implementation is correct. A package from an unknown source is
+read like a model package: only the known file names (<code>manifest.json</code>, <code>spec.json</code>, <code>weights.json</code>, <code>README.md</code>, three C
+sources under <code>c/</code> and five files for each of the golden cases), every file hashed against the manifest, the manifest listing
+exactly the files that are in the archive, a hard size limit per entry, no path from the archive used, and the C sources
+checked against their hashes but never compiled or run by the toolbox.</p>
+<p>Every format is taken from the package, never assumed, and the toolbox refuses what it cannot compute exactly: words wider
+than 16 bits (inputs, state, outputs, weights, table values), a pre-activation wider than 32 bits, an accumulator wider than
+53 bits (what double precision holds), weights that are not whole numbers in their word, tables of the wrong length, a rule
+text that differs from the specification's, and any package for which a sum, product or shift could leave the range below
+2^53. An accumulator that reaches its declared width raises <code>opendpd:FixedOverflow</code>, as the Python reference does.</p>
+<p><code>opendpd.generateCode</code> does not accept a <code>FixedModel</code> (error <code>opendpd:CodegenFixedPoint</code>): the package already carries a
+generated C99 reference, and a MATLAB fixed-point or HDL design is not provided.</p>
+<p>What was checked (MATLAB R2026a, Linux, one machine): two real packages written by <code>opendpd deploy</code>'s code path, one with the
+default specification and one in which every format differs (14-bit input, 14-bit state with 13 fractional bits, 14-bit output with 11, 12-bit weights, a 28-bit
+pre-activation, a 40-bit accumulator, coarser tables), both with a C99 verdict of <code>bit_exact</code>, reproduce all six golden vectors
+(5,582 samples per package, outputs and states); a production-size package (24 hidden units, 72,448 golden samples) verifies in
+1.3 s (about 18 us per sample); the kernel equals an independent scalar <code>int64</code> implementation of the specification on 24
+random sets of formats and weights; the kernel builds with MATLAB Coder and the MEX function reproduces the golden vectors of both packages.
+Seeded faults in the arithmetic, the reader and the entry points were each caught by at least one test (see the 2.4.0 release
+notes for the count). Not checked: other MATLAB releases and operating systems, a <code>fi</code> or HDL Coder implementation (none is provided),
+packages whose weights come from a run that was trained longer than the fixtures' one epoch, and any hardware.</p>
 <h2 id="measured-captures-opendpdlab">Measured captures: <code>opendpd.lab</code></h2>
 <p><code>opendpd.lab.Session</code> supervises a measurement made by <strong>your</strong> instrument code. RF stays off until a named person arms
 the session, every limit is checked before anything is sent, and every abnormal path - an error in your functions, a

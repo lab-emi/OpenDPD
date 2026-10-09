@@ -179,8 +179,9 @@ y = model(chunk); reset(model);                   % streaming, for gru and gmp
 
 Use the training dataset's sample rate and amplitude units: nothing is normalised or aligned
 (`model.Manifest.signal`, `model.Manifest.scaling`). For an `mp_ls` model, `model.commCoefficients()` returns the matrix
-for `comm.DPD`, so a memory polynomial fitted by OpenDPD can be run by MathWorks code; one `nperseg` segment of OpenDPD
-and one `comm.DPD` stream from a zero state agree. See the [function
+for `comm.DPD` and `rf.PAmemory`, so a memory polynomial fitted by OpenDPD can be run by MathWorks code; one `nperseg` segment
+of OpenDPD and one `comm.DPD` stream from a zero state agree (`rf.PAmemory` starts its delay line with the first sample: see the
+reference for the zero pad). See the [function
 reference](reference.html#model-packages-run-a-trained-model-without-python) for what a package contains, what `verify`
 shows and what it does not, and how a package from elsewhere is read.
 
@@ -195,6 +196,17 @@ Add a *MATLAB System* block with the System object name `ApaDpd`, or run `codege
 `opendpdSimulink` builds a DPD-then-PA transmit chain. Choose `streaming` when samples arrive one at a time or in
 frames of any size; the default restarts the state every `nperseg` samples, as in training. See the [function
 reference](reference.html#standalone-classes-for-matlab-coder-and-simulink).
+
+A fixed-point deployment package (`opendpd deploy`, or the Studio's Deployment panel) is loaded the same way and checked bit
+for bit against its golden vectors; the same model gives you the expected integers for your own implementation:
+
+```matlab
+fixed = opendpd.load("deploy.zip");               % an opendpd.FixedModel: integers held exactly in double precision
+opendpd.verify(fixed).status                      % "bit_exact", or the case, sample and signal where it first differs
+[yq, state, trace] = fixed.runInteger(xq);        % integers in, integers out, the state after every sample
+```
+
+See the [function reference](reference.html#fixed-point-deployment-packages-check-an-implementation-bit-for-bit).
 
 ## Measure on your bench
 

@@ -119,6 +119,7 @@ classdef Model < matlab.System
         function [coefficients, info] = commCoefficients(obj)
             %COMMCOEFFICIENTS The Coefficients matrix of comm.DPD (memory polynomial) for an mp_ls model.
             % coefficients = reshape(w, Q, K): row q+1 is lag q, column k+1 is envelope power k. Valid for mp_ls only.
+            % The matrix is also the CoefficientMatrix of rf.PAmemory (RF Toolbox); info.rf_pamemory says how to use it there.
             obj.requireLoaded();
             if ~strcmp(obj.Kernel.key, 'mp_ls')
                 error('opendpd:NoMathWorksEquivalent', ['%s has no comm.DPD equivalent: only the memory polynomial ' ...
@@ -127,7 +128,10 @@ classdef Model < matlab.System
             coefficients = reshape(obj.Kernel.coefficients, obj.Kernel.Q, obj.Kernel.K);
             info = struct('polynomial_type', 'Memory polynomial', 'degree', obj.Kernel.K, 'memory_depth', obj.Kernel.Q, ...
                 'note', ['comm.DPD runs one continuous stream with a zero initial state; OpenDPD resets the state every ' ...
-                'nperseg samples when it scores a run, so the two agree within one segment.']);
+                'nperseg samples when it scores a run, so the two agree within one segment.'], ...
+                'rf_pamemory', ['The same matrix is the CoefficientMatrix of rf.PAmemory(Model=''Memory polynomial'', ...) ' ...
+                '(RF Toolbox). rf.PAmemory fills its delay line with the first input sample: for a zero history, as in an ' ...
+                'OpenDPD segment, apply it to [zeros(Q-1,1); x] and drop the first Q-1 outputs.']);
         end
     end
 

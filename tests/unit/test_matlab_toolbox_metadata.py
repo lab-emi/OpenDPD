@@ -70,7 +70,7 @@ def test_segment_length_has_no_default_anywhere():
 
 def _public_functions():
     """Function files a user can call as ``opendpd.<name>`` or ``opendpd.metrics.<name>`` (classes are documented apart)."""
-    classes = {"Job", "Project", "MATLABBridge", "Model"}
+    classes = {"Job", "Project", "MATLABBridge", "Model", "FixedModel"}
     top = [p.stem for p in (TOOLBOX / "+opendpd").glob("*.m") if p.stem not in classes]
     return sorted(top), sorted(p.stem for p in (TOOLBOX / "+opendpd" / "+metrics").glob("*.m"))
 
@@ -86,6 +86,7 @@ def test_every_public_function_is_documented_and_listed():
         assert f"opendpd.metrics.{name}(" in reference, f"metrics.{name} is not in the function reference"
         assert f"metrics.{name}" in contents
     assert "`opendpd.Model`" in reference and re.search(r"\bModel\b", contents)
+    assert "`opendpd.FixedModel`" in reference and re.search(r"\bFixedModel\b", contents)
 
 
 def test_shared_helpers_have_one_implementation():
@@ -120,10 +121,12 @@ def test_the_model_runtime_runs_no_python_and_loads_nothing():
     forbidden = re.compile(r"(?<![A-Za-z0-9_.])(load|whos|matfile|eval|evalc|evalin|feval|str2func|unzip|run|system|dos|unix|"
                            r"urlread|webread)\s*\(")
     files = [TOOLBOX / "+opendpd" / name for name in ("Model.m", "verify.m", "load.m")]
+    files += [TOOLBOX / "+opendpd" / name for name in ("FixedModel.m",)]
     files += [TOOLBOX / "+opendpd" / "+internal" / name
-              for name in ("readPackage.m", "readNpz.m", "readNpy.m", "copyZipEntry.m", "sha256.m")]
+              for name in ("readPackage.m", "readNpz.m", "readNpy.m", "copyZipEntry.m", "sha256.m", "readFixedPackage.m",
+                           "packageKind.m")]
     files += sorted((TOOLBOX / "+opendpd" / "+runtime").glob("*.m"))
-    assert len(files) >= 16
+    assert len(files) >= 20
     for path in files:
         text = path.read_text(encoding="utf-8")
         if path.name == "load.m":
@@ -209,3 +212,25 @@ def test_the_code_generator_is_documented_runs_nothing_and_its_kernels_call_only
     generated = _text("+opendpd", "+internal", "generateSources.m")
     for stem in ("gruLayer", "tresFeatures", "tresSkip", "mpForward", "gmpForward", "gmpPolynomialForward"):
         assert f"'{stem}'" in generated, f"generateSources does not copy {stem}"
+
+
+def test_the_fixed_point_reader_is_documented_and_its_kernel_is_plain_matlab():
+    """``opendpd.load`` returns an ``opendpd.FixedModel`` for a fixed-point-v1 package; the documentation, the guide, the
+    tutorial and the CI workflow all say so, and the integer kernel is a ``+runtime`` function that calls only other kernels."""
+    reference, readme, contents = _text("docs", "reference.md"), _text("README.md"), _text("Contents.m")
+    workflow = _text("docs", "workflow.md")
+    for text in (reference, workflow, readme):
+        assert "runInteger" in text or "FixedModel" in text, "a fixed-point page lacks the call"
+    assert "model.runInteger(" in reference and "opendpd.FixedModel" in reference and "FixedModel" in contents
+    assert "opendpd:CodegenFixedPoint" in reference
+    tutorial = (ROOT / "docs" / "tutorials" / "deployment-export.md").read_text(encoding="utf-8")
+    assert "## 4. Check it in MATLAB" in tutorial and "opendpd.verify(model)" in tutorial
+    workflow_file = (ROOT / ".github" / "workflows" / "matlab-toolbox.yml").read_text(encoding="utf-8")
+    assert "gru-pa.fixed-point-v1.zip" in workflow_file and "tests/unit/test_fixed_point_package.py" in workflow_file
+    assert (TOOLBOX / "tests" / "data" / "gru-pa.fixed-point-v1.zip").is_file()
+    assert (TOOLBOX / "tests" / "data" / "gru-pa-custom.fixed-point-v1.zip").is_file()
+    kernels = {path.stem for path in (TOOLBOX / "+opendpd" / "+runtime").glob("*.m")}
+    assert {"fixedGruRun", "fixedRescale"} <= kernels
+    # the verdict and the arguments of the entry points name the new class
+    for name in ("load", "verify", "apply"):
+        assert "FixedModel" in _text("+opendpd", f"{name}.m"), name
