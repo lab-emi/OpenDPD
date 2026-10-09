@@ -56,23 +56,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The Linux job installs the products that 35 of the tests need and otherwise skip (MATLAB Coder and Simulink for the
-          # MEX and MATLAB System block tests, Communications, LTE and RF Toolbox for the three comparisons with MathWorks tools,
-          # with the Signal Processing and DSP System Toolbox those use): the same eight licence features the local runs check out.
+          # With base MATLAB only, 35 of the 523 tests skip themselves. The Linux job installs the products that 23 of them need
+          # (Simulink for the MATLAB System block tests; Communications, LTE and RF Toolbox for the three comparisons with
+          # MathWorks tools, with the Signal Processing and DSP System Toolbox those use), and a test skipped for any other reason is
+          # an error (see buildfile.m). The other 12 build MEX functions with MATLAB Coder, a transformation product that MathWorks
+          # does not license on public-project CI without a batch licensing token (setup-matlab README): they run on the
+          # development machine only, until a token with a MATLAB Coder entitlement is provided as the secret MLM_LICENSE_TOKEN,
+          # MATLAB_Coder is added to the products and allow_skipped is emptied.
           - os: ubuntu-22.04
             experimental: false
-            products: MATLAB_Coder Simulink Communications_Toolbox LTE_Toolbox RF_Toolbox Signal_Processing_Toolbox DSP_System_Toolbox
-            require_all: "1"        # a test skipped for a missing product is an error here (see buildfile.m)
+            products: Simulink Communications_Toolbox LTE_Toolbox RF_Toolbox Signal_Processing_Toolbox DSP_System_Toolbox
+            require_all: "1"
+            allow_skipped: matlabCoder
           - os: windows-2022
             experimental: true
             products: ""
             require_all: ""
+            allow_skipped: ""
     env:
       # Optional for public repositories; required by MathWorks for private CI.
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
       MPLBACKEND: Agg
       TQDM_DISABLE: "1"
       OPENDPD_REQUIRE_ALL_TESTS: ${{ matrix.require_all }}
+      OPENDPD_ALLOW_SKIPPED: ${{ matrix.allow_skipped }}
     defaults:
       run:
         shell: bash

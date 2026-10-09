@@ -14,11 +14,16 @@ results = runtests(fullfile(root, 'tests'), IncludeSubfolders=true);
 assertSuccess(results);
 % Tests that need MATLAB Coder, Simulink or a toolbox skip themselves where it is missing, and assertSuccess accepts that. A CI job
 % that installs those products sets OPENDPD_REQUIRE_ALL_TESTS=1, so that a product which failed to install is an error and not a
-% silent loss of coverage.
+% silent loss of coverage. OPENDPD_ALLOW_SKIPPED is a regular expression (case-insensitive) for the names of the tests that may skip
+% all the same: the ones whose product that CI cannot license.
 if strcmp(getenv('OPENDPD_REQUIRE_ALL_TESTS'), '1')
     skipped = results([results.Incomplete]);
+    allowed = getenv('OPENDPD_ALLOW_SKIPPED');
+    if ~isempty(skipped) && ~isempty(allowed)
+        skipped = skipped(cellfun(@isempty, regexpi({skipped.Name}, allowed, 'once')));
+    end
     if ~isempty(skipped)
-        error('opendpd:build:TestsSkipped', '%d tests were skipped, and OPENDPD_REQUIRE_ALL_TESTS=1 asks for none to be:\n%s', ...
+        error('opendpd:build:TestsSkipped', '%d tests were skipped, and OPENDPD_REQUIRE_ALL_TESTS=1 allows none of them to be:\n%s', ...
             numel(skipped), strjoin(string({skipped.Name}), newline));
     end
 end
