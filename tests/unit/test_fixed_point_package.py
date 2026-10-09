@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from opendpd.core.fixed_point import FixedGRU, QuantisedGRU, table
+from opendpd.core.fixed_point import FixedGRU, QuantisedGRU, rescale, table
 from opendpd.export import c_backend
 from opendpd.schemas.fixed_point import NONLINEARITY, ROUNDING, SATURATION, DeploymentManifest, FixedPointSpec
 
@@ -138,3 +138,22 @@ def test_the_matlab_reader_accepts_what_the_specification_allows_and_no_more_tha
     contents = _read(PACKAGES[0])
     c_source = c_backend.generate(_reference(contents, DeploymentManifest.model_validate_json(contents["manifest.json"])))
     assert "static const int16_t W_IH" in c_source["gru_fixed.c"] and "static const int32_t B_IH" in c_source["gru_fixed.c"]
+
+
+def test_the_references_hold_integers_in_64_bits_so_the_matlab_reader_refuses_formats_that_need_more():
+    """``requireReferenceRange`` in FixedModel.m refuses a shift of more than 62 places and a value of 2^63 or more, because
+    numpy raises for a right shift of 63 places, the C99 backend shifts ``int64_t`` (undefined beyond 62 places) and a left shift
+    that reaches 2^63 wraps, while the MATLAB kernel computes exactly. If a reference changes (wider integers, a checked
+    shift), that guard has to be revisited with it."""
+    v = np.array([5, -5, 1 << 40], dtype=np.int64)
+    assert rescale(v, 62, 0).tolist() == [0, 0, 0]
+    with pytest.raises(OverflowError):
+        rescale(v, 63, 0)
+    one = np.array([1 << 31], dtype=np.int64)
+    assert rescale(one, 0, 31)[0] == 1 << 62
+    assert rescale(one, 0, 32)[0] == -(1 << 63)
+    contents = _read(PACKAGES[0])
+    c_source = c_backend.generate(_reference(contents, DeploymentManifest.model_validate_json(contents["manifest.json"])))
+    assert "static int64_t rescale(int64_t v, int from_frac, int to_frac)" in c_source["gru_fixed.c"]
+    source = (ROOT / "Matlab" / "toolbox" / "+opendpd" / "FixedModel.m").read_text(encoding="utf-8")
+    assert "any(shifts > 62)" in source and "grown >= 2^63" in source

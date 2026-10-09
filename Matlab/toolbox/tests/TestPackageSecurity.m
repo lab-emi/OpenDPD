@@ -100,6 +100,75 @@ classdef TestPackageSecurity < matlab.unittest.TestCase
             end
         end
 
+        function aManifestThatNestsDeeplyOrHoldsTooMuchIsRefusedBeforeJsondecodeCanHurtMatlab(testCase)
+            % jsondecode recurses once per level of nesting: 100000 levels end the MATLAB process with a segmentation fault.
+            parts = PackageTools.unpack(PackageTools.path('mp_ls-dpd'));
+            k = find(parts.names == "manifest.json");
+            for depth = [9 5000 100000]
+                changed = parts;
+                changed.bytes{k} = uint8([repmat('[', 1, depth) repmat(']', 1, depth)]).';
+                testCase.verifySubstring(refusalMessage(testCase, changed, 'opendpd:Package'), ...
+                    sprintf('manifest.json nests %d levels deep', depth));
+            end
+            allowed = parts;                                   % eight levels are what the limit allows: refused for what it is
+            allowed.bytes{k} = uint8(['{"format": "opendpd-model-v1", "x": ' repmat('[', 1, 7) repmat(']', 1, 7) '}']).';
+            testCase.verifyFalse(contains(refusalMessage(testCase, allowed, 'opendpd:PackageHash'), 'levels deep'));
+            many = parts;
+            many.bytes{k} = uint8(['{"format": "opendpd-model-v1", "x": [' repmat('0,', 1, 30000) '0]}']).';
+            testCase.verifySubstring(refusalMessage(testCase, many, 'opendpd:Package'), 'array elements');
+            long = parts;                                      % jsondecode takes half a minute on a million digits
+            long.bytes{k} = uint8(['{"format": "opendpd-model-v1", "x": 0.' repmat('1', 1, 1e6) '}']).';
+            tic;
+            testCase.verifySubstring(refusalMessage(testCase, long, 'opendpd:Package'), 'holds a number or word of');
+            testCase.verifyLessThan(toc, 10);
+            big = parts;
+            big.bytes{k} = zeros(4e6 + 1, 1, 'uint8');
+            testCase.verifyError(@() opendpd.load(PackageTools.write(testCase, big)), 'opendpd:PackageContents');
+        end
+
+        function aManifestThatIsNotOneObjectIsRefusedWithAMessage(testCase)
+            parts = PackageTools.unpack(PackageTools.path('mp_ls-dpd'));
+            text = char(parts.bytes{parts.names == "manifest.json"}(:).');
+            notOneObject = {['[' text ',' text ']'], '[]', '{}', '"opendpd-model-v1"', 'null', '7'};
+            for replacement = notOneObject
+                changed = PackageTools.replaceBytes(parts, 'manifest.json', uint8(replacement{1}).');
+                testCase.verifySubstring(refusalMessage(testCase, changed, 'opendpd:Package'), 'Not an opendpd-model-v1 package', ...
+                    replacement{1}(1:min(end, 20)));
+            end
+            files = PackageTools.editManifest(parts, '("files": )(\{[^}]*\})', '$1[$2,$2]');
+            testCase.verifyError(@() opendpd.load(PackageTools.write(testCase, files)), 'opendpd:PackageHash');
+            asList = PackageTools.editManifest(parts, '"format": "opendpd-model-v1"', '"format": ["opendpd-model-v1"]');
+            testCase.verifySubstring(refusalMessage(testCase, asList, 'opendpd:Package'), 'Not an opendpd-model-v1 package');
+        end
+
+        function aManifestThatDeclaresFewerGruLayersThanTheWeightsHoldIsRefused(testCase)
+            parts = PackageTools.unpack(PackageTools.path('gru-dpd'));
+            testCase.assertNotEmpty(regexp(char(parts.bytes{parts.names == "manifest.json"}(:).'), '"num_layers": 2', 'once'), ...
+                'the fixture must have two layers');
+            fewer = PackageTools.editManifest(parts, '"num_layers": 2', '"num_layers": 1');
+            message = refusalMessage(testCase, fewer, 'opendpd:Package');
+            testCase.verifySubstring(message, 'which the 1-layer model of its manifest does not use');
+            testCase.verifyEqual(class(opendpd.load(PackageTools.path('gru-dpd'))), 'opendpd.Model');
+            % an array the model never uses under a name of the layer family is as much a mismatch as a third layer
+            weights = PackageTools.readArrays(parts, 'weights.npz');
+            weights.rnn_weight_ih_l5 = weights.rnn_weight_ih_l0;
+            odd = PackageTools.replaceArrays(parts, 'weights.npz', weights);
+            testCase.verifySubstring(refusalMessage(testCase, odd, 'opendpd:Package'), 'rnn_weight_ih_l5');
+            weights = PackageTools.readArrays(parts, 'weights.npz');
+            weights.rnn_gain = 1;
+            other = PackageTools.replaceArrays(parts, 'weights.npz', weights);
+            testCase.verifySubstring(refusalMessage(testCase, other, 'opendpd:Package'), 'rnn_gain');
+        end
+
+        function textInTheManifestIsMadePlainBeforeAnyoneSeesIt(testCase)
+            parts = PackageTools.unpack(PackageTools.path('mp_ls-dpd'));
+            changed = PackageTools.editManifest(parts, '"note": "[^"]*"', '"note": "a\\u001b[2Jb\\u0007c"');
+            model = opendpd.load(PackageTools.write(testCase, changed));
+            testCase.verifyEqual(model.Manifest.evidence.note, 'a?[2Jb?c');
+            wrongType = PackageTools.editManifest(parts, '"format": "opendpd-model-v1"', '"format": {}');
+            testCase.verifyError(@() opendpd.load(PackageTools.write(testCase, wrongType)), 'opendpd:Package');
+        end
+
         function aManifestThatDoesNotMatchTheWeightsIsRefused(testCase)
             parts = PackageTools.unpack(PackageTools.path('mp_ls-dpd'));
             wrongSize = PackageTools.replaceArrays(parts, 'weights.npz', struct('coefficients', complex(ones(5, 1), 0)));
@@ -272,4 +341,16 @@ classdef TestPackageSecurity < matlab.unittest.TestCase
             testCase.verifyNotEmpty(runtime);
         end
     end
+end
+
+function message = refusalMessage(testCase, parts, identifier)
+% Load PARTS as a package, check that the error has IDENTIFIER, and return its message.
+message = '';
+try
+    opendpd.load(PackageTools.write(testCase, parts));
+    testCase.verifyFail('The package was not refused.');
+catch cause
+    testCase.verifyEqual(cause.identifier, identifier, cause.message);
+    message = cause.message;
+end
 end

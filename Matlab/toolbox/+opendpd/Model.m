@@ -361,6 +361,7 @@ classdef Model < matlab.System
                         kernel.biasIH{l} = opendpd.Model.optionalVector(w, sprintf('rnn_bias_ih_l%d', l - 1), 3 * hidden);
                         kernel.biasHH{l} = opendpd.Model.optionalVector(w, sprintf('rnn_bias_hh_l%d', l - 1), 3 * hidden);
                     end
+                    opendpd.Model.requireNoOtherLayers(w, layers);
                     kernel.fcWeight = opendpd.Model.matrix(w, 'fc_weight', [2, hidden]);
                     kernel.fcBias = opendpd.Model.optionalVector(w, 'fc_bias', 2);
                     if strcmp(key, 'tres_gru')
@@ -404,6 +405,18 @@ classdef Model < matlab.System
                 error('opendpd:Package', '%s must be an integer of at least %d (got %s).', name, lower, mat2str(v));
             end
             value = double(v);
+        end
+
+        function requireNoOtherLayers(w, layers)
+            % Weights of a layer the manifest does not declare would be ignored: the package would describe another network
+            % than the one it runs.
+            for name = string(fieldnames(w)).'
+                layer = regexp(char(name), '^rnn_(?:weight|bias)_(?:ih|hh)_l(\d+)$', 'tokens', 'once');
+                if startsWith(name, "rnn_") && (isempty(layer) || str2double(layer{1}) >= layers)
+                    error('opendpd:Package', 'The package holds the array "%s", which the %d-layer model of its manifest does not use.', ...
+                        regexprep(char(name), '[^A-Za-z0-9_]', '?'), layers);
+                end
+            end
         end
 
         function value = vector(w, name, count)

@@ -3,8 +3,9 @@ function [y, h, trace] = fixedGruRun(x, h, resetAt, f)
 %   [y, h, trace] = opendpd.runtime.fixedGruRun(x, h, resetAt, f) runs the rows of X (integers in the input format, one
 %   sample per row) from the state H (a hidden-by-1 column of integers in the state format). It returns Y (one row of
 %   output integers per sample), the final state, and TRACE, the state after every sample (one row per sample).
-%   Before sample k with k in RESETAT (1-based) the state is zeroed. F carries the formats and the integer weights; opendpd.FixedModel
-%   builds it from a package and has checked that no value below can reach 2^53, so that every sum, product and shift is exact.
+%   Before sample k with k in RESETAT (1-based; entries outside 1..N change nothing) the state is zeroed. F carries the formats
+%   and the integer weights; opendpd.FixedModel builds it from a package and has checked that no value below can reach 2^53,
+%   so that every sum, product and shift is exact.
 %   The steps and their order are those of docs/protocols/fixed-point-v1.md section 3. An accumulator that reaches the
 %   declared width raises opendpd:FixedOverflow, as the Python reference does.
 n = size(x, 1);
@@ -12,8 +13,10 @@ hidden = f.hidden;
 y = zeros(n, f.outputs);
 trace = zeros(n, hidden);
 one = 2^f.hFrac;
+isReset = false(n, 1);
+isReset(resetAt(resetAt >= 1 & resetAt <= n)) = true;      % a mask: a long list of resets costs nothing per sample
 for k = 1:n
-    if any(resetAt == k)
+    if isReset(k)
         h = zeros(hidden, 1);
     end
     xk = min(max(x(k, :).', f.xMin), f.xMax);

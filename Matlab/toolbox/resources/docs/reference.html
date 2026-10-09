@@ -432,8 +432,14 @@ path from the archive is used), every file must match the SHA-256 in the manifes
 size limit, and the arrays are read from the <code>.npz</code> files by a strict parser that only ever interprets bytes as float32,
 float64, complex64 or complex128 numbers. The <code>.mat</code> files are for your own code and are never opened by the toolbox:
 <code>load</code> and <code>whos -file</code> both call <code>loadobj</code> for classes on the MATLAB path, so opening a MAT file from an untrusted
-source can itself run code. The golden test input is synthetic noise with the training input's amplitude statistics,
-never a slice of your data, so a package can be shared without sharing a measurement.</p>
+source can itself run code. <code>manifest.json</code> is measured before it is parsed, because MATLAB's <code>jsondecode</code> recurses once
+per level of nesting and ends the MATLAB process with a segmentation fault on a text nested tens of thousands of levels deep,
+holds several hundred bytes of memory per array element, and needs time quadratic in the digits after the decimal point of one
+number (a million digits take half a minute): a manifest that nests more than 8 levels, holds more than 20,000 array elements
+and object members, or has a number of more than 64 characters is refused with <code>opendpd:Package</code>, and the control characters
+in its text (escape sequences, bells, carriage returns) are replaced by <code>?</code> before anyone can display it. A manifest that
+declares fewer GRU layers than the weights hold is refused. The golden test input is synthetic noise with the training input's amplitude
+statistics, never a slice of your data, so a package can be shared without sharing a measurement.</p>
 <p>Execution and numerics: <code>opendpd.apply(model, x)</code> uses the same two semantics as for a job (<code>offline_segmented</code>, the
 default, restarts state every <code>Manifest.signal.nperseg</code> samples and zero pads the last segment; <code>tres_gru</code> reads 16
 future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
@@ -538,16 +544,70 @@ y = opendpd.apply(model, xTest);                    % float in, float out: what 
 <p>What a pass shows and what it does not: this MATLAB release reproduces, bit for bit, every output and state of the six golden
 vectors that the package carries and that Python computed, and <code>package_c99_status</code> says that the C99 reference did too. It
 does not show that the specification is right, that the quantised model is good for your amplifier (the package's report
-lists the quality loss on the test split), or that a hardware implementation is correct. A package from an unknown source is
+lists the quality loss on the test split), or that a hardware implementation is correct. The golden vectors are part of the
+package, so a package that carries a few trivial ones passes trivially: <code>report.samples_checked</code> says how much was replayed, and
+<code>runInteger</code> gives you the expected values for stimulus of your own. A package from an unknown source is
 read like a model package: only the known file names (<code>manifest.json</code>, <code>spec.json</code>, <code>weights.json</code>, <code>README.md</code>, three C
-sources under <code>c/</code> and five files for each of the golden cases), every file hashed against the manifest, the manifest listing
-exactly the files that are in the archive, a hard size limit per entry, no path from the archive used, and the C sources
-checked against their hashes but never compiled or run by the toolbox.</p>
+sources under <code>c/</code> and five files for each of the six golden cases the specification names), every file hashed against the
+manifest, the manifest listing exactly the files that are in the archive and the hashes it gives the golden vectors being the
+hashes of their files, a hard size limit per entry that depends on what the file is, no path from the archive used, and the C
+sources checked against their hashes but never compiled or run by the toolbox. The JSON files are measured before they are
+parsed, because <code>jsondecode</code> ends the MATLAB process with a segmentation fault on a text nested tens of thousands of levels deep,
+needs several hundred bytes of memory per array element and takes quadratic time on a long number: a file that nests more than
+8 levels, holds more array elements and object members than the hidden size and the table limit allow, or has a number of more
+than 64 characters, is refused with <code>opendpd:Package</code> before it is parsed. The
+manifest is checked member by member (only the members the format defines, each of the type the format defines, so a logical,
+a one-character string or an array of character codes cannot stand in for a number or a name) and the control characters in
+its text (escape sequences, bells, carriage returns) are replaced by <code>?</code> before anyone can display it. The same measuring and
+text cleaning protect <code>opendpd.load</code> of a model package.</p>
+<p>What the toolbox accepts in a <code>fixed-point-v1</code> package (the limits are far above what OpenDPD writes: 6 to 24 hidden units,
+tables of 4096 and 2048 entries, about 72 thousand golden samples):</p>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hidden units</td>
+<td>512 (the JSON of the recurrent matrix alone then needs 0.3 GB to parse)</td>
+</tr>
+<tr>
+<td>Entries of one lookup table</td>
+<td>65,536</td>
+</tr>
+<tr>
+<td>Golden samples in all six cases</td>
+<td>2,097,152 (replaying the largest package the limits allow takes 20 to 40 s, 12 to 150 microseconds per sample depending on the hidden size)</td>
+</tr>
+<tr>
+<td>Size of <code>manifest.json</code>, <code>spec.json</code>, <code>weights.json</code>, a <code>meta.json</code></td>
+<td>4 MB, 1 MB, 32 MB, 1 MB</td>
+</tr>
+<tr>
+<td>Size of one <code>h_trace.i16</code> (2 bytes per hidden unit and sample), of one C source</td>
+<td>160 MB, 32 MB</td>
+</tr>
+<tr>
+<td>Nesting of any JSON file</td>
+<td>8 levels</td>
+</tr>
+<tr>
+<td>Length of a number or word (<code>true</code>, <code>null</code>) in any JSON file</td>
+<td>64 characters (OpenDPD writes at most 21)</td>
+</tr>
+</tbody>
+</table>
 <p>Every format is taken from the package, never assumed, and the toolbox refuses what it cannot compute exactly: words wider
 than 16 bits (inputs, state, outputs, weights, table values), a pre-activation wider than 32 bits, an accumulator wider than
 53 bits (what double precision holds), weights that are not whole numbers in their word, tables of the wrong length, a rule
 text that differs from the specification's, and any package for which a sum, product or shift could leave the range below
-2^53. An accumulator that reaches its declared width raises <code>opendpd:FixedOverflow</code>, as the Python reference does.</p>
+2^53. It also refuses formats that need a shift of more than 62 places or a value of 2^63 or more: the Python and C99
+references hold integers in 64 bits (numpy raises for a right shift of 63 places or more, C leaves it undefined, and a left
+shift that reaches 2^63 wraps in numpy and is undefined in C), so for such a format there is no reference to agree with. An
+accumulator that reaches its declared width raises <code>opendpd:FixedOverflow</code>, as the Python reference does.</p>
 <p><code>opendpd.generateCode</code> does not accept a <code>FixedModel</code> (error <code>opendpd:CodegenFixedPoint</code>): the package already carries a
 generated C99 reference, and a MATLAB fixed-point or HDL design is not provided.</p>
 <p>What was checked (MATLAB R2026a, Linux, one machine): two real packages written by <code>opendpd deploy</code>'s code path, one with the

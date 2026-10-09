@@ -211,54 +211,50 @@ end
 % be an integer below 2^53, which is what makes double precision exact.
 
 function [f, cases] = packModel(package)
+% The reader (opendpd.internal.readFixedPackage) has checked the manifest member by member; this checks what the
+% specification and the weights say and what the formats allow.
 manifest = package.manifest;
 spec = package.spec;
 w = package.weights;
-requireFields(manifest, ["run_id", "hidden_size", "verification"], 'the manifest');
-if ~(ischar(manifest.run_id) && ~isempty(regexp(manifest.run_id, '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$', 'once')))
-    error('opendpd:Package', 'The manifest''s run_id is not a plain identifier.');
-end
-requireFields(manifest.verification, "status", 'the manifest''s verification');
-if ~(ischar(manifest.verification.status) && any(strcmp(manifest.verification.status, {'bit_exact', 'mismatch', 'not_run'})))
-    error('opendpd:Package', 'The manifest''s verification status is not one of bit_exact, mismatch, not_run.');
-end
-requireFields(spec, ["spec_id", "model_key", "x", "h", "y", "pre", "weight_bits", "accumulator_bits", "sigmoid", "tanh", ...
-    "rounding", "saturation", "nonlinearity"], 'the specification');
-if ~strcmp(spec.model_key, 'gru_stream')
+limits = opendpd.internal.fixedLimits();
+opendpd.internal.requireMembers(spec, ["spec_id", "model_key", "x", "h", "y", "pre", "weight_bits", "accumulator_bits", ...
+    "sigmoid", "tanh", "rounding", "saturation", "nonlinearity"], strings(1, 0), 'The specification');
+if ~sameText(spec.model_key, 'gru_stream')
     error('opendpd:Package', 'The specification executes "%s"; this toolbox implements gru_stream.', shown(spec.model_key));
 end
-if ~isequal(spec.rounding, opendpd.FixedModel.Rounding) || ~isequal(spec.saturation, opendpd.FixedModel.Saturation) ...
-        || ~isequal(spec.nonlinearity, opendpd.FixedModel.Nonlinearity)
+if ~sameText(spec.rounding, opendpd.FixedModel.Rounding) || ~sameText(spec.saturation, opendpd.FixedModel.Saturation) ...
+        || ~sameText(spec.nonlinearity, opendpd.FixedModel.Nonlinearity)
     error('opendpd:Package', ['The package states rounding, saturation or table rules that differ from the ones this ' ...
         'toolbox implements (docs/protocols/fixed-point-v1.md); a changed rule is a new specification id.']);
 end
-requireFields(w, ["spec_id", "hidden", "inputs", "outputs", "fractions", "w_ih", "w_hh", "w_out", "b_ih", "b_hh", "b_out", ...
-    "sigmoid_table", "tanh_table", "gate_order"], 'weights.json');
+opendpd.internal.requireMembers(w, ["spec_id", "hidden", "inputs", "outputs", "fractions", "w_ih", "w_hh", "w_out", "b_ih", ...
+    "b_hh", "b_out", "sigmoid_table", "tanh_table", "gate_order"], strings(1, 0), 'weights.json');
 x = wordFormat('x', spec.x, 16);
 h = wordFormat('h', spec.h, 16);
 y = wordFormat('y', spec.y, 16);
 pre = wordFormat('pre', spec.pre, 32);
 weightBits = wholeNumber('weight_bits', spec.weight_bits, 4, 16);
 accBits = wholeNumber('accumulator_bits', spec.accumulator_bits, 32, 53);
-sigmoid = tableFormat('sigmoid', spec.sigmoid, w, 'sigmoid_table');
-tanhTable = tableFormat('tanh', spec.tanh, w, 'tanh_table');
-if ~strcmp(w.spec_id, 'fixed-point-v1')
+sigmoid = tableFormat('sigmoid', spec.sigmoid, w, 'sigmoid_table', limits);
+tanhTable = tableFormat('tanh', spec.tanh, w, 'tanh_table', limits);
+if ~sameText(w.spec_id, 'fixed-point-v1')
     error('opendpd:Package', 'weights.json is not for fixed-point-v1.');
 end
-hidden = wholeNumber('hidden', w.hidden, 1, 4096);
-if ~isequal(manifest.hidden_size, hidden)
-    error('opendpd:Package', 'The manifest says %s hidden units and weights.json says %d.', shown(manifest.hidden_size), hidden);
+hidden = wholeNumber('hidden', w.hidden, 1, limits.MaxHidden);
+if manifest.hidden_size ~= hidden
+    error('opendpd:Package', 'The manifest says %d hidden units and weights.json says %d.', manifest.hidden_size, hidden);
 end
-if ~isequal(w.inputs, 2) || ~isequal(w.outputs, 2)
+if ~(isnumeric(w.inputs) && isscalar(w.inputs) && w.inputs == 2 && isnumeric(w.outputs) && isscalar(w.outputs) && w.outputs == 2)
     error('opendpd:Package', 'A deployment package takes I/Q samples: inputs and outputs must both be 2.');
 end
-if ~isequal(w.gate_order, {'r'; 'z'; 'n'})
+if ~(iscell(w.gate_order) && isequal(size(w.gate_order), [3 1]) && all(cellfun(@ischar, w.gate_order)) ...
+        && isequal(w.gate_order, {'r'; 'z'; 'n'}))
     error('opendpd:Package', 'weights.json lists the gates in an order other than r, z, n.');
 end
-requireFields(w.fractions, ["w_ih", "w_hh", "w_out", "bias"], 'fractions');
+opendpd.internal.requireMembers(w.fractions, ["w_ih", "w_hh", "w_out", "bias"], strings(1, 0), 'The fractions');
 fractions = [wholeNumber('fractions.w_ih', w.fractions.w_ih, 0, 62), wholeNumber('fractions.w_hh', w.fractions.w_hh, 0, 62), ...
     wholeNumber('fractions.w_out', w.fractions.w_out, 0, 62)];
-if ~isequal(w.fractions.bias, pre.frac)
+if wholeNumber('fractions.bias', w.fractions.bias, 0, 62) ~= pre.frac
     error('opendpd:Package', 'The bias fraction must equal the pre-activation fraction (%d).', pre.frac);
 end
 limit = 2^(weightBits - 1);
@@ -277,19 +273,14 @@ f = struct('hidden', hidden, 'outputs', 2, 'accBits', accBits, 'accLimit', 2^(ac
     'preBits', pre.bits, 'preFrac', pre.frac, 'preMin', pre.min, 'preMax', pre.max, ...
     'fIH', fractions(1), 'fHH', fractions(2), 'fOut', fractions(3), ...
     'wIH', wIH, 'wHH', wHH, 'wOut', wOut, 'bIH', bIH, 'bHH', bHH, 'bOut', bOut, 'sigmoid', sigmoid, 'tanh', tanhTable);
+requireReferenceRange(f);
 requireExact(f);
 cases = goldenCases(manifest, package.golden, f);
 end
 
-function requireFields(s, names, label)
-if ~isstruct(s)
-    error('opendpd:Package', '%s must be an object.', label);
-end
-for name = names
-    if ~isfield(s, name)
-        error('opendpd:Package', '%s lacks "%s".', label, name);
-    end
-end
+function same = sameText(value, expected)
+% Text from the package equals the text this toolbox implements; anything that is not a character row is different.
+same = ischar(value) && isrow(value) && strcmp(value, expected);
 end
 
 function text = shown(value)
@@ -313,22 +304,26 @@ value = double(value);
 end
 
 function word = wordFormat(name, s, maxBits)
-requireFields(s, ["bits", "frac"], name);
+opendpd.internal.requireMembers(s, ["bits", "frac"], strings(1, 0), ['The ' name ' format']);
 bits = wholeNumber([name '.bits'], s.bits, 2, maxBits);
 frac = wholeNumber([name '.frac'], s.frac, 0, 62);
 word = struct('bits', bits, 'frac', frac, 'min', -2^(bits - 1), 'max', 2^(bits - 1) - 1);
 end
 
-function table = tableFormat(function_, s, weights, field)
-requireFields(s, ["function", "range", "index_frac", "value"], function_);
-if ~strcmp(s.function, function_)
+function table = tableFormat(function_, s, weights, field, limits)
+opendpd.internal.requireMembers(s, ["function", "range", "index_frac", "value"], strings(1, 0), ['The ' function_ ' table']);
+if ~sameText(s.function, function_)
     error('opendpd:Package', 'The %s table is declared as "%s".', function_, shown(s.function));
 end
 indexFrac = wholeNumber([function_ '.index_frac'], s.index_frac, 0, 16);
 value = wordFormat([function_ '.value'], s.value, 16);
+if ~(isnumeric(s.range) && isscalar(s.range) && isreal(s.range) && isfinite(s.range))
+    error('opendpd:Package', 'The %s table range must be a finite number.', function_);
+end
 offset = s.range * 2^indexFrac;
-if ~(isnumeric(offset) && isscalar(offset) && isfinite(offset) && offset == fix(offset) && offset >= 1 && offset <= 2^20)
-    error('opendpd:Package', 'The %s table range times 2^index_frac must be a whole number of entries.', function_);
+if ~(offset == fix(offset) && offset >= 1 && offset <= limits.MaxTableEntries / 2)
+    error('opendpd:Package', ['The %s table range times 2^index_frac must be a whole number of entries, at most %d on ' ...
+        'each side of zero.'], function_, limits.MaxTableEntries / 2);
 end
 values = integerMatrix(field, weights.(field), [2 * offset, 1], value.min, value.max);
 table = struct('values', values, 'range', offset, 'indexFrac', indexFrac);
@@ -393,14 +388,28 @@ for k = 1:size(stages, 1)
 end
 end
 
+function requireReferenceRange(f)
+% The references the golden vectors come from (Python and C99) hold integers in 64 bits and shift by at most 62 places: a
+% format that needs more has no reference to agree with. numpy raises for a shift of 63 places or more, C leaves it undefined,
+% and a left shift that reaches 2^63 wraps in numpy and is undefined in C, while exact arithmetic here would give another
+% answer.
+% The reader limits every fraction to 0..62 places and the table index fractions to 0..16, so the shifts that depend on one
+% fraction (the state update, the table indices, the right shift of the pre-activation into the output) are in range already,
+% and requireExact bounds the left shifts of the accumulators. What can leave the range is the right shift of an accumulator
+% (the sum of its weight and operand fractions, less the pre-activation's) and the left shift of the pre-activation into the
+% output format, which is a value that has only been saturated, not an accumulator.
+shifts = [f.fIH + f.xFrac, f.fHH + f.hFrac, f.fOut + f.hFrac] - f.preFrac;
+grown = 2^(f.preBits - 1) * 2^max(f.yFrac - f.preFrac, 0);
+if any(shifts > 62) || grown >= 2^63
+    error('opendpd:Package', ['The formats need a shift of more than 62 places or a value of 2^63 or more, which the 64-bit ' ...
+        'Python and C99 references cannot hold; there is no reference for this package to agree with, so it is refused.']);
+end
+end
+
 function cases = goldenCases(manifest, golden, f)
 index = manifest.golden;
-if ~isstruct(index) || isempty(index) || ~isfield(index, 'case_id') || ~isfield(index, 'n_samples') ...
-        || ~isfield(index, 'resets_at')
-    error('opendpd:Package', 'The manifest does not index the golden vectors.');
-end
 ids = string({index.case_id});
-if numel(unique(ids)) ~= numel(ids) || ~isequal(sort(ids(:)), sort(string(fieldnames(golden))))
+if ~isequal(sort(ids(:)), sort(string(fieldnames(golden))))
     error('opendpd:Package', 'The golden vectors in the archive and the manifest''s index are not the same set.');
 end
 cases = struct('id', {}, 'resets', {}, 'x', {}, 'y', {}, 'h', {});
@@ -411,9 +420,10 @@ for k = 1:numel(index)
     if ~all(isfield(g, needed))
         error('opendpd:Package', 'Golden case %s lacks one of x, y, h_trace, h_final.', shown(id));
     end
-    n = wholeNumber('n_samples', index(k).n_samples, 1, 2^31);
+    n = index(k).n_samples;
     resets = reshape(double(index(k).resets_at), 1, []);
-    if ~isempty(resets) && (any(resets ~= fix(resets)) || any(resets < 0) || any(resets >= n))
+    if ~isempty(resets) && (any(resets ~= fix(resets)) || any(resets < 0) || any(resets >= n) ...
+            || numel(unique(resets)) ~= numel(resets))
         error('opendpd:Package', 'Golden case %s resets the state at samples outside the vector.', shown(id));
     end
     if numel(g.x) ~= 2 * n || numel(g.y) ~= 2 * n || numel(g.h_trace) ~= f.hidden * n || numel(g.h_final) ~= f.hidden

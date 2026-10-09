@@ -124,7 +124,7 @@ def test_the_model_runtime_runs_no_python_and_loads_nothing():
     files += [TOOLBOX / "+opendpd" / name for name in ("FixedModel.m",)]
     files += [TOOLBOX / "+opendpd" / "+internal" / name
               for name in ("readPackage.m", "readNpz.m", "readNpy.m", "copyZipEntry.m", "sha256.m", "readFixedPackage.m",
-                           "packageKind.m")]
+                           "packageKind.m", "decodeJson.m", "jsonShape.m", "plainText.m", "fixedLimits.m", "requireMembers.m")]
     files += sorted((TOOLBOX / "+opendpd" / "+runtime").glob("*.m"))
     assert len(files) >= 20
     for path in files:

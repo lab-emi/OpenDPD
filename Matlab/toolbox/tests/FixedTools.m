@@ -42,6 +42,13 @@ classdef FixedTools
             parts.bytes{k} = bytes;
             pattern = ['("' regexptranslate('escape', char(name)) '": ")[0-9a-f]{64}'];
             parts = FixedTools.editManifest(parts, pattern, ['$1' PackageTools.sha256(bytes)]);
+            % a golden vector is also indexed with its hash, in the case's own object: a regenerated package has both right
+            golden = regexp(char(name), '^golden/([a-z_]+)/(x|y|h_final|h_trace)\.i16$', 'tokens', 'once');
+            if ~isempty(golden)
+                field = struct('x', 'input', 'y', 'output', 'h_final', 'state', 'h_trace', 'trace').(golden{2});
+                parts = FixedTools.editManifest(parts, ['("case_id": "' golden{1} '"[^}]*?"' field '_sha256": ")[0-9a-f]{64}'], ...
+                    ['$1' PackageTools.sha256(bytes)]);
+            end
         end
 
         function parts = editManifest(parts, pattern, replacement)
