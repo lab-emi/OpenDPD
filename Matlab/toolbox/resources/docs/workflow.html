@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Script workflow · OpenDPD for MATLAB</title>
+<link rel="stylesheet" href="guide.css"></head><body>
+<a class="skip" href="#content">Skip to content</a>
+<header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
+<span class="version">2.4.0</span></header>
+<nav aria-label="Guide"><a href="index.html">Get started</a>
+<a href="gui.html">MATLINK walkthrough</a>
+<a href="workflow.html" aria-current="page">Script workflow</a>
+<a href="reference.html">Function reference</a>
+<a href="architecture.html">Integration design</a>
+<a href="troubleshooting.html">Troubleshooting</a></nav>
+<main id="content"><h1 id="script-workflow">Script workflow</h1>
+<p>Scripts and MATLINK use the same workspace service as Studio. Script workflows
+can save workspace paths and run IDs for reproducible reconnection; the MATLINK
+GUI selects experiments by name.</p>
+<h2 id="run-the-complete-synthetic-example">Run the complete synthetic example</h2>
+<p>After <a href="index.html#install-and-select-python">setup</a>:</p>
+<pre><code class="language-matlab">toolboxRoot = fileparts(fileparts(which('opendpd.setup')));
+addpath(fullfile(toolboxRoot, &quot;examples&quot;));
+summary = opendpdQuickstart();
+</code></pre>
+<p>The example creates a fresh workspace and a synthetic nonlinear PA capture,
+trains small PA and DPD GRUs for two epochs on CPU, checks inference, exports a
+waveform and writes <code>matlab-dpd-output.mat</code>. It closes its service when finished.
+The MAT file includes <code>xTest</code>, <code>u</code>, <code>uScored</code> (the segmented form the stored report scored), <code>info</code>, <code>fs</code> and <code>report</code>. This is a workflow
+check, not a model benchmark. Reopen it with:</p>
+<pre><code class="language-matlab">p = opendpd.openProject(summary.workspace);
+link = opendpd.studio(p);
+</code></pre>
+<h2 id="import-your-capture">Import your capture</h2>
+<p>Let <code>x</code> be the PA input and <code>y</code> its aligned output, recorded at the same sample
+rate. Provide occupied signal bandwidth explicitly, in Hz, and the segment length.</p>
+<pre><code class="language-matlab">p = opendpd.openProject(&quot;my-pa-workspace&quot;);
+ds = opendpd.importIQ(p, x, y, Name=&quot;capture-001&quot;, ...
+    SampleRate=491.52e6, Bandwidth=200e6, Origin=&quot;measured&quot;, ...
+    SegmentSamples=2048, GuardSamples=256);
+</code></pre>
+<p><code>SegmentSamples</code> has no default. It is the PSD (Welch) segment length of every spectral metric and the
+interval at which evaluation restarts a model's state, so choose it for your signal; Studio's generated
+signals use 512-4096.</p>
+<p>Rows and columns are accepted. Backend storage uses float32; source precision
+and shape are recorded. No delay correction, normalization or gain fitting is
+performed at the bridge boundary. Nonfinite values and float32 overflow are
+rejected. Import uses the existing contiguous train/validation/test split; set
+the guard to cover your training frame context.</p>
+<p>For a MAT file with numeric variables:</p>
+<pre><code class="language-matlab">ds = opendpd.importMAT(p, &quot;capture.mat&quot;, ...
+    InputVariable=&quot;tx&quot;, OutputVariable=&quot;rx&quot;, Name=&quot;capture-002&quot;, ...
+    SampleRate=491.52e6, Bandwidth=200e6, SegmentSamples=2048, Origin=&quot;measured&quot;);
+</code></pre>
+<p>MATLAB reads the file, so every MAT-file version works, v7.3 included. The MAT adapter
+accepts dense single/double complex vectors and real N×2 I/Q matrices. Real vectors are
+I-only. The source file name, SHA-256 and variable names are recorded; keep the original
+MAT file if its other variables matter to your experiment.</p>
+<h2 id="train-the-pa-and-dpd">Train the PA and DPD</h2>
+<pre><code class="language-matlab">training = struct('epochs', 150, 'frame_length', 200, ...
+    'frame_stride', 100, 'seed', 0);
+paJob = opendpd.trainPA(p, ds, Model=&quot;gru&quot;, Training=training);
+opendpd.status(paJob)
+pa = opendpd.wait(paJob, Timeout=3600);
+dpdJob = opendpd.trainDPD(p, ds, PA=pa, Model=&quot;gru&quot;, Training=training);
+dpd = opendpd.wait(dpdJob, Timeout=3600);
+report = opendpd.result(dpd);
+</code></pre>
+<p><code>ModelParameters</code> and <code>Training</code> use the existing OpenDPD schema, for example
+<code>struct('hidden_size', 8)</code> and <code>struct('epochs', 5)</code>. <code>Device="auto"</code> is the default: the
+first detected of <code>cuda</code>, <code>mps</code>, <code>cpu</code> (least-squares models stay on <code>cpu</code>), which is also
+Studio's default. Pass <code>Device="cpu"</code> for a small reproducible run. A complete experiment
+configuration can be sent with <code>opendpd.submit(p, config)</code>.
+Training remains in Python/PyTorch and uses the model registry and validation
+already used by Studio.</p>
+<h2 id="apply-the-dpd">Apply the DPD</h2>
+<p>Use an independent <code>xTest</code> waveform with the training sample rate and
+preprocessing:</p>
+<pre><code class="language-matlab">[u, info] = opendpd.apply(dpd, xTest);
+save(&quot;predistorted-input.mat&quot;, &quot;u&quot;, &quot;info&quot;, &quot;xTest&quot;, &quot;-v7&quot;);
+</code></pre>
+<p><code>u</code> is a complex single column vector with the same sample count as <code>xTest</code>.
+For a DPD run it is the <strong>predistorted PA input</strong>, before a physical or simulated
+PA. Applying a PA run instead produces the modeled PA output.</p>
+<p><code>apply</code> supports <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code> and <code>gmp_ls</code> on CPU, unquantized. Each
+has a test that compares its output with the Python evaluator. By default (<code>Execution="auto"</code>) a
+<code>gru</code> or <code>gmp</code> runs as a stream, with one state across the whole waveform, and the other models run
+the way the run was scored; <code>info.execution</code>, <code>info.execution_requested</code> and <code>info.execution_reason</code> say which and why.
+The default follows a measurement of the two executions after a PA (a state reset every 512 to 4096 samples costs 0.8 to
+12 dB of linearisation quality for the GRU DPDs measured and at most 0.12 dB for the <code>gmp</code> DPDs; see
+<code>docs/performance/matlab-apply-semantics.md</code> in the OpenDPD repository).
+<code>Execution="offline_segmented"</code> is how the run was scored: state resets at the trained
+run's frozen segment boundaries, the final segment is zero padded and the padding is trimmed
+from the returned vector. <code>tres_gru</code> reads 16 future samples, so within 16 samples of a
+segment end it sees zero padding rather than the waveform; <code>info.limitations</code> says so.
+Calls do not share hidden state. Each call loads the recorded model in an isolated process,
+so pass a whole waveform rather than repeatedly calling it for individual samples.</p>
+<p>For a waveform that will run continuously, <code>Execution="streaming"</code> carries one state across
+chunks (<code>ChunkSamples</code>) for <code>gru</code> and <code>gmp</code>, whose registered streaming variants are
+<code>gru_stream</code> and <code>gmp_stream</code>. Other models are refused rather than approximated. Streaming
+output is a different signal from the one the stored report scored; <code>info.streaming</code> records
+the measured warm-up, look-ahead and chunk consistency of that execution.</p>
+<p>Inference metadata includes checkpoint and sample hashes, execution mode,
+sample count, segment length, sample rate, preprocessing version and output
+role. Later edits to dataset metadata do not alter frozen inference settings.
+A checkpoint whose hash changed is refused.</p>
+<p>To queue the standard test-split waveform export:</p>
+<pre><code class="language-matlab">exported = opendpd.wait(opendpd.runDPD(dpd));
+exportReport = opendpd.result(exported);
+opendpd.openStudio(p, Page=&quot;run&quot;, RunID=exported.ID);
+</code></pre>
+<p>The existing <code>runDPD</code> exporter carries state across the whole test waveform, as <code>apply</code> does by default for a
+<code>gru</code> or <code>gmp</code>; <code>Execution="offline_segmented"</code> resets at segment boundaries, as the stored report was scored. These
+outputs can differ. Read the export
+sidecar for its execution semantics. The quickstart saves the segmented
+training-run report alongside <code>apply</code>'s waveform and separately records the
+export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
+to <code>apply</code> does not update that stored report or establish hardware performance.</p>
+<h2 id="one-call-from-a-capture-to-models-fit">One call from a capture to models: <code>fit</code></h2>
+<p>When you have a paired capture and want models that run in MATLAB, <code>fit</code> does the whole sequence and starts Python as a
+separate process (no <code>pyenv</code>):</p>
+<pre><code class="language-matlab">[dpd, pa, report] = opendpd.fit(x, y, Workspace=&quot;my-pa-workspace&quot;, SampleRate=fs, Bandwidth=bw, ...
+    SegmentSamples=2048, PAModel=&quot;gru&quot;, DPDModel=&quot;gru&quot;);
+u = opendpd.apply(dpd, xNew);        % the predistorted PA input, plain MATLAB
+yHat = opendpd.apply(pa, u);         % the PA model's output for it
+report.DPD.Result                    % the stored evaluation result of the DPD run
+</code></pre>
+<p>The runs are ordinary runs in <code>Workspace</code>: open it in Studio (<code>opendpd.studio("my-pa-workspace")</code>) to see the curves
+and spectra. Use the project API (<code>openProject</code>, <code>importIQ</code>, <code>trainPA</code>, <code>trainDPD</code>) when you need finer control. See the
+<a href="reference.html#one-call-fit">function reference</a> for the options, how Python is found and what is checked first.</p>
+<h2 id="score-a-capture-without-training">Score a capture without training</h2>
+<p>Metrics need no project or server. Play <code>opendpd.waveform</code> through your amplifier, capture its output and score it
+with the code Studio uses:</p>
+<pre><code class="language-matlab">w = opendpd.waveform(Seed=1, Subframes=10);       % the waveform to play (loop it); w.x is 30.72 MS/s
+% ... play w (resampled to your generator's rate), capture the PA output as y at SampleRate fs ...
+evm  = opendpd.metrics.evm(y, w, SampleRate=fs);                                  % evm.EVM_RMS in percent
+aclr = opendpd.metrics.aclr(y, SampleRate=fs, SegmentSamples=2048, Waveform=w);   % aclr.ACLR_L, aclr.ACLR_R in dBc
+</code></pre>
+<p><code>SegmentSamples</code> has no default because the ratio depends on it: it is the Welch segment length, and a longer
+segment resolves the band edges better. Report it with the number. If <code>Status</code> is not <code>"ok"</code>, read <code>Reason</code>; for
+example <code>"missing_reference"</code> means the capture does not correlate with <code>w</code>. See the
+<a href="reference.html#metrics-without-a-run">function reference</a> for all options.</p>
+<h2 id="take-a-trained-model-out-of-opendpd">Take a trained model out of OpenDPD</h2>
+<p>A trained PA or DPD can leave the Python environment as a package of data and run in plain MATLAB, on a machine
+that has no Python:</p>
+<pre><code class="language-matlab">opendpd.export(dpd, &quot;apa-dpd.opendpd.zip&quot;);       % needs the Python SDK; the same run always gives the same bytes
+model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);      % plain MATLAB from here on
+report = opendpd.verify(model)                    % golden test: OpenDPD's outputs vs this MATLAB release, within 1e-5
+u = opendpd.apply(model, xTest);                  % auto, like opendpd.apply(dpd, xTest): a stream for gru and gmp
+y = model(chunk); reset(model);                   % streaming, for gru and gmp
+</code></pre>
+<p>Use the training dataset's sample rate and amplitude units: nothing is normalised or aligned
+(<code>model.Manifest.signal</code>, <code>model.Manifest.scaling</code>). For an <code>mp_ls</code> model, <code>model.commCoefficients()</code> returns the matrix
+for <code>comm.DPD</code> and <code>rf.PAmemory</code>, so a memory polynomial fitted by OpenDPD can be run by MathWorks code; one <code>nperseg</code> segment
+of OpenDPD and one <code>comm.DPD</code> stream from a zero state agree (<code>rf.PAmemory</code> starts its delay line with the first sample: see the
+reference for the zero pad). See the <a href="reference.html#model-packages-run-a-trained-model-without-python">function
+reference</a> for what a package contains, what <code>verify</code>
+shows and what it does not, and how a package from elsewhere is read.</p>
+<p>To use the model in Simulink or with MATLAB Coder, write it as a standalone class:</p>
+<pre><code class="language-matlab">r = opendpd.generateCode(model, &quot;apa-dpd-class&quot;, Name=&quot;ApaDpd&quot;, Execution=&quot;streaming&quot;);
+addpath(r.Folder); ApaDpdCheck()                  % the golden test again, on the generated class
+</code></pre>
+<p>Add a <em>MATLAB System</em> block with the System object name <code>ApaDpd</code>, or run <code>codegen ApaDpdStep ...</code>. The example
+<code>opendpdSimulink</code> builds a DPD-then-PA transmit chain. Choose <code>streaming</code> when samples arrive one at a time or in
+frames of any size; the default restarts the state every <code>nperseg</code> samples, as in training. See the <a href="reference.html#standalone-classes-for-matlab-coder-and-simulink">function
+reference</a>.</p>
+<p>A fixed-point deployment package (<code>opendpd deploy</code>, or the Studio's Deployment panel) is loaded the same way and checked bit
+for bit against its golden vectors; the same model gives you the expected integers for your own implementation:</p>
+<pre><code class="language-matlab">fixed = opendpd.load(&quot;deploy.zip&quot;);               % an opendpd.FixedModel: integers held exactly in double precision
+opendpd.verify(fixed).status                      % &quot;bit_exact&quot;, or the case, sample and signal where it first differs
+[yq, state, trace] = fixed.runInteger(xq);        % integers in, integers out, the state after every sample
+</code></pre>
+<p>See the <a href="reference.html#fixed-point-deployment-packages-check-an-implementation-bit-for-bit">function reference</a>.</p>
+<h2 id="measure-on-your-bench">Measure on your bench</h2>
+<p><code>opendpd.lab.Session</code> wraps the instrument code you already have so that a measurement is supervised and recorded
+(see the <a href="reference.html#measured-captures-opendpdlab">function reference</a> for the rules). Learn the procedure on the
+dry-run mock first; it emits nothing and needs no Python:</p>
+<pre><code class="language-matlab">rng(1); u = 0.1 * complex(randn(8192, 1), randn(8192, 1));       % any complex baseband signal below MaxPeak
+lab = opendpd.lab.Session(Instrument=opendpd.lab.MockInstrument(), Operator=&quot;Your Name&quot;);
+arm(lab);
+y = measure(lab, u, SampleRate=30.72e6);                         % the mock's synthetic PA, not an amplifier
+disarm(lab);
+record(lab)                                                       % operator, limits, hashes of played and captured, log
+</code></pre>
+<p>For your own chain, replace <code>Instrument=</code> by <code>MeasureFcn=</code> and <code>RFOffFcn=</code> (and, if you have them, <code>HeartbeatFcn=</code> and
+<code>PowerCalibration=</code>). Arming such a session needs the person's name and the environment variable
+<code>OPENDPD_ALLOW_RF_OUTPUT=1</code>; nothing in this toolbox sets that variable.</p>
+<h2 id="reconnect-cancel-and-stop">Reconnect, cancel and stop</h2>
+<p>MATLINK report delivery does not require script IDs. Use its <strong>Send to MATLAB</strong>
+or <strong>Send when ready</strong> actions, then select <strong>Open in MATLAB</strong> to inspect the
+saved report. For scripts, keep Job handles during a session and save IDs for
+later reconnection:</p>
+<pre><code class="language-matlab">savedRunID = dpd.ID;
+savedWorkspace = p.Workspace;
+opendpd.disconnect(p.Workspace); % if MATLINK is attached
+opendpd.closeProject(p);  % disconnect; service and jobs continue
+p = opendpd.openProject(savedWorkspace);
+job = opendpd.getRun(p, savedRunID);
+opendpd.status(job)
+opendpd.cancel(job);      % explicit cancellation request, when applicable
+</code></pre>
+<p>If MATLINK is attached, <code>opendpd.disconnect(p.Workspace)</code> detaches that bridge
+without stopping training or closing a caller-owned Project. Calling
+<code>opendpd.disconnect()</code> detaches all MATLINK bridges in this MATLAB process.
+Disconnecting ends pending report delivery; reconnect and request a saved report
+again when needed.</p>
+<p>Save paths and run IDs as strings; MATLAB handles containing Python objects
+are not portable model artifacts. A timeout or Ctrl+C during <code>wait</code> leaves the
+job running. Cancellation remains <code>cancel_requested</code> until the worker stops.</p>
+<p><code>opendpd.closeProject(p, StopService=true)</code> stops an SDK-started service and all
+jobs in that workspace, including after reconnecting. Stop externally launched
+Studio through its original launcher. Uninstalling the toolbox leaves Python
+environments and experiment workspaces intact.</p></main>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
+</body></html>

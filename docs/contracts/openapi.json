@@ -9517,6 +9517,427 @@
         "title": "ManifestUpdate",
         "type": "object"
       },
+      "MatlabVariable": {
+        "additionalProperties": false,
+        "properties": {
+          "class_name": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Class Name",
+            "type": "string"
+          },
+          "complex": {
+            "default": false,
+            "title": "Complex",
+            "type": "boolean"
+          },
+          "eligible": {
+            "default": false,
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "n_samples": {
+            "default": 0,
+            "maximum": 9007199254740992.0,
+            "minimum": 0.0,
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "name": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,62}$",
+            "title": "Name",
+            "type": "string"
+          },
+          "size": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 32,
+            "minItems": 2,
+            "title": "Size",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "class_name",
+          "size"
+        ],
+        "title": "MatlabVariable",
+        "type": "object"
+      },
+      "MatlinkCompletion": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "MatlinkCompletion",
+        "type": "object"
+      },
+      "MatlinkConnect": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "enum": [
+                "dataset_export",
+                "result_bundle"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "label": {
+            "default": "MATLAB",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "release": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Release",
+            "type": "string"
+          },
+          "variables": {
+            "items": {
+              "$ref": "#/components/schemas/MatlabVariable"
+            },
+            "maxItems": 256,
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "title": "MatlinkConnect",
+        "type": "object"
+      },
+      "MatlinkConnection": {
+        "additionalProperties": false,
+        "properties": {
+          "bridge_token": {
+            "title": "Bridge Token",
+            "type": "string"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "lease_seconds": {
+            "title": "Lease Seconds",
+            "type": "integer"
+          },
+          "protocol_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Protocol Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_id",
+          "bridge_token",
+          "lease_seconds"
+        ],
+        "title": "MatlinkConnection",
+        "type": "object"
+      },
+      "MatlinkDisconnected": {
+        "additionalProperties": false,
+        "properties": {
+          "disconnected": {
+            "const": true,
+            "default": true,
+            "title": "Disconnected",
+            "type": "boolean"
+          }
+        },
+        "title": "MatlinkDisconnected",
+        "type": "object"
+      },
+      "MatlinkHeartbeat": {
+        "additionalProperties": false,
+        "properties": {
+          "variables": {
+            "items": {
+              "$ref": "#/components/schemas/MatlabVariable"
+            },
+            "maxItems": 256,
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "title": "MatlinkHeartbeat",
+        "type": "object"
+      },
+      "MatlinkPoll": {
+        "additionalProperties": false,
+        "properties": {
+          "lease_seconds": {
+            "title": "Lease Seconds",
+            "type": "integer"
+          },
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/MatlinkTransfer"
+            },
+            "title": "Requests",
+            "type": "array"
+          }
+        },
+        "required": [
+          "requests",
+          "lease_seconds"
+        ],
+        "title": "MatlinkPoll",
+        "type": "object"
+      },
+      "MatlinkRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "create_demo",
+              "import_iq",
+              "import_result",
+              "import_dataset",
+              "open_variable"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "client_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Client Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "client_id",
+          "action",
+          "idempotency_key"
+        ],
+        "title": "MatlinkRequest",
+        "type": "object"
+      },
+      "MatlinkSession": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "enum": [
+                "dataset_export",
+                "result_bundle"
+              ],
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "connected": {
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "last_seen": {
+            "format": "date-time",
+            "title": "Last Seen",
+            "type": "string"
+          },
+          "pending_count": {
+            "title": "Pending Count",
+            "type": "integer"
+          },
+          "release": {
+            "title": "Release",
+            "type": "string"
+          },
+          "variables": {
+            "items": {
+              "$ref": "#/components/schemas/MatlabVariable"
+            },
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "required": [
+          "client_id",
+          "label",
+          "release",
+          "connected",
+          "last_seen",
+          "variables",
+          "pending_count"
+        ],
+        "title": "MatlinkSession",
+        "type": "object"
+      },
+      "MatlinkState": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "const": true,
+            "default": true,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "protocol_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Protocol Version",
+            "type": "integer"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/MatlinkSession"
+            },
+            "title": "Sessions",
+            "type": "array"
+          },
+          "transfers": {
+            "items": {
+              "$ref": "#/components/schemas/MatlinkTransfer"
+            },
+            "title": "Transfers",
+            "type": "array"
+          },
+          "workspace": {
+            "title": "Workspace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace",
+          "sessions",
+          "transfers"
+        ],
+        "title": "MatlinkState",
+        "type": "object"
+      },
+      "MatlinkTransfer": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "create_demo",
+              "import_iq",
+              "import_result",
+              "import_dataset",
+              "open_variable"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "waiting",
+              "queued",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "client_id",
+          "action",
+          "status",
+          "payload",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MatlinkTransfer",
+        "type": "object"
+      },
       "MeasuredExecution": {
         "additionalProperties": false,
         "description": "The C reference's speed on the machine that built the package: a property of that build, not of a deployment.",
@@ -18192,6 +18613,264 @@
         "summary": "Imports Create",
         "tags": [
           "exports"
+        ]
+      }
+    },
+    "/api/v1/matlink": {
+      "get": {
+        "operationId": "state_api_v1_matlink_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatlinkState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "State",
+        "tags": [
+          "MATLINK"
+        ]
+      }
+    },
+    "/api/v1/matlink/connect": {
+      "post": {
+        "operationId": "connect_api_v1_matlink_connect_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatlinkConnect"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatlinkConnection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Connect",
+        "tags": [
+          "MATLINK"
+        ]
+      }
+    },
+    "/api/v1/matlink/requests": {
+      "post": {
+        "operationId": "transfer_api_v1_matlink_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatlinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatlinkTransfer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Transfer",
+        "tags": [
+          "MATLINK"
+        ]
+      }
+    },
+    "/api/v1/matlink/{client_id}/disconnect": {
+      "post": {
+        "operationId": "disconnect_api_v1_matlink__client_id__disconnect_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatlinkDisconnected"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disconnect",
+        "tags": [
+          "MATLINK"
+        ]
+      }
+    },
+    "/api/v1/matlink/{client_id}/heartbeat": {
+      "post": {
+        "operationId": "heartbeat_api_v1_matlink__client_id__heartbeat_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatlinkHeartbeat"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatlinkPoll"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Heartbeat",
+        "tags": [
+          "MATLINK"
+        ]
+      }
+    },
+    "/api/v1/matlink/{client_id}/requests/{request_id}/complete": {
+      "post": {
+        "operationId": "complete_api_v1_matlink__client_id__requests__request_id__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "title": "Client Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatlinkCompletion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatlinkTransfer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete",
+        "tags": [
+          "MATLINK"
         ]
       }
     },

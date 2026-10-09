@@ -720,6 +720,32 @@ def cmd_deploy(args) -> int:
     return 0 if manifest.verification.status != "mismatch" else 1
 
 
+def cmd_export_model(args) -> int:
+    """Write a finished run as an ``opendpd-model-v1`` package: weights, manifest and a golden vector, no code."""
+    import contextlib
+
+    from opendpd.services.model_export import export_model
+    from opendpd.services.workspace import Workspace, WorkspaceError
+
+    try:
+        ws = Workspace.open(Path(args.workspace))
+        out = Path(args.out) if args.out else ws.exports_dir / f"{args.run_id}.opendpd.zip"
+        with contextlib.redirect_stdout(sys.stderr):      # legacy step chatter never pollutes the JSON
+            summary = export_model(ws, args.run_id, out)
+    except (WorkspaceError, ValueError, KeyError, FileNotFoundError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+    if args.json:
+        _print_json(summary)
+    else:
+        print(f"package written to {summary['path']}")
+        print(f"  {summary['model']} ({summary['role']}), run {summary['run_id']}, sha256 {summary['sha256']}")
+        print("  execution: " + ", ".join(f"{name} {'available' if ok else 'not available'}"
+                                          for name, ok in summary["execution"].items()))
+        print("  in MATLAB: model = opendpd.load(file); opendpd.verify(model); y = opendpd.apply(model, x)")
+    return 0
+
+
 def cmd_adaptation(args) -> int:
     """conditions-v1 (S17): sealed condition cards, pre-registered adaptation plans and every-cell reports."""
     import contextlib
@@ -954,6 +980,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--device", default="cpu")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_stream)
+
+    p = sub.add_parser("export-model", help="opendpd-model-v1: write a finished run as data (weights, manifest, golden vector) "
+                                            "that the OpenDPD toolbox for MATLAB runs without Python")
+    p.add_argument("run_id", help="a succeeded train_pa or train_dpd run of gru, tres_gru, gmp, mp_ls or gmp_ls")
+    p.add_argument("--workspace", required=True)
+    p.add_argument("--out", default=None, help="package file (default: <workspace>/exports/<run_id>.opendpd.zip)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_export_model)
 
     p = sub.add_parser("deploy", help="fixed-point-v1: quantise a finished GRU run, write golden vectors and the bit-exact C99 reference")
     p.add_argument("run_id", help="a succeeded train_pa or train_dpd run of a model with export format fixed-point-v1 (gru)")

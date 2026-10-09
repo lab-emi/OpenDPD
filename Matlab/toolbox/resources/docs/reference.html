@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Function reference · OpenDPD for MATLAB</title>
+<link rel="stylesheet" href="guide.css"></head><body>
+<a class="skip" href="#content">Skip to content</a>
+<header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
+<span class="version">2.4.0</span></header>
+<nav aria-label="Guide"><a href="index.html">Get started</a>
+<a href="gui.html">MATLINK walkthrough</a>
+<a href="workflow.html">Script workflow</a>
+<a href="reference.html" aria-current="page">Function reference</a>
+<a href="architecture.html">Integration design</a>
+<a href="troubleshooting.html">Troubleshooting</a></nav>
+<main id="content"><h1 id="function-reference">Function reference</h1>
+<p>All functions live in the <code>opendpd</code> namespace. MATLAB's <code>help opendpd.function</code>
+also shows each function's short reference. Numeric sample rate and bandwidth
+arguments use <strong>Hz</strong>; MATLINK displays <strong>MHz</strong>.</p>
+<h2 id="environment-and-matlink">Environment and MATLINK</h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Purpose and options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>info = opendpd.setup(...)</code></td>
+<td>Select Python. <code>PythonExecutable=""</code>, <code>SourceDirectory=""</code>, <code>ExecutionMode="OutOfProcess"</code>. SourceDirectory is an optional development checkout. Does not install packages or terminate Python.</td>
+</tr>
+<tr>
+<td><code>info = opendpd.doctor()</code></td>
+<td>Dependency checks, Python/OpenDPD versions, SDK protocol and supported inference models.</td>
+</tr>
+<tr>
+<td><code>p = opendpd.openProject(workspace, ...)</code></td>
+<td>Open or attach a local workspace. <code>StartService=true</code>, <code>Timeout=30</code> seconds. <code>p.Workspace</code> is the resolved path.</td>
+</tr>
+<tr>
+<td><code>opendpd.closeProject(p, ...)</code></td>
+<td>Disconnect a Project. <code>StopService=false</code>; true explicitly stops an SDK-started service and its jobs. Use <code>disconnect</code> to detach MATLINK.</td>
+</tr>
+<tr>
+<td><code>link = opendpd.studio(...)</code></td>
+<td>Connect MATLAB and open Studio at MATLINK. Uses remembered workspace, Python and source settings when omitted. Options: <code>PythonExecutable=""</code>, <code>SourceDirectory=""</code>, <code>OpenBrowser=true</code>, <code>Label</code> defaulting to the MATLAB release.</td>
+</tr>
+<tr>
+<td><code>link = opendpd.studio(workspace, ...)</code></td>
+<td>Connect a specified workspace; reuse its active bridge in this MATLAB process.</td>
+</tr>
+<tr>
+<td><code>link = opendpd.studio(p, ...)</code></td>
+<td>Connect MATLINK through an existing Project. That Project remains caller-owned and usable after MATLINK disconnects.</td>
+</tr>
+<tr>
+<td><code>opendpd.disconnect()</code></td>
+<td>Disconnect every MATLINK bridge in the current MATLAB process; leave services and jobs running.</td>
+</tr>
+<tr>
+<td><code>opendpd.disconnect(link)</code></td>
+<td>Disconnect one returned MATLABBridge.</td>
+</tr>
+<tr>
+<td><code>opendpd.disconnect(workspace)</code></td>
+<td>Disconnect the bridge for one workspace.</td>
+</tr>
+<tr>
+<td><code>opendpd.openStudio(p, ...)</code></td>
+<td>Open a Studio page in the system browser. <code>Page="home"</code>, <code>RunID=""</code>, <code>OpenBrowser=true</code>. This alone does not create a MATLAB bridge.</td>
+</tr>
+<tr>
+<td><code>opendpd.help(topic)</code></td>
+<td>Open a bundled guide. Topics: <code>index</code> (default), <code>gui</code>, <code>workflow</code>, <code>reference</code>, <code>architecture</code>, <code>troubleshooting</code>. <code>OpenBrowser=false</code> returns the local filename without opening it.</td>
+</tr>
+</tbody>
+</table>
+<p><code>studio</code> returns an <code>opendpd.MATLABBridge</code> and retains it for the MATLAB session,
+so calling without an output keeps MATLINK active. Use <code>disconnect</code> for lifecycle
+control. Internal request messages and timer state are implementation details,
+not a stable public automation API. When MATLAB is blocked, requests and the
+heartbeat wait until callbacks can run again.</p>
+<pre><code class="language-matlab">link = opendpd.studio(&quot;my-pa-workspace&quot;, Label=&quot;PA capture session&quot;);
+opendpd.help(&quot;gui&quot;);
+opendpd.disconnect(link);
+</code></pre>
+<p><code>OpenBrowser=false</code> connects the bridge without launching a browser. Studio pages
+supported by <code>openStudio</code> are <code>home</code>, <code>matlink</code>, <code>datasets</code>, <code>experiments</code>,
+<code>new-experiment</code>, <code>results</code>, <code>run</code> and <code>result</code>. The last two require <code>RunID</code>,
+which is useful in scripts; the MATLINK GUI uses named experiment selection.
+Only supported local routes are accepted. A returned URL from <code>openStudio</code> is a
+<strong>private bootstrap link</strong>; keep it local. Normal use prints no token in the
+Command Window.</p>
+<pre><code class="language-matlab">opendpd.openStudio(p, Page=&quot;datasets&quot;);
+opendpd.openStudio(p, Page=&quot;result&quot;, RunID=job.ID);
+</code></pre>
+<h2 id="import">Import</h2>
+<pre><code class="language-matlab">ds = opendpd.importIQ(p, x, y, SampleRate=80e6, Bandwidth=20e6, SegmentSamples=2048);
+ds = opendpd.importMAT(p, &quot;capture.mat&quot;, SampleRate=80e6, Bandwidth=20e6, SegmentSamples=2048);
+</code></pre>
+<p><code>ds</code> is a dataset struct including <code>dataset_id</code>, sample count and provenance.
+<code>importIQ</code> accepts dense MATLAB single/double vectors; rows and columns are
+equivalent. <code>importMAT</code> reads a MAT file of any version in MATLAB and additionally accepts
+real N×2 I/Q matrices.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default / requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SampleRate</code>, <code>Bandwidth</code></td>
+<td>Required, finite and positive, in Hz; backend validates the signal specification.</td>
+</tr>
+<tr>
+<td><code>SegmentSamples</code></td>
+<td>Required, integer at least 2, no default. PSD segment length of every spectral metric and the interval at which evaluation restarts a model's state. Studio's generated signals use 512-4096.</td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td><code>""</code> for an automatic ID; otherwise a unique dataset slug such as <code>capture-001</code>.</td>
+</tr>
+<tr>
+<td><code>GuardSamples</code></td>
+<td><code>256</code>, nonnegative integer. Must cover the training frame context.</td>
+</tr>
+<tr>
+<td><code>Subchannels</code></td>
+<td><code>1</code>, positive integer.</td>
+</tr>
+<tr>
+<td><code>Origin</code></td>
+<td><code>"unknown"</code>; also <code>"measured"</code>, <code>"synthetic"</code>.</td>
+</tr>
+<tr>
+<td><code>AmplitudeUnits</code></td>
+<td><code>"unknown"</code>; also <code>"normalized"</code>, <code>"volts"</code>. Describes input units, does not transform amplitudes.</td>
+</tr>
+<tr>
+<td><code>InputVariable</code>, <code>OutputVariable</code></td>
+<td>MAT adapter only; defaults <code>"x"</code>, <code>"y"</code>.</td>
+</tr>
+<tr>
+<td><code>Source</code></td>
+<td><code>importIQ</code> only; a struct recorded as the dataset's provenance (<code>importMAT</code> fills it).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="jobs">Jobs</h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>job = opendpd.trainPA(p, ds, ...)</code></td>
+<td>Queue PA training. <code>ds</code> may be a dataset struct or ID.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.trainDPD(p, ds, PA=pa, ...)</code></td>
+<td>Queue DPD training using a succeeded PA Job from the same workspace.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.submit(p, config)</code></td>
+<td>Submit a complete ExperimentConfig struct; server validates it.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.getRun(p, runID)</code></td>
+<td>Create a handle for a saved run.</td>
+</tr>
+<tr>
+<td><code>record = opendpd.status(job)</code></td>
+<td>Read status and error information as a struct.</td>
+</tr>
+<tr>
+<td><code>job = opendpd.wait(job, ...)</code></td>
+<td>Wait for success; <code>Timeout=600</code>, <code>PollInterval=0.5</code>, in seconds. Errors on failure or timeout; timeout does not cancel.</td>
+</tr>
+<tr>
+<td><code>record = opendpd.cancel(job)</code></td>
+<td>Request cancellation through the shared service.</td>
+</tr>
+<tr>
+<td><code>report = opendpd.result(job)</code></td>
+<td>Read the stored result struct. Requires a saved result.</td>
+</tr>
+</tbody>
+</table>
+<p>Training options shared by <code>trainPA</code> and <code>trainDPD</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Model</code></td>
+<td><code>"gru"</code></td>
+</tr>
+<tr>
+<td><code>ModelParameters</code>, <code>Training</code></td>
+<td>Empty structs; use existing OpenDPD schema fields.</td>
+</tr>
+<tr>
+<td><code>Device</code></td>
+<td><code>"auto"</code>: Studio's default (first detected of <code>cuda</code>, <code>mps</code>, <code>cpu</code>; <code>cpu</code> for least-squares models). Or <code>"cpu"</code>, <code>"cuda"</code>, <code>"mps"</code>, which require locally supported hardware and model.</td>
+</tr>
+<tr>
+<td><code>DeviceIndex</code></td>
+<td><code>0</code>; the logical CUDA device when <code>Device</code> resolves to <code>"cuda"</code>.</td>
+</tr>
+<tr>
+<td><code>NumThreads</code></td>
+<td><code>0</code>: the service decides. A positive integer sets the CPU thread count.</td>
+</tr>
+<tr>
+<td><code>Profile</code></td>
+<td><code>"opendpd-spectral-v2"</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>job.ID</code> and <code>job.Project.Workspace</code> identify a run for reconnection. Complete
+settings, artifacts and logs remain in the workspace and Studio.</p>
+<h2 id="one-call-fit">One call: fit</h2>
+<p><code>opendpd.fit</code> does what the project API does in order - import the capture, train a PA model, train a DPD through it,
+export both - in one call, and returns the two models as <code>opendpd.Model</code> objects that run in plain MATLAB.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[dpd, pa, report] = opendpd.fit(x, y, Workspace=w, SampleRate=fs, Bandwidth=bw, SegmentSamples=n, ...)</code></td>
+<td><code>x</code> is the PA input and <code>y</code> the PA output (complex vectors of one length; nothing is normalised). <code>dpd</code> and <code>pa</code> are loaded model packages (<code>opendpd.apply(dpd, xNew)</code>, streaming for <code>gru</code> and <code>gmp</code>). <code>report</code> has <code>Workspace</code>, <code>Dataset</code>, <code>PA</code> and <code>DPD</code> (<code>RunID</code>, <code>Result</code>, <code>Package</code> file, <code>Verify</code>), <code>Seconds</code>, <code>Python</code> and <code>Job</code>.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default / requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Workspace</code></td>
+<td>Required. The folder for datasets, runs and packages; created if missing. No default, so results never land somewhere you did not choose. Every step is an ordinary run you can open in Studio.</td>
+</tr>
+<tr>
+<td><code>SampleRate</code>, <code>Bandwidth</code>, <code>SegmentSamples</code></td>
+<td>Required, as for <code>importIQ</code>.</td>
+</tr>
+<tr>
+<td><code>DPDModel</code>, <code>PAModel</code></td>
+<td><code>"gru"</code> for both. Both must be exportable (<code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code>), and <code>PAModel</code> must be gradient-trained (<code>gru</code>, <code>tres_gru</code>, <code>gmp</code>) because the DPD is trained through it. Checked before anything trains.</td>
+</tr>
+<tr>
+<td><code>DPDParameters</code>, <code>PAParameters</code>, <code>Training</code></td>
+<td>Empty structs: OpenDPD defaults. <code>Training</code> is shared by both runs (a DPD must use its surrogate's seed and frame length).</td>
+</tr>
+<tr>
+<td><code>Device</code>, <code>DeviceIndex</code>, <code>NumThreads</code>, <code>Profile</code></td>
+<td>As for <code>trainPA</code>.</td>
+</tr>
+<tr>
+<td><code>Name</code>, <code>Subchannels</code>, <code>GuardSamples</code>, <code>Origin</code>, <code>AmplitudeUnits</code></td>
+<td>As for <code>importIQ</code>.</td>
+</tr>
+<tr>
+<td><code>OutputFolder</code></td>
+<td><code>&lt;Workspace&gt;/exports</code>; packages are <code>&lt;run id&gt;.opendpd.zip</code>.</td>
+</tr>
+<tr>
+<td><code>Timeout</code></td>
+<td>Seconds; none by default. When it passes the running job is cancelled and the call fails with <code>opendpd:Timeout</code>.</td>
+</tr>
+<tr>
+<td><code>PythonExecutable</code>, <code>SourceDirectory</code></td>
+<td>See below. <code>SourceDirectory</code> is a development checkout put on <code>PYTHONPATH</code>.</td>
+</tr>
+<tr>
+<td><code>Verbose</code></td>
+<td><code>true</code>: print the import, the epochs (about ten lines per model) and the exports.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Python is a separate process.</strong> <code>fit</code> starts <code>python -m opendpd.sdk._fit</code> as a child of MATLAB and exchanges files with
+it; MATLAB's Python integration (<code>pyenv</code>, the <code>py.</code> namespace) is not used or loaded. The Python version therefore need
+not be one your MATLAB release supports, and a crash in Python cannot take MATLAB down. The interpreter is the first
+that exists of: <code>PythonExecutable</code>, the <code>OPENDPD_PYTHON</code> environment variable, the one <code>opendpd.studio</code> or
+<code>opendpd.setup</code> remembered, MATLAB's configured <code>pyenv</code> (reading the setting does not load Python). MATLAB's own library
+folders are removed from the child's library path (<code>LD_LIBRARY_PATH</code>, <code>DYLD_*</code>, and <code>PATH</code> on Windows) so that system
+libraries are not replaced by MATLAB's; other entries stay. Ctrl+C asks the running job to cancel and returns once it has
+stopped (up to a minute, then the process is ended). Verified on R2026a with Python 3.13 on Linux, in a fresh session
+that left <code>pyenv</code> unloaded; Windows and macOS are not verified.</p>
+<p><strong>The workspace service.</strong> <code>fit</code> works through the workspace's Studio service. If none is running it starts one and stops it
+when the call ends. A service that was already running - a Studio you have open on that workspace, or another session's -
+is used and left running, and so is one that still has other runs; <code>fit</code> only stops what it started. If the service it
+started does not stop promptly, <code>fit</code> still returns its result and warns (<code>opendpd:fit:ServiceNotStopped</code>).</p>
+<p>The exported models are verified against their golden vectors on this MATLAB release before <code>fit</code> returns; if one does
+not reproduce OpenDPD's outputs, <code>fit</code> fails with <code>opendpd:Verification</code> and names the package. Errors from Python come
+back with its message: <code>opendpd:FitFailed</code>, <code>opendpd:Cancelled</code>, <code>opendpd:Timeout</code>.</p>
+<h2 id="metrics-without-a-run">Metrics without a run</h2>
+<p>These need no project, workspace or server: they call the code that Studio and the run service use, so a number
+computed here equals the one in a Studio result for the same signal and settings. Metadata that changes a number
+has no default (<code>SegmentSamples</code>, <code>SampleRate</code>); a metric that cannot be computed is returned with a <code>Status</code> and a
+<code>Reason</code>, never a guess.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w = opendpd.waveform(Seed=1, Subframes=10)</code></td>
+<td>The <code>ofdm-lte20-v1</code> test waveform with known symbols, regenerated from its seed: <code>w.x</code> (complex column, 30.72 MS/s, unit power), <code>w.Symbols</code> (symbols × 1200), <code>w.SampleRate</code>, <code>w.Seed</code>, <code>w.Subframes</code>, <code>w.SHA256</code>. A test signal, not a conformance signal.</td>
+</tr>
+<tr>
+<td><code>m = opendpd.metrics.evm(y, w, SampleRate=fs)</code></td>
+<td>Data-aided EVM of a capture of <code>w</code>: <code>m.EVM_RMS</code> (percent), <code>m.EVM_dB</code>, <code>m.Status</code>, <code>m.Reason</code>. <code>fs</code> must convert to 30.72 MS/s with a small exact ratio. <code>m.Status</code> is <code>"missing_reference"</code> when <code>y</code> does not correlate with <code>w</code> (wrong seed or length, or a carrier offset above about 75 Hz for 10 subframes).</td>
+</tr>
+<tr>
+<td><code>m = opendpd.metrics.aclr(y, SampleRate=fs, SegmentSamples=n, Waveform=w)</code></td>
+<td>Adjacent-channel leakage in negative dBc: <code>m.ACLR_L</code>, <code>m.ACLR_R</code>, <code>m.Status</code>, <code>m.Reason</code>. <code>Profile="ofdm-lte20-evm-v1"</code> (default; needs <code>Waveform</code> and <code>fs</code> of at least 58 MS/s) or <code>"opendpd-spectral-v2"</code> (needs <code>Bandwidth</code>, <code>Subchannels</code>). <code>SegmentSamples</code> is the Welch segment length and moves the ratio.</td>
+</tr>
+<tr>
+<td><code>t = opendpd.metrics.evaluate(y, SampleRate=fs, SegmentSamples=n, Waveform=w, ...)</code></td>
+<td>Every metric of a profile as a table (<code>Name</code>, <code>Value</code>, <code>Unit</code>, <code>Status</code>, <code>Reason</code>). Also <code>Profile="general-spectral-v1"</code>, <code>Reference=</code> (target signal for reference-based metrics), <code>Bandwidth</code>, <code>Subchannels</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>How these compare with MathWorks functions is measured, not assumed: EVM agrees with an independent
+<code>lteOFDMDemodulate</code>/<code>lteEVM</code> chain to better than 1e-8 percentage points on the registered signals, and the
+profile's ACLR differs from <code>comm.ACPR</code> by up to 0.2 dB because <code>comm.ACPR</code> integrates the bins that enclose a band
+edge while OpenDPD sums the bins whose centre lies inside it. The numbers, budgets and the cases that do not agree
+are in <code>docs/performance/matlab-parity.md</code> of the OpenDPD repository.</p>
+<h2 id="inference-and-export">Inference and export</h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[y, info] = opendpd.apply(job, x, ...)</code></td>
+<td>Complex single column vector plus metadata. <code>Execution="auto"</code> (default: a stream for <code>gru</code> and <code>gmp</code>, the scored form for the others), <code>"offline_segmented"</code> (how the run was scored) or <code>"streaming_stateful"</code> / <code>"streaming"</code> (one state across chunks; <code>gru</code> and <code>gmp</code> only), <code>ChunkSamples=0</code> (the default chunk), <code>Timeout=120</code> seconds. CPU, unquantized <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code>. <code>info.execution</code>, <code>info.execution_requested</code>, <code>info.execution_reason</code> (for <code>auto</code>), <code>info.limitations</code> and <code>info.streaming</code> state what produced <code>y</code>.</td>
+</tr>
+<tr>
+<td><code>exported = opendpd.runDPD(dpd)</code></td>
+<td>Job handle for standard test-split waveform export and surrogate evaluation. Wait for completion before reading its report/artifacts.</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="workflow.html#apply-the-dpd">execution semantics</a> before comparing exported
+and applied waveforms. <code>apply</code> uses stored sample-rate metadata and assumes the
+supplied samples have the corresponding physical rate; vectors do not carry
+their own time base.</p>
+<h2 id="model-packages-run-a-trained-model-without-python">Model packages: run a trained model without Python</h2>
+<p><code>opendpd.export</code> writes a trained PA or DPD as an <code>opendpd-model-v1</code> package: a zip of data (<code>manifest.json</code>,
+<code>weights.mat</code> and <code>weights.npz</code> with the same arrays, <code>golden/</code> with a test input and the outputs OpenDPD produced for it,
+a README). It holds no code. <code>opendpd.load</code> reads it back as an <code>opendpd.Model</code> that runs in plain MATLAB: no Python,
+no project, no server, no other toolbox. A run trained in Studio can be exported from a terminal with
+<code>opendpd export-model RUN_ID --workspace WORKSPACE --out file.opendpd.zip</code>; it writes the same bytes.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>s = opendpd.export(job, file, ...)</code></td>
+<td>Write a succeeded PA or DPD run to <code>file</code> (<code>*.opendpd.zip</code>). Needs the Python SDK. <code>Timeout=300</code> seconds. Models: <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code> (those <code>apply</code> supports), unquantized. The same run always gives the same bytes. <code>s</code> has <code>path</code>, <code>sha256</code>, <code>model</code>, <code>role</code>, <code>run_id</code>, <code>files</code>, <code>golden_samples</code>, <code>execution</code>.</td>
+</tr>
+<tr>
+<td><code>model = opendpd.load(file)</code></td>
+<td>Read a package as data and return an <code>opendpd.Model</code>. Properties: <code>Manifest</code> (model, signal, scaling, execution semantics, evidence, provenance), <code>Source</code>, <code>SHA256</code> of the file. A <code>fixed-point-v1</code> deployment package is recognised by its entry names and returned as an <code>opendpd.FixedModel</code> (<a href="#fixed-point-deployment-packages-check-an-implementation-bit-for-bit">below</a>).</td>
+</tr>
+<tr>
+<td><code>report = opendpd.verify(model)</code></td>
+<td>Run the package's golden test vector on this MATLAB release. <code>report.passed</code>, <code>report.offline_max_abs_error</code>, <code>report.streaming_max_abs_error</code> (<code>NaN</code> for a model without a streaming variant), <code>report.tolerance_abs</code> (at most <code>1e-5</code>; a package can ask for a stricter test, never a looser one). A non-finite output never passes.</td>
+</tr>
+<tr>
+<td><code>[y, info] = opendpd.apply(model, x, ...)</code></td>
+<td>Same options and result as for a job (<code>Execution</code>, <code>ChunkSamples</code>), computed by <code>opendpd.runtime</code> in MATLAB. <code>Timeout</code> does not apply. Input is rounded to single first, as the Python evaluator does.</td>
+</tr>
+<tr>
+<td><code>y = model(chunk)</code>, <code>reset(model)</code></td>
+<td>The model as a System object for streaming (<code>gru</code>, <code>gmp</code>): one state across calls, any chunk size. <code>reset</code> returns to the start of a stream.</td>
+</tr>
+<tr>
+<td><code>[C, info] = model.commCoefficients()</code></td>
+<td><code>mp_ls</code> only: <code>C = reshape(w, Q, K)</code>, the <code>Coefficients</code> of <code>comm.DPD('PolynomialType', 'Memory polynomial')</code> and the <code>CoefficientMatrix</code> of <code>rf.PAmemory</code>. <code>info.rf_pamemory</code> says how to use it there. Other models: error <code>opendpd:NoMathWorksEquivalent</code>.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-matlab">opendpd.export(dpd, &quot;apa-dpd.opendpd.zip&quot;);           % where the model was trained (Python SDK)
+model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);          % anywhere: plain MATLAB
+assert(opendpd.verify(model).passed)                  % this release computes the model as OpenDPD did
+u = opendpd.apply(model, xTest);                      % the predistorted PA input, like opendpd.apply(dpd, xTest)
+</code></pre>
+<p><strong><code>mp_ls</code> in an <code>rf.PAmemory</code> (RF Toolbox).</strong> The matrix from <code>commCoefficients()</code> is the <code>CoefficientMatrix</code> of
+<code>rf.PAmemory(Model='Memory polynomial', CoefficientMatrix=C)</code>. The only difference from <code>comm.DPD</code> is the initial delay line:
+<code>rf.PAmemory</code> fills it with the first input sample, not with zeros. To reproduce an OpenDPD segment (zero history) apply it to
+<code>[zeros(Q-1,1); x]</code> and drop the first <code>Q-1</code> outputs; the delay line then carries across calls, so a stream can be fed in chunks.
+Checked on R2026a (RF Toolbox 26.1) against <code>comm.DPD</code> on 36 coefficient/signal cases (largest relative difference
+4·10⁻¹⁶) and against <code>opendpd.apply</code> on 3 (4.5·10⁻⁸, the single-precision interface); registered and recorded in
+<code>docs/performance/matlab-parity-dpd.md</code> (amendment 2). Not checked: the RF Blockset amplifier block, the other nonlinearity
+models of <code>rf.PAmemory</code>, other releases.</p>
+<p>What <code>verify</code> shows and what it does not: a pass means this MATLAB release computes the package's model on the
+golden input to within <code>1e-5</code> of what OpenDPD's <code>apply</code> produced. It does not show that the model is good for your
+amplifier, and it does not make a package from an unknown source trustworthy: the golden vector comes from the
+same file. Compare <code>model.SHA256</code> with the value published by whoever gave you the package.</p>
+<p>Reading a package is deliberately narrow. Only the six known file names are accepted (nothing else is extracted, no
+path from the archive is used), every file must match the SHA-256 in the manifest, entries are copied out with a hard
+size limit, and the arrays are read from the <code>.npz</code> files by a strict parser that only ever interprets bytes as float32,
+float64, complex64 or complex128 numbers. The <code>.mat</code> files are for your own code and are never opened by the toolbox:
+<code>load</code> and <code>whos -file</code> both call <code>loadobj</code> for classes on the MATLAB path, so opening a MAT file from an untrusted
+source can itself run code. <code>manifest.json</code> is measured before it is parsed, because MATLAB's <code>jsondecode</code> recurses once
+per level of nesting and ends the MATLAB process with a segmentation fault on a text nested tens of thousands of levels deep,
+holds several hundred bytes of memory per array element, and needs time quadratic in the digits after the decimal point of one
+number (a million digits take half a minute): a manifest that nests more than 8 levels, holds more than 20,000 array elements
+and object members, or has a number of more than 64 characters is refused with <code>opendpd:Package</code>, and the control characters
+in its text (escape sequences, bells, carriage returns) are replaced by <code>?</code> before anyone can display it. A manifest that
+declares fewer GRU layers than the weights hold is refused. The golden test input is synthetic noise with the training input's amplitude
+statistics, never a slice of your data, so a package can be shared without sharing a measurement.</p>
+<p>Execution and numerics: <code>opendpd.apply(model, x)</code> uses the same semantics as for a job (<code>auto</code>, the default, is a stream for
+<code>gru</code> and <code>gmp</code> and <code>offline_segmented</code> for the others; <code>offline_segmented</code> restarts state every
+<code>Manifest.signal.nperseg</code> samples and zero pads the last segment; <code>tres_gru</code> reads 16 future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
+about <code>1e-7</code>, which is what the golden test measures. Speed on a development machine (R2026a, Linux, no GPU, one MATLAB
+process) is roughly 0.3 us per sample for <code>mp_ls</code>, 1 us for <code>gmp_ls</code>, 2-5 us for a two-layer <code>gru</code> or <code>tres_gru</code> of
+hidden size 6-64, and 13 us for a <code>gmp</code> of 495 terms; it is for evaluating waveforms, not a real-time implementation.
+<code>opendpd.Model</code> loads its weights from a file, so it is not the class to put in a Simulink MATLAB System block or to
+build with MATLAB Coder: use <a href="#standalone-classes-for-matlab-coder-and-simulink"><code>opendpd.generateCode</code></a> for that.
+Not verified: other MATLAB releases or operating systems.</p>
+<h2 id="standalone-classes-for-matlab-coder-and-simulink">Standalone classes for MATLAB Coder and Simulink</h2>
+<p><code>opendpd.generateCode</code> writes a loaded package as a <strong>standalone MATLAB class</strong>: the weights are constants in the source,
+the arithmetic is the text of the <code>opendpd.runtime</code> kernels, and nothing is read at run time. The class needs no OpenDPD
+toolbox, no Python and no file, so it can be used as a Simulink MATLAB System block, built with MATLAB Coder, or given to
+a colleague who does not have this toolbox.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>r = opendpd.generateCode(model, folder, ...)</code></td>
+<td>Write four text files into <code>folder</code> (created if needed) and return <code>r.Name</code>, <code>r.Folder</code>, <code>r.Files</code>, <code>r.Execution</code>, <code>r.Model</code> and <code>r.PackageSHA256</code>. <code>Name="..."</code> is the class name (default <code>OpenDPD&lt;Role&gt;&lt;Model&gt;</code>, for example <code>OpenDPDDpdGru</code>); a name that is already a function, class or file on the path is refused so that a generated file cannot shadow another. <code>Execution="offline_segmented"</code> (default) or <code>"streaming_stateful"</code> / <code>"streaming"</code> (<code>gru</code> and <code>gmp</code>; error <code>opendpd:NoStreamingVariant</code> otherwise). <code>Overwrite=true</code> replaces files this function wrote earlier and never any other file. The same package, name and execution always give the same bytes.</td>
+</tr>
+</tbody>
+</table>
+<p>The files, for <code>Name="ApaDpd"</code>: <code>ApaDpd.m</code>, the <code>matlab.System</code> class; <code>ApaDpdStep.m</code>, the entry point for MATLAB Coder;
+<code>ApaDpdCheck.m</code>, which runs the class on the package's golden test vector and returns <code>passed</code>, <code>max_abs_error</code> and
+<code>tolerance_abs</code> (at most <code>1e-5</code>); and <code>README_ApaDpd.md</code> with the provenance (package SHA-256, run, evidence type) and the
+limits. Every file says in a comment which package it came from.</p>
+<pre><code class="language-matlab">model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);
+r = opendpd.generateCode(model, &quot;apa-dpd-class&quot;, Name=&quot;ApaDpd&quot;, Execution=&quot;streaming&quot;);
+addpath(r.Folder)
+ApaDpdCheck()                                      % passed = true: the class computes the model as OpenDPD did
+dpd = ApaDpd;  u = dpd(chunk);                     % complex single column; the state is kept between calls, reset(dpd) clears it
+codegen ApaDpdStep -args {coder.typeof(complex(single(0)), [Inf 1])}      % MATLAB Coder: a MEX function (or a library)
+</code></pre>
+<p>In Simulink add a <em>MATLAB System</em> block and set its <strong>System object name</strong> to the class name. The block takes a vector
+(a frame) or one sample per time step and returns a complex single column; both <em>Interpreted execution</em> and <em>Code
+generation</em> work. <code>examples/opendpdSimulink.m</code> builds a DPD-then-PA transmit chain this way and compares it with
+<code>opendpd.apply</code>.</p>
+<p><strong>Choose the execution to match how the block is fed.</strong> The default of <code>opendpd.generateCode</code> stays <code>offline_segmented</code>
+(<code>opendpd.apply</code>'s <code>auto</code> does not apply to it: a generated class is fed in whatever frames you choose). <code>offline_segmented</code> cuts every call into segments of
+<code>nperseg</code> samples with a zero state at the start of each, because that is how OpenDPD scored the run: a frame of exactly
+<code>nperseg</code> samples is one segment, but feeding it <em>one sample per time step</em> makes every sample its own segment with a zero
+state, which is not the model. For sample-by-sample or frame-by-frame processing of a <code>gru</code> or <code>gmp</code> use
+<code>Execution="streaming"</code>; <code>tres_gru</code>, <code>mp_ls</code> and <code>gmp_ls</code> have no streaming variant and need whole frames. A class is
+generated for one execution; generate both if you need both.</p>
+<p>What was checked, and on what (MATLAB R2026a, Linux, one machine): for the six small packages in <code>tests/data</code>, each class
+equals <code>opendpd.apply</code> to within <code>1e-12</code> on waveforms of 1 to hundreds of samples and on any chunking (observed: identical),
+passes its own golden check, builds with MATLAB Coder as a MEX function (variable-size input for every class; fixed-size
+frames, single samples and double input for the streaming <code>gru</code>), reproduces the golden vector from the MEX function, and
+runs in a MATLAB System block in both simulation modes on a frame (a DPD then PA chain of streaming <code>gru</code> classes, one
+sample per time step, equals the MATLAB chain). Not checked: other MATLAB releases and operating
+systems, C/C++ libraries and embedded targets, GPU Coder, HDL Coder, fixed-point conversion, and packages larger than the
+fixtures. The arithmetic is double precision on single-rounded inputs, like the MATLAB runtime: this is not a fixed-point
+or HDL-ready design, and it is not a statement about real-time speed.</p>
+<p><strong>Safety.</strong> The generated files are code that you will run. The generator puts only numbers it formatted and short,
+character-restricted provenance text from the package into them, never anything else from the manifest, and refuses
+a package with a weight that is not finite or with more than 250 000 numbers (use <code>opendpd.apply</code> for those). A package
+from an unknown source is still a download from an unknown source: compare <code>model.SHA256</code> with the value you were given
+before you generate code from it.</p>
+<h2 id="fixed-point-deployment-packages-check-an-implementation-bit-for-bit">Fixed-point deployment packages: check an implementation bit for bit</h2>
+<p><code>opendpd deploy RUN_ID --workspace WORKSPACE --out deploy.zip</code> (or the Studio's Deployment panel) writes a <code>fixed-point-v1</code>
+package for a one-layer <code>gru</code> run: quantised integer weights, six golden vectors (inputs, outputs and the state after every
+sample) and a C99 reference that was replayed against them. <code>opendpd.load</code> reads it as an <code>opendpd.FixedModel</code>, which executes
+the specification's GRU (<code>docs/protocols/fixed-point-v1.md</code>) in plain MATLAB. The integers are held exactly in double
+precision, so there is no Python, no compiler and no Fixed-Point Designer in the loop. Its purpose is to be a second,
+independent implementation to check against, and a source of expected values for your own implementation (HLS, RTL, firmware).</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>model = opendpd.load(file)</code></td>
+<td>An <code>opendpd.FixedModel</code>. Properties: <code>Manifest</code> (specification, run, golden index, the package's own verification and report), <code>Source</code>, <code>SHA256</code>.</td>
+</tr>
+<tr>
+<td><code>report = opendpd.verify(model)</code></td>
+<td>Replay the six golden vectors and compare every output sample and every state step. <code>report.status</code> is <code>"bit_exact"</code> or <code>"mismatch"</code>; <code>passed</code>, <code>cases_checked</code>, <code>samples_checked</code>; for a mismatch <code>mismatch_case</code>, <code>mismatch_sample</code> (1-based) and <code>mismatch_signal</code> (<code>"h"</code>, the state, is compared before <code>"y"</code> at the same sample, because the output is computed from it); <code>package_c99_status</code> is the verdict the package recorded for its own C99 reference.</td>
+</tr>
+<tr>
+<td><code>[yq, state, trace] = model.runInteger(xq, ...)</code></td>
+<td>Integers in, integers out. <code>xq</code> is N-by-2 in the input format (larger values saturate, as in the Python reference; the C99 reference expects inputs already in range); <code>yq</code> is an integer class wide enough for the output format (<code>int16</code> for 16 bits); <code>state</code> is the final state and <code>trace</code> the state after every sample. <code>State=</code> starts from a given state, <code>ResetAt=</code> lists 1-based samples before which the state is zeroed.</td>
+</tr>
+<tr>
+<td><code>[y, info] = opendpd.apply(model, x)</code></td>
+<td>A waveform through the integer model: the input is rounded to single, multiplied by <code>2^frac</code> of the input format, rounded half away from zero and saturated; the output integers are divided by <code>2^frac</code> of the output format. The state starts at zero. The streaming reference is the only execution a fixed-point model has (<code>Execution="offline_segmented"</code> is refused, <code>ChunkSamples</code> does not change the result).</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-matlab">model = opendpd.load(&quot;deploy.zip&quot;);
+report = opendpd.verify(model)                      % status &quot;bit_exact&quot;: this MATLAB release computes the package's integers
+[yq, state, trace] = model.runInteger(xq);          % expected outputs and states for your own implementation
+y = opendpd.apply(model, xTest);                    % float in, float out: what the quantised model does to a waveform
+</code></pre>
+<p>What a pass shows and what it does not: this MATLAB release reproduces, bit for bit, every output and state of the six golden
+vectors that the package carries and that Python computed, and <code>package_c99_status</code> says that the C99 reference did too. It
+does not show that the specification is right, that the quantised model is good for your amplifier (the package's report
+lists the quality loss on the test split), or that a hardware implementation is correct. The golden vectors are part of the
+package, so a package that carries a few trivial ones passes trivially: <code>report.samples_checked</code> says how much was replayed, and
+<code>runInteger</code> gives you the expected values for stimulus of your own. A package from an unknown source is
+read like a model package: only the known file names (<code>manifest.json</code>, <code>spec.json</code>, <code>weights.json</code>, <code>README.md</code>, three C
+sources under <code>c/</code> and five files for each of the six golden cases the specification names), every file hashed against the
+manifest, the manifest listing exactly the files that are in the archive and the hashes it gives the golden vectors being the
+hashes of their files, a hard size limit per entry that depends on what the file is, no path from the archive used, and the C
+sources checked against their hashes but never compiled or run by the toolbox. The JSON files are measured before they are
+parsed, because <code>jsondecode</code> ends the MATLAB process with a segmentation fault on a text nested tens of thousands of levels deep,
+needs several hundred bytes of memory per array element and takes quadratic time on a long number: a file that nests more than
+8 levels, holds more array elements and object members than the hidden size and the table limit allow, or has a number of more
+than 64 characters, is refused with <code>opendpd:Package</code> before it is parsed. The
+manifest is checked member by member (only the members the format defines, each of the type the format defines, so a logical,
+a one-character string or an array of character codes cannot stand in for a number or a name) and the control characters in
+its text (escape sequences, bells, carriage returns) are replaced by <code>?</code> before anyone can display it. The same measuring and
+text cleaning protect <code>opendpd.load</code> of a model package.</p>
+<p>What the toolbox accepts in a <code>fixed-point-v1</code> package (the limits are far above what OpenDPD writes: 6 to 24 hidden units,
+tables of 4096 and 2048 entries, about 72 thousand golden samples):</p>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hidden units</td>
+<td>512 (the JSON of the recurrent matrix alone then needs 0.3 GB to parse)</td>
+</tr>
+<tr>
+<td>Entries of one lookup table</td>
+<td>65,536</td>
+</tr>
+<tr>
+<td>Golden samples in all six cases</td>
+<td>2,097,152 (replaying the largest package the limits allow takes 20 to 40 s, 12 to 150 microseconds per sample depending on the hidden size)</td>
+</tr>
+<tr>
+<td>Size of <code>manifest.json</code>, <code>spec.json</code>, <code>weights.json</code>, a <code>meta.json</code></td>
+<td>4 MB, 1 MB, 32 MB, 1 MB</td>
+</tr>
+<tr>
+<td>Size of one <code>h_trace.i16</code> (2 bytes per hidden unit and sample), of one C source</td>
+<td>160 MB, 32 MB</td>
+</tr>
+<tr>
+<td>Nesting of any JSON file</td>
+<td>8 levels</td>
+</tr>
+<tr>
+<td>Length of a number or word (<code>true</code>, <code>null</code>) in any JSON file</td>
+<td>64 characters (OpenDPD writes at most 21)</td>
+</tr>
+</tbody>
+</table>
+<p>Every format is taken from the package, never assumed, and the toolbox refuses what it cannot compute exactly: words wider
+than 16 bits (inputs, state, outputs, weights, table values), a pre-activation wider than 32 bits, an accumulator wider than
+53 bits (what double precision holds), weights that are not whole numbers in their word, tables of the wrong length, a rule
+text that differs from the specification's, and any package for which a sum, product or shift could leave the range below
+2^53. It also refuses formats that need a shift of more than 62 places or a value of 2^63 or more: the Python and C99
+references hold integers in 64 bits (numpy raises for a right shift of 63 places or more, C leaves it undefined, and a left
+shift that reaches 2^63 wraps in numpy and is undefined in C), so for such a format there is no reference to agree with. An
+accumulator that reaches its declared width raises <code>opendpd:FixedOverflow</code>, as the Python reference does.</p>
+<p><code>opendpd.generateCode</code> does not accept a <code>FixedModel</code> (error <code>opendpd:CodegenFixedPoint</code>): the package already carries a
+generated C99 reference, and a MATLAB fixed-point or HDL design is not provided.</p>
+<p>What was checked (MATLAB R2026a, Linux, one machine): two real packages written by <code>opendpd deploy</code>'s code path, one with the
+default specification and one in which every format differs (14-bit input, 14-bit state with 13 fractional bits, 14-bit output with 11, 12-bit weights, a 28-bit
+pre-activation, a 40-bit accumulator, coarser tables), both with a C99 verdict of <code>bit_exact</code>, reproduce all six golden vectors
+(5,582 samples per package, outputs and states); a production-size package (24 hidden units, 72,448 golden samples) verifies in
+1.3 s (about 18 us per sample); the kernel equals an independent scalar <code>int64</code> implementation of the specification on 24
+random sets of formats and weights; the kernel builds with MATLAB Coder and the MEX function reproduces the golden vectors of both packages.
+Seeded faults in the arithmetic, the reader and the entry points were each caught by at least one test (see the 2.4.0 release
+notes for the count). Not checked: other MATLAB releases and operating systems, a <code>fi</code> or HDL Coder implementation (none is provided),
+packages whose weights come from a run that was trained longer than the fixtures' one epoch, and any hardware.</p>
+<h2 id="measured-captures-opendpdlab">Measured captures: <code>opendpd.lab</code></h2>
+<p><code>opendpd.lab.Session</code> supervises a measurement made by <strong>your</strong> instrument code. RF stays off until a named person arms
+the session, every limit is checked before anything is sent, and every abnormal path - an error in your functions, a
+timeout, a lost link, a capture that is empty or not finite, Ctrl+C, a failed RF-off - switches RF off and leaves the
+session <em>tripped</em>, which cannot be armed again. It follows OpenDPD's Python interlock (<code>opendpd/instruments/safety.py</code>,
+<code>docs/architecture/instruments.md</code>); the instrument adapter is a pair of function handles, so the code your laboratory
+already has (VISA, a vendor driver, a remote laboratory) is used as it is. No driver ships with the toolbox.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lab = opendpd.lab.Session(MeasureFcn=@f, RFOffFcn=@g, Operator="Name", ...)</code></td>
+<td>A disarmed session. <code>f(u, fs)</code> plays the complex baseband signal <code>u</code> (digital full scale 1.0) at sample rate <code>fs</code> and returns the captured complex vector or an N-by-2 <code>[I Q]</code>; it is called as <code>f(u)</code> when <code>measure</code> gets no <code>SampleRate</code>. <code>g()</code> switches the output off: required, idempotent, no default. Optional: <code>HeartbeatFcn</code> (returns when the link is alive, errors otherwise), <code>PowerCalibration(u)</code> (the dBm that playing <code>u</code> produces, one finite number; for a safety ceiling give peak power), <code>MaxPeak=1</code>, <code>MaxOutputPower_dBm</code> (none), <code>Timeout=30</code> seconds, <code>RFOffAfterMeasure=true</code>, <code>Name</code>, <code>Description</code>.</td>
+</tr>
+<tr>
+<td><code>lab = opendpd.lab.Session(Instrument=opendpd.lab.MockInstrument())</code></td>
+<td>A dry-run session around a fixed synthetic PA. It emits nothing, arms with a name alone, and records <code>mock: true</code> everywhere. For learning the procedure and testing your scripts; what it returns is never evidence about an amplifier. The class is sealed, so a subclass that drives hardware cannot pass as the mock.</td>
+</tr>
+<tr>
+<td><code>arm(lab)</code>, <code>arm(lab, "Name")</code></td>
+<td>A named person arms the session (an empty name is refused). A session built from functions also needs the environment variable <code>OPENDPD_ALLOW_RF_OUTPUT=1</code>, which only an approved laboratory session sets: this toolbox, its tests and automated tooling never set it, and its tests do not run when it is set.</td>
+</tr>
+<tr>
+<td><code>y = measure(lab, u, SampleRate=fs, RequestedPower_dBm=p)</code></td>
+<td>Refuses unless armed, and before anything is sent refuses a signal that is empty, not finite, not a vector or real N-by-2, whose peak exceeds <code>MaxPeak</code>, or whose power exceeds <code>MaxOutputPower_dBm</code> (the larger of the calibration and <code>RequestedPower_dBm</code>). Then calls your <code>MeasureFcn</code> and returns the capture as a complex column. Stricter than the Python interlock: with a power ceiling set and no way to know the power, it refuses. RF is switched off after the measurement unless <code>RFOffAfterMeasure=false</code>.</td>
+</tr>
+<tr>
+<td><code>disarm(lab)</code>, <code>abort(lab, reason)</code></td>
+<td>RF off. <code>abort</code> also trips the session; <code>disarm</code> does not clear a trip. Deleting a session that is still armed switches RF off.</td>
+</tr>
+<tr>
+<td><code>r = record(lab)</code>, <code>record(lab, Compact=true)</code>, <code>saveRecord(lab, file)</code></td>
+<td>The record: operator, limits, the SHA-256 of every played and captured signal (float32 interleaved I/Q, the hash Python session records use), the log of every state change, whether the instrument was a mock. <code>Compact=true</code> fits a dataset's 2000-character notes (free text is cut: operator at 100 characters, trip reason at 200) and carries the SHA-256 of the complete record, which <code>saveRecord</code> writes as JSON and returns <code>file</code> and <code>sha256</code> for.</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-matlab">lab = opendpd.lab.Session(MeasureFcn=@myMeasure, RFOffFcn=@myRFOff, Operator=&quot;Your Name&quot;, ...
+    MaxPeak=0.9, MaxOutputPower_dBm=30, PowerCalibration=@myPeakPower_dBm, Timeout=60);
+% The next line needs OPENDPD_ALLOW_RF_OUTPUT=1, which you set only in an approved laboratory session.
+arm(lab);
+y = measure(lab, u, SampleRate=fs);                % limits first, then myMeasure(u, fs); RF off afterwards
+disarm(lab);
+ds = opendpd.importIQ(p, u, y, SampleRate=fs, Bandwidth=bw, SegmentSamples=2048, Origin=&quot;measured&quot;, ...
+    Source=record(lab, Compact=true));              % the dataset keeps who armed the session and what was played
+saveRecord(lab, &quot;session-1.json&quot;);                 % the complete record, next to your data
+</code></pre>
+<p><strong>What MATLAB cannot do.</strong> It cannot interrupt a running function, so <code>Timeout</code> is checked when <code>MeasureFcn</code> returns,
+and the heartbeat is checked before and after a measurement, not during it. Give your instrument calls their own time
+limits (for example the <code>Timeout</code> of a <code>visadev</code>) so that a hung instrument returns by itself. Ctrl+C trips the session
+through an <code>onCleanup</code> guard that MATLAB documents; that path was not automated in tests (<code>matlab -batch</code> did not react
+to SIGINT, so the cleanup could not be exercised). If <code>RFOffFcn</code> itself fails the session warns (<code>opendpd:lab:RFOffFailed</code>), is tripped and says that the output may
+still be on: switch it off at the instrument.</p>
+<p><strong>What this is not.</strong> A session is a safety wrapper and a record, not a calibration: it does not align delay or gain,
+does not know your attenuators, and does not establish the amplifier's real output power unless your <code>PowerCalibration</code>
+does. It has been exercised only on the mock, with injected faults; no instrument chain has been tested with it, so the
+supervised trial that <code>docs/protocols/measured-dpd.md</code> requires is still to be done on a real bench.</p></main>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
+</body></html>

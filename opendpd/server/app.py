@@ -69,6 +69,8 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         supervisor = supervisor_factory(ws, store, **(supervisor_kwargs or {}))
         supervisor.start()
         app.state.ws, app.state.store, app.state.supervisor = ws, store, supervisor
+        from opendpd.services.matlink import MatlinkBroker
+        app.state.matlink = MatlinkBroker(ws, store)
         from opendpd.services.sweeps import SweepController
         sweeps = SweepController(ws, supervisor)
         if start_sweeps:
@@ -157,7 +159,8 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         static = static_status(request.app.state.static_dir)
         if static["problem"]:
             problems.append(static["problem"])
-        payload = {"ready": not problems, "problems": problems, "version": __version__, "frontend": static}
+        payload = {"ready": not problems, "problems": problems, "version": __version__, "frontend": static,
+                   "studio_navigation_version": 1, "matlink_protocol_version": 1}
         return JSONResponse(payload, status_code=200 if not problems else 503)
 
     @app.post("/bootstrap/mint", include_in_schema=False)
@@ -169,13 +172,18 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
         return JSONResponse({"token": token})
 
     @app.get("/bootstrap", include_in_schema=False)
-    async def bootstrap(request: Request, token: str = ""):
+    async def bootstrap(request: Request, token: str = "", next: str = "/"):
+        from opendpd.studio.navigation import valid_destination
+
+        if not valid_destination(next):
+            return JSONResponse(error_payload("invalid_destination", "Choose a supported local Studio page"),
+                                status_code=400)
         session = request.app.state.sessions.exchange(token)
         if session is None:
             return HTMLResponse(_diagnostic_page("This link is not valid for the running OpenDPD Studio server.",
                                                  "Start it again with `opendpd gui` and use the URL it prints."),
                                 status_code=401)
-        response = RedirectResponse(url="/", status_code=303)
+        response = RedirectResponse(url=next, status_code=303)
         response.set_cookie(SESSION_COOKIE, session.session_id, max_age=SESSION_MAX_AGE, httponly=True,
                             samesite="strict", path="/")
         return response
@@ -200,6 +208,8 @@ def create_app(workspace_root: Path, *, bootstrap_token: Optional[str] = None, s
     app.include_router(signal_analyzer_router, prefix=API_PREFIX)
     from opendpd.server.virtual_pa_routes import router as virtual_pa_router
     app.include_router(virtual_pa_router, prefix=API_PREFIX)
+    from opendpd.server.matlink_routes import router as matlink_router
+    app.include_router(matlink_router, prefix=API_PREFIX)
 
     # -- static frontend with SPA fallback; API paths never fall back --------------
     assets = Path(static_dir) / "assets"

@@ -68,6 +68,7 @@ nav:
       - Visualization: visualization.md
       - Signal-chain PSD plots: guides/signal-chain-spectra.md
       - API reference: api.md
+      - MATLAB toolbox preview: tutorials/matlab-toolbox.md
   - Research & deployment:
       - Choose a workflow: advanced.md
       - Research review: guides/research-review.md
@@ -146,6 +147,9 @@ not_in_nav: |
   performance/studio-2.2.8.md
   performance/arena-*.md
   performance/pa-identification-comparison.md
+  performance/matlab-parity.md
+  performance/matlab-parity-dpd.md
+  performance/matlab-apply-semantics.md
   architecture/**
   community/**
   design/**

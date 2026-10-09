@@ -1,0 +1,160 @@
+name: MATLAB toolbox
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - Matlab/**
+      - opendpd/sdk/**
+      - opendpd/services/inference.py
+      - opendpd/services/model_export.py
+      - opendpd/services/matlink.py
+      - opendpd/schemas/matlink.py
+      - opendpd/server/matlink_routes.py
+      - frontend/src/pages/MatlinkPage*
+      - scripts/build_matlab_docs.py
+      - tests/unit/test_sdk_iq.py
+      - tests/unit/test_sdk_metrics.py
+      - tests/unit/test_model_export.py
+      - tests/unit/test_matlab_toolbox_metadata.py
+      - scripts/make_matlab_model_fixtures.py
+      - scripts/make_matlab_fixed_fixture.py
+      - tests/unit/test_fixed_point_package.py
+      - tests/unit/test_studio_navigation.py
+      - tests/unit/test_matlink.py
+      - tests/integration/test_matlink_*.py
+      - tests/integration/test_sdk_matlab.py
+      - tests/integration/test_sdk_fit.py
+      - tests/integration/test_apply_parity.py
+      - .github/workflows/matlab-toolbox.yml
+  workflow_dispatch:
+    inputs:
+      release:
+        description: MATLAB release to test and package
+        required: true
+        default: R2026a
+        type: choice
+        options: [R2024b, R2025b, R2026a, R2026b]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  toolbox:
+    name: Toolbox (${{ matrix.os }}, ${{ inputs.release || 'R2026a' }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    # Windows has not been seen green yet: its result is reported but does not block until it has been, then flip
+    # `experimental` below. The Linux job is the gate. Release compatibility other than R2026a is checked by
+    # starting this workflow by hand with another release.
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # With base MATLAB only, 35 of the 523 tests skip themselves. The Linux job installs the products that 23 of them need
+          # (Simulink for the MATLAB System block tests; Communications, LTE and RF Toolbox for the three comparisons with
+          # MathWorks tools, with the Signal Processing and DSP System Toolbox those use), and a test skipped for any other reason is
+          # an error (see buildfile.m). The other 12 build MEX functions with MATLAB Coder, a transformation product that MathWorks
+          # does not license on public-project CI without a batch licensing token (setup-matlab README): they run on the
+          # development machine only, until a token with a MATLAB Coder entitlement is provided as the secret MLM_LICENSE_TOKEN,
+          # MATLAB_Coder is added to the products and allow_skipped is emptied.
+          - os: ubuntu-22.04
+            experimental: false
+            products: Simulink Communications_Toolbox LTE_Toolbox RF_Toolbox Signal_Processing_Toolbox DSP_System_Toolbox
+            require_all: "1"
+            allow_skipped: matlabCoder
+          - os: windows-2022
+            experimental: true
+            products: ""
+            require_all: ""
+            allow_skipped: ""
+    env:
+      # Optional for public repositories; required by MathWorks for private CI.
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+      MPLBACKEND: Agg
+      TQDM_DISABLE: "1"
+      OPENDPD_REQUIRE_ALL_TESTS: ${{ matrix.require_all }}
+      OPENDPD_ALLOW_SKIPPED: ${{ matrix.allow_skipped }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build Studio
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+      - name: Install PyTorch (CPU)
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install and verify Python SDK
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pip install Markdown
+          python scripts/build_matlab_docs.py --check
+          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_fixed_point_package.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
+          python -c 'import os, sys; open(os.environ["GITHUB_ENV"], "a").write("OPENDPD_MATLAB_PYTHON=" + sys.executable + "\n")'
+      - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
+        with:
+          release: ${{ inputs.release || 'R2026a' }}
+          products: ${{ matrix.products }}
+          cache: true
+      - name: Run MATLAB tests and build toolbox
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
+        with:
+          command: cd(fullfile('Matlab','toolbox')); buildtool package
+      - name: Install package and run example in a fresh MATLAB session
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
+        with:
+          command: >-
+            packages = dir(fullfile(pwd,'Matlab','toolbox','dist','*.mltbx'));
+            assert(isscalar(packages), 'Expected exactly one packaged toolbox');
+            packageFile = fullfile(packages.folder, packages.name);
+            cd(tempdir);
+            addonRoot = [tempname '-addons']; mkdir(addonRoot);
+            s = settings; s.matlab.addons.InstallationFolder.TemporaryValue = addonRoot;
+            installed = matlab.addons.toolbox.installToolbox(packageFile);
+            cleanup = onCleanup(@() matlab.addons.toolbox.uninstallToolbox(installed));
+            toolboxRoot = fileparts(fileparts(which('opendpd.setup')));
+            assert(startsWith(toolboxRoot,addonRoot));
+            model = opendpd.load(fullfile(toolboxRoot,'tests','data','gru-dpd.opendpd.zip'));
+            assert(opendpd.verify(model).passed);
+            assert(~strcmp(char(pyenv().Status),'Loaded'), 'running a model package must not load Python');
+            generated = opendpd.generateCode(model, fullfile(tempname,'generated'), Name='CiDpd', Execution='streaming');
+            addpath(generated.Folder); assert(CiDpdCheck().passed); rmpath(generated.Folder);
+            fixed = opendpd.load(fullfile(toolboxRoot,'tests','data','gru-pa.fixed-point-v1.zip'));
+            assert(strcmp(opendpd.verify(fixed).status,'bit_exact'));
+            rng(12); x = complex(single(randn(4096,1)), single(randn(4096,1)))/8; y = x - single(0.2)*x.*abs(x).^2;
+            [dpd, pa] = opendpd.fit(x, y, Workspace=fullfile(tempname,'fit'), SampleRate=80e6, Bandwidth=20e6, SegmentSamples=128, PAParameters=struct('hidden_size',4), Training=struct('epochs',1,'frame_length',32,'frame_stride',32,'batch_size',16,'batch_size_eval',16), Device='cpu', PythonExecutable=string(getenv('OPENDPD_MATLAB_PYTHON')), Verbose=false);
+            assert(opendpd.verify(dpd).passed && opendpd.verify(pa).passed);
+            assert(~strcmp(char(pyenv().Status),'Loaded'), 'fit must not load Python into MATLAB');
+            opendpd.setup(PythonExecutable=string(getenv('OPENDPD_MATLAB_PYTHON')));
+            assert(isfile(opendpd.help(OpenBrowser=false)));
+            p = opendpd.openProject(string(tempname));
+            link = opendpd.studio(p,OpenBrowser=false);
+            assert(link.Connected); opendpd.disconnect(link);
+            opendpd.closeProject(p,StopService=true);
+            addpath(fullfile(toolboxRoot,'examples'));
+            opendpdQuickstart;
+            clear cleanup;
+            assert(isempty(matlab.addons.toolbox.installedToolboxes));
+      - name: Upload package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: OpenDPD-toolbox-${{ runner.os }}-${{ inputs.release || 'R2026a' }}
+          path: Matlab/toolbox/dist/*.mltbx
+          if-no-files-found: error
