@@ -171,9 +171,7 @@ def test_auto_is_streaming_where_a_variant_exists_and_offline_elsewhere(runs, wa
     job = runs[key][role]
     chosen = "streaming_stateful" if key in ("gru", "gmp") else "offline_segmented"
     default, meta = job.apply(waveform)
-    named, _ = job.apply(waveform, execution="auto")
     explicit, explicit_meta = job.apply(waveform, execution=chosen)
-    np.testing.assert_array_equal(default, named)
     np.testing.assert_array_equal(default, explicit)
     assert meta["execution"] == chosen and meta["execution_requested"] == "auto"
     assert meta["output_sha256"] == explicit_meta["output_sha256"]
@@ -185,6 +183,9 @@ def test_auto_is_streaming_where_a_variant_exists_and_offline_elsewhere(runs, wa
 def test_auto_differs_from_the_scored_form_for_a_stateful_model(runs, waveform):
     job = runs["gru"][1]
     auto, meta = job.apply(waveform)
+    named, named_meta = job.apply(waveform, execution="auto")                  # naming auto and leaving it out are one request
+    np.testing.assert_array_equal(auto, named)
+    assert named_meta["execution_requested"] == "auto" and named_meta["output_sha256"] == meta["output_sha256"]
     scored, _ = job.apply(waveform, execution="offline_segmented")
     assert meta["execution"] == "streaming_stateful" and "segment_samples" not in meta
     assert np.abs(auto[NPERSEG:] - scored[NPERSEG:]).max() > 1e-6
