@@ -220,6 +220,22 @@ class Project:
         self._cookies.clear()
         self._closed = True
 
+    @property
+    def started_service(self):
+        """True when this connection launched the workspace service that is still running; False when it attached to
+        one that was already there (started by another connection, or by Studio itself)."""
+        if self._process is None or self._process.poll() is not None:
+            return False
+        from opendpd.studio.launcher import Lock, LOCK_FILE
+
+        lock = Lock.read(self.workspace / LOCK_FILE)
+        return lock is not None and lock.pid == self._process.pid
+
+    def active_run_count(self):
+        """Runs that are queued, running or being cancelled in this workspace, from any client."""
+        return sum(self._request("GET", f"/runs/count?status={status}")["count"]
+                   for status in ("queued", "running", "cancel_requested"))
+
     def studio_url(self, page="home", run_id=None):
         """Private local bootstrap URL. Do not log or share it."""
         from opendpd.studio.launcher import Lock, LOCK_FILE

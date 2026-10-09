@@ -74,7 +74,7 @@ def _public_functions():
 
 def test_every_public_function_is_documented_and_listed():
     top, metrics = _public_functions()
-    assert {"apply", "waveform", "export", "load", "verify"} <= set(top) and {"evm", "aclr", "evaluate"} <= set(metrics)
+    assert {"apply", "waveform", "export", "load", "verify", "fit"} <= set(top) and {"evm", "aclr", "evaluate"} <= set(metrics)
     reference, contents = _text("docs", "reference.md"), _text("Contents.m")
     for name in top:
         assert f"opendpd.{name}(" in reference, f"{name} is not in the function reference"
@@ -128,3 +128,19 @@ def test_the_model_runtime_runs_no_python_and_loads_nothing():
         assert not forbidden.search(text), f"{path.name} calls something that can run code"
         assert not re.search(r"(?<![A-Za-z0-9_.])py\.", text), f"{path.name} refers to Python"
         assert not re.search(r"(?<![A-Za-z0-9_.])bridge\s*\(", text), f"{path.name} calls the bridge"
+
+
+def test_the_process_transport_never_calls_python_inside_matlab():
+    """``fit`` starts Python as a child process; nothing on that path may use MATLAB's Python integration.
+
+    Reading ``pyenv().Executable`` is allowed (it does not load Python); the ``py.`` namespace and the bridge are not.
+    ``TestFit`` also checks that the pyenv status does not change, but that check is vacuous in a session where an earlier
+    test already loaded Python, so this scan is the one that always holds."""
+    files = [TOOLBOX / "+opendpd" / "fit.m"]
+    files += [TOOLBOX / "+opendpd" / "+internal" / name for name in
+              ("runPython.m", "pythonExecutable.m", "writeNpy.m", "iqMatrix.m", "ProgressPrinter.m", "withoutMatlabEntries.m")]
+    for path in files:
+        text = path.read_text(encoding="utf-8")
+        assert not re.search(r"(?<![A-Za-z0-9_.])py\.", text), f"{path.name} refers to Python"
+        assert not re.search(r"(?<![A-Za-z0-9_.])bridge\s*\(", text), f"{path.name} calls the bridge"
+        assert not re.search(r"pyenv\s*\(\s*[^)\s]", text), f"{path.name} configures pyenv"

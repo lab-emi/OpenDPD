@@ -130,6 +130,23 @@ training-run report alongside `apply`'s waveform and separately records the
 export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
 to `apply` does not update that stored report or establish hardware performance.
 
+## One call from a capture to models: `fit`
+
+When you have a paired capture and want models that run in MATLAB, `fit` does the whole sequence and starts Python as a
+separate process (no `pyenv`):
+
+```matlab
+[dpd, pa, report] = opendpd.fit(x, y, Workspace="my-pa-workspace", SampleRate=fs, Bandwidth=bw, ...
+    SegmentSamples=2048, PAModel="gru", DPDModel="gru");
+u = opendpd.apply(dpd, xNew);        % the predistorted PA input, plain MATLAB
+yHat = opendpd.apply(pa, u);         % the PA model's output for it
+report.DPD.Result                    % the stored evaluation result of the DPD run
+```
+
+The runs are ordinary runs in `Workspace`: open it in Studio (`opendpd.studio("my-pa-workspace")`) to see the curves
+and spectra. Use the project API (`openProject`, `importIQ`, `trainPA`, `trainDPD`) when you need finer control. See the
+[function reference](reference.html#one-call-fit) for the options, how Python is found and what is checked first.
+
 ## Score a capture without training
 
 Metrics need no project or server. Play `opendpd.waveform` through your amplifier, capture its output and score it

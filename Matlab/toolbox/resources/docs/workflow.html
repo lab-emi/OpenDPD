@@ -109,6 +109,18 @@ sidecar for its execution semantics. The quickstart saves the segmented
 training-run report alongside <code>apply</code>'s waveform and separately records the
 export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
 to <code>apply</code> does not update that stored report or establish hardware performance.</p>
+<h2 id="one-call-from-a-capture-to-models-fit">One call from a capture to models: <code>fit</code></h2>
+<p>When you have a paired capture and want models that run in MATLAB, <code>fit</code> does the whole sequence and starts Python as a
+separate process (no <code>pyenv</code>):</p>
+<pre><code class="language-matlab">[dpd, pa, report] = opendpd.fit(x, y, Workspace=&quot;my-pa-workspace&quot;, SampleRate=fs, Bandwidth=bw, ...
+    SegmentSamples=2048, PAModel=&quot;gru&quot;, DPDModel=&quot;gru&quot;);
+u = opendpd.apply(dpd, xNew);        % the predistorted PA input, plain MATLAB
+yHat = opendpd.apply(pa, u);         % the PA model's output for it
+report.DPD.Result                    % the stored evaluation result of the DPD run
+</code></pre>
+<p>The runs are ordinary runs in <code>Workspace</code>: open it in Studio (<code>opendpd.studio("my-pa-workspace")</code>) to see the curves
+and spectra. Use the project API (<code>openProject</code>, <code>importIQ</code>, <code>trainPA</code>, <code>trainDPD</code>) when you need finer control. See the
+<a href="reference.html#one-call-fit">function reference</a> for the options, how Python is found and what is checked first.</p>
 <h2 id="score-a-capture-without-training">Score a capture without training</h2>
 <p>Metrics need no project or server. Play <code>opendpd.waveform</code> through your amplifier, capture its output and score it
 with the code Studio uses:</p>

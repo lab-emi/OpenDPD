@@ -6,7 +6,8 @@ does not import PyTorch or start a service. See ``Matlab/toolbox/README.md``.
 
 from .client import Job, Project, SDKError, open_project
 from .diagnostics import doctor
+from .workflow import fit
 
 API_VERSION = 1
 
-__all__ = ["API_VERSION", "Job", "Project", "SDKError", "doctor", "open_project"]
+__all__ = ["API_VERSION", "Job", "Project", "SDKError", "doctor", "fit", "open_project"]

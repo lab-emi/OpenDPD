@@ -228,6 +228,89 @@ real N×2 I/Q matrices.</p>
 </table>
 <p><code>job.ID</code> and <code>job.Project.Workspace</code> identify a run for reconnection. Complete
 settings, artifacts and logs remain in the workspace and Studio.</p>
+<h2 id="one-call-fit">One call: fit</h2>
+<p><code>opendpd.fit</code> does what the project API does in order - import the capture, train a PA model, train a DPD through it,
+export both - in one call, and returns the two models as <code>opendpd.Model</code> objects that run in plain MATLAB.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[dpd, pa, report] = opendpd.fit(x, y, Workspace=w, SampleRate=fs, Bandwidth=bw, SegmentSamples=n, ...)</code></td>
+<td><code>x</code> is the PA input and <code>y</code> the PA output (complex vectors of one length; nothing is normalised). <code>dpd</code> and <code>pa</code> are loaded model packages (<code>opendpd.apply(dpd, xNew)</code>, streaming for <code>gru</code> and <code>gmp</code>). <code>report</code> has <code>Workspace</code>, <code>Dataset</code>, <code>PA</code> and <code>DPD</code> (<code>RunID</code>, <code>Result</code>, <code>Package</code> file, <code>Verify</code>), <code>Seconds</code>, <code>Python</code> and <code>Job</code>.</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default / requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Workspace</code></td>
+<td>Required. The folder for datasets, runs and packages; created if missing. No default, so results never land somewhere you did not choose. Every step is an ordinary run you can open in Studio.</td>
+</tr>
+<tr>
+<td><code>SampleRate</code>, <code>Bandwidth</code>, <code>SegmentSamples</code></td>
+<td>Required, as for <code>importIQ</code>.</td>
+</tr>
+<tr>
+<td><code>DPDModel</code>, <code>PAModel</code></td>
+<td><code>"gru"</code> for both. Both must be exportable (<code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code>), and <code>PAModel</code> must be gradient-trained (<code>gru</code>, <code>tres_gru</code>, <code>gmp</code>) because the DPD is trained through it. Checked before anything trains.</td>
+</tr>
+<tr>
+<td><code>DPDParameters</code>, <code>PAParameters</code>, <code>Training</code></td>
+<td>Empty structs: OpenDPD defaults. <code>Training</code> is shared by both runs (a DPD must use its surrogate's seed and frame length).</td>
+</tr>
+<tr>
+<td><code>Device</code>, <code>DeviceIndex</code>, <code>NumThreads</code>, <code>Profile</code></td>
+<td>As for <code>trainPA</code>.</td>
+</tr>
+<tr>
+<td><code>Name</code>, <code>Subchannels</code>, <code>GuardSamples</code>, <code>Origin</code>, <code>AmplitudeUnits</code></td>
+<td>As for <code>importIQ</code>.</td>
+</tr>
+<tr>
+<td><code>OutputFolder</code></td>
+<td><code>&lt;Workspace&gt;/exports</code>; packages are <code>&lt;run id&gt;.opendpd.zip</code>.</td>
+</tr>
+<tr>
+<td><code>Timeout</code></td>
+<td>Seconds; none by default. When it passes the running job is cancelled and the call fails with <code>opendpd:Timeout</code>.</td>
+</tr>
+<tr>
+<td><code>PythonExecutable</code>, <code>SourceDirectory</code></td>
+<td>See below. <code>SourceDirectory</code> is a development checkout put on <code>PYTHONPATH</code>.</td>
+</tr>
+<tr>
+<td><code>Verbose</code></td>
+<td><code>true</code>: print the import, the epochs (about ten lines per model) and the exports.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Python is a separate process.</strong> <code>fit</code> starts <code>python -m opendpd.sdk._fit</code> as a child of MATLAB and exchanges files with
+it; MATLAB's Python integration (<code>pyenv</code>, the <code>py.</code> namespace) is not used or loaded. The Python version therefore need
+not be one your MATLAB release supports, and a crash in Python cannot take MATLAB down. The interpreter is the first
+that exists of: <code>PythonExecutable</code>, the <code>OPENDPD_PYTHON</code> environment variable, the one <code>opendpd.studio</code> or
+<code>opendpd.setup</code> remembered, MATLAB's configured <code>pyenv</code> (reading the setting does not load Python). MATLAB's own library
+folders are removed from the child's library path (<code>LD_LIBRARY_PATH</code>, <code>DYLD_*</code>, and <code>PATH</code> on Windows) so that system
+libraries are not replaced by MATLAB's; other entries stay. Ctrl+C asks the running job to cancel and returns once it has
+stopped (up to a minute, then the process is ended). Verified on R2026a with Python 3.13 on Linux, in a fresh session
+that left <code>pyenv</code> unloaded; Windows and macOS are not verified.</p>
+<p><strong>The workspace service.</strong> <code>fit</code> works through the workspace's Studio service. If none is running it starts one and stops it
+when the call ends. A service that was already running - a Studio you have open on that workspace, or another session's -
+is used and left running, and so is one that still has other runs; <code>fit</code> only stops what it started. If the service it
+started does not stop promptly, <code>fit</code> still returns its result and warns (<code>opendpd:fit:ServiceNotStopped</code>).</p>
+<p>The exported models are verified against their golden vectors on this MATLAB release before <code>fit</code> returns; if one does
+not reproduce OpenDPD's outputs, <code>fit</code> fails with <code>opendpd:Verification</code> and names the package. Errors from Python come
+back with its message: <code>opendpd:FitFailed</code>, <code>opendpd:Cancelled</code>, <code>opendpd:Timeout</code>.</p>
 <h2 id="metrics-without-a-run">Metrics without a run</h2>
 <p>These need no project, workspace or server: they call the code that Studio and the run service use, so a number
 computed here equals the one in a Studio result for the same signal and settings. Metadata that changes a number

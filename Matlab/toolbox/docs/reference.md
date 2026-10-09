@@ -97,6 +97,47 @@ Training options shared by `trainPA` and `trainDPD`:
 `job.ID` and `job.Project.Workspace` identify a run for reconnection. Complete
 settings, artifacts and logs remain in the workspace and Studio.
 
+## One call: fit
+
+`opendpd.fit` does what the project API does in order - import the capture, train a PA model, train a DPD through it,
+export both - in one call, and returns the two models as `opendpd.Model` objects that run in plain MATLAB.
+
+| Call | Returns / behavior |
+| --- | --- |
+| `[dpd, pa, report] = opendpd.fit(x, y, Workspace=w, SampleRate=fs, Bandwidth=bw, SegmentSamples=n, ...)` | `x` is the PA input and `y` the PA output (complex vectors of one length; nothing is normalised). `dpd` and `pa` are loaded model packages (`opendpd.apply(dpd, xNew)`, streaming for `gru` and `gmp`). `report` has `Workspace`, `Dataset`, `PA` and `DPD` (`RunID`, `Result`, `Package` file, `Verify`), `Seconds`, `Python` and `Job`. |
+
+| Option | Default / requirement |
+| --- | --- |
+| `Workspace` | Required. The folder for datasets, runs and packages; created if missing. No default, so results never land somewhere you did not choose. Every step is an ordinary run you can open in Studio. |
+| `SampleRate`, `Bandwidth`, `SegmentSamples` | Required, as for `importIQ`. |
+| `DPDModel`, `PAModel` | `"gru"` for both. Both must be exportable (`gru`, `tres_gru`, `gmp`, `mp_ls`, `gmp_ls`), and `PAModel` must be gradient-trained (`gru`, `tres_gru`, `gmp`) because the DPD is trained through it. Checked before anything trains. |
+| `DPDParameters`, `PAParameters`, `Training` | Empty structs: OpenDPD defaults. `Training` is shared by both runs (a DPD must use its surrogate's seed and frame length). |
+| `Device`, `DeviceIndex`, `NumThreads`, `Profile` | As for `trainPA`. |
+| `Name`, `Subchannels`, `GuardSamples`, `Origin`, `AmplitudeUnits` | As for `importIQ`. |
+| `OutputFolder` | `<Workspace>/exports`; packages are `<run id>.opendpd.zip`. |
+| `Timeout` | Seconds; none by default. When it passes the running job is cancelled and the call fails with `opendpd:Timeout`. |
+| `PythonExecutable`, `SourceDirectory` | See below. `SourceDirectory` is a development checkout put on `PYTHONPATH`. |
+| `Verbose` | `true`: print the import, the epochs (about ten lines per model) and the exports. |
+
+**Python is a separate process.** `fit` starts `python -m opendpd.sdk._fit` as a child of MATLAB and exchanges files with
+it; MATLAB's Python integration (`pyenv`, the `py.` namespace) is not used or loaded. The Python version therefore need
+not be one your MATLAB release supports, and a crash in Python cannot take MATLAB down. The interpreter is the first
+that exists of: `PythonExecutable`, the `OPENDPD_PYTHON` environment variable, the one `opendpd.studio` or
+`opendpd.setup` remembered, MATLAB's configured `pyenv` (reading the setting does not load Python). MATLAB's own library
+folders are removed from the child's library path (`LD_LIBRARY_PATH`, `DYLD_*`, and `PATH` on Windows) so that system
+libraries are not replaced by MATLAB's; other entries stay. Ctrl+C asks the running job to cancel and returns once it has
+stopped (up to a minute, then the process is ended). Verified on R2026a with Python 3.13 on Linux, in a fresh session
+that left `pyenv` unloaded; Windows and macOS are not verified.
+
+**The workspace service.** `fit` works through the workspace's Studio service. If none is running it starts one and stops it
+when the call ends. A service that was already running - a Studio you have open on that workspace, or another session's -
+is used and left running, and so is one that still has other runs; `fit` only stops what it started. If the service it
+started does not stop promptly, `fit` still returns its result and warns (`opendpd:fit:ServiceNotStopped`).
+
+The exported models are verified against their golden vectors on this MATLAB release before `fit` returns; if one does
+not reproduce OpenDPD's outputs, `fit` fails with `opendpd:Verification` and names the package. Errors from Python come
+back with its message: `opendpd:FitFailed`, `opendpd:Cancelled`, `opendpd:Timeout`.
+
 ## Metrics without a run
 
 These need no project, workspace or server: they call the code that Studio and the run service use, so a number
