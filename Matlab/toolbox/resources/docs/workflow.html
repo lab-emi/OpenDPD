@@ -148,6 +148,14 @@ for <code>comm.DPD</code>, so a memory polynomial fitted by OpenDPD can be run b
 and one <code>comm.DPD</code> stream from a zero state agree. See the <a href="reference.html#model-packages-run-a-trained-model-without-python">function
 reference</a> for what a package contains, what <code>verify</code>
 shows and what it does not, and how a package from elsewhere is read.</p>
+<p>To use the model in Simulink or with MATLAB Coder, write it as a standalone class:</p>
+<pre><code class="language-matlab">r = opendpd.generateCode(model, &quot;apa-dpd-class&quot;, Name=&quot;ApaDpd&quot;, Execution=&quot;streaming&quot;);
+addpath(r.Folder); ApaDpdCheck()                  % the golden test again, on the generated class
+</code></pre>
+<p>Add a <em>MATLAB System</em> block with the System object name <code>ApaDpd</code>, or run <code>codegen ApaDpdStep ...</code>. The example
+<code>opendpdSimulink</code> builds a DPD-then-PA transmit chain. Choose <code>streaming</code> when samples arrive one at a time or in
+frames of any size; the default restarts the state every <code>nperseg</code> samples, as in training. See the <a href="reference.html#standalone-classes-for-matlab-coder-and-simulink">function
+reference</a>.</p>
 <h2 id="measure-on-your-bench">Measure on your bench</h2>
 <p><code>opendpd.lab.Session</code> wraps the instrument code you already have so that a measurement is supervised and recorded
 (see the <a href="reference.html#measured-captures-opendpdlab">function reference</a> for the rules). Learn the procedure on the

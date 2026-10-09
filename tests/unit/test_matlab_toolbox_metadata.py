@@ -180,3 +180,32 @@ def test_the_lab_session_hashes_signals_the_way_python_session_records_do():
     assert digest == "45b6a1346b0daf8b0e93e0faf712d6245e4325c632d4007cbf186d66041d8f86"
     assert digest in _text("tests", "TestLab.m")
 
+
+
+def test_the_code_generator_is_documented_runs_nothing_and_its_kernels_call_only_each_other():
+    """``opendpd.generateCode`` writes code that users run, so its own sources are held to the rules of the runtime.
+
+    The kernels it copies into a generated class are the files of ``+runtime``; the copy drops the ``opendpd.runtime.``
+    qualifier, so a kernel that called anything else of the toolbox would produce a class that fails to run. ``TestCodegen``
+    runs the generated classes with the toolbox off the path; this scan fails in the Python CI too."""
+    reference, contents, readme = _text("docs", "reference.md"), _text("Contents.m"), _text("README.md")
+    assert "opendpd.generateCode(" in reference and re.search(r"\bgenerateCode\b", contents) and "generateCode" in readme
+    assert "examples/opendpdSimulink.m" in reference and (TOOLBOX / "examples" / "opendpdSimulink.m").is_file()
+    forbidden = re.compile(r"(?<![A-Za-z0-9_.])(load|whos|matfile|eval|evalc|evalin|feval|str2func|unzip|run|system|dos|unix|"
+                           r"urlread|webread)\s*\(")
+    for relative in (("+opendpd", "generateCode.m"), ("+opendpd", "+internal", "generateSources.m"),
+                     ("+opendpd", "+internal", "codegenMark.m")):
+        text = _text(*relative)
+        assert not forbidden.search(text), f"{relative[-1]} calls something that can run code"
+        assert not re.search(r"(?<![A-Za-z0-9_.])py\.", text), f"{relative[-1]} refers to Python"
+        assert not re.search(r"(?<![A-Za-z0-9_.])bridge\s*\(", text), f"{relative[-1]} calls the bridge"
+    kernels = {path.stem for path in (TOOLBOX / "+opendpd" / "+runtime").glob("*.m")}
+    assert {"gruLayer", "tresFeatures", "tresSkip", "mpForward", "gmpForward", "gmpPolynomialForward"} <= kernels
+    assert "gruStack" not in kernels, "the cell-array GRU stack cannot be built by MATLAB Coder; generateCode needs gruLayer"
+    for stem in kernels:
+        text = _text("+opendpd", "+runtime", f"{stem}.m")
+        for called in re.findall(r"(?<![A-Za-z0-9_.])opendpd\.([A-Za-z_.]+)\(", text):
+            assert called.startswith("runtime.") and called.split(".")[1] in kernels, f"{stem}.m calls opendpd.{called}"
+    generated = _text("+opendpd", "+internal", "generateSources.m")
+    for stem in ("gruLayer", "tresFeatures", "tresSkip", "mpForward", "gmpForward", "gmpPolynomialForward"):
+        assert f"'{stem}'" in generated, f"generateSources does not copy {stem}"

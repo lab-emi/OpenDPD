@@ -6,7 +6,8 @@ classdef Model < matlab.System
     %   y = model(chunk);  reset(model);                      % streaming, as a System object (same models)
     % Samples are not normalised or aligned: use the training dataset's units and sample rate (model.Manifest.signal).
     % Like the evaluator, input is rounded to single before it is used; apply returns a complex single column vector.
-    % The kernels in opendpd.runtime are plain MATLAB. Not verified: MATLAB Coder, Simulink MATLAB System blocks, HDL.
+    % The kernels in opendpd.runtime are plain MATLAB. For MATLAB Coder and Simulink MATLAB System blocks use
+    % opendpd.generateCode(model, folder), which writes a standalone class of the same kernels; HDL is not supported.
     properties (SetAccess = private)
         Manifest = struct()          % the package manifest (model, signal, scaling, execution, evidence, provenance)
         Source = ""                  % file the model was loaded from
@@ -127,6 +128,15 @@ classdef Model < matlab.System
             info = struct('polynomial_type', 'Memory polynomial', 'degree', obj.Kernel.K, 'memory_depth', obj.Kernel.Q, ...
                 'note', ['comm.DPD runs one continuous stream with a zero initial state; OpenDPD resets the state every ' ...
                 'nperseg samples when it scores a run, so the two agree within one segment.']);
+        end
+    end
+
+    methods (Hidden)
+        function data = codegenInputs(obj)
+            %CODEGENINPUTS What opendpd.generateCode writes a standalone class from: manifest, kernel arrays, golden vector.
+            obj.requireLoaded();
+            data = struct('Manifest', obj.Manifest, 'Kernel', obj.Kernel, 'Golden', obj.GoldenData, ...
+                'SHA256', char(obj.SHA256));
         end
     end
 

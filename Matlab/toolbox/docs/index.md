@@ -113,5 +113,6 @@ segments by default or one continuous state for `gru` and `gmp`. MATLINK
 returns saved report structs; use the script API for waveform inference and
 export. DPD reports evaluate a learned PA surrogate. Hardware performance
 requires a separate measured capture and evaluation. This preview runs on the
-local desktop; MATLAB Online, remote services and Simulink are outside its current
-scope.
+local desktop; MATLAB Online and remote services are outside its current scope. Simulink
+is supported only through the standalone classes that `opendpd.generateCode` writes from a
+model package.

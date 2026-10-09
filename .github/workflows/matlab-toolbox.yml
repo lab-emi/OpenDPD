@@ -115,6 +115,8 @@ jobs:
             model = opendpd.load(fullfile(toolboxRoot,'tests','data','gru-dpd.opendpd.zip'));
             assert(opendpd.verify(model).passed);
             assert(~strcmp(char(pyenv().Status),'Loaded'), 'running a model package must not load Python');
+            generated = opendpd.generateCode(model, fullfile(tempname,'generated'), Name='CiDpd', Execution='streaming');
+            addpath(generated.Folder); assert(CiDpdCheck().passed); rmpath(generated.Folder);
             rng(12); x = complex(single(randn(4096,1)), single(randn(4096,1)))/8; y = x - single(0.2)*x.*abs(x).^2;
             [dpd, pa] = opendpd.fit(x, y, Workspace=fullfile(tempname,'fit'), SampleRate=80e6, Bandwidth=20e6, SegmentSamples=128, PAParameters=struct('hidden_size',4), Training=struct('epochs',1,'frame_length',32,'frame_stride',32,'batch_size',16,'batch_size_eval',16), Device='cpu', PythonExecutable=string(getenv('OPENDPD_MATLAB_PYTHON')), Verbose=false);
             assert(opendpd.verify(dpd).passed && opendpd.verify(pa).passed);

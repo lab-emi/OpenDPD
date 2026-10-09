@@ -432,7 +432,63 @@ future samples inside a segment). MATLAB computes in double precision; PyTorch u
 about <code>1e-7</code>, which is what the golden test measures. Speed on a development machine (R2026a, Linux, no GPU, one MATLAB
 process) is roughly 0.3 us per sample for <code>mp_ls</code>, 1 us for <code>gmp_ls</code>, 2-5 us for a two-layer <code>gru</code> or <code>tres_gru</code> of
 hidden size 6-64, and 13 us for a <code>gmp</code> of 495 terms; it is for evaluating waveforms, not a real-time implementation.
-Not verified: MATLAB Coder, a Simulink MATLAB System block, HDL generation, other MATLAB releases or operating systems.</p>
+<code>opendpd.Model</code> loads its weights from a file, so it is not the class to put in a Simulink MATLAB System block or to
+build with MATLAB Coder: use <a href="#standalone-classes-for-matlab-coder-and-simulink"><code>opendpd.generateCode</code></a> for that.
+Not verified: other MATLAB releases or operating systems.</p>
+<h2 id="standalone-classes-for-matlab-coder-and-simulink">Standalone classes for MATLAB Coder and Simulink</h2>
+<p><code>opendpd.generateCode</code> writes a loaded package as a <strong>standalone MATLAB class</strong>: the weights are constants in the source,
+the arithmetic is the text of the <code>opendpd.runtime</code> kernels, and nothing is read at run time. The class needs no OpenDPD
+toolbox, no Python and no file, so it can be used as a Simulink MATLAB System block, built with MATLAB Coder, or given to
+a colleague who does not have this toolbox.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Returns / behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>r = opendpd.generateCode(model, folder, ...)</code></td>
+<td>Write four text files into <code>folder</code> (created if needed) and return <code>r.Name</code>, <code>r.Folder</code>, <code>r.Files</code>, <code>r.Execution</code>, <code>r.Model</code> and <code>r.PackageSHA256</code>. <code>Name="..."</code> is the class name (default <code>OpenDPD&lt;Role&gt;&lt;Model&gt;</code>, for example <code>OpenDPDDpdGru</code>); a name that is already a function, class or file on the path is refused so that a generated file cannot shadow another. <code>Execution="offline_segmented"</code> (default) or <code>"streaming_stateful"</code> / <code>"streaming"</code> (<code>gru</code> and <code>gmp</code>; error <code>opendpd:NoStreamingVariant</code> otherwise). <code>Overwrite=true</code> replaces files this function wrote earlier and never any other file. The same package, name and execution always give the same bytes.</td>
+</tr>
+</tbody>
+</table>
+<p>The files, for <code>Name="ApaDpd"</code>: <code>ApaDpd.m</code>, the <code>matlab.System</code> class; <code>ApaDpdStep.m</code>, the entry point for MATLAB Coder;
+<code>ApaDpdCheck.m</code>, which runs the class on the package's golden test vector and returns <code>passed</code>, <code>max_abs_error</code> and
+<code>tolerance_abs</code> (at most <code>1e-5</code>); and <code>README_ApaDpd.md</code> with the provenance (package SHA-256, run, evidence type) and the
+limits. Every file says in a comment which package it came from.</p>
+<pre><code class="language-matlab">model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);
+r = opendpd.generateCode(model, &quot;apa-dpd-class&quot;, Name=&quot;ApaDpd&quot;, Execution=&quot;streaming&quot;);
+addpath(r.Folder)
+ApaDpdCheck()                                      % passed = true: the class computes the model as OpenDPD did
+dpd = ApaDpd;  u = dpd(chunk);                     % complex single column; the state is kept between calls, reset(dpd) clears it
+codegen ApaDpdStep -args {coder.typeof(complex(single(0)), [Inf 1])}      % MATLAB Coder: a MEX function (or a library)
+</code></pre>
+<p>In Simulink add a <em>MATLAB System</em> block and set its <strong>System object name</strong> to the class name. The block takes a vector
+(a frame) or one sample per time step and returns a complex single column; both <em>Interpreted execution</em> and <em>Code
+generation</em> work. <code>examples/opendpdSimulink.m</code> builds a DPD-then-PA transmit chain this way and compares it with
+<code>opendpd.apply</code>.</p>
+<p><strong>Choose the execution to match how the block is fed.</strong> <code>offline_segmented</code> cuts every call into segments of
+<code>nperseg</code> samples with a zero state at the start of each, because that is how OpenDPD scored the run: a frame of exactly
+<code>nperseg</code> samples is one segment, but feeding it <em>one sample per time step</em> makes every sample its own segment with a zero
+state, which is not the model. For sample-by-sample or frame-by-frame processing of a <code>gru</code> or <code>gmp</code> use
+<code>Execution="streaming"</code>; <code>tres_gru</code>, <code>mp_ls</code> and <code>gmp_ls</code> have no streaming variant and need whole frames. A class is
+generated for one execution; generate both if you need both.</p>
+<p>What was checked, and on what (MATLAB R2026a, Linux, one machine): for the six small packages in <code>tests/data</code>, each class
+equals <code>opendpd.apply</code> to within <code>1e-12</code> on waveforms of 1 to hundreds of samples and on any chunking (observed: identical),
+passes its own golden check, builds with MATLAB Coder as a MEX function (variable-size input for every class; fixed-size
+frames, single samples and double input for the streaming <code>gru</code>), reproduces the golden vector from the MEX function, and
+runs in a MATLAB System block in both simulation modes on a frame (a DPD then PA chain of streaming <code>gru</code> classes, one
+sample per time step, equals the MATLAB chain). Not checked: other MATLAB releases and operating
+systems, C/C++ libraries and embedded targets, GPU Coder, HDL Coder, fixed-point conversion, and packages larger than the
+fixtures. The arithmetic is double precision on single-rounded inputs, like the MATLAB runtime: this is not a fixed-point
+or HDL-ready design, and it is not a statement about real-time speed.</p>
+<p><strong>Safety.</strong> The generated files are code that you will run. The generator puts only numbers it formatted and short,
+character-restricted provenance text from the package into them, never anything else from the manifest, and refuses
+a package with a weight that is not finite or with more than 250 000 numbers (use <code>opendpd.apply</code> for those). A package
+from an unknown source is still a download from an unknown source: compare <code>model.SHA256</code> with the value you were given
+before you generate code from it.</p>
 <h2 id="measured-captures-opendpdlab">Measured captures: <code>opendpd.lab</code></h2>
 <p><code>opendpd.lab.Session</code> supervises a measurement made by <strong>your</strong> instrument code. RF stays off until a named person arms
 the session, every limit is checked before anything is sent, and every abnormal path - an error in your functions, a

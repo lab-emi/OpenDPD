@@ -30,6 +30,9 @@ metadata is still the 2.3 baseline until the release is cut.
 - Export a trained PA or DPD as an `opendpd-model-v1` package (`opendpd.export`) and run it in plain
   MATLAB with no Python (`opendpd.load`, `opendpd.verify`, `opendpd.apply(model, x)`, streaming as a
   System object); for `mp_ls`, `model.commCoefficients()` gives the `comm.DPD` coefficients.
+- Write a loaded model as a standalone class for Simulink (MATLAB System block) and MATLAB Coder:
+  `opendpd.generateCode`. The class needs no toolbox or Python; checked on R2026a with Coder MEX builds and a Simulink
+  DPD-then-PA chain (`examples/opendpdSimulink.m`); not fixed-point, not for HDL.
 - Supervise a measurement made by your own instrument code with `opendpd.lab.Session`: RF off until a named person arms it, limits
   checked before anything is sent, every abnormal path switches RF off and trips the session, and a record with the hash of every
   played and captured signal goes into the dataset. Exercised only on a dry-run mock; no instrument chain has been tested.
@@ -309,6 +312,10 @@ license; Python and model weights remain in the selected environment/workspace.
 Install it with `matlab.addons.toolbox.installToolbox`, then select Python
 with `opendpd.setup`. Uninstalling it leaves Python environments and experiment
 workspaces intact.
+
+The tests of `opendpd.generateCode` that need MATLAB Coder with a C compiler, or Simulink (the MEX and MATLAB System
+block checks), are skipped, not failed, where those products are missing. The GitHub workflow below installs base
+MATLAB only, so it skips them; they ran on a development machine that has the products (R2026a, Linux).
 
 The **MATLAB toolbox** GitHub workflow runs on pull requests that touch the toolbox,
 SDK, MATLINK or `apply`, and can be started by hand for another MATLAB release. It runs

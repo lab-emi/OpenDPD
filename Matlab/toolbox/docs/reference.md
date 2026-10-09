@@ -213,7 +213,62 @@ future samples inside a segment). MATLAB computes in double precision; PyTorch u
 about `1e-7`, which is what the golden test measures. Speed on a development machine (R2026a, Linux, no GPU, one MATLAB
 process) is roughly 0.3 us per sample for `mp_ls`, 1 us for `gmp_ls`, 2-5 us for a two-layer `gru` or `tres_gru` of
 hidden size 6-64, and 13 us for a `gmp` of 495 terms; it is for evaluating waveforms, not a real-time implementation.
-Not verified: MATLAB Coder, a Simulink MATLAB System block, HDL generation, other MATLAB releases or operating systems.
+`opendpd.Model` loads its weights from a file, so it is not the class to put in a Simulink MATLAB System block or to
+build with MATLAB Coder: use [`opendpd.generateCode`](#standalone-classes-for-matlab-coder-and-simulink) for that.
+Not verified: other MATLAB releases or operating systems.
+
+## Standalone classes for MATLAB Coder and Simulink
+
+`opendpd.generateCode` writes a loaded package as a **standalone MATLAB class**: the weights are constants in the source,
+the arithmetic is the text of the `opendpd.runtime` kernels, and nothing is read at run time. The class needs no OpenDPD
+toolbox, no Python and no file, so it can be used as a Simulink MATLAB System block, built with MATLAB Coder, or given to
+a colleague who does not have this toolbox.
+
+| Call | Returns / behavior |
+| --- | --- |
+| `r = opendpd.generateCode(model, folder, ...)` | Write four text files into `folder` (created if needed) and return `r.Name`, `r.Folder`, `r.Files`, `r.Execution`, `r.Model` and `r.PackageSHA256`. `Name="..."` is the class name (default `OpenDPD<Role><Model>`, for example `OpenDPDDpdGru`); a name that is already a function, class or file on the path is refused so that a generated file cannot shadow another. `Execution="offline_segmented"` (default) or `"streaming_stateful"` / `"streaming"` (`gru` and `gmp`; error `opendpd:NoStreamingVariant` otherwise). `Overwrite=true` replaces files this function wrote earlier and never any other file. The same package, name and execution always give the same bytes. |
+
+The files, for `Name="ApaDpd"`: `ApaDpd.m`, the `matlab.System` class; `ApaDpdStep.m`, the entry point for MATLAB Coder;
+`ApaDpdCheck.m`, which runs the class on the package's golden test vector and returns `passed`, `max_abs_error` and
+`tolerance_abs` (at most `1e-5`); and `README_ApaDpd.md` with the provenance (package SHA-256, run, evidence type) and the
+limits. Every file says in a comment which package it came from.
+
+```matlab
+model = opendpd.load("apa-dpd.opendpd.zip");
+r = opendpd.generateCode(model, "apa-dpd-class", Name="ApaDpd", Execution="streaming");
+addpath(r.Folder)
+ApaDpdCheck()                                      % passed = true: the class computes the model as OpenDPD did
+dpd = ApaDpd;  u = dpd(chunk);                     % complex single column; the state is kept between calls, reset(dpd) clears it
+codegen ApaDpdStep -args {coder.typeof(complex(single(0)), [Inf 1])}      % MATLAB Coder: a MEX function (or a library)
+```
+
+In Simulink add a *MATLAB System* block and set its **System object name** to the class name. The block takes a vector
+(a frame) or one sample per time step and returns a complex single column; both *Interpreted execution* and *Code
+generation* work. `examples/opendpdSimulink.m` builds a DPD-then-PA transmit chain this way and compares it with
+`opendpd.apply`.
+
+**Choose the execution to match how the block is fed.** `offline_segmented` cuts every call into segments of
+`nperseg` samples with a zero state at the start of each, because that is how OpenDPD scored the run: a frame of exactly
+`nperseg` samples is one segment, but feeding it *one sample per time step* makes every sample its own segment with a zero
+state, which is not the model. For sample-by-sample or frame-by-frame processing of a `gru` or `gmp` use
+`Execution="streaming"`; `tres_gru`, `mp_ls` and `gmp_ls` have no streaming variant and need whole frames. A class is
+generated for one execution; generate both if you need both.
+
+What was checked, and on what (MATLAB R2026a, Linux, one machine): for the six small packages in `tests/data`, each class
+equals `opendpd.apply` to within `1e-12` on waveforms of 1 to hundreds of samples and on any chunking (observed: identical),
+passes its own golden check, builds with MATLAB Coder as a MEX function (variable-size input for every class; fixed-size
+frames, single samples and double input for the streaming `gru`), reproduces the golden vector from the MEX function, and
+runs in a MATLAB System block in both simulation modes on a frame (a DPD then PA chain of streaming `gru` classes, one
+sample per time step, equals the MATLAB chain). Not checked: other MATLAB releases and operating
+systems, C/C++ libraries and embedded targets, GPU Coder, HDL Coder, fixed-point conversion, and packages larger than the
+fixtures. The arithmetic is double precision on single-rounded inputs, like the MATLAB runtime: this is not a fixed-point
+or HDL-ready design, and it is not a statement about real-time speed.
+
+**Safety.** The generated files are code that you will run. The generator puts only numbers it formatted and short,
+character-restricted provenance text from the package into them, never anything else from the manifest, and refuses
+a package with a weight that is not finite or with more than 250 000 numbers (use `opendpd.apply` for those). A package
+from an unknown source is still a download from an unknown source: compare `model.SHA256` with the value you were given
+before you generate code from it.
 
 ## Measured captures: `opendpd.lab`
 

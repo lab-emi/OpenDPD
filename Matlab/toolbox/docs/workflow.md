@@ -184,6 +184,18 @@ and one `comm.DPD` stream from a zero state agree. See the [function
 reference](reference.html#model-packages-run-a-trained-model-without-python) for what a package contains, what `verify`
 shows and what it does not, and how a package from elsewhere is read.
 
+To use the model in Simulink or with MATLAB Coder, write it as a standalone class:
+
+```matlab
+r = opendpd.generateCode(model, "apa-dpd-class", Name="ApaDpd", Execution="streaming");
+addpath(r.Folder); ApaDpdCheck()                  % the golden test again, on the generated class
+```
+
+Add a *MATLAB System* block with the System object name `ApaDpd`, or run `codegen ApaDpdStep ...`. The example
+`opendpdSimulink` builds a DPD-then-PA transmit chain. Choose `streaming` when samples arrive one at a time or in
+frames of any size; the default restarts the state every `nperseg` samples, as in training. See the [function
+reference](reference.html#standalone-classes-for-matlab-coder-and-simulink).
+
 ## Measure on your bench
 
 `opendpd.lab.Session` wraps the instrument code you already have so that a measurement is supervised and recorded
