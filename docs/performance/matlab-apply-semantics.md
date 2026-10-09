@@ -122,6 +122,19 @@ It covers two backbones (`gru`, `gmp`: the only ones with a streaming variant; `
 recipes of section 3. The streaming variants stay `experimental` in the registry; promoting them to `supported` is a maintainer
 decision that this page does not take, and an `auto` default would change only what the MATLAB toolbox and the SDK ask for.
 
-## 10. Run log
+## 10. Run log and amendments
 
-(No run yet.)
+Entries are appended in the order they happened. Nothing above this heading is edited after the first result is read.
+
+### 2026-10-09: Part A scored; Part B training stopped by a platform rule (amendment 1, procedure only)
+
+Part A was run as registered (commit `03a0c3a`) and scored. Part B training then stopped at the second DPD with the platform's own
+error: *the legacy checkpoint convention requires the DPD run to use the same seed and frame_length as its PA surrogate (PA: seed=0,
+frame_length=200)*. A DPD of seed 1 or 2 cannot be trained through the seed-0 PA that section 3 prescribes.
+
+**Amendment 1.** Part B trains **three PA/DPD pairs per dataset: PA seed s with DPD seed s, s = 0, 1, 2**, everything else as
+registered (SDK defaults, `gru`, hidden size 23). The seed-0 pair of `DPA_200MHz` is the one already trained before this
+amendment (PA `run-20261009-082222-67f908`, 66 s; DPD `run-20261009-082328-e56c2d`, 101 s) and is kept; no S(L) output of Part B
+had been computed. Section 3 ("one PA per dataset") and section 5 ("the 3 seeds") are read as "the 3 pairs"; the PA fidelity
+diagnostic is reported per pair. The cause is the platform error above and not any Part A number, which did not enter the
+decision to amend; the thresholds, lengths, decision rule and checks are unchanged.
