@@ -56,15 +56,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # The Linux job installs the products that 35 of the tests need and otherwise skip (MATLAB Coder and Simulink for the
+          # MEX and MATLAB System block tests, Communications, LTE and RF Toolbox for the three comparisons with MathWorks tools,
+          # with the Signal Processing and DSP System Toolbox those use): the same eight licence features the local runs check out.
           - os: ubuntu-22.04
             experimental: false
+            products: MATLAB_Coder Simulink Communications_Toolbox LTE_Toolbox RF_Toolbox Signal_Processing_Toolbox DSP_System_Toolbox
+            require_all: "1"        # a test skipped for a missing product is an error here (see buildfile.m)
           - os: windows-2022
             experimental: true
+            products: ""
+            require_all: ""
     env:
       # Optional for public repositories; required by MathWorks for private CI.
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
       MPLBACKEND: Agg
       TQDM_DISABLE: "1"
+      OPENDPD_REQUIRE_ALL_TESTS: ${{ matrix.require_all }}
     defaults:
       run:
         shell: bash
@@ -96,6 +104,8 @@ jobs:
       - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
         with:
           release: ${{ inputs.release || 'R2026a' }}
+          products: ${{ matrix.products }}
+          cache: true
       - name: Run MATLAB tests and build toolbox
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         with:

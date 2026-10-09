@@ -12,6 +12,16 @@ root = context.Plan.RootFolder;
 addpath(root);
 results = runtests(fullfile(root, 'tests'), IncludeSubfolders=true);
 assertSuccess(results);
+% Tests that need MATLAB Coder, Simulink or a toolbox skip themselves where it is missing, and assertSuccess accepts that. A CI job
+% that installs those products sets OPENDPD_REQUIRE_ALL_TESTS=1, so that a product which failed to install is an error and not a
+% silent loss of coverage.
+if strcmp(getenv('OPENDPD_REQUIRE_ALL_TESTS'), '1')
+    skipped = results([results.Incomplete]);
+    if ~isempty(skipped)
+        error('opendpd:build:TestsSkipped', '%d tests were skipped, and OPENDPD_REQUIRE_ALL_TESTS=1 asks for none to be:\n%s', ...
+            numel(skipped), strjoin(string({skipped.Name}), newline));
+    end
+end
 end
 
 function packageTask(context)
