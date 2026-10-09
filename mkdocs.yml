@@ -149,6 +149,7 @@ not_in_nav: |
   performance/pa-identification-comparison.md
   performance/matlab-parity.md
   performance/matlab-parity-dpd.md
+  performance/matlab-apply-semantics.md
   architecture/**
   community/**
   design/**
