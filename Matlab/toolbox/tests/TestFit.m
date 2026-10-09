@@ -96,6 +96,7 @@ classdef TestFit < matlab.unittest.TestCase
 
         function aFailingPythonReportsItsOwnMessage(testCase)
             % A Python without OpenDPD: the module is missing; the error carries what Python said and where the log is.
+            testCase.assumeTrue(isunix, 'needs a shell wrapper');
             nothing = fullfile(string(tempname), "workspace");
             testCase.addTeardown(@() TestFit.remove(fileparts(nothing)));
             empty = string(tempname);
@@ -103,10 +104,9 @@ classdef TestFit < matlab.unittest.TestCase
             testCase.addTeardown(@() TestFit.remove(empty));
             wrapper = fullfile(empty, "python-without-opendpd");
             fid = fopen(wrapper, 'w');
-            fprintf(fid, '#!/bin/sh\nexec "%s" -I "$@"\n', testCase.Python);        % -I: ignore PYTHONPATH and user site
+            fprintf(fid, '#!/bin/sh\nexec "%s" -I -S "$@"\n', testCase.Python);     % -I: ignore PYTHONPATH and user site; -S: no site-packages, so an installed OpenDPD is not found either
             fclose(fid);
             fileattrib(wrapper, '+x');
-            testCase.assumeTrue(isunix, 'needs a shell wrapper');
             x = testCase.X; y = testCase.Y;
             try
                 opendpd.fit(x, y, Workspace=nothing, SampleRate=80e6, Bandwidth=20e6, SegmentSamples=128, PythonExecutable=wrapper, Verbose=false);

@@ -21,8 +21,9 @@ classdef TestTransport < matlab.unittest.TestCase
             stream = RandStream('twister', Seed=3);
             cases = {single(randn(stream, 7, 2)), randn(stream, 5, 2), randn(stream, 6, 1), single(randn(stream, 2, 3, 4)), ...
                 randn(stream, 1, 5), single(7), randn(stream, 4096, 2)};
+            % no double quotes inside the Python text: Windows strips them from a command-line argument
             script = ['import numpy as np, json, sys; a = np.load(sys.argv[1], allow_pickle=False); ' ...
-                'print(json.dumps({"dtype": str(a.dtype), "shape": list(a.shape), "flat": a.reshape(-1).astype("float64").tolist()}))'];
+                'print(json.dumps({''dtype'': str(a.dtype), ''shape'': list(a.shape), ''flat'': a.reshape(-1).astype(''float64'').tolist()}))'];
             for k = 1:numel(cases)
                 a = cases{k};
                 file = fullfile(testCase.Folder, sprintf('a%d.npy', k));
@@ -102,7 +103,7 @@ classdef TestTransport < matlab.unittest.TestCase
             marker = fullfile(testCase.Folder, 'stopped');
             polite = string(sprintf(['import os, sys, time\nt0 = time.time()\n' ...
                 'while not os.path.exists(sys.argv[1]) and time.time() - t0 < 60: time.sleep(0.05)\n' ...
-                'open(sys.argv[2], "w").close() if os.path.exists(sys.argv[1]) else None']));      % never outlives the test by more than a minute
+                'open(sys.argv[2], ''w'').close() if os.path.exists(sys.argv[1]) else None']));      % never outlives the test by more than a minute; no double quotes (Windows strips them)
             interrupt = @() error('test:interrupt', 'simulated Ctrl+C');
             testCase.verifyError(@() opendpd.internal.runPython(testCase.Python, ["-c", polite, cancel, marker], ...
                 Log=fullfile(testCase.Folder, 'log.txt'), CancelFile=cancel, Grace=20, PollInterval=0.1, OnPoll=interrupt), 'test:interrupt');
