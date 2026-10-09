@@ -86,8 +86,11 @@ which one produced it.
   (`gru`: the recurrent state; `gmp`: a window of `history_samples` past inputs, which is carried instead of zero filled).
   `available` is `false`, with a reason, for the others.
 
-The two give different waveforms for the same model. Which one to use for a waveform that goes to hardware is a decision
-for the user; neither is a measurement.
+The two give different waveforms for the same model. `opendpd.apply` and the SDK's `Job.apply` ask for `auto` unless told
+otherwise: `streaming_stateful` for a model that has the variant (`gru`, `gmp`), `offline_segmented` for every other model,
+and the result says which it ran and why. The choice follows a pre-registered measurement of both executions after a PA
+(`docs/performance/matlab-apply-semantics.md`): a state reset every 512 to 4096 samples costs 0.8 to 12 dB of linearisation
+quality for the GRU DPDs measured and at most 0.12 dB for the `gmp` DPDs. Neither execution is a hardware measurement.
 
 ## Golden test
 

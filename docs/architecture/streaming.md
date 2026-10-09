@@ -26,6 +26,12 @@ weights therefore produces a different signal, and:
   (`opendpd/core/metrics/compare.py`), so nothing is inherited from the
   offline benchmark.
 
+How much the difference matters after a PA was measured for `gru` and `gmp` DPDs
+(`docs/performance/matlab-apply-semantics.md`, pre-registered): resetting the state every 512 to 4096 samples costs 0.8 to
+12 dB of linearisation quality for the GRU DPDs measured and at most 0.12 dB for the GMP DPDs. On that evidence the SDK's
+`Job.apply` and the MATLAB toolbox's `opendpd.apply` default to `auto`, which runs a model that has a streaming variant as a
+stream and every other model offline; the variants stay **experimental** in the registry and Studio's own scoring is unchanged.
+
 ## 2. The interface
 
 ```

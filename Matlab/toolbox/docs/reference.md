@@ -162,7 +162,7 @@ are in `docs/performance/matlab-parity.md` of the OpenDPD repository.
 
 | Call | Returns / behavior |
 | --- | --- |
-| `[y, info] = opendpd.apply(job, x, ...)` | Complex single column vector plus metadata. `Execution="offline_segmented"` (default, how the run was scored) or `"streaming_stateful"` / `"streaming"` (one state across chunks; `gru` and `gmp` only), `ChunkSamples=0` (the default chunk), `Timeout=120` seconds. CPU, unquantized `gru`, `tres_gru`, `gmp`, `mp_ls`, `gmp_ls`. `info.execution`, `info.limitations` and `info.streaming` state what produced `y`. |
+| `[y, info] = opendpd.apply(job, x, ...)` | Complex single column vector plus metadata. `Execution="auto"` (default: a stream for `gru` and `gmp`, the scored form for the others), `"offline_segmented"` (how the run was scored) or `"streaming_stateful"` / `"streaming"` (one state across chunks; `gru` and `gmp` only), `ChunkSamples=0` (the default chunk), `Timeout=120` seconds. CPU, unquantized `gru`, `tres_gru`, `gmp`, `mp_ls`, `gmp_ls`. `info.execution`, `info.execution_requested`, `info.execution_reason` (for `auto`), `info.limitations` and `info.streaming` state what produced `y`. |
 | `exported = opendpd.runDPD(dpd)` | Job handle for standard test-split waveform export and surrogate evaluation. Wait for completion before reading its report/artifacts. |
 
 See [execution semantics](workflow.html#apply-the-dpd) before comparing exported
@@ -222,9 +222,9 @@ in its text (escape sequences, bells, carriage returns) are replaced by `?` befo
 declares fewer GRU layers than the weights hold is refused. The golden test input is synthetic noise with the training input's amplitude
 statistics, never a slice of your data, so a package can be shared without sharing a measurement.
 
-Execution and numerics: `opendpd.apply(model, x)` uses the same two semantics as for a job (`offline_segmented`, the
-default, restarts state every `Manifest.signal.nperseg` samples and zero pads the last segment; `tres_gru` reads 16
-future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
+Execution and numerics: `opendpd.apply(model, x)` uses the same semantics as for a job (`auto`, the default, is a stream for
+`gru` and `gmp` and `offline_segmented` for the others; `offline_segmented` restarts state every
+`Manifest.signal.nperseg` samples and zero pads the last segment; `tres_gru` reads 16 future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
 about `1e-7`, which is what the golden test measures. Speed on a development machine (R2026a, Linux, no GPU, one MATLAB
 process) is roughly 0.3 us per sample for `mp_ls`, 1 us for `gmp_ls`, 2-5 us for a two-layer `gru` or `tres_gru` of
 hidden size 6-64, and 13 us for a `gmp` of 495 terms; it is for evaluating waveforms, not a real-time implementation.
@@ -262,7 +262,8 @@ In Simulink add a *MATLAB System* block and set its **System object name** to th
 generation* work. `examples/opendpdSimulink.m` builds a DPD-then-PA transmit chain this way and compares it with
 `opendpd.apply`.
 
-**Choose the execution to match how the block is fed.** `offline_segmented` cuts every call into segments of
+**Choose the execution to match how the block is fed.** The default of `opendpd.generateCode` stays `offline_segmented`
+(`opendpd.apply`'s `auto` does not apply to it: a generated class is fed in whatever frames you choose). `offline_segmented` cuts every call into segments of
 `nperseg` samples with a zero state at the start of each, because that is how OpenDPD scored the run: a frame of exactly
 `nperseg` samples is one segment, but feeding it *one sample per time step* makes every sample its own segment with a zero
 state, which is not the model. For sample-by-sample or frame-by-frame processing of a `gru` or `gmp` use

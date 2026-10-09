@@ -17,7 +17,7 @@ summary = opendpdQuickstart();
 The example creates a fresh workspace and a synthetic nonlinear PA capture,
 trains small PA and DPD GRUs for two epochs on CPU, checks inference, exports a
 waveform and writes `matlab-dpd-output.mat`. It closes its service when finished.
-The MAT file includes `xTest`, `u`, `info`, `fs` and `report`. This is a workflow
+The MAT file includes `xTest`, `u`, `uScored` (the segmented form the stored report scored), `info`, `fs` and `report`. This is a workflow
 check, not a model benchmark. Reopen it with:
 
 ```matlab
@@ -96,8 +96,13 @@ For a DPD run it is the **predistorted PA input**, before a physical or simulate
 PA. Applying a PA run instead produces the modeled PA output.
 
 `apply` supports `gru`, `tres_gru`, `gmp`, `mp_ls` and `gmp_ls` on CPU, unquantized. Each
-has a test that compares its output with the Python evaluator. By default
-(`Execution="offline_segmented"`) it is how the run was scored: state resets at the trained
+has a test that compares its output with the Python evaluator. By default (`Execution="auto"`) a
+`gru` or `gmp` runs as a stream, with one state across the whole waveform, and the other models run
+the way the run was scored; `info.execution`, `info.execution_requested` and `info.execution_reason` say which and why.
+The default follows a measurement of the two executions after a PA (a state reset every 512 to 4096 samples costs 0.8 to
+12 dB of linearisation quality for the GRU DPDs measured and at most 0.12 dB for the `gmp` DPDs; see
+`docs/performance/matlab-apply-semantics.md` in the OpenDPD repository).
+`Execution="offline_segmented"` is how the run was scored: state resets at the trained
 run's frozen segment boundaries, the final segment is zero padded and the padding is trimmed
 from the returned vector. `tres_gru` reads 16 future samples, so within 16 samples of a
 segment end it sees zero padding rather than the waveform; `info.limitations` says so.
@@ -123,8 +128,9 @@ exportReport = opendpd.result(exported);
 opendpd.openStudio(p, Page="run", RunID=exported.ID);
 ```
 
-The existing `runDPD` exporter carries state across the whole test waveform;
-`apply` resets at segment boundaries by default. These outputs can differ. Read the export
+The existing `runDPD` exporter carries state across the whole test waveform, as `apply` does by default for a
+`gru` or `gmp`; `Execution="offline_segmented"` resets at segment boundaries, as the stored report was scored. These
+outputs can differ. Read the export
 sidecar for its execution semantics. The quickstart saves the segmented
 training-run report alongside `apply`'s waveform and separately records the
 export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
@@ -173,7 +179,7 @@ that has no Python:
 opendpd.export(dpd, "apa-dpd.opendpd.zip");       % needs the Python SDK; the same run always gives the same bytes
 model = opendpd.load("apa-dpd.opendpd.zip");      % plain MATLAB from here on
 report = opendpd.verify(model)                    % golden test: OpenDPD's outputs vs this MATLAB release, within 1e-5
-u = opendpd.apply(model, xTest);                  % offline_segmented, like opendpd.apply(dpd, xTest)
+u = opendpd.apply(model, xTest);                  % auto, like opendpd.apply(dpd, xTest): a stream for gru and gmp
 y = model(chunk); reset(model);                   % streaming, for gru and gmp
 ```
 

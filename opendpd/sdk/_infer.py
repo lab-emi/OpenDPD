@@ -17,7 +17,7 @@ def main():
     parser.add_argument("--workspace", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--directory", type=Path, required=True)
-    parser.add_argument("--execution", default="offline_segmented")
+    parser.add_argument("--execution", default="auto")
     parser.add_argument("--chunk-samples", type=int, default=0)
     args = parser.parse_args()
     try:

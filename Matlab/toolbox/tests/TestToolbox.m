@@ -91,8 +91,8 @@ classdef TestToolbox < matlab.unittest.TestCase
             pa = opendpd.wait(opendpd.trainPA(p, ds, ModelParameters=parameters, Training=training, Device="cpu"));
             dpd = opendpd.wait(opendpd.trainDPD(p, ds, PA=pa, ModelParameters=parameters, Training=training, Device="cpu"));
             xTest = x(1:257);
-            [u, info] = opendpd.apply(dpd, xTest.');
-            reference = dpd.Backend.apply(py.numpy.asarray([real(xTest), imag(xTest)]));
+            [u, info] = opendpd.apply(dpd, xTest.', Execution="offline_segmented");
+            reference = dpd.Backend.apply(py.numpy.asarray([real(xTest), imag(xTest)]), pyargs('execution', 'offline_segmented'));
             referenceIQ = single(reference{1});
             testCase.verifyEqual(u, complex(referenceIQ(:,1), referenceIQ(:,2)), AbsTol=single(1e-6));
             testCase.verifySize(u, [257, 1]);
@@ -107,6 +107,14 @@ classdef TestToolbox < matlab.unittest.TestCase
             testCase.verifyEqual(streamInfo.streaming.chunk_samples, 50);
             testCase.verifyTrue(streamInfo.streaming.consistency.within_tolerance);
             testCase.verifyGreaterThan(max(abs(s(129:end) - u(129:end))), 1e-6);
+            % The default, "auto", is that streaming execution for a gru (it has a streaming variant), not the scored form.
+            [a, autoInfo] = opendpd.apply(dpd, xTest.');
+            testCase.verifyEqual(autoInfo.execution, 'streaming_stateful');
+            testCase.verifyEqual(autoInfo.execution_requested, 'auto');
+            testCase.verifyTrue(startsWith(autoInfo.execution_reason, 'auto: '));
+            testCase.verifyEqual(a, s, AbsTol=single(1e-5));
+            [~, namedInfo] = opendpd.apply(dpd, xTest.', Execution="streaming");
+            testCase.verifyFalse(isfield(namedInfo, 'execution_reason'));
             testCase.verifyError(@() opendpd.apply(dpd, xTest.', Execution="realtime"), 'MATLAB:validators:mustBeMember');
             % Take the trained models out of OpenDPD: export, then run the packages in plain MATLAB (no Python) and compare
             % with the Python evaluator on these samples, for both semantics and for a PA and a DPD run.
@@ -120,7 +128,8 @@ classdef TestToolbox < matlab.unittest.TestCase
             model = opendpd.load(file);
             testCase.verifyTrue(opendpd.verify(model).passed);
             testCase.verifyEqual(model.SHA256, string(summary.sha256));
-            testCase.verifyEqual(opendpd.apply(model, xTest.'), u, AbsTol=single(1e-5));
+            testCase.verifyEqual(opendpd.apply(model, xTest.', Execution="offline_segmented"), u, AbsTol=single(1e-5));
+            testCase.verifyEqual(opendpd.apply(model, xTest.'), a, AbsTol=single(1e-5));      % auto, plain MATLAB against Python
             testCase.verifyEqual(opendpd.apply(model, xTest.', Execution="streaming", ChunkSamples=50), s, AbsTol=single(1e-5));
             again = fullfile(folder, "again.opendpd.zip");
             opendpd.export(dpd, again);

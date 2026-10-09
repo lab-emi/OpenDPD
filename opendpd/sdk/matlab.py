@@ -37,7 +37,7 @@ def file_sha256(path):
     return sha256_file(path)
 
 
-def apply(job, x, execution="offline_segmented", timeout=120.0, chunk_samples=0):
+def apply(job, x, execution="auto", timeout=120.0, chunk_samples=0):
     y, metadata = job.apply(x, execution=execution, chunk_samples=int(chunk_samples) or None, timeout=float(timeout))
     return y, encode(metadata)
 

@@ -11,6 +11,10 @@ execution semantics produced it:
   variant (``gru`` as ``gru_stream``, ``gmp`` as ``gmp_stream``). It is a different signal from the one the stored
   report scored; the streaming evidence (warm-up, look-ahead, chunk consistency) is returned with it.
 
+``auto`` names neither: it is ``streaming_stateful`` for a model with a registered streaming variant and
+``offline_segmented`` for every other one, and the metadata says which it chose and why. The SDK and the MATLAB toolbox
+ask for ``auto`` by default; this function's own default stays ``offline_segmented``, which the exported golden vectors rely on.
+
 Nothing is normalised, aligned or rescaled: supply the waveform in the training dataset's units and sample rate.
 This runs in a worker or the SDK's isolated process, never inside the HTTP server process, because rebuilding a
 network changes the working directory.
@@ -29,7 +33,9 @@ from opendpd.schemas import ArtifactKind, RunStatus, TaskType
 from opendpd.services.workspace import Workspace, WorkspaceError, sha256_file
 
 OFFLINE = "offline_segmented"
+AUTO = "auto"
 EXECUTIONS = (OFFLINE, STREAMING)
+CHOICES = (AUTO, OFFLINE, STREAMING)
 ALIASES = {"streaming": STREAMING}
 # Models whose output is checked against the evaluator in tests/integration/test_apply_parity.py. A model joins this
 # list together with its parity test, not before.
@@ -48,10 +54,24 @@ class InferenceError(WorkspaceError):
 
 
 def normalise_execution(execution: str) -> str:
+    """What the caller asked for: one of the two semantics, or ``auto`` (resolved by ``resolve_execution``)."""
     execution = ALIASES.get(execution, execution)
-    if execution not in EXECUTIONS:
-        raise ValueError(f"execution must be one of {', '.join(EXECUTIONS)} (or 'streaming'), got {execution!r}")
+    if execution not in CHOICES:
+        raise ValueError(f"execution must be one of {', '.join(CHOICES)} (or 'streaming'), got {execution!r}")
     return execution
+
+
+def resolve_execution(key: str, execution: str) -> Tuple[str, Optional[str]]:
+    """``auto`` is ``streaming_stateful`` for a model with a registered streaming variant and ``offline_segmented``
+    for every other; the second item says why (``None`` when the caller named a semantics)."""
+    if execution != AUTO:
+        return execution, None
+    variant = streaming_variant_of(key)
+    if variant is not None:
+        return STREAMING, (f"auto: {key} has the registered streaming variant {variant.key}, which carries one state across "
+                           "the whole waveform as a deployed model does; a state reset every segment costs EVM and ACLR after "
+                           "a PA (docs/performance/matlab-apply-semantics.md)")
+    return OFFLINE, f"auto: {key} has no registered streaming variant, so it runs the way the run was scored"
 
 
 def _iq(x: Any, max_samples: int) -> np.ndarray:
@@ -133,6 +153,8 @@ def apply_waveform(ws: Workspace, run_id: str, x: Any, *, execution: str = OFFLI
                              "test against the evaluator yet")
     if resolved.quantization and resolved.quantization.enabled:
         raise InferenceError("unsupported_model", "Quantisation-aware runs are not supported by apply")
+    requested = execution
+    execution, reason = resolve_execution(key, execution)
     variant = None
     if execution == STREAMING:
         variant = streaming_variant_of(key)
@@ -169,6 +191,7 @@ def apply_waveform(ws: Workspace, run_id: str, x: Any, *, execution: str = OFFLI
         raise InferenceError("nonfinite_output", "Model produced nonfinite or misshapen samples")
     meta.update(
         apply_version=2, sdk_iq_version=1, run_id=run_id, model=key, task=run.task.value, execution=execution,
+        execution_requested=requested,
         checkpoint_sha256=artifact.file.sha256, input_sha256=hashlib.sha256(x.astype("<f4").tobytes()).hexdigest(),
         output_sha256=hashlib.sha256(y.astype("<f4").tobytes()).hexdigest(), hash_layout=HASH_LAYOUT,
         n_samples=len(x), dtype="float32", device="cpu", sample_rate_hz=sample_rate,
@@ -178,6 +201,8 @@ def apply_waveform(ws: Workspace, run_id: str, x: Any, *, execution: str = OFFLI
         input_scaling="as supplied; use the training dataset's preprocessing and sample rate",
         output_role="predistorted_pa_input" if run.task == TaskType.train_dpd else "modeled_pa_output",
         limitations=_limitations(key, execution, nperseg, streaming_notes), evidence=EVIDENCE)
+    if reason:
+        meta["execution_reason"] = reason
     return y, meta
 
 

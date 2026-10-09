@@ -100,8 +100,9 @@ classdef TestModel < matlab.unittest.TestCase
             model = opendpd.load(PackageTools.path(fixture));
             n = model.Manifest.signal.nperseg;
             x = PackageTools.signal(2 * n + 5, 1);
-            whole = opendpd.apply(model, x);
-            parts = [opendpd.apply(model, x(1:n)); opendpd.apply(model, x(n+1:2*n)); opendpd.apply(model, x(2*n+1:end))];
+            whole = opendpd.apply(model, x, Execution="offline_segmented");
+            parts = [opendpd.apply(model, x(1:n), Execution="offline_segmented"); opendpd.apply(model, x(n+1:2*n), Execution="offline_segmented"); ...
+                opendpd.apply(model, x(2*n+1:end), Execution="offline_segmented")];
             testCase.verifyEqual(whole, parts, AbsTol=1e-7);
             testCase.verifySize(whole, [numel(x), 1]);
             testCase.verifyClass(whole, 'single');
@@ -142,7 +143,7 @@ classdef TestModel < matlab.unittest.TestCase
             model = opendpd.load(PackageTools.path(streamer));
             n = model.Manifest.signal.nperseg;
             x = PackageTools.signal(3 * n, 4);
-            offline = opendpd.apply(model, x);
+            offline = opendpd.apply(model, x, Execution="offline_segmented");
             streamed = opendpd.apply(model, x, Execution="streaming");
             testCase.verifyEqual(streamed(1:n), offline(1:n), AbsTol=2e-6);     % the first segment starts from zero state in both
             testCase.verifyGreaterThan(max(abs(streamed(n+1:end) - offline(n+1:end))), 1e-6);
@@ -168,9 +169,40 @@ classdef TestModel < matlab.unittest.TestCase
             testCase.verifyError(@() model(x), 'opendpd:NoStreamingVariant');
         end
 
-        function applyReportsWhatProducedTheOutput(testCase)
-            [~, info] = opendpd.apply(opendpd.load(PackageTools.path('gru-dpd')), PackageTools.signal(200, 7));
+        % ----- the default, "auto" -----------------------------------------------------------------------------------
+        function autoIsStreamingWhereAVariantExists(testCase, streamer)
+            model = opendpd.load(PackageTools.path(streamer));
+            x = PackageTools.signal(2 * model.Manifest.signal.nperseg + 5, 5);
+            [auto, info] = opendpd.apply(model, x);
+            testCase.verifyEqual(auto, opendpd.apply(model, x, Execution="streaming"));          % the same code path, bit for bit
+            testCase.verifyEqual(auto, opendpd.apply(model, x, Execution="auto"));
+            testCase.verifyEqual(info.execution, 'streaming_stateful');
+            testCase.verifyEqual(info.execution_requested, 'auto');
+            testCase.verifyTrue(startsWith(info.execution_reason, 'auto: ') && contains(info.execution_reason, model.Manifest.model.key));
+            testCase.verifyEmpty(info.segment_samples);
+            [~, named] = opendpd.apply(model, x, Execution="streaming");
+            testCase.verifyEqual(named.execution_requested, 'streaming_stateful');
+            testCase.verifyFalse(isfield(named, 'execution_reason'));
+            scored = opendpd.apply(model, x, Execution="offline_segmented");
+            testCase.verifyGreaterThan(max(abs(auto - scored)), 1e-6, 'auto must not silently be the scored form');
+        end
+
+        function autoIsTheScoredFormWhereNoStreamingVariantExists(testCase, plain)
+            model = opendpd.load(PackageTools.path(plain));
+            x = PackageTools.signal(2 * model.Manifest.signal.nperseg + 5, 6);
+            [auto, info] = opendpd.apply(model, x);
+            testCase.verifyEqual(auto, opendpd.apply(model, x, Execution="offline_segmented"));
             testCase.verifyEqual(info.execution, 'offline_segmented');
+            testCase.verifyEqual(info.execution_requested, 'auto');
+            testCase.verifyTrue(contains(info.execution_reason, 'no registered streaming variant'));
+            testCase.verifyEqual(info.segment_samples, model.Manifest.signal.nperseg);
+        end
+
+        function applyReportsWhatProducedTheOutput(testCase)
+            [~, info] = opendpd.apply(opendpd.load(PackageTools.path('gru-dpd')), PackageTools.signal(200, 7), Execution="offline_segmented");
+            testCase.verifyEqual(info.execution, 'offline_segmented');
+            testCase.verifyEqual(info.execution_requested, 'offline_segmented');
+            testCase.verifyFalse(isfield(info, 'execution_reason'));
             testCase.verifyEqual(info.output_role, 'predistorted_pa_input');
             testCase.verifyEqual(info.segment_samples, 128);
             [~, pa] = opendpd.apply(opendpd.load(PackageTools.path('gru-pa')), PackageTools.signal(200, 7));
@@ -193,7 +225,7 @@ classdef TestModel < matlab.unittest.TestCase
             x = PackageTools.signal(model.Manifest.signal.nperseg, 8);
             dpd = comm.DPD('PolynomialType', 'Memory polynomial', 'Coefficients', coefficients);
             expected = dpd(double(single(x)));
-            testCase.verifyEqual(double(opendpd.apply(model, x)), expected, ...
+            testCase.verifyEqual(double(opendpd.apply(model, x, Execution="offline_segmented")), expected, ...
                 'one OpenDPD segment equals one comm.DPD stream with a zero initial state', AbsTol=2e-6);
         end
 
@@ -206,7 +238,7 @@ classdef TestModel < matlab.unittest.TestCase
             x = PackageTools.signal(model.Manifest.signal.nperseg, 9);
             pa = rf.PAmemory(Model='Memory polynomial', CoefficientMatrix=coefficients);
             y = pa([zeros(Q - 1, 1); double(single(x))]);
-            reference = double(opendpd.apply(model, x));
+            reference = double(opendpd.apply(model, x, Execution="offline_segmented"));
             testCase.verifyLessThan(max(abs(y(Q:end) - reference)) / max(abs(reference)), 1e-6, ...
                 'rf.PAmemory on a zero-padded segment equals the OpenDPD segment (registered budget: 1e-6, single interface)');
             % the delay line of rf.PAmemory starts with the first sample, so without the pad the first Q-1 outputs differ

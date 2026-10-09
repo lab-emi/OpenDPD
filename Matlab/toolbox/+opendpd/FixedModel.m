@@ -88,7 +88,7 @@ classdef FixedModel < matlab.mixin.CustomDisplay
                 obj (1,1) opendpd.FixedModel
                 x {mustBeNumeric}
                 options.Execution (1,1) string {mustBeMember(options.Execution, ...
-                    ["", "streaming_stateful", "streaming", "offline_segmented"])} = ""
+                    ["", "auto", "streaming_stateful", "streaming", "offline_segmented"])} = ""
                 options.ChunkSamples (1,1) double {mustBeInteger, mustBeNonnegative} = 0
             end
             obj.requireLoaded();

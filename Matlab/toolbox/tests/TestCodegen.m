@@ -53,7 +53,7 @@ classdef TestCodegen < matlab.unittest.TestCase
                 testCase.verifyClass(y, 'single');
                 testCase.verifySize(y, [count 1]);
                 testCase.verifyFalse(isreal(y));
-                testCase.verifyEqual(double(y), double(opendpd.apply(model, x)), ...
+                testCase.verifyEqual(double(y), double(opendpd.apply(model, x, Execution="offline_segmented")), ...
                     sprintf('%s, %d samples', offline, count), AbsTol=1e-12);
             end
         end
@@ -84,7 +84,7 @@ classdef TestCodegen < matlab.unittest.TestCase
         function inputsOfEveryAcceptedKindGiveAComplexSingleColumn(testCase)
             [name, model] = testCase.generate('gru-dpd', 'offline_segmented');
             x = PackageTools.signal(150, 8);
-            reference = double(opendpd.apply(model, x));
+            reference = double(opendpd.apply(model, x, Execution="offline_segmented"));
             obj = feval(name);
             for input = {single(x), x, x.', single(x).'}
                 release(obj);
@@ -95,7 +95,7 @@ classdef TestCodegen < matlab.unittest.TestCase
             end
             release(obj);
             fromReal = obj(single(real(x)));
-            testCase.verifyEqual(double(fromReal), double(opendpd.apply(model, single(real(x)))), AbsTol=1e-12);
+            testCase.verifyEqual(double(fromReal), double(opendpd.apply(model, single(real(x)), Execution="offline_segmented")), AbsTol=1e-12);
         end
 
         function badInputsAreRefusedLikeApplyRefusesThem(testCase)
@@ -300,7 +300,7 @@ classdef TestCodegen < matlab.unittest.TestCase
             [name, ~] = testCase.generate(damaged, 'offline_segmented');
             x = PackageTools.signal(300, 21) / 10;
             instance = feval(name);
-            testCase.verifyEqual(instance(x), opendpd.apply(damaged, x), AbsTol=0);
+            testCase.verifyEqual(instance(x), opendpd.apply(damaged, x, Execution="offline_segmented"), AbsTol=0);
         end
 
         function weightsThatAreNotFiniteAreRefused(testCase)

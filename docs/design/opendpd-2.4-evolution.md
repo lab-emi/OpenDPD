@@ -68,7 +68,7 @@ Engine 的方向和安装要求见 [MATLAB Engine 文档](https://www.mathworks.
 
 ### 目标使用体验
 
-以下基本接口已有开发实现。示例的 `x`/`y` 为同次采集的 PA 输入/输出，`xTest` 为独立测试波形。当前 `apply` 支持 `gru`、`tres_gru`、`gmp`、`mp_ls`、`gmp_ls` 的 CPU 离线分段推理（与评估器逐样本一致），`gru` 与 `gmp` 另有有状态流式执行。
+以下基本接口已有开发实现。示例的 `x`/`y` 为同次采集的 PA 输入/输出，`xTest` 为独立测试波形。当前 `apply` 支持 `gru`、`tres_gru`、`gmp`、`mp_ls`、`gmp_ls` 的 CPU 离线分段推理（与评估器逐样本一致），`gru` 与 `gmp` 另有有状态流式执行；默认 `Execution="auto"`：有流式变体的模型走流式，其余走离线分段（依据 `docs/performance/matlab-apply-semantics.md` 的预注册测量）。
 
 ```matlab
 opendpd.setup(PythonExecutable="/path/to/python");

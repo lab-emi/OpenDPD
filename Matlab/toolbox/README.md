@@ -21,8 +21,9 @@ metadata is still the 2.3 baseline until the release is cut.
 - Submit PA/DPD training, query progress, cancel, and reconnect by run ID.
 - Read stored evaluation results and queue the standard DPD waveform export.
 - Apply a trained PA or DPD (`gru`, `tres_gru`, `gmp`, `mp_ls`, `gmp_ls`) to a supplied
-  waveform on CPU, with the **offline segment boundaries** of the Python evaluator, or as
-  a **stream** for the models that have a registered streaming variant (`gru`, `gmp`).
+  waveform on CPU: as a **stream** (one state across the waveform) for the models that have a registered
+  streaming variant (`gru`, `gmp`), which is the default for them, or with the **offline segment boundaries** of
+  the Python evaluator, which is how a run was scored and the only form of the other models.
 - Go from a paired capture to a trained PA and DPD in one call, `opendpd.fit`, which starts Python as a separate
   process (no `pyenv`) and returns models that run in plain MATLAB.
 - Score a capture with the metrics Studio uses, without a project or server: `opendpd.waveform`,
@@ -158,7 +159,8 @@ summary = opendpdQuickstart();
 
 The example creates a fresh workspace, generates a synthetic nonlinear PA
 capture, trains small GRUs, and writes `matlab-dpd-output.mat` containing the
-held-out input, predistorted waveform, inference metadata and stored report.
+held-out input, the predistorted waveform as `apply` produces it by default (`u`) and as the stored report scored it
+(`uScored`), inference metadata and the stored report.
 It stops its service when finished. Two training epochs check the workflow;
 the result is not a performance benchmark.
 
@@ -211,10 +213,10 @@ reproducible small run, or `Device="cuda"` with `DeviceIndex=1` to pick a GPU.
 To register the standard test-split waveform and surrogate evaluation in the
 workspace, use `exported = opendpd.wait(opendpd.runDPD(dpd))`. Its artifacts
 are available through Studio and `opendpd.result(exported)` reads its report.
-The baseline `runDPD` exporter carries state over the whole test waveform;
-`apply` resets at segment boundaries unless you ask for `Execution="streaming"`.
-Read the export sidecar for its execution semantics. The example saves the segmented training-run report with `apply`'s
-waveform and records the separate export run ID.
+The baseline `runDPD` exporter carries state over the whole test waveform, and so does `apply` for a `gru` or `gmp` by
+default; `Execution="offline_segmented"` resets at segment boundaries, which is how the stored training-run report was
+scored. Read the export sidecar for its execution semantics. The example saves the segmented training-run report
+with `apply`'s waveform and records the separate export run ID.
 
 ### MAT files
 
@@ -243,17 +245,25 @@ signals use 512-4096.
 - Import uses the existing contiguous split with a default 256-sample guard.
   The guard must cover the training frame context. Dataset names must be
   unique IDs, for example `capture-001`.
-- `apply(..., Execution="offline_segmented")` (the default) is how the run was scored. It
+- `apply(..., Execution="auto")` (the default) runs a `gru` or `gmp` as a stream and every other model the way the run
+  was scored. `info.execution` says which, `info.execution_requested` what was asked for and `info.execution_reason`
+  why. The default follows a pre-registered measurement of the two executions after a PA (Studio's own
+  `docs/performance/matlab-apply-semantics.md`): for the GRU DPDs measured, a state reset every 512 to 4096
+  samples costs 0.8 to 12 dB of the linearised output's quality (the mean of the EVM or in-band-error gain and the ACLR gain;
+  0.8 dB on the `DPA_200MHz` capture at 1024 samples, 12 dB on the Arena reference models at 512), and at most 0.12 dB for
+  the `gmp` DPDs.
+- `apply(..., Execution="offline_segmented")` is how the run was scored. It
   restarts the model's state at the run's frozen `SegmentSamples` boundary, pads the final
   segment with zeros and trims the padding from its result. A model that reads future
   samples (`tres_gru` reads 16) sees zero padding within that distance of a segment end.
-  `info.limitations` says so. It does not carry state between calls.
+  `info.limitations` says so. It does not carry state between calls. Use it to reproduce
+  the stored report.
 - `apply(..., Execution="streaming")` (alias of `"streaming_stateful"`) carries one state across
   the waveform in chunks of `ChunkSamples`. It exists only for `gru` and `gmp`, whose
   registered streaming variants are `gru_stream` and `gmp_stream`; other models are refused
   rather than approximated. The output is a different signal from the one the stored report
   scored, and `info.streaming` carries the measured warm-up, look-ahead and chunk
-  consistency. Choose it deliberately for a waveform that will run continuously.
+  consistency. It is what `auto` chooses for those two models.
 - Each call loads the recorded model in an isolated CPU process; it is intended for whole
   waveforms.
 - Inference metadata includes checkpoint and sample hashes, output role, sample count,

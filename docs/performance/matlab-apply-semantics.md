@@ -299,6 +299,18 @@ difference is at most 0.12 dB at the typical lengths, on DPDs that improve the P
 * Expected `q_T - q_O` within 0.01 dB. Confirmed: 0.0009 dB at most (GRU), 0.0000 (GMP).
 * Cautioned that a PA surrogate fitted on frames may be less faithful with continuous state. It is not (at most 0.05 dB).
 
+#### Implemented, and what is not changed
+
+`Job.apply` (SDK) and `opendpd.apply` (MATLAB: job, `opendpd.Model`) default to `auto`; `apply_waveform` accepts `auto`, resolves
+it from the registered streaming variant of the run's model, and returns `execution` (what ran), `execution_requested` and, for
+`auto`, `execution_reason`. A `FixedModel` accepts `auto` and runs its one execution. Tests that depend on the scored form name it
+explicitly, and new tests pin `auto` for every supported model, both roles, in Python and in MATLAB.
+
+Not changed, deliberately: the registry and the `experimental` status of the streaming variants (promoting them is a maintainer
+decision, and `auto` is a default of two clients, not a claim about them); `apply_waveform`'s own default of
+`offline_segmented`, which the exported golden vectors rely on; the default of `opendpd.generateCode`, which is how a block is fed;
+Studio's API, scoring and screens; model causality; every threshold and metric.
+
 #### Limits
 
 Two backbones, three datasets, one PA model family (a GRU surrogate fitted to the capture), SDK-default training, three seeds

@@ -30,11 +30,12 @@ dpd = opendpd.wait(opendpd.trainDPD(p, ds, PA=pa, ModelParameters=parameters, Tr
 % Manifest boundaries are zero-based, half-open; MATLAB indices are one-based.
 range = ds.split.boundaries.test;
 xTest = x(range(1)+1:range(2));
-[u, info] = opendpd.apply(dpd, xTest);
+[u, info] = opendpd.apply(dpd, xTest); % Execution="auto": a stream for a gru, see info.execution
+uScored = opendpd.apply(dpd, xTest, Execution="offline_segmented"); % how the stored report was scored
 exported = opendpd.wait(opendpd.runDPD(dpd));
-report = opendpd.result(dpd); % segmented test evaluation matching apply above
+report = opendpd.result(dpd); % segmented test evaluation matching uScored above
 outputFile = fullfile(p.Workspace, 'matlab-dpd-output.mat');
-save(outputFile, 'xTest', 'u', 'info', 'fs', 'report', '-v7');
+save(outputFile, 'xTest', 'u', 'uScored', 'info', 'fs', 'report', '-v7');
 
 summary = struct('workspace', p.Workspace, 'pa_run', pa.ID, 'dpd_run', dpd.ID, ...
     'export_run', exported.ID, 'waveform_file', outputFile);

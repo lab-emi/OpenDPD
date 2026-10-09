@@ -25,7 +25,7 @@ summary = opendpdQuickstart();
 <p>The example creates a fresh workspace and a synthetic nonlinear PA capture,
 trains small PA and DPD GRUs for two epochs on CPU, checks inference, exports a
 waveform and writes <code>matlab-dpd-output.mat</code>. It closes its service when finished.
-The MAT file includes <code>xTest</code>, <code>u</code>, <code>info</code>, <code>fs</code> and <code>report</code>. This is a workflow
+The MAT file includes <code>xTest</code>, <code>u</code>, <code>uScored</code> (the segmented form the stored report scored), <code>info</code>, <code>fs</code> and <code>report</code>. This is a workflow
 check, not a model benchmark. Reopen it with:</p>
 <pre><code class="language-matlab">p = opendpd.openProject(summary.workspace);
 link = opendpd.studio(p);
@@ -82,8 +82,13 @@ save(&quot;predistorted-input.mat&quot;, &quot;u&quot;, &quot;info&quot;, &quot;
 For a DPD run it is the <strong>predistorted PA input</strong>, before a physical or simulated
 PA. Applying a PA run instead produces the modeled PA output.</p>
 <p><code>apply</code> supports <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code> and <code>gmp_ls</code> on CPU, unquantized. Each
-has a test that compares its output with the Python evaluator. By default
-(<code>Execution="offline_segmented"</code>) it is how the run was scored: state resets at the trained
+has a test that compares its output with the Python evaluator. By default (<code>Execution="auto"</code>) a
+<code>gru</code> or <code>gmp</code> runs as a stream, with one state across the whole waveform, and the other models run
+the way the run was scored; <code>info.execution</code>, <code>info.execution_requested</code> and <code>info.execution_reason</code> say which and why.
+The default follows a measurement of the two executions after a PA (a state reset every 512 to 4096 samples costs 0.8 to
+12 dB of linearisation quality for the GRU DPDs measured and at most 0.12 dB for the <code>gmp</code> DPDs; see
+<code>docs/performance/matlab-apply-semantics.md</code> in the OpenDPD repository).
+<code>Execution="offline_segmented"</code> is how the run was scored: state resets at the trained
 run's frozen segment boundaries, the final segment is zero padded and the padding is trimmed
 from the returned vector. <code>tres_gru</code> reads 16 future samples, so within 16 samples of a
 segment end it sees zero padding rather than the waveform; <code>info.limitations</code> says so.
@@ -103,8 +108,9 @@ A checkpoint whose hash changed is refused.</p>
 exportReport = opendpd.result(exported);
 opendpd.openStudio(p, Page=&quot;run&quot;, RunID=exported.ID);
 </code></pre>
-<p>The existing <code>runDPD</code> exporter carries state across the whole test waveform;
-<code>apply</code> resets at segment boundaries by default. These outputs can differ. Read the export
+<p>The existing <code>runDPD</code> exporter carries state across the whole test waveform, as <code>apply</code> does by default for a
+<code>gru</code> or <code>gmp</code>; <code>Execution="offline_segmented"</code> resets at segment boundaries, as the stored report was scored. These
+outputs can differ. Read the export
 sidecar for its execution semantics. The quickstart saves the segmented
 training-run report alongside <code>apply</code>'s waveform and separately records the
 export run ID. Stored DPD reports evaluate a PA surrogate. A new waveform passed
@@ -139,7 +145,7 @@ that has no Python:</p>
 <pre><code class="language-matlab">opendpd.export(dpd, &quot;apa-dpd.opendpd.zip&quot;);       % needs the Python SDK; the same run always gives the same bytes
 model = opendpd.load(&quot;apa-dpd.opendpd.zip&quot;);      % plain MATLAB from here on
 report = opendpd.verify(model)                    % golden test: OpenDPD's outputs vs this MATLAB release, within 1e-5
-u = opendpd.apply(model, xTest);                  % offline_segmented, like opendpd.apply(dpd, xTest)
+u = opendpd.apply(model, xTest);                  % auto, like opendpd.apply(dpd, xTest): a stream for gru and gmp
 y = model(chunk); reset(model);                   % streaming, for gru and gmp
 </code></pre>
 <p>Use the training dataset's sample rate and amplitude units: nothing is normalised or aligned

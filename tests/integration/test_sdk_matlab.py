@@ -115,7 +115,7 @@ def test_apply_matches_existing_python_evaluator(project, trained, index):
     cwd = Path.cwd()
     expected = predict_test_split(ws, job.run_id, config, experiments.load_artifacts(ws, job.run_id))
     expected_iq = expected.prediction if index == 1 else expected.u
-    actual, meta_json = bridge.apply(job, x)
+    actual, meta_json = bridge.apply(job, x, "offline_segmented")
     meta = json.loads(meta_json)
     np.testing.assert_allclose(actual, expected_iq.reshape(-1, 2)[:len(x)], rtol=1e-5, atol=1e-6)
     assert actual.shape == x.shape and actual.dtype == np.float32
@@ -124,12 +124,24 @@ def test_apply_matches_existing_python_evaluator(project, trained, index):
     assert Path.cwd() == cwd
 
 
+def test_the_bridge_asks_for_auto_unless_told_otherwise(trained):
+    # the default model is a gru, which has a streaming variant: auto is one continuous state, not the scored form
+    job = trained[2]
+    x, _ = synthesize(300, fs=80e6, bandwidth=20e6)
+    default, meta = bridge.apply(job, x)
+    meta = json.loads(meta)
+    assert meta["execution_requested"] == "auto" and meta["execution"] == "streaming_stateful"
+    assert meta["execution_reason"].startswith("auto: ") and "segment_samples" not in meta
+    scored, scored_meta = bridge.apply(job, x, "offline_segmented")
+    assert json.loads(scored_meta)["execution"] == "offline_segmented" and not np.array_equal(default, scored)
+
+
 def test_apply_resets_segments_and_trims_partial_tail(project, trained):
     job = trained[2]
     x, _ = synthesize(257, fs=80e6, bandwidth=20e6)
-    full, _ = job.apply(x)
-    first, _ = job.apply(x[:128])
-    tail, _ = job.apply(x[128:])
+    full, _ = job.apply(x, execution="offline_segmented")
+    first, _ = job.apply(x[:128], execution="offline_segmented")
+    tail, _ = job.apply(x[128:], execution="offline_segmented")
     np.testing.assert_allclose(full, np.concatenate([first, tail]), rtol=1e-5, atol=1e-6)
     assert full.shape == (257, 2)
     with pytest.raises(ValueError, match="execution must be one of"):
@@ -143,11 +155,11 @@ def test_apply_uses_frozen_run_metadata_after_dataset_edit(project, trained):
     ds, pa, _ = trained
     manifest = ws.get_dataset(ds["dataset_id"])
     x, _ = synthesize(257, fs=80e6, bandwidth=20e6)
-    expected, _ = pa.apply(x)
+    expected, _ = pa.apply(x, execution="offline_segmented")
     try:
         update_manifest(ws, manifest.dataset_id,
             signal=manifest.signal.model_copy(update={"nperseg": 64, "sample_rate_hz": 160e6}))
-        actual, info = pa.apply(x)
+        actual, info = pa.apply(x, execution="offline_segmented")
         np.testing.assert_array_equal(actual, expected)
         assert info["segment_samples"] == 128 and info["sample_rate_hz"] == 80e6
     finally:

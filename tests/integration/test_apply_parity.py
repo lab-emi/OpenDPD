@@ -82,7 +82,7 @@ def test_offline_apply_matches_the_evaluator(project, runs, waveform, key, role)
     expected = predict_test_split(ws, job.run_id, experiments.load_resolved(ws, job.run_id),
                                   experiments.load_artifacts(ws, job.run_id))
     expected_iq = (expected.prediction if role == 0 else expected.u).reshape(-1, 2)[:len(waveform)]
-    actual, meta = job.apply(waveform)
+    actual, meta = job.apply(waveform, execution="offline_segmented")
     np.testing.assert_allclose(actual, expected_iq, rtol=1e-5, atol=1e-6)
     assert actual.shape == waveform.shape and actual.dtype == np.float32
     assert meta["execution"] == "offline_segmented" and meta["segment_samples"] == NPERSEG
@@ -95,16 +95,17 @@ def test_offline_apply_matches_the_evaluator(project, runs, waveform, key, role)
 def test_offline_segments_are_independent_and_the_tail_is_trimmed(runs, key):
     job = runs[key][1]
     x, _ = synthesize(2 * NPERSEG + 5, fs=FS, bandwidth=20e6)
-    whole, _ = job.apply(x)
-    parts = [job.apply(x[:NPERSEG])[0], job.apply(x[NPERSEG:2 * NPERSEG])[0], job.apply(x[2 * NPERSEG:])[0]]
+    whole, _ = job.apply(x, execution="offline_segmented")
+    parts = [job.apply(x[:NPERSEG], execution="offline_segmented")[0], job.apply(x[NPERSEG:2 * NPERSEG], execution="offline_segmented")[0],
+             job.apply(x[2 * NPERSEG:], execution="offline_segmented")[0]]
     np.testing.assert_allclose(whole, np.concatenate(parts), rtol=1e-5, atol=1e-6)
     assert whole.shape == x.shape
 
 
 def test_non_causal_models_state_what_they_read_beyond_a_segment(runs):
     x, _ = synthesize(NPERSEG, fs=FS, bandwidth=20e6)
-    _, tres = runs["tres_gru"][1].apply(x)
-    _, causal = runs["gru"][1].apply(x)
+    _, tres = runs["tres_gru"][1].apply(x, execution="offline_segmented")
+    _, causal = runs["gru"][1].apply(x, execution="offline_segmented")
     assert tres["lookahead_samples"] == 16 and any("16 future samples" in note for note in tres["limitations"])
     assert causal["lookahead_samples"] == 0 and not any("future samples" in note for note in causal["limitations"])
 
@@ -126,7 +127,7 @@ def test_streaming_apply_follows_the_streaming_contract(project, runs, waveform,
     other, _ = job.apply(waveform, execution="streaming", chunk_samples=77)
     warmup = meta["streaming"]["warmup_samples"]
     np.testing.assert_allclose(streamed[warmup:], other[warmup:], atol=1e-4)
-    offline, _ = job.apply(waveform)
+    offline, _ = job.apply(waveform, execution="offline_segmented")
     assert np.abs(streamed[NPERSEG:] - offline[NPERSEG:]).max() > 1e-6
 
 
@@ -162,6 +163,33 @@ def test_metadata_is_json_serialisable_and_names_its_evidence(runs, waveform):
     assert meta["evidence"].startswith("model inference") and meta["apply_version"] == 2
 
 
+# --- the default, auto: one continuous state where the model has a streaming variant, the scored form elsewhere ----------
+
+@pytest.mark.parametrize("role", [0, 1], ids=["pa", "dpd"])
+@pytest.mark.parametrize("key", APPLY_MODELS)
+def test_auto_is_streaming_where_a_variant_exists_and_offline_elsewhere(runs, waveform, key, role):
+    job = runs[key][role]
+    chosen = "streaming_stateful" if key in ("gru", "gmp") else "offline_segmented"
+    default, meta = job.apply(waveform)
+    named, _ = job.apply(waveform, execution="auto")
+    explicit, explicit_meta = job.apply(waveform, execution=chosen)
+    np.testing.assert_array_equal(default, named)
+    np.testing.assert_array_equal(default, explicit)
+    assert meta["execution"] == chosen and meta["execution_requested"] == "auto"
+    assert meta["output_sha256"] == explicit_meta["output_sha256"]
+    assert meta["execution_reason"].startswith("auto: ") and key in meta["execution_reason"]
+    # a caller who names a semantics gets exactly that one and no reason
+    assert explicit_meta["execution_requested"] == chosen and "execution_reason" not in explicit_meta
+
+
+def test_auto_differs_from_the_scored_form_for_a_stateful_model(runs, waveform):
+    job = runs["gru"][1]
+    auto, meta = job.apply(waveform)
+    scored, _ = job.apply(waveform, execution="offline_segmented")
+    assert meta["execution"] == "streaming_stateful" and "segment_samples" not in meta
+    assert np.abs(auto[NPERSEG:] - scored[NPERSEG:]).max() > 1e-6
+
+
 # --- model packages (opendpd-model-v1): the exported weights and golden vector equal the evaluator ----------------------
 
 def _package(path):
@@ -193,7 +221,7 @@ def test_exported_package_carries_the_weights_and_reproduces_apply(project, runs
     for name, values in expected.items():
         np.testing.assert_array_equal(weights[name], values)
     # the golden outputs are apply's, and a module rebuilt from the package alone reproduces them
-    offline, _ = job.apply(golden["input"])
+    offline, _ = job.apply(golden["input"], execution="offline_segmented")
     np.testing.assert_allclose(golden["output_offline_segmented"], offline, rtol=0, atol=1e-6)
     rebuilt = export.core_from_weights(key, manifest["model"]["parameters"], manifest["model"]["architecture"], weights)
     from opendpd.services.inference import _offline

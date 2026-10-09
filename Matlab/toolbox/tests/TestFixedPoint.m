@@ -365,6 +365,7 @@ classdef TestFixedPoint < matlab.unittest.TestCase
             testCase.verifyEqual(info.spec_id, 'fixed-point-v1');
             testCase.verifyEqual(opendpd.apply(model, single(x)), y);
             testCase.verifyEqual(opendpd.apply(model, x, Execution="streaming"), y);
+            testCase.verifyEqual(opendpd.apply(model, x, Execution="auto"), y);              % its one execution, so auto is that
             testCase.verifyEqual(opendpd.apply(model, x, Execution="streaming_stateful", ChunkSamples=64), y);
         end
 

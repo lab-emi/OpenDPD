@@ -440,13 +440,16 @@ class Job:
                 raise TimeoutError(f"Run {self.run_id} is still {record['status']}; it was not cancelled")
             time.sleep(min(interval, remaining))
 
-    def apply(self, x, *, execution="offline_segmented", chunk_samples=None, timeout=120.0):
+    def apply(self, x, *, execution="auto", chunk_samples=None, timeout=120.0):
         """Apply a succeeded run on CPU; return ``(Nx2 float32, metadata)``.
 
-        ``offline_segmented`` (default) is how the run was scored: state resets at the stored segment length and the
-        last segment is zero padded. ``streaming_stateful`` (alias ``streaming``) carries one state across chunks
-        and exists only for models with a registered streaming variant. The metadata says which one produced the
-        output, with its limitations. Nothing is normalised.
+        ``auto`` (default) runs a model with a registered streaming variant (``gru``, ``gmp``) as
+        ``streaming_stateful`` and every other model as ``offline_segmented``. ``offline_segmented`` is how the run
+        was scored: state resets at the stored segment length and the last segment is zero padded.
+        ``streaming_stateful`` (alias ``streaming``) carries one state across chunks and exists only for models with
+        a registered streaming variant. The metadata says which one produced the output (``execution``), what was
+        asked for (``execution_requested``) and, for ``auto``, why (``execution_reason``), with the limitations.
+        Nothing is normalised.
         """
         import numpy as np
         from opendpd.services.inference import normalise_execution

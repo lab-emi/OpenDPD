@@ -3,9 +3,10 @@ function [dpd, pa, report] = fit(x, y, options)
 %   [dpd, pa, report] = opendpd.fit(x, y, Workspace="my-workspace", SampleRate=fs, Bandwidth=bw, SegmentSamples=2048)
 % x is the PA input and y the PA output (complex vectors of the same length, nothing is normalised). Training runs in
 % Python/PyTorch from the usual OpenDPD workspace, so every step is an ordinary run you can open in Studio later; the
-% results come back as opendpd.Model objects that run in plain MATLAB (opendpd.apply(dpd, xNew), streaming for gru
-% and gmp). Python is started as a separate process: MATLAB's pyenv is not used or loaded, so the Python version need
-% not match the MATLAB release. Pass PythonExecutable, or set OPENDPD_PYTHON, or run opendpd.studio/opendpd.setup once.
+% results come back as opendpd.Model objects that run in plain MATLAB (opendpd.apply(dpd, xNew): one state across the
+% waveform for gru and gmp, the scored form for the others). Python is started as a separate process: MATLAB's pyenv is
+% not used or loaded, so the Python version need not match the MATLAB release. Pass PythonExecutable, or set
+% OPENDPD_PYTHON, or run opendpd.studio/opendpd.setup once.
 %
 % Required: Workspace (a folder; it is created and nothing is stored anywhere else), SampleRate and Bandwidth in Hz, and
 % SegmentSamples, which has no default because spectral metrics use it as their Welch segment and evaluation restarts a

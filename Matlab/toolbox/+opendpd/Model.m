@@ -1,7 +1,8 @@
 classdef Model < matlab.System
     % OPENDPD.MODEL An opendpd-model-v1 package run by plain MATLAB code (no Python, no other toolbox).
     %   model = opendpd.load("pkg.opendpd.zip");
-    %   y = opendpd.apply(model, x);                          % how the run was scored: state resets every nperseg samples
+    %   y = opendpd.apply(model, x);                          % auto: one state across the waveform (gru, gmp), else as scored
+    %   y = opendpd.apply(model, x, Execution="offline_segmented");   % as scored: the state resets every nperseg samples
     %   y = opendpd.apply(model, x, Execution="streaming");   % one state across the waveform (gru, gmp only)
     %   y = model(chunk);  reset(model);                      % streaming, as a System object (same models)
     % Samples are not normalised or aligned: use the training dataset's units and sample rate (model.Manifest.signal).
@@ -42,12 +43,14 @@ classdef Model < matlab.System
         end
 
         function [y, info] = apply(obj, x, options)
-            %APPLY Run the model on a whole waveform with one of the two OpenDPD execution semantics.
+            %APPLY Run the model on a whole waveform with one of the two OpenDPD execution semantics, or "auto".
+            % "auto" (default) is streaming_stateful for a model with a streaming variant (gru, gmp) and offline_segmented for
+            % every other model; info.execution says which one ran and info.execution_reason why.
             arguments
                 obj (1,1) opendpd.Model
                 x {mustBeNumeric}
                 options.Execution (1,1) string {mustBeMember(options.Execution, ...
-                    ["offline_segmented", "streaming_stateful", "streaming"])} = "offline_segmented"
+                    ["auto", "offline_segmented", "streaming_stateful", "streaming"])} = "auto"
                 options.ChunkSamples (1,1) double {mustBeInteger, mustBeNonnegative} = 0
             end
             obj.requireLoaded();
@@ -57,10 +60,11 @@ classdef Model < matlab.System
                 error('opendpd:InvalidIQ', 'Expected a finite single/double I/Q vector: %s', cause.message);
             end
             signal = complex(double(single(real(x(:)))), double(single(imag(x(:)))));
-            execution = options.Execution;
-            if execution == "streaming"
-                execution = "streaming_stateful";
+            requested = options.Execution;
+            if requested == "streaming"
+                requested = "streaming_stateful";
             end
+            [execution, reason] = obj.resolveExecution(requested);
             if execution == "offline_segmented"
                 nperseg = obj.Manifest.signal.nperseg;
                 count = numel(signal);
@@ -87,7 +91,7 @@ classdef Model < matlab.System
             end
             y = complex(single(real(yc)), single(imag(yc)));
             if nargout > 1
-                info = obj.describe(execution);
+                info = obj.describe(execution, requested, reason);
             end
         end
 
@@ -102,7 +106,8 @@ classdef Model < matlab.System
             x = complex(double(g.input(:, 1)), double(g.input(:, 2)));
             report = struct('model', obj.Kernel.key, 'samples', numel(x), 'tolerance_abs', tolerance, ...
                 'offline_max_abs_error', NaN, 'streaming_max_abs_error', NaN, 'passed', false);
-            report.offline_max_abs_error = opendpd.Model.maxError(obj.apply(x), g.output_offline_segmented);
+            scored = obj.apply(x, Execution="offline_segmented");
+            report.offline_max_abs_error = opendpd.Model.maxError(scored, g.output_offline_segmented);
             passed = report.offline_max_abs_error <= tolerance;
             if obj.Manifest.execution.streaming_stateful.available
                 if ~isfield(g, 'output_streaming_stateful')
@@ -269,15 +274,38 @@ classdef Model < matlab.System
             end
         end
 
-        function info = describe(obj, execution)
+        function [execution, reason] = resolveExecution(obj, requested)
+            % "auto" is streaming for a model that has a registered streaming variant and the scored form otherwise.
+            execution = requested;
+            reason = '';
+            if requested ~= "auto"
+                return
+            end
+            key = obj.Manifest.model.key;
+            if obj.Manifest.execution.streaming_stateful.available
+                execution = "streaming_stateful";
+                reason = sprintf(['auto: %s has a registered streaming variant, which carries one state across the whole waveform ' ...
+                    'as a deployed model does; a state reset every segment costs EVM and ACLR after a PA ' ...
+                    '(docs/performance/matlab-apply-semantics.md)'], key);
+            else
+                execution = "offline_segmented";
+                reason = sprintf('auto: %s has no registered streaming variant, so it runs the way the run was scored', key);
+            end
+        end
+
+        function info = describe(obj, execution, requested, reason)
             m = obj.Manifest;
-            info = struct('execution', char(execution), 'model', m.model.key, 'run_id', m.run.run_id, ...
+            info = struct('execution', char(execution), 'execution_requested', char(requested), ...
+                'model', m.model.key, 'run_id', m.run.run_id, ...
                 'output_role', 'modeled_pa_output', 'sample_rate_hz', m.signal.sample_rate_hz, ...
                 'segment_samples', m.signal.nperseg, 'lookahead_samples', m.execution.offline_segmented.lookahead_samples, ...
                 'evidence', m.evidence.type, 'runtime', 'plain MATLAB (opendpd.runtime)', ...
                 'note', 'no normalisation or alignment is applied; use the training dataset''s units and sample rate');
             if strcmp(m.run.role, 'dpd')
                 info.output_role = 'predistorted_pa_input';
+            end
+            if ~isempty(reason)
+                info.execution_reason = reason;
             end
             if execution == "streaming_stateful"
                 info.segment_samples = [];

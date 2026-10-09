@@ -358,7 +358,7 @@ are in <code>docs/performance/matlab-parity.md</code> of the OpenDPD repository.
 <tbody>
 <tr>
 <td><code>[y, info] = opendpd.apply(job, x, ...)</code></td>
-<td>Complex single column vector plus metadata. <code>Execution="offline_segmented"</code> (default, how the run was scored) or <code>"streaming_stateful"</code> / <code>"streaming"</code> (one state across chunks; <code>gru</code> and <code>gmp</code> only), <code>ChunkSamples=0</code> (the default chunk), <code>Timeout=120</code> seconds. CPU, unquantized <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code>. <code>info.execution</code>, <code>info.limitations</code> and <code>info.streaming</code> state what produced <code>y</code>.</td>
+<td>Complex single column vector plus metadata. <code>Execution="auto"</code> (default: a stream for <code>gru</code> and <code>gmp</code>, the scored form for the others), <code>"offline_segmented"</code> (how the run was scored) or <code>"streaming_stateful"</code> / <code>"streaming"</code> (one state across chunks; <code>gru</code> and <code>gmp</code> only), <code>ChunkSamples=0</code> (the default chunk), <code>Timeout=120</code> seconds. CPU, unquantized <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code>, <code>gmp_ls</code>. <code>info.execution</code>, <code>info.execution_requested</code>, <code>info.execution_reason</code> (for <code>auto</code>), <code>info.limitations</code> and <code>info.streaming</code> state what produced <code>y</code>.</td>
 </tr>
 <tr>
 <td><code>exported = opendpd.runDPD(dpd)</code></td>
@@ -440,9 +440,9 @@ and object members, or has a number of more than 64 characters is refused with <
 in its text (escape sequences, bells, carriage returns) are replaced by <code>?</code> before anyone can display it. A manifest that
 declares fewer GRU layers than the weights hold is refused. The golden test input is synthetic noise with the training input's amplitude
 statistics, never a slice of your data, so a package can be shared without sharing a measurement.</p>
-<p>Execution and numerics: <code>opendpd.apply(model, x)</code> uses the same two semantics as for a job (<code>offline_segmented</code>, the
-default, restarts state every <code>Manifest.signal.nperseg</code> samples and zero pads the last segment; <code>tres_gru</code> reads 16
-future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
+<p>Execution and numerics: <code>opendpd.apply(model, x)</code> uses the same semantics as for a job (<code>auto</code>, the default, is a stream for
+<code>gru</code> and <code>gmp</code> and <code>offline_segmented</code> for the others; <code>offline_segmented</code> restarts state every
+<code>Manifest.signal.nperseg</code> samples and zero pads the last segment; <code>tres_gru</code> reads 16 future samples inside a segment). MATLAB computes in double precision; PyTorch uses float32, so outputs agree to
 about <code>1e-7</code>, which is what the golden test measures. Speed on a development machine (R2026a, Linux, no GPU, one MATLAB
 process) is roughly 0.3 us per sample for <code>mp_ls</code>, 1 us for <code>gmp_ls</code>, 2-5 us for a two-layer <code>gru</code> or <code>tres_gru</code> of
 hidden size 6-64, and 13 us for a <code>gmp</code> of 495 terms; it is for evaluating waveforms, not a real-time implementation.
@@ -483,7 +483,8 @@ codegen ApaDpdStep -args {coder.typeof(complex(single(0)), [Inf 1])}      % MATL
 (a frame) or one sample per time step and returns a complex single column; both <em>Interpreted execution</em> and <em>Code
 generation</em> work. <code>examples/opendpdSimulink.m</code> builds a DPD-then-PA transmit chain this way and compares it with
 <code>opendpd.apply</code>.</p>
-<p><strong>Choose the execution to match how the block is fed.</strong> <code>offline_segmented</code> cuts every call into segments of
+<p><strong>Choose the execution to match how the block is fed.</strong> The default of <code>opendpd.generateCode</code> stays <code>offline_segmented</code>
+(<code>opendpd.apply</code>'s <code>auto</code> does not apply to it: a generated class is fed in whatever frames you choose). <code>offline_segmented</code> cuts every call into segments of
 <code>nperseg</code> samples with a zero state at the start of each, because that is how OpenDPD scored the run: a frame of exactly
 <code>nperseg</code> samples is one segment, but feeding it <em>one sample per time step</em> makes every sample its own segment with a zero
 state, which is not the model. For sample-by-sample or frame-by-frame processing of a <code>gru</code> or <code>gmp</code> use

@@ -62,7 +62,8 @@ The package holds the weights, the execution semantics (`offline_segmented`, and
 model has a registered streaming variant), the signal metadata the run was scored with, and a golden test vector
 made of OpenDPD's own outputs. It is supported for `gru`, `tres_gru`, `gmp`, `mp_ls` and `gmp_ls`; other models
 are refused with the reason. The same run always gives the same bytes. In MATLAB:
-`model = opendpd.load("apa-dpd.opendpd.zip"); opendpd.verify(model); u = opendpd.apply(model, x);`.
+`model = opendpd.load("apa-dpd.opendpd.zip"); opendpd.verify(model); u = opendpd.apply(model, x);` (a `gru` or `gmp` runs as
+a stream by default, the other models the way the run was scored; `Execution=` chooses explicitly).
 
 ## 3. Write your own configuration
 
