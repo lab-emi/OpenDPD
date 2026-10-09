@@ -22,8 +22,8 @@
     "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.4.0",
     "@tanstack/react-query": "^5.103.2",
-    "katex": "^0.18.7",
-    "plotly.js-basic-dist-min": "4.1.1",
+    "katex": "^0.19.0",
+    "plotly.js-basic-dist-min": "4.1.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.4.0"
