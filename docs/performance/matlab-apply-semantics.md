@@ -138,3 +138,26 @@ amendment (PA `run-20261009-082222-67f908`, 66 s; DPD `run-20261009-082328-e56c2
 had been computed. Section 3 ("one PA per dataset") and section 5 ("the 3 seeds") are read as "the 3 pairs"; the PA fidelity
 diagnostic is reported per pair. The cause is the platform error above and not any Part A number, which did not enter the
 decision to amend; the thresholds, lengths, decision rule and checks are unchanged.
+
+### 2026-10-09: validity check V4 could not have passed on a GPU-trained run (amendment 2, check only)
+
+Before the final Part B analysis, the analyser was debugged on the two DPA pairs finished at that point, printing the validity
+checks only (no quality was printed; the debug record was never opened). V2 (1.2e-7) and V3 (1.2e-7 for both executions)
+passed. **V4 did not: 0.058 dB and 0.049 dB** against the metrics stored in the runs' results, where 0.01 dB was registered.
+A read-only probe on pair 0 (no SDK service) found the cause. The array shape (flat or segmented) and the metric code make no
+difference (identical to four decimals). The evaluator's own `predict_test_split` run on the CPU reproduces the harness
+**exactly** (largest difference 0.0 in both u and the PA output, identical metrics). What differs is the stored result: the
+evaluator ran it on the GPU, where cuDNN uses TF32 (`torch.backends.cudnn.allow_tf32` is True by default), and its PA output
+differs from the CPU computation of the same weights by up to 1.25e-3 in amplitude (3.3e-4 in u), which moves the stored NMSE by
+0.05 dB (-44.40 stored, -44.45 on the CPU) and IBE by 0.06 dB. No CPU computation can reproduce a GPU-stored number to 0.01 dB,
+so V4 as registered could not pass for a run trained on the GPU, which is what the SDK defaults give.
+
+**Amendment 2.** V4 compares the harness with the evaluator's own pipeline (`predict_test_split`, the run's resolved
+configuration with `device` set to `cpu`): NMSE, IBE, ACLR_L and ACLR_R within 0.01 dB. The difference to the metrics stored by
+the GPU evaluation is reported for every run as information and is not a criterion. Nothing else changes: the Part B quality
+is a difference between two executions of the same weights on the same device, so the GPU floor cancels, and both executions
+are computed on the CPU throughout, as `Job.apply` does.
+
+Also logged: the same debug run closed the project with `stop_service=True` while the first APA PA (`run-20261009-083154-885383`)
+was training in that workspace, which cancelled that run. It is not part of the registered set; the training was restarted from
+its manifest and trains that PA again.
