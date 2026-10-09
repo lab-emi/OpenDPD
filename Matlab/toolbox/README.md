@@ -30,6 +30,9 @@ metadata is still the 2.3 baseline until the release is cut.
 - Export a trained PA or DPD as an `opendpd-model-v1` package (`opendpd.export`) and run it in plain
   MATLAB with no Python (`opendpd.load`, `opendpd.verify`, `opendpd.apply(model, x)`, streaming as a
   System object); for `mp_ls`, `model.commCoefficients()` gives the `comm.DPD` coefficients.
+- Supervise a measurement made by your own instrument code with `opendpd.lab.Session`: RF off until a named person arms it, limits
+  checked before anything is sent, every abnormal path switches RF off and trips the session, and a record with the hash of every
+  played and captured signal goes into the dataset. Exercised only on a dry-run mock; no instrument chain has been tested.
 - Build a source-only `.mltbx` using MATLAB, after running the MATLAB tests.
 
 Training uses the existing model registry. `apply` supports the five models above

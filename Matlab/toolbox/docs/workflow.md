@@ -184,6 +184,25 @@ and one `comm.DPD` stream from a zero state agree. See the [function
 reference](reference.html#model-packages-run-a-trained-model-without-python) for what a package contains, what `verify`
 shows and what it does not, and how a package from elsewhere is read.
 
+## Measure on your bench
+
+`opendpd.lab.Session` wraps the instrument code you already have so that a measurement is supervised and recorded
+(see the [function reference](reference.html#measured-captures-opendpdlab) for the rules). Learn the procedure on the
+dry-run mock first; it emits nothing and needs no Python:
+
+```matlab
+rng(1); u = 0.1 * complex(randn(8192, 1), randn(8192, 1));       % any complex baseband signal below MaxPeak
+lab = opendpd.lab.Session(Instrument=opendpd.lab.MockInstrument(), Operator="Your Name");
+arm(lab);
+y = measure(lab, u, SampleRate=30.72e6);                         % the mock's synthetic PA, not an amplifier
+disarm(lab);
+record(lab)                                                       % operator, limits, hashes of played and captured, log
+```
+
+For your own chain, replace `Instrument=` by `MeasureFcn=` and `RFOffFcn=` (and, if you have them, `HeartbeatFcn=` and
+`PowerCalibration=`). Arming such a session needs the person's name and the environment variable
+`OPENDPD_ALLOW_RF_OUTPUT=1`; nothing in this toolbox sets that variable.
+
 ## Reconnect, cancel and stop
 
 MATLINK report delivery does not require script IDs. Use its **Send to MATLAB**

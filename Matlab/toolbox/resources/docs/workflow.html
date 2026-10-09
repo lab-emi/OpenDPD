@@ -148,6 +148,20 @@ for <code>comm.DPD</code>, so a memory polynomial fitted by OpenDPD can be run b
 and one <code>comm.DPD</code> stream from a zero state agree. See the <a href="reference.html#model-packages-run-a-trained-model-without-python">function
 reference</a> for what a package contains, what <code>verify</code>
 shows and what it does not, and how a package from elsewhere is read.</p>
+<h2 id="measure-on-your-bench">Measure on your bench</h2>
+<p><code>opendpd.lab.Session</code> wraps the instrument code you already have so that a measurement is supervised and recorded
+(see the <a href="reference.html#measured-captures-opendpdlab">function reference</a> for the rules). Learn the procedure on the
+dry-run mock first; it emits nothing and needs no Python:</p>
+<pre><code class="language-matlab">rng(1); u = 0.1 * complex(randn(8192, 1), randn(8192, 1));       % any complex baseband signal below MaxPeak
+lab = opendpd.lab.Session(Instrument=opendpd.lab.MockInstrument(), Operator=&quot;Your Name&quot;);
+arm(lab);
+y = measure(lab, u, SampleRate=30.72e6);                         % the mock's synthetic PA, not an amplifier
+disarm(lab);
+record(lab)                                                       % operator, limits, hashes of played and captured, log
+</code></pre>
+<p>For your own chain, replace <code>Instrument=</code> by <code>MeasureFcn=</code> and <code>RFOffFcn=</code> (and, if you have them, <code>HeartbeatFcn=</code> and
+<code>PowerCalibration=</code>). Arming such a session needs the person's name and the environment variable
+<code>OPENDPD_ALLOW_RF_OUTPUT=1</code>; nothing in this toolbox sets that variable.</p>
 <h2 id="reconnect-cancel-and-stop">Reconnect, cancel and stop</h2>
 <p>MATLINK report delivery does not require script IDs. Use its <strong>Send to MATLAB</strong>
 or <strong>Send when ready</strong> actions, then select <strong>Open in MATLAB</strong> to inspect the

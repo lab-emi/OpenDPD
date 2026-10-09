@@ -51,6 +51,31 @@ classdef TestToolbox < matlab.unittest.TestCase
             end
         end
 
+        function aLabRecordTravelsWithTheCaptureItProduced(testCase)
+            % A measured pair is imported with the compact session record as its source: the dataset then keeps who armed
+            % the session, its limits and the hash of what was played and captured, within the notes' 2000 characters.
+            p = testCase.Project;
+            rng(5);
+            u = complex(single(randn(2048, 1)), single(randn(2048, 1))) / 16;
+            lab = opendpd.lab.Session(Instrument=opendpd.lab.MockInstrument(), Operator=string(repmat('N', 1, 400)), MaxPeak=0.9);
+            arm(lab);
+            y = measure(lab, u, SampleRate=80e6);
+            disarm(lab);
+            record = lab.record(Compact=true);
+            ds = opendpd.importIQ(p, u, y, SampleRate=80e6, Bandwidth=20e6, SegmentSamples=128, Origin="measured", ...
+                Name="lab-record-test", Source=record);
+            notes = jsondecode(ds.notes);
+            testCase.verifyEqual(ds.origin, 'measured');
+            testCase.verifyLessThan(strlength(ds.notes), 2000);
+            testCase.verifyEqual(notes.source.record_sha256, record.record_sha256);
+            testCase.verifyEqual(notes.source.final_state, 'disarmed');
+            testCase.verifyTrue(notes.source.mock, 'a dry run says so in the dataset');
+            testCase.verifyEqual(notes.source.last.captured_sha256, opendpd.lab.iqHash(y));
+            testCase.verifyEqual(notes.source.last.played_sha256, opendpd.lab.iqHash(u));
+            saved = lab.saveRecord(fullfile(string(testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder), "s.json"));
+            testCase.verifyEqual(notes.source.record_sha256, saved.sha256, 'the notes name the complete record by its hash');
+        end
+
         function trainApplyAndReconnect(testCase)
             p = testCase.Project;
             rng(12);

@@ -2,7 +2,7 @@
 
 ## MATLAB cannot find opendpd.studio
 
-Install preview 0.4.0, or add this checkout's `Matlab/toolbox` folder to the
+Install the toolbox (`OpenDPD-2.4.0.mltbx`), or add this checkout's `Matlab/toolbox` folder to the
 MATLAB path. Use `which opendpd.studio -all` and `which opendpd.setup -all` to
 check for older installations. Only the toolbox root needs to be on the path.
 

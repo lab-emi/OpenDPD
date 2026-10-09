@@ -1,10 +1,13 @@
 """The toolbox's version, supported models and documented calls agree with each other and with the code."""
 
+import hashlib
 import re
 from pathlib import Path
 
+import numpy as np
 import pytest
 
+from opendpd.core.measurement import to_iq
 from opendpd.services.inference import APPLY_MODELS
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -144,3 +147,36 @@ def test_the_process_transport_never_calls_python_inside_matlab():
         assert not re.search(r"(?<![A-Za-z0-9_.])py\.", text), f"{path.name} refers to Python"
         assert not re.search(r"(?<![A-Za-z0-9_.])bridge\s*\(", text), f"{path.name} calls the bridge"
         assert not re.search(r"pyenv\s*\(\s*[^)\s]", text), f"{path.name} configures pyenv"
+
+
+def test_the_lab_session_is_documented_and_never_opens_the_rf_gate_or_calls_python():
+    """``opendpd.lab`` drives instruments, so its sources are held to the rules the Python interlock lives by.
+
+    Nothing in the toolbox may set ``OPENDPD_ALLOW_RF_OUTPUT`` (``TestLab`` also scans for it); the check is repeated here so
+    that the Python CI fails too. The session needs no Python at all."""
+    folder = TOOLBOX / "+opendpd" / "+lab"
+    files = sorted(folder.glob("*.m"))
+    assert {p.stem for p in files} >= {"Session", "MockInstrument", "iqHash"}
+    reference, contents, readme = _text("docs", "reference.md"), _text("Contents.m"), _text("README.md")
+    for name in ("Session", "MockInstrument"):
+        assert f"opendpd.lab.{name}(" in reference, f"lab.{name} is not in the function reference"
+        assert f"lab.{name}" in contents, f"lab.{name} is not listed in Contents.m"
+    assert "opendpd.lab.Session" in readme and "OPENDPD_ALLOW_RF_OUTPUT" in reference
+    for path in [*files, *sorted((TOOLBOX / "tests").glob("*.m"))]:
+        text = path.read_text(encoding="utf-8")
+        assert not re.search(r"setenv\s*\(\s*['\"]OPENDPD_ALLOW_RF_OUTPUT", text), f"{path.name} opens the RF output gate"
+    for path in files:
+        text = path.read_text(encoding="utf-8")
+        assert not re.search(r"setenv\s*\(", text), f"{path.name} sets an environment variable"
+        assert not re.search(r"(?<![A-Za-z0-9_.])py\.", text), f"{path.name} refers to Python"
+        assert not re.search(r"(?<![A-Za-z0-9_.])bridge\s*\(", text), f"{path.name} calls the bridge"
+
+
+def test_the_lab_session_hashes_signals_the_way_python_session_records_do():
+    """``TestLab`` pins the same literal for ``opendpd.lab.iqHash``: float32 interleaved I/Q, as ``run_capture_session`` hashes
+    ``to_iq(z).tobytes()``. If either side changes how it hashes, one of the two tests fails."""
+    z = np.arange(1, 9) / 16 + 1j * (np.arange(-4, 4) / 16)
+    digest = hashlib.sha256(to_iq(z).tobytes()).hexdigest()
+    assert digest == "45b6a1346b0daf8b0e93e0faf712d6245e4325c632d4007cbf186d66041d8f86"
+    assert digest in _text("tests", "TestLab.m")
+

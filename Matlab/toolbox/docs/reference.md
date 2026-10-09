@@ -215,3 +215,44 @@ process) is roughly 0.3 us per sample for `mp_ls`, 1 us for `gmp_ls`, 2-5 us for
 hidden size 6-64, and 13 us for a `gmp` of 495 terms; it is for evaluating waveforms, not a real-time implementation.
 Not verified: MATLAB Coder, a Simulink MATLAB System block, HDL generation, other MATLAB releases or operating systems.
 
+## Measured captures: `opendpd.lab`
+
+`opendpd.lab.Session` supervises a measurement made by **your** instrument code. RF stays off until a named person arms
+the session, every limit is checked before anything is sent, and every abnormal path - an error in your functions, a
+timeout, a lost link, a capture that is empty or not finite, Ctrl+C, a failed RF-off - switches RF off and leaves the
+session *tripped*, which cannot be armed again. It follows OpenDPD's Python interlock (`opendpd/instruments/safety.py`,
+`docs/architecture/instruments.md`); the instrument adapter is a pair of function handles, so the code your laboratory
+already has (VISA, a vendor driver, a remote laboratory) is used as it is. No driver ships with the toolbox.
+
+| Call | Returns / behavior |
+| --- | --- |
+| `lab = opendpd.lab.Session(MeasureFcn=@f, RFOffFcn=@g, Operator="Name", ...)` | A disarmed session. `f(u, fs)` plays the complex baseband signal `u` (digital full scale 1.0) at sample rate `fs` and returns the captured complex vector or an N-by-2 `[I Q]`; it is called as `f(u)` when `measure` gets no `SampleRate`. `g()` switches the output off: required, idempotent, no default. Optional: `HeartbeatFcn` (returns when the link is alive, errors otherwise), `PowerCalibration(u)` (the dBm that playing `u` produces, one finite number; for a safety ceiling give peak power), `MaxPeak=1`, `MaxOutputPower_dBm` (none), `Timeout=30` seconds, `RFOffAfterMeasure=true`, `Name`, `Description`. |
+| `lab = opendpd.lab.Session(Instrument=opendpd.lab.MockInstrument())` | A dry-run session around a fixed synthetic PA. It emits nothing, arms with a name alone, and records `mock: true` everywhere. For learning the procedure and testing your scripts; what it returns is never evidence about an amplifier. The class is sealed, so a subclass that drives hardware cannot pass as the mock. |
+| `arm(lab)`, `arm(lab, "Name")` | A named person arms the session (an empty name is refused). A session built from functions also needs the environment variable `OPENDPD_ALLOW_RF_OUTPUT=1`, which only an approved laboratory session sets: this toolbox, its tests and automated tooling never set it, and its tests do not run when it is set. |
+| `y = measure(lab, u, SampleRate=fs, RequestedPower_dBm=p)` | Refuses unless armed, and before anything is sent refuses a signal that is empty, not finite, not a vector or real N-by-2, whose peak exceeds `MaxPeak`, or whose power exceeds `MaxOutputPower_dBm` (the larger of the calibration and `RequestedPower_dBm`). Then calls your `MeasureFcn` and returns the capture as a complex column. Stricter than the Python interlock: with a power ceiling set and no way to know the power, it refuses. RF is switched off after the measurement unless `RFOffAfterMeasure=false`. |
+| `disarm(lab)`, `abort(lab, reason)` | RF off. `abort` also trips the session; `disarm` does not clear a trip. Deleting a session that is still armed switches RF off. |
+| `r = record(lab)`, `record(lab, Compact=true)`, `saveRecord(lab, file)` | The record: operator, limits, the SHA-256 of every played and captured signal (float32 interleaved I/Q, the hash Python session records use), the log of every state change, whether the instrument was a mock. `Compact=true` fits a dataset's 2000-character notes (free text is cut: operator at 100 characters, trip reason at 200) and carries the SHA-256 of the complete record, which `saveRecord` writes as JSON and returns `file` and `sha256` for. |
+
+```matlab
+lab = opendpd.lab.Session(MeasureFcn=@myMeasure, RFOffFcn=@myRFOff, Operator="Your Name", ...
+    MaxPeak=0.9, MaxOutputPower_dBm=30, PowerCalibration=@myPeakPower_dBm, Timeout=60);
+% The next line needs OPENDPD_ALLOW_RF_OUTPUT=1, which you set only in an approved laboratory session.
+arm(lab);
+y = measure(lab, u, SampleRate=fs);                % limits first, then myMeasure(u, fs); RF off afterwards
+disarm(lab);
+ds = opendpd.importIQ(p, u, y, SampleRate=fs, Bandwidth=bw, SegmentSamples=2048, Origin="measured", ...
+    Source=record(lab, Compact=true));              % the dataset keeps who armed the session and what was played
+saveRecord(lab, "session-1.json");                 % the complete record, next to your data
+```
+
+**What MATLAB cannot do.** It cannot interrupt a running function, so `Timeout` is checked when `MeasureFcn` returns,
+and the heartbeat is checked before and after a measurement, not during it. Give your instrument calls their own time
+limits (for example the `Timeout` of a `visadev`) so that a hung instrument returns by itself. Ctrl+C trips the session
+through an `onCleanup` guard that MATLAB documents; that path was not automated in tests (`matlab -batch` did not react
+to SIGINT, so the cleanup could not be exercised). If `RFOffFcn` itself fails the session warns (`opendpd:lab:RFOffFailed`), is tripped and says that the output may
+still be on: switch it off at the instrument.
+
+**What this is not.** A session is a safety wrapper and a record, not a calibration: it does not align delay or gain,
+does not know your attenuators, and does not establish the amplifier's real output power unless your `PowerCalibration`
+does. It has been exercised only on the mock, with injected faults; no instrument chain has been tested with it, so the
+supervised trial that `docs/protocols/measured-dpd.md` requires is still to be done on a real bench.

@@ -9,6 +9,7 @@
 % Results:     result, apply, runDPD.
 % Metrics:     waveform, metrics.evm, metrics.aclr, metrics.evaluate (no project or server needed).
 % Models:      export, load, verify, Model (a loaded package); apply(model, x) and model(chunk) run it in plain MATLAB.
+% Lab:         lab.Session (supervised measurement with RF-off interlock), lab.MockInstrument (dry run, emits nothing).
 %
 % All functions use the opendpd namespace, for example opendpd.doctor().
 % Start with README.md and examples/opendpdQuickstart.m.

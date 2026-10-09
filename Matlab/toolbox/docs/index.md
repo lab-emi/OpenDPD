@@ -1,6 +1,6 @@
 # OpenDPD for MATLAB
 
-**Toolbox preview 0.4.0 · OpenDPD 2.4 development · SDK protocol 1**
+**Toolbox 2.4.0 (unreleased) · OpenDPD 2.4 development · SDK protocol 1**
 
 Use OpenDPD Studio as the toolbox GUI. Prepare signals in MATLAB, import them
 from Studio's **MATLINK** tab, train with the existing Studio workflow, and send
@@ -38,7 +38,7 @@ for your MATLAB release.
 Install the `.mltbx` by opening it in MATLAB, or:
 
 ```matlab
-matlab.addons.toolbox.installToolbox("/path/to/OpenDPD-0.4.0.mltbx");
+matlab.addons.toolbox.installToolbox("/path/to/OpenDPD-2.4.0.mltbx");
 opendpd.studio("/path/to/experiment-workspace", ...
     PythonExecutable="/path/to/python");
 ```
