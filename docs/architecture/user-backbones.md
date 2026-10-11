@@ -92,7 +92,8 @@ private raw source is not automatically attached to a run export or sent to GitH
 
 The feature deliberately refuses public submission unless it can verify an active
 repository ruleset for `main` with no bypass actors, current independent approvals,
-code-owner review and the required `user-backbone-review` status from the GitHub
+an independent review gate and the required `independent-review` and
+`user-backbone-review` statuses from the GitHub
 Actions app (15368). A warning explains why the contribution checkbox is disabled;
 private upload and training continue to work.
 
@@ -103,44 +104,30 @@ empty bypass list.
 
 Deployment order:
 
-1. Human-review and merge the implementation, including
-   `.github/workflows/user-backbones.yml`, the trusted scanner and CODEOWNERS.
-2. Confirm `@lab-emi/opendpd-maintainers` exists, has access, and contains the
-   intended human reviewers. Use a dedicated contribution identity for a hosted
-   Studio, distinct from its human reviewer.
-3. Inspect and apply `deployment/user-backbone-ruleset.json` as an **additional**
-   repository ruleset. This also requires independent/code-owner approvals on
-   other main PRs; it must be coordinated with existing protections. Do not remove
-   or weaken any existing rule. The capability endpoint only reads rules; Studio
-   cannot create or disable them.
-4. Keep the guard's status required for every main PR (it passes without a review
-   when no protected backbone paths change). The workflow also handles merge
-   queues: it rescans the combined tree and requires each protected queued file
-   to match the exact blob in a currently human-approved PR. Conflicting combined
-   edits fail closed and should be queued separately. This follows GitHub's
-   [requirement to report checks on the merge-group head](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#merge_group).
-5. On the public host only, opt in with `OPENDPD_WEB_BACKBONE_PUBLICATIONS=1` after
-   configuring its dedicated GitHub CLI identity. Default is disabled. Uploads,
-   catalog reads and training do not require publication to be enabled.
+1. Independently review and merge the trusted scanner and workflows.
+2. Apply `deployment/user-backbone-ruleset.json` alongside the existing CI rules.
+   It requires PRs, resolved conversations, current branches, no bypass actors,
+   and the `independent-review` and `user-backbone-review` statuses from GitHub
+   Actions (15368). Native approval counts need not require a person.
+3. Give intended human or agent reviewers an authorized admin/maintain identity.
+   Prefer separate GitHub identities; shared-account agents use the explicit
+   session-bound attestation in the [review policy](review-policy.md).
+4. On a public host, opt in with `OPENDPD_WEB_BACKBONE_PUBLICATIONS=1` after
+   configuring its dedicated contribution identity. Publication stays disabled
+   by default. Private uploads and training do not require it.
 
-The guard runs executable code only from the trusted target branch, retrieves PR
-files as bounded blobs, and publishes a status on the exact PR head. It accepts
-only an `APPROVED` review by an independent `User` account with admin/maintain
-permission. Bots, author approvals, comments (including `Reviewed head:` comments),
-stale or dismissed approvals do not count. Outstanding maintainer changes-requested
-reviews block it. GitHub account type alone cannot prove a person was operating
-the account; human-only maintainer membership and access control remain necessary.
-
-For fork PRs where GitHub gives the review-event workflow a read-only token, a
-maintainer can trigger a trusted recheck with `/backbone-review` in a PR comment
-or run the workflow manually with the PR number. A comment triggers verification;
-it is never treated as approval. Repository administrators remain the root of trust
-and can change GitHub rules outside Studio.
+The guard executes only trusted base code and reads bounded blobs at the PR head.
+It accepts independent authorized human or agent approval under the shared policy;
+self-review, stale/dismissed approvals and unresolved changes requests fail.
+For fork events with read-only tokens, post a PR comment or manually dispatch
+with `pr_number` to trigger a trusted recheck. Ordinary comments are not approvals.
+Studio only reads the rules; it never changes protections or merges contributions.
+Repository administrators remain the root of trust.
 
 ## Verification
 
 `tests/unit/test_backbone_template.py` exercises malicious syntax, size/shape
-bounds, every operation's gradients and causal behavior, and human-review rules.
+bounds, every operation's gradients and causal behavior, and independent-review rules.
 `tests/integration/test_user_backbones.py` covers API authentication/CSRF,
 workspace isolation, consent/tampering, real local bare Git branches with mocked
 GitHub PR transport, fork recovery, main-only catalog refresh and real PA/DPD

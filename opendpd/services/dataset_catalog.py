@@ -73,7 +73,7 @@ def write_package(ws: Workspace, draft: DatasetPublicationDraft, directory: Path
             "`data.csv` has finite I_in,Q_in,I_out,Q_out values; preprocessing is raw-v1.\n\n"
             "Synthetic data demonstrate software behavior and are not physical RF measurements. "
             "A contributor's measured declaration is not independent certification.\n\n"
-            "Inclusion requires human review of data, rights and provenance. No automatic merge is requested. "
+            "Inclusion requires independent human or agent review of data, rights and provenance. No automatic merge is requested. "
             "Questions: emi.lab@outlook.com.\n", encoding="utf-8")
         files = [FileRef(path=p.name, sha256=sha256_file(p), size_bytes=p.stat().st_size) for p in sorted(directory.iterdir())]
         digest = canonical_sha256([f.model_dump(mode="json") for f in files])

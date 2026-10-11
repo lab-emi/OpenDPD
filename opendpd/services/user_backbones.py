@@ -75,12 +75,13 @@ class BackbonePublisher(GitHubPublisher):
                     continue
                 policies = {r["type"]: r.get("parameters", {}) for r in rule.get("rules", [])}
                 reviews, checks = policies.get("pull_request", {}), policies.get("required_status_checks", {})
-                if (reviews.get("required_approving_review_count", 0) >= 1
+                if ("pull_request" in policies
                         and reviews.get("dismiss_stale_reviews_on_push")
-                        and reviews.get("require_last_push_approval") and reviews.get("require_code_owner_review")
+                        and reviews.get("required_review_thread_resolution")
                         and checks.get("strict_required_status_checks_policy")
-                        and any(c.get("context") == REVIEW_CHECK and c.get("integration_id") == GITHUB_ACTIONS_APP_ID
-                                for c in checks.get("required_status_checks", []))):
+                        and {REVIEW_CHECK, "independent-review"} <= {c.get("context")
+                                for c in checks.get("required_status_checks", [])
+                                if c.get("integration_id") == GITHUB_ACTIONS_APP_ID}):
                     return True
         except (ValueError, KeyError, TypeError):
             pass
@@ -92,12 +93,12 @@ class BackbonePublisher(GitHubPublisher):
         if not base.available:
             return BackboneCapability(reason="Git and an authenticated GitHub CLI are required on the Studio host for contributions. Private uploads remain available.")
         if not self.review_gate_available():
-            return BackboneCapability(reason="Repository setup required: enable the no-bypass human review ruleset and user-backbone-review check on main before accepting contributions. Private uploads remain available.")
+            return BackboneCapability(reason="Repository setup required: enable the no-bypass independent review ruleset and user-backbone-review check on main before accepting contributions. Private uploads remain available.")
         return BackboneCapability(publication_available=True)
 
     def publish(self, record, package, progress):
         if not self.review_gate_available():
-            raise WorkspaceError("The required human review gate is unavailable. The upload remains private; ask a repository administrator to enable it.")
+            raise WorkspaceError("The required independent review gate is unavailable. The upload remains private; ask a repository administrator to enable it.")
         verify_package(record, package)
         return super().publish(record, package, progress)
 
@@ -124,8 +125,8 @@ class BackbonePublisher(GitHubPublisher):
             "The contributor explicitly authorized publishing the entire source and public attribution under Apache-2.0. "
             "The template is parsed as bounded data; uploaded Python is never executed. The scan is a format and resource check, "
             "not a malware-free certification or a claim of model accuracy.\n\n"
-            "Human review is required: an independent maintainer must approve the current head, including architecture, "
-            "licensing, attribution and scientific claims. Bots, comments, self-approval and stale approvals do not count. "
+            "Independent review by an authorized human or agent is required for the current head, including architecture, "
+            "licensing, attribution and scientific claims. Follow docs/architecture/review-policy.md; self-review and stale approvals do not count. "
             "Studio never merges PRs or enables auto-merge. After merge to main, refresh User Uploaded Backbones in Studio.\n")
 
 

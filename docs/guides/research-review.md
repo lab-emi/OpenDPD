@@ -161,7 +161,7 @@ package. Only that package is submitted after the rights/disclosure confirmation
 
 Public submission creates a fresh branch from the latest upstream default
 branch, pushes the data-only folder under `dataset/community/`, and opens a PR
-for human review. Data are publicly accessible on GitHub while review is pending.
+for independent human or agent review. Data are publicly accessible on GitHub while review is pending.
 The current code checkout is not staged or pushed. Failed submission can resume
 the same branch and recover an existing PR; no automatic merge is performed.
 Questions about data or review: [emi.lab@outlook.com](mailto:emi.lab@outlook.com).
@@ -173,7 +173,7 @@ identity. The feature is otherwise unavailable for submission, while private
 preview/download still work. Hosted defaults allow two new submissions per
 network and twenty per day; retries keep their existing reservation. Credentials
 are never sent to the browser. Configuring this feature does not change the
-requirement for human review.
+requirement for independent human or agent review.
 
 
 ## Hardware costs and precision
