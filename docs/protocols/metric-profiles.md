@@ -130,7 +130,7 @@ captures are `missing_reference` under this profile by design.
 `golden` (frozen references of the historical code: `legacy-opendpd-v1`),
 `analytic` (closed-form reference tests: `general-spectral-v1`),
 `pending_cross_validation` (implemented and tested, the independent-backend
-comparison has not run: `ofdm-lte20-evm-v1`) or `cross_validated`. The
+comparison has not passed: `ofdm-lte20-evm-v1`) or `cross_validated`. The
 service computes and stores every profile; the GUI offers only profiles past
 `pending_cross_validation`; `opendpd profiles` prints the status and
 `opendpd evaluate` says so before scoring under a pending profile. Every
@@ -165,7 +165,7 @@ side with the reasons (`GET /results/compare`, the Compare page).
 `ofdm-lte20-evm-v2` uses dataset-sized symmetric Hann segments and
 `ofdm-lte20-evm-auto-v2` uses full-record symmetric Hamming. Both use enclosing
 FFT-bin integration and guarded frequency-tolerant acquisition. Their 115-item
-[registered comparison](waveform-profiles-v2.md) passed twice against independent
+[registered comparison](waveform-profiles-v2.md) passed in three recorded runs against independent
 MATLAB implementations at the unchanged budgets; [evidence](../performance/matlab-parity-v2.md).
 They require a binding to the known periodic waveform and do not establish 3GPP
 conformance. The old v1 profile stays pending with its original failed record.
