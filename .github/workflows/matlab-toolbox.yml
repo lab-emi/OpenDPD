@@ -92,15 +92,31 @@ jobs:
           release: ${{ inputs.release || 'R2026a' }}
           products: ${{ matrix.products }}
           cache: true
-      - name: Cross-validate all registered LTE v2 cases
+      # The official action supplies public-project licensing. Direct matlab
+      # subprocesses cannot assume that licensing environment on hosted runners.
+      - name: Prepare registered LTE inputs
         if: matrix.experimental == false
+        run: |
+          mkdir -p "$RUNNER_TEMP/lte-parity-v2-prefs"
+          python scripts/matlab_parity_v2.py --work "$RUNNER_TEMP/lte-parity-v2" --prepare-only
+      - name: Measure registered LTE signals with MATLAB
+        if: matrix.experimental == false
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         env:
-          MATLAB_BIN: ${{ steps.matlab.outputs.matlabroot }}/bin/matlab
+          MATLAB_PREFDIR: ${{ runner.temp }}/lte-parity-v2-prefs
+        with:
+          command: >-
+            work = fullfile(getenv('RUNNER_TEMP'),'lte-parity-v2');
+            diary(fullfile(work,'matlab.log'));
+            addpath(fullfile(pwd,'Matlab','toolbox','examples','parity'));
+            parityLTEv2(fullfile(work,'signals.mat'),fullfile(work,'matlab-results.json'));
+            diary off;
+      - name: Require all registered LTE v2 comparisons to pass
+        if: matrix.experimental == false
         run: >-
           python scripts/matlab_parity_v2.py
           --work "$RUNNER_TEMP/lte-parity-v2"
-          --matlab "$MATLAB_BIN"
-          --matlab-prefdir "$RUNNER_TEMP/lte-parity-v2-prefs"
+          --matlab-results "$RUNNER_TEMP/lte-parity-v2/matlab-results.json"
           --run "$GITHUB_RUN_ID" --date "$(date -u +%F)"
       - name: Upload LTE cross-validation evidence
         if: always() && matrix.experimental == false

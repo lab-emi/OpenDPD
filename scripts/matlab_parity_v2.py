@@ -172,6 +172,11 @@ def main():
     parser.add_argument("--work", required=True, type=Path)
     parser.add_argument("--matlab", default="matlab")
     parser.add_argument("--matlab-prefdir", type=Path)
+    phase = parser.add_mutually_exclusive_group()
+    phase.add_argument("--prepare-only", action="store_true",
+                       help="Write the frozen inputs for a separately licensed MATLAB CI action")
+    phase.add_argument("--matlab-results", type=Path,
+                       help="Score the JSON written by that real MATLAB action; recompute OpenDPD values")
     parser.add_argument("--timeout", type=int, default=3600)
     parser.add_argument("--run", default="1")
     parser.add_argument("--date", default="")
@@ -183,16 +188,24 @@ def main():
     product = product_values(built)
     inputs = original.write_matlab_inputs(work, built, product)
     output = work / "matlab-results.json"
-    env = dict(os.environ)
-    if args.matlab_prefdir:
-        args.matlab_prefdir.mkdir(parents=True, exist_ok=True)
-        env["MATLAB_PREFDIR"] = str(args.matlab_prefdir.resolve())
-    quote = lambda path: str(path).replace("'", "''")
-    command = f"addpath('{quote(original.PARITY_DIR)}'); parityLTEv2('{quote(inputs)}','{quote(output)}');"
-    run = subprocess.run([args.matlab, "-batch", command], env=env, capture_output=True, text=True, timeout=args.timeout)
-    (work / "matlab.log").write_text(run.stdout + "\n" + run.stderr)
-    if run.returncode:
-        raise RuntimeError(f"Independent MATLAB execution failed; inspect {work / 'matlab.log'}")
+    if args.prepare_only:
+        # Never allow a stale result to satisfy a later CI scoring step.
+        output.unlink(missing_ok=True)
+        print(f"Prepared registered MATLAB inputs: {inputs}")
+        return 0
+    if args.matlab_results:
+        output = args.matlab_results.resolve()
+    else:
+        env = dict(os.environ)
+        if args.matlab_prefdir:
+            args.matlab_prefdir.mkdir(parents=True, exist_ok=True)
+            env["MATLAB_PREFDIR"] = str(args.matlab_prefdir.resolve())
+        quote = lambda path: str(path).replace("'", "''")
+        command = f"addpath('{quote(original.PARITY_DIR)}'); parityLTEv2('{quote(inputs)}','{quote(output)}');"
+        run = subprocess.run([args.matlab, "-batch", command], env=env, capture_output=True, text=True, timeout=args.timeout)
+        (work / "matlab.log").write_text(run.stdout + "\n" + run.stderr)
+        if run.returncode:
+            raise RuntimeError(f"Independent MATLAB execution failed; inspect {work / 'matlab.log'}")
     matlab = json.loads(output.read_text())
     items = compare(product, matlab, built)
     environment = original.environment(matlab["environment"])
