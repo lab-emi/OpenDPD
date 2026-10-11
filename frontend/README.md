@@ -8,13 +8,22 @@ end users never need Node.js (S06 packages the build into the wheel).
 cd frontend
 npm ci
 npm run dev            # http://127.0.0.1:5173, proxies /api to a running `opendpd gui` on 8765
-npm run typecheck      # tsc -b, strict, no `any`
+npm run typecheck      # TypeScript 7 tsc -b, strict, no `any`
 npm run lint           # oxlint
 npm test               # Vitest + Testing Library (jsdom)
 npm run build          # -> ../opendpd/studio/static
 npm run e2e            # Playwright journeys on the preview build with a mocked API (also visual baselines)
 npm run types:generate # regenerate src/api/schema.ts from ../docs/contracts/openapi.json
 ```
+
+TypeScript 7 (`@typescript/native`, an npm alias of `typescript@7`) type-checks the
+app. TypeScript 7.0 ships no JavaScript compiler API, so the `typescript` package
+stays on 5.9 only for `openapi-typescript`, which imports that API and declares a
+`typescript@^5.x` peer. This follows the side-by-side setup in the
+[TypeScript 7.0 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0).
+The `typecheck` and `build` scripts call the TypeScript 7 binary by path because both
+packages provide `tsc`. Remove the 5.9 pin once `openapi-typescript` supports
+TypeScript 7 ([openapi-typescript#2841](https://github.com/openapi-ts/openapi-typescript/issues/2841)).
 
 ## Where things are
 
