@@ -217,3 +217,14 @@ def test_merge_rechecks_evidence_scan_and_expected_head(monkeypatch, failure):
         merger.main()
         assert api.merges[0]['sha'] == HEAD
         assert 'Reviewed-By: Claude Code' in api.merges[0]['commit_message']
+
+
+@pytest.mark.parametrize('details, expected', [
+    ({'permission': 'write', 'role_name': 'maintain'}, True),
+    ({'permission': 'write', 'role_name': 'write'}, False),
+    ({'permission': 'read', 'role_name': 'triage'}, False),
+    ({'permission': 'admin', 'role_name': 'custom-admin'}, True),
+])
+def test_github_legacy_permission_mapping_preserves_maintain_role(details, expected):
+    from scripts.review_policy import permission_reader
+    assert bool(decide([attestation()], permission=permission_reader(lambda _: details))) is expected

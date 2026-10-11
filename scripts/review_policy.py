@@ -107,7 +107,11 @@ def permission_reader(get):
             return None
         if login not in permissions:
             try:
-                permissions[login] = get(f"collaborators/{login}/permission")["permission"]
+                details = get(f"collaborators/{login}/permission")
+                # GitHub maps maintain to legacy permission=write; role_name
+                # preserves the actual role. Plain write must not gain approval.
+                permissions[login] = ("admin" if details.get("permission") == "admin"
+                                      else details.get("role_name") or details.get("permission"))
             except urllib.error.HTTPError as error:
                 if error.code != 404:
                     raise
