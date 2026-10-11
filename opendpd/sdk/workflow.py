@@ -110,9 +110,9 @@ def fit(workspace, x, y, *, sample_rate_hz, bandwidth_hz, nperseg, dpd_model="gr
     if not poll_interval > 0:
         raise ValueError("poll_interval must be positive")
     deadline = None if timeout is None else time.monotonic() + float(timeout)
-    started = time.monotonic()
+    started_at = time.monotonic()
     project = open_project(workspace)
-    started = project.started_service
+    started_service = project.started_service
     running = None
     try:
         folder = Path(output_folder).expanduser().resolve() if output_folder else project.workspace / "exports"
@@ -133,7 +133,7 @@ def fit(workspace, x, y, *, sample_rate_hz, bandwidth_hz, nperseg, dpd_model="gr
         for role, job in (("pa", pa), ("dpd", dpd)):
             _event(on_event, stage="export", role=role, run_id=job.run_id)
             packages[role] = job.export(folder / f"{job.run_id}.opendpd.zip")
-        return {"workspace": str(project.workspace), "dataset": dataset, "seconds": time.monotonic() - started,
+        return {"workspace": str(project.workspace), "dataset": dataset, "seconds": time.monotonic() - started_at,
                 "pa": {"run_id": pa.run_id, "status": "succeeded", "result": pa.result(), "package": packages["pa"]},
                 "dpd": {"run_id": dpd.run_id, "status": "succeeded", "result": dpd.result(), "package": packages["dpd"]}}
     except BaseException:
@@ -146,4 +146,4 @@ def fit(workspace, x, y, *, sample_rate_hz, bandwidth_hz, nperseg, dpd_model="gr
                 pass
         raise
     finally:
-        _release(project, started, on_event)
+        _release(project, started_service, on_event)
