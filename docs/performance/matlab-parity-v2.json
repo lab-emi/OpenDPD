@@ -5,7 +5,7 @@
     "frequency_offset_hz": 0.01,
     "waveform_relative_rms": 1e-06
   },
-  "date": "2026-10-11",
+  "date": "2026-10-12",
   "diagnostics": {
     "matlab": {
       "acpr_convention_check": {
@@ -1569,7 +1569,7 @@
       "release": "2026a"
     },
     "numpy": "2.4.4",
-    "opendpd_commit": "cd9ccb3284eb0c44a00e248672399c743377b444",
+    "opendpd_commit": "e6012dfc4c391a3806fe76c891d26fbc71b30b0f",
     "platform": "Linux-7.2.6-1-cachyos-x86_64-with-glibc2.44",
     "python": "3.13.14",
     "scipy": "1.18.0",
@@ -1579,11 +1579,12 @@
     },
     "v2_source_sha256": {
       "Matlab/toolbox/examples/parity/parityLTEv2.m": "e0fd19b904c2a466b08eee6574b419200173d6b18541055d14e1a5c621f2c939",
-      "docs/protocols/waveform-profiles-v2.md": "08abdca1cec9d6fa5c6c84fc3de0830d9e793ab27ce90e3ad67ed5c75d4d99e7",
+      "docs/protocols/waveform-profiles-v2.md": "dc22e372492ca026f403a215408a73d22ce0e3072dfca2ceef2354322cc243c2",
+      "opendpd/core/metric_profiles.py": "a69f2f2cc9eb5ec2f7f9863c41a50f4524b367ae8f0782f97db8c577aab9c983",
       "opendpd/core/metrics/ofdm_evm_v2.py": "48b9ee5760095c365e514fcb99dd992fbfcd46e734a449dc6ffeaf80c8f57e89",
-      "opendpd/core/metrics/registry.py": "eef48e7771226258d8072f92a7f0990a548458088feb377a18798ffdd9c82831",
+      "opendpd/core/metrics/registry.py": "f6a3c06264d9716ed9855918b700e476a1a1d383ad935da741be01c9c45f8ecb",
       "opendpd/core/waveforms/ofdm.py": "f38b1e8f03fd61e9f79af16f65059dd59e67da7b6704b43e4ad3c4aacabc34f2",
-      "scripts/matlab_parity_v2.py": "db06d367e1764354f2b781ecb379a66b87e74b78d6723baa738c1be8a17f2b4f"
+      "scripts/matlab_parity_v2.py": "555fe26d54283f6638880158e77be11736926ca58b94b5c7384fd55969f160ad"
     },
     "working_tree_modified": false
   },
@@ -2975,7 +2976,7 @@
     "default": "ofdm-lte20-evm-auto-v2"
   },
   "registration_commit": "8a8c77f594703da8cccf747cda18c905b109a491",
-  "run": "2",
+  "run": "3",
   "signals": {
     "S0": {
       "n_samples": 307200,

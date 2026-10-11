@@ -28,7 +28,8 @@ MathWorks OFDM demodulation and EVM functions remain the independent backend.
 | --- | --- | --- | --- |
 | v1 baseline rerun | 2026-10-11 | original implementation plus review-policy merge | 102/115 within budget, seven outside, six unevaluable; same result as the archived v1 record |
 | v2 run 1 | 2026-10-11 | `ba5819b` (clean numerical source) | 115/115 passed; [machine-readable record](matlab-parity-v2-run1.json) |
-| v2 run 2 | 2026-10-11 | `cd9ccb3` (proposed validated profile metadata; clean numerical source) | 115/115 passed; [complete record and diagnostics](matlab-parity-v2.json) |
+| v2 run 2 | 2026-10-11 | `cd9ccb3` (proposed validated profile metadata; clean numerical source) | 115/115 passed; [run2 record and diagnostics](matlab-parity-v2-run2.json) |
+| v2 run 3 | 2026-10-12 | `e6012df` (application catalogue isolated from frozen Arena; clean numerical source) | 115/115 passed; [complete record and diagnostics](matlab-parity-v2.json) |
 
 Run 1 maximum absolute ACLR difference: **7.105427357601002e-15 dB**
 (budget 0.1 dB). Maximum EVM difference: **4.036622438989357e-7 percentage
@@ -72,7 +73,7 @@ Nyquist boundaries, mode-independent EVM, and exact-case/tolerance integrity.
 ## Complete scored results
 
 <!-- parity-v2-results:begin -->
-Run 2 — 2026-10-11: **115/115 passed**; 0 failed.
+Run 3 — 2026-10-12: **115/115 passed**; 0 failed.
 
 This is the separately registered v2 result; it does not change the old v1 verdict.
 For frequency-offset rows the first value is the injected offset; the second is the estimate by the tool named in the item.
