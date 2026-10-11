@@ -148,7 +148,7 @@ class LocalGitHub(GitHubPublisher):
             return json.dumps([{"html_url": pr["url"], "state": pr["state"].lower(), "head": {"label": pr["head"]}} for pr in self.prs])
         if args[:2] == ("pr", "create"):
             body = Path(args[args.index("--body-file") + 1]).read_text()
-            assert "Human review" in body and "emi.lab@outlook.com" in body
+            assert "Independent" in body and "review" in body and "emi.lab@outlook.com" in body
             if self.fail_after_push:
                 self.fail_after_push = False
                 raise WorkspaceError("Simulated network failure after push")

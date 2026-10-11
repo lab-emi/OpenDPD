@@ -1,4 +1,4 @@
-# Scientific-semantics paths need a maintainer review (see docs/architecture/review-policy.md).
+# Scientific-semantics paths need independent human or agent review (see docs/architecture/review-policy.md).
 /tests/golden/                       @lab-emi/opendpd-maintainers
 /opendpd/core/metrics/               @lab-emi/opendpd-maintainers
 /opendpd/core/splits.py              @lab-emi/opendpd-maintainers
@@ -13,7 +13,7 @@
 /opendpd/web/ @lab-emi/opendpd-maintainers
 /scripts/check_protected_review.py @lab-emi/opendpd-maintainers
 
-# Uploaded graphs and their execution/review boundary require independent human review.
+# Uploaded graphs and their execution/review boundary require independent human or agent review.
 /backbones/user_uploaded/ @lab-emi/opendpd-maintainers
 /opendpd/core/backbone_template.py @lab-emi/opendpd-maintainers
 /opendpd/core/template_network.py @lab-emi/opendpd-maintainers
@@ -41,3 +41,8 @@
 /scripts/ @lab-emi/opendpd-maintainers
 /frontend/ @lab-emi/opendpd-maintainers
 /docs/leaderboard/ @lab-emi/opendpd-maintainers
+
+/scripts/review_policy.py @lab-emi/opendpd-maintainers
+/scripts/merge_reviewed_pr.py @lab-emi/opendpd-maintainers
+/CONTRIBUTING.md @lab-emi/opendpd-maintainers
+/docs/architecture/review-policy.md @lab-emi/opendpd-maintainers

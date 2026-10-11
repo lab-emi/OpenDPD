@@ -102,7 +102,7 @@ constitute independent measurement conditions.
   The ordinary contiguous split protocol remains unchanged. Fractions apply to
   `N - 2 × guard`, with rounding remainder assigned to testing.
 - Data stays private unless the user separately initiates a dataset contribution.
-  Public contributions require human merge review; contact **emi.lab@outlook.com**.
+  Public contributions require independent human or agent merge review; contact **emi.lab@outlook.com**.
 
 ## Modeling references
 

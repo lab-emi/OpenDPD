@@ -100,7 +100,7 @@ class GitHubPublisher:
             "The package includes canonical finite numeric CSV, declared signal/split metadata and full hashes. "
             "Local paths, private workspace notes and executables are excluded.\n\n"
             f"Package SHA256: `{record.package_sha256}`.\n\n"
-            "Human review of data provenance, rights, format and scientific claims is required before merge. "
+            "Independent human or agent review of data provenance, rights, format and scientific claims is required before merge. "
             "Synthetic datasets demonstrate software behavior; measured labels are contributor declarations. "
             "No automatic merge is requested. Questions: emi.lab@outlook.com.\n")
 
