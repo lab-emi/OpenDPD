@@ -83,6 +83,23 @@ def validation(api, sha, ref=None):
     return ("waiting", "checks are running or newly dispatched") if waiting else ("passed", "all required checks passed")
 
 
+def review_checks(api, pr):
+    """Token-created branch updates also need trusted review workflow dispatches."""
+    latest = {}
+    for status in api.pages(f"commits/{pr['head']['sha']}/statuses"):
+        latest.setdefault(status["context"], status["state"])
+    workflows = {"independent-review": "protected-paths.yml", "user-backbone-review": "user-backbones.yml"}
+    missing = workflows.keys() - latest.keys()
+    for context in missing:
+        api.request(f"actions/workflows/{workflows[context]}/dispatches",
+                    {"ref": "main", "inputs": {"pr_number": str(pr["number"])}})
+    if any(latest.get(context) in {"failure", "error"} for context in workflows):
+        return "failed", "independent review checks need resolution"
+    if missing or any(latest.get(context) != "success" for context in workflows):
+        return "waiting", "independent review checks are running or newly dispatched"
+    return "passed", "independent review checks passed"
+
+
 def require_strict_checks(api):
     """GitHub must enforce the base-SHA race boundary at the merge operation."""
     required = set().union(*WORKFLOWS.values())
@@ -160,13 +177,18 @@ def reconcile(api):
         if state != "passed":
             report.append(f"#{number}: {state}: {detail}")
             continue
+        state, detail = review_checks(api, pr)
+        if state != "passed":
+            report.append(f"#{number}: {state}: {detail}")
+            continue
         require_strict_checks(api)
         fresh = api.request(f"pulls/{number}")
         if fresh["state"] != "open" or fresh["head"]["sha"] != sha or api.comparison(fresh)["behind_by"]:
             report.append(f"#{number}: source changed during checks; retry later")
             continue
         try:
-            result = api.request(f"pulls/{number}/merge", {"sha": sha, "merge_method": "squash"}, method="PUT")
+            result = api.request(f"pulls/{number}/merge", {"sha": sha, "merge_method": "squash",
+                "commit_message": f"Contributed-By: Dependabot\nReviewed-By: OpenDPD dependency-policy automation\nReviewed-Commit: {sha}\nReview-Policy: scripts/dependency_policy.py"}, method="PUT")
         except urllib.error.HTTPError as error:
             report.append(deferred_update(api, number, error))
             continue

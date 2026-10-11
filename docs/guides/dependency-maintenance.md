@@ -21,9 +21,9 @@ Automatic handling is restricted to same-repository Dependabot PRs that contain:
 
 New packages, major upgrades, breaking 0.x updates, core Python dependencies,
 scripts, source-code changes, workflow structure, permissions, new registries and
-symlinks require human review. Labels alone never authorize an automatic merge.
+symlinks require independent human or agent review. Labels alone never authorize an automatic merge.
 The scoped review checks report routine dependency eligibility explicitly; they
-do not pretend that a human reviewed the PR.
+do not pretend that a independent human or agent reviewed the PR.
 
 The workflow refreshes an eligible branch against current `main`, then requires
 the full **CI**, **Docs** and **Deployment dependency audit** workflows to pass

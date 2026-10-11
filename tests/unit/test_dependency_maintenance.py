@@ -193,6 +193,8 @@ class Checks:
         raise AssertionError(path)
 
     def pages(self, path):
+        if path.startswith("commits/") and path.endswith("/statuses"):
+            return [{"context": name, "state": "success"} for name in ("independent-review", "user-backbone-review")]
         assert path == "rules/branches/main"
         return self.rules
 
@@ -306,7 +308,11 @@ class Reconciler(Checks):
 def test_merge_is_bound_to_tested_head_and_dispatches_main_checks():
     api = Reconciler()
     assert "merged" in maintenance.reconcile(api)[0]
-    assert ("pulls/10/merge", {"sha": HEAD, "merge_method": "squash"}, "PUT") in api.calls
+    merge = next(payload for path, payload, method in api.calls if path == "pulls/10/merge" and method == "PUT")
+    assert merge["sha"] == HEAD and merge["merge_method"] == "squash"
+    assert "Contributed-By: Dependabot" in merge["commit_message"]
+    assert "Reviewed-By: OpenDPD dependency-policy automation" in merge["commit_message"]
+    assert f"Reviewed-Commit: {HEAD}" in merge["commit_message"]
     assert {path for path, body, _ in api.calls if body == {"ref": "main"}} == {
         f"actions/workflows/{name}/dispatches" for name in maintenance.WORKFLOWS}
 
@@ -502,3 +508,13 @@ def test_privileged_workflow_does_not_checkout_pr_or_install_dependencies():
     assert "ref: main" in text and "persist-credentials: false" in text
     assert "pull_request.head" not in text
     assert "npm " not in text and "pip install" not in text
+
+
+def test_review_gates_are_dispatched_after_token_updates_and_fail_closed():
+    api = Checks()
+    api.pages = lambda path: []
+    assert maintenance.review_checks(api, {**pr(), "number": 10})[0] == "waiting"
+    assert {path for path, _, _ in api.calls} == {
+        "actions/workflows/protected-paths.yml/dispatches", "actions/workflows/user-backbones.yml/dispatches"}
+    api.pages = lambda path: [{"context": name, "state": "failure"} for name in ("independent-review", "user-backbone-review")]
+    assert maintenance.review_checks(api, {**pr(), "number": 10})[0] == "failed"
