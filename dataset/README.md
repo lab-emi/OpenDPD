@@ -6,7 +6,7 @@ This directory holds datasets in one validated, data-only format. Existing
 - `synthetic/studio-research-v1/`: generated examples with three normalized drive
   settings and two synthetic realizations per setting. No physical measurements.
 - `community/<origin>/<dataset-id>/<package-sha256>/`: user-selected public data
-  contributions. A human reviews each PR before deciding whether to merge it.
+  contributions. A independent human or agent reviews each PR before deciding whether to merge it.
 
 Each entry contains `data.csv` (I_in,Q_in,I_out,Q_out), `dataset.json` (signal,
 split, license, attribution, provenance and full hashes), and `README.md`.

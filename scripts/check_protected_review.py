@@ -9,7 +9,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dependency_github import GitHub
-from review_policy import approvals, native_approvals, pages
+from review_policy import approvals, authorized_attestations, native_approvals, pages, permission_reader
 
 CONTEXT = "independent-review"
 
@@ -31,10 +31,11 @@ def main():
         ok = bool(approvals(pr, api.request))
         if not ok:
             # An objection overrides even the narrow dependency exception.
+            permission = permission_reader(api.request)
             _, blocked = native_approvals(pr, pages(api.request, f"pulls/{number}/reviews"),
-                lambda login: api.request(f"collaborators/{login}/permission")["permission"])
+                permission)
             comments = pages(api.request, f"issues/{number}/comments")
-            has_attestation = any("```opendpd-review" in (c.get("body") or "") for c in comments)
+            has_attestation = bool(authorized_attestations(comments, permission))
             ok = not blocked and not has_attestation and api.routine(pr)
         current = api.request(f"pulls/{number}")
         if current["head"]["sha"] != head or current.get("body") != pr.get("body"):

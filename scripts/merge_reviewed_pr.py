@@ -7,6 +7,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dependency_github import GitHub
+from check_user_backbone_review import validate_changed_templates
 from maintain_dependencies import require_strict_checks, validation
 from review_policy import approvals, merge_message
 
@@ -24,11 +25,15 @@ def main():
     if pr["state"] != "open" or pr.get("draft") or pr["base"]["ref"] != "main" or pr["head"]["sha"] != args.head:
         raise SystemExit("Expected a ready, open PR into main at the reviewed head.")
     require_strict_checks(api)
-    state, detail = validation(api, args.head)
+    state, detail = validation(api, args.head, head_repository=pr["head"]["repo"]["full_name"])
     if state != "passed":
         raise SystemExit(detail)
     if api.comparison(pr).get("behind_by") != 0:
         raise SystemExit("Update the PR against main, rerun CI and review the new head.")
+    # Recheck template bytes directly even during policy bootstrap, before the
+    # new required statuses exist. Read fork blobs as data; never execute them.
+    source_api = GitHub(pr["head"]["repo"]["full_name"], token)
+    validate_changed_templates(api.files(pr), lambda path: source_api.source(args.head, path).encode("utf-8"))
     body = merge_message(pr, approvals(pr, api.request))
     current = api.request(f"pulls/{args.number}")
     if current["head"]["sha"] != args.head or current.get("body") != pr.get("body"):

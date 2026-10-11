@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import urllib.error
 
 
 def pages(get, path):
@@ -73,7 +74,7 @@ def independent_approvals(pr, reviews, comments, permission):
     authors = contributors(pr)
     latest = {}
     for comment in sorted(comments, key=lambda c: (c.get("updated_at", ""), c.get("id", 0))):
-        if "```opendpd-review" not in (comment.get("body") or ""):
+        if not has_review_record(comment.get("body")):
             continue
         login = (comment.get("user") or {}).get("login")
         if not login or permission(login) not in {"admin", "maintain"}:
@@ -99,17 +100,37 @@ def independent_approvals(pr, reviews, comments, permission):
     return accepted
 
 
-def approvals(pr, get):
+def permission_reader(get):
     permissions = {}
     def permission(login):
         if not re.fullmatch(r"[A-Za-z0-9_\[\]-]+", login):
             return None
         if login not in permissions:
-            permissions[login] = get(f"collaborators/{login}/permission")["permission"]
+            try:
+                permissions[login] = get(f"collaborators/{login}/permission")["permission"]
+            except urllib.error.HTTPError as error:
+                if error.code != 404:
+                    raise
+                # A GitHub App need not be a repository collaborator. Its
+                # review cannot authorize a merge or invalidate another approval.
+                permissions[login] = None
         return permissions[login]
+    return permission
+
+
+def has_review_record(body):
+    return bool(re.search(r"^```opendpd-review[^\S\n]*(?:\n|$)", body or "", re.M))
+
+
+def authorized_attestations(comments, permission):
+    return [comment for comment in comments if has_review_record(comment.get("body"))
+            and permission((comment.get("user") or {}).get("login", "")) in {"admin", "maintain"}]
+
+
+def approvals(pr, get):
     return independent_approvals(
         pr, pages(get, f"pulls/{pr['number']}/reviews"),
-        pages(get, f"issues/{pr['number']}/comments"), permission)
+        pages(get, f"issues/{pr['number']}/comments"), permission_reader(get))
 
 
 def merge_message(pr, accepted):

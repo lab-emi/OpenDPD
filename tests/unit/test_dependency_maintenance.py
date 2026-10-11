@@ -518,3 +518,11 @@ def test_review_gates_are_dispatched_after_token_updates_and_fail_closed():
         "actions/workflows/protected-paths.yml/dispatches", "actions/workflows/user-backbones.yml/dispatches"}
     api.pages = lambda path: [{"context": name, "state": "failure"} for name in ("independent-review", "user-backbone-review")]
     assert maintenance.review_checks(api, {**pr(), "number": 10})[0] == "failed"
+
+
+def test_fork_validation_must_match_the_actual_pr_head_repository():
+    api = Checks()
+    for run in api.runs.values():
+        run['head_repository']['full_name'] = 'contributor/OpenDPD'
+    assert maintenance.validation(api, HEAD)[0] == 'waiting'
+    assert maintenance.validation(api, HEAD, head_repository='contributor/OpenDPD')[0] == 'passed'

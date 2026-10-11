@@ -141,3 +141,79 @@ def test_gate_publishes_on_live_head_and_fails_when_head_changes(tmp_path, monke
     api.changed, api.reads = True, 0
     assert gate.main() == 1
     assert api.statuses[-1][1]['state'] == 'failure'
+
+
+def test_noncollaborator_app_review_cannot_block_authorized_review():
+    import urllib.error
+    from scripts.review_policy import permission_reader
+    def get(path):
+        if 'app[bot]' in path:
+            raise urllib.error.HTTPError('https://api.github.com', 404, 'Not Found', {}, None)
+        return {'permission': 'maintain'}
+    assert decide([attestation()], [native(user={'login': 'app[bot]'})], permission=permission_reader(get))
+
+
+def test_gate_ignores_unprivileged_marker_but_preserves_review_objections(tmp_path, monkeypatch):
+    from scripts import check_protected_review as gate
+    event = tmp_path / 'event.json'
+    event.write_text(json.dumps({'issue': {'number': 81}}))
+    monkeypatch.setenv('GITHUB_EVENT_PATH', str(event))
+    class API:
+        reviews = []
+        comments = [{**attestation(), 'user': {'login': 'outsider'}}]
+        def request(self, path, payload=None):
+            if path.startswith('statuses/'):
+                self.last_status = payload['state']; return {}
+            if path == 'pulls/81': return {**pr(), 'state': 'open'}
+            if '/reviews?' in path: return self.reviews
+            if '/comments?' in path: return self.comments
+            if '/permission' in path: return {'permission': 'read' if 'outsider' in path else 'maintain'}
+            raise AssertionError(path)
+        def routine(self, pull): return True
+    api = API()
+    monkeypatch.setattr(gate, 'GitHub', lambda: api)
+    assert gate.main() == 0 and api.last_status == 'success'
+    api.reviews = [native(state='CHANGES_REQUESTED')]
+    assert gate.main() == 1 and api.last_status == 'failure'
+    api.reviews = []
+    api.comments = [attestation(decision='request_changes')]
+    assert gate.main() == 1 and api.last_status == 'failure'
+    api.comments = [{**attestation(), 'body': 'Explain the ```opendpd-review marker in prose.'}]
+    assert gate.main() == 0
+
+
+@pytest.mark.parametrize('failure', ['none', 'head', 'draft', 'ci', 'behind', 'scan', 'approval', 'changed'])
+def test_merge_rechecks_evidence_scan_and_expected_head(monkeypatch, failure):
+    from scripts import merge_reviewed_pr as merger
+    import sys
+    monkeypatch.setenv('GH_TOKEN', 'fixture-token')
+    monkeypatch.setattr(sys, 'argv', ['merge_reviewed_pr.py', '81', '--head', HEAD, '--merge'])
+    class API:
+        def __init__(self):
+            self.reads, self.merges = 0, []
+        def request(self, path, payload=None, method=None):
+            if path.endswith('/merge'):
+                self.merges.append(payload)
+                return {'merged': True, 'sha': OTHER}
+            self.reads += 1
+            return {**pr(), 'state': 'open', 'draft': failure == 'draft', 'title': 'Policy change',
+                    'base': {'ref': 'main'}, 'head': {'sha': OTHER if failure == 'head' or failure == 'changed' and self.reads > 1 else HEAD,
+                                                     'repo': {'full_name': 'contributor/OpenDPD'}}}
+        def comparison(self, pull): return {'behind_by': int(failure == 'behind')}
+        def files(self, pull): return []
+    api = API()
+    monkeypatch.setattr(merger, 'GitHub', lambda *_: api)
+    monkeypatch.setattr(merger, 'require_strict_checks', lambda *_: None)
+    monkeypatch.setattr(merger, 'validation', lambda *a, **k: ('failed' if failure == 'ci' else 'passed', 'CI'))
+    monkeypatch.setattr(merger, 'approvals', lambda *_: [] if failure == 'approval' else decide([attestation()]))
+    def scan(*args):
+        if failure == 'scan': raise ValueError('Invalid uploaded template')
+    monkeypatch.setattr(merger, 'validate_changed_templates', scan)
+    if failure != 'none':
+        with pytest.raises((SystemExit, ValueError)):
+            merger.main()
+        assert not api.merges
+    else:
+        merger.main()
+        assert api.merges[0]['sha'] == HEAD
+        assert 'Reviewed-By: Claude Code' in api.merges[0]['commit_message']

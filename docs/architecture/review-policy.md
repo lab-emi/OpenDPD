@@ -57,7 +57,10 @@ in a PR comment, using an account with `admin` or `maintain` permission:
 {"head":"0123456789abcdef0123456789abcdef01234567","decision":"approve","reviewer":"Claude Code <noreply@anthropic.com>","session":"claude:review-session-id","independent":true,"summary":"Reviewed the diff and relevant tests; describe commands, results, findings and evidence here."}
 ```
 
-Use real session IDs and the actual reviewed SHA. `request_changes` blocks merge;
+Use real session IDs and the actual reviewed SHA. For existing or Dependabot PRs
+without a contributors block, first add accurate contributor/session metadata to
+the description before using an agent attestation (for example, a Dependabot
+contribution session can be identified by its PR URL and head SHA). `request_changes` blocks merge;
 `dismiss` withdraws that review. Post a replacement with the same reviewer/session
 or edit the original record to change the decision. A newer decision supersedes
 that session's old decision; an unresolved request from another reviewer/session
@@ -133,7 +136,8 @@ python -I scripts/merge_reviewed_pr.py PR_NUMBER --head FULL_REVIEWED_SHA --merg
 ```
 
 The first command validates and prints the commit body. The second rereads the
-PR/reviews, checks full CI and the current base, and submits a squash merge with an
+PR/reviews, rescans uploaded template bytes, checks full CI and the current base,
+and submits a squash merge with an
 expected head SHA and attribution trailers. GitHub still enforces its rulesets.
 Equivalent native/API merges must preserve the same trailers; avoid a rebase merge
 that loses reviewer attribution. Automated dependency merges write Dependabot and
