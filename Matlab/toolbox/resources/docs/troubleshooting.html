@@ -19,23 +19,25 @@ MATLAB path. Use <code>which opendpd.studio -all</code> and <code>which opendpd.
 check for older installations. Only the toolbox root needs to be on the path.</p>
 <h2 id="python-or-opendpd-cannot-load">Python or OpenDPD cannot load</h2>
 <p>Run <code>pyenv</code> and <code>opendpd.doctor()</code>. Select a Python executable supported by your
-MATLAB release and install dependencies into that exact environment. A regular
-OpenDPD 2.3 release does not contain the preview SDK; select the 2.4 checkout via
-<code>SourceDirectory</code> or install it into the environment:</p>
+MATLAB release and install the matching package into that exact environment:
+run <code>python -m pip install --upgrade "opendpd==2.4.0"</code> in its terminal. Then
+select that interpreter in MATLAB (a packaged installation needs no source checkout):</p>
 <pre><code class="language-matlab">opendpd.studio(&quot;/path/to/workspace&quot;, ...
-    PythonExecutable=&quot;/path/to/python&quot;, SourceDirectory=&quot;/path/to/OpenDPD&quot;);
+    PythonExecutable=&quot;/path/to/python&quot;);
 </code></pre>
 <p>If MATLAB has already loaded a different interpreter or checkout, finish work
 using it before restarting Python or MATLAB. The toolbox does not terminate that
 session automatically. Consult <a href="https://www.mathworks.com/help/matlab/ref/pyenv.html">pyenv</a>
 for execution-mode and release-specific behavior.</p>
 <h2 id="studio-does-not-open-or-matlink-is-missing">Studio does not open or MATLINK is missing</h2>
-<p>Build the frontend from the selected development checkout:</p>
+<p>The 2.4.0 Python wheel includes Studio. Confirm <code>opendpd.doctor()</code> points to
+the environment where <code>opendpd==2.4.0</code> is installed. For a source checkout
+selected with <code>SourceDirectory</code>, build its frontend from the repository root:</p>
 <pre><code class="language-bash">npm --prefix frontend ci
 npm --prefix frontend run build
 </code></pre>
 <p>Then run <code>opendpd.studio(workspace)</code> again. If a workspace service was started
-before the update, finish its jobs and restart it with the current checkout.
+before the update, finish its jobs and restart it with the updated environment or checkout.
 The toolbox does not silently restart an existing service. Inspect the service
 log and <code>opendpd.doctor()</code> if readiness fails. Keep <code>.sdk-service-*.log</code> files
 local because they may contain a private bootstrap URL.</p>

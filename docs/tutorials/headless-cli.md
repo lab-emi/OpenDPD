@@ -1,8 +1,8 @@
 # Headless experiments with `opendpd run`
 
 The `opendpd` command runs the same experiment service the Studio GUI uses,
-without a browser. Install the [source preview](../install.md) first; the
-PyPI 2.1.0 release only provides the legacy CLI. Everything lands in a **workspace** directory you choose;
+without a browser. [Install OpenDPD](../install.md) first and activate its
+Python environment. Everything lands in a **workspace** directory you choose;
 nothing is written into the installed package.
 
 ## 1. Create a workspace and register data

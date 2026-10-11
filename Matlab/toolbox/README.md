@@ -100,8 +100,8 @@ that generated pages are current and their local links resolve.
 
 ## Install from this checkout
 
-Start with desktop MATLAB R2024b or later and a compatible CPython environment.
-Python 3.11 is a candidate common to the planned MATLAB release matrix. Check
+Desktop MATLAB R2026a is verified; R2024b is a candidate minimum that has not
+yet been validated. Python 3.11 is used by the R2026a CI jobs. Check
 the [MathWorks Python compatibility table](https://www.mathworks.com/support/requirements/python-compatibility.html)
 for your release. Base MATLAB is sufficient for the synthetic example;
 the Python environment supplies PyTorch and OpenDPD's dependencies.

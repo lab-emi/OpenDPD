@@ -27,7 +27,7 @@ global-exclude .DS_Store
 exclude .gitignore
 exclude .git
 recursive-exclude Matlab *
-# Ship the source-only toolbox preview in sdists; historical bench scripts stay separate.
+# Ship the source-only toolbox in sdists; historical bench scripts stay separate.
 recursive-include Matlab/toolbox *.m *.md *.html *.css *.js *.svg LICENSE
 recursive-exclude slprj *
 recursive-exclude pics *
