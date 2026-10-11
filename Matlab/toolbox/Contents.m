@@ -1,4 +1,4 @@
-% OpenDPD Toolbox for MATLAB - for the unreleased OpenDPD 2.4.0.
+% OpenDPD Toolbox for MATLAB - OpenDPD 2.4.0.
 % Version 2.4.0
 %
 % GUI:         studio, disconnect, help, openStudio (also Apps > OpenDPDStudio).
