@@ -165,7 +165,7 @@ side with the reasons (`GET /results/compare`, the Compare page).
 `ofdm-lte20-evm-v2` uses dataset-sized symmetric Hann segments and
 `ofdm-lte20-evm-auto-v2` uses full-record symmetric Hamming. Both use enclosing
 FFT-bin integration and guarded frequency-tolerant acquisition. Their 115-item
-[registered comparison](waveform-profiles-v2.md) passed in three recorded runs against independent
+[registered comparison](waveform-profiles-v2.md) passed in four recorded runs against independent
 MATLAB implementations at the unchanged budgets; [evidence](../performance/matlab-parity-v2.md).
 They require a binding to the known periodic waveform and do not establish 3GPP
 conformance. The old v1 profile stays pending with its original failed record.
