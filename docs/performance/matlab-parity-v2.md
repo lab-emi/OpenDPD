@@ -30,7 +30,6 @@ MathWorks OFDM demodulation and EVM functions remain the independent backend.
 | v2 run 1 | 2026-10-11 | `ba5819b` (clean numerical source) | 115/115 passed; [machine-readable record](matlab-parity-v2-run1.json) |
 | v2 run 2 | 2026-10-11 | `cd9ccb3` (proposed validated profile metadata; clean numerical source) | 115/115 passed; [run2 record and diagnostics](matlab-parity-v2-run2.json) |
 | v2 run 3 | 2026-10-12 | `e6012df` (application catalogue isolated from frozen Arena; clean numerical source) | 115/115 passed; [run3 record and diagnostics](matlab-parity-v2-run3.json) |
-
 | v2 run 4 | 2026-10-12 | `6962567` (prepare / native MATLAB / score phases used by CI; clean source) | 115/115 passed; [complete record and diagnostics](matlab-parity-v2.json) |
 
 Run 1 maximum absolute ACLR difference: **7.105427357601002e-15 dB**
