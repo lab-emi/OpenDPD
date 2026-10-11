@@ -133,3 +133,13 @@ this; adding one touches the model registry, which needs maintainer review.
   tests `TestModel`, `TestPackageSecurity`; fixtures `Matlab/toolbox/tests/data/*.opendpd.zip` (six small packages).
 * Evidence recorded with the first implementation: the pure-MATLAB kernels reproduce the evaluator's outputs for the six
   fixtures to at most 1.2e-7 (the polynomial models exactly), on MATLAB R2026a, Linux.
+
+## Package-driven work limits
+
+The Python exporter and MATLAB reader cap both `signal.nperseg` and golden-vector
+length at 2^20 samples. The default exported golden remains at most 8192 samples.
+This prevents a tiny package from using a very large segment field to allocate
+gigabytes of padding during verification. Oversized exports are rejected before
+loading the model weights, and oversized packages are rejected before inference.
+Package integrity hashes do not authenticate an author or prove arbitrary archive
+parsers defect-free; the numeric, JSON and archive bounds are specific safeguards.

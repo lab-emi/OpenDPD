@@ -144,3 +144,24 @@ def test_committed_package_still_matches_todays_pytorch_code(path):
                                      sample_rate_hz=manifest["signal"]["sample_rate_hz"])
         assert np.max(np.abs(streamed - golden["output_streaming_stateful"])) <= me.TOLERANCE_ABS
         assert np.max(np.abs(streamed - offline)) > 1e-6              # the two semantics differ, which is why both are shipped
+
+
+@pytest.mark.parametrize("count", [0, -1, 1.5, True, 2**20 + 1, float("inf")])
+def test_export_rejects_unbounded_golden_work_before_reading_the_run(tmp_path, count):
+    from opendpd.services.inference import InferenceError
+    with pytest.raises(InferenceError, match="golden_samples"):
+        me.export_model(None, "unused", tmp_path / "model.zip", golden_samples=count)
+
+
+def test_export_rejects_excessive_segment_padding_before_loading_weights(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from opendpd.schemas import RunStatus, TaskType
+    from opendpd.services import evaluation, experiments, inference
+    monkeypatch.setattr(experiments, "load_run", lambda *a: SimpleNamespace(status=RunStatus.succeeded))
+    monkeypatch.setattr(experiments, "load_resolved", lambda *a: SimpleNamespace(task=TaskType.train_pa, model=SimpleNamespace(key="gru"), quantization=None))
+    monkeypatch.setattr(experiments, "load_result", lambda *a: SimpleNamespace(nperseg=10**8, evaluated_signal=object()))
+    monkeypatch.setattr(inference, "_checkpoint", lambda *a: None)
+    def do_not_load(*a): raise AssertionError("weights must not be loaded for an oversized package")
+    monkeypatch.setattr(evaluation, "trained_model", do_not_load)
+    with pytest.raises(inference.InferenceError, match="nperseg"):
+        me.export_model(None, "unused", tmp_path / "model.zip")

@@ -3,6 +3,7 @@
 import json
 import subprocess
 import sys
+import time
 import zipfile
 from pathlib import Path
 
@@ -33,8 +34,11 @@ def manifest_of(path):
 def test_fit_trains_exports_and_reports_progress(tmp_path, capture):
     x, y = capture
     events = []
+    started_at = time.monotonic()
     result = fit(tmp_path / "ws", x, y, **SIGNAL, pa_model="gru", dpd_model="gmp", pa_parameters={"hidden_size": 5},
                  training=TINY, device="cpu", on_event=events.append, poll_interval=0.1)
+    elapsed = time.monotonic() - started_at
+    assert 0 < result["seconds"] <= elapsed, "fit duration must exclude machine uptime"
     assert result["pa"]["status"] == result["dpd"]["status"] == "succeeded"
     for role, key in (("pa", "gru"), ("dpd", "gmp")):
         package = Path(result[role]["package"]["path"])

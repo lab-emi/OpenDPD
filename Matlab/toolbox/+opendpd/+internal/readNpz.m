@@ -20,7 +20,7 @@ entries = archive.entries();
 while entries.hasMoreElements()
     entry = entries.nextElement();
     name = string(entry.getName());
-    if isempty(regexp(char(name), '^[A-Za-z][A-Za-z0-9_]{0,63}\.npy$', 'once'))
+    if isempty(regexp(char(name), '^[A-Za-z][A-Za-z0-9_]{0,62}\.npy$', 'once'))
         error('opendpd:PackageContents', 'The .npz holds an entry named "%s"; only arrays named like "weight_1.npy" are read.', name);
     end
     if any(names == name)

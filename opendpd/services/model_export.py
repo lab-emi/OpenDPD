@@ -33,6 +33,8 @@ FORMAT = "opendpd-model-v1"
 EXPORT_MODELS = APPLY_MODELS
 TOLERANCE_ABS = 1e-5                   # float32 outputs: the acceptance bound of the golden test
 GOLDEN_SEED = 20260101
+MAX_PACKAGE_SEGMENT_SAMPLES = 2**20
+MAX_GOLDEN_SAMPLES = 2**20
 GOLDEN_CHUNK_SAMPLES = 37              # an awkward size on purpose: chunk boundaries must not matter
 ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 GMP_STREAM_HISTORY_NOTE = "output n reads x[n-2*(memory_length-1)..n]; that history is carried instead of zero-filled"
@@ -204,12 +206,20 @@ def _execution(key: str, nperseg: int) -> Dict[str, Any]:
     return execution
 
 
+def _bounded_samples(value, maximum, name):
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)) or not 1 <= value <= maximum:
+        raise InferenceError("invalid_export_size", f"{name} must be an integer from 1 to {maximum}; refuse excessive package work")
+    return int(value)
+
+
 def export_model(ws: Workspace, run_id: str, destination: Any, *, golden_samples: Optional[int] = None) -> Dict[str, Any]:
     """Write ``destination`` (a ``.zip`` file path) for a succeeded run; returns a summary of what was written."""
     from opendpd.services.evaluation import trained_model
     from opendpd.services.experiments import load_resolved, load_result, load_run
     from opendpd.services.inference import _checkpoint, apply_waveform
 
+    if golden_samples is not None:
+        golden_samples = _bounded_samples(golden_samples, MAX_GOLDEN_SAMPLES, "golden_samples")
     run = load_run(ws, run_id)
     resolved = load_resolved(ws, run_id)
     if run.status != RunStatus.succeeded or resolved.task not in (TaskType.train_pa, TaskType.train_dpd):
@@ -224,13 +234,13 @@ def export_model(ws: Workspace, run_id: str, destination: Any, *, golden_samples
     result = load_result(ws, run_id)
     if result is None or result.nperseg is None or result.evaluated_signal is None:
         raise InferenceError("metadata_missing", "Run needs a stored result with frozen signal and segment metadata")
-    nperseg = int(result.nperseg)
+    nperseg = _bounded_samples(result.nperseg, MAX_PACKAGE_SEGMENT_SAMPLES, "nperseg")
     trained = trained_model(ws, run_id)
     arrays, architecture, sources = extract_weights(key, trained.evaluated)
     stats = _train_input_stats(ws, resolved, trained.dataset)
     role = "dpd" if run.task == TaskType.train_dpd else "pa"
 
-    n = int(golden_samples or min(max(2 * nperseg + nperseg // 2, 256), 8192))
+    n = golden_samples if golden_samples is not None else min(max(2 * nperseg + nperseg // 2, 256), 8192)
     x = golden_input(n, stats["rms"], stats["peak"])
     golden: Dict[str, np.ndarray] = {"input": x}
     y_offline, _ = apply_waveform(ws, run_id, x)

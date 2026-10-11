@@ -94,10 +94,11 @@ if strlength(source) > 0
     environment.PYTHONPATH = char(strjoin(nonEmpty([source, string(getenv('PYTHONPATH'))]), pathsep));
 end
 progress = opendpd.internal.ProgressPrinter(fullfile(job, 'progress.jsonl'), options.Verbose, options.DPDModel, options.PAModel);
+% Allow Python cancellation (60 s), settling (30 s) and owned-service shutdown (25 s), plus margin.
 started = tic;
 outcome = opendpd.internal.runPython(executable, ["-m", "opendpd.sdk._fit", "--job", job], ...
     Log=fullfile(job, 'log.txt'), Environment=environment, Timeout=options.Timeout + 120, ...
-    CancelFile=fullfile(job, 'cancel'), OnPoll=@progress.poll);
+    CancelFile=fullfile(job, 'cancel'), OnPoll=@progress.poll, Grace=150);
 failure = fullfile(job, 'error.json');
 if outcome.ExitCode ~= 0 || ~isfile(fullfile(job, 'result.json'))
     detail = tail(outcome.Log);
