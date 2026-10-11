@@ -1,7 +1,7 @@
 # User uploaded backbone templates
 
 Studio opens an opt-in contribution PR in a separate branch. It never merges
-that PR. An independent human maintainer must approve its current head before
+that PR. An independent authorized human or agent reviewer must approve its current head before
 it can merge. See [the contribution guide](../../docs/architecture/user-backbones.md).
 
 Each contribution directory contains exactly `backbone.py` and `manifest.json`.
