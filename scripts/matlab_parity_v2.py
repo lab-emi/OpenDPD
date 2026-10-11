@@ -156,7 +156,8 @@ def verdict(items):
 def render(report):
     v = report["verdict"]
     lines = [f"Run {report['run']} — {report['date']}: **{v['passed']}/{v['scored']} passed**; {v['failed']} failed.",
-             "", "This is the separately registered v2 result; it does not change the old v1 verdict.", "",
+             "", "This is the separately registered v2 result; it does not change the old v1 verdict.",
+             "For frequency-offset rows the first value is the injected offset; the second is the estimate by the tool named in the item.", "",
              "| Group | Scored item | OpenDPD | MATLAB | Difference | Budget | Pass |",
              "| --- | --- | --- | --- | --- | --- | --- |"]
     def fmt(x): return "unavailable" if x is None else f"{x:.12g}"
@@ -204,7 +205,13 @@ def main():
         "package_sha256": built["package_sha256"],
         "signals": {sid: {"sha256": sig["sha256"], "sample_rate_hz": sig["fs"], "n_samples": len(sig["iq"]),
                           "nperseg": sig["nperseg"]} for sid, sig in built["signals"].items()},
-        "items": items, "verdict": verdict(items)}
+        "items": items, "verdict": verdict(items),
+        "diagnostics": {
+            "note": "Not scored: retain every product value and independent MATLAB diagnostic, including ideal-signal PSD floors and resampler comparisons.",
+            "product": {sid: {key: value for key, value in row.items() if key != "baseband"}
+                        for sid, row in product.items()},
+            "matlab": matlab,
+        }}
     target = args.report_json or work / "report.json"
     target.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n")
     (work / "report.md").write_text(render(report))

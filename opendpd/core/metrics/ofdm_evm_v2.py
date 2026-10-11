@@ -26,11 +26,14 @@ def _profile(auto):
     profile.profile_id = AUTO_PROFILE_ID if auto else PROFILE_ID
     profile.version = 2
     profile.frozen = True
-    profile.validation = ProfileValidation.pending_cross_validation
+    profile.validation = ProfileValidation.cross_validated
     profile.description = ("Frequency-tolerant data-aided LTE-numerology EVM and "
                            + ("full-record Hamming" if auto else "dataset-segment Hann")
                            + " ACLR, with enclosing FFT-bin bands. Not a conformance measurement.")
     profile.parameters.update({
+        "waveform": "ofdm-lte20-v1 known-symbol test waveform: LTE 20 MHz numerology, 15 kHz spacing, "
+                    "2048 FFT at 30.72 MS/s, normal CP and 1200 occupied subcarriers; no conformance claim",
+        "cross_validation": "docs/performance/matlab-parity-v2.md; registered digital signals against MATLAB R2026a",
         "timing": "complex circular correlation; below 0.3 use magnitude timing only as a candidate, "
                   "estimate CP coarse frequency offset, compensate, then require complex correlation >=0.3",
         "aclr": "10*log10(P_adjacent/P_main); main [-9,+9] MHz, adjacent [-29,-11] and [+11,+29] MHz; "
