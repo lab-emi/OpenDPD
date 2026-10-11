@@ -1755,7 +1755,7 @@
   "matlink.openGenerator": "打开 Signal Generator",
   "matlink.virtualPA": "虚拟 PA 模型",
   "matlink.virtualPAHelp": "生成器产生 PA 输入 x，所选虚拟 PA 产生训练所需的输出 y。两者均为仿真信号，并一起保存到 MATLAB。",
-  "matlink.upgrade": "此连接需要 0.4.0 或更新版 toolbox。更新后运行 opendpd.studio() 重新连接。",
+  "matlink.upgrade": "此连接需要 2.4.0 或更新版 toolbox。更新后运行 opendpd.studio() 重新连接。",
   "matlink.generatorLength": "每组训练信号需包含 8,192–1,000,000 个采样点。DPD 频谱评估可能需要更长的信号。",
   "matlink.savingSignals": "数据集已就绪，正在等待 MATLAB 保存信号，随后自动进入实验…",
   "matlink.back": "返回 MATLINK",

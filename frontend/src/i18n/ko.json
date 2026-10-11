@@ -1755,7 +1755,7 @@
   "matlink.openGenerator": "Open Signal Generator",
   "matlink.virtualPA": "Virtual PA model",
   "matlink.virtualPAHelp": "The generator creates PA input x. The selected virtual PA produces y for training. Both signals are synthetic and are saved together in MATLAB.",
-  "matlink.upgrade": "This connection needs toolbox 0.4.0 or later. Reconnect with opendpd.studio() after updating.",
+  "matlink.upgrade": "This connection needs toolbox 2.4.0 or later. Reconnect with opendpd.studio() after updating.",
   "matlink.generatorLength": "Each training capture needs 8,192–1,000,000 samples. Longer captures may be needed for DPD spectral evaluation.",
   "matlink.savingSignals": "Dataset ready. Waiting for MATLAB to save the signals before opening the experiment…",
   "matlink.back": "Back to MATLINK",

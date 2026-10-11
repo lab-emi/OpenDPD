@@ -36,7 +36,7 @@ def test_old_bridge_cannot_silently_ignore_new_transfer_options(broker):
     for action, payload in [("import_dataset", {"dataset_id": "signals"}),
                             ("import_result", {"run_id": "run-a", "bundle": True}),
                             ("import_result", {"run_id": "run-a", "variable": "myResult"})]:
-        with pytest.raises(MatlinkError, match="0.4.0"):
+        with pytest.raises(MatlinkError, match="2.4.0"):
             broker.request(request(connection, action, payload))
     for variable_name in ["for", "x.y", "x);quit", "1result"]:
         with pytest.raises(ValidationError):
