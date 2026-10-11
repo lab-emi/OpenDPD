@@ -107,3 +107,19 @@ means agreement for this registered digital measurement, not compliance with
 comparison. Append the actual results and any limitations after the run; do not
 edit this registration to fit them. Any procedural change requires a new dated
 amendment committed before its comparison result is read.
+
+## Implementation clarification 1 — 2026-10-11, before the first v2 comparison
+
+Reading the installed R2026a `comm.internal.PowerMeasurements` implementation
+confirmed that its Hann and Hamming windows are **symmetric**. Therefore the v2
+segmented profile uses a symmetric Hann window; this supersedes "periodic Hann"
+in the initial table. The old profiles retain their existing periodic Hann.
+This is a configuration correction from primary implementation evidence, made
+before any Python-v2/MATLAB-v2 comparison result was read; no tolerance, signal or
+scored comparison is changed. A two-sample symmetric Hann has zero window power,
+so the segmented v2 profile explicitly refuses segment lengths below three.
+
+At a captured Nyquist endpoint the enclosing range is clipped to the available
+FFT grid, as `comm.ACPR` does. A requested band outside the physical Nyquist range
+is still refused. None of the registered 122.88/245.76 MS/s bands needs clipping;
+analytic tests cover that boundary separately.

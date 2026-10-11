@@ -10,13 +10,15 @@ from opendpd.schemas.common import MetricValue
 from opendpd.schemas.dataset import SignalSpec
 from opendpd.schemas.metrics import MetricProfile
 
-from . import general_v1, legacy_v1, ofdm_evm_v1, spectral_v2
+from . import general_v1, legacy_v1, ofdm_evm_v1, ofdm_evm_v2, spectral_v2
 
 PROFILES: Dict[str, MetricProfile] = {
     spectral_v2.PROFILE.profile_id: spectral_v2.PROFILE,
     legacy_v1.PROFILE.profile_id: legacy_v1.PROFILE,
     general_v1.PROFILE.profile_id: general_v1.PROFILE,
     ofdm_evm_v1.PROFILE.profile_id: ofdm_evm_v1.PROFILE,
+    ofdm_evm_v2.PROFILE.profile_id: ofdm_evm_v2.PROFILE,
+    ofdm_evm_v2.AUTO_PROFILE.profile_id: ofdm_evm_v2.AUTO_PROFILE,
 }
 DEFAULT_PROFILE_ID = spectral_v2.PROFILE.profile_id
 
@@ -49,4 +51,7 @@ def evaluate(profile_id: str, prediction: np.ndarray, reference: Optional[np.nda
         return legacy_v1.compute(prediction, reference, signal)
     if profile_id == ofdm_evm_v1.PROFILE_ID:
         return ofdm_evm_v1.compute(prediction, reference, signal, valid_samples=valid_samples)
+    if profile_id in (ofdm_evm_v2.PROFILE_ID, ofdm_evm_v2.AUTO_PROFILE_ID):
+        return ofdm_evm_v2.compute(prediction, reference, signal, valid_samples=valid_samples,
+                                  auto=profile_id == ofdm_evm_v2.AUTO_PROFILE_ID)
     return general_v1.compute(prediction, reference, signal, valid_samples=valid_samples)
