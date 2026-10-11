@@ -405,3 +405,15 @@ still be on: switch it off at the instrument.
 does not know your attenuators, and does not establish the amplifier's real output power unless your `PowerCalibration`
 does. It has been exercised only on the mock, with injected faults; no instrument chain has been tested with it, so the
 supervised trial that `docs/protocols/measured-dpd.md` requires is still to be done on a real bench.
+
+### Package resource limits
+
+`opendpd.load` refuses model packages with a segment or golden-vector length above
+1,048,576 samples. `opendpd export-model` enforces the same limits before producing
+a package. The default golden has at most 8192 samples. These limits bound
+package-controlled padding and verification work; user-supplied waveform length
+is a separate input. NPZ array names contain at most 63 ASCII identifier characters.
+
+When cancelling `opendpd.fit`, the process transport allows 150 seconds for Python
+to cancel the run, settle it and stop an SDK-owned service before forcing an exit.
+An existing Studio service remains owned by its original launcher.

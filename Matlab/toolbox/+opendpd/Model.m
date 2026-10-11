@@ -21,6 +21,8 @@ classdef Model < matlab.System
         History = complex(zeros(0, 1))
     end
     properties (Constant, Hidden)
+        MaxSegmentSamples = 2^20
+        MaxGoldenSamples = 2^20
         MaxGoldenTolerance = 1e-5    % a package may ask for a tighter test, never a looser one
     end
     methods
@@ -33,6 +35,9 @@ classdef Model < matlab.System
                         rethrow(cause);
                     end
                     error('opendpd:Package', 'The package does not describe a model this toolbox supports: %s', cause.message);
+                end
+                if isfield(package.golden, 'input') && size(package.golden.input, 1) > obj.MaxGoldenSamples
+                    error('opendpd:Package', 'The golden vector exceeds the supported verification sample limit (%d).', obj.MaxGoldenSamples);
                 end
                 obj.Manifest = package.manifest;
                 obj.GoldenData = package.golden;
@@ -325,8 +330,9 @@ classdef Model < matlab.System
             kernel = struct('key', key);
             integer = @(name, v, lo) opendpd.Model.mustBeCount(name, v, lo);
             nperseg = integer('signal.nperseg', manifest.signal.nperseg, 1);
-            if nperseg > 1e8
-                error('opendpd:Package', 'signal.nperseg = %g is not a plausible segment length.', nperseg);
+            if nperseg > opendpd.Model.MaxSegmentSamples
+                error('opendpd:Package', 'signal.nperseg = %g exceeds the supported segment limit (%d).', ...
+                    nperseg, opendpd.Model.MaxSegmentSamples);
             end
             streaming = manifest.execution.streaming_stateful;
             if ~(islogical(streaming.available) && isscalar(streaming.available))

@@ -23,6 +23,33 @@ classdef TestPackageSecurity < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function packageCannotAmplifyTinyInputIntoAHugeSegment(testCase)
+            parts = PackageTools.unpack(PackageTools.path('gru-dpd'));
+            for count = [2^20 + 1, 100000000]
+                changed = PackageTools.editManifest(parts, '"nperseg": 128', sprintf('"nperseg": %d', count));
+                testCase.verifyError(@() opendpd.load(PackageTools.write(testCase, changed)), 'opendpd:Package');
+            end
+            boundary = PackageTools.editManifest(parts, '"nperseg": 128', '"nperseg": 1048576');
+            model = opendpd.load(PackageTools.write(testCase, boundary));
+            testCase.verifyEqual(model.Manifest.signal.nperseg, 2^20);
+        end
+
+        function oversizedGoldenVectorsAreRejectedBeforeVerification(testCase)
+            parts = PackageTools.unpack(PackageTools.path('gru-dpd'));
+            golden = PackageTools.readArrays(parts, 'golden/golden.npz');
+            golden.input = zeros(2^20 + 1, 2, 'single');
+            parts = PackageTools.replaceArrays(parts, 'golden/golden.npz', golden);
+            testCase.verifyError(@() opendpd.load(PackageTools.write(testCase, parts)), 'opendpd:Package');
+        end
+
+        function npzNamesRespectTheMatlabIdentifierLimit(testCase)
+            file = [tempname '.npz'];
+            testCase.addTeardown(@() PackageTools.deleteIfPresent(file));
+            name = string(repmat('a', 1, 64)) + ".npy";
+            PackageTools.buildZip(file, name, {PackageTools.npy(single(1))});
+            testCase.verifyError(@() opendpd.internal.readNpz(file), 'opendpd:PackageContents');
+        end
+
         % ----- the archive -------------------------------------------------------------------------------------------
         function unexpectedEntriesAreRefusedAndNeverExtracted(testCase)
             parts = PackageTools.unpack(PackageTools.path('mp_ls-dpd'));

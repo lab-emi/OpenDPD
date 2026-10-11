@@ -155,7 +155,7 @@ class MatlinkBroker:
                 "result_bundle" if body.action == "import_result" and
                 (body.payload.get("bundle") or body.payload.get("variable")) else None)
             if feature and feature not in bridge.view.capabilities:
-                raise MatlinkError("matlink_upgrade_required", "Reconnect using OpenDPD MATLAB toolbox 0.4.0 or later for this transfer.")
+                raise MatlinkError("matlink_upgrade_required", "Reconnect using OpenDPD MATLAB toolbox 2.4.0 or later for this transfer.")
             variables = {v.name: v for v in bridge.view.variables}
             if body.action == "import_iq":
                 pair = [variables.get(body.payload[k]) for k in ("input", "output")]
