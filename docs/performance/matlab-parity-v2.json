@@ -1,0 +1,3104 @@
+{
+  "budgets": {
+    "aclr_db": 0.1,
+    "evm_percentage_points": 0.05,
+    "frequency_offset_hz": 0.01,
+    "waveform_relative_rms": 1e-06
+  },
+  "date": "2026-10-11",
+  "diagnostics": {
+    "matlab": {
+      "acpr_convention_check": {
+        "constructed_right_dB": -40,
+        "measured_left_dB": -239.4430537211224,
+        "measured_right_dB": -40.023685370104275,
+        "ok": true
+      },
+      "environment": {
+        "Communications_Toolbox": "26.1",
+        "LTE_Toolbox": "26.1",
+        "Signal_Processing_Toolbox": "26.1",
+        "matlab": "26.1.0.3346908 (R2026a) Update 5",
+        "release": "2026a"
+      },
+      "p1": {
+        "n_samples_matlab": 307200,
+        "n_samples_package": 307200,
+        "peak_lag_samples": 0,
+        "relative_rms_difference": 2.8548268843620048e-08,
+        "scale": 59.120668471452156
+      },
+      "protocol": {
+        "aclr_aligned_comparator_for": "ofdm-lte20-evm-v2",
+        "aclr_default_comparator_for": "ofdm-lte20-evm-auto-v2",
+        "cp_guard_samples": 32,
+        "max_fine_iterations": 3,
+        "registration": "docs/protocols/waveform-profiles-v2.md",
+        "registration_commit": "8a8c77f594703da8cccf747cda18c905b109a491",
+        "script": "parityLTEv2",
+        "timing_threshold": 0.3
+      },
+      "signals": {
+        "S0": {
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9999999999999994,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": 0,
+            "correlation": 0.9999999999999994,
+            "evm_rms_percent": 2.3337188709077837e-06,
+            "frequency_offset_hz": 2.486674591161525e-09,
+            "iterations": 1,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S0",
+          "sample_rate_hz": 30720000.0
+        },
+        "S1": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -42.36039652323364,
+                "right_dB": -42.24189635171133
+              },
+              "n2048": {
+                "left_dB": -42.16187651027986,
+                "right_dB": -42.076630995355664
+              },
+              "n4096": {
+                "left_dB": -42.3146769228853,
+                "right_dB": -42.209056361472
+              }
+            },
+            "default": {
+              "left_dB": -42.49625572078581,
+              "right_dB": -42.21474171038079
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -42.36044432946941,
+                "right_dB": -42.24205322530919
+              },
+              "n2048": {
+                "left_dB": -42.161762521387274,
+                "right_dB": -42.07666534666653
+              },
+              "n4096": {
+                "left_dB": -42.31463316334184,
+                "right_dB": -42.2091408308951
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -42.53186165030128,
+                "right_dB": -42.417123211405055
+              },
+              "n2048": {
+                "left_dB": -42.246744007988895,
+                "right_dB": -42.16326463605337
+              },
+              "n4096": {
+                "left_dB": -42.356384063139735,
+                "right_dB": -42.25165558222959
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9999982358194854,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.019809403916165678,
+            "correlation": 0.9999982358194854,
+            "evm_rms_percent": 0.029863536580142507,
+            "frequency_offset_hz": -3.680415918719417e-05,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.9999982358194851,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.01980940391616659,
+            "correlation": 0.9999982358194851,
+            "evm_rms_percent": 0.029863536580142565,
+            "frequency_offset_hz": -3.68041591872415e-05,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S1",
+          "resampler_relative_difference": 3.9460349455704524e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S2": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -41.196653964460054,
+                "right_dB": -41.33206071143454
+              },
+              "n2048": {
+                "left_dB": -41.05397753150406,
+                "right_dB": -41.214724292190596
+              },
+              "n4096": {
+                "left_dB": -41.16945725829172,
+                "right_dB": -41.31706293368542
+              }
+            },
+            "default": {
+              "left_dB": -41.334805433548354,
+              "right_dB": -41.32808467436621
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -41.19667638906523,
+                "right_dB": -41.332080269206585
+              },
+              "n2048": {
+                "left_dB": -41.05388805893048,
+                "right_dB": -41.21473615512312
+              },
+              "n4096": {
+                "left_dB": -41.16943095187919,
+                "right_dB": -41.317120180119545
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -41.35000577340733,
+                "right_dB": -41.489859764480734
+              },
+              "n2048": {
+                "left_dB": -41.12844004741957,
+                "right_dB": -41.29344223513093
+              },
+              "n4096": {
+                "left_dB": -41.20556199128268,
+                "right_dB": -41.35559884554061
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9998089497884611,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07013663595542323,
+            "correlation": 0.9998089497884611,
+            "evm_rms_percent": 0.9836567673789454,
+            "frequency_offset_hz": 0.00011820975139497595,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.999808949788461,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07013663595542088,
+            "correlation": 0.999808949788461,
+            "evm_rms_percent": 0.9836567673789456,
+            "frequency_offset_hz": 0.0001182097513949773,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S2",
+          "resampler_relative_difference": 3.9457566821338253e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S3": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -37.34482698578789,
+                "right_dB": -37.2428124009642
+              },
+              "n2048": {
+                "left_dB": -37.32569344909465,
+                "right_dB": -37.23105275093683
+              },
+              "n4096": {
+                "left_dB": -37.37089423487666,
+                "right_dB": -37.275051419049234
+              }
+            },
+            "default": {
+              "left_dB": -37.47078386090907,
+              "right_dB": -37.28918236653938
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -37.344816933685344,
+                "right_dB": -37.24271432071942
+              },
+              "n2048": {
+                "left_dB": -37.32565253074569,
+                "right_dB": -37.23105586658344
+              },
+              "n4096": {
+                "left_dB": -37.37089544022876,
+                "right_dB": -37.27506805924009
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -37.45937499434358,
+                "right_dB": -37.3566779630305
+              },
+              "n2048": {
+                "left_dB": -37.38160634539972,
+                "right_dB": -37.28809854022978
+              },
+              "n4096": {
+                "left_dB": -37.39791974322736,
+                "right_dB": -37.302171712630056
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9993792987263317,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07049802373337621,
+            "correlation": 0.9993792987263317,
+            "evm_rms_percent": 2.725834248093997,
+            "frequency_offset_hz": 0.00035722015665503475,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.9993792987263315,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07049802373336968,
+            "correlation": 0.9993792987263315,
+            "evm_rms_percent": 2.7258342480939968,
+            "frequency_offset_hz": 0.00035722015665507693,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S3",
+          "resampler_relative_difference": 3.9399361727498754e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S4": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -32.750045613351006,
+                "right_dB": -32.52815870063898
+              },
+              "n2048": {
+                "left_dB": -32.78933926410669,
+                "right_dB": -32.56399052850864
+              },
+              "n4096": {
+                "left_dB": -32.80403384081407,
+                "right_dB": -32.58411633984273
+              }
+            },
+            "default": {
+              "left_dB": -32.86743355074505,
+              "right_dB": -32.598868626912356
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -32.750024613048396,
+                "right_dB": -32.52804368744863
+              },
+              "n2048": {
+                "left_dB": -32.78932014350285,
+                "right_dB": -32.56399762614509
+              },
+              "n4096": {
+                "left_dB": -32.80404612366296,
+                "right_dB": -32.58411926723519
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -32.84727790450089,
+                "right_dB": -32.62269814063902
+              },
+              "n2048": {
+                "left_dB": -32.837638463302845,
+                "right_dB": -32.61101131042427
+              },
+              "n4096": {
+                "left_dB": -32.827623203247065,
+                "right_dB": -32.60598231088251
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9979947827899642,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07201601558581336,
+            "correlation": 0.9979947827899642,
+            "evm_rms_percent": 5.315247161741676,
+            "frequency_offset_hz": 0.0006824673635283911,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.9979947827899642,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07201601558581633,
+            "correlation": 0.9979947827899642,
+            "evm_rms_percent": 5.315247161741676,
+            "frequency_offset_hz": 0.0006824673635283876,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S4",
+          "resampler_relative_difference": 3.945933265619691e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S5": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -27.154732815106392,
+                "right_dB": -26.860551959557306
+              },
+              "n2048": {
+                "left_dB": -27.217290239946305,
+                "right_dB": -26.9144876755678
+              },
+              "n4096": {
+                "left_dB": -27.221540821755113,
+                "right_dB": -26.927803966112364
+              }
+            },
+            "default": {
+              "left_dB": -27.268878263989237,
+              "right_dB": -26.944706948541253
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -27.15470840624276,
+                "right_dB": -26.860447872890024
+              },
+              "n2048": {
+                "left_dB": -27.217280064141764,
+                "right_dB": -26.914499801520325
+              },
+              "n4096": {
+                "left_dB": -27.22155772332226,
+                "right_dB": -26.927805032406745
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -27.24536259177969,
+                "right_dB": -26.947558876987365
+              },
+              "n2048": {
+                "left_dB": -27.263101946102566,
+                "right_dB": -26.95752629414613
+              },
+              "n4096": {
+                "left_dB": -27.244153206754742,
+                "right_dB": -26.947655179535555
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9923988480912341,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07815675597879164,
+            "correlation": 0.9923988480912341,
+            "evm_rms_percent": 10.638244920401036,
+            "frequency_offset_hz": 0.0011267952911098564,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.9923988480912344,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.07815675597880598,
+            "correlation": 0.9923988480912344,
+            "evm_rms_percent": 10.638244920401036,
+            "frequency_offset_hz": 0.0011267952911098269,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S5",
+          "resampler_relative_difference": 4.002232651092126e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S6": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -32.74319266281915,
+                "right_dB": -32.51856336665203
+              },
+              "n2048": {
+                "left_dB": -32.782620667139874,
+                "right_dB": -32.55431215478838
+              },
+              "n4096": {
+                "left_dB": -32.79650800823015,
+                "right_dB": -32.5739466347053
+              }
+            },
+            "default": {
+              "left_dB": -32.847066655486486,
+              "right_dB": -32.57988635167098
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -32.74318135903376,
+                "right_dB": -32.518457765369384
+              },
+              "n2048": {
+                "left_dB": -32.78260518620234,
+                "right_dB": -32.554323553219206
+              },
+              "n4096": {
+                "left_dB": -32.796521245741836,
+                "right_dB": -32.57395180001688
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -32.84051352122201,
+                "right_dB": -32.61326458484392
+              },
+              "n2048": {
+                "left_dB": -32.83080294000504,
+                "right_dB": -32.601374525887
+              },
+              "n4096": {
+                "left_dB": -32.819950311500996,
+                "right_dB": -32.595754484366196
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "candidate_frequency_offset_hz": 349.948728365472,
+              "candidate_symbols": 140,
+              "candidate_timing_samples": 92160,
+              "final_correlation": 0.9979944061297341,
+              "final_timing_equals_candidate": true,
+              "final_timing_samples": 92160,
+              "initial_correlation": 0.08984143276504863,
+              "initial_timing_samples": 92160,
+              "magnitude_correlation": 0.9981693503975763,
+              "method": "magnitude_candidate_then_complex"
+            },
+            "coarse_frequency_offset_hz": 349.948728365472,
+            "correlation": 0.9979944061297341,
+            "evm_rms_percent": 5.315214739697334,
+            "frequency_offset_hz": 350.00017034660215,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "candidate_frequency_offset_hz": 349.94872836547194,
+              "candidate_symbols": 140,
+              "candidate_timing_samples": 92160,
+              "final_correlation": 0.9979944061297341,
+              "final_timing_equals_candidate": true,
+              "final_timing_samples": 92160,
+              "initial_correlation": 0.0898414327650486,
+              "initial_timing_samples": 92160,
+              "magnitude_correlation": 0.9981693503975763,
+              "method": "magnitude_candidate_then_complex"
+            },
+            "coarse_frequency_offset_hz": 349.94872836547194,
+            "correlation": 0.9979944061297341,
+            "evm_rms_percent": 5.315214739697334,
+            "frequency_offset_hz": 350.0001703466021,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "frequency_offset_toolbox": 350.004602317423,
+          "id": "S6",
+          "resampler_relative_difference": 3.9284072161412543e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S6b": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -32.742894873577335,
+                "right_dB": -32.51885378982373
+              },
+              "n2048": {
+                "left_dB": -32.78231840689677,
+                "right_dB": -32.55460676298509
+              },
+              "n4096": {
+                "left_dB": -32.79620966573687,
+                "right_dB": -32.5742386733525
+              }
+            },
+            "default": {
+              "left_dB": -32.846877494294944,
+              "right_dB": -32.58063111183729
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -32.74288353344473,
+                "right_dB": -32.51874817243308
+              },
+              "n2048": {
+                "left_dB": -32.78230290710922,
+                "right_dB": -32.55461816761934
+              },
+              "n4096": {
+                "left_dB": -32.79622290205988,
+                "right_dB": -32.57424384165172
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -32.84025812595097,
+                "right_dB": -32.6136074475324
+              },
+              "n2048": {
+                "left_dB": -32.8305474298548,
+                "right_dB": -32.60171756068342
+              },
+              "n4096": {
+                "left_dB": -32.81969144807854,
+                "right_dB": -32.59608062398763
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.8569410115897471,
+              "initial_timing_samples": 92160,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": 29.948724183047094,
+            "correlation": 0.8569410115897471,
+            "evm_rms_percent": 5.315214757143582,
+            "frequency_offset_hz": 30.00017035192365,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.8569410115897472,
+              "initial_timing_samples": 92160,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": 29.948724183047087,
+            "correlation": 0.8569410115897472,
+            "evm_rms_percent": 5.315214757143581,
+            "frequency_offset_hz": 30.00017035192365,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "frequency_offset_toolbox": 30.0045999020365,
+          "id": "S6b",
+          "resampler_relative_difference": 3.920531655310843e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S7": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -31.673013589982357,
+                "right_dB": -31.50685627519763
+              },
+              "n2048": {
+                "left_dB": -31.709543979931745,
+                "right_dB": -31.54275361269724
+              },
+              "n4096": {
+                "left_dB": -31.724592494621504,
+                "right_dB": -31.561657469682483
+              }
+            },
+            "default": {
+              "left_dB": -31.784658722724078,
+              "right_dB": -31.57591430385455
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -31.6729782020642,
+                "right_dB": -31.506770384621397
+              },
+              "n2048": {
+                "left_dB": -31.70952608028843,
+                "right_dB": -31.542757529859543
+              },
+              "n4096": {
+                "left_dB": -31.7246023720895,
+                "right_dB": -31.561661396289562
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -31.75771126829428,
+                "right_dB": -31.589498811963384
+              },
+              "n2048": {
+                "left_dB": -31.751459370553903,
+                "right_dB": -31.58457388290961
+              },
+              "n4096": {
+                "left_dB": -31.7452066375466,
+                "right_dB": -31.580829715036536
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9978745721365395,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.059988881030731266,
+            "correlation": 0.9978745721365395,
+            "evm_rms_percent": 5.449736134420795,
+            "frequency_offset_hz": 0.0011841624866739092,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.9978745721365397,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.05998888103072563,
+            "correlation": 0.9978745721365397,
+            "evm_rms_percent": 5.449736134420795,
+            "frequency_offset_hz": 0.001184162486673906,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S7",
+          "resampler_relative_difference": 3.938286162299765e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S8": {
+          "aclr": {
+            "aligned": {
+              "n2048": {
+                "left_dB": -32.539256854459325,
+                "right_dB": -32.41704020129486
+              },
+              "n4096": {
+                "left_dB": -32.57853440726591,
+                "right_dB": -32.45145321283157
+              },
+              "n8192": {
+                "left_dB": -32.59205349987035,
+                "right_dB": -32.47145404642598
+              }
+            },
+            "default": {
+              "left_dB": -32.65325732696655,
+              "right_dB": -32.48528012256887
+            },
+            "enclosing_rule_replica": {
+              "n2048": {
+                "left_dB": -32.53924589750254,
+                "right_dB": -32.416982338033904
+              },
+              "n4096": {
+                "left_dB": -32.57852531510848,
+                "right_dB": -32.4514569446584
+              },
+              "n8192": {
+                "left_dB": -32.592059878052964,
+                "right_dB": -32.471455588155095
+              }
+            },
+            "pwelch": {
+              "n2048": {
+                "left_dB": -32.6334388729221,
+                "right_dB": -32.509741841141555
+              },
+              "n4096": {
+                "left_dB": -32.62534647310682,
+                "right_dB": -32.49751262797841
+              },
+              "n8192": {
+                "left_dB": -32.614884893191004,
+                "right_dB": -32.49283965758272
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.9980677128018685,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.05470186467889098,
+            "correlation": 0.9980677128018685,
+            "evm_rms_percent": 5.3212990927399195,
+            "frequency_offset_hz": 0.0006784700740589495,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.9980677128018686,
+              "initial_timing_samples": 0,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": -0.054701864678895,
+            "correlation": 0.9980677128018686,
+            "evm_rms_percent": 5.3212990927399195,
+            "frequency_offset_hz": 0.0006784700740589952,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 0
+          },
+          "id": "S8",
+          "resampler_relative_difference": 5.620991765045851e-16,
+          "sample_rate_hz": 245760000.0
+        },
+        "S9": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -42.278779963555536,
+                "right_dB": -42.15648098904941
+              },
+              "n2048": {
+                "left_dB": -42.08624577633584,
+                "right_dB": -41.99705456890608
+              },
+              "n4096": {
+                "left_dB": -42.236784071457365,
+                "right_dB": -42.12756328219727
+              }
+            },
+            "default": {
+              "left_dB": -42.44078939913579,
+              "right_dB": -42.059727578147516
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -42.278911007760904,
+                "right_dB": -42.15672349007299
+              },
+              "n2048": {
+                "left_dB": -42.086171860479155,
+                "right_dB": -41.99712808824877
+              },
+              "n4096": {
+                "left_dB": -42.2367602391402,
+                "right_dB": -42.12766600566546
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -42.45009061236211,
+                "right_dB": -42.33182305387033
+              },
+              "n2048": {
+                "left_dB": -42.17100178788304,
+                "right_dB": -42.08369585156912
+              },
+              "n4096": {
+                "left_dB": -42.278406841543834,
+                "right_dB": -42.17013876075684
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "candidate_frequency_offset_hz": 350.0012774737266,
+              "candidate_symbols": 140,
+              "candidate_timing_samples": 92160,
+              "final_correlation": 0.9999982550403795,
+              "final_timing_equals_candidate": true,
+              "final_timing_samples": 92160,
+              "initial_correlation": 0.08998210406887953,
+              "initial_timing_samples": 92160,
+              "magnitude_correlation": 0.999999058187765,
+              "method": "magnitude_candidate_then_complex"
+            },
+            "coarse_frequency_offset_hz": 350.0012774737266,
+            "correlation": 0.9999982550403795,
+            "evm_rms_percent": 0.026429543396407934,
+            "frequency_offset_hz": 350.00003938416097,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "candidate_frequency_offset_hz": 350.0012774737266,
+              "candidate_symbols": 140,
+              "candidate_timing_samples": 92160,
+              "final_correlation": 0.9999982550403795,
+              "final_timing_equals_candidate": true,
+              "final_timing_samples": 92160,
+              "initial_correlation": 0.08998210406887952,
+              "initial_timing_samples": 92160,
+              "magnitude_correlation": 0.9999990581877648,
+              "method": "magnitude_candidate_then_complex"
+            },
+            "coarse_frequency_offset_hz": 350.0012774737266,
+            "correlation": 0.9999982550403795,
+            "evm_rms_percent": 0.026429543396407934,
+            "frequency_offset_hz": 350.00003938416097,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "id": "S9",
+          "resampler_relative_difference": 3.940764057472091e-16,
+          "sample_rate_hz": 122880000.0
+        },
+        "S9b": {
+          "aclr": {
+            "aligned": {
+              "n1024": {
+                "left_dB": -42.27827855188452,
+                "right_dB": -42.15699419238726
+              },
+              "n2048": {
+                "left_dB": -42.08574772162472,
+                "right_dB": -41.99756408161987
+              },
+              "n4096": {
+                "left_dB": -42.23628932913816,
+                "right_dB": -42.128070164803695
+              }
+            },
+            "default": {
+              "left_dB": -42.43996060418061,
+              "right_dB": -42.060531814809295
+            },
+            "enclosing_rule_replica": {
+              "n1024": {
+                "left_dB": -42.27840956933041,
+                "right_dB": -42.1572366995942
+              },
+              "n2048": {
+                "left_dB": -42.08567379051965,
+                "right_dB": -41.99763759106248
+              },
+              "n4096": {
+                "left_dB": -42.236265487556835,
+                "right_dB": -42.12817288805479
+              }
+            },
+            "pwelch": {
+              "n1024": {
+                "left_dB": -42.44964597891729,
+                "right_dB": -42.33238356115295
+              },
+              "n2048": {
+                "left_dB": -42.17055525190865,
+                "right_dB": -42.084253293121165
+              },
+              "n4096": {
+                "left_dB": -42.277958277297564,
+                "right_dB": -42.17069009443955
+              }
+            }
+          },
+          "evm": {
+            "acquisition": {
+              "initial_correlation": 0.8586970410953,
+              "initial_timing_samples": 92160,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": 30.001279056373935,
+            "correlation": 0.8586970410953,
+            "evm_rms_percent": 0.026429528099104635,
+            "frequency_offset_hz": 30.000039389858372,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "evm_on_opendpd_baseband": {
+            "acquisition": {
+              "initial_correlation": 0.8586970410953,
+              "initial_timing_samples": 92160,
+              "method": "complex"
+            },
+            "coarse_frequency_offset_hz": 30.00127905637396,
+            "correlation": 0.8586970410953,
+            "evm_rms_percent": 0.026429528099104593,
+            "frequency_offset_hz": 30.000039389858376,
+            "iterations": 2,
+            "n_symbols": 140,
+            "status": "ok",
+            "timing_samples": 92160
+          },
+          "id": "S9b",
+          "resampler_relative_difference": 3.9544204103764505e-16,
+          "sample_rate_hz": 122880000.0
+        }
+      }
+    },
+    "note": "Not scored: retain every product value and independent MATLAB diagnostic, including ideal-signal PSD floors and resampler comparisons.",
+    "product": {
+      "S0": {
+        "aclr": {
+          "2048": {}
+        },
+        "correlation": 0.9999999999999966,
+        "demodulation": {
+          "evm_rms_percent": 1.930056627008848e-06,
+          "frequency_offset_hz": 2.168166077400048e-09,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 1.930056627008848e-06,
+        "evm_status": "ok"
+      },
+      "S1": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -42.36039652323364,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -42.24189635171133
+            },
+            "default": {
+              "left_dB": -42.49625572078581,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.21474171038079
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -42.16187651027986,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -42.076630995355664
+            },
+            "default": {
+              "left_dB": -42.49625572078581,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.21474171038079
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -42.31467692288529,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -42.209056361472
+            },
+            "default": {
+              "left_dB": -42.49625572078581,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.21474171038079
+            }
+          }
+        },
+        "correlation": 0.9999982358194848,
+        "demodulation": {
+          "evm_rms_percent": 0.02986353589111031,
+          "frequency_offset_hz": -3.68044790859322e-05,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 0.02986353589111031,
+        "evm_status": "ok"
+      },
+      "S2": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -41.196653964460054,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -41.33206071143454
+            },
+            "default": {
+              "left_dB": -41.334805433548354,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -41.32808467436621
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -41.05397753150406,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -41.214724292190596
+            },
+            "default": {
+              "left_dB": -41.334805433548354,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -41.32808467436621
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -41.16945725829172,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -41.31706293368542
+            },
+            "default": {
+              "left_dB": -41.334805433548354,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -41.32808467436621
+            }
+          }
+        },
+        "correlation": 0.9998089497888939,
+        "demodulation": {
+          "evm_rms_percent": 0.9836567684518284,
+          "frequency_offset_hz": 0.0001182094445997286,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 0.9836567684518284,
+        "evm_status": "ok"
+      },
+      "S3": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -37.34482698578789,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -37.2428124009642
+            },
+            "default": {
+              "left_dB": -37.47078386090907,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -37.28918236653938
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -37.32569344909465,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -37.23105275093683
+            },
+            "default": {
+              "left_dB": -37.47078386090907,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -37.28918236653938
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -37.37089423487666,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -37.275051419049234
+            },
+            "default": {
+              "left_dB": -37.47078386090907,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -37.28918236653938
+            }
+          }
+        },
+        "correlation": 0.9993792987266085,
+        "demodulation": {
+          "evm_rms_percent": 2.725834249143838,
+          "frequency_offset_hz": 0.0003572198733034821,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 2.725834249143838,
+        "evm_status": "ok"
+      },
+      "S4": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -32.750045613351006,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.52815870063899
+            },
+            "default": {
+              "left_dB": -32.86743355074505,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.598868626912356
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -32.78933926410669,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.56399052850864
+            },
+            "default": {
+              "left_dB": -32.86743355074505,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.598868626912356
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -32.80403384081407,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.58411633984273
+            },
+            "default": {
+              "left_dB": -32.86743355074505,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.598868626912356
+            }
+          }
+        },
+        "correlation": 0.9979947827900049,
+        "demodulation": {
+          "evm_rms_percent": 5.315247162741446,
+          "frequency_offset_hz": 0.0006824671163174945,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 5.315247162741446,
+        "evm_status": "ok"
+      },
+      "S5": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -27.154732815106392,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -26.860551959557306
+            },
+            "default": {
+              "left_dB": -27.268878263989237,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -26.944706948541253
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -27.217290239946305,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -26.9144876755678
+            },
+            "default": {
+              "left_dB": -27.268878263989237,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -26.944706948541253
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -27.221540821755113,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -26.927803966112364
+            },
+            "default": {
+              "left_dB": -27.268878263989237,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -26.944706948541253
+            }
+          }
+        },
+        "correlation": 0.9923988480907672,
+        "demodulation": {
+          "evm_rms_percent": 10.638244921304594,
+          "frequency_offset_hz": 0.0011267951237327598,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 10.638244921304594,
+        "evm_status": "ok"
+      },
+      "S6": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -32.74319266281915,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.51856336665203
+            },
+            "default": {
+              "left_dB": -32.847066655486486,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.57988635167098
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -32.782620667139874,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.55431215478838
+            },
+            "default": {
+              "left_dB": -32.847066655486486,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.57988635167098
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -32.79650800823015,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.5739466347053
+            },
+            "default": {
+              "left_dB": -32.847066655486486,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.57988635167098
+            }
+          }
+        },
+        "correlation": 0.9979944061297717,
+        "demodulation": {
+          "evm_rms_percent": 5.315214740690684,
+          "frequency_offset_hz": 350.00017034659214,
+          "n_symbols": 140,
+          "timing_samples": 92160
+        },
+        "evm_rms_percent": 5.315214740690684,
+        "evm_status": "ok"
+      },
+      "S6b": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -32.742894873577335,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.51885378982373
+            },
+            "default": {
+              "left_dB": -32.846877494294944,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.580631111837285
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -32.78231840689677,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.55460676298509
+            },
+            "default": {
+              "left_dB": -32.846877494294944,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.580631111837285
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -32.79620966573687,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.5742386733525
+            },
+            "default": {
+              "left_dB": -32.846877494294944,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.580631111837285
+            }
+          }
+        },
+        "correlation": 0.8569410115931041,
+        "demodulation": {
+          "evm_rms_percent": 5.315214758136931,
+          "frequency_offset_hz": 30.000170351913688,
+          "n_symbols": 140,
+          "timing_samples": 92160
+        },
+        "evm_rms_percent": 5.315214758136931,
+        "evm_status": "ok"
+      },
+      "S7": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -31.673013589982357,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -31.50685627519763
+            },
+            "default": {
+              "left_dB": -31.784658722724078,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -31.57591430385455
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -31.709543979931745,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -31.54275361269724
+            },
+            "default": {
+              "left_dB": -31.784658722724078,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -31.57591430385455
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -31.724592494621504,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -31.561657469682487
+            },
+            "default": {
+              "left_dB": -31.784658722724078,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -31.57591430385455
+            }
+          }
+        },
+        "correlation": 0.997874572136475,
+        "demodulation": {
+          "evm_rms_percent": 5.4497361357011735,
+          "frequency_offset_hz": 0.0011841622127949161,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 5.4497361357011735,
+        "evm_status": "ok"
+      },
+      "S8": {
+        "aclr": {
+          "2048": {
+            "aligned": {
+              "left_dB": -32.539256854459325,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.41704020129486
+            },
+            "default": {
+              "left_dB": -32.65325732696655,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.48528012256887
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -32.57853440726591,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.45145321283157
+            },
+            "default": {
+              "left_dB": -32.65325732696655,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.48528012256887
+            }
+          },
+          "8192": {
+            "aligned": {
+              "left_dB": -32.59205349987035,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -32.47145404642598
+            },
+            "default": {
+              "left_dB": -32.65325732696655,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -32.48528012256887
+            }
+          }
+        },
+        "correlation": 0.9980677128016439,
+        "demodulation": {
+          "evm_rms_percent": 5.32129909371387,
+          "frequency_offset_hz": 0.000678469826236211,
+          "n_symbols": 140,
+          "timing_samples": 0
+        },
+        "evm_rms_percent": 5.32129909371387,
+        "evm_status": "ok"
+      },
+      "S9": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -42.278779963555536,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -42.15648098904941
+            },
+            "default": {
+              "left_dB": -42.44078939913579,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.059727578147516
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -42.08624577633584,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -41.99705456890608
+            },
+            "default": {
+              "left_dB": -42.44078939913579,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.059727578147516
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -42.236784071457365,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -42.12756328219727
+            },
+            "default": {
+              "left_dB": -42.44078939913579,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.059727578147516
+            }
+          }
+        },
+        "correlation": 0.9999982550403752,
+        "demodulation": {
+          "evm_rms_percent": 0.026429541376284903,
+          "frequency_offset_hz": 350.0000393841402,
+          "n_symbols": 140,
+          "timing_samples": 92160
+        },
+        "evm_rms_percent": 0.026429541376284903,
+        "evm_status": "ok"
+      },
+      "S9b": {
+        "aclr": {
+          "1024": {
+            "aligned": {
+              "left_dB": -42.27827855188452,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -42.15699419238726
+            },
+            "default": {
+              "left_dB": -42.43996060418061,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.060531814809295
+            }
+          },
+          "2048": {
+            "aligned": {
+              "left_dB": -42.08574772162472,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -41.997564081619856
+            },
+            "default": {
+              "left_dB": -42.43996060418061,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.060531814809295
+            }
+          },
+          "4096": {
+            "aligned": {
+              "left_dB": -42.23628932913816,
+              "profile_id": "ofdm-lte20-evm-v2",
+              "right_dB": -42.128070164803695
+            },
+            "default": {
+              "left_dB": -42.43996060418061,
+              "profile_id": "ofdm-lte20-evm-auto-v2",
+              "right_dB": -42.060531814809295
+            }
+          }
+        },
+        "correlation": 0.85869704109922,
+        "demodulation": {
+          "evm_rms_percent": 0.02642952607911068,
+          "frequency_offset_hz": 30.000039389837642,
+          "n_symbols": 140,
+          "timing_samples": 92160
+        },
+        "evm_rms_percent": 0.02642952607911068,
+        "evm_status": "ok"
+      }
+    }
+  },
+  "environment": {
+    "matlab": {
+      "Communications_Toolbox": "26.1",
+      "LTE_Toolbox": "26.1",
+      "Signal_Processing_Toolbox": "26.1",
+      "matlab": "26.1.0.3346908 (R2026a) Update 5",
+      "release": "2026a"
+    },
+    "numpy": "2.4.4",
+    "opendpd_commit": "cd9ccb3284eb0c44a00e248672399c743377b444",
+    "platform": "Linux-7.2.6-1-cachyos-x86_64-with-glibc2.44",
+    "python": "3.13.14",
+    "scipy": "1.18.0",
+    "script_sha256": {
+      "matlab_parity.py": "7421d7a694a02019e19946973c2844a7f17a4141350a8aac2677a077615f6489",
+      "parityLTE.m": "3f74c8444c3d2838c5c3d7fec2fccd35b9653242a4e9f2cf6df9cbb6d22807c1"
+    },
+    "v2_source_sha256": {
+      "Matlab/toolbox/examples/parity/parityLTEv2.m": "e0fd19b904c2a466b08eee6574b419200173d6b18541055d14e1a5c621f2c939",
+      "docs/protocols/waveform-profiles-v2.md": "08abdca1cec9d6fa5c6c84fc3de0830d9e793ab27ce90e3ad67ed5c75d4d99e7",
+      "opendpd/core/metrics/ofdm_evm_v2.py": "48b9ee5760095c365e514fcb99dd992fbfcd46e734a449dc6ffeaf80c8f57e89",
+      "opendpd/core/metrics/registry.py": "eef48e7771226258d8072f92a7f0990a548458088feb377a18798ffdd9c82831",
+      "opendpd/core/waveforms/ofdm.py": "f38b1e8f03fd61e9f79af16f65059dd59e67da7b6704b43e4ad3c4aacabc34f2",
+      "scripts/matlab_parity_v2.py": "db06d367e1764354f2b781ecb379a66b87e74b78d6723baa738c1be8a17f2b4f"
+    },
+    "working_tree_modified": false
+  },
+  "items": [
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P1",
+      "item": "sample count",
+      "kind": "scored",
+      "matlab": 307200,
+      "note": "",
+      "opendpd": 307200,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P1",
+      "item": "first-sample alignment (peak lag)",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 1e-06,
+      "difference": 2.8548268843620048e-08,
+      "group": "P1",
+      "item": "relative RMS difference after one real scale",
+      "kind": "scored",
+      "matlab": 2.8548268843620048e-08,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.05,
+      "difference": 4.036622438989357e-07,
+      "group": "P3",
+      "item": "S0 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 2.3337188709077837e-06,
+      "note": "",
+      "opendpd": 1.930056627008848e-06,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S0 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.05,
+      "difference": 6.890321958830103e-10,
+      "group": "P3",
+      "item": "S1 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 0.029863536580142507,
+      "note": "",
+      "opendpd": 0.02986353589111031,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S1 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_L nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -41.196653964460054,
+      "note": "",
+      "opendpd": -41.196653964460054,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_R nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -41.33206071143454,
+      "note": "",
+      "opendpd": -41.33206071143454,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_L nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -41.334805433548354,
+      "note": "",
+      "opendpd": -41.334805433548354,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_R nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -41.32808467436621,
+      "note": "",
+      "opendpd": -41.32808467436621,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_L nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -41.05397753150406,
+      "note": "",
+      "opendpd": -41.05397753150406,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_R nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -41.214724292190596,
+      "note": "",
+      "opendpd": -41.214724292190596,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_L nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -41.334805433548354,
+      "note": "",
+      "opendpd": -41.334805433548354,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_R nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -41.32808467436621,
+      "note": "",
+      "opendpd": -41.32808467436621,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_L nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -41.16945725829172,
+      "note": "",
+      "opendpd": -41.16945725829172,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_R nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -41.31706293368542,
+      "note": "",
+      "opendpd": -41.31706293368542,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_L nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -41.334805433548354,
+      "note": "",
+      "opendpd": -41.334805433548354,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S2 ACLR_R nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -41.32808467436621,
+      "note": "",
+      "opendpd": -41.32808467436621,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.05,
+      "difference": -1.0728830046602411e-09,
+      "group": "P3",
+      "item": "S2 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 0.9836567673789454,
+      "note": "",
+      "opendpd": 0.9836567684518284,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S2 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_L nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -37.34482698578789,
+      "note": "",
+      "opendpd": -37.34482698578789,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_R nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -37.2428124009642,
+      "note": "",
+      "opendpd": -37.2428124009642,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_L nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -37.47078386090907,
+      "note": "",
+      "opendpd": -37.47078386090907,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_R nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -37.28918236653938,
+      "note": "",
+      "opendpd": -37.28918236653938,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_L nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -37.32569344909465,
+      "note": "",
+      "opendpd": -37.32569344909465,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_R nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -37.23105275093683,
+      "note": "",
+      "opendpd": -37.23105275093683,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_L nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -37.47078386090907,
+      "note": "",
+      "opendpd": -37.47078386090907,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_R nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -37.28918236653938,
+      "note": "",
+      "opendpd": -37.28918236653938,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_L nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -37.37089423487666,
+      "note": "",
+      "opendpd": -37.37089423487666,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_R nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -37.275051419049234,
+      "note": "",
+      "opendpd": -37.275051419049234,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_L nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -37.47078386090907,
+      "note": "",
+      "opendpd": -37.47078386090907,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S3 ACLR_R nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -37.28918236653938,
+      "note": "",
+      "opendpd": -37.28918236653938,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.05,
+      "difference": -1.0498406588510534e-09,
+      "group": "P3",
+      "item": "S3 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 2.725834248093997,
+      "note": "",
+      "opendpd": 2.725834249143838,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S3 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_L nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.750045613351006,
+      "note": "",
+      "opendpd": -32.750045613351006,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 7.105427357601002e-15,
+      "group": "P2",
+      "item": "S4 ACLR_R nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.52815870063898,
+      "note": "",
+      "opendpd": -32.52815870063899,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_L nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.86743355074505,
+      "note": "",
+      "opendpd": -32.86743355074505,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_R nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.598868626912356,
+      "note": "",
+      "opendpd": -32.598868626912356,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_L nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.78933926410669,
+      "note": "",
+      "opendpd": -32.78933926410669,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_R nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.56399052850864,
+      "note": "",
+      "opendpd": -32.56399052850864,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_L nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.86743355074505,
+      "note": "",
+      "opendpd": -32.86743355074505,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_R nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.598868626912356,
+      "note": "",
+      "opendpd": -32.598868626912356,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_L nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.80403384081407,
+      "note": "",
+      "opendpd": -32.80403384081407,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_R nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.58411633984273,
+      "note": "",
+      "opendpd": -32.58411633984273,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_L nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.86743355074505,
+      "note": "",
+      "opendpd": -32.86743355074505,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S4 ACLR_R nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.598868626912356,
+      "note": "",
+      "opendpd": -32.598868626912356,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.05,
+      "difference": -9.997700445296687e-10,
+      "group": "P3",
+      "item": "S4 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 5.315247161741676,
+      "note": "",
+      "opendpd": 5.315247162741446,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S4 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_L nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -27.154732815106392,
+      "note": "",
+      "opendpd": -27.154732815106392,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_R nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -26.860551959557306,
+      "note": "",
+      "opendpd": -26.860551959557306,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_L nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -27.268878263989237,
+      "note": "",
+      "opendpd": -27.268878263989237,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_R nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -26.944706948541253,
+      "note": "",
+      "opendpd": -26.944706948541253,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_L nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -27.217290239946305,
+      "note": "",
+      "opendpd": -27.217290239946305,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_R nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -26.9144876755678,
+      "note": "",
+      "opendpd": -26.9144876755678,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_L nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -27.268878263989237,
+      "note": "",
+      "opendpd": -27.268878263989237,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_R nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -26.944706948541253,
+      "note": "",
+      "opendpd": -26.944706948541253,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_L nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -27.221540821755113,
+      "note": "",
+      "opendpd": -27.221540821755113,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_R nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -26.927803966112364,
+      "note": "",
+      "opendpd": -26.927803966112364,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_L nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -27.268878263989237,
+      "note": "",
+      "opendpd": -27.268878263989237,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S5 ACLR_R nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -26.944706948541253,
+      "note": "",
+      "opendpd": -26.944706948541253,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.05,
+      "difference": -9.035581172156526e-10,
+      "group": "P3",
+      "item": "S5 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 10.638244920401036,
+      "note": "",
+      "opendpd": 10.638244921304594,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S5 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_L nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.74319266281915,
+      "note": "",
+      "opendpd": -32.74319266281915,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_R nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.51856336665203,
+      "note": "",
+      "opendpd": -32.51856336665203,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_L nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.847066655486486,
+      "note": "",
+      "opendpd": -32.847066655486486,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_R nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.57988635167098,
+      "note": "",
+      "opendpd": -32.57988635167098,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_L nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.782620667139874,
+      "note": "",
+      "opendpd": -32.782620667139874,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_R nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.55431215478838,
+      "note": "",
+      "opendpd": -32.55431215478838,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_L nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.847066655486486,
+      "note": "",
+      "opendpd": -32.847066655486486,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_R nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.57988635167098,
+      "note": "",
+      "opendpd": -32.57988635167098,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_L nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.79650800823015,
+      "note": "",
+      "opendpd": -32.79650800823015,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_R nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.5739466347053,
+      "note": "",
+      "opendpd": -32.5739466347053,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_L nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.847066655486486,
+      "note": "",
+      "opendpd": -32.847066655486486,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S6 ACLR_R nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.57988635167098,
+      "note": "",
+      "opendpd": -32.57988635167098,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.05,
+      "difference": -9.933502909120762e-10,
+      "group": "P3",
+      "item": "S6 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 5.315214739697334,
+      "note": "",
+      "opendpd": 5.315214740690684,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S6 integer timing",
+      "kind": "scored",
+      "matlab": 92160,
+      "note": "",
+      "opendpd": 92160,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_L nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -31.673013589982357,
+      "note": "",
+      "opendpd": -31.673013589982357,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_R nperseg=1024 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -31.50685627519763,
+      "note": "",
+      "opendpd": -31.50685627519763,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_L nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -31.784658722724078,
+      "note": "",
+      "opendpd": -31.784658722724078,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_R nperseg=1024 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -31.57591430385455,
+      "note": "",
+      "opendpd": -31.57591430385455,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_L nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -31.709543979931745,
+      "note": "",
+      "opendpd": -31.709543979931745,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_R nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -31.54275361269724,
+      "note": "",
+      "opendpd": -31.54275361269724,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_L nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -31.784658722724078,
+      "note": "",
+      "opendpd": -31.784658722724078,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_R nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -31.57591430385455,
+      "note": "",
+      "opendpd": -31.57591430385455,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_L nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -31.724592494621504,
+      "note": "",
+      "opendpd": -31.724592494621504,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 3.552713678800501e-15,
+      "group": "P2",
+      "item": "S7 ACLR_R nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -31.561657469682483,
+      "note": "",
+      "opendpd": -31.561657469682487,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_L nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -31.784658722724078,
+      "note": "",
+      "opendpd": -31.784658722724078,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S7 ACLR_R nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -31.57591430385455,
+      "note": "",
+      "opendpd": -31.57591430385455,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.05,
+      "difference": -1.2803784699144671e-09,
+      "group": "P3",
+      "item": "S7 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 5.449736134420795,
+      "note": "",
+      "opendpd": 5.4497361357011735,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S7 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_L nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.539256854459325,
+      "note": "",
+      "opendpd": -32.539256854459325,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_R nperseg=2048 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.41704020129486,
+      "note": "",
+      "opendpd": -32.41704020129486,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_L nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.65325732696655,
+      "note": "",
+      "opendpd": -32.65325732696655,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_R nperseg=2048 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.48528012256887,
+      "note": "",
+      "opendpd": -32.48528012256887,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_L nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.57853440726591,
+      "note": "",
+      "opendpd": -32.57853440726591,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_R nperseg=4096 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.45145321283157,
+      "note": "",
+      "opendpd": -32.45145321283157,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_L nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.65325732696655,
+      "note": "",
+      "opendpd": -32.65325732696655,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_R nperseg=4096 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.48528012256887,
+      "note": "",
+      "opendpd": -32.48528012256887,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_L nperseg=8192 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.59205349987035,
+      "note": "",
+      "opendpd": -32.59205349987035,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_R nperseg=8192 vs comm.ACPR aligned",
+      "kind": "scored",
+      "matlab": -32.47145404642598,
+      "note": "",
+      "opendpd": -32.47145404642598,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_L nperseg=8192 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.65325732696655,
+      "note": "",
+      "opendpd": -32.65325732696655,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.1,
+      "difference": 0.0,
+      "group": "P2",
+      "item": "S8 ACLR_R nperseg=8192 vs comm.ACPR default",
+      "kind": "scored",
+      "matlab": -32.48528012256887,
+      "note": "",
+      "opendpd": -32.48528012256887,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-auto-v2"
+    },
+    {
+      "budget": 0.05,
+      "difference": -9.73950697868986e-10,
+      "group": "P3",
+      "item": "S8 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 5.3212990927399195,
+      "note": "",
+      "opendpd": 5.32129909371387,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S8 integer timing",
+      "kind": "scored",
+      "matlab": 0,
+      "note": "",
+      "opendpd": 0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.05,
+      "difference": 2.020123030660459e-09,
+      "group": "P3",
+      "item": "S9 EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 0.026429543396407934,
+      "note": "",
+      "opendpd": 0.026429541376284903,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S9 integer timing",
+      "kind": "scored",
+      "matlab": 92160,
+      "note": "",
+      "opendpd": 92160,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.01,
+      "difference": 3.9384140222864517e-05,
+      "group": "P3",
+      "item": "S9 frequency offset, OpenDPD",
+      "kind": "scored",
+      "matlab": 350.0000393841402,
+      "note": "",
+      "opendpd": 350.0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.01,
+      "difference": 3.93841609707124e-05,
+      "group": "P3",
+      "item": "S9 frequency offset, MATLAB",
+      "kind": "scored",
+      "matlab": 350.00003938416097,
+      "note": "",
+      "opendpd": 350.0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.05,
+      "difference": -9.933494027336565e-10,
+      "group": "P3",
+      "item": "S6b EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 5.315214757143582,
+      "note": "",
+      "opendpd": 5.315214758136931,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S6b integer timing",
+      "kind": "scored",
+      "matlab": 92160,
+      "note": "",
+      "opendpd": 92160,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.05,
+      "difference": 2.0199939533560585e-09,
+      "group": "P3",
+      "item": "S9b EVM_RMS (percent)",
+      "kind": "scored",
+      "matlab": 0.026429528099104635,
+      "note": "",
+      "opendpd": 0.02642952607911068,
+      "pass": true,
+      "profile_id": "ofdm-lte20-evm-v2"
+    },
+    {
+      "budget": 0,
+      "difference": 0,
+      "group": "P3",
+      "item": "S9b integer timing",
+      "kind": "scored",
+      "matlab": 92160,
+      "note": "",
+      "opendpd": 92160,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.01,
+      "difference": 3.938983764228965e-05,
+      "group": "P3",
+      "item": "S9b frequency offset, OpenDPD",
+      "kind": "scored",
+      "matlab": 30.000039389837642,
+      "note": "",
+      "opendpd": 30.0,
+      "pass": true,
+      "profile_id": null
+    },
+    {
+      "budget": 0.01,
+      "difference": 3.9389858372373965e-05,
+      "group": "P3",
+      "item": "S9b frequency offset, MATLAB",
+      "kind": "scored",
+      "matlab": 30.000039389858372,
+      "note": "",
+      "opendpd": 30.0,
+      "pass": true,
+      "profile_id": null
+    }
+  ],
+  "package_sha256": "a972712353f4c2b6068c4ad96f8bf7fdb0f2df5c14ca136b203a587047ec2102",
+  "profiles": {
+    "aligned": "ofdm-lte20-evm-v2",
+    "default": "ofdm-lte20-evm-auto-v2"
+  },
+  "registration_commit": "8a8c77f594703da8cccf747cda18c905b109a491",
+  "run": "2",
+  "signals": {
+    "S0": {
+      "n_samples": 307200,
+      "nperseg": [],
+      "sample_rate_hz": 30720000.0,
+      "sha256": "c6118a34d063a2bf247e6f8adfcdb32f459e523a0a1d53ef684334d3df5598f4"
+    },
+    "S1": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "66b84f7e6c4baeddaba4025021fad3a4017e9145cb1cc66c7a99f62b1cbf5c76"
+    },
+    "S2": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "cc660529191aebb014d7144951f29833e5a3a516daabb7c64dc8cb5c1cd5ffe4"
+    },
+    "S3": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "e1d006af3c1884cd91a85f1dd66848cf6d0eb887c5747398cfa82364b3efe59a"
+    },
+    "S4": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "6f702b71bae291214f82131e0395b82edf6290af94d8b7651aa0ae6b4ce9f233"
+    },
+    "S5": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "1a6c4936f38cdbafb9ed7b64c5a582e27f46e00702fc415178e747d2a2d72e36"
+    },
+    "S6": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "87aaedd27e11036cc0bb68f2f7b87f3a1ed59e6db63e85133e136ab02e69bc76"
+    },
+    "S6b": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "1814e3ebfd01efb3ff6df6c29f6aeecb1cb22ec3dc3c339e43e0e8e2a8363460"
+    },
+    "S7": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "9bdf529508a4e4f8a7235a4a3202fe726c84442ef321d1fb2b720971aeed28b2"
+    },
+    "S8": {
+      "n_samples": 2457600,
+      "nperseg": [
+        2048,
+        4096,
+        8192
+      ],
+      "sample_rate_hz": 245760000.0,
+      "sha256": "d357c447458b092721f0e8ae4e1651d1be231f900c519ea1943881c2399373ff"
+    },
+    "S9": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "777feea55af54bfc9f19e6ab0abdfff344056adf875bb9db19d45bd70daed7e6"
+    },
+    "S9b": {
+      "n_samples": 1228800,
+      "nperseg": [
+        1024,
+        2048,
+        4096
+      ],
+      "sample_rate_hz": 122880000.0,
+      "sha256": "325196d7c2bbe8b951b0d4f33ba4f4581b71749c9cf42506c99709afd7860c9b"
+    }
+  },
+  "verdict": {
+    "all_scored_within_budget": true,
+    "failed": 0,
+    "failed_items": [],
+    "passed": 115,
+    "scored": 115
+  }
+}

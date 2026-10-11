@@ -164,3 +164,14 @@ and document the expected difference (up to 0.2 dB at 60 kHz resolution and coar
 Nothing changes for `legacy-opendpd-v1` (frozen) or `general-spectral-v1`:
 the new profile is an additional file under `runs/<id>/results/` and reports
 explicit statuses on every existing dataset (`tests/unit/test_metrics_ofdm_evm.py`).
+
+## Versioned follow-up (2026-10-11)
+
+The v1 record above remains a failed-as-registered comparison, and
+`ofdm-lte20-evm-v1` remains `pending_cross_validation`. The separately registered
+[v2 profiles](waveform-profiles-v2.md) distinguish the two PSD configurations
+and add frequency-tolerant acquisition. Both real v2 runs passed all 115 scored
+items at the original tolerances and signal hashes; see the
+[complete evidence](../performance/matlab-parity-v2.md). This does not promote
+v1 or alter the legacy/general/carrier profiles, and is not a 3GPP conformance
+claim.

@@ -25,6 +25,7 @@ WORKFLOWS = {
                *{f"Default install ({os})" for os in ("ubuntu-latest", "macos-latest", "windows-latest")}},
     "docs.yml": {"Build site"},
     "dependency-audit.yml": {"audit"},
+    "matlab-toolbox.yml": {"Toolbox (ubuntu-22.04, R2026a)"},
 }
 
 

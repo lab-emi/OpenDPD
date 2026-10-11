@@ -3,30 +3,6 @@ name: MATLAB toolbox
 on:
   pull_request:
     branches: [main]
-    paths:
-      - Matlab/**
-      - opendpd/sdk/**
-      - opendpd/services/inference.py
-      - opendpd/services/model_export.py
-      - opendpd/services/matlink.py
-      - opendpd/schemas/matlink.py
-      - opendpd/server/matlink_routes.py
-      - frontend/src/pages/MatlinkPage*
-      - scripts/build_matlab_docs.py
-      - tests/unit/test_sdk_iq.py
-      - tests/unit/test_sdk_metrics.py
-      - tests/unit/test_model_export.py
-      - tests/unit/test_matlab_toolbox_metadata.py
-      - scripts/make_matlab_model_fixtures.py
-      - scripts/make_matlab_fixed_fixture.py
-      - tests/unit/test_fixed_point_package.py
-      - tests/unit/test_studio_navigation.py
-      - tests/unit/test_matlink.py
-      - tests/integration/test_matlink_*.py
-      - tests/integration/test_sdk_matlab.py
-      - tests/integration/test_sdk_fit.py
-      - tests/integration/test_apply_parity.py
-      - .github/workflows/matlab-toolbox.yml
   workflow_dispatch:
     inputs:
       release:
@@ -106,13 +82,34 @@ jobs:
           python -m pip install -e ".[dev]"
           python -m pip install Markdown
           python scripts/build_matlab_docs.py --check
-          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_fixed_point_package.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
+          python -m pytest tests/unit/test_metrics_ofdm_v2.py tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_fixed_point_package.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
           python -c 'import os, sys; open(os.environ["GITHUB_ENV"], "a").write("OPENDPD_MATLAB_PYTHON=" + sys.executable + "\n")'
-      - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
+      - id: matlab
+        uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
         with:
           release: ${{ inputs.release || 'R2026a' }}
           products: ${{ matrix.products }}
           cache: true
+      - name: Cross-validate all registered LTE v2 cases
+        if: matrix.experimental == false
+        env:
+          MATLAB_BIN: ${{ steps.matlab.outputs.matlabroot }}/bin/matlab
+        run: >-
+          python scripts/matlab_parity_v2.py
+          --work "$RUNNER_TEMP/lte-parity-v2"
+          --matlab "$MATLAB_BIN"
+          --matlab-prefdir "$RUNNER_TEMP/lte-parity-v2-prefs"
+          --run "$GITHUB_RUN_ID" --date "$(date -u +%F)"
+      - name: Upload LTE cross-validation evidence
+        if: always() && matrix.experimental == false
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: LTE-parity-${{ runner.os }}-${{ inputs.release || 'R2026a' }}
+          path: |
+            ${{ runner.temp }}/lte-parity-v2/report.json
+            ${{ runner.temp }}/lte-parity-v2/report.md
+            ${{ runner.temp }}/lte-parity-v2/matlab.log
+          if-no-files-found: error
       - name: Run MATLAB tests and build toolbox
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         with:

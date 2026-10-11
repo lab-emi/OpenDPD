@@ -157,3 +157,9 @@ workflow verification. Never change thresholds or branch protection to make a
 release pass.
 
 The [2026-10-11 development audit](../releases/2.4-development-audit-2026-10-11.md) records the 2.4 PR backlog and the previous enforcement gap.
+
+The 2.4 validation gate additionally requires `Toolbox (ubuntu-22.04, R2026a)`,
+including all 115 registered LTE v2 comparisons. The dependency ruleset template
+and merge/release validation include that workflow. Activate this additional
+status only after the MATLAB workflow exists on trusted main and the science PR
+has produced its check; retain every existing CI and review requirement.
