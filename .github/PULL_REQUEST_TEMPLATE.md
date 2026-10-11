@@ -16,7 +16,15 @@
 
 ## Risk / approvals
 - [ ] Touches a protected path (`tests/golden`, metrics, splits, benchmark, protocols)? If yes: separate PR + `science-review-approved` label.
-- [ ] Changes permissions, release, telemetry, network binding or hardware control? If yes: maintainer approval required.
+- [ ] Changes permissions, release, telemetry, network binding or hardware control? If yes: independent authorized human or agent review required; operational permissions still apply.
+
+## Contributors and independent review
+<!-- List actual people/agents and development session IDs. Required for shared-account
+     agent review. Copy the opendpd-contributors JSON block from
+     docs/architecture/review-policy.md. Prefer a different agent for review/merge.
+     The reviewer records the current full head SHA, findings and a separate session.
+     Final merge commit: Contributed-By, Reviewed-By, Reviewed-Commit, Review-URL.
+     Do not claim a review that has not happened. -->
 
 ## Rollback
 <!-- How to revert code or restore data. Deleting evidence is not a rollback. -->

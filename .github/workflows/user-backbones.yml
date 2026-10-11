@@ -2,18 +2,18 @@ name: User backbone review
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
     branches: [main]
   pull_request_review:
     types: [submitted, edited, dismissed]
   merge_group:
     types: [checks_requested]
   issue_comment:
-    types: [created]
+    types: [created, edited, deleted]
   workflow_dispatch:
     inputs:
       pr_number:
-        description: Pull request number to recheck after a human review
+        description: Pull request number to recheck after an independent review
         required: true
 
 permissions:
@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   verify:
-    if: github.event_name != 'issue_comment' || (github.event.issue.pull_request && github.event.comment.body == '/backbone-review')
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -37,7 +37,7 @@ jobs:
         with:
           ref: ${{ github.event.merge_group.base_sha || github.event.pull_request.base.sha || 'main' }}
           persist-credentials: false
-      - name: Publish a head-bound template and human-review status
+      - name: Publish a head-bound template and independent-review status
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/check_user_backbone_review.py
