@@ -12,7 +12,7 @@ import time
 from collections import defaultdict
 from pydantic import ValidationError
 
-from opendpd.core.metrics import get_profile
+from opendpd.core.metric_profiles import get_profile
 from opendpd.core.registry import get_model, validate_parameters, RegistryError
 from opendpd.schemas import AdaptationEntry, AdaptationPlan, DatasetRef, ExecutionConfig, EvaluationConfig, PAReference, RunStatus, TaskType, TERMINAL_STATUSES
 from opendpd.schemas.common import utcnow

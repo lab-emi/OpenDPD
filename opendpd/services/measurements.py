@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 
 from opendpd.core.measurement import align, align_fractional, level_db, peak_abs, rate_ratio, resample, rms, to_iq
-from opendpd.core.metrics import evaluate as score, get_profile, list_profiles
+from opendpd.core.metric_profiles import evaluate as score, get_profile, list_profiles
 from opendpd.schemas import (
     ATTESTATION,
     MOCK_ATTESTATION,

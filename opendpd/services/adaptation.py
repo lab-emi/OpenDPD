@@ -14,7 +14,7 @@ import statistics
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
-from opendpd.core.metrics import get_profile
+from opendpd.core.metric_profiles import get_profile
 from opendpd.schemas import (
     AdaptationCell,
     AdaptationEntry,

@@ -159,3 +159,19 @@ version, split protocol, evaluated split, reference kind, reference gain
 hash the DPD was scored through), execution semantics or mock status.
 Results with an empty list may be ranked; others may only be shown side by
 side with the reasons (`GET /results/compare`, the Compare page).
+
+## Validated LTE v2 application profiles
+
+`ofdm-lte20-evm-v2` uses dataset-sized symmetric Hann segments and
+`ofdm-lte20-evm-auto-v2` uses full-record symmetric Hamming. Both use enclosing
+FFT-bin integration and guarded frequency-tolerant acquisition. Their 115-item
+[registered comparison](waveform-profiles-v2.md) passed twice against independent
+MATLAB implementations at the unchanged budgets; [evidence](../performance/matlab-parity-v2.md).
+They require a binding to the known periodic waveform and do not establish 3GPP
+conformance. The old v1 profile stays pending with its original failed record.
+
+Studio, CLI and SDK resolve profiles through `opendpd.core.metric_profiles`. It
+extends the application catalogue while delegating every existing profile to
+the unchanged implementation. Arena continues to import its frozen catalogue
+from `opendpd.core.metrics`; none of its fingerprinted source files, sealed
+reference artifacts or scoring definitions changes.

@@ -86,3 +86,10 @@ def test_figures_reject_nonfinite_axes_and_foreign_references():
         FigurePanel(traces=[trace], y_range=[-1, -2])
     with pytest.raises(ValidationError):
         FigureSpec(title="example", reference_run_id="b", profiles={"a": "general-spectral-v1"}, panels=[dict(traces=[trace])])
+
+
+@pytest.mark.parametrize('profile', ['ofdm-lte20-evm-v2', 'ofdm-lte20-evm-auto-v2'])
+def test_lte_v2_review_has_explicit_measurement_bands(profile):
+    bands, note = integration_bands(profile, SignalSpec(sample_rate_hz=122.88e6, bandwidth_hz=18e6))
+    assert [b.edges_hz for b in bands] == [(-9e6, 9e6), (-29e6, -11e6), (11e6, 29e6)]
+    assert all(b.available for b in bands) and 'enclosing FFT bins' in note

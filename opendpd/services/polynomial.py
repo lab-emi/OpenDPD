@@ -90,7 +90,7 @@ def fit_run(ws: Workspace, run_dir: Path, resolved: ResolvedExperimentConfig, ns
     import torch
     from modules.data_collector import load_dataset
     from utils.util import set_target_gain
-    from opendpd.core.metrics import evaluate
+    from opendpd.core.metric_profiles import evaluate
     from opendpd.services.ilc import ILC_STATEMENT
 
     dataset = ws.get_dataset(resolved.dataset.id)

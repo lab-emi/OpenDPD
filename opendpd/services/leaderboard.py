@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from opendpd.core.metrics.registry import get_profile
+from opendpd.core.metric_profiles import get_profile
 from opendpd.core.registry import get_model
 from opendpd.schemas import ArtifactKind, BenchmarkReport, BetterDirection, MetricStats, RunStatus, SeedScore, TaskType
 from opendpd.schemas.leaderboard import (

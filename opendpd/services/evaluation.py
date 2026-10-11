@@ -24,7 +24,7 @@ from typing import Dict, List, Optional
 import numpy as np
 
 from opendpd import __version__
-from opendpd.core.metrics import evaluate as score, get_profile, list_profiles
+from opendpd.core.metric_profiles import evaluate as score, get_profile, list_profiles
 from opendpd.schemas import (
     ArtifactKind,
     ArtifactManifest,
@@ -437,7 +437,7 @@ def compare_results(ws: Workspace, run_ids: List[str], profile_id: Optional[str]
                     profile_ids: Optional[Dict[str, str]] = None) -> ComparisonReport:
     """Stored results side by side. Every pair is checked with ``incompatibilities``; results under different
     protocols are shown with the reasons and never ranked."""
-    from opendpd.core.metrics import incompatibilities
+    from opendpd.core.metric_profiles import incompatibilities
 
     results = []
     for run_id in run_ids:

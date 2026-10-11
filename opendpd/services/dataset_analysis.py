@@ -11,7 +11,7 @@ import numpy as np
 
 from opendpd.core import plots
 from opendpd.core.doctor import ANALYSIS_SAMPLES, DOCTOR_VERSION, MIN_SAMPLES, diagnose
-from opendpd.core.metrics import evaluate, get_profile
+from opendpd.core.metric_profiles import evaluate, get_profile
 from opendpd.schemas.analysis import DatasetAnalysis, InspectionMeasurement, InspectionReading
 from opendpd.schemas.diagnostics import DiagnosticItem, DiagnosticReport
 from opendpd.schemas.metrics import ProfileValidation

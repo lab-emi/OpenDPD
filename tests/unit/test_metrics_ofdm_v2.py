@@ -4,7 +4,8 @@ import copy
 import numpy as np
 import pytest
 
-from opendpd.core.metrics import ofdm_evm_v1, ofdm_evm_v2, registry
+from opendpd.core.metrics import ofdm_evm_v1, ofdm_evm_v2
+from opendpd.core import metric_profiles as registry
 from opendpd.core.waveforms import ofdm
 from opendpd.schemas.dataset import SignalSpec
 from opendpd.schemas.waveform import WaveformSpec
@@ -142,3 +143,20 @@ def test_committed_v2_evidence_contains_every_case_and_renders_its_table():
     document = (root / 'docs/performance/matlab-parity-v2.md').read_text()
     actual = document.split('<!-- parity-v2-results:begin -->\n')[1].split('<!-- parity-v2-results:end -->')[0]
     assert actual == harness.render(report)
+
+
+def test_application_profiles_preserve_the_frozen_arena_catalogue(monkeypatch):
+    from opendpd.core import arena, arena_metrics
+    from opendpd.core.metrics import registry as frozen
+    assert arena_metrics.evaluate is frozen.evaluate
+    assert set(frozen.PROFILES) == {'legacy-opendpd-v1', 'general-spectral-v1', 'opendpd-spectral-v2', 'ofdm-lte20-evm-v1'}
+    assert not set(harness.PROFILE_IDS.values()) & set(frozen.PROFILES)
+    sentinel = object()
+    calls = []
+    def original(*args, **kwargs):
+        calls.append((args, kwargs)); return sentinel
+    monkeypatch.setattr(frozen, 'evaluate', original)
+    assert registry.evaluate('opendpd-spectral-v2', 1, 2, 3, valid_samples=7) is sentinel
+    assert calls == [(('opendpd-spectral-v2', 1, 2, 3), {'valid_samples': 7})]
+    # The real catalogue must still validate the sealed reference artifact.
+    assert all(row.protocol_sha256 == arena.protocol().protocol_sha256 for row in arena.load_official_rows())

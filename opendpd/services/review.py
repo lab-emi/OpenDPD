@@ -4,7 +4,7 @@ import hashlib
 import json
 import math
 
-from opendpd.core.metrics import get_profile
+from opendpd.core.metric_profiles import get_profile
 from opendpd.schemas.dataset import SignalSpec
 from opendpd.schemas.review import ReviewBand, ReviewContext, ReviewFact
 from opendpd.schemas.rf import RFConditions
@@ -59,10 +59,12 @@ def integration_bands(profile_id, signal):
         bands.append(ReviewBand(label=label, role=role, edges_hz=(lo, hi), available=available,
                                 reason=None if available else "Band exceeds the captured range or contains no bins."))
 
-    if profile_id == "ofdm-lte20-evm-v1":
+    if profile_id in {"ofdm-lte20-evm-v1", "ofdm-lte20-evm-v2", "ofdm-lte20-evm-auto-v2"}:
         band("Main", "main", -9e6, 9e6)
         band("Left", "adjacent", -29e6, -11e6)
         band("Right", "adjacent", 11e6, 29e6)
+        if profile_id != "ofdm-lte20-evm-v1":
+            return bands, "LTE v2 nominal bands; measurements include enclosing FFT bins. The display PSD may use a different window from the full-record Hamming profile."
         return bands, "Profile integration intervals in Hz; stored PSD is a display, not a demodulated constellation."
     if not bw:
         return [], "Integration bands unavailable: the evaluated bandwidth was not recorded."

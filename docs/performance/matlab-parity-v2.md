@@ -195,3 +195,19 @@ For frequency-offset rows the first value is the injected offset; the second is 
 | P3 | S9b frequency offset, OpenDPD | 30 | 30.0000393898 | 3.93898376423e-05 | 0.01 | yes |
 | P3 | S9b frequency offset, MATLAB | 30 | 30.0000393899 | 3.93898583724e-05 | 0.01 | yes |
 <!-- parity-v2-results:end -->
+
+## Evidence interpretation and Arena isolation
+
+The 84 ACLR scored entries comprise 42 segmented comparisons and 42 Auto entries.
+Auto ignores nperseg, so those 42 entries are 14 distinct values repeated across
+the three segment-size rows for correspondence with the original matrix. They
+are not 84 statistically independent observations. Both implementations share
+the written procedure, so agreement does not independently validate every
+assumption of that procedure. The waveform is assumed to repeat: captures with
+silence-prefixed, non-circular framing are outside this registration.
+
+Independent review caught that directly extending the old registry altered an
+Arena-hashed file. The application catalogue is therefore extended separately in
+`opendpd.core.metric_profiles`; Arena keeps the original registry, evaluator and
+source bytes. No bundled hash or benchmark result is rewritten. Regression tests
+verify the original evaluator binding, profile catalogue and sealed Arena rows.

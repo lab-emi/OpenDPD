@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from opendpd.core.metrics import get_profile
+from opendpd.core.metric_profiles import get_profile
 from opendpd.schemas import ArtifactKind, ProfileValidation
 from opendpd.schemas.common import FileRef, MetricStatus
 from opendpd.schemas.hardware import (CostAttachment, CostValues, HardwareCostDraft, HardwareCostEntry,

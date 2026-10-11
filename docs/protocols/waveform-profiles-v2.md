@@ -123,3 +123,13 @@ At a captured Nyquist endpoint the enclosing range is clipped to the available
 FFT grid, as `comm.ACPR` does. A requested band outside the physical Nyquist range
 is still refused. None of the registered 122.88/245.76 MS/s bands needs clipping;
 analytic tests cover that boundary separately.
+
+## Application catalogue integration — 2026-10-12
+
+The two v2 profiles are registered by `opendpd.core.metric_profiles`, the
+application facade used by Studio, CLI and SDK services. It delegates every
+existing profile to the original evaluator. The Arena-specific catalogue at
+`opendpd.core.metrics` and every source file included in its fingerprint remain
+byte-identical to the pre-v2 implementation; no hash or sealed result is updated.
+This is a dispatch-layer correction after independent review, not a change to
+the registered numerical procedure, matrix, inputs or budgets.

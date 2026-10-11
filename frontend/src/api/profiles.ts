@@ -11,4 +11,5 @@ const isOffered = (profile: MetricProfile): boolean => profile.validation !== 'p
 export const offeredProfiles = (profiles: readonly MetricProfile[] | undefined): MetricProfile[] => (profiles ?? []).filter(isOffered)
 
 export const profileLabel = (id: string) => id === 'opendpd-spectral-v2' ? t('profile.spectral') : id === 'general-spectral-v1' ? t('profile.general')
+  : id === 'ofdm-lte20-evm-v2' ? t('profile.ofdmV2Segment') : id === 'ofdm-lte20-evm-auto-v2' ? t('profile.ofdmV2Auto')
   : id === 'legacy-opendpd-v1' ? t('profile.legacy') : id === 'ofdm-lte20-evm-v1' ? t('profile.ofdm') : id

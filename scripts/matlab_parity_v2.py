@@ -51,7 +51,7 @@ def verify_signals(built):
 
 
 def product_values(built):
-    from opendpd.core.metrics import registry
+    from opendpd.core import metric_profiles
     from opendpd.core.waveforms import ofdm
     from opendpd.schemas.dataset import SignalSpec
 
@@ -71,7 +71,7 @@ def product_values(built):
             signal = SignalSpec(sample_rate_hz=fs, bandwidth_hz=18e6, n_sub_ch=1, nperseg=size, waveform=binding)
             row["aclr"][str(size)] = {}
             for mode, profile in PROFILE_IDS.items():
-                values = {m.name: m for m in registry.evaluate(profile, sig["iq"], None, signal)}
+                values = {m.name: m for m in metric_profiles.evaluate(profile, sig["iq"], None, signal)}
                 evm = (values["EVM_RMS"].value, values["EVM_RMS"].status.value)
                 if first_evm is None:
                     first_evm = evm
@@ -196,7 +196,7 @@ def main():
     matlab = json.loads(output.read_text())
     items = compare(product, matlab, built)
     environment = original.environment(matlab["environment"])
-    paths = ["scripts/matlab_parity_v2.py", "opendpd/core/metrics/ofdm_evm_v2.py", "opendpd/core/metrics/registry.py",
+    paths = ["scripts/matlab_parity_v2.py", "opendpd/core/metrics/ofdm_evm_v2.py", "opendpd/core/metrics/registry.py", "opendpd/core/metric_profiles.py",
              "opendpd/core/waveforms/ofdm.py", "Matlab/toolbox/examples/parity/parityLTEv2.m",
              "docs/protocols/waveform-profiles-v2.md"]
     environment["v2_source_sha256"] = {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in paths}

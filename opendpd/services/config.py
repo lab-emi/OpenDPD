@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import ValidationError
 
 from opendpd import __version__
-from opendpd.core.metrics import PROFILES
+from opendpd.core.metric_profiles import PROFILES
 from opendpd.core.registry import RegistryError, get_model, validate_parameters
 from opendpd.schemas import SCHEMA_VERSION, ExperimentConfig, ResolvedExperimentConfig, ResolutionInfo, TaskType
 
