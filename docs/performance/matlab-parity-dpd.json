@@ -1,0 +1,549 @@
+{
+  "budgets": {
+    "coefficient_relative": 1e-06,
+    "double_relative": 1e-09,
+    "output_relative": 1e-06
+  },
+  "cases": {
+    "C1": {
+      "degree": 5,
+      "gain": 0.5674225691538244,
+      "kappa": 4268.428230367381,
+      "memory_depth": 3,
+      "rank": 15,
+      "record": "S4",
+      "rho_db": -44.692299508846375
+    },
+    "C2": {
+      "degree": 7,
+      "gain": 0.5674225691538244,
+      "kappa": 136821.06332839016,
+      "memory_depth": 5,
+      "rank": 35,
+      "record": "S4",
+      "rho_db": -47.959810039142006
+    },
+    "C3": {
+      "degree": 5,
+      "gain": 0.4030268634125685,
+      "kappa": 6650.0203761717075,
+      "memory_depth": 3,
+      "rank": 15,
+      "record": "S5",
+      "rho_db": -27.11344377919914
+    },
+    "C4": {
+      "degree": 7,
+      "gain": 0.4030268634125685,
+      "kappa": 307974.9514547474,
+      "memory_depth": 5,
+      "rank": 35,
+      "record": "S5",
+      "rho_db": -28.002955726612715
+    }
+  },
+  "date": "2026-10-09",
+  "environment": {
+    "matlab": {
+      "Communications_Toolbox": "26.1",
+      "matlab": "26.1.0.3346908 (R2026a) Update 5",
+      "release": "2026a"
+    },
+    "numpy": "2.4.4",
+    "opendpd_commit": "cc5b907926137f0a85e82445ebff549c3e17b5ce",
+    "platform": "Linux-7.2.6-1-cachyos-x86_64-with-glibc2.44",
+    "python": "3.13.14",
+    "scipy": "1.18.0",
+    "script_sha256": {
+      "matlab_parity_dpd.py": "28a5ca96449b5271e204ffe22d51674e8b4cecd3269f9bcf3558ef9abf3f71df",
+      "parityMP.m": "c573a7b5a93ba1ca1a2a4c6f6af0180b6ea1214cc41a95ed0830f954de2f7d80"
+    },
+    "torch": "2.13.0+cu132",
+    "working_tree_modified": true
+  },
+  "items": [
+    {
+      "budget": 1e-06,
+      "difference": 1.779031994398641e-14,
+      "group": "Q1",
+      "item": "C1 (S4, K=5, Q=3): MATLAB estimator on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": 1.779031994398641e-14,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 5.4599978982937664e-15,
+      "group": "Q2",
+      "item": "C1 (S4, K=5, Q=3): OpenDPD fit on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": 5.4599978982937664e-15,
+      "pass": true
+    },
+    {
+      "budget": 1e-09,
+      "difference": 2.263070046557868e-16,
+      "group": "Q3",
+      "item": "C1 (S4, K=5, Q=3): comm.DPD(c_true) on y/G vs the constructed input",
+      "kind": "scored",
+      "matlab": 2.263070046557868e-16,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 1.553997564158862e-14,
+      "group": "Q4",
+      "item": "C1 (S4, K=5, Q=3): predistorter outputs, each tool with its own coefficients",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 2.535227367029399e-08,
+      "group": "Q5",
+      "item": "C1 (S4, K=5, Q=3): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32)",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": null,
+      "difference": 9.527346306671765e-15,
+      "group": "D1",
+      "item": "C1 (S4, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "unscaled condition number 4.27e+03; OpenDPD fit residual -44.69 dB; rank 15",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.005696560433499934,
+      "group": "D2",
+      "item": "C1 (S4, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "residual on complete-memory rows (dB): MATLAB -44.69, OpenDPD complete-memory -44.69, OpenDPD segmented -44.68",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.001221257537855446,
+      "group": "D2",
+      "item": "C1 (S4, K=5, Q=3): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "applied continuously instead: 0.000314",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.8269027464641012,
+      "group": "D3",
+      "item": "C1 (S4, K=5, Q=3): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": 1e-06,
+      "difference": 4.744508537075257e-13,
+      "group": "Q1",
+      "item": "C2 (S4, K=7, Q=5): MATLAB estimator on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": 4.744508537075257e-13,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 8.315882874421203e-14,
+      "group": "Q2",
+      "item": "C2 (S4, K=7, Q=5): OpenDPD fit on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": 8.315882874421203e-14,
+      "pass": true
+    },
+    {
+      "budget": 1e-09,
+      "difference": 3.1789882351876595e-16,
+      "group": "Q3",
+      "item": "C2 (S4, K=7, Q=5): comm.DPD(c_true) on y/G vs the constructed input",
+      "kind": "scored",
+      "matlab": 3.1789882351876595e-16,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 2.956156821218931e-14,
+      "group": "Q4",
+      "item": "C2 (S4, K=7, Q=5): predistorter outputs, each tool with its own coefficients",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 2.5366528836352765e-08,
+      "group": "Q5",
+      "item": "C2 (S4, K=7, Q=5): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32)",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": null,
+      "difference": 1.7016153827937517e-13,
+      "group": "D1",
+      "item": "C2 (S4, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "unscaled condition number 1.37e+05; OpenDPD fit residual -47.96 dB; rank 35",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.1109787032304636,
+      "group": "D2",
+      "item": "C2 (S4, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "residual on complete-memory rows (dB): MATLAB -47.96, OpenDPD complete-memory -47.96, OpenDPD segmented -47.87",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.001356533290706612,
+      "group": "D2",
+      "item": "C2 (S4, K=7, Q=5): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "applied continuously instead: 0.000774",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.9300174456041211,
+      "group": "D3",
+      "item": "C2 (S4, K=7, Q=5): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": 1e-06,
+      "difference": 3.1637134795459017e-14,
+      "group": "Q1",
+      "item": "C3 (S5, K=5, Q=3): MATLAB estimator on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": 3.1637134795459017e-14,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 1.2110660323805834e-14,
+      "group": "Q2",
+      "item": "C3 (S5, K=5, Q=3): OpenDPD fit on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": 1.2110660323805834e-14,
+      "pass": true
+    },
+    {
+      "budget": 1e-09,
+      "difference": 3.3345326690153233e-16,
+      "group": "Q3",
+      "item": "C3 (S5, K=5, Q=3): comm.DPD(c_true) on y/G vs the constructed input",
+      "kind": "scored",
+      "matlab": 3.3345326690153233e-16,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 2.5564732517187635e-14,
+      "group": "Q4",
+      "item": "C3 (S5, K=5, Q=3): predistorter outputs, each tool with its own coefficients",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 2.5311328354199505e-08,
+      "group": "Q5",
+      "item": "C3 (S5, K=5, Q=3): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32)",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": null,
+      "difference": 1.4940376409004613e-14,
+      "group": "D1",
+      "item": "C3 (S5, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "unscaled condition number 6.65e+03; OpenDPD fit residual -27.11 dB; rank 15",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.00870505455588782,
+      "group": "D2",
+      "item": "C3 (S5, K=5, Q=3): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "residual on complete-memory rows (dB): MATLAB -27.11, OpenDPD complete-memory -27.11, OpenDPD segmented -27.11",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.0021144923871267217,
+      "group": "D2",
+      "item": "C3 (S5, K=5, Q=3): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "applied continuously instead: 0.000776",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.9166292467896489,
+      "group": "D3",
+      "item": "C3 (S5, K=5, Q=3): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": 1e-06,
+      "difference": 1.2464834824134423e-13,
+      "group": "Q1",
+      "item": "C4 (S5, K=7, Q=5): MATLAB estimator on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": 1.2464834824134423e-13,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 8.9354937700451e-14,
+      "group": "Q2",
+      "item": "C4 (S5, K=7, Q=5): OpenDPD fit on the exact problem vs c_true",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": 8.9354937700451e-14,
+      "pass": true
+    },
+    {
+      "budget": 1e-09,
+      "difference": 5.9177431059405295e-16,
+      "group": "Q3",
+      "item": "C4 (S5, K=7, Q=5): comm.DPD(c_true) on y/G vs the constructed input",
+      "kind": "scored",
+      "matlab": 5.9177431059405295e-16,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 4.759847513765563e-13,
+      "group": "Q4",
+      "item": "C4 (S5, K=7, Q=5): predistorter outputs, each tool with its own coefficients",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": 1e-06,
+      "difference": 2.5373537404559923e-08,
+      "group": "Q5",
+      "item": "C4 (S5, K=7, Q=5): the same coefficients applied by comm.DPD and by the PolynomialModel module (float32)",
+      "kind": "scored",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": null,
+      "difference": 3.925357419903166e-13,
+      "group": "D1",
+      "item": "C4 (S5, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD (complete-memory rows)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "unscaled condition number 3.08e+05; OpenDPD fit residual -28.00 dB; rank 35",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.185209575713513,
+      "group": "D2",
+      "item": "C4 (S5, K=7, Q=5): coefficients, MATLAB estimator vs OpenDPD segmented fit (nperseg 2048)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "residual on complete-memory rows (dB): MATLAB -28.00, OpenDPD complete-memory -28.00, OpenDPD segmented -27.89",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.00700287256119052,
+      "group": "D2",
+      "item": "C4 (S5, K=7, Q=5): predistorter outputs, MATLAB vs OpenDPD segmented fit applied per segment",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "applied continuously instead: 0.00541",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.9712362846677288,
+      "group": "D3",
+      "item": "C4 (S5, K=7, Q=5): coefficients with DesiredAmplitudeGaindB = 20 log10(G) vs OpenDPD",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": 1e-06,
+      "difference": 0.0,
+      "group": "Q6",
+      "item": "C1 data through the SDK: DPD run checkpoint vs the segmented fit recomputed from the run's train split",
+      "kind": "scored",
+      "matlab": null,
+      "note": "run run-20261008-220907-75811f, 736972 train samples, gain 0.60192",
+      "opendpd": null,
+      "pass": true
+    },
+    {
+      "budget": null,
+      "difference": 0.00624010033619254,
+      "group": "D4",
+      "item": "MATLAB estimator on the run's train split vs the checkpoint",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": null
+    },
+    {
+      "budget": null,
+      "difference": 0.006232894023943873,
+      "group": "D4",
+      "item": "segmented fit minus complete-memory fit on the same split (what the zero-filled rows change)",
+      "kind": "diagnostic",
+      "matlab": null,
+      "note": "",
+      "opendpd": null,
+      "pass": null
+    }
+  ],
+  "matlab_settings": {
+    "C1": {
+      "degree": 5,
+      "desired_amplitude_gain_db": -2.4609339419396496,
+      "gain": 0.5674225691538244,
+      "memory_depth": 3
+    },
+    "C2": {
+      "degree": 7,
+      "desired_amplitude_gain_db": -2.4609339419396496,
+      "gain": 0.5674225691538244,
+      "memory_depth": 5
+    },
+    "C3": {
+      "degree": 5,
+      "desired_amplitude_gain_db": -3.9466600536504384,
+      "gain": 0.4030268634125685,
+      "memory_depth": 3
+    },
+    "C4": {
+      "degree": 7,
+      "desired_amplitude_gain_db": -3.9466600536504384,
+      "gain": 0.4030268634125685,
+      "memory_depth": 5
+    },
+    "pp": {
+      "degree": 5,
+      "desired_amplitude_gain_db": -2.2046152693648997,
+      "gain": 0.6019195830903713,
+      "memory_depth": 3
+    }
+  },
+  "records": {
+    "S4": {
+      "n_samples": 1228800,
+      "sha256_x": "7e7103a9e8130d3c92a49d6c2d698fe5b661a5da5b315e5e4a7184a1d63898ad",
+      "sha256_y": "179e2f88715b647d78cbcdc841d620b8f7ea7b289588a407e2a4414693a55d6a"
+    },
+    "S5": {
+      "n_samples": 1228800,
+      "sha256_x": "b4f225fe761d414b17e444da70dfe8afd8f57dedea25e4cabeb956813bb80850",
+      "sha256_y": "cdc7dedbdfa625a4855a7257ac5d6808a836b2d5b4f9213573480c64204e9261"
+    }
+  },
+  "run": "1",
+  "verdict": {
+    "all_scored_within_budget": true,
+    "failed": 0,
+    "failed_items": [],
+    "not_evaluable": 0,
+    "not_evaluable_items": [],
+    "passed": 21,
+    "scored": 21
+  }
+}

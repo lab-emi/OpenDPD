@@ -49,3 +49,20 @@ compare your outputs and states with `y.i16` and `h_trace.i16`; the first
 differing sample and signal locate the fault. The specification, the
 verification rule and the approval record are in
 `docs/protocols/fixed-point-v1.md`.
+
+## 4. Check it in MATLAB
+
+The MATLAB toolbox of OpenDPD 2.4 (unreleased) reads the package as data and runs the specification's GRU in plain MATLAB
+integers, held exactly in double precision. It is a second implementation to compare with the C99 reference, and a source
+of expected values for your own (HLS, RTL, firmware). It needs no Python, no compiler and no Fixed-Point Designer:
+
+```matlab
+model = opendpd.load("deploy.zip");                 % an opendpd.FixedModel; every file is hashed against the manifest
+report = opendpd.verify(model)                      % status "bit_exact", or the case, sample and signal that first differs
+[yq, state, trace] = model.runInteger(xq);          % integers in (N-by-2, spec.x), integers out, the state after every sample
+```
+
+`verify` compares every output sample and every state step of the six golden vectors, the way `c_backend.verify` does, and a
+mismatch is reported at a sample and a signal (`h` before `y`). The MATLAB code blocks of this tutorial are not run by the
+Python CI; the toolbox's own tests (`Matlab/toolbox/tests/TestFixedPoint.m`) check them against two committed packages. See the
+toolbox's function reference for what a pass shows and what it does not.

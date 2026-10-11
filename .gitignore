@@ -70,6 +70,10 @@ opendpd-workspace*/
 .opendpd/
 .studio.lock*
 .studio.guard
+.sdk-service.json
+.sdk-service-*.log
+.sdk-stop-*
+Matlab/toolbox/dist/
 workspace.json
 events.jsonl
 *.sqlite

@@ -952,6 +952,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/matlink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** State */
+        get: operations["state_api_v1_matlink_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/matlink/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connect */
+        post: operations["connect_api_v1_matlink_connect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/matlink/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transfer */
+        post: operations["transfer_api_v1_matlink_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/matlink/{client_id}/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disconnect */
+        post: operations["disconnect_api_v1_matlink__client_id__disconnect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/matlink/{client_id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Heartbeat */
+        post: operations["heartbeat_api_v1_matlink__client_id__heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/matlink/{client_id}/requests/{request_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete */
+        post: operations["complete_api_v1_matlink__client_id__requests__request_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/measurement-sessions": {
         parameters: {
             query?: never;
@@ -5620,6 +5722,193 @@ export interface components {
             origin?: components["schemas"]["DatasetOrigin"] | null;
             signal?: components["schemas"]["SignalSpec"] | null;
         };
+        /** MatlabVariable */
+        MatlabVariable: {
+            /** Class Name */
+            class_name: string;
+            /**
+             * Complex
+             * @default false
+             */
+            complex: boolean;
+            /**
+             * Eligible
+             * @default false
+             */
+            eligible: boolean;
+            /**
+             * N Samples
+             * @default 0
+             */
+            n_samples: number;
+            /** Name */
+            name: string;
+            /** Size */
+            size: number[];
+        };
+        /** MatlinkCompletion */
+        MatlinkCompletion: {
+            /** Error */
+            error?: string | null;
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "succeeded" | "failed";
+        };
+        /** MatlinkConnect */
+        MatlinkConnect: {
+            /** Capabilities */
+            capabilities?: ("dataset_export" | "result_bundle")[];
+            /**
+             * Label
+             * @default MATLAB
+             */
+            label: string;
+            /**
+             * Release
+             * @default
+             */
+            release: string;
+            /** Variables */
+            variables?: components["schemas"]["MatlabVariable"][];
+        };
+        /** MatlinkConnection */
+        MatlinkConnection: {
+            /** Bridge Token */
+            bridge_token: string;
+            /** Client Id */
+            client_id: string;
+            /** Lease Seconds */
+            lease_seconds: number;
+            /**
+             * Protocol Version
+             * @default 1
+             * @constant
+             */
+            protocol_version: 1;
+        };
+        /** MatlinkDisconnected */
+        MatlinkDisconnected: {
+            /**
+             * Disconnected
+             * @default true
+             * @constant
+             */
+            disconnected: true;
+        };
+        /** MatlinkHeartbeat */
+        MatlinkHeartbeat: {
+            /** Variables */
+            variables?: components["schemas"]["MatlabVariable"][];
+        };
+        /** MatlinkPoll */
+        MatlinkPoll: {
+            /** Lease Seconds */
+            lease_seconds: number;
+            /** Requests */
+            requests: components["schemas"]["MatlinkTransfer"][];
+        };
+        /** MatlinkRequest */
+        MatlinkRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create_demo" | "import_iq" | "import_result" | "import_dataset" | "open_variable";
+            /** Client Id */
+            client_id: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+        };
+        /** MatlinkSession */
+        MatlinkSession: {
+            /** Capabilities */
+            capabilities?: ("dataset_export" | "result_bundle")[];
+            /** Client Id */
+            client_id: string;
+            /** Connected */
+            connected: boolean;
+            /** Label */
+            label: string;
+            /**
+             * Last Seen
+             * Format: date-time
+             */
+            last_seen: string;
+            /** Pending Count */
+            pending_count: number;
+            /** Release */
+            release: string;
+            /** Variables */
+            variables: components["schemas"]["MatlabVariable"][];
+        };
+        /** MatlinkState */
+        MatlinkState: {
+            /**
+             * Available
+             * @default true
+             * @constant
+             */
+            available: true;
+            /**
+             * Protocol Version
+             * @default 1
+             * @constant
+             */
+            protocol_version: 1;
+            /** Sessions */
+            sessions: components["schemas"]["MatlinkSession"][];
+            /** Transfers */
+            transfers: components["schemas"]["MatlinkTransfer"][];
+            /** Workspace */
+            workspace: string;
+        };
+        /** MatlinkTransfer */
+        MatlinkTransfer: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "create_demo" | "import_iq" | "import_result" | "import_dataset" | "open_variable";
+            /** Client Id */
+            client_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error?: string | null;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Request Id */
+            request_id: string;
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "waiting" | "queued" | "succeeded" | "failed";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * MeasuredExecution
          * @description The C reference's speed on the machine that built the package: a property of that build, not of a deployment.
@@ -9613,6 +9902,194 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    state_api_v1_matlink_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatlinkState"];
+                };
+            };
+        };
+    };
+    connect_api_v1_matlink_connect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatlinkConnect"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatlinkConnection"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transfer_api_v1_matlink_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatlinkRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatlinkTransfer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_api_v1_matlink__client_id__disconnect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatlinkDisconnected"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    heartbeat_api_v1_matlink__client_id__heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatlinkHeartbeat"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatlinkPoll"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_api_v1_matlink__client_id__requests__request_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                client_id: string;
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatlinkCompletion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatlinkTransfer"];
                 };
             };
             /** @description Validation Error */
