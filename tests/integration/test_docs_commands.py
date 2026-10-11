@@ -12,6 +12,7 @@ import re
 import shlex
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
@@ -236,6 +237,17 @@ def test_documented_commands_run_end_to_end(tmp_path):
     assert deployed["manifest"]["spec"]["spec_id"] == "fixed-point-v1" and (tmp_path / "deploy.zip").exists()
     assert deployed["manifest"]["verification"]["status"] in ("bit_exact", "not_run")
     assert [g["case_id"] for g in deployed["manifest"]["golden"]][:2] == ["normal", "extreme"]
+
+    # docs/tutorials/headless-cli.md: the PA run as an opendpd-model-v1 package - data only, and the same run gives the same bytes
+    model_package = tmp_path / "pa.opendpd.zip"
+    exported = json.loads(run("export-model", pa_id, "--workspace", str(ws), "--out", str(model_package), "--json").stdout)
+    assert exported["format"] == "opendpd-model-v1" and exported["model"] == "gru" and exported["role"] == "pa"
+    again = tmp_path / "pa-again.opendpd.zip"
+    run("export-model", pa_id, "--workspace", str(ws), "--out", str(again))
+    assert model_package.read_bytes() == again.read_bytes()
+    with zipfile.ZipFile(model_package) as archive:
+        assert sorted(archive.namelist()) == ["README.md", "golden/golden.mat", "golden/golden.npz", "manifest.json",
+                                              "weights.mat", "weights.npz"]
 
     # docs/tutorials/leaderboard-submission.md: a submission drafted from the PA run, blocked while statements are TODO,
     # recomputed from its package in a fresh workspace, added to a board seeded from the repository's report, reviewed

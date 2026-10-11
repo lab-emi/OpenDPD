@@ -14,7 +14,7 @@ export const paText = (value: { en: string; zh: string }) => getLanguage() === '
 export const paDefaults = (model: VirtualPA) => Object.fromEntries(model.parameters.map(p => [p.key, p.default]))
 export const parameterKey = (parameters: Record<string, number>) => JSON.stringify(Object.entries(parameters).sort(([a], [b]) => a.localeCompare(b)))
 export const usePAInputs = () => useQuery({ queryKey: ['pa-inputs'], queryFn: ({ signal }: { signal: AbortSignal }) => api.get<PAInput[]>('/signal-generator/signals', signal) })
-export const useVirtualPAs = () => useQuery({ queryKey: ['virtual-pa-models'], queryFn: ({ signal }: { signal: AbortSignal }) => api.get<VirtualPA[]>('/pa-library/models', signal), staleTime: Infinity })
+export const useVirtualPAs = (enabled = true) => useQuery({ enabled, queryKey: ['virtual-pa-models'], queryFn: ({ signal }: { signal: AbortSignal }) => api.get<VirtualPA[]>('/pa-library/models', signal), staleTime: Infinity })
 export const usePASimulation = (id: string | null) => useQuery({ queryKey: ['pa-simulation', id],
   queryFn: ({ signal }: { signal: AbortSignal }) => api.get<PASimulation>('/pa-library/simulations/' + encodeURIComponent(id!), signal), enabled: !!id, retry: false })
 export const useSimulatePA = () => useMutation({ mutationFn: (request: PARequest) => api.post<PASimulation>('/pa-library/simulations', request) })

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Troubleshooting · OpenDPD for MATLAB</title>
+<link rel="stylesheet" href="guide.css"></head><body>
+<a class="skip" href="#content">Skip to content</a>
+<header><a class="brand" href="index.html">OpenDPD <span>FOR MATLAB</span></a>
+<span class="version">2.4.0</span></header>
+<nav aria-label="Guide"><a href="index.html">Get started</a>
+<a href="gui.html">MATLINK walkthrough</a>
+<a href="workflow.html">Script workflow</a>
+<a href="reference.html">Function reference</a>
+<a href="architecture.html">Integration design</a>
+<a href="troubleshooting.html" aria-current="page">Troubleshooting</a></nav>
+<main id="content"><h1 id="troubleshooting">Troubleshooting</h1>
+<h2 id="matlab-cannot-find-opendpdstudio">MATLAB cannot find opendpd.studio</h2>
+<p>Install the toolbox (<code>OpenDPD-2.4.0.mltbx</code>), or add this checkout's <code>Matlab/toolbox</code> folder to the
+MATLAB path. Use <code>which opendpd.studio -all</code> and <code>which opendpd.setup -all</code> to
+check for older installations. Only the toolbox root needs to be on the path.</p>
+<h2 id="python-or-opendpd-cannot-load">Python or OpenDPD cannot load</h2>
+<p>Run <code>pyenv</code> and <code>opendpd.doctor()</code>. Select a Python executable supported by your
+MATLAB release and install dependencies into that exact environment. A regular
+OpenDPD 2.3 release does not contain the preview SDK; select the 2.4 checkout via
+<code>SourceDirectory</code> or install it into the environment:</p>
+<pre><code class="language-matlab">opendpd.studio(&quot;/path/to/workspace&quot;, ...
+    PythonExecutable=&quot;/path/to/python&quot;, SourceDirectory=&quot;/path/to/OpenDPD&quot;);
+</code></pre>
+<p>If MATLAB has already loaded a different interpreter or checkout, finish work
+using it before restarting Python or MATLAB. The toolbox does not terminate that
+session automatically. Consult <a href="https://www.mathworks.com/help/matlab/ref/pyenv.html">pyenv</a>
+for execution-mode and release-specific behavior.</p>
+<h2 id="studio-does-not-open-or-matlink-is-missing">Studio does not open or MATLINK is missing</h2>
+<p>Build the frontend from the selected development checkout:</p>
+<pre><code class="language-bash">npm --prefix frontend ci
+npm --prefix frontend run build
+</code></pre>
+<p>Then run <code>opendpd.studio(workspace)</code> again. If a workspace service was started
+before the update, finish its jobs and restart it with the current checkout.
+The toolbox does not silently restart an existing service. Inspect the service
+log and <code>opendpd.doctor()</code> if readiness fails. Keep <code>.sdk-service-*.log</code> files
+local because they may contain a private bootstrap URL.</p>
+<p>A Studio tab alone does not attach MATLAB. Start the connection from the MATLAB
+session you want to use and select the same workspace folder.</p>
+<h2 id="matlink-shows-no-matlab-session-or-says-offline">MATLINK shows no MATLAB session or says offline</h2>
+<p>Run <code>opendpd.studio(workspace)</code> in MATLAB. Check that the browser and MATLAB use
+the same workspace. MATLAB must remain running and able to process callbacks.
+A long blocking computation, modal interaction or breakpoint can delay the
+heartbeat and pending actions. Once MATLAB resumes callback processing, its
+presence updates again.</p>
+<p>Closing the browser does not disconnect the bridge. Calling
+<code>opendpd.disconnect()</code> or closing MATLAB does. After an intentional disconnect,
+connect again before requesting imports or report delivery.</p>
+<h2 id="no-variables-appear-or-import-fails">No variables appear, or import fails</h2>
+<ul>
+<li>Load signals into MATLAB's <strong>base workspace</strong> and wait for MATLINK to refresh.
+  Function-local variables can be imported directly through the script API.</li>
+<li>Use dense nonempty single/double vectors of equal length. Correct NaN and Inf
+  in the capture; float32 overflow is refused.</li>
+<li>Confirm units: <strong>MHz in MATLINK, Hz in scripts</strong>.</li>
+<li>Use enough samples for train/validation/test splits and their guards.</li>
+<li>Choose a unique dataset ID. Imports never replace an existing dataset.</li>
+<li><code>importMAT</code> reads any MAT-file version, v7.3 included. It needs full single/double
+  variables; cells, structs, sparse arrays and integer classes are refused.</li>
+</ul>
+<p>If an import loses its connection, inspect Studio's dataset list before retrying.
+The server may still finish. The SDK retains staged input under <code>imports/</code> and
+reports its location when the outcome is uncertain.</p>
+<h2 id="a-report-has-not-arrived">A report has not arrived</h2>
+<p>Check MATLINK's session and delivery status. <strong>Send to MATLAB</strong> needs a completed
+experiment with a saved result. <strong>Send when ready</strong> waits for successful
+completion and for MATLAB to process callbacks. Failed and cancelled runs
+cannot complete that delivery.</p>
+<p>Disconnecting or closing MATLAB ends pending delivery. Reconnect, select the
+completed experiment, and send its report again. There is no need to copy a
+run ID or type a variable name. MATLINK shows the generated variable name after
+success; <strong>Open in MATLAB</strong> opens it in MATLAB. Existing variables are preserved.</p>
+<p>A delivered report describes the stored evaluation. It does not contain a newly
+predistorted waveform or recalculate metrics for a waveform passed to <code>apply</code>.
+Use the <a href="workflow.html#apply-the-dpd">script workflow</a> for inference and export.</p>
+<h2 id="training-keeps-running-after-closing-matlab">Training keeps running after closing MATLAB</h2>
+<p>This is the shared-service lifecycle. Reconnect to the workspace and use Studio
+or <code>opendpd.cancel(job)</code> to cancel a particular job. To stop an SDK-started service
+and its jobs, use <code>opendpd.closeProject(p, StopService=true)</code>. Stop a service
+launched by Studio through its original launcher.</p>
+<h2 id="apply-rejects-a-model-or-differs-from-rundpd">apply rejects a model or differs from runDPD</h2>
+<p><code>apply</code> supports unquantized <code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code> and <code>gmp_ls</code> on CPU. Any
+other model, a quantization-aware run, or <code>Execution="streaming"</code> for a model without a
+registered streaming variant (only <code>gru</code> and <code>gmp</code> have one) is refused with the reason;
+the output is never approximated. Offline segments use frozen run settings. The baseline
+test-split exporter carries recurrent state across the waveform, so it can differ from
+segmented <code>apply</code>; ask <code>apply</code> for <code>Execution="streaming"</code> to compare like with like. Check
+<code>info.execution</code>, <code>info.limitations</code> and <code>info.streaming</code>. A changed checkpoint hash is
+rejected; restore the original artifact.</p>
+<p>A missing <code>SegmentSamples</code> error from <code>importIQ</code> or <code>importMAT</code> is deliberate: see the
+import options in the reference.</p>
+<h2 id="documentation-is-blank">Documentation is blank</h2>
+<p><code>opendpd.help()</code> opens the bundled guide without Python or an internet connection.
+Check that <code>resources/docs</code> was included in the installation, and reinstall the
+package if resources are missing. External links need internet access. This
+preview requires desktop MATLAB.</p>
+<h2 id="package-installation-path-is-not-accessible">Package installation path is not accessible</h2>
+<p>Choose a writable Add-Ons installation folder in MATLAB Settings. A fresh batch
+profile may have no installation folder set. The installation smoke test uses
+a temporary folder for its own session.</p></main>
+<footer>OpenDPD Toolbox for MATLAB 2.4.0 · Apache-2.0</footer>
+</body></html>

@@ -283,13 +283,22 @@ def _block_until_interrupted() -> None:
 
 def launch(workspace: Path, *, port: Optional[int] = None, mode: Mode = "auto", out=None, serve=None,
            opener: Callable[[str], bool] = webbrowser.open, window_runner=None, background_server=None,
-           availability=None) -> int:
+           availability=None, reserved_listener: Optional[socket.socket] = None) -> int:
     """Run the Studio server for ``workspace``; returns a process exit code.
 
     ``mode``: ``auto`` opens a native window when the desktop extra can show one
     and the browser otherwise; ``window`` insists on the window; ``browser``
     always uses the browser; ``none`` only prints the URL.
+    A headless SDK server can reserve a loopback listener before publishing its
+    lock. Its injected ``serve`` callback must use that socket and own its lifetime.
     """
+    if reserved_listener is not None:
+        if mode != "none" or serve is None:
+            raise ValueError("A reserved listener requires mode='none' and an injected server")
+        address, reserved_port = reserved_listener.getsockname()
+        if (address != HOST or not reserved_listener.getsockopt(socket.SOL_SOCKET, socket.SO_ACCEPTCONN)
+                or port not in (None, reserved_port)):
+            raise ValueError("Reserve a listening loopback socket on the requested port")
     out = out or sys.stdout
     workspace = workspace.expanduser().resolve()
     if availability is None:
@@ -309,7 +318,8 @@ def launch(workspace: Path, *, port: Optional[int] = None, mode: Mode = "auto", 
         check_workspace_permissions(workspace)
         with workspace_guard(workspace):
             return _launch_locked(workspace, port=port, surface=surface, out=out, serve=serve, opener=opener,
-                                  window_runner=window_runner, background_server=background_server or BackgroundServer)
+                                  window_runner=window_runner, background_server=background_server or BackgroundServer,
+                                  reserved_listener=reserved_listener)
     except WorkspaceBusy:
         running = existing_instance(workspace)
         if running is not None:
@@ -349,7 +359,7 @@ def _reuse_instance(workspace: Path, running: Lock, surface: str, out, opener, w
 
 
 def _launch_locked(workspace: Path, *, port: Optional[int], surface: str, out, serve,
-                   opener: Callable[[str], bool], window_runner, background_server) -> int:
+                   opener: Callable[[str], bool], window_runner, background_server, reserved_listener=None) -> int:
     running = existing_instance(workspace)
     if running is not None:
         return _reuse_instance(workspace, running, surface, out, opener, window_runner)
@@ -363,7 +373,7 @@ def _launch_locked(workspace: Path, *, port: Optional[int], surface: str, out, s
         return 2
 
     try:
-        chosen = choose_port(port)
+        chosen = reserved_listener.getsockname()[1] if reserved_listener is not None else choose_port(port)
     except LaunchError as err:
         print(f"error: {err}", file=sys.stderr)
         return 2

@@ -294,6 +294,12 @@ function ExperimentForm({ task }: { task: ExperimentTask }) {
         <Typography variant="h1" id="form-title">{t(`modelWorkflow.${displayGroup}`)}</Typography>
         <Button variant="outlined" size="small" onClick={() => setJsonOpen(true)} disabled={submit.isPending}>{t('json.open')}</Button>
       </Stack>
+      {params.get('matlink') && datasetId === params.get('dataset') && <Alert severity="success" action={<Button component={RouterLink} to="/matlink">{t('matlink.back')}</Button>}>
+        <Typography variant="body2">{t('matlink.experimentReady')}</Typography>
+        {params.get('matlab_variable') && <Typography variant="body2" sx={{ mt: .5 }}>{t('matlink.savedAs', { variable: params.get('matlab_variable')! })} · <code>{params.get('matlab_variable')}.captures(1).x</code> / <code>.y</code></Typography>}
+        {dataset && <Typography variant="caption">Fs {Number(dataset.signal.sample_rate_hz) / 1e6} MS/s · BW {Number(dataset.signal.bandwidth_hz) / 1e6} MHz · nperseg {dataset.signal.nperseg} · {form.device}</Typography>}
+        {(dataset?.captures?.length ?? 0) > 1 && <Typography variant="body2">{t('matlink.collectionReady', { n: dataset!.captures!.length })}</Typography>}
+      </Alert>}
       <ExperimentTasks active={displayTask} dataset={workflowDataset} version={workflowVersion} compact />
       <Tabs value={ilcRequested ? 'ilc' : displayTesting ? 'test' : 'train'} aria-label={t('modelWorkflow.mode')}>
         {(['train', 'test'] as const).map((mode) => {
