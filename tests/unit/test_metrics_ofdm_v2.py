@@ -132,15 +132,15 @@ def test_committed_v2_evidence_contains_every_case_and_renders_its_table():
     import json
     from pathlib import Path
     root = Path(__file__).resolve().parents[2]
-    report = json.loads((root / 'docs/performance/matlab-parity-v2.json').read_text())
+    report = json.loads((root / 'docs/performance/matlab-parity-v2.json').read_text(encoding="utf-8"))
     assert harness.verdict(report['items']) == report['verdict']
     assert report['verdict']['passed'] == 115 and report['verdict']['failed'] == 0
     assert report['profiles'] == harness.PROFILE_IDS and report['budgets'] == harness.BUDGETS
     assert set(report['diagnostics']['product']) == set(harness.SIGNALS)
     assert set(report['diagnostics']['matlab']['signals']) == set(harness.SIGNALS)
-    original = json.loads((root / 'docs/performance/matlab-parity.json').read_text())
+    original = json.loads((root / 'docs/performance/matlab-parity.json').read_text(encoding="utf-8"))
     assert report['signals'] == original['signals'] and report['package_sha256'] == original['package_sha256']
-    document = (root / 'docs/performance/matlab-parity-v2.md').read_text()
+    document = (root / 'docs/performance/matlab-parity-v2.md').read_text(encoding="utf-8")
     actual = document.split('<!-- parity-v2-results:begin -->\n')[1].split('<!-- parity-v2-results:end -->')[0]
     assert actual == harness.render(report)
 

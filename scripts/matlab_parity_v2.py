@@ -40,7 +40,7 @@ def expected_cases():
 
 
 def verify_signals(built):
-    registered = json.loads((ROOT / "docs/performance/matlab-parity.json").read_text())
+    registered = json.loads((ROOT / "docs/performance/matlab-parity.json").read_text(encoding="utf-8"))
     if set(built["signals"]) != set(SIGNALS) or built["package_sha256"] != registered["package_sha256"]:
         raise ValueError("Signal set or reference waveform differs from registration")
     for sid, signal in built["signals"].items():
@@ -203,10 +203,10 @@ def main():
         quote = lambda path: str(path).replace("'", "''")
         command = f"addpath('{quote(original.PARITY_DIR)}'); parityLTEv2('{quote(inputs)}','{quote(output)}');"
         run = subprocess.run([args.matlab, "-batch", command], env=env, capture_output=True, text=True, timeout=args.timeout)
-        (work / "matlab.log").write_text(run.stdout + "\n" + run.stderr)
+        (work / "matlab.log").write_text(run.stdout + "\n" + run.stderr, encoding="utf-8")
         if run.returncode:
             raise RuntimeError(f"Independent MATLAB execution failed; inspect {work / 'matlab.log'}")
-    matlab = json.loads(output.read_text())
+    matlab = json.loads(output.read_text(encoding="utf-8"))
     items = compare(product, matlab, built)
     environment = original.environment(matlab["environment"])
     paths = ["scripts/matlab_parity_v2.py", "opendpd/core/metrics/ofdm_evm_v2.py", "opendpd/core/metrics/registry.py", "opendpd/core/metric_profiles.py",
@@ -226,8 +226,8 @@ def main():
             "matlab": matlab,
         }}
     target = args.report_json or work / "report.json"
-    target.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n")
-    (work / "report.md").write_text(render(report))
+    target.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
+    (work / "report.md").write_text(render(report), encoding="utf-8")
     print(json.dumps(report["verdict"]))
     return 0 if report["verdict"]["all_scored_within_budget"] else 1
 
