@@ -41,7 +41,7 @@ class LocalBackboneGitHub(BackbonePublisher, LocalGitHub):
             from pathlib import Path
             self.calls.append(args)
             body = Path(args[args.index('--body-file')+1]).read_text()
-            assert 'Human review is required' in body and 'Source SHA256' in body
+            assert 'Independent review by an authorized human or agent is required' in body and 'Source SHA256' in body
             if self.fail_after_push:
                 self.fail_after_push = False
                 raise WorkspaceError('Simulated network failure after push')

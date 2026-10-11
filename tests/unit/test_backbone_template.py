@@ -8,7 +8,11 @@ from opendpd.core.backbone_template import (TEMPLATE, TemplateError, canonical_d
     scan_source, validate_definition)
 from opendpd.core.registry import RegistryError, validate_parameters
 from opendpd.core.template_network import TemplateNetwork
-from scripts.check_user_backbone_review import approved_by_human, validate_changed_templates
+from scripts.check_user_backbone_review import validate_changed_templates
+from scripts.review_policy import independent_approvals
+
+def approved(pr, reviews, permission):
+    return bool(independent_approvals(pr, reviews, [], permission))
 
 
 @pytest.mark.parametrize("payload", [
@@ -106,17 +110,18 @@ def test_residual_concat_and_no_unbounded_allocations():
         validate_definition(d)
 
 
-def test_human_review_excludes_bots_author_comments_stale_dismissed_and_changes_requested():
+def test_independent_review_accepts_agents_but_excludes_author_comments_stale_and_dismissed():
     pr = {'head':{'sha':'a'*40}, 'user':{'login':'author'}}
     good = {'id':1,'commit_id':'a'*40,'state':'APPROVED','user':{'login':'reviewer','type':'User'}}
-    assert approved_by_human(pr,[good],lambda _: 'maintain')
-    assert not approved_by_human(pr,[good],lambda _: 'write')
+    assert approved(pr,[good],lambda _: 'maintain')
+    assert approved(pr,[{**good,'user':{'login':'agent[bot]','type':'Bot'}}],lambda _: 'maintain')
+    assert not approved(pr,[good],lambda _: 'write')
     for update in ({'state':'COMMENTED'}, {'commit_id':'b'*40}, {'state':'DISMISSED'},
-                   {'user':{'login':'author','type':'User'}}, {'user':{'login':'bot','type':'Bot'}}):
-        assert not approved_by_human(pr,[{**good,**update}],lambda _: 'admin')
-    assert not approved_by_human(pr,[good,{**good,'id':2,'state':'CHANGES_REQUESTED'}],lambda _: 'admin')
-    assert not approved_by_human(pr,[good,{**good,'id':2,'state':'DISMISSED'}],lambda _: 'admin')
-    assert approved_by_human(pr,[good,{**good,'id':2,'state':'COMMENTED'}],lambda _: 'admin')
+                   {'user':{'login':'author','type':'User'}}):
+        assert not approved(pr,[{**good,**update}],lambda _: 'admin')
+    assert not approved(pr,[good,{**good,'id':2,'state':'CHANGES_REQUESTED'}],lambda _: 'admin')
+    assert not approved(pr,[good,{**good,'id':2,'state':'DISMISSED'}],lambda _: 'admin')
+    assert approved(pr,[good,{**good,'id':2,'state':'COMMENTED'}],lambda _: 'admin')
 
 
 def test_ci_scanner_checks_renames_and_hashes_without_importing_sources():
@@ -134,7 +139,7 @@ def test_ci_scanner_checks_renames_and_hashes_without_importing_sources():
         validate_changed_templates([{'filename':'backbones/user_uploaded/__init__.py','status':'added'}],content.__getitem__)
 
 
-def test_merge_queue_requires_exact_protected_bytes_and_fresh_human_approval():
+def test_merge_queue_requires_exact_protected_bytes_and_fresh_independent_approval():
     from scripts.check_user_backbone_review import evaluate_merge_group
     file={'filename':'opendpd/core/backbone_template.py','status':'modified','sha':'b'*40}
     pr={'number':4,'state':'open','changed_files':1,'base':{'ref':'main'},'head':{'sha':'c'*40},'user':{'login':'author'}}
@@ -146,6 +151,7 @@ def test_merge_queue_requires_exact_protected_bytes_and_fresh_human_approval():
         if path=='pulls/4': return pr
         if '/files?' in path: return [current_file]
         if '/reviews?' in path: return [review]
+        if '/comments?' in path: return []
         if path.endswith('/permission'): return {'permission':'maintain'}
         raise AssertionError(path)
     group={'base_sha':'d'*40,'head_sha':'e'*40}

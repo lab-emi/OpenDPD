@@ -49,6 +49,15 @@ Run it before each version bump. Routine Dependabot updates are grouped,
 validated and merged automatically; failed or non-routine updates remain explicit
 release blockers until resolved.
 
+## Independent review and merge
+
+People and authorized agents may contribute, review and merge. No human reviewer
+is mandatory. Use an independent reviewer session and prefer a different agent:
+Codex → Claude Code, or Claude Code → Codex. The reviewer should merge after
+reviewing the current head and passing all required checks. Shared GitHub accounts
+use the explicit authenticated attestation described in the
+[review and merge policy](docs/architecture/review-policy.md).
+
 ## Protected scientific paths
 
 Metric definitions, data splits, golden references, acceptance thresholds and
@@ -73,4 +82,8 @@ replace expected values to make a failing test pass.
 ## Commit messages
 
 Use an imperative summary line, keep the body factual, and reference the plan
-step (for example `S03`) when the change belongs to one.
+step (for example `S03`) when the change belongs to one. Record actual people and
+agents with `Contributed-By:` (and `Co-Authored-By:` where applicable). The final
+squash/merge commit must also include `Reviewed-By:`, `Reviewed-Commit:` and a
+review evidence link. Add reviewer credit only after review; use
+`scripts/merge_reviewed_pr.py` to preserve it without changing the reviewed head.

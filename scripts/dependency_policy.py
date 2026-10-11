@@ -114,7 +114,7 @@ def action_updates(old, new):
         x, y = USE.fullmatch(a), USE.fullmatch(b)
         if (not x or not y or x[1] != y[1] or x[2] != y[2] or y[2] not in ACTIONS
                 or not routine_version(x[4], y[4]) or (x[4] == y[4] and x[3] != y[3])):
-            raise ValueError("workflow changes require human review")
+            raise ValueError("workflow changes require independent review")
         pins.append((y[2], "v" + y[4], y[3]))
     return pins
 

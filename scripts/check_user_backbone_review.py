@@ -1,4 +1,4 @@
-"""Trusted-base, data-only scan and independent current-head human review gate.
+"""Trusted-base, data-only scan and independent current-head human/agent review gate.
 
 Never check out or execute PR code. This script and the scanner must be loaded
 from the target branch. The resulting commit status is bound to the PR head,
@@ -17,36 +17,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dependency_github import automatic_dependency_review
+from review_policy import approvals
 from opendpd.core.backbone_template import MAX_SOURCE_BYTES, scan_source, source_sha256
 
 CONTEXT = "user-backbone-review"
 CATALOG = "backbones/user_uploaded/"
 PROTECTED = (CATALOG, ".github/workflows/", ".github/CODEOWNERS",
-             "scripts/check_user_backbone_review.py", "opendpd/core/backbone_template.py",
+             "scripts/check_user_backbone_review.py", "scripts/review_policy.py", "scripts/check_protected_review.py", "opendpd/core/backbone_template.py",
              "opendpd/core/template_network.py", "opendpd/services/user_backbones.py",
              "opendpd/server/backbone_routes.py", "opendpd/core/backbone_builders.py",
              "opendpd/core/registry.py", "opendpd/services/dataset_publication.py",
              "opendpd/services/legacy_adapter.py", "models.py", "opendpd/web/")
-
-
-def approved_by_human(pr, reviews, permission):
-    """No bot, author, comment, dismissed approval or approval of an old head."""
-    latest = {}
-    for review in sorted(reviews, key=lambda r: r.get("id", 0)):
-        user = review.get("user") or {}
-        if review.get("state") in {"APPROVED", "CHANGES_REQUESTED", "DISMISSED"}:
-            latest[user.get("login")] = review
-    approved = False
-    for login, review in latest.items():
-        user = review["user"]
-        if (not login or user.get("type") != "User" or login == pr["user"]["login"]
-                or login.endswith("[bot]") or permission(login) not in {"admin", "maintain"}):
-            continue
-        if review["state"] == "CHANGES_REQUESTED":
-            return False
-        if review["state"] == "APPROVED" and review.get("commit_id") == pr["head"]["sha"]:
-            approved = True
-    return approved
 
 
 def validate_changed_templates(files, get_source):
@@ -85,20 +66,12 @@ def evaluate(pr, files, get, get_source):
         return True, "Routine Dependabot version pins verified; full CI remains required."
     validate_changed_templates(files, get_source)
     if not reviewed(pr, get):
-        return False, "Independent human maintainer approval of this exact head is required."
-    return True, "Template scan and independent current-head human approval passed."
+        return False, "Independent human or agent approval of this exact head is required."
+    return True, "Template scan and independent current-head approval passed."
 
 
 def reviewed(pr, get):
-    reviews = []
-    for page in range(1, 21):
-        batch = get(f'pulls/{pr["number"]}/reviews?per_page=100&page={page}')
-        reviews.extend(batch)
-        if len(batch) < 100:
-            break
-    else:
-        raise ValueError("Review history exceeds the verification limit.")
-    return approved_by_human(pr, reviews, lambda login: get(f"collaborators/{login}/permission")["permission"])
+    return bool(approvals(pr, get))
 
 
 def pr_files(pr, get):
@@ -146,7 +119,7 @@ def evaluate_merge_group(group, get, get_source):
         remaining -= matching
         if not remaining:
             return True, 'Queued backbone bytes match independently approved current PR heads.'
-    return False, 'Each protected queued file must match a current human-approved PR head.'
+    return False, 'Each protected queued file must match a current independently approved PR head.'
 
 
 def main():
@@ -177,7 +150,7 @@ def main():
         raise SystemExit("Only PRs into main are eligible.")
     def status(state, description):
         api(f"statuses/{head}", {"state": state, "context": CONTEXT, "description": description[:140]})
-    status("pending", "Checking template format and independent human approval.")
+    status("pending", "Checking template format and independent human or agent approval.")
     try:
         head_repo = repository if group else pr["head"]["repo"]["full_name"]
         if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", head_repo):
@@ -214,7 +187,8 @@ def main():
                 raise ValueError("Source size mismatch.")
             return value
         ok, description = evaluate_merge_group(group, api, source) if group else evaluate(pr, pr_files(pr,api), api, source)
-        if not group and api(f"pulls/{number}")["head"]["sha"] != head:
+        if not group and (api(f"pulls/{number}")["head"]["sha"] != head
+                          or api(f"pulls/{number}").get("body") != pr.get("body")):
             raise ValueError("PR head changed during review verification.")
         status("success" if ok else "failure", description)
         print(description)
