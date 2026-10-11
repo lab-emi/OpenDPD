@@ -1,68 +1,54 @@
-"""Require a maintainer review tied to the current PR head for protected changes."""
+"""Publish an independent-review status on the immutable PR head.
+
+Execute only trusted target-branch code. Never check out or execute PR code.
+"""
 import json
 import os
 from pathlib import Path
 import sys
-import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dependency_github import automatic_dependency_review
+from dependency_github import GitHub
+from review_policy import approvals, authorized_attestations, native_approvals, pages, permission_reader
+
+CONTEXT = "independent-review"
 
 
 def main():
-    event = json.load(open(os.environ['GITHUB_EVENT_PATH']))
-    pr = event.get('pull_request')
-    number = pr['number'] if pr else event['issue']['number']
-    repository = os.environ['GITHUB_REPOSITORY']
-    token = os.environ['GH_TOKEN']
-
-    def get(path):
-        request = urllib.request.Request(f'https://api.github.com/repos/{repository}/{path}',
-            headers={'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'})
-        with urllib.request.urlopen(request, timeout=15) as response:
-            return json.load(response)
-
-    # Read fresh state: reviews and new commits may arrive after this job was queued.
-    current = get(f'pulls/{number}')
-    head = current['head']['sha']
-    if pr and head != pr['head']['sha']:
-        raise SystemExit('The PR head changed; wait for the check on its new commit.')
-    protected = ('tests/golden/', 'opendpd/', 'modules/', 'steps/', 'quant/', 'utils/', 'datasets/',
-                 'backbones/', 'benchmark/', 'docs/protocols/', 'docs/leaderboard/', '.github/',
-                 'deployment/', 'scripts/', 'frontend/', 'pyproject.toml', 'project.py', 'arguments.py')
-    changed = []
-    for page in range(1, 31):
-        files = get(f'pulls/{number}/files?per_page=100&page={page}')
-        changed.extend(name for item in files for name in (item['filename'], item.get('previous_filename', '')))
-        if len(files) < 100:
-            break
-    else:
-        raise SystemExit('Too many changed files to audit; maintainer inspection is required.')
-    if automatic_dependency_review(current):
-        print('Routine Dependabot version-only update; full CI remains required for merging.')
-        return
-    if not any(name.startswith(protected) for name in changed):
-        print('No protected paths changed')
-        return
-    latest = {}
-    page = 1
-    while True:
-        reviews = get(f'pulls/{number}/reviews?per_page=100&page={page}')
-        for review in reviews:
-            if review['commit_id'] == head:
-                latest[review['user']['login']] = review
-        if len(reviews) < 100:
-            break
-        page += 1
-    for login, review in latest.items():
-        approved = review['state'] == 'APPROVED'
-        if approved and login != current['user']['login']:
-            permission = get(f'collaborators/{login}/permission')['permission']
-            if permission in {'admin', 'maintain'}:
-                print(f'Maintainer review recorded for {head}')
-                return
-    raise SystemExit('Protected changes require an admin/maintainer review of the current head; labels are not approvals.')
+    event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+    number = (event.get("pull_request") or event.get("issue") or {}).get("number") or event.get("inputs", {}).get("pr_number")
+    if not str(number).isdigit() or not 0 < int(number) < 10**9:
+        raise SystemExit("Invalid PR number.")
+    api = GitHub()
+    pr = api.request(f"pulls/{number}")
+    if pr["state"] != "open":
+        return 0
+    head = pr["head"]["sha"]
+    def status(state, description):
+        api.request(f"statuses/{head}", {"state": state, "context": CONTEXT, "description": description[:140]})
+    status("pending", "Checking independent human or agent review of this commit.")
+    try:
+        ok = bool(approvals(pr, api.request))
+        if not ok:
+            # An objection overrides even the narrow dependency exception.
+            permission = permission_reader(api.request)
+            _, blocked = native_approvals(pr, pages(api.request, f"pulls/{number}/reviews"),
+                permission)
+            comments = pages(api.request, f"issues/{number}/comments")
+            has_attestation = bool(authorized_attestations(comments, permission))
+            ok = not blocked and not has_attestation and api.routine(pr)
+        current = api.request(f"pulls/{number}")
+        if current["head"]["sha"] != head or current.get("body") != pr.get("body"):
+            raise ValueError("PR changed during review verification.")
+        description = "Independent review passed for this commit." if ok else "Independent human or agent approval of this exact head is required."
+        status("success" if ok else "failure", description)
+        print(description)
+        return 0 if ok else 1
+    except Exception:
+        status("failure", "Review verification failed; inspect the review metadata and rerun.")
+        print("Review verification failed; no PR code was executed.")
+        return 1
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    raise SystemExit(main())

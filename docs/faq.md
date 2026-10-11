@@ -15,7 +15,7 @@ Use the [workspace CLI guide](tutorials/headless-cli.md), [training guide](train
 
 ## Can I upload my own dataset?
 
-Yes. Choose **Upload CSV** in Get Started or Datasets and supply paired PA input/output with signal metadata. Generated signals are input-only until PA Library creates a synthetic output. Contributions to the shared collection require explicit submission and human PR review; private datasets stay in the current workspace.
+Yes. Choose **Upload CSV** in Get Started or Datasets and supply paired PA input/output with signal metadata. Generated signals are input-only until PA Library creates a synthetic output. Contributions to the shared collection require explicit submission and independent human or agent PR review; private datasets stay in the current workspace.
 
 ## Why is a DPD result labeled simulated?
 

@@ -113,7 +113,7 @@ for the selected dataset/version and PA reference.
 
 Generated datasets are private by default. Optional publication uses the existing
 dataset contribution workflow: an explicit reviewed package, a separate branch,
-push and PR, followed by human merge review. Contact: emi.lab@outlook.com.
+push and PR, followed by independent human or agent merge review. Contact: emi.lab@outlook.com.
 
 Hosted sessions apply authentication, tenant isolation, size limits and generation
 quotas. Dataset creation respects the host's custom-dataset capability. No RF
