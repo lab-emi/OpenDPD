@@ -86,8 +86,7 @@ jobs:
           python scripts/build_matlab_docs.py --check
           python -m pytest tests/unit/test_metrics_ofdm_v2.py tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_fixed_point_package.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
           python -c 'import os, sys; open(os.environ["GITHUB_ENV"], "a").write("OPENDPD_MATLAB_PYTHON=" + sys.executable + "\n")'
-      - id: matlab
-        uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
+      - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
         with:
           release: ${{ inputs.release || 'R2026a' }}
           products: ${{ matrix.products }}
