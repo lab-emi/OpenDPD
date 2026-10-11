@@ -47,6 +47,6 @@ test('an old toolbox cannot start the automatic generation workflow', async () =
     'GET /api/v1/pa-library/models': () => models.data,
   })
   renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator?matlink=matlab-test' })
-  await screen.findByText(/This connection needs toolbox 0.4.0/, undefined, { timeout: 5000 })
+  await screen.findByText(/This connection needs toolbox 2.4.0/, undefined, { timeout: 5000 })
   expect(screen.getByRole('button', { name: 'Generate & prepare experiment' })).toBeDisabled()
 }, 15000)
