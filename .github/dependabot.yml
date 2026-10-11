@@ -20,6 +20,11 @@ updates:
     directory: /frontend
     schedule:
       interval: daily
+    ignore:
+      # `typescript` stays on 5.x for openapi-typescript's compiler API; TypeScript 7
+      # is installed as `@typescript/native` (see frontend/README.md).
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     groups:
       frontend-minor-patch:
         patterns: ["*"]

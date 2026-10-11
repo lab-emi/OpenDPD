@@ -21,8 +21,7 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"], "@mocks/*": ["mocks/*"] }
+    "paths": { "@/*": ["./src/*"], "@mocks/*": ["./mocks/*"] }
   },
   "include": ["src", "mocks"]
 }
