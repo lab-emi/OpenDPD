@@ -148,10 +148,30 @@ Python; MATLAB is the independent backend that checks them.
 
 | Date | Backend and version | Signals | ACLR difference | EVM difference | Outcome |
 |---|---|---|---|---|---|
-| — | — | — | — | — | **not run yet** |
+| 2026-10-08 | MATLAB R2026a Update 5 on Linux; LTE Toolbox, Communications Toolbox and Signal Processing Toolbox 26.1 | `ofdm-lte20-v1` waveform, synthetic memory-polynomial PA at four drive levels (1 % to 11 % EVM), a gain/delay/noise variant and a 245.76 MS/s variant (S0 to S9, plus S6b and S9b at +30 Hz) | 7 of 84 scored values against `comm.ACPR` are outside the 0.1 dB budget, at most 0.21 dB, all on the two lowest-distortion signals | at most 2.1·10⁻⁹ percentage points from an independent MathWorks-blocks chain on the ten evaluable signals (budget 0.05) | **not passed as registered**: 102 of 115 scored items within budget, 7 outside, 6 not evaluable (the +350 Hz signals, which both tools refuse) |
+
+The outcome above is the record of the registered cross-validation, not an approval: the ACLR differences come from how the two
+tools integrate a band whose edge is not a bin centre (a `pwelch` PSD integrated with `comm.ACPR`'s rule reproduces `comm.ACPR`
+to 2.5·10⁻⁴ dB), and the EVM chain, the waveform (`lteOFDMModulate`, 2.9·10⁻⁸ relative RMS) and the Welch estimator agree.
+`validation` in `opendpd/core/metrics/ofdm_evm_v1.py` is therefore **not** changed by this record. Whether to keep the band rule
+and document the expected difference (up to 0.2 dB at 60 kHz resolution and coarser), to state the carrier-offset capture range
+(the timing peak falls below the 0.3 rule at about 75 Hz for a 10 ms waveform) and the waveform's own ACLR floor (about
+-42 dBc), is a decision for the maintainers. Rules, signals, budgets, every number and the diagnostics:
+[OpenDPD ↔ MATLAB parity](../performance/matlab-parity.md).
 
 ## 8. Effect on existing results
 
 Nothing changes for `legacy-opendpd-v1` (frozen) or `general-spectral-v1`:
 the new profile is an additional file under `runs/<id>/results/` and reports
 explicit statuses on every existing dataset (`tests/unit/test_metrics_ofdm_evm.py`).
+
+## Versioned follow-up (2026-10-11)
+
+The v1 record above remains a failed-as-registered comparison, and
+`ofdm-lte20-evm-v1` remains `pending_cross_validation`. The separately registered
+[v2 profiles](waveform-profiles-v2.md) distinguish the two PSD configurations
+and add frequency-tolerant acquisition. Both real v2 runs passed all 115 scored
+items at the original tolerances and signal hashes; see the
+[complete evidence](../performance/matlab-parity-v2.md). This does not promote
+v1 or alter the legacy/general/carrier profiles, and is not a 3GPP conformance
+claim.

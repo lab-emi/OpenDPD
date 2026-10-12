@@ -96,5 +96,10 @@ repository ruleset. The automation reads effective rules using metadata access;
 it does not need an administrator token.
 
 The required branch checks are the eleven CI jobs declared in
-`scripts/maintain_dependencies.py`, plus `Build site` and `audit`, with strict
+`scripts/maintain_dependencies.py`, plus `Build site`, `audit` and `Toolbox (ubuntu-22.04, R2026a)`, with strict
 up-to-date checking. Keep that list aligned when changing the CI matrix.
+
+The MATLAB Linux job includes the registered 115-case LTE v2 cross-validation
+and fails unless all scored comparisons pass. The workflow runs for every main
+PR so its required status cannot be absent for dependency or documentation PRs.
+Its evidence is uploaded as `LTE-parity-Linux-R2026a`.

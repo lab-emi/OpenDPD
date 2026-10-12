@@ -1,32 +1,10 @@
 name: MATLAB toolbox
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
-    paths:
-      - Matlab/**
-      - opendpd/sdk/**
-      - opendpd/services/inference.py
-      - opendpd/services/model_export.py
-      - opendpd/services/matlink.py
-      - opendpd/schemas/matlink.py
-      - opendpd/server/matlink_routes.py
-      - frontend/src/pages/MatlinkPage*
-      - scripts/build_matlab_docs.py
-      - tests/unit/test_sdk_iq.py
-      - tests/unit/test_sdk_metrics.py
-      - tests/unit/test_model_export.py
-      - tests/unit/test_matlab_toolbox_metadata.py
-      - scripts/make_matlab_model_fixtures.py
-      - scripts/make_matlab_fixed_fixture.py
-      - tests/unit/test_fixed_point_package.py
-      - tests/unit/test_studio_navigation.py
-      - tests/unit/test_matlink.py
-      - tests/integration/test_matlink_*.py
-      - tests/integration/test_sdk_matlab.py
-      - tests/integration/test_sdk_fit.py
-      - tests/integration/test_apply_parity.py
-      - .github/workflows/matlab-toolbox.yml
   workflow_dispatch:
     inputs:
       release:
@@ -90,7 +68,7 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
@@ -106,13 +84,49 @@ jobs:
           python -m pip install -e ".[dev]"
           python -m pip install Markdown
           python scripts/build_matlab_docs.py --check
-          python -m pytest tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_fixed_point_package.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
+          python -m pytest tests/unit/test_metrics_ofdm_v2.py tests/unit/test_sdk_iq.py tests/unit/test_sdk_metrics.py tests/unit/test_model_export.py tests/unit/test_matlab_toolbox_metadata.py tests/unit/test_fixed_point_package.py tests/unit/test_studio_navigation.py tests/unit/test_matlink.py tests/integration/test_matlink_api.py tests/integration/test_matlink_sdk.py tests/integration/test_sdk_matlab.py tests/integration/test_sdk_fit.py tests/integration/test_apply_parity.py -q
           python -c 'import os, sys; open(os.environ["GITHUB_ENV"], "a").write("OPENDPD_MATLAB_PYTHON=" + sys.executable + "\n")'
       - uses: matlab-actions/setup-matlab@f9e43010f1ae678f7cfa0542fe2a4f60f7d1ad8d # v3
         with:
           release: ${{ inputs.release || 'R2026a' }}
           products: ${{ matrix.products }}
           cache: true
+      # The official action supplies public-project licensing. Direct matlab
+      # subprocesses cannot assume that licensing environment on hosted runners.
+      - name: Prepare registered LTE inputs
+        if: matrix.experimental == false
+        run: |
+          mkdir -p "$RUNNER_TEMP/lte-parity-v2-prefs"
+          python scripts/matlab_parity_v2.py --work "$RUNNER_TEMP/lte-parity-v2" --prepare-only
+      - name: Measure registered LTE signals with MATLAB
+        if: matrix.experimental == false
+        uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
+        env:
+          MATLAB_PREFDIR: ${{ runner.temp }}/lte-parity-v2-prefs
+        with:
+          command: >-
+            work = fullfile(getenv('RUNNER_TEMP'),'lte-parity-v2');
+            diary(fullfile(work,'matlab.log'));
+            addpath(fullfile(pwd,'Matlab','toolbox','examples','parity'));
+            parityLTEv2(fullfile(work,'signals.mat'),fullfile(work,'matlab-results.json'));
+            diary off;
+      - name: Require all registered LTE v2 comparisons to pass
+        if: matrix.experimental == false
+        run: >-
+          python scripts/matlab_parity_v2.py
+          --work "$RUNNER_TEMP/lte-parity-v2"
+          --matlab-results "$RUNNER_TEMP/lte-parity-v2/matlab-results.json"
+          --run "$GITHUB_RUN_ID" --date "$(date -u +%F)"
+      - name: Upload LTE cross-validation evidence
+        if: always() && matrix.experimental == false
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: LTE-parity-${{ runner.os }}-${{ inputs.release || 'R2026a' }}
+          path: |
+            ${{ runner.temp }}/lte-parity-v2/report.json
+            ${{ runner.temp }}/lte-parity-v2/report.md
+            ${{ runner.temp }}/lte-parity-v2/matlab.log
+          if-no-files-found: error
       - name: Run MATLAB tests and build toolbox
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         with:
@@ -153,7 +167,7 @@ jobs:
             clear cleanup;
             assert(isempty(matlab.addons.toolbox.installedToolboxes));
       - name: Upload package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: OpenDPD-toolbox-${{ runner.os }}-${{ inputs.release || 'R2026a' }}
           path: Matlab/toolbox/dist/*.mltbx

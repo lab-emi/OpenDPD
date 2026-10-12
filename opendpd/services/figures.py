@@ -10,7 +10,7 @@ import uuid
 import zipfile
 from pathlib import Path
 
-from opendpd.core.metrics import incompatibilities
+from opendpd.core.metric_profiles import incompatibilities
 from opendpd.core.spectrum_layout import signal_node, has_dpd
 from opendpd.schemas.review import FigureBinding, FigureSpec, SavedFigure, FigureSources, FigureSource, FigurePreview
 from opendpd.services import figure_render

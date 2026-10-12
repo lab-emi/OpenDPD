@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 
 from opendpd.core.fixed_point import FixedGRU, QuantisedGRU, quantise, to_fixed, to_float
-from opendpd.core.metrics import evaluate as score
+from opendpd.core.metric_profiles import evaluate as score
 from opendpd.core.registry import get_model
 from opendpd.core.streaming import DEFAULT_CHUNK_SAMPLES, run_stream
 from opendpd.export import c_backend

@@ -65,3 +65,19 @@ channel is inside the capture.
 The built-in ten-carrier captures are not bound to any waveform and report
 `missing_reference` under this profile: that is the correct answer, not a
 gap to fill by re-using the profile's name for another definition.
+
+## Validated v2 measurement configurations
+
+The additional `ofdm-lte20-evm-v2` profile uses dataset-length symmetric Hann
+segments; `ofdm-lte20-evm-auto-v2` uses the complete valid record with symmetric
+Hamming. Choose the configuration that matches the external measurement you are
+comparing. Both require a binding to the known waveform and use frequency-tolerant
+acquisition; arbitrary or multi-carrier data are not silently scored as LTE EVM.
+The default carrier profile and training/checkpoint metric are unchanged.
+
+Both v2 configurations passed every item of the separately registered 115-case
+MATLAB comparison at the original 0.1 dB ACLR and 0.05 percentage-point EVM
+budgets. See the [procedure](../protocols/waveform-profiles-v2.md) and
+[complete validation record](../performance/matlab-parity-v2.md). This is digital
+procedure agreement, not a 3GPP conformance claim. The original
+`ofdm-lte20-evm-v1` remains pending and keeps its failed-as-registered record.

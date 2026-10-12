@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from opendpd import __version__
-from opendpd.core.metrics import get_profile, list_profiles
+from opendpd.core.metric_profiles import get_profile, list_profiles
 from opendpd.core.registry import list_models
 from opendpd.core.splits import DEFAULT_GUARD_SAMPLES
 from opendpd.schemas import (

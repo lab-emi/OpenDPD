@@ -1774,5 +1774,7 @@
   "matlink.experimentReady": "Signal selected. Sample rate, bandwidth and spectral segment length come from this dataset. Training defaults come from the selected recipe and detected device. Review before starting.",
   "matlink.collectionReady": "All {n} captures are saved in MATLAB. This experiment starts with the first capture; select another dataset to train a different capture.",
   "matlink.generateExperiment": "Generate & prepare experiment",
-  "matlink.segmentHelp": "Campioni per segmento PSD. La valutazione azzera anche lo stato del modello con questo intervallo. I segnali generati da Studio usano 512–4096."
+  "matlink.segmentHelp": "Campioni per segmento PSD. La valutazione azzera anche lo stato del modello con questo intervallo. I segnali generati da Studio usano 512–4096.",
+  "profile.ofdmV2Segment": "LTE EVM + ACLR v2 (segmenti Hann)",
+  "profile.ofdmV2Auto": "LTE EVM + ACLR v2 (Hamming sull’intera registrazione)"
 }

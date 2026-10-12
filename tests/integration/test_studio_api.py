@@ -234,7 +234,13 @@ def test_run_lifecycle_events_logs_artifacts_result(client, session):
     profiles = {p["profile_id"]: p for p in client.get("/api/v1/metrics/profiles").json()}
     assert profiles["legacy-opendpd-v1"]["frozen"] is True and "ACPR_L" in [m["name"] for m in profiles["general-spectral-v1"]["metrics"]]
     assert client.get("/api/v1/metrics/profiles/nope").status_code == 404
-    assert client.get(f"/api/v1/results/{run_id}/profiles").json() == ["opendpd-spectral-v2", "general-spectral-v1", "legacy-opendpd-v1", "ofdm-lte20-evm-v1"]
+    expected_profiles = {"opendpd-spectral-v2", "general-spectral-v1", "legacy-opendpd-v1", "ofdm-lte20-evm-v1",
+                         "ofdm-lte20-evm-v2", "ofdm-lte20-evm-auto-v2"}
+    assert client.get(f"/api/v1/results/{run_id}/profiles").json() == ["opendpd-spectral-v2", *sorted(expected_profiles - {"opendpd-spectral-v2"})]
+    for identifier in ("ofdm-lte20-evm-v2", "ofdm-lte20-evm-auto-v2"):
+        assert profiles[identifier]["validation"] == "cross_validated" and profiles[identifier]["version"] == 2
+        unavailable = client.get(f"/api/v1/results/{run_id}", params={"profile": identifier}).json()
+        assert {m["status"] for m in unavailable["metrics"]} == {"missing_reference"}
     assert profiles["ofdm-lte20-evm-v1"]["validation"] == "pending_cross_validation"    # the GUI hides it; the API serves it
     pending = client.get(f"/api/v1/results/{run_id}", params={"profile": "ofdm-lte20-evm-v1"}).json()
     assert {m["status"] for m in pending["metrics"]} == {"missing_reference"}

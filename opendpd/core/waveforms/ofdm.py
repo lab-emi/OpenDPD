@@ -248,7 +248,33 @@ def _equalize(received: np.ndarray, reference: np.ndarray) -> Tuple[np.ndarray, 
     return equalizer, received / np.where(equalizer != 0, equalizer, 1.0)
 
 
-def demodulate(y: np.ndarray, wf: Waveform, *, correct_cfo: bool = True, max_iterations: int = 3) -> Optional[Demodulation]:
+def synchronize_frequency_tolerant(y: np.ndarray, wf: Waveform) -> Tuple[int, float]:
+    """V2 acquisition: magnitude proposes timing; complex correlation verifies it.
+
+    A whole-frame coherent correlation can cancel under a constant frequency
+    offset. The fallback estimates that offset from candidate cyclic prefixes,
+    then applies the original complex-reference acceptance threshold. Magnitude
+    correlation never establishes a waveform identity on its own.
+    """
+    offset, correlation = synchronize(y, wf)
+    if correlation >= MIN_CORRELATION:
+        return offset, correlation
+    head = np.asarray(y, dtype=np.complex128).reshape(-1)[:wf.period]
+    magnitude = np.zeros(wf.period, dtype=np.float64)
+    magnitude[:head.size] = np.abs(head)
+    candidates = np.fft.ifft(np.fft.fft(magnitude) * np.conj(np.fft.fft(np.abs(wf.x)))).real
+    candidate = (-int(np.argmax(candidates))) % wf.period
+    windows = _symbol_windows(wf, candidate, head.size)
+    if not windows:
+        return offset, correlation
+    frequency = estimate_cfo(head, wf, windows)
+    corrected = head * np.exp(-2j * math.pi * frequency / FS * np.arange(head.size))
+    verified_offset, verified_correlation = synchronize(corrected, wf)
+    return (verified_offset, verified_correlation) if verified_correlation > correlation else (offset, correlation)
+
+
+def demodulate(y: np.ndarray, wf: Waveform, *, correct_cfo: bool = True, max_iterations: int = 3,
+               frequency_tolerant: bool = False) -> Optional[Demodulation]:
     """Data-aided demodulation of ``y`` (complex, at the waveform clock). None when ``y`` does not correlate
     with the waveform or holds no complete OFDM symbol; the caller turns that into an explicit status.
 
@@ -259,7 +285,9 @@ def demodulate(y: np.ndarray, wf: Waveform, *, correct_cfo: bool = True, max_ite
     y = np.asarray(y, dtype=np.complex128).reshape(-1)
     if y.size < NFFT + max(CP_SLOT):
         return None
-    offset, corr = synchronize(y, wf)
+    # V1 callers keep their exact acquisition behavior. Only the separately
+    # versioned V2 metric profiles opt into the registered fallback.
+    offset, corr = (synchronize_frequency_tolerant(y, wf) if frequency_tolerant else synchronize(y, wf))
     if corr < MIN_CORRELATION:
         return None
     windows = _symbol_windows(wf, offset, y.size)

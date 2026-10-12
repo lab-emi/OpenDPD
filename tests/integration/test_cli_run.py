@@ -82,7 +82,7 @@ def test_result_metrics_come_from_the_registry_and_agree_with_the_training_log(w
     """The stored result re-scores the best checkpoint; under the legacy profile that reproduces the
     trainer's own TEST_* numbers, and every registered profile is stored next to it (S08)."""
     import csv
-    from opendpd.core.metrics import PROFILES
+    from opendpd.core.metric_profiles import PROFILES
     from opendpd.services.evaluation import available_profiles, evaluate_run
 
     run_dir = workspace.run_dir(pa_run.run_id)
@@ -100,7 +100,7 @@ def test_result_metrics_come_from_the_registry_and_agree_with_the_training_log(w
     assert result.selected_epoch == int(min(history, key=lambda row: float(row["VAL_NMSE"]))["EPOCH"])
 
     # every registered profile is stored; the waveform profile (S15) has no binding on the built-in data and says so
-    assert available_profiles(workspace, pa_run.run_id) == ["legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-v1", "opendpd-spectral-v2"]
+    assert available_profiles(workspace, pa_run.run_id) == ["legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-auto-v2", "ofdm-lte20-evm-v1", "ofdm-lte20-evm-v2", "opendpd-spectral-v2"]
     pending = load_result(workspace, pa_run.run_id, "ofdm-lte20-evm-v1")
     assert {m.status.value for m in pending.metrics} == {"missing_reference"}
     assert any("pending cross-validation" in lim for lim in pending.limitations)
@@ -110,7 +110,13 @@ def test_result_metrics_come_from_the_registry_and_agree_with_the_training_log(w
     assert all(m.status.value == "ok" for m in general.metrics), [m.reason for m in general.metrics]
     # pooled NMSE and the legacy mean-of-segment-dB NMSE are different numbers by design
     assert general.metric("NMSE").value != result.metric("NMSE").value
-    assert set(PROFILES) == {"opendpd-spectral-v2", "legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-v1"}
+    assert set(PROFILES) == {"opendpd-spectral-v2", "legacy-opendpd-v1", "general-spectral-v1", "ofdm-lte20-evm-v1",
+                             "ofdm-lte20-evm-v2", "ofdm-lte20-evm-auto-v2"}
+    # New validated profiles must still refuse a capture without a waveform binding.
+    for profile_id in ("ofdm-lte20-evm-v2", "ofdm-lte20-evm-auto-v2"):
+        unbound = load_result(workspace, pa_run.run_id, profile_id)
+        assert {m.status.value for m in unbound.metrics} == {"missing_reference"}
+        assert unbound.metric_profile_id == profile_id
 
     # re-evaluation from the checkpoint is deterministic on CPU and available from the CLI
     again = evaluate_run(workspace, pa_run.run_id, "general-spectral-v1")
@@ -678,7 +684,7 @@ def test_measured_result_reevaluates_from_the_stored_captures_and_renders_in_rep
     from opendpd.services.evaluation import available_profiles, evaluate_run
     from opendpd.services.reports import report_html, report_markdown
 
-    assert available_profiles(workspace, measured_run.run_id) == ["opendpd-spectral-v2", "general-spectral-v1", "legacy-opendpd-v1", "ofdm-lte20-evm-v1"]
+    assert available_profiles(workspace, measured_run.run_id) == ["opendpd-spectral-v2", "general-spectral-v1", "legacy-opendpd-v1", "ofdm-lte20-evm-auto-v2", "ofdm-lte20-evm-v1", "ofdm-lte20-evm-v2"]
     stored = load_result(workspace, measured_run.run_id, "general-spectral-v1")
     again = evaluate_run(workspace, measured_run.run_id, "general-spectral-v1")
     assert [m.value for m in again.metrics] == [m.value for m in stored.metrics]

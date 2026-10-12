@@ -153,13 +153,19 @@ def test_damaged_and_earlier_version_records_never_take_the_arena_api_down_or_se
 def test_hosted_arena_exposes_rankings_but_cannot_start_unbrokered_compute(tmp_path):
     from opendpd.web.app import create_web_app
     from opendpd.web.policy import WebConfig
+    from opendpd.web.runtime import DAY
     tunnel = "a" * 48 + ".internal"
+    # Ranking availability is independent of the live service's twice-daily
+    # admission pause. Expiry/drain behavior has dedicated controlled-clock tests.
     app = create_web_app(WebConfig(root=tmp_path / "public", origin="https://opendpd.com",
-                                  api_host="api.opendpd.com", tunnel_host=tunnel))
+                                  api_host="api.opendpd.com", tunnel_host=tunnel),
+                         now=lambda: DAY * 20000 + 3600)
     with TestClient(app, base_url="http://" + tunnel, client=("127.0.0.1", 10000)) as client:
         client.headers.update({"Origin": "https://opendpd.com", "X-Forwarded-Proto": "https",
                                "CF-Connecting-IP": "203.0.113.10"})
-        auth = client.post("/api/v1/web/sessions", json={}).json()
+        admitted = client.post("/api/v1/web/sessions", json={})
+        assert admitted.status_code == 201, admitted.text
+        auth = admitted.json()
         client.headers["Authorization"] = "Bearer " + auth["access_token"]
         catalog = client.get("/api/v1/arena")
         assert catalog.status_code == 200, catalog.text

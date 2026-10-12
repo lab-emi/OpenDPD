@@ -1,0 +1,2 @@
+# Arena fingerprints Python source bytes; keep the frozen LF bytes on every OS.
+*.py text eol=lf

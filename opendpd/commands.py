@@ -250,7 +250,7 @@ def _print_result(result, file=None) -> None:
 
 
 def cmd_profiles(args) -> int:
-    from opendpd.core.metrics import list_profiles
+    from opendpd.core.metric_profiles import list_profiles
 
     profiles = list_profiles()
     if args.json:
@@ -427,7 +427,7 @@ def cmd_evaluate(args) -> int:
 
     import contextlib
 
-    from opendpd.core.metrics import get_profile
+    from opendpd.core.metric_profiles import get_profile
     from opendpd.schemas import ProfileValidation
 
     try:

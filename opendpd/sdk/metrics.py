@@ -59,8 +59,8 @@ def evaluate(y, *, profile: str = LTE_PROFILE, sample_rate_hz: float, nperseg: O
 
     ``nperseg`` is the Welch segment length of every spectral metric and has no default. The LTE profile needs the
     seed and length of the waveform that was played; without them its EVM is reported as ``missing_reference``."""
-    from opendpd.core.metrics import evaluate as run_profile
-    from opendpd.core.metrics.registry import get_profile
+    from opendpd.core.metric_profiles import evaluate as run_profile
+    from opendpd.core.metric_profiles import get_profile
     from opendpd.schemas import SignalSpec
     from opendpd.schemas.waveform import WaveformBinding, WaveformSpec
 
