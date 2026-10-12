@@ -90,4 +90,6 @@ pip cannot detect your GPU driver to choose a custom PyTorch index. For accelera
 
 --8<-- "README.md:source-install"
 
+For Windows source upgrades, a fresh clone applies the versioned LF rules for Python files, keeping Arena's source integrity checks consistent. The published wheel also preserves these source bytes.
+
 After source changes, rerun the editable install and frontend build. See [Contributing](https://github.com/lab-emi/OpenDPD/blob/main/CONTRIBUTING.md) and the [platform support matrix](releases/support-matrix.md).
