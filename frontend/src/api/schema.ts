@@ -7168,7 +7168,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.3.1
+             * @default 2.4.0
              */
             version: string;
         };

@@ -1,6 +1,6 @@
 # Installation
 
-[Use the hosted Studio](https://opendpd.com/studio/) without installation, or run OpenDPD **2.3.1** locally. Python 3.12 is the recommended starting point; the compute suite also covers 3.10–3.13.
+[Use the hosted Studio](https://opendpd.com/studio/) without installation, or run OpenDPD **2.4.0** locally. Python 3.12 is the recommended starting point; the compute suite also covers 3.10–3.13.
 
 ## Install uv
 
@@ -26,7 +26,7 @@ These commands work on macOS, Linux and Windows; activation is unnecessary becau
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.3.1" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.4.0" --torch-backend=auto
 uv run --no-project --python .venv opendpd doctor
 uv run --no-project --python .venv opendpd gui
 ```
@@ -82,12 +82,14 @@ A browser-open failure is nonfatal: Studio continues serving its URL. The launch
 Standard pip installs all Python dependencies too:
 
 ```sh
-python -m pip install "opendpd==2.3.1"
+python -m pip install "opendpd==2.4.0"
 opendpd gui
 ```
 
 pip cannot detect your GPU driver to choose a custom PyTorch index. For acceleration, prefer the uv command above, or follow the official PyTorch selector before installing OpenDPD. Running from a source checkout also needs Git and Node.js 22.22+:
 
 --8<-- "README.md:source-install"
+
+For Windows source upgrades, a fresh clone applies the versioned LF rules for Python files, keeping Arena's source integrity checks consistent. The published wheel also preserves these source bytes.
 
 After source changes, rerun the editable install and frontend build. See [Contributing](https://github.com/lab-emi/OpenDPD/blob/main/CONTRIBUTING.md) and the [platform support matrix](releases/support-matrix.md).

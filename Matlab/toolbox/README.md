@@ -1,15 +1,17 @@
-# OpenDPD Toolbox for MATLAB — development preview
+# OpenDPD Toolbox for MATLAB
 
 Run PA and DPD experiments from MATLAB using the same workspace, queue and
 results as OpenDPD Studio. Training runs in Python/PyTorch. MATLAB receives
 ordinary structs and complex signal vectors.
 
-This is the toolbox for the unreleased OpenDPD **2.4.0** (SDK protocol **1**). The
-toolbox version follows the OpenDPD release it ships with. Install the Python code from
-this checkout: the released 2.3 package does not contain this SDK. The Python package
-metadata is still the 2.3 baseline until the release is cut.
+This toolbox ships with OpenDPD **2.4.0** (SDK protocol **1**). Install the matching
+Python package with `python -m pip install "opendpd==2.4.0"` and download
+`OpenDPD-2.4.0.mltbx` from the
+[GitHub release](https://github.com/lab-emi/OpenDPD/releases/tag/v2.4.0).
+The Python wheel includes Studio; a packaged installation does not need Node.js.
+The toolbox is distributed through GitHub, not MATLAB Add-On Explorer or File Exchange.
 
-## What works in this preview
+## Features
 
 - Open OpenDPD Studio as the toolbox GUI from `opendpd.studio()` or Apps.
 - Use Studio's **MATLINK** tab to select MATLAB signals and import a paired capture.
@@ -98,8 +100,8 @@ that generated pages are current and their local links resolve.
 
 ## Install from this checkout
 
-Start with desktop MATLAB R2024b or later and a compatible CPython environment.
-Python 3.11 is a candidate common to the planned MATLAB release matrix. Check
+Desktop MATLAB R2026a is verified; R2024b is a candidate minimum that has not
+yet been validated. Python 3.11 is used by the R2026a CI jobs. Check
 the [MathWorks Python compatibility table](https://www.mathworks.com/support/requirements/python-compatibility.html)
 for your release. Base MATLAB is sufficient for the synthetic example;
 the Python environment supplies PyTorch and OpenDPD's dependencies.
@@ -148,7 +150,7 @@ npm --prefix frontend run build
 ```
 
 The SDK itself works without built frontend assets. A workspace service stays
-on loopback; this preview does not connect to a remote server or MATLAB Online.
+on loopback; this version does not connect to a remote server or MATLAB Online.
 
 ## Run the synthetic example
 

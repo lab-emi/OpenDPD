@@ -52,7 +52,7 @@ verification rule and the approval record are in
 
 ## 4. Check it in MATLAB
 
-The MATLAB toolbox of OpenDPD 2.4 (unreleased) reads the package as data and runs the specification's GRU in plain MATLAB
+The MATLAB toolbox of OpenDPD 2.4.0 reads the package as data and runs the specification's GRU in plain MATLAB
 integers, held exactly in double precision. It is a second implementation to compare with the C99 reference, and a source
 of expected values for your own (HLS, RTL, firmware). It needs no Python, no compiler and no Fixed-Point Designer:
 

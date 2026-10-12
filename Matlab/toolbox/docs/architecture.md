@@ -42,7 +42,7 @@ embed third-party web applications using external URLs. See the
 MATLAB's public `web(url, '-browser')` API opens Studio in the system browser.
 Using this supported launch path lets the toolbox reuse the complete existing
 web application. See the [web reference](https://www.mathworks.com/help/matlab/ref/web.html).
-The preview does not try to place a remote URL inside a MATLAB iframe.
+The toolbox does not try to place a remote URL inside a MATLAB iframe.
 
 | Option | Fit for OpenDPD |
 | --- | --- |
@@ -77,7 +77,7 @@ plot arrays are transferred as a MATLAB struct. Generated paired datasets are
 loaded as full continuous I/Q arrays after verifying their recorded hashes.
 All batch captures are included, with per-capture metadata.
 **Send when ready** waits for successful completion while the session is
-connected. This preview keeps waveform inference and export in the script API;
+connected. This version keeps waveform inference and export in the script API;
 it does not transfer model weights into native MATLAB execution.
 
 ## Service and data boundaries
@@ -86,7 +86,7 @@ The SDK reuses Studio's launcher, workspace lock, sessions, CSRF protection,
 queue and workers. Both clients attach to one local workspace service.
 Opening Studio exchanges a private bootstrap token for a session cookie and
 redirects to a supported local route. Same-origin, CSRF and anti-frame
-protections remain in place. This preview serves loopback only.
+protections remain in place. This version serves loopback only.
 
 The allowed browser requests cover refreshing variable metadata, generating
 paired-dataset delivery, importing a selected pair, receiving a saved result bundle, and opening

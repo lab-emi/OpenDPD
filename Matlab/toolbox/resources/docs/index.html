@@ -13,7 +13,7 @@
 <a href="architecture.html">Integration design</a>
 <a href="troubleshooting.html">Troubleshooting</a></nav>
 <main id="content"><h1 id="opendpd-for-matlab">OpenDPD for MATLAB</h1>
-<p><strong>Toolbox 2.4.0 (unreleased) · OpenDPD 2.4 development · SDK protocol 1</strong></p>
+<p><strong>Toolbox 2.4.0 · OpenDPD 2.4.0 · SDK protocol 1</strong></p>
 <p>Use OpenDPD Studio as the toolbox GUI. Prepare signals in MATLAB, import them
 from Studio's <strong>MATLINK</strong> tab, train with the existing Studio workflow, and send
 saved reports back to MATLAB by selecting an experiment. Both applications
@@ -46,21 +46,18 @@ for your MATLAB release.</p>
 opendpd.studio(&quot;/path/to/experiment-workspace&quot;, ...
     PythonExecutable=&quot;/path/to/python&quot;);
 </code></pre>
-<p>The package includes MATLAB source, this offline
-guide, tests, examples and the Apache-2.0 license. Install Python dependencies
-separately. The released OpenDPD 2.3 package does not contain this SDK: install
-Python code from the <strong>2.4 development checkout</strong>. Its package version still
-reflects the 2.3 baseline until the coordinated prerelease.</p>
-<p>From the checkout root, create an environment, install dependencies and build
-Studio. These are terminal commands; choose a Python version supported by your
-MATLAB release (3.11 is a candidate for the planned release matrix).</p>
+<p>Download <code>OpenDPD-2.4.0.mltbx</code> from the
+<a href="https://github.com/lab-emi/OpenDPD/releases/tag/v2.4.0">GitHub release</a>.
+The package includes MATLAB source, this offline guide, tests, examples and the
+Apache-2.0 license. Install the matching Python package separately. Choose a
+Python version supported by your MATLAB release; Python 3.11 is used in the
+R2026a CI jobs. These commands run in a terminal:</p>
 <pre><code class="language-bash">python3.11 -m venv .venv
-.venv/bin/python -m pip install -e &quot;.[dev]&quot;
-npm --prefix frontend ci
-npm --prefix frontend run build
+.venv/bin/python -m pip install &quot;opendpd==2.4.0&quot;
 </code></pre>
 <p>On Windows, use <code>py -3.11 -m venv .venv</code> and
-<code>.venv\Scripts\python.exe -m pip install -e ".[dev]"</code>.</p>
+<code>.venv\Scripts\python.exe -m pip install "opendpd==2.4.0"</code>. The wheel includes
+Studio, so no Node.js or frontend build is needed for a packaged installation.</p>
 <p>For development without installing the toolbox package:</p>
 <pre><code class="language-matlab">repo = &quot;/absolute/path/to/OpenDPD&quot;;
 addpath(fullfile(repo, &quot;Matlab&quot;, &quot;toolbox&quot;));
@@ -97,10 +94,11 @@ delivery. The workspace service and training jobs continue. Reconnect and send
 a completed report again when ready.</p>
 <p>Training uses the existing OpenDPD model registry. MATLAB <code>apply</code> supports
 unquantized <strong><code>gru</code>, <code>tres_gru</code>, <code>gmp</code>, <code>mp_ls</code> and <code>gmp_ls</code> on CPU</strong>, using offline
-segments by default or one continuous state for <code>gru</code> and <code>gmp</code>. MATLINK
+segments for <code>tres_gru</code>, <code>mp_ls</code> and <code>gmp_ls</code>, and one continuous state by
+default for <code>gru</code> and <code>gmp</code> (<code>Execution="auto"</code>). MATLINK
 returns saved report structs; use the script API for waveform inference and
 export. DPD reports evaluate a learned PA surrogate. Hardware performance
-requires a separate measured capture and evaluation. This preview runs on the
+requires a separate measured capture and evaluation. This version runs on the
 local desktop; MATLAB Online and remote services are outside its current scope. Simulink
 is supported only through the standalone classes that <code>opendpd.generateCode</code> writes from a
 model package.</p></main>

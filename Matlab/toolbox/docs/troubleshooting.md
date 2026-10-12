@@ -9,13 +9,13 @@ check for older installations. Only the toolbox root needs to be on the path.
 ## Python or OpenDPD cannot load
 
 Run `pyenv` and `opendpd.doctor()`. Select a Python executable supported by your
-MATLAB release and install dependencies into that exact environment. A regular
-OpenDPD 2.3 release does not contain the preview SDK; select the 2.4 checkout via
-`SourceDirectory` or install it into the environment:
+MATLAB release and install the matching package into that exact environment:
+run `python -m pip install --upgrade "opendpd==2.4.0"` in its terminal. Then
+select that interpreter in MATLAB (a packaged installation needs no source checkout):
 
 ```matlab
 opendpd.studio("/path/to/workspace", ...
-    PythonExecutable="/path/to/python", SourceDirectory="/path/to/OpenDPD");
+    PythonExecutable="/path/to/python");
 ```
 
 If MATLAB has already loaded a different interpreter or checkout, finish work
@@ -25,7 +25,9 @@ for execution-mode and release-specific behavior.
 
 ## Studio does not open or MATLINK is missing
 
-Build the frontend from the selected development checkout:
+The 2.4.0 Python wheel includes Studio. Confirm `opendpd.doctor()` points to
+the environment where `opendpd==2.4.0` is installed. For a source checkout
+selected with `SourceDirectory`, build its frontend from the repository root:
 
 ```bash
 npm --prefix frontend ci
@@ -33,7 +35,7 @@ npm --prefix frontend run build
 ```
 
 Then run `opendpd.studio(workspace)` again. If a workspace service was started
-before the update, finish its jobs and restart it with the current checkout.
+before the update, finish its jobs and restart it with the updated environment or checkout.
 The toolbox does not silently restart an existing service. Inspect the service
 log and `opendpd.doctor()` if readiness fails. Keep `.sdk-service-*.log` files
 local because they may contain a private bootstrap URL.

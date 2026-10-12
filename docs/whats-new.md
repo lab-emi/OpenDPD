@@ -1,5 +1,24 @@
 # What's new
 
+## 2.4.0: MATLAB toolbox and versioned LTE validation
+
+Train PA and DPD models through MATLINK or the MATLAB script API, use `fit` to
+train a pair from a capture, and export portable packages that run in plain
+MATLAB. Generate standalone classes for Simulink and MATLAB Coder, or replay
+fixed-point packages against their golden vectors. The Python SDK shares the
+same workspace and queue as Studio.
+
+Two new LTE EVM/ACLR profiles use explicitly matched spectral settings and
+frequency-tolerant timing acquisition. All 115 registered digital comparisons
+pass against MATLAB at the original tolerances. The original v1 profile and
+its failed validation record remain unchanged; this is not a standards
+conformance or hardware measurement claim. Existing Arena results retain their
+frozen source identity.
+
+[MATLAB toolbox](tutorials/matlab-toolbox.md) ·
+[LTE v2 evidence](performance/matlab-parity-v2.md) ·
+[2.4.0 release notes](releases/2.4.0.md)
+
 ## 2.3.1: Select individual local GPUs
 
 PA and DPD Training and Testing now list each detected NVIDIA GPU by index and
