@@ -15,6 +15,7 @@ from opendpd.services.workspace import write_json_atomic
 from opendpd.web.app import create_web_app
 from opendpd.web.gpu_archive import pack
 from opendpd.web.policy import WebConfig
+from opendpd.web.runtime import DAY
 from tests.unit.test_arena_scoring import adjusted, cases
 
 pytestmark = pytest.mark.integration
@@ -35,7 +36,11 @@ def hosted(tmp_path, monkeypatch):
     # Every quota is the production default: a parameter sweep has to fit the ordinary budgets.
     config = WebConfig(root=tmp_path / "web", origin="https://opendpd.com", api_host="api.opendpd.com",
         tunnel_host=tunnel, gpu_token="a" * 64, arena_submissions=True)
-    app = create_web_app(config)
+    # Keep admission and GPU absolute-expiry clocks consistent and clear of
+    # the real service's 11:55/23:55 UTC admission pause; waits stay monotonic.
+    clock = lambda: DAY * 20000 + 3600
+    monkeypatch.setattr(time, "time", clock)
+    app = create_web_app(config, now=clock)
     with TestClient(app, base_url="http://" + tunnel, client=("127.0.0.1", 10000)) as client:
         client.headers.update({"Origin": "https://opendpd.com", "X-Forwarded-Proto": "https",
                                "CF-Connecting-IP": "203.0.113.10"})
