@@ -267,6 +267,7 @@ timer. A failed cleanup disables session admission and makes health return
 503. Stop the connector to take the public API offline; leave the guest reset
 timer running so data is still purged. Source updates require restarting the
 guest API, which intentionally invalidates all existing sessions.
+A release that adds public routes (2.4.1 added the two [NR test model](#nr-test-models-in-241) routes) must reach the API before the site: redeploy the API first, then set `STUDIO_REF`.
 
 ### Host reboot recovery
 
@@ -450,3 +451,29 @@ Before polling for jobs, the agent runs `python -m opendpd.web.gpu_probe` in the
 Export GET routes share the heavy-work budget. JSON bodies are bounded and read before reserving compute/storage; CSV uploads retain a timeout and one heavy request per network. Each network has at most six in-flight requests and one heavy request. Export files are cached and workspace locks do not serialize different tenants. The 65,536-entry session-budget table refuses only new networks when full; IPv6 addresses share a /48 budget. A distributed attacker can still consume finite service capacity; edge rate limiting remains necessary.
 
 GPU inputs accept only data/artifact layouts. Container entry points use Python safe-path mode from `/`; live reads and final output walks anchor every untrusted path component to directory descriptors. The container is removed before output collection. The host agent remains rootful, so this boundary still requires operational defense in depth.
+
+## NR test models in 2.4.1
+
+The 2.4.1 Signal Generator opens on the NR FR1 standard test models of 3GPP TS 38.141-1 clause 4.9.2. Two literal allowlist entries make them reachable in the public Studio:
+
+| Route | Purpose | Cost |
+|---|---|---|
+| `GET /signal-generator/nr-test-models` | The catalogue: models, parameter ranges, resource-block tables, fixed parameters, defaults | Static for a server version, 42,371 bytes (about 42 KB) |
+| `POST /signal-generator/nr-test-models/resolve` | A recipe in, the complete generator configuration and its summary out | A pure function of the request: 2.9 KB of JSON for one carrier, 14.7 KB for sixteen |
+
+`resolve` reads and writes no workspace data, so `policy.STATELESS_POSTS` exempts it from what other generator POSTs need: it sets no mutation flag, so it also runs while a workspace change is in progress, and it reserves no storage and takes no shared expensive-request slot. The web interface calls it 0.4 seconds after the last edit, so it stays inside every other boundary: the allowlist, the exact Origin, a valid session, the 120 requests per minute per session, 3 concurrent requests per session and 6 per network, a JSON-only body of at most 64 KiB with the ten-second receive deadline, and a mutation rule (`nr-test-model`) that allows 120 requests per minute per network. The rule validates the body against `NrTestModelConfig` before the recipe is resolved and answers 422 `invalid_request` with the field and message of every violation (for example that 5 MHz is not defined for 60 kHz), 429 `rate_limited` beyond the rate. The catalogue GET is not a heavy request.
+
+Generating a test-model signal uses the ordinary `POST /signal-generator/batches` and `/signals` routes with their existing limits: 16 configurations and 4,000,000 samples per batch, 1,000,000 per signal, the per-network `signal-generator` budget (12 batch and 24 single-signal requests per minute, counted together), one shared expensive-request slot and the workspace mutation flag. The server re-derives the structural fields from the recipe, so a stale or hand-edited configuration is a 422 that asks for the recipe to be edited.
+
+A test-model capture can be large because the standard fixes its duration. Measured with the public test client on 2.4.1 (the 10 ms standard duration of a 100 MHz carrier at 30 kHz, 122.88 MS/s, 983,040 samples):
+
+| What is stored | Size |
+|---|---|
+| After generation (7.9 MB of I/Q samples, 1.2 MB manifest with the analysis curves, provenance) | 9.0 MB |
+| CSV export (`input.csv`, created on first request and kept) | 25.5 MB |
+| ZIP archive (`download`, created on first request and kept; it contains the CSV again) | 18.5 MB |
+| Generation, CSV and archive together | 53 MB of the 256 MiB (268 MB) temporary workspace |
+
+The admission estimate is `100 B x samples + 2 MB` per configuration, 100.3 MB for this capture, because it also covers the exports, and it is checked together with the bytes already stored. Two such captures in one request pass while the workspace holds less than 67.8 MB; three (300.9 MB) are refused with 413 `workspace_limit` before anything is generated. Requested one at a time and never exported, 19 distinct full-length captures (172.0 MB) fit before the 20th is refused. Shorten the capture (the recipe's subframes) or lower the oversampling to store more. Resolving takes milliseconds (5 ms for one 100 MHz carrier, 9 ms for sixteen 10 MHz carriers); generating a full-length capture took 0.17 s for one 100 MHz carrier, 0.35 s for four and 1.1 s for sixteen carriers of 10 MHz at 15 kHz, each storing 9 to 9.3 MB, with a peak process size of 0.4 GB for the whole measurement.
+
+Deploy the API before the site. An API of 2.4.0 answers both routes with 403 `feature_unavailable`, even before a session exists, and the 2.4.1 web build treats a refused catalogue (403, 404 or any other failure, not retried) as "no test models available": it opens on the generic preset matrix with `nr-20` selected, as 2.4.0 did. Redeploy the guest API as described under [Deployment](#deployment), then set `STUDIO_REF` of `lab-emi/opendpd-site`; the site built first only shows the matrix until the API serves the new routes. An older site on a newer API needs nothing: configurations without a recipe keep their identifiers, manifests and dataset provenance byte for byte.

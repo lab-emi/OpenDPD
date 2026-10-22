@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { RunView } from '@/api/types'
+import type { PAInputConfig } from '@/api/signalGenerator'
+import { fixtureCatalog, fixtureResolve } from '@/test/nrTestModelFixtures'
 import { mockApi, renderWithProviders } from '@/test/utils'
+import { normalizeRecipe } from '@/utils/nrTestModel'
 import { StudioWorkflowProvider, useRunWorkflow, useStudioWorkflow } from './StudioWorkflow'
 
 test('saved run navigation restores lineage and inspecting its PA keeps the linked DPD', async () => {
@@ -27,4 +30,21 @@ test('saved run navigation restores lineage and inspecting its PA keeps the link
     await userEvent.click(screen.getByRole('button', { name: 'Inspect PA' }))
     expect(JSON.parse(screen.getByTestId('lineage').textContent!)).toMatchObject({ paRunId: 'saved-pa', dpdRunId: 'saved-dpd' })
   } finally { localStorage.removeItem('opendpd-workflow-v1:lineage-ui-test') }
+})
+
+test('the input of a generated test model is named by its recipe label, a matrix preset by its id', async () => {
+  const tm = fixtureResolve({ ...normalizeRecipe(fixtureCatalog().default_recipe), model: 'NR-FR1-TM3.1a' }).config as PAInputConfig
+  mockApi({ 'GET /api/v1/system/capabilities': () => ({ workspace: 'input-name-test' }) })
+  function Selector() {
+    const workflow = useStudioWorkflow()
+    return <>
+      <output data-testid="name">{workflow.state.inputName}</output>
+      <button onClick={() => workflow.selectInputs(['sg-1', 'sg-2'], [tm, { ...tm, nr_test_model: null, preset_id: 'nr-20' }] as PAInputConfig[])}>Select</button>
+    </>
+  }
+  try {
+    renderWithProviders(<StudioWorkflowProvider><Selector /></StudioWorkflowProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Select' }))
+    expect(screen.getByTestId('name')).toHaveTextContent('TM3.1a · 20 MHz · 30 kHz · FDD, nr-20')
+  } finally { localStorage.removeItem('opendpd-workflow-v1:input-name-test') }
 })

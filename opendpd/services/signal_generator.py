@@ -25,6 +25,54 @@ from opendpd.services.workspace import Workspace, WorkspaceError, read_json, sha
 from opendpd.services.workspace import workspace_lock
 
 
+def _generator_source_hash() -> str:
+    from opendpd.core.waveforms import generator
+    return hashlib.sha256(b"".join((Path(generator.__file__).parent / name).read_bytes()
+        for name in ("generator.py", "modulation.py", "generator_presets.py"))).hexdigest()
+
+
+def _test_model_source_hash() -> str:
+    from opendpd.core.waveforms.nr_tm import SOURCE_FILES
+    return hashlib.sha256(b"".join(path.read_bytes() for path in SOURCE_FILES)).hexdigest()
+
+
+def signal_identifier(config: GeneratorConfig, source_hash: str, test_model_hash: str | None = None) -> str:
+    """The content address of a generated signal.
+
+    Configurations without a test model keep the formula of every earlier release (the serialised form omits the unused
+    recipe), so existing signal ids, Virtual PA ids and dataset provenance do not change. A test-model configuration also
+    hashes the source of the test-model package.
+    """
+    serialized = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    material = source_hash + np.__version__ + scipy.__version__ + serialized
+    if config.nr_test_model is not None:
+        material += test_model_hash or _test_model_source_hash()
+    return "sg-" + hashlib.sha256(material.encode()).hexdigest()
+
+
+def signal_coverage(config: GeneratorConfig) -> str:
+    return "standard_test_model" if config.nr_test_model is not None else coverage(config)
+
+
+def precheck(config: GeneratorConfig) -> None:
+    """Fail before any signal is generated if the configuration cannot be synthesised (ValueError)."""
+    if config.nr_test_model is not None:
+        from opendpd.core.waveforms.nr_tm import derive
+        derive(config.nr_test_model)         # the recipe resolves (the GeneratorConfig validator has matched the derived fields)
+    elif config.waveform == "ofdm":
+        from opendpd.core.waveforms.generator import allocation
+        allocation(config)
+
+
+def display_label(config, fallback: str | None = None) -> str:
+    """The name shown for a signal: the recipe for a standard test model (its preset_id is an identifier), otherwise ``fallback`` or the preset id."""
+    recipe = getattr(config, "nr_test_model", None)
+    if recipe is not None:
+        from opendpd.core.waveforms.nr_tm import recipe_label
+        return recipe_label(recipe)
+    return config.preset_id if fallback is None else fallback
+
+
 def input_summary(result):
     from opendpd.schemas.virtual_pa import PAInputDataset
     base = f"/api/v1/signal-generator/signals/{result.signal_id}"
@@ -82,7 +130,7 @@ def read_signal(ws, identifier) -> GeneratedSignal:
     target = directory(ws, identifier)
     if not (target / "manifest.json").is_file() or (target / "manifest.json").is_symlink():
         raise WorkspaceError("PA input not found. Generate or import the waveform first.")
-    result = GeneratedSignal.model_validate(read_json(target / "manifest.json"))
+    result = GeneratedSignal.from_stored(read_json(target / "manifest.json"))
     source = target / "iq.npy"
     if source.is_symlink() or not source.is_file() or sha256_file(source) != result.iq_sha256:
         raise WorkspaceError("PA input IQ bytes have changed. Generate or import the waveform again.")
@@ -90,30 +138,46 @@ def read_signal(ws, identifier) -> GeneratedSignal:
 
 
 def generate(ws: Workspace, config: GeneratorConfig) -> GeneratedSignal:
-    from opendpd.core.waveforms import generator
-    source_hash = hashlib.sha256(b"".join((Path(generator.__file__).parent / name).read_bytes()
-        for name in ("generator.py", "modulation.py", "generator_presets.py"))).hexdigest()
-    serialized = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
-    identifier = "sg-" + hashlib.sha256((source_hash + np.__version__ + scipy.__version__ + serialized).encode()).hexdigest()
+    source_hash = _generator_source_hash()
+    test_model_hash = _test_model_source_hash() if config.nr_test_model is not None else None
+    identifier = signal_identifier(config, source_hash, test_model_hash)
     with workspace_lock(ws):
         target = directory(ws, identifier)
         if (target / "manifest.json").is_file():
             (target / ".removed").unlink(missing_ok=True)
             return read_signal(ws, identifier)
         try:
-            iq, analysis = synthesize(config)
-        except ValueError as exc:
+            if config.nr_test_model is not None:
+                from opendpd.core.waveforms.nr_tm import synthesize_nr_tm
+                iq, analysis = synthesize_nr_tm(config)
+            else:
+                iq, analysis = synthesize(config)
+        except (ValueError, NotImplementedError) as exc:
             raise WorkspaceError(str(exc)) from exc
         target.mkdir(parents=True, exist_ok=True)
         np.save(target / "iq.npy", np.column_stack((iq.real, iq.imag)), allow_pickle=False)
         result = GeneratedSignal(signal_id=identifier, config=config, iq_sha256=sha256_file(target / "iq.npy"),
-            coverage=coverage(config), analysis=analysis,
+            coverage=signal_coverage(config), analysis=analysis,
             download_url=f"/api/v1/signal-generator/signals/{identifier}/download")
         write_json_atomic(target / "manifest.json", result)
-        write_json_atomic(target / "provenance.json", {"generator_source_sha256": source_hash,
+        provenance = {"generator_source_sha256": source_hash,
             "numpy_version": np.__version__, "scipy_version": scipy.__version__, "physical_measurement": False, "sample_format": "float32 [I,Q]",
-            "coverage": result.coverage, "full_protocol_frames": False, "config": config.model_dump(mode="json")})
+            "coverage": result.coverage, "full_protocol_frames": False, "config": config.model_dump(mode="json")}
+        if test_model_hash is not None:
+            provenance.update({"nr_test_model_source_sha256": test_model_hash,
+                "nr_test_model": config.nr_test_model.model_dump(mode="json"), "nr_test_model_definition":
+                "3GPP TS 38.141-1 V18.14.0 clause 4.9.2 (baseband implementation, not a conformance certification)"})
+        write_json_atomic(target / "provenance.json", provenance)
         return result
+
+
+def _test_model_heading(config) -> str:
+    recipe = getattr(config, "nr_test_model", None)
+    if recipe is None:
+        return ""
+    carriers = ", ".join(f"{c.bandwidth_mhz} MHz at {c.scs_khz} kHz" for c in recipe.carriers)
+    return (f"3GPP TS 38.141-1 standard test model {recipe.model} ({recipe.duplex.upper()}; {len(recipe.carriers)} carrier"
+            f"{'s' if len(recipe.carriers) != 1 else ''}: {carriers}). The recipe is stored in config.json under nr_test_model.\n\n")
 
 
 def export_signal(ws, identifier):
@@ -132,7 +196,8 @@ def export_signal(ws, identifier):
             archive.write(target / "provenance.json", "provenance.json")
             archive.writestr("iq.csv", csv.getvalue())
             archive.writestr("config.json", result.config.model_dump_json(indent=2))
-            archive.writestr("README.txt", result.origin.upper() + " complex-baseband stimulus\n\n" + "\n".join(result.analysis.notes)
+            archive.writestr("README.txt", result.origin.upper() + " complex-baseband stimulus\n\n" + _test_model_heading(result.config)
+                + "\n".join(result.analysis.notes)
                 + f"\n\nSamples: {result.analysis.sample_count}\nSample rate: {result.config.sample_rate_hz} Hz\n"
                 + f"RF carrier metadata: {result.config.carrier_frequency_hz} Hz\nIQ NPY SHA256: {result.iq_sha256}\n"
                 + ("\nReimport iq.csv with the sampling metadata in config.json; uploaded samples cannot be regenerated from a generator recipe.\n" if result.origin == "uploaded" else
@@ -185,8 +250,12 @@ def create_dataset(ws, identifier, request: GeneratorDatasetRequest) -> Generato
                 # OFDMA users are not separate adjacent RF carriers in the metric profile.
                 sub_channel_bandwidth_hz=config.bandwidth_hz, n_sub_ch=1,
                 nperseg=min(4096, max(512, config.fft_size*config.oversampling)),
-                modulation=f"{config.waveform.upper()} synthetic stimulus", amplitude_units="normalized"),
-            notes="SYNTHETIC stimulus and illustrative nonlinear memory PA. No physical capture, calibrated RF power or standard conformance claim. " + " ".join(result.analysis.notes))
+                modulation=(f"{config.nr_test_model.model} test model, OFDM synthetic stimulus" if config.nr_test_model is not None
+                            else f"{config.waveform.upper()} synthetic stimulus"), amplitude_units="normalized"),
+            notes=("SYNTHETIC stimulus and illustrative nonlinear memory PA. No physical capture, calibrated RF power or standard conformance claim. "
+                   if config.nr_test_model is None else
+                   "SYNTHETIC baseband implementation of the 3GPP TS 38.141-1 test model definition and illustrative nonlinear memory PA. "
+                   "No physical capture, calibrated RF power or conformance certification claim. ") + " ".join(result.analysis.notes))
         manifest = manifest.model_copy(update={"simulation": simulation,
             "source": manifest.source.model_copy(update={"original_path": None})})
         ws.save_dataset(manifest)
@@ -224,19 +293,17 @@ def archive_input(ws, identifier, *, restore=False):
 
 
 def generate_batch(ws, request):
-    from opendpd.core.waveforms.generator import allocation
     from opendpd.core.waveforms.dataset_names import dataset_name
     from opendpd.schemas.signal_analyzer import AnalyzerSource, AnalyzerSourceInfo
     from opendpd.services.signal_datasets import save_dataset
     for config in request.configs:
-        if config.waveform == "ofdm":
-            try:
-                allocation(config)
-            except ValueError as exc:
-                raise WorkspaceError(str(exc)) from exc
+        try:
+            precheck(config)
+        except ValueError as exc:
+            raise WorkspaceError(str(exc)) from exc
     signals = [generate(ws, config) for config in request.configs]
     members = [AnalyzerSourceInfo(source=AnalyzerSource(kind="generated", source_id=s.signal_id),
-        label=s.config.preset_id, sample_count=s.analysis.sample_count, sample_rate_hz=s.config.sample_rate_hz,
+        label=display_label(s.config), sample_count=s.analysis.sample_count, sample_rate_hz=s.config.sample_rate_hz,
         bandwidth_hz=s.config.bandwidth_hz, origin="synthetic") for s in signals]
     dataset = save_dataset(ws, request.dataset_name or dataset_name(request.configs), "pa_input", members)
     return [input_summary(s).model_copy(update={"dataset_id": dataset.dataset_id, "dataset_name": dataset.name}) for s in signals]

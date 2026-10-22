@@ -1,0 +1,233 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "config": {
+      "bandwidth_hz": 38190000.0,
+      "burst_off_samples": 1024,
+      "burst_on_samples": null,
+      "burst_ramp_samples": 32,
+      "carrier_frequency_hz": 3500000000.0,
+      "channel_gap_bins": 48,
+      "channel_modulations": [
+        256,
+        256
+      ],
+      "channel_power_db": [
+        0.0,
+        0.0
+      ],
+      "channel_subcarriers": [
+        612,
+        612
+      ],
+      "clip_db": null,
+      "cp_mode": "nr_normal",
+      "cp_samples": 16,
+      "dc_i": 0.0,
+      "dc_null": false,
+      "dc_q": 0.0,
+      "dft_spreading": false,
+      "duration_ms": 1.0,
+      "fft_size": 2048,
+      "filter_enabled": false,
+      "frequency_offset_hz": 0.0,
+      "fsk_deviation_hz": 1000000.0,
+      "gaussian_bt": 0.5,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "length_mode": "samples",
+      "modulation_order": 64,
+      "multitone_phase": "random",
+      "n_samples": 614400,
+      "nr_test_model": {
+        "carriers": [
+          {
+            "bandwidth_mhz": 20,
+            "gap_before_mhz": 0.0,
+            "n_cell_id": null,
+            "scs_khz": 30
+          },
+          {
+            "bandwidth_mhz": 20,
+            "gap_before_mhz": 0.0,
+            "n_cell_id": null,
+            "scs_khz": 30
+          }
+        ],
+        "data_convention": "standard",
+        "duplex": "fdd",
+        "layers": 1,
+        "model": "NR-FR1-TM3.1a",
+        "nb_iot": null,
+        "output_port": 0,
+        "oversampling": null,
+        "pn_scope": "dl_symbols",
+        "subframes": null,
+        "version": "nr-test-model-v1"
+      },
+      "oversampling": 1,
+      "payload_bits": "00110101",
+      "payload_mode": "random",
+      "phase_noise_rms_deg": 0.0,
+      "phase_offset_deg": 0.0,
+      "pilot_boost_db": 0.0,
+      "pilot_indices": [],
+      "pilot_mode": "none",
+      "pilot_spacing": 16,
+      "preset_id": "nr-tm3p1a-fdd-30k-20m-c2-4a395b",
+      "psk_order": 8,
+      "rms": 0.2,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "sample_rate_hz": 61440000.0,
+      "samples_per_symbol": 8,
+      "seed": 42,
+      "shared_channel_settings": true,
+      "snr_db": null,
+      "tone_count": 8,
+      "tone_frequency_hz": 1000000.0,
+      "version": "signal-generator-v1",
+      "waveform": "ofdm"
+    },
+    "recipe": {
+      "carriers": [
+        {
+          "bandwidth_mhz": 20,
+          "gap_before_mhz": 0.0,
+          "n_cell_id": null,
+          "scs_khz": 30
+        },
+        {
+          "bandwidth_mhz": 20,
+          "gap_before_mhz": 0.0,
+          "n_cell_id": null,
+          "scs_khz": 30
+        }
+      ],
+      "data_convention": "standard",
+      "duplex": "fdd",
+      "layers": 1,
+      "model": "NR-FR1-TM3.1a",
+      "nb_iot": null,
+      "output_port": 0,
+      "oversampling": null,
+      "pn_scope": "dl_symbols",
+      "subframes": null,
+      "version": "nr-test-model-v1"
+    },
+    "summary": {
+      "aggregated_bandwidth_hz": 38160000.0,
+      "carriers": [
+        {
+          "bandwidth_mhz": 20,
+          "boosted_rbgs": [],
+          "center_offset_hz": -9885000.0,
+          "index": 0,
+          "n_cell_id": 1,
+          "n_fft": 2048,
+          "n_rbg": null,
+          "nrb": 51,
+          "occupied_bandwidth_hz": 18360000.0,
+          "rbg_size": null,
+          "scs_khz": 30,
+          "slots": 20,
+          "slots_per_frame": 20,
+          "subcarriers": 612,
+          "users": [
+            {
+              "evm_measured": true,
+              "level_db": 0.0,
+              "modulation": "256QAM",
+              "prbs": 48,
+              "rb_ranges": [
+                [
+                  3,
+                  50
+                ]
+              ],
+              "rnti": 0,
+              "role": "PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0",
+              "start_symbol": 0
+            },
+            {
+              "evm_measured": true,
+              "level_db": 0.0,
+              "modulation": "256QAM",
+              "prbs": 3,
+              "rb_ranges": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "rnti": 2,
+              "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)",
+              "start_symbol": 2
+            }
+          ]
+        },
+        {
+          "bandwidth_mhz": 20,
+          "boosted_rbgs": [],
+          "center_offset_hz": 9915000.0,
+          "index": 1,
+          "n_cell_id": 2,
+          "n_fft": 2048,
+          "n_rbg": null,
+          "nrb": 51,
+          "occupied_bandwidth_hz": 18360000.0,
+          "rbg_size": null,
+          "scs_khz": 30,
+          "slots": 20,
+          "slots_per_frame": 20,
+          "subcarriers": 612,
+          "users": [
+            {
+              "evm_measured": true,
+              "level_db": 0.0,
+              "modulation": "256QAM",
+              "prbs": 48,
+              "rb_ranges": [
+                [
+                  3,
+                  50
+                ]
+              ],
+              "rnti": 0,
+              "role": "PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0",
+              "start_symbol": 0
+            },
+            {
+              "evm_measured": true,
+              "level_db": 0.0,
+              "modulation": "256QAM",
+              "prbs": 3,
+              "rb_ranges": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "rnti": 2,
+              "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)",
+              "start_symbol": 2
+            }
+          ]
+        }
+      ],
+      "duration_ms": 10.0,
+      "model": "NR-FR1-TM3.1a",
+      "n_samples": 614400,
+      "native_sample_rate_hz": 61440000.0,
+      "nb_iot_rbs": null,
+      "oversampling": 1,
+      "sample_rate_hz": 61440000.0,
+      "standard_subframes": 10,
+      "subframes": 10,
+      "tdd_pattern": null,
+      "truncated": false,
+      "warnings": []
+    }
+  }
+}

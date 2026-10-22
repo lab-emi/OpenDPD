@@ -5,6 +5,7 @@ import asyncio
 from dataclasses import dataclass
 import re
 
+from opendpd.schemas.nr_test_model import NrTestModelConfig
 from opendpd.schemas.signal_generator import GeneratorConfig, GeneratorBatchRequest, ImportSignalRequest
 from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPADatasetRequest
 from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest, DatasetPublicationDraft
@@ -21,6 +22,8 @@ class MutationRule:
     rate_key: str
     per_minute: int
     estimate: str
+    # Report the validation messages instead of the generic hint (for forms whose rules the user must be able to read).
+    explain: bool = False
 
 
 MUTATIONS = (
@@ -29,6 +32,8 @@ MUTATIONS = (
 
     MutationRule(r"/signal-generator/import", ImportSignalRequest, "signal-import", 12, "signal_import"),
     MutationRule(r"/signal-generator/batches", GeneratorBatchRequest, "signal-generator", 12, "generator_batch"),
+    # Stores nothing (policy.STATELESS_POSTS): the rule only rate-limits and refuses an invalid recipe before any derivation.
+    MutationRule(r"/signal-generator/nr-test-models/resolve", NrTestModelConfig, "nr-test-model", 120, "none", explain=True),
     MutationRule(r"/pa-library/datasets", VirtualPADatasetRequest, "virtual-pa-dataset", 6, "pa_dataset"),
     MutationRule(r'/signal-analyzer/analyze', None, 'signal-analysis', 36, 'none'),
     MutationRule(r'/signal-generator/signals', GeneratorConfig, 'signal-generator', 24, 'generator'),
@@ -77,7 +82,10 @@ async def enforce_mutation_budget(manager, tenant, path, body):
         return
     try:
         payload = rule.model.model_validate(body) if rule.model else body
-    except ValueError:
+    except ValueError as exc:
+        if rule.explain and hasattr(exc, 'errors'):       # the same shape as the local application's validation error
+            reject(422, 'invalid_request', 'request validation failed', [
+                {'field': '.'.join(str(p) for p in e['loc']), 'message': e['msg']} for e in exc.errors()])
         reject(422, 'invalid_request', 'Check the signal parameters, sample count and required dataset metadata.')
     manager.rate_limit(rule.rate_key + ':' + tenant.ip_key, rule.per_minute)
     if rule.estimate == 'none':

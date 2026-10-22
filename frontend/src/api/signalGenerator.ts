@@ -2,7 +2,8 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import { api } from './client'
 import type { Schemas } from './types'
 
-export type GeneratorConfig = Required<Schemas['GeneratorConfig']>
+/** The server omits `nr_test_model` for configurations without a test model (and 2.4.0 never sent it): treat undefined and null alike. */
+export type GeneratorConfig = Required<Omit<Schemas['GeneratorConfig'], 'nr_test_model'>> & { nr_test_model?: Schemas['NrTestModelConfig'] | null }
 export type GeneratorPreset = Schemas['GeneratorPreset']
 export type GeneratedSignal = Schemas['GeneratedSignal']
 export type PAInputConfig = GeneratorConfig | Required<Schemas['ImportedSignalConfig']>

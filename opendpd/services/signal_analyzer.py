@@ -96,14 +96,15 @@ def admit_signal_upload(ws, path: Path, filename: str | None = None):
 
 def list_sources(ws):
     from opendpd.schemas.signal_generator import GeneratedSignal
+    from opendpd.services import signal_generator
     from opendpd.schemas.virtual_pa import VirtualPASimulation
     results = []
     for path in sorted((ws.root / "signals").glob("sg-*/manifest.json"))[:100]:
         if path.is_symlink() or path.parent.is_symlink() or (path.parent / ".removed").exists():
             continue
-        data = GeneratedSignal.model_validate(read_json(path))
+        data = GeneratedSignal.from_stored(read_json(path))
         results.append(AnalyzerSourceInfo(source=AnalyzerSource(kind="generated", source_id=data.signal_id),
-            label=data.config.preset_id + " · PA input", sample_count=data.analysis.sample_count,
+            label=signal_generator.display_label(data.config) + " · PA input", sample_count=data.analysis.sample_count,
             sample_rate_hz=data.config.sample_rate_hz, bandwidth_hz=data.config.bandwidth_hz, origin=data.origin))
     for path in sorted((ws.root / "signal_uploads").glob("sa-*/manifest.json"))[:16]:
         if not path.is_symlink() and not path.parent.is_symlink():
@@ -170,9 +171,9 @@ def list_datasets(ws):
 
 def _load(ws, source):
     if source.kind == "generated":
-        from opendpd.services.signal_generator import read_signal, directory
+        from opendpd.services.signal_generator import display_label, read_signal, directory
         data = read_signal(ws, source.source_id)
-        info = AnalyzerSourceInfo(source=source, label=data.config.preset_id + " · PA input",
+        info = AnalyzerSourceInfo(source=source, label=display_label(data.config) + " · PA input",
             sample_count=data.analysis.sample_count, sample_rate_hz=data.config.sample_rate_hz,
             bandwidth_hz=data.config.bandwidth_hz, origin=data.origin)
         return np.load(directory(ws, source.source_id) / "iq.npy", mmap_mode="r", allow_pickle=False), info

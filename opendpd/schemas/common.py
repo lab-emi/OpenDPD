@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Annotated, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 SCHEMA_VERSION = 1
 
@@ -33,6 +33,16 @@ class StrictModel(BaseModel):
     """Base for all contracts: unknown fields are errors, not silently dropped."""
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True, use_enum_values=False)
+
+
+# Validation context for a record read back from storage. Input from a user must satisfy every rule of the running release;
+# a stored record only has to be well-formed, so that a later release can refine derived values or table rules without
+# making the records of an earlier release (and every list that contains them) unreadable.
+STORED_CONTEXT = {"stored": True}
+
+
+def is_stored(info: ValidationInfo) -> bool:
+    return bool(info.context and info.context.get("stored"))
 
 
 class EvidenceType(str, Enum):

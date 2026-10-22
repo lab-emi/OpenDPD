@@ -1,0 +1,1763 @@
+{
+  "_mock": true,
+  "_note": "Generated from opendpd.schemas.examples; do not edit by hand.",
+  "data": {
+    "default_config": {
+      "bandwidth_hz": 18390000.0,
+      "burst_off_samples": 1024,
+      "burst_on_samples": null,
+      "burst_ramp_samples": 32,
+      "carrier_frequency_hz": 3500000000.0,
+      "channel_gap_bins": 0,
+      "channel_modulations": [
+        4
+      ],
+      "channel_power_db": [
+        0.0
+      ],
+      "channel_subcarriers": [
+        612
+      ],
+      "clip_db": null,
+      "cp_mode": "nr_normal",
+      "cp_samples": 16,
+      "dc_i": 0.0,
+      "dc_null": false,
+      "dc_q": 0.0,
+      "dft_spreading": false,
+      "duration_ms": 1.0,
+      "fft_size": 1024,
+      "filter_enabled": false,
+      "frequency_offset_hz": 0.0,
+      "fsk_deviation_hz": 1000000.0,
+      "gaussian_bt": 0.5,
+      "iq_gain_db": 0.0,
+      "iq_phase_deg": 0.0,
+      "length_mode": "samples",
+      "modulation_order": 64,
+      "multitone_phase": "random",
+      "n_samples": 614400,
+      "nr_test_model": {
+        "carriers": [
+          {
+            "bandwidth_mhz": 20,
+            "gap_before_mhz": 0.0,
+            "n_cell_id": null,
+            "scs_khz": 30
+          }
+        ],
+        "data_convention": "standard",
+        "duplex": "fdd",
+        "layers": 1,
+        "model": "NR-FR1-TM1.1",
+        "nb_iot": null,
+        "output_port": 0,
+        "oversampling": null,
+        "pn_scope": "dl_symbols",
+        "subframes": null,
+        "version": "nr-test-model-v1"
+      },
+      "oversampling": 2,
+      "payload_bits": "00110101",
+      "payload_mode": "random",
+      "phase_noise_rms_deg": 0.0,
+      "phase_offset_deg": 0.0,
+      "pilot_boost_db": 0.0,
+      "pilot_indices": [],
+      "pilot_mode": "none",
+      "pilot_spacing": 16,
+      "preset_id": "nr-tm1p1-fdd-30k-20m-c1-86d5b0",
+      "psk_order": 8,
+      "rms": 0.2,
+      "rrc_rolloff": 0.25,
+      "rrc_span_symbols": 10,
+      "sample_rate_hz": 61440000.0,
+      "samples_per_symbol": 8,
+      "seed": 42,
+      "shared_channel_settings": true,
+      "snr_db": null,
+      "tone_count": 8,
+      "tone_frequency_hz": 1000000.0,
+      "version": "signal-generator-v1",
+      "waveform": "ofdm"
+    },
+    "default_recipe": {
+      "carriers": [
+        {
+          "bandwidth_mhz": 20,
+          "gap_before_mhz": 0.0,
+          "n_cell_id": null,
+          "scs_khz": 30
+        }
+      ],
+      "data_convention": "standard",
+      "duplex": "fdd",
+      "layers": 1,
+      "model": "NR-FR1-TM1.1",
+      "nb_iot": null,
+      "output_port": 0,
+      "oversampling": null,
+      "pn_scope": "dl_symbols",
+      "subframes": null,
+      "version": "nr-test-model-v1"
+    },
+    "limits": {
+      "carrier_gap_step_mhz": 0.3,
+      "max_carriers": 16,
+      "max_cell_id": 1007,
+      "max_samples": 1000000,
+      "standard_subframes_fdd": 10,
+      "standard_subframes_tdd": 20
+    },
+    "models": [
+      {
+        "clause": "4.9.2.2.1",
+        "description": "Two QPSK users cover the whole carrier: n_RNTI 0 on PRB 3...N_RB-1 and n_RNTI 2 on PRB 0-2, all at the same level. The same structure is the model for rank-2 time alignment error tests.",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0 (QPSK); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (QPSK)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost on all PRBs"
+          },
+          {
+            "name": "Rank",
+            "value": "1 (one layer, port 1000); rank 2 (two layers, ports 1000 and 1001, no precoding) only for the TAE test; the PDCCH is always single-port"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM1.1",
+        "modulations": [
+          "QPSK"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": true,
+        "title": "Full-band QPSK",
+        "used_for": [
+          "BS output power",
+          "Transmit ON/OFF power",
+          "TAE",
+          "Unwanted emissions > Occupied bandwidth",
+          "Unwanted emissions > ACLR",
+          "Unwanted emissions > Operating band unwanted emissions",
+          "Unwanted emissions > Transmitter spurious emissions",
+          "Transmitter intermodulation",
+          "Receiver spurious emissions"
+        ],
+        "users": [
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 0,
+            "role": "PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0"
+          },
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.2",
+        "description": "QPSK resource-block groups (x = 40 % of the PRBs) are boosted by 3 dB, the remaining PRBs are de-boosted so that the total power equals that of N_RB-3 PRBs at 0 dB; n_RNTI 2 occupies PRB 0-2.",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: boosted QPSK RBGs (type 0 allocation) (QPSK); n_RNTI 1: de-boosted QPSK PRBs (type 0 allocation) (QPSK); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (QPSK)"
+          },
+          {
+            "name": "Target share x",
+            "value": "40 % of the PRBs 3...N_RB-1 (resource-block groups of n_RNTI 0)"
+          },
+          {
+            "name": "RBG size P",
+            "value": "TS 38.214 table 5.1.2.2.1-1 configuration 1 with N_RB-3 PRBs: 2 (up to 36), 4 (up to 72), 8 (up to 144), 16 (up to 275)"
+          },
+          {
+            "name": "Number of target RBGs",
+            "value": "N_RBG = min(floor(x (N_RB-3) / P), (A - A mod 2) / 2 + 1), A = floor((N_RB-3 + (3 mod P) - P) / P)"
+          },
+          {
+            "name": "Target RBG locations",
+            "value": "RBG floor((N_RB-3 + (3 mod P)) / P) - 1 and, if N_RBG > 1, RBG 1, 3, ..., 2 (N_RBG-2) + 1 (0-based, RBG 0 being the partial first group that starts at PRB 3)"
+          },
+          {
+            "name": "Level of the target RBGs",
+            "value": "+3 dB (n_RNTI 0)"
+          },
+          {
+            "name": "Level of the other PRBs",
+            "value": "n_RNTI 1: 10 log10((N_RB-3 - 10^(3/10) P N_RBG) / (N_RB-3 - P N_RBG)) dB so that the total power equals N_RB-3 PRBs at 0 dB"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM1.2",
+        "modulations": [
+          "QPSK"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "Boosted and de-boosted QPSK",
+        "used_for": [
+          "Unwanted emissions > ACLR",
+          "Unwanted emissions > Operating band unwanted emissions"
+        ],
+        "users": [
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 0,
+            "role": "boosted QPSK RBGs (type 0 allocation)"
+          },
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 1,
+            "role": "de-boosted QPSK PRBs (type 0 allocation)"
+          },
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.3",
+        "description": "One 64QAM PRB per slot (n_RNTI 2) walks over PRB 0, floor(N_RB/2) and N_RB-1 in consecutive slots; all other PRBs are unallocated.",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 2: one PRB per slot at a slot-dependent position, symbols from 2 (64QAM)"
+          },
+          {
+            "name": "PRB position",
+            "value": "slot 3n: PRB 0; slot 3n+1: PRB floor(N_RB/2); slot 3n+2: PRB N_RB-1 (slots numbered within the radio frame); all other PRBs are unallocated (table 4.9.2.2.3-1)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM2",
+        "modulations": [
+          "64QAM"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "Single 64QAM PRB",
+        "used_for": [
+          "Total power dynamic range (lower OFDM symbol TX power limit (OSTP) at min power) > EVM of single 64QAM PRB allocation (at min power)",
+          "Total power dynamic range (lower OFDM symbol TX power limit (OSTP) at min power) > Frequency error (at min power)"
+        ],
+        "users": [
+          {
+            "evm_measured": true,
+            "modulation": "64QAM",
+            "rnti": 2,
+            "role": "one PRB per slot at a slot-dependent position, symbols from 2"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.4",
+        "description": "As NR-FR1-TM2 with the 64QAM PRB replaced by a 256QAM PRB.",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 2: one PRB per slot at a slot-dependent position, symbols from 2 (256QAM)"
+          },
+          {
+            "name": "PRB position",
+            "value": "slot 3n: PRB 0; slot 3n+1: PRB floor(N_RB/2); slot 3n+2: PRB N_RB-1 (slots numbered within the radio frame); all other PRBs are unallocated (table 4.9.2.2.3-1)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM2a",
+        "modulations": [
+          "256QAM"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "Single 256QAM PRB",
+        "used_for": [
+          "Total power dynamic range (lower OFDM symbol TX power limit (OSTP) at min power) > EVM of single 256QAM PRB allocation (at min power)",
+          "Total power dynamic range (lower OFDM symbol TX power limit (OSTP) at min power) > Frequency error (at min power)"
+        ],
+        "users": [
+          {
+            "evm_measured": true,
+            "modulation": "256QAM",
+            "rnti": 2,
+            "role": "one PRB per slot at a slot-dependent position, symbols from 2"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.4A",
+        "description": "As NR-FR1-TM2 with the 64QAM PRB replaced by a 1024QAM PRB.",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 2: one PRB per slot at a slot-dependent position, symbols from 2 (1024QAM)"
+          },
+          {
+            "name": "PRB position",
+            "value": "slot 3n: PRB 0; slot 3n+1: PRB floor(N_RB/2); slot 3n+2: PRB N_RB-1 (slots numbered within the radio frame); all other PRBs are unallocated (table 4.9.2.2.3-1)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM2b",
+        "modulations": [
+          "1024QAM"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "Single 1024QAM PRB",
+        "used_for": [
+          "Total power dynamic range (lower OFDM symbol TX power limit (OSTP) at min power) > EVM of single 1024QAM PRB allocation (at min power)",
+          "Total power dynamic range (lower OFDM symbol TX power limit (OSTP) at min power) > Frequency error (at min power)"
+        ],
+        "users": [
+          {
+            "evm_measured": true,
+            "modulation": "1024QAM",
+            "rnti": 2,
+            "role": "one PRB per slot at a slot-dependent position, symbols from 2"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.5",
+        "description": "As NR-FR1-TM1.1 with both users in 64QAM (the control channel stays QPSK).",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0 (64QAM); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (64QAM)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost on all PRBs"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM3.1",
+        "modulations": [
+          "64QAM"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "Full-band 64QAM",
+        "used_for": [
+          "Output power dynamics > Total power dynamic range (upper OFDM symbol TX power limit (OSTP) at max power with all 64QAM PRBs allocated)",
+          "Transmitted signal quality > Frequency error",
+          "Transmitted signal quality > EVM for 64QAM modulation (at max power)"
+        ],
+        "users": [
+          {
+            "evm_measured": true,
+            "modulation": "64QAM",
+            "rnti": 0,
+            "role": "PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0"
+          },
+          {
+            "evm_measured": true,
+            "modulation": "64QAM",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.6",
+        "description": "As NR-FR1-TM1.1 with both users in 256QAM (the control channel stays QPSK).",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0 (256QAM); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (256QAM)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost on all PRBs"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM3.1a",
+        "modulations": [
+          "256QAM"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "Full-band 256QAM",
+        "used_for": [
+          "Output power dynamics > Total power dynamic range (upper OFDM symbol TX power limit (OSTP) at max power with all 256QAM PRBs allocated)",
+          "Transmitted signal quality > Frequency error",
+          "Transmitted signal quality > EVM for 256QAM modulation (at max power)"
+        ],
+        "users": [
+          {
+            "evm_measured": true,
+            "modulation": "256QAM",
+            "rnti": 0,
+            "role": "PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0"
+          },
+          {
+            "evm_measured": true,
+            "modulation": "256QAM",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.6A",
+        "description": "As NR-FR1-TM1.1 with both users in 1024QAM (the control channel stays QPSK).",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0 (1024QAM); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (1024QAM)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost on all PRBs"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM3.1b",
+        "modulations": [
+          "1024QAM"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "Full-band 1024QAM",
+        "used_for": [
+          "Output power dynamics > Total power dynamic range (upper OFDM symbol TX power limit (OSTP) at max power with all 1024QAM PRBs allocated)",
+          "Transmitted signal quality > Frequency error",
+          "Transmitted signal quality > EVM for 1024QAM modulation (at max power)"
+        ],
+        "users": [
+          {
+            "evm_measured": true,
+            "modulation": "1024QAM",
+            "rnti": 0,
+            "role": "PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0"
+          },
+          {
+            "evm_measured": true,
+            "modulation": "1024QAM",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.7",
+        "description": "16QAM resource-block groups (x = 60 % of the PRBs, n_RNTI 1, EVM measured) are de-boosted by 3 dB; the remaining PRBs carry boosted QPSK (n_RNTI 0) to keep the total power of N_RB-3 PRBs; n_RNTI 2 occupies PRB 0-2.",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: QPSK PRBs balancing the power, EVM not measured (type 0 allocation) (QPSK); n_RNTI 1: de-boosted 16QAM RBGs, EVM measured (type 0 allocation) (16QAM); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (QPSK)"
+          },
+          {
+            "name": "Target share x",
+            "value": "60 % of the PRBs 3...N_RB-1 (resource-block groups of n_RNTI 1)"
+          },
+          {
+            "name": "RBG size P",
+            "value": "TS 38.214 table 5.1.2.2.1-1 configuration 1 with N_RB-3 PRBs: 2 (up to 36), 4 (up to 72), 8 (up to 144), 16 (up to 275)"
+          },
+          {
+            "name": "Number of target RBGs",
+            "value": "N_RBG = min(floor(x (N_RB-3) / P), (A - A mod 2) / 2 + 1), A = floor((N_RB-3 + (3 mod P) - P) / P)"
+          },
+          {
+            "name": "Target RBG locations",
+            "value": "RBG floor((N_RB-3 + (3 mod P)) / P) - 1 and, if N_RBG > 1, RBG 1, 3, ..., 2 (N_RBG-2) + 1 (0-based, RBG 0 being the partial first group that starts at PRB 3)"
+          },
+          {
+            "name": "Level of the target RBGs",
+            "value": "-3 dB (n_RNTI 1)"
+          },
+          {
+            "name": "Level of the other PRBs",
+            "value": "n_RNTI 0: 10 log10((N_RB-3 - 10^(-3/10) P N_RBG) / (N_RB-3 - P N_RBG)) dB so that the total power equals N_RB-3 PRBs at 0 dB"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM3.2",
+        "modulations": [
+          "QPSK",
+          "16QAM"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "De-boosted 16QAM among boosted QPSK",
+        "used_for": [
+          "Transmitted signal quality > Frequency error",
+          "Transmitted signal quality > EVM for 16QAM modulation"
+        ],
+        "users": [
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 0,
+            "role": "QPSK PRBs balancing the power, EVM not measured (type 0 allocation)"
+          },
+          {
+            "evm_measured": true,
+            "modulation": "16QAM",
+            "rnti": 1,
+            "role": "de-boosted 16QAM RBGs, EVM measured (type 0 allocation)"
+          },
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.8",
+        "description": "QPSK resource-block groups (x = 50 % of the PRBs, n_RNTI 1, EVM measured) are de-boosted by 6 dB; the remaining PRBs carry boosted QPSK (n_RNTI 0) to keep the total power of N_RB-3 PRBs; n_RNTI 2 occupies PRB 0-2.",
+        "fdd_only": false,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: QPSK PRBs balancing the power, EVM not measured (type 0 allocation) (QPSK); n_RNTI 1: de-boosted QPSK RBGs, EVM measured (type 0 allocation) (QPSK); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (QPSK)"
+          },
+          {
+            "name": "Target share x",
+            "value": "50 % of the PRBs 3...N_RB-1 (resource-block groups of n_RNTI 1)"
+          },
+          {
+            "name": "RBG size P",
+            "value": "TS 38.214 table 5.1.2.2.1-1 configuration 1 with N_RB-3 PRBs: 2 (up to 36), 4 (up to 72), 8 (up to 144), 16 (up to 275)"
+          },
+          {
+            "name": "Number of target RBGs",
+            "value": "N_RBG = min(floor(x (N_RB-3) / P), (A - A mod 2) / 2 + 1), A = floor((N_RB-3 + (3 mod P) - P) / P)"
+          },
+          {
+            "name": "Target RBG locations",
+            "value": "RBG floor((N_RB-3 + (3 mod P)) / P) - 1 and, if N_RBG > 1, RBG 1, 3, ..., 2 (N_RBG-2) + 1 (0-based, RBG 0 being the partial first group that starts at PRB 3)"
+          },
+          {
+            "name": "Level of the target RBGs",
+            "value": "-6 dB (n_RNTI 1)"
+          },
+          {
+            "name": "Level of the other PRBs",
+            "value": "n_RNTI 0: 10 log10((N_RB-3 - 10^(-6/10) P N_RBG) / (N_RB-3 - P N_RBG)) dB so that the total power equals N_RB-3 PRBs at 0 dB"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-FR1-TM3.3",
+        "modulations": [
+          "QPSK"
+        ],
+        "nb_iot": false,
+        "scs_khz": [
+          15,
+          30,
+          60
+        ],
+        "supports_layers": false,
+        "title": "De-boosted QPSK among boosted QPSK",
+        "used_for": [
+          "Transmitted signal quality > Frequency error",
+          "Transmitted signal quality > EVM for QPSK modulation"
+        ],
+        "users": [
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 0,
+            "role": "QPSK PRBs balancing the power, EVM not measured (type 0 allocation)"
+          },
+          {
+            "evm_measured": true,
+            "modulation": "QPSK",
+            "rnti": 1,
+            "role": "de-boosted QPSK RBGs, EVM measured (type 0 allocation)"
+          },
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      },
+      {
+        "clause": "4.9.2.2.9",
+        "description": "NR-FR1-TM1.1 on the NR carrier with one NR resource block punctured by an NB-IoT carrier (TS 36.141 N-TM) at the eligible position closest to the minimum guard band; the NB-IoT resource elements are boosted by X dB over the average resource element. FDD, 15 kHz only.",
+        "fdd_only": true,
+        "fixed_parameters": [
+          {
+            "name": "Users (table 4.9.2.3.2-1)",
+            "value": "n_RNTI 0: PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0 (QPSK); n_RNTI 2: PRB 0-2, symbols from 2 (PRBs below the full-band user) (QPSK)"
+          },
+          {
+            "name": "Level",
+            "value": "0 dB boost on all PRBs"
+          },
+          {
+            "name": "NB-IoT",
+            "value": "one NR resource block per NB-IoT carrier is punctured at the eligible in-band position closest to the lower and/or upper minimum guard band (L_NB-IoT, R_NB-IoT) and carries the NB-IoT test model N-TM of TS 36.141 6.1.3-6.1.6, the only NB-IoT test model there is; every other NR carrier is NR-FR1-TM1.1"
+          },
+          {
+            "name": "NB-IoT channels",
+            "value": "NPSS, NSSS, NRS, NPBCH, NPDCCH (format 1) and NPDSCH (single user, n_RNTI 1000, QPSK), normal cyclic prefix, n_f = 0 and slot 0 at the start; all data bits are zero (scrambled as in TS 36.211 clause 10.2)"
+          },
+          {
+            "name": "NB-IoT subframe map",
+            "value": "one 10 ms frame repeated every frame: subframe 0 NPBCH, 1 NPDCCH, 2-4 and 6-8 NPDSCH, 5 NPSS, 9 NSSS; NRS in every subframe except 5 and 9"
+          },
+          {
+            "name": "NB-IoT antenna port",
+            "value": "one NB-IoT antenna port is exported (NRS port 2000); the 304 (stand-alone) / 200 (in-band) bit budgets of TS 36.141 6.1.4 are those of a two-port NRS, four host CRS ports and three control symbols, so the NRS positions of port 2001 stay reserved and only the 100 data resource elements per in-band subframe are used"
+          },
+          {
+            "name": "NB-IoT cell identity",
+            "value": "N_ID^Ncell = 97 + 6 n + max(0, m - 1) with m the cell identity of the host NR carrier and n the rank of the host among the NB-IoT hosts (103 for the lowest host with cell identity 1, 110 for the second); the lower and the upper NB-IoT carrier of one host share it; at most 503"
+          },
+          {
+            "name": "NB-IoT resource elements",
+            "value": "1085 of the 1680 N_RB resource elements of a frame per NB-IoT carrier: 108 (100 data + 8 NRS) in each of the eight subframes 0-4 and 6-8, NPSS 105 and NSSS 116; 1089 if the host cell identity mod 6 is 2 or 5 (the NPSS then skips no host CRS resource element)"
+          },
+          {
+            "name": "NB-IoT power",
+            "value": "P_avg = P_rated / (12 N_RB); NB-IoT RE: P_avg 10^(X/10); NR RE: (P_rated - N_NB-IoT P_NB-IoT) / N_NR, counted over the resource elements of the whole 10 ms frame; X >= 6 dB (or >= 3 dB) is the declared NB-IoT power dynamic range"
+          },
+          {
+            "name": "NR content around NB-IoT",
+            "value": "NR-FR1-TM1.1 on every resource element without NB-IoT signal, including the control symbols and host CRS positions of the punctured resource block"
+          },
+          {
+            "name": "Duplex / numerology",
+            "value": "FDD with 15 kHz subcarrier spacing and channel bandwidths of 3 to 50 MHz; the NB-IoT bandwidth of 180 kHz is one NR resource block only at 15 kHz"
+          },
+          {
+            "name": "EVM",
+            "value": "the NB-IoT resource elements are excluded from the PDSCH EVM reference"
+          },
+          {
+            "name": "Cyclic prefix",
+            "value": "Normal CP (TS 38.141-1 4.9.2.2); virtual resource blocks of localized type"
+          },
+          {
+            "name": "Transmission bandwidth",
+            "value": "N_RB = maximum transmission bandwidth configuration of TS 38.104 table 5.3.2-1 (12 N_RB subcarriers)"
+          },
+          {
+            "name": "Duration",
+            "value": "1 radio frame (10 ms) for FDD, 2 radio frames (20 ms) for TDD; slots numbered 0 to 10 x 2^mu - 1 in every frame"
+          },
+          {
+            "name": "PDCCH (table 4.9.2.2-2)",
+            "value": "2 symbols from symbol 0, 1 CCE (aggregation level 1, 6 REGs = PRB 0-2 in both symbols), QPSK, PDCCH EPRE = DM-RS EPRE, 0 dB boost, port 2000, in every DL and special slot"
+          },
+          {
+            "name": "PDCCH data",
+            "value": "108 bits per slot from the PN23 generator, scrambled with c_init = N_ID^cell (n_RNTI = 0)"
+          },
+          {
+            "name": "PDSCH mapping (table 4.9.2.2-3)",
+            "value": "Mapping type A, dmrs-TypeA-Position pos2, dmrs-AdditionalPosition 1, DM-RS configuration type 1, maxLength 1, PDSCH EPRE = DM-RS EPRE (0 dB)"
+          },
+          {
+            "name": "PDSCH DM-RS symbols",
+            "value": "l = 2 and 11 for 14 DL symbols; 2 and 9 for 10 or 12 DL symbols; 2 for 6 DL symbols; even subcarriers carry DM-RS, the odd subcarriers of DM-RS symbols carry PDSCH data"
+          },
+          {
+            "name": "PDSCH users (table 4.9.2.2-4)",
+            "value": "n_RNTI 0/1 start at symbol 0, n_RNTI 2 on PRB 0-2 starts at symbol 2; PDSCH EPRE = PDCCH EPRE (0 dB)"
+          },
+          {
+            "name": "Antenna ports",
+            "value": "PDCCH 2000; PDSCH 1000 (rank 1, one layer, no precoding)"
+          },
+          {
+            "name": "Cell identity",
+            "value": "N_ID^cell = 1 for the lowest carrier, 2 for the second lowest, ...; scrambling n_ID = DM-RS N_ID = N_ID^cell, n_SCID = 0"
+          },
+          {
+            "name": "Data",
+            "value": "PN23 bits (ITU-T O.150), scrambled per TS 38.211 7.3.1.1 / 7.3.2.3, no channel coding"
+          },
+          {
+            "name": "Not included",
+            "value": "SSB, CSI-RS, PT-RS, PRACH, channel coding and CRC"
+          }
+        ],
+        "model": "NR-N-TM",
+        "modulations": [
+          "QPSK"
+        ],
+        "nb_iot": true,
+        "scs_khz": [
+          15
+        ],
+        "supports_layers": false,
+        "title": "NB-IoT operation in NR in-band",
+        "used_for": [
+          "Unwanted emissions > Occupied bandwidth",
+          "Unwanted emissions > ACLR",
+          "Unwanted emissions > Operating band unwanted emissions",
+          "Unwanted emissions > Transmitter spurious emissions",
+          "Transmitter intermodulation",
+          "Receiver spurious emissions",
+          "NB-IoT RB power dynamic range"
+        ],
+        "users": [
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 0,
+            "role": "PRB 3 to N_RB-1 (all PRBs outside the control-channel PRBs), symbols from 0"
+          },
+          {
+            "evm_measured": false,
+            "modulation": "QPSK",
+            "rnti": 2,
+            "role": "PRB 0-2, symbols from 2 (PRBs below the full-band user)"
+          }
+        ]
+      }
+    ],
+    "nb_iot": {
+      "bandwidths_mhz": [
+        3,
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50
+      ],
+      "eligible_rbs": {
+        "10": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50
+        ],
+        "15": [
+          4,
+          9,
+          14,
+          19,
+          24,
+          29,
+          34,
+          39,
+          44,
+          49,
+          54,
+          59,
+          64,
+          69,
+          74
+        ],
+        "20": [
+          2,
+          7,
+          12,
+          17,
+          22,
+          27,
+          32,
+          37,
+          42,
+          47,
+          52,
+          57,
+          62,
+          67,
+          72,
+          77,
+          82,
+          87,
+          92,
+          97,
+          102
+        ],
+        "25": [
+          1,
+          6,
+          11,
+          16,
+          21,
+          26,
+          31,
+          36,
+          41,
+          46,
+          51,
+          56,
+          61,
+          66,
+          71,
+          76,
+          81,
+          86,
+          91,
+          96,
+          101,
+          106,
+          111,
+          116,
+          121,
+          126,
+          131
+        ],
+        "3": [
+          2,
+          7,
+          12
+        ],
+        "30": [
+          4,
+          9,
+          14,
+          19,
+          24,
+          29,
+          34,
+          39,
+          44,
+          49,
+          54,
+          59,
+          64,
+          69,
+          74,
+          79,
+          84,
+          89,
+          94,
+          99,
+          104,
+          109,
+          114,
+          119,
+          124,
+          129,
+          134,
+          139,
+          144,
+          149,
+          154,
+          159
+        ],
+        "35": [
+          3,
+          8,
+          13,
+          18,
+          23,
+          28,
+          33,
+          38,
+          43,
+          48,
+          53,
+          58,
+          63,
+          68,
+          73,
+          78,
+          83,
+          88,
+          93,
+          98,
+          103,
+          108,
+          113,
+          118,
+          123,
+          128,
+          133,
+          138,
+          143,
+          148,
+          153,
+          158,
+          163,
+          168,
+          173,
+          178,
+          183
+        ],
+        "40": [
+          2,
+          7,
+          12,
+          17,
+          22,
+          27,
+          32,
+          37,
+          42,
+          47,
+          52,
+          57,
+          62,
+          67,
+          72,
+          77,
+          82,
+          87,
+          92,
+          97,
+          102,
+          107,
+          112,
+          117,
+          122,
+          127,
+          132,
+          137,
+          142,
+          147,
+          152,
+          157,
+          162,
+          167,
+          172,
+          177,
+          182,
+          187,
+          192,
+          197,
+          202,
+          207,
+          212
+        ],
+        "45": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120,
+          125,
+          130,
+          135,
+          140,
+          145,
+          150,
+          155,
+          160,
+          165,
+          170,
+          175,
+          180,
+          185,
+          190,
+          195,
+          200,
+          205,
+          210,
+          215,
+          220,
+          225,
+          230,
+          235,
+          240
+        ],
+        "5": [
+          2,
+          7,
+          12,
+          17,
+          22
+        ],
+        "50": [
+          4,
+          9,
+          14,
+          19,
+          24,
+          29,
+          34,
+          39,
+          44,
+          49,
+          54,
+          59,
+          64,
+          69,
+          74,
+          79,
+          84,
+          89,
+          94,
+          99,
+          104,
+          109,
+          114,
+          119,
+          124,
+          129,
+          134,
+          139,
+          144,
+          149,
+          154,
+          159,
+          164,
+          169,
+          174,
+          179,
+          184,
+          189,
+          194,
+          199,
+          204,
+          209,
+          214,
+          219,
+          224,
+          229,
+          234,
+          239,
+          244,
+          249,
+          254,
+          259,
+          264,
+          269
+        ]
+      },
+      "lower_rb": {
+        "10": 0,
+        "15": 4,
+        "20": 2,
+        "25": 1,
+        "3": 2,
+        "30": 4,
+        "35": 3,
+        "40": 2,
+        "45": 0,
+        "5": 2,
+        "50": 4
+      },
+      "scs_khz": 15,
+      "upper_rb": {
+        "10": 50,
+        "15": 74,
+        "20": 102,
+        "25": 131,
+        "3": 12,
+        "30": 159,
+        "35": 183,
+        "40": 212,
+        "45": 240,
+        "5": 22,
+        "50": 269
+      }
+    },
+    "notes": [
+      "Models of 3GPP TS 38.141-1 V18.14.0 clause 4.9.2.2 (FR1, BS type 1-C and 1-H); N_RB from TS 38.104 table 5.3.2-1. The FR2 models of TS 38.141-2 are not included.",
+      "Parameters the standard leaves open and that you can set: duplex mode, number of carriers, subcarrier spacing and channel bandwidth per carrier, cell identity, the gap before a carrier (sub-block gap), rank for NR-FR1-TM1.1, the PN23 conventions, NB-IoT position and boost, oversampling and capture length.",
+      "Carriers are placed at the nominal channel spacing of TS 38.104 5.4.1.2 for 100 kHz-raster bands, the aggregate is centred at baseband DC and every carrier has the same resource-element amplitude (equal power spectral density).",
+      "Only PDCCH, PDSCH and DM-RS are generated: no SSB, CSI-RS, PT-RS or channel coding; the NRTC6 ON-OFF patterns are not included.",
+      "At most 1,000,000 samples are generated: the capture is shortened to whole subframes, or lower the oversampling."
+    ],
+    "resource_blocks": {
+      "15": {
+        "10": 52,
+        "15": 79,
+        "20": 106,
+        "25": 133,
+        "3": 15,
+        "30": 160,
+        "35": 188,
+        "40": 216,
+        "45": 242,
+        "5": 25,
+        "50": 270
+      },
+      "30": {
+        "10": 24,
+        "100": 273,
+        "15": 38,
+        "20": 51,
+        "25": 65,
+        "30": 78,
+        "35": 92,
+        "40": 106,
+        "45": 119,
+        "5": 11,
+        "50": 133,
+        "60": 162,
+        "70": 189,
+        "80": 217,
+        "90": 245
+      },
+      "60": {
+        "10": 11,
+        "100": 135,
+        "15": 18,
+        "20": 24,
+        "25": 31,
+        "30": 38,
+        "35": 44,
+        "40": 51,
+        "45": 58,
+        "50": 65,
+        "60": 79,
+        "70": 93,
+        "80": 107,
+        "90": 121
+      }
+    },
+    "scs_khz": [
+      15,
+      30,
+      60
+    ],
+    "standard": "3GPP TS 38.141-1 V18.14.0 clause 4.9.2 (NR FR1 base station test models)",
+    "tdd_patterns": [
+      {
+        "dl_slots": 3,
+        "dl_symbols": 10,
+        "period_ms": 5.0,
+        "scs_khz": 15,
+        "slot_map": [
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDFFUU",
+          "UUUUUUUUUUUUUU"
+        ],
+        "slots_per_period": 5,
+        "ul_slots": 1,
+        "ul_symbols": 2
+      },
+      {
+        "dl_slots": 7,
+        "dl_symbols": 6,
+        "period_ms": 5.0,
+        "scs_khz": 30,
+        "slot_map": [
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDFFFFUUUU",
+          "UUUUUUUUUUUUUU",
+          "UUUUUUUUUUUUUU"
+        ],
+        "slots_per_period": 10,
+        "ul_slots": 2,
+        "ul_symbols": 4
+      },
+      {
+        "dl_slots": 14,
+        "dl_symbols": 12,
+        "period_ms": 5.0,
+        "scs_khz": 60,
+        "slot_map": [
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDDD",
+          "DDDDDDDDDDDDFF",
+          "FFFFFFUUUUUUUU",
+          "UUUUUUUUUUUUUU",
+          "UUUUUUUUUUUUUU",
+          "UUUUUUUUUUUUUU",
+          "UUUUUUUUUUUUUU"
+        ],
+        "slots_per_period": 20,
+        "ul_slots": 4,
+        "ul_symbols": 8
+      }
+    ],
+    "version": "nr-test-model-catalog-v1"
+  }
+}

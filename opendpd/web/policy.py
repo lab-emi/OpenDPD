@@ -50,11 +50,19 @@ ROUTES["GET"] += [r"/arena", r"/arena/boards/apa-200mhz-b",
                   r"/arena/submissions", r"/arena/submissions/arena-[a-f0-9]{32}"]
 ROUTES["POST"] += [r"/arena/submissions"]
 ROUTES["POST"] += [r"/signal-generator/import"]
+# NR FR1 standard test models (TS 38.141-1 4.9.2): a static catalogue and a pure function of the recipe.
+ROUTES["GET"] += [r"/signal-generator/nr-test-models"]
+ROUTES["POST"] += [r"/signal-generator/nr-test-models/resolve"]
+
+# POSTs that neither read nor write the workspace and finish in milliseconds. They take no mutation slot, no storage
+# reservation and no shared compute slot (a debounced form may call them several times a second), but remain subject to
+# the body cap, JSON-only, the per-session and per-IP rates and the MutationRule that validates the body.
+STATELESS_POSTS = frozenset({"/signal-generator/nr-test-models/resolve"})
 
 
-def reject(status: int, code: str, message: str):
+def reject(status: int, code: str, message: str, details=None):
     from opendpd.server.errors import api_error
-    raise api_error(status, code, message)
+    raise api_error(status, code, message, details=details)
 
 
 @dataclass(frozen=True)
@@ -144,7 +152,7 @@ def expensive_request(method: str, path: str) -> bool:
     """Bound in-process numeric/file work separately from lightweight status and cancellation."""
     if method == 'GET':
         return bool(re.fullmatch(r'/datasets/builtin|/pa-library/models|/signal-analyzer/(sources|datasets)|/signal-generator/datasets/[^/]+/download|/signal-generator/signals/[^/]+/(input.csv|metadata.json|download)|/pa-library/simulations/[^/]+/(output.csv|paired.csv|metadata.json)|/datasets/[^/]+/(analysis|download)|/results/compare|/results/[^/]+(/(report|review))?', path))
-    return method == 'POST' and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/', '/backbones/')))
+    return method == 'POST' and path not in STATELESS_POSTS and (path == '/exports' or path.startswith(('/datasets/', '/signal-generator/', '/signal-analyzer/', '/pa-library/', '/dataset-publications/', '/backbones/')))
 
 
 def check_slug(value, field: str):

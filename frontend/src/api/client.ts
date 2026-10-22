@@ -155,7 +155,7 @@ export const api = {
       return request<T>('GET', path, undefined, readSignal)
     }, signal) : request<T>('GET', path, undefined, signal)
   },
-  post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
+  post: <T>(path: string, body?: unknown, signal?: AbortSignal) => request<T>('POST', path, body, signal),
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
   upload,
 }

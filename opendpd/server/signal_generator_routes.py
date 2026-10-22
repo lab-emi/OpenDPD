@@ -1,18 +1,27 @@
 """Authenticated local signal generation; exported data remains private."""
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse
+from pydantic import ValidationError
 
 from opendpd.core.waveforms.generator_presets import presets
-from opendpd.core.waveforms.generator import allocation
 from opendpd.schemas.signal_generator import (DatasetSampleCounts, GeneratedSignal, GeneratorConfig,
     GeneratorDatasetRequest, GeneratorDatasetResponse, GeneratorPreset, GeneratorBatchRequest, ImportSignalRequest)
 from opendpd.server.routes import require_csrf, require_session
 from opendpd.server.errors import api_error as _error
 from opendpd.services import signal_generator as service
 from opendpd.schemas.virtual_pa import PAInputDataset
+from opendpd.schemas.nr_test_model import NrTestModelConfig
+from opendpd.schemas.nr_test_model_api import NrTmCatalog, NrTmResolution
 from opendpd.schemas.signal_dataset import SignalDataset
 
 router = APIRouter(tags=["signal generator"])
+
+
+def _message(exc: ValueError) -> str:
+    """A readable text for a ValueError or a pydantic ValidationError (which is a ValueError)."""
+    if isinstance(exc, ValidationError):
+        return "; ".join(str(e["msg"]).removeprefix("Value error, ") for e in exc.errors())
+    return str(exc)
 
 
 @router.post("/signal-generator/import", response_model=PAInputDataset, status_code=201, dependencies=[Depends(require_csrf)])
@@ -69,16 +78,33 @@ def metadata(signal_id: str, request: Request):
 @router.post("/signal-generator/validate", response_model=GeneratorConfig, dependencies=[Depends(require_csrf)])
 def validate(body: GeneratorConfig):
     try:
-        if body.waveform == "ofdm":
-            allocation(body)
+        service.precheck(body)
     except ValueError as exc:
-        raise _error(422, "invalid_signal", str(exc)) from exc
+        raise _error(422, "invalid_signal", _message(exc)) from exc
     return body
 
 
 @router.get("/signal-generator/presets", response_model=list[GeneratorPreset], dependencies=[Depends(require_session)])
 def list_presets():
     return presets()
+
+
+@router.get("/signal-generator/nr-test-models", response_model=NrTmCatalog, dependencies=[Depends(require_session)])
+def nr_test_models():
+    """The NR FR1 standard test models of 3GPP TS 38.141-1 clause 4.9.2: parameters, ranges, fixed values and defaults."""
+    from opendpd.core.waveforms.nr_tm import catalog
+    return catalog()
+
+
+@router.post("/signal-generator/nr-test-models/resolve", response_model=NrTmResolution, dependencies=[Depends(require_csrf)])
+def resolve_nr_test_model(body: NrTestModelConfig):
+    """Derive everything a recipe implies (resource blocks, FFT, sample rate, RBG sets, users, capture length, the complete
+    ``GeneratorConfig``). Nothing is generated or stored."""
+    try:
+        from opendpd.core.waveforms.nr_tm import resolve
+        return resolve(body)
+    except ValueError as exc:
+        raise _error(422, "invalid_signal", _message(exc)) from exc
 
 
 @router.post("/signal-generator/signals", response_model=GeneratedSignal, status_code=201, dependencies=[Depends(require_csrf)])

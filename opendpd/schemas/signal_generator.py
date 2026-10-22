@@ -4,11 +4,21 @@ from __future__ import annotations
 import math
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationInfo, model_serializer, model_validator
 
-from .common import Sha256, Slug, StrictModel
+from .common import STORED_CONTEXT, Sha256, Slug, StrictModel, is_stored
 from .dataset import DatasetManifest
+from .nr_test_model import NrTestModelConfig, NrTmSummary
 from .signal_dataset import InputDatasetName
+
+
+# Generic-waveform fields that a configuration with an NR test model recipe does not use. They must keep their defaults so that
+# one signal has one configuration (and one id).
+_TEST_MODEL_UNUSED = (
+    "duration_ms", "cp_samples", "pilot_spacing", "pilot_indices", "pilot_boost_db", "modulation_order", "samples_per_symbol",
+    "rrc_rolloff", "rrc_span_symbols", "psk_order", "payload_mode", "payload_bits", "dft_spreading", "fsk_deviation_hz", "gaussian_bt",
+    "tone_frequency_hz", "tone_count", "multitone_phase",
+)
 
 
 class GeneratorConfig(StrictModel):
@@ -63,13 +73,40 @@ class GeneratorConfig(StrictModel):
     snr_db: float | None = Field(default=None, ge=0, le=100, allow_inf_nan=False)
     filter_enabled: bool = True
     clip_db: float | None = Field(default=None, ge=0, le=30, allow_inf_nan=False)
+    nr_test_model: NrTestModelConfig | None = Field(default=None, description=(
+        "NR FR1 standard test model recipe (3GPP TS 38.141-1 clause 4.9.2). When set, the structural fields (preset_id, rate, FFT, channels, "
+        "length, ...) must equal the values derived from it by POST /signal-generator/nr-test-models/resolve; only the impairment, "
+        "burst, RMS, seed, carrier frequency and filter fields remain editable. Omitted from the serialised form when not set."))
+
+    @model_serializer(mode="wrap")
+    def _omit_unused_recipe(self, handler):
+        # Keeps the serialised form (and therefore every signal id, manifest and dataset provenance)
+        # of configurations without a test model byte-identical to releases before 2.4.1.
+        data = handler(self)
+        if data.get("nr_test_model") is None:
+            data.pop("nr_test_model", None)
+        return data
 
     @property
     def sample_count(self) -> int:
         return self.n_samples if self.length_mode == "samples" else math.floor(self.sample_rate_hz * self.duration_ms / 1000 + .5)
 
+    def _match_test_model(self) -> None:
+        """A configuration with a recipe is fully described by it: structural fields must equal the derivation."""
+        from opendpd.core.waveforms.nr_tm import STRUCTURAL_FIELDS, derive  # lazy: derive imports the generator package
+
+        derived = derive(self.nr_test_model).fields
+        for name in STRUCTURAL_FIELDS:
+            if name != "filter_enabled" and getattr(self, name) != derived[name]:     # filter_enabled is only a default
+                raise ValueError(f"{name} of a standard test model is derived from its nr_test_model recipe ({derived[name]!r}, "
+                                 f"not {getattr(self, name)!r}). Edit the recipe instead of this field.")
+        for name in _TEST_MODEL_UNUSED:
+            default = type(self).model_fields[name].get_default(call_default_factory=True)
+            if getattr(self, name) != default:
+                raise ValueError(f"{name} is not used by standard test models; keep it at {default!r} (or remove nr_test_model).")
+
     @model_validator(mode="after")
-    def _valid(self):
+    def _valid(self, info: ValidationInfo):
         if not 256 <= self.sample_count <= 1_000_000:
             raise ValueError("Choose a duration producing 256–1,000,000 complex I/Q samples.")
         if self.bandwidth_hz > self.sample_rate_hz:
@@ -92,7 +129,13 @@ class GeneratorConfig(StrictModel):
             raise ValueError("Shared OFDMA settings require identical subcarrier counts, modulation and power across channels.")
         if len(set(self.pilot_indices)) != len(self.pilot_indices):
             raise ValueError("Pilot carrier indices must be unique.")
-        if self.waveform == "ofdm":
+        if self.nr_test_model is not None:
+            if self.waveform != "ofdm":
+                raise ValueError("A standard test model configuration is an OFDM signal; keep the waveform at OFDM or remove nr_test_model.")
+            if not is_stored(info):
+                self._match_test_model()
+            allocated_extent = self.bandwidth_hz / 2          # the symmetric extent derived by the resolver
+        elif self.waveform == "ofdm":
             if self.dft_spreading and self.pilot_mode != "none":
                 raise ValueError("DFT spreading requires pilot mode None; transform-spread reference pilots are not implemented.")
             span = sum(self.channel_subcarriers) + (count - 1) * self.channel_gap_bins
@@ -190,8 +233,20 @@ class GeneratorAnalysis(StrictModel):
     reference_q: list[float]
     ccdf_db: list[float]
     ccdf_probability: list[float]
-    allocation: list[dict[str, object]]
+    allocation: list[dict[str, object]] = Field(description=(
+        "One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. "
+        "Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic) "
+        "and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps)."))
     notes: list[str]
+    nr_test_model: NrTmSummary | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_unused_summary(self, handler):
+        # Stored manifests of ordinary signals keep exactly the keys of earlier releases.
+        data = handler(self)
+        if data.get("nr_test_model") is None:
+            data.pop("nr_test_model", None)
+        return data
 
 
 class ImportedSignalConfig(StrictModel):
@@ -236,9 +291,14 @@ class GeneratedSignal(StrictModel):
     config: GeneratorConfig | ImportedSignalConfig
     origin: Literal["synthetic", "uploaded"] = "synthetic"
     iq_sha256: Sha256
-    coverage: Literal["numerology", "experimental", "custom"]
+    coverage: Literal["numerology", "experimental", "custom", "standard_test_model"]
     analysis: GeneratorAnalysis
     download_url: str
+
+    @classmethod
+    def from_stored(cls, data) -> "GeneratedSignal":
+        """Read a manifest from the workspace: the test-model recipe is not re-derived with the rules of this release."""
+        return cls.model_validate(data, context=STORED_CONTEXT)
 
 
 class GeneratorDatasetRequest(StrictModel):

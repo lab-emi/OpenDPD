@@ -6859,7 +6859,8 @@
             "enum": [
               "numerology",
               "experimental",
-              "custom"
+              "custom",
+              "standard_test_model"
             ],
             "title": "Coverage",
             "type": "string"
@@ -6913,6 +6914,7 @@
             "type": "integer"
           },
           "allocation": {
+            "description": "One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic) and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps).",
             "items": {
               "additionalProperties": true,
               "type": "object"
@@ -7024,6 +7026,16 @@
             },
             "title": "Notes",
             "type": "array"
+          },
+          "nr_test_model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NrTmSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "occupied_bandwidth_99_hz": {
             "title": "Occupied Bandwidth 99 Hz",
@@ -7422,6 +7434,17 @@
             "minimum": 256.0,
             "title": "N Samples",
             "type": "integer"
+          },
+          "nr_test_model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NrTestModelConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "NR FR1 standard test model recipe (3GPP TS 38.141-1 clause 4.9.2). When set, the structural fields (preset_id, rate, FFT, channels, length, ...) must equal the values derived from it by POST /signal-generator/nr-test-models/resolve; only the impairment, burst, RMS, seed, carrier frequency and filter fields remain editable. Omitted from the serialised form when not set."
           },
           "oversampling": {
             "default": 4,
@@ -11017,6 +11040,859 @@
         "title": "ModelSpec",
         "type": "object"
       },
+      "NrTestModelConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "carriers": {
+            "items": {
+              "$ref": "#/components/schemas/NrTmCarrier"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "title": "Carriers",
+            "type": "array"
+          },
+          "data_convention": {
+            "default": "standard",
+            "enum": [
+              "standard",
+              "matlab"
+            ],
+            "title": "Data Convention",
+            "type": "string"
+          },
+          "duplex": {
+            "default": "fdd",
+            "enum": [
+              "fdd",
+              "tdd"
+            ],
+            "title": "Duplex",
+            "type": "string"
+          },
+          "layers": {
+            "default": 1,
+            "enum": [
+              1,
+              2
+            ],
+            "title": "Layers",
+            "type": "integer"
+          },
+          "model": {
+            "default": "NR-FR1-TM1.1",
+            "enum": [
+              "NR-FR1-TM1.1",
+              "NR-FR1-TM1.2",
+              "NR-FR1-TM2",
+              "NR-FR1-TM2a",
+              "NR-FR1-TM2b",
+              "NR-FR1-TM3.1",
+              "NR-FR1-TM3.1a",
+              "NR-FR1-TM3.1b",
+              "NR-FR1-TM3.2",
+              "NR-FR1-TM3.3",
+              "NR-N-TM"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "nb_iot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NrTmNbIot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output_port": {
+            "default": 0,
+            "enum": [
+              0,
+              1
+            ],
+            "title": "Output Port",
+            "type": "integer"
+          },
+          "oversampling": {
+            "anyOf": [
+              {
+                "enum": [
+                  1,
+                  2,
+                  4,
+                  8
+                ],
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oversampling"
+          },
+          "pn_scope": {
+            "default": "dl_symbols",
+            "enum": [
+              "dl_symbols",
+              "all_symbols"
+            ],
+            "title": "Pn Scope",
+            "type": "string"
+          },
+          "subframes": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subframes"
+          },
+          "version": {
+            "const": "nr-test-model-v1",
+            "default": "nr-test-model-v1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "title": "NrTestModelConfig",
+        "type": "object"
+      },
+      "NrTmCarrier": {
+        "additionalProperties": false,
+        "description": "One NR carrier carrying the test model (TS 38.141-1 4.9.2.3: one cell ID per carrier).",
+        "properties": {
+          "bandwidth_mhz": {
+            "default": 20,
+            "maximum": 100.0,
+            "minimum": 3.0,
+            "title": "Bandwidth Mhz",
+            "type": "integer"
+          },
+          "gap_before_mhz": {
+            "default": 0,
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Gap Before Mhz",
+            "type": "number"
+          },
+          "n_cell_id": {
+            "anyOf": [
+              {
+                "maximum": 1007.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Cell Id"
+          },
+          "scs_khz": {
+            "default": 30,
+            "enum": [
+              15,
+              30,
+              60
+            ],
+            "title": "Scs Khz",
+            "type": "integer"
+          }
+        },
+        "title": "NrTmCarrier",
+        "type": "object"
+      },
+      "NrTmCarrierSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidth_mhz": {
+            "title": "Bandwidth Mhz",
+            "type": "integer"
+          },
+          "boosted_rbgs": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Boosted Rbgs",
+            "type": "array"
+          },
+          "center_offset_hz": {
+            "title": "Center Offset Hz",
+            "type": "number"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "n_cell_id": {
+            "title": "N Cell Id",
+            "type": "integer"
+          },
+          "n_fft": {
+            "title": "N Fft",
+            "type": "integer"
+          },
+          "n_rbg": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Rbg"
+          },
+          "nrb": {
+            "title": "Nrb",
+            "type": "integer"
+          },
+          "occupied_bandwidth_hz": {
+            "title": "Occupied Bandwidth Hz",
+            "type": "number"
+          },
+          "rbg_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rbg Size"
+          },
+          "scs_khz": {
+            "title": "Scs Khz",
+            "type": "integer"
+          },
+          "slots": {
+            "title": "Slots",
+            "type": "integer"
+          },
+          "slots_per_frame": {
+            "title": "Slots Per Frame",
+            "type": "integer"
+          },
+          "subcarriers": {
+            "title": "Subcarriers",
+            "type": "integer"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/NrTmUser"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "index",
+          "scs_khz",
+          "bandwidth_mhz",
+          "nrb",
+          "subcarriers",
+          "n_fft",
+          "n_cell_id",
+          "center_offset_hz",
+          "occupied_bandwidth_hz",
+          "slots",
+          "slots_per_frame"
+        ],
+        "title": "NrTmCarrierSummary",
+        "type": "object"
+      },
+      "NrTmCatalog": {
+        "additionalProperties": false,
+        "properties": {
+          "default_config": {
+            "$ref": "#/components/schemas/GeneratorConfig"
+          },
+          "default_recipe": {
+            "$ref": "#/components/schemas/NrTestModelConfig"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/NrTmLimits"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/NrTmModelInfo"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "nb_iot": {
+            "$ref": "#/components/schemas/NrTmNbIotInfo"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "resource_blocks": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "title": "Resource Blocks",
+            "type": "object"
+          },
+          "scs_khz": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Scs Khz",
+            "type": "array"
+          },
+          "standard": {
+            "title": "Standard",
+            "type": "string"
+          },
+          "tdd_patterns": {
+            "items": {
+              "$ref": "#/components/schemas/NrTmTddPattern"
+            },
+            "title": "Tdd Patterns",
+            "type": "array"
+          },
+          "version": {
+            "const": "nr-test-model-catalog-v1",
+            "default": "nr-test-model-catalog-v1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "standard",
+          "models",
+          "scs_khz",
+          "resource_blocks",
+          "tdd_patterns",
+          "nb_iot",
+          "limits",
+          "default_recipe",
+          "default_config"
+        ],
+        "title": "NrTmCatalog",
+        "type": "object"
+      },
+      "NrTmFixedParameter": {
+        "additionalProperties": false,
+        "description": "A parameter the standard fixes for this model (shown read-only), e.g. 'PDCCH: 1 CCE, RB 0-2, symbols 0-1'.",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "NrTmFixedParameter",
+        "type": "object"
+      },
+      "NrTmLimits": {
+        "additionalProperties": false,
+        "properties": {
+          "carrier_gap_step_mhz": {
+            "title": "Carrier Gap Step Mhz",
+            "type": "number"
+          },
+          "max_carriers": {
+            "title": "Max Carriers",
+            "type": "integer"
+          },
+          "max_cell_id": {
+            "title": "Max Cell Id",
+            "type": "integer"
+          },
+          "max_samples": {
+            "title": "Max Samples",
+            "type": "integer"
+          },
+          "standard_subframes_fdd": {
+            "title": "Standard Subframes Fdd",
+            "type": "integer"
+          },
+          "standard_subframes_tdd": {
+            "title": "Standard Subframes Tdd",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "max_carriers",
+          "max_samples",
+          "max_cell_id",
+          "standard_subframes_fdd",
+          "standard_subframes_tdd",
+          "carrier_gap_step_mhz"
+        ],
+        "title": "NrTmLimits",
+        "type": "object"
+      },
+      "NrTmModelInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "clause": {
+            "title": "Clause",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "fdd_only": {
+            "default": false,
+            "title": "Fdd Only",
+            "type": "boolean"
+          },
+          "fixed_parameters": {
+            "items": {
+              "$ref": "#/components/schemas/NrTmFixedParameter"
+            },
+            "title": "Fixed Parameters",
+            "type": "array"
+          },
+          "model": {
+            "enum": [
+              "NR-FR1-TM1.1",
+              "NR-FR1-TM1.2",
+              "NR-FR1-TM2",
+              "NR-FR1-TM2a",
+              "NR-FR1-TM2b",
+              "NR-FR1-TM3.1",
+              "NR-FR1-TM3.1a",
+              "NR-FR1-TM3.1b",
+              "NR-FR1-TM3.2",
+              "NR-FR1-TM3.3",
+              "NR-N-TM"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "modulations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Modulations",
+            "type": "array"
+          },
+          "nb_iot": {
+            "default": false,
+            "title": "Nb Iot",
+            "type": "boolean"
+          },
+          "scs_khz": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Scs Khz",
+            "type": "array"
+          },
+          "supports_layers": {
+            "default": false,
+            "title": "Supports Layers",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "used_for": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Used For",
+            "type": "array"
+          },
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/NrTmUserInfo"
+            },
+            "title": "Users",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model",
+          "clause",
+          "title",
+          "description",
+          "used_for",
+          "modulations",
+          "users",
+          "fixed_parameters",
+          "scs_khz"
+        ],
+        "title": "NrTmModelInfo",
+        "type": "object"
+      },
+      "NrTmNbIot": {
+        "additionalProperties": false,
+        "description": "NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): FDD, 15 kHz only.",
+        "properties": {
+          "boost_db": {
+            "default": 6,
+            "maximum": 12.0,
+            "minimum": 3.0,
+            "title": "Boost Db",
+            "type": "number"
+          },
+          "position": {
+            "default": "lower",
+            "enum": [
+              "lower",
+              "upper",
+              "both"
+            ],
+            "title": "Position",
+            "type": "string"
+          }
+        },
+        "title": "NrTmNbIot",
+        "type": "object"
+      },
+      "NrTmNbIotInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "bandwidths_mhz": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Bandwidths Mhz",
+            "type": "array"
+          },
+          "eligible_rbs": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Eligible Rbs",
+            "type": "object"
+          },
+          "lower_rb": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Lower Rb",
+            "type": "object"
+          },
+          "scs_khz": {
+            "title": "Scs Khz",
+            "type": "integer"
+          },
+          "upper_rb": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Upper Rb",
+            "type": "object"
+          }
+        },
+        "required": [
+          "scs_khz",
+          "bandwidths_mhz",
+          "lower_rb",
+          "upper_rb",
+          "eligible_rbs"
+        ],
+        "title": "NrTmNbIotInfo",
+        "type": "object"
+      },
+      "NrTmResolution": {
+        "additionalProperties": false,
+        "description": "A recipe plus the complete, validated generator configuration derived from it.",
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/GeneratorConfig"
+          },
+          "recipe": {
+            "$ref": "#/components/schemas/NrTestModelConfig"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/NrTmSummary"
+          }
+        },
+        "required": [
+          "recipe",
+          "config",
+          "summary"
+        ],
+        "title": "NrTmResolution",
+        "type": "object"
+      },
+      "NrTmSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregated_bandwidth_hz": {
+            "title": "Aggregated Bandwidth Hz",
+            "type": "number"
+          },
+          "carriers": {
+            "items": {
+              "$ref": "#/components/schemas/NrTmCarrierSummary"
+            },
+            "title": "Carriers",
+            "type": "array"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "model": {
+            "enum": [
+              "NR-FR1-TM1.1",
+              "NR-FR1-TM1.2",
+              "NR-FR1-TM2",
+              "NR-FR1-TM2a",
+              "NR-FR1-TM2b",
+              "NR-FR1-TM3.1",
+              "NR-FR1-TM3.1a",
+              "NR-FR1-TM3.1b",
+              "NR-FR1-TM3.2",
+              "NR-FR1-TM3.3",
+              "NR-N-TM"
+            ],
+            "title": "Model",
+            "type": "string"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "native_sample_rate_hz": {
+            "title": "Native Sample Rate Hz",
+            "type": "number"
+          },
+          "nb_iot_rbs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nb Iot Rbs"
+          },
+          "oversampling": {
+            "title": "Oversampling",
+            "type": "integer"
+          },
+          "sample_rate_hz": {
+            "title": "Sample Rate Hz",
+            "type": "number"
+          },
+          "standard_subframes": {
+            "title": "Standard Subframes",
+            "type": "integer"
+          },
+          "subframes": {
+            "title": "Subframes",
+            "type": "integer"
+          },
+          "tdd_pattern": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tdd Pattern"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model",
+          "carriers",
+          "sample_rate_hz",
+          "native_sample_rate_hz",
+          "oversampling",
+          "subframes",
+          "standard_subframes",
+          "truncated",
+          "n_samples",
+          "duration_ms",
+          "aggregated_bandwidth_hz"
+        ],
+        "title": "NrTmSummary",
+        "type": "object"
+      },
+      "NrTmTddPattern": {
+        "additionalProperties": false,
+        "description": "TS 38.141-1 Table 4.9.2.2-1 (TS 38.331 TDD-UL-DL-ConfigCommon semantics).",
+        "properties": {
+          "dl_slots": {
+            "title": "Dl Slots",
+            "type": "integer"
+          },
+          "dl_symbols": {
+            "title": "Dl Symbols",
+            "type": "integer"
+          },
+          "period_ms": {
+            "title": "Period Ms",
+            "type": "number"
+          },
+          "scs_khz": {
+            "title": "Scs Khz",
+            "type": "integer"
+          },
+          "slot_map": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slot Map",
+            "type": "array"
+          },
+          "slots_per_period": {
+            "title": "Slots Per Period",
+            "type": "integer"
+          },
+          "ul_slots": {
+            "title": "Ul Slots",
+            "type": "integer"
+          },
+          "ul_symbols": {
+            "title": "Ul Symbols",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scs_khz",
+          "period_ms",
+          "slots_per_period",
+          "dl_slots",
+          "dl_symbols",
+          "ul_slots",
+          "ul_symbols",
+          "slot_map"
+        ],
+        "title": "NrTmTddPattern",
+        "type": "object"
+      },
+      "NrTmUser": {
+        "additionalProperties": false,
+        "description": "One user (n_RNTI) of the test model in a reference full-DL slot.",
+        "properties": {
+          "evm_measured": {
+            "default": false,
+            "title": "Evm Measured",
+            "type": "boolean"
+          },
+          "level_db": {
+            "title": "Level Db",
+            "type": "number"
+          },
+          "modulation": {
+            "title": "Modulation",
+            "type": "string"
+          },
+          "prbs": {
+            "title": "Prbs",
+            "type": "integer"
+          },
+          "rb_ranges": {
+            "items": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Rb Ranges",
+            "type": "array"
+          },
+          "rnti": {
+            "title": "Rnti",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "start_symbol": {
+            "title": "Start Symbol",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rnti",
+          "role",
+          "modulation",
+          "prbs",
+          "rb_ranges",
+          "start_symbol",
+          "level_db"
+        ],
+        "title": "NrTmUser",
+        "type": "object"
+      },
+      "NrTmUserInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "evm_measured": {
+            "default": false,
+            "title": "Evm Measured",
+            "type": "boolean"
+          },
+          "modulation": {
+            "title": "Modulation",
+            "type": "string"
+          },
+          "rnti": {
+            "title": "Rnti",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rnti",
+          "role",
+          "modulation"
+        ],
+        "title": "NrTmUserInfo",
+        "type": "object"
+      },
       "PAAnalysis": {
         "additionalProperties": false,
         "properties": {
@@ -13603,7 +14479,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.4.0",
+            "default": "2.4.1",
             "title": "Version",
             "type": "string"
           }
@@ -16208,7 +17084,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.4.0"
+    "version": "2.4.1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -21123,6 +21999,70 @@
           }
         },
         "summary": "Import Signal",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/nr-test-models": {
+      "get": {
+        "description": "The NR FR1 standard test models of 3GPP TS 38.141-1 clause 4.9.2: parameters, ranges, fixed values and defaults.",
+        "operationId": "nr_test_models_api_v1_signal_generator_nr_test_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NrTmCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Nr Test Models",
+        "tags": [
+          "signal generator"
+        ]
+      }
+    },
+    "/api/v1/signal-generator/nr-test-models/resolve": {
+      "post": {
+        "description": "Derive everything a recipe implies (resource blocks, FFT, sample rate, RBG sets, users, capture length, the complete\n``GeneratorConfig``). Nothing is generated or stored.",
+        "operationId": "resolve_nr_test_model_api_v1_signal_generator_nr_test_models_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NrTestModelConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NrTmResolution"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Nr Test Model",
         "tags": [
           "signal generator"
         ]

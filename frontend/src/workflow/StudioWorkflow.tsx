@@ -5,6 +5,7 @@ import type { RunView } from '@/api/types'
 import type { PAInputConfig } from '@/api/signalGenerator'
 import { parameterKey, type PASimulation } from '@/api/virtualPA'
 import { LoadingState } from '@/components/StateBlock'
+import { signalName } from '@/utils/nrTestModel'
 
 export interface WorkflowState {
   version: 1
@@ -96,7 +97,7 @@ function ScopedWorkflow({ scope, children }: { scope: string; children: ReactNod
   const actions = useMemo<WorkflowActions>(() => ({
     selectInputs: (ids, configs, dataset) => set(old => ({ ...empty(), origin: 'generated', inputId: ids[0] ?? null,
       inputIds: ids, inputConfigs: configs, inputDatasetId: dataset?.id, inputDatasetName: dataset?.name,
-      inputName: dataset?.name ?? configs.map(c => c.preset_id).join(', '), modelId: old.modelId, parameters: old.parameters })),
+      inputName: dataset?.name ?? configs.map(signalName).join(', '), modelId: old.modelId, parameters: old.parameters })),
     selectCapture: (id, version) => set(old => old.datasetId === id && old.datasetVersion === version ? old : { ...old, datasetId: id, datasetVersion: version, paRunId: null, dpdRunId: null }),
     completeDataset: (id, simulationId) => set(old => ({ ...old, datasetId: id, simulationId, datasetVersion: 'raw-v1', paRunId: null, dpdRunId: null })),
     selectInput: (id, name) => set(old => old.origin === 'generated' && old.inputId === id ? old
