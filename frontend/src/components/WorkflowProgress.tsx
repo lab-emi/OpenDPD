@@ -67,7 +67,7 @@ export function WorkflowProgress() {
         const color = step.done ? colors.primary : colors.textSecondary
         const fill = step.done ? colors.selected : colors.surface
         const enabled = index < 3 || pair
-        return <g key={step.key} role="button" tabIndex={enabled ? 0 : -1} aria-label={step.label + ' · ' + t(step.done ? 'paFlow.complete' : 'paFlow.pending')}
+        return <g key={step.key} role="button" tabIndex={enabled ? 0 : -1} aria-label={step.symbol + ' ' + step.label + ' · ' + t(step.done ? 'paFlow.complete' : 'paFlow.pending')}
           aria-disabled={!enabled} data-testid={'workflow-' + step.key} data-complete={step.done}
           onClick={() => open(index)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(index) } }}
           style={{ cursor: enabled ? 'pointer' : 'default', outlineColor: colors.primary }}>
@@ -77,7 +77,7 @@ export function WorkflowProgress() {
             fill={fill} stroke={color} strokeWidth="1.5" /> : <>
             <rect x={x!-40} y={y!-16} width="80" height="34" rx={index === 4 ? 4 : 7} fill={fill} stroke={color} strokeWidth="1.5" />
           </>}
-          <text x={x!-(index === 1 || index === 3 ? 7 : 0)} y={y!+5} textAnchor="middle" fill={color} fontFamily="ui-monospace, monospace" fontWeight="700" fontSize="15">{step.symbol}</text>
+          <text x={x!-(index === 1 || index === 3 ? 7 : 0)} y={y!+5} textAnchor="middle" fill={color} fontFamily="ui-monospace, monospace" fontWeight="700" fontSize="15">{step.symbol + ' '}</text>
           {step.done && <g><circle cx={x!+36} cy={y!-17} r="8" fill={colors.primary} /><path d={'M ' + (x!+32) + ' ' + (y!-17) + ' l 3 3 5 -6'} fill="none" stroke={colors.primaryContrast} strokeWidth="1.7" /></g>}
           <text x={x} y={y!+37} textAnchor="middle" fill={color} fontSize={large ? 14 : 10.5} fontWeight={active === index ? 700 : 500}>{step.label}</text>
         </g>
