@@ -753,7 +753,7 @@ test('"Show it" from the keyboard leaves the focus in the panel instead of dropp
   expect(within(screen.getByTestId('nrtm-panel')).getAllByRole('button')[0]).toHaveFocus()
 })
 
-test('switching to NR-N-TM (FDD only) and back never leaves the TDD-only PN23 scope on an FDD recipe', async () => {
+test('switching TM3.2 to TDD and selecting all symbols sends the TDD PN23 scope', async () => {
   const { calls } = setup()
   renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
   await ready()
@@ -765,21 +765,34 @@ test('switching to NR-N-TM (FDD only) and back never leaves the TDD-only PN23 sc
   await pick(screen.getByRole('combobox', { name: 'PN23 scope (TDD)' }), 'All symbols')
   const tddAll = recipeWith({ ...tm32, duplex: 'tdd', pn_scope: 'all_symbols' })
   await waitFor(() => expect(screen.getByTestId(chip(tddAll))).toBeInTheDocument())
-  const before = resolveCalls(calls).length
-  // NR-N-TM exists for FDD only: the recipe becomes FDD and the scope returns to its default.
-  await userEvent.click(screen.getByRole('button', { name: 'NR-N-TM, QPSK' }))
-  const ntm = recipeWith({ model: 'NR-N-TM', nb_iot: { position: 'lower', boost_db: 6 } }, { scs_khz: 15 })
-  await waitFor(() => expect(screen.getByTestId(chip(ntm))).toBeInTheDocument())
-  expect(screen.queryByRole('combobox', { name: 'PN23 scope (TDD)' })).not.toBeInTheDocument()
-  await userEvent.click(screen.getByRole('button', { name: 'TM3.2, QPSK, 16QAM' }))
-  const fdd = recipeWith(tm32, { scs_khz: 15 })
-  await waitFor(() => expect(screen.getByTestId(chip(fdd))).toBeInTheDocument())
-  // Every request after the switch carried the default scope, and the entry has the id of the plain FDD recipe (the same IQ must not get a second id).
-  const bodies = resolveCalls(calls).slice(before).map(c => c.body as NrTmRecipe)
-  expect(bodies.length).toBeGreaterThanOrEqual(2)
-  expect(bodies.map(body => `${body.model}/${body.duplex}/${body.pn_scope}`)).toEqual(expect.arrayContaining(['NR-N-TM/fdd/dl_symbols', 'NR-FR1-TM3.2/fdd/dl_symbols']))
-  expect(bodies.some(body => body.duplex === 'fdd' && body.pn_scope === 'all_symbols')).toBe(false)
-  expect(screen.getAllByTestId(/^selected-preset-/).map(node => node.getAttribute('data-testid'))).toEqual(['selected-preset-' + fixtureResolve(fdd).config.preset_id])
+  expect(resolveCalls(calls).at(-1)!.body).toMatchObject(tddAll)
+})
+
+test('switching to NR-N-TM (FDD only) and back never leaves the TDD-only PN23 scope on an FDD recipe', async () => {
+  // Restore the state exercised above so this test measures the two model switches,
+  // without spending three more real debounce intervals setting up that state.
+  const tm32 = { model: 'NR-FR1-TM3.2' } as const
+  const tddAll = recipeWith({ ...tm32, duplex: 'tdd', pn_scope: 'all_symbols' })
+  const { calls, cleanup } = await openWith([fixtureResolve(tddAll).config], 'generator-pn23-switch')
+  try {
+    await ready()
+    expect(screen.getByTestId(chip(tddAll))).toBeInTheDocument()
+    const before = resolveCalls(calls).length
+    // NR-N-TM exists for FDD only: the recipe becomes FDD and the scope returns to its default.
+    await userEvent.click(screen.getByRole('button', { name: 'NR-N-TM, QPSK' }))
+    const ntm = recipeWith({ model: 'NR-N-TM', nb_iot: { position: 'lower', boost_db: 6 } }, { scs_khz: 15 })
+    await waitFor(() => expect(screen.getByTestId(chip(ntm))).toBeInTheDocument())
+    expect(screen.queryByRole('combobox', { name: 'PN23 scope (TDD)' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'TM3.2, QPSK, 16QAM' }))
+    const fdd = recipeWith(tm32, { scs_khz: 15 })
+    await waitFor(() => expect(screen.getByTestId(chip(fdd))).toBeInTheDocument())
+    // Every request after the switch carried the default scope, and the entry has the id of the plain FDD recipe (the same IQ must not get a second id).
+    const bodies = resolveCalls(calls).slice(before).map(c => c.body as NrTmRecipe)
+    expect(bodies.length).toBeGreaterThanOrEqual(2)
+    expect(bodies.map(body => `${body.model}/${body.duplex}/${body.pn_scope}`)).toEqual(expect.arrayContaining(['NR-N-TM/fdd/dl_symbols', 'NR-FR1-TM3.2/fdd/dl_symbols']))
+    expect(bodies.some(body => body.duplex === 'fdd' && body.pn_scope === 'all_symbols')).toBe(false)
+    expect(screen.getAllByTestId(/^selected-preset-/).map(node => node.getAttribute('data-testid'))).toEqual(['selected-preset-' + fixtureResolve(fdd).config.preset_id])
+  } finally { cleanup() }
 })
 
 test('the results header names a signal like its chip and its entry in the preview list, so two test models that differ only in the PN convention are not the same line', async () => {

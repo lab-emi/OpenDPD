@@ -147,7 +147,7 @@ HOSTILE_RECIPES = {
     "a boost of null": (recipe_text("null"), "invalid_request"),
     "a gap of 400 digits": (recipe_text(carriers='[{"scs_khz":15,"bandwidth_mhz":10},{"scs_khz":15,"bandwidth_mhz":10,"gap_before_mhz":%s}]' % ("1" + "0" * 400)), "invalid_request"),
     "carriers nested 500 deep": (recipe_text(carriers=NESTED(500)), "invalid_request"),
-    "carriers nested 3,000 deep": (recipe_text(carriers=NESTED(3000)), "invalid_request"),
+    "carriers nested 3,000 deep": (recipe_text(carriers=NESTED(3000)), None),
     "carriers nested 30,000 deep": (recipe_text(carriers=NESTED(30000)), "invalid_json"),
 }
 RECIPE_BODIES = {                  # the four public routes whose bodies can carry a recipe
@@ -165,9 +165,20 @@ def test_hostile_numbers_in_a_recipe_are_a_422_on_every_route_that_takes_one_and
     with caplog.at_level(logging.DEBUG):
         for name, (recipe, code) in HOSTILE_RECIPES.items():
             for path, wrap in RECIPE_BODIES.items():
-                response = client.post(path, content=wrap(recipe).encode(), headers=auth)
+                body = wrap(recipe)
+                expected_code = code
+                if expected_code is None:
+                    # Older CPython JSON decoders hit their recursion limit
+                    # before schema validation; both paths must remain a 422.
+                    try:
+                        json.loads(body)
+                    except RecursionError:
+                        expected_code = "invalid_json"
+                    else:
+                        expected_code = "invalid_request"
+                response = client.post(path, content=body.encode(), headers=auth)
                 assert response.status_code == 422, (name, path, response.status_code, response.text[:200])
-                assert response.json()["error"]["code"] == code, (name, path, response.text[:200])
+                assert response.json()["error"]["code"] == expected_code, (name, path, response.text[:200])
             now[0] += 60                                                       # a new minute: the per-address budgets start again
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING or r.exc_info], [r.getMessage() for r in caplog.records][:3]
     assert manager.inflight == 0 and not manager.ip_inflight and not manager.ip_expensive and not manager.storage_reserved

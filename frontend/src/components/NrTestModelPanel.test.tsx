@@ -100,11 +100,16 @@ test('the carrier table adds, clones and removes carriers up to 16 and offers th
   fireEvent.change(carrierGroup(2).getByLabelText('Cell ID'), { target: { value: '12' } })
   expect(lastCall(onChange).carriers[1]).toEqual({ scs_khz: 30, bandwidth_mhz: 20, n_cell_id: 12, gap_before_mhz: 0.9 })
   // Growing clones the last row but starts with the default cell ID and no gap.
-  await userEvent.click(screen.getByRole('button', { name: 'Add carrier' }))
+  const addCarrier = screen.getByRole('button', { name: 'Add carrier' })
+  await userEvent.click(addCarrier)
   expect(lastCall(onChange).carriers[2]).toEqual(carrier(30, 20))
-  for (let i = 0; i < 20; i++) if (!screen.getByRole('button', { name: 'Add carrier' }).hasAttribute('disabled')) await userEvent.click(screen.getByRole('button', { name: 'Add carrier' }))
+  // The same button survives row additions; avoid rescanning every MUI row for each click.
+  for (let count = 3; count < 16; count++) await userEvent.click(addCarrier)
   expect(screen.getByTestId('nrtm-carrier-count')).toHaveTextContent('16')
-  expect(screen.getByRole('button', { name: 'Add carrier' })).toBeDisabled()
+  expect(addCarrier).toBeDisabled()
+  const changeCount = onChange.mock.calls.length
+  fireEvent.click(addCarrier)
+  expect(onChange).toHaveBeenCalledTimes(changeCount)
   expect(screen.getByRole('button', { name: 'Add a carrier like the last one' })).toBeDisabled()
   // The cap is Studio's choice, and the panel says so right beside the stepper.
   expect(screen.getByTestId('nrtm-carrier-limit')).toHaveTextContent('16 carriers is the Studio limit (the standard sets none).')
