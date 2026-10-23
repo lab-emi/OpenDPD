@@ -63,7 +63,7 @@ test.describe('J1 — reproduce the built-in example (mock API)', () => {
     await expect(timePlot.locator('svg.main-svg').first()).toBeVisible()
     const range = () => timePlot.evaluate((el) => (el as HTMLElement & { layout: { xaxis: { range: number[] } } }).layout.xaxis.range)
     const before = await range()
-    await page.getByRole('button', { name: 'Language' }).click()
+    await page.getByRole('button', { name: 'English · Language' }).click()
     const items = page.getByRole('menuitem')
     // Requested order: English, Dutch and Chinese first, then English-name alphabetical order.
     await expect(items).toHaveText(['English', 'Nederlands', '中文', 'Français', 'Deutsch', 'Italiano', '日本語', '한국어', 'Español'])

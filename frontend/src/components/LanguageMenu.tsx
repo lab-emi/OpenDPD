@@ -44,7 +44,7 @@ export function LanguageMenu({ variant = 'toolbar' }: { variant?: 'toolbar' | 's
         color="inherit"
         variant={variant === 'settings' ? 'outlined' : 'text'}
         size="small"
-        aria-label={t('language.label')}
+        aria-label={current.name + ' · ' + t('language.label')}
         aria-haspopup="menu"
         aria-expanded={anchor ? 'true' : undefined}
         startIcon={<Flag src={current.flag} />}
