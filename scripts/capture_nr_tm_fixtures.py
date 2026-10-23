@@ -14,6 +14,9 @@ A recipe is the complete object the Studio sends (`NrTmRecipe`: no optional key 
 The generated signals keep every scalar and every allocation / EVM-bin list verbatim; the long plot arrays (PSD, time, constellation, CCDF) are
 decimated to `DECIMATE` points because no test reads them. Run this again after the backend changes; `fixtureResolve` throws for a recipe that is not
 in the file and names the command.
+
+Signal identifiers include the generator source hashes and NumPy/SciPy versions. The output records these as `_runtime`;
+use its library versions when checking a snapshot. A source change requires a fresh capture even when I/Q bytes are unchanged.
 """
 import argparse
 import json
@@ -44,8 +47,11 @@ def capture():
     from fastapi.testclient import TestClient
 
     from opendpd import __version__
+    import numpy as np
+    import scipy
     from opendpd.server.app import create_app
     from opendpd.server.security import CSRF_HEADER
+    from opendpd.services.signal_generator import _generator_source_hash, _test_model_source_hash
 
     wanted = json.loads(RECIPES.read_text())
     with tempfile.TemporaryDirectory() as workspace:
@@ -70,6 +76,8 @@ def capture():
                         analysis[key] = decimate(analysis[key])
                 signals[item["name"]] = {"recipe": item["recipe"], "signal": signal}
     return {"_generated_by": "scripts/capture_nr_tm_fixtures.py", "_opendpd_version": __version__,
+            "_runtime": {"numpy_version": np.__version__, "scipy_version": scipy.__version__,
+                         "generator_source_sha256": _generator_source_hash(), "nr_test_model_source_sha256": _test_model_source_hash()},
             "_note": "Real answers of the local API for the recipes in nrTmFixtureRecipes.json. Long plot arrays of generated signals are decimated to "
                      f"{DECIMATE} points; every other field is verbatim. Regenerate with the command in the script header; do not edit by hand.",
             "resolutions": resolutions, "signals": signals}
@@ -77,7 +85,7 @@ def capture():
 
 def render(data):
     lines = ["{"]
-    for key in ("_generated_by", "_opendpd_version", "_note"):
+    for key in ("_generated_by", "_opendpd_version", "_runtime", "_note"):
         lines.append(f"{json.dumps(key)}: {json.dumps(data[key])},")
     lines.append('"resolutions": [')
     lines.append(",\n".join(json.dumps(entry, sort_keys=True, separators=(",", ":")) for entry in data["resolutions"]))
@@ -91,11 +99,16 @@ def render(data):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--check", action="store_true", help="compare with the committed file instead of writing it")
-    text = render(capture())
+    captured = capture()
+    text = render(captured)
     json.loads(text)
     if parser.parse_args().check:
         if RESPONSES.read_text() != text:
             print(f"{RESPONSES.relative_to(ROOT)} differs from what the backend answers now; run this script without --check", file=sys.stderr)
+            expected_runtime = json.loads(RESPONSES.read_text()).get("_runtime")
+            if expected_runtime != captured["_runtime"]:
+                print(f"Recorded runtime: {json.dumps(expected_runtime, sort_keys=True)}", file=sys.stderr)
+                print(f"Current runtime:  {json.dumps(captured['_runtime'], sort_keys=True)}", file=sys.stderr)
             return 1
         print("fixtures match the backend")
         return 0
