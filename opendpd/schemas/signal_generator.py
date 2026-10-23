@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from contextvars import ContextVar
 from typing import Literal
 
 from pydantic import Field, ValidationInfo, model_serializer, model_validator
@@ -19,6 +20,11 @@ _TEST_MODEL_UNUSED = (
     "rrc_rolloff", "rrc_span_symbols", "psk_order", "payload_mode", "payload_bits", "dft_spreading", "fsk_deviation_hz", "gaussian_bt",
     "tone_frequency_hz", "tone_count", "multitone_phase",
 )
+
+
+# The field a GeneratorConfig is being assigned to (set by GeneratorConfig.__setattr__ while pydantic validates the assignment).
+# ValidationInfo.field_name cannot tell an assignment from a nested validation: inside a batch it names the parent's field.
+_ASSIGNING: ContextVar[str | None] = ContextVar("generator_config_assigning", default=None)
 
 
 class GeneratorConfig(StrictModel):
@@ -93,9 +99,9 @@ class GeneratorConfig(StrictModel):
 
     def _match_test_model(self) -> None:
         """A configuration with a recipe is fully described by it: structural fields must equal the derivation."""
-        from opendpd.core.waveforms.nr_tm import STRUCTURAL_FIELDS, derive  # lazy: derive imports the generator package
+        from opendpd.core.waveforms.nr_tm import STRUCTURAL_FIELDS, derived_fields  # lazy: the plan imports the generator package
 
-        derived = derive(self.nr_test_model).fields
+        derived = derived_fields(self.nr_test_model)
         for name in STRUCTURAL_FIELDS:
             if name != "filter_enabled" and getattr(self, name) != derived[name]:     # filter_enabled is only a default
                 raise ValueError(f"{name} of a standard test model is derived from its nr_test_model recipe ({derived[name]!r}, "
@@ -104,6 +110,18 @@ class GeneratorConfig(StrictModel):
             default = type(self).model_fields[name].get_default(call_default_factory=True)
             if getattr(self, name) != default:
                 raise ValueError(f"{name} is not used by standard test models; keep it at {default!r} (or remove nr_test_model).")
+
+    def __setattr__(self, name, value):
+        token = _ASSIGNING.set(name)
+        try:
+            super().__setattr__(name, value)
+        finally:
+            _ASSIGNING.reset(token)
+
+    @staticmethod
+    def _bound_to_recipe(name: str) -> bool:
+        from opendpd.core.waveforms.nr_tm import STRUCTURAL_FIELDS
+        return name == "nr_test_model" or name in STRUCTURAL_FIELDS or name in _TEST_MODEL_UNUSED
 
     @model_validator(mode="after")
     def _valid(self, info: ValidationInfo):
@@ -124,7 +142,10 @@ class GeneratorConfig(StrictModel):
             raise ValueError("Channel powers must be finite and within ±40 dB.")
         same = all(len(set(values)) == 1 for values in (self.channel_subcarriers, self.channel_modulations, self.channel_power_db))
         if self.shared_channel_settings is None:
-            self.shared_channel_settings = same
+            # The derived default is written directly: an assignment would validate the model again, and without the context of this
+            # validation (a record read from storage is judged by the rules of the release that wrote it, not by the running one).
+            self.__dict__["shared_channel_settings"] = same
+            self.__pydantic_fields_set__.add("shared_channel_settings")
         elif self.shared_channel_settings and not same:
             raise ValueError("Shared OFDMA settings require identical subcarrier counts, modulation and power across channels.")
         if len(set(self.pilot_indices)) != len(self.pilot_indices):
@@ -132,7 +153,10 @@ class GeneratorConfig(StrictModel):
         if self.nr_test_model is not None:
             if self.waveform != "ofdm":
                 raise ValueError("A standard test model configuration is an OFDM signal; keep the waveform at OFDM or remove nr_test_model.")
-            if not is_stored(info):
+            # validate_assignment runs this validator again for every assignment, always without the 'stored' context. An assignment to an
+            # editable field (rms, seed, impairments, ...) cannot change the relation to the recipe; only the fields bound to it re-check it.
+            assigned = _ASSIGNING.get()
+            if not is_stored(info) and (assigned is None or self._bound_to_recipe(assigned)):
                 self._match_test_model()
             allocated_extent = self.bandwidth_hz / 2          # the symmetric extent derived by the resolver
         elif self.waveform == "ofdm":
@@ -235,8 +259,10 @@ class GeneratorAnalysis(StrictModel):
     ccdf_probability: list[float]
     allocation: list[dict[str, object]] = Field(description=(
         "One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. "
-        "Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic) "
-        "and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps)."))
+        "Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic), "
+        "evm_symbols (OFDM symbols of that carrier that enter its EVM) and subcarrier_step (1, or 12 when the lists are thinned to "
+        "resource-block steps). The evm_symbols of the analysis itself counts the OFDM symbols of one carrier grid (the lowest carrier), "
+        "not carriers times symbols."))
     notes: list[str]
     nr_test_model: NrTmSummary | None = None
 

@@ -20,7 +20,8 @@ import { Facts, Scroll } from './NrTmFacts'
 import { PlotlyChart, type PlotTrace } from './PlotlyChart'
 import { useStudioColors } from '@/theme'
 
-export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSignal; stale: boolean }) {
+/** `name` is the label the page gives this signal among the ones generated together (test models that would read the same are told apart); it defaults to the signal's own name. */
+export function SignalGeneratorPlots({ result, stale, name }: { result: GeneratedSignal; stale: boolean; name?: string }) {
   const PALETTE = useStudioColors().chart
   const [tab, setTab] = useState('overview')
   const a = result.analysis
@@ -70,7 +71,7 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
     ...(summary ? [
       [t('nrtm.model'), shortModel(summary.model)],
       [t('nrtm.nativeRate'), `${summary.native_sample_rate_hz / 1e6} MHz × ${summary.oversampling}`],
-      [t('nrtm.captured'), t('nrtm.subframesOf', { used: summary.subframes, standard: summary.standard_subframes })],
+      [t('nrtm.captured'), t(summary.subframes > summary.standard_subframes ? 'nrtm.subframesLonger' : 'nrtm.subframesOf', { used: summary.subframes, standard: summary.standard_subframes })],
       [t('nrtm.aggregated'), `${(summary.aggregated_bandwidth_hz / 1e6).toPrecision(5)} MHz`],
       ...(summary.nb_iot_rbs?.length ? [[t('nrtm.nbiot'), `RB ${summary.nb_iot_rbs.join(', ')}`]] : []),
     ] : []),
@@ -84,7 +85,7 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
     {stale && <Alert severity="warning">{t('generator.stale')}</Alert>}
     {summary?.warnings?.map(warning => <Alert key={warning} severity="warning" sx={{ overflowWrap: 'anywhere' }} data-testid="nrtm-result-warning">{warning}</Alert>)}
     <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
-    <Typography variant="caption" color="text.secondary" data-testid="generator-result-name"><span title={result.config.preset_id}>{signalName(result.config)}</span> · {formatNumber(a.sample_count)} {t('generator.samplesUnit')} · {a.duration_ms.toPrecision(4)} ms</Typography>
+    <Typography variant="caption" color="text.secondary" data-testid="generator-result-name"><span title={result.config.preset_id}>{name ?? signalName(result.config)}</span> · {formatNumber(a.sample_count)} {t('generator.samplesUnit')} · {a.duration_ms.toPrecision(4)} ms</Typography>
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 1 }}>
       {[
         ['PAPR', `${a.papr_db.toFixed(2)} dB`],

@@ -2,12 +2,14 @@ import { useQueries } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { resolveKey, resolveNrTestModel, type NrTmCatalog, type NrTmRecipe, type NrTmResolution } from '@/api/nrTestModels'
 import type { GeneratorConfig } from '@/api/signalGenerator'
-import { normalizeRecipe, recipeKey, recipeOf } from '@/utils/nrTestModel'
+import { MAX_SELECTED, normalizeRecipe, recipeKey, recipeOf } from '@/utils/nrTestModel'
 
 /** Edits are sent to the server this long after the last one, never per keystroke. */
 export const RESOLVE_DEBOUNCE_MS = 400
 
 export type NrTmStatus = 'ready' | 'waiting' | 'resolving' | 'error' | 'duplicate'
+/** Why the edits of an entry are held back: the server is still on them (`pending`), refused them (`error`), or accepted them and they give the signal of `of` (`duplicate`). */
+export interface NrTmDraftCause { cause: 'pending' | 'error' | 'duplicate'; of?: string }
 
 function useDebounced<T>(value: T, ms: number) {
   const [debounced, setDebounced] = useState(value)
@@ -47,6 +49,7 @@ export function useNrTmEditor({ catalog, configs, activeId, onResolved, onCreate
   const latest = useRef({ onResolved, drafts, configs })
   useEffect(() => { latest.current = { onResolved, drafts, configs } })
   const ids = Object.keys(configs).join('\n')
+  const draftIds = Object.keys(drafts).filter(id => id in configs)
 
   // Every draft whose debounce has caught up, plus the active entry when it is clean (its summary is shown in the panel).
   const jobs: Array<{ id: string; recipe: NrTmRecipe; key: string }> = []
@@ -57,7 +60,8 @@ export function useNrTmEditor({ catalog, configs, activeId, onResolved, onCreate
     }
     if (applied && !(activeId in drafts)) jobs.push({ id: activeId, recipe: applied, key: recipeKey(applied) })
   }
-  const results = useQueries({ queries: jobs.map(job => ({ queryKey: resolveKey(job.key), staleTime: Infinity, retry: false,
+  // A resolution is a pure function of its recipe: a refused one is not asked again when the window regains focus (its notice would flicker through "resolving").
+  const results = useQueries({ queries: jobs.map(job => ({ queryKey: resolveKey(job.key), staleTime: Infinity, retry: false, refetchOnWindowFocus: false, refetchOnReconnect: false,
     queryFn: ({ signal }: { signal: AbortSignal }) => resolveNrTestModel(job.recipe, signal) })) })
   const succeeded = jobs.map((job, i) => results[i]?.data ? job.id + '=' + job.key : '').join(';')
 
@@ -86,9 +90,19 @@ export function useNrTmEditor({ catalog, configs, activeId, onResolved, onCreate
   const caughtUp = !!draft && !!settled[activeId] && recipeKey(settled[activeId]!) === recipeKey(draft)
   const resolution = last[activeId]?.data
   const fresh = !!recipe && !!last[activeId]?.keys.includes(recipeKey(recipe))
-  const target = draft && fresh ? resolution?.config.preset_id : undefined
-  const duplicateOf = target && target !== activeId && target in configs ? target : undefined
+  // The server accepted a draft but names the id of another entry: the same signal twice (one dataset holds each id once).
+  const duplicateTarget = (id: string) => {
+    const entry = last[id], pending = drafts[id]
+    const target = pending && entry?.keys.includes(recipeKey(pending)) ? entry.data.config.preset_id : undefined
+    return target && target !== id && target in configs ? target : undefined
+  }
+  const duplicateOf = duplicateTarget(activeId)
   const status: NrTmStatus = draft ? (duplicateOf ? 'duplicate' : !caughtUp ? 'waiting' : query?.isError ? 'error' : 'resolving') : 'ready'
+  const causes: Record<string, NrTmDraftCause> = {}
+  for (const id of draftIds) {
+    const of = duplicateTarget(id), job = jobs.findIndex(j => j.id === id)
+    causes[id] = of ? { cause: 'duplicate', of } : { cause: job >= 0 && results[job]?.isError ? 'error' : 'pending' }
+  }
 
   return {
     /** The recipe the panel shows: the draft while there is one, else the active entry's own. */
@@ -99,11 +113,15 @@ export function useNrTmEditor({ catalog, configs, activeId, onResolved, onCreate
     /** The active entry's summary is loading (or being refreshed) from the server. */
     loading: status === 'waiting' || status === 'resolving' || !!query?.isFetching,
     /** True while any entry of the selection waits for the server: generating would use a configuration that is not derived from its recipe. */
-    blocked: Object.keys(drafts).some(id => id in configs),
+    blocked: draftIds.length > 0,
+    /** The entries that have a draft the server has not accepted (waiting, resolving, refused or a duplicate), in selection order. */
+    draftIds: Object.keys(configs).filter(id => draftIds.includes(id)),
+    /** For every entry with such a draft, why it is held back (the wording of the marker and of the line next to Generate depends on it). */
+    causes,
     edit: (next: NrTmRecipe) => setDrafts(old => applied && recipeKey(next) === recipeKey(applied) ? omit(old, activeId) : { ...old, [activeId]: next }),
     /** Appends a new entry that has no derived configuration yet; it is resolved like any other draft. */
     add: (next: NrTmRecipe) => {
-      if (!catalog) return
+      if (!catalog || Object.keys(configs).length >= MAX_SELECTED) return
       const id = `nr-tm-new-${++counter.current}`
       setDrafts(old => ({ ...old, [id]: next }))
       onCreate({ ...(catalog.default_config as GeneratorConfig), preset_id: id, nr_test_model: next })

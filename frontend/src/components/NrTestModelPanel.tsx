@@ -17,18 +17,15 @@ import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
+import type { Ref } from 'react'
 import type { NrTmCatalog, NrTmModelId, NrTmRecipe, NrTmResolution } from '@/api/nrTestModels'
 import { formatNumber, t } from '@/i18n'
 import { useStudioColors } from '@/theme'
-import { describeApiError } from '@/utils/apiErrorText'
-import { convertModel, modelInfo, NB_IOT_DEFAULT, nextModel, normalizeRecipe, shortModel } from '@/utils/nrTestModel'
+import { convertModel, describeNrTmError, MAX_SUBFRAMES, modelInfo, NB_IOT_BOOST, NB_IOT_DEFAULT, nbIotBoostBounds, nbIotHosts, nextModel, normalizeRecipe, shortModel, withPnScope } from '@/utils/nrTestModel'
 import { NrTmCarriers } from './NrTmCarriers'
 import { NumberInput } from './NrTmFields'
 import { NrTmStandard } from './NrTmStandard'
 import type { NrTmStatus } from './useNrTmEditor'
-
-/** The server's refusal of a recipe as readable lines (both envelopes, without pydantic's "Value error, " prefix). */
-export const describeNrTmError = describeApiError
 
 export interface NrTestModelPanelProps {
   catalog: NrTmCatalog
@@ -46,23 +43,31 @@ export interface NrTestModelPanelProps {
   /** Models already in the selection, so that "Add another" starts from one that is not. */
   selectedModels: string[]
   canAdd: boolean
+  /** The panel's heading takes focus when the page brings an entry here ("Show it"), so that keyboard and screen-reader users land in the panel. */
+  headingRef?: Ref<HTMLHeadingElement>
   onChange: (recipe: NrTmRecipe) => void
   onAdd: (recipe: NrTmRecipe) => void
 }
 
-export function NrTestModelPanel({ catalog, recipe, status, error, resolution, fresh, loading, duplicateOf, disabled, selectedModels, canAdd, onChange, onAdd }: NrTestModelPanelProps) {
+export function NrTestModelPanel({ catalog, recipe, status, error, resolution, fresh, loading, duplicateOf, disabled, selectedModels, canAdd, headingRef, onChange, onAdd }: NrTestModelPanelProps) {
   const colors = useStudioColors()
   const info = recipe ? modelInfo(catalog, recipe.model) : undefined
   const summary = resolution?.summary
   const current = fresh ? summary : undefined
   const standardSubframes = recipe?.duplex === 'tdd' ? catalog.limits.standard_subframes_tdd : catalog.limits.standard_subframes_fdd
-  const choose = (model: NrTmModelId) => recipe ? onChange(convertModel(catalog, recipe, model)) : onAdd(convertModel(catalog, normalizeRecipe(catalog.default_recipe), model))
-  const set = (change: Partial<NrTmRecipe>) => recipe && onChange({ ...recipe, ...change })
+  // The server accepts 1 to 20 subframes whatever the duplex mode; the standard's own length is only the default.
+  const maxSubframes = Math.max(MAX_SUBFRAMES, catalog.limits.standard_subframes_tdd)
+  // Without an active test model a card adds an entry, and the selection is full at 16: say so instead of offering a button that would break the limit.
+  const full = !recipe && !canAdd
+  const boost = recipe?.nb_iot ? nbIotBoostBounds(catalog, recipe) : NB_IOT_BOOST
+  const choose = (model: NrTmModelId) => recipe ? onChange(convertModel(catalog, recipe, model)) : canAdd && onAdd(convertModel(catalog, normalizeRecipe(catalog.default_recipe), model))
+  // The PN23 scope only matters for TDD with the standard convention (the server warns otherwise), so any other combination keeps the default.
+  const set = (change: Partial<NrTmRecipe>) => { if (recipe) onChange(withPnScope({ ...recipe, ...change })) }
 
   return <Stack spacing={1.5} data-testid="nrtm-panel" aria-busy={loading}>
     <Stack spacing={.5}>
       <Stack direction="row" useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h3" component="h3">{t('nrtm.title')}</Typography>
+        <Typography variant="h3" component="h3" ref={headingRef} tabIndex={-1} sx={{ '&:focus-visible': { outline: '3px solid', outlineColor: 'primary.main', outlineOffset: 2, borderRadius: .5 } }}>{t('nrtm.title')}</Typography>
         <Chip size="small" variant="outlined" label={catalog.standard} sx={{ height: 'auto', maxWidth: '100%', py: .25, '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere' } }} />
       </Stack>
       <Typography variant="caption" color="text.secondary">{t(recipe ? 'nrtm.help' : 'nrtm.helpEmpty')}</Typography>
@@ -71,7 +76,7 @@ export function NrTestModelPanel({ catalog, recipe, status, error, resolution, f
     <Box role="group" aria-label={t('nrtm.model')} sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(108px,1fr))', gap: 1 }}>
       {catalog.models.map(m => {
         const selected = recipe?.model === m.model
-        return <ButtonBase key={m.model} disabled={disabled} aria-pressed={selected} aria-label={`${shortModel(m.model)}, ${m.modulations.join(', ')}`} title={m.title} data-testid={'nrtm-model-' + m.model} onClick={() => choose(m.model)}
+        return <ButtonBase key={m.model} disabled={disabled || full} aria-pressed={selected} aria-label={`${shortModel(m.model)}, ${m.modulations.join(', ')}`} title={m.title} data-testid={'nrtm-model-' + m.model} onClick={() => choose(m.model)}
           sx={{ display: 'block', textAlign: 'left', p: 1.25, border: 1, borderRadius: 1.5, borderColor: selected ? 'primary.main' : 'divider', bgcolor: selected ? colors.selected : 'background.paper',
             '&:hover': { borderColor: 'primary.main' }, '&.Mui-focusVisible': { outline: '3px solid', outlineColor: 'primary.main', outlineOffset: 2 } }}>
           <Typography component="span" sx={{ display: 'block', fontWeight: 750, fontSize: 16 }}>{shortModel(m.model)}</Typography>
@@ -79,12 +84,13 @@ export function NrTestModelPanel({ catalog, recipe, status, error, resolution, f
         </ButtonBase>
       })}
     </Box>
+    {full && <Typography variant="caption" color="warning.main" role="status" data-testid="nrtm-selection-full">{t('generator.selectionLimit')}</Typography>}
 
     {recipe && info && <Paper sx={{ p: 1.5 }} data-testid="nrtm-model-details"><Stack spacing={.75}>
-      <Typography variant="subtitle2">{info.title}</Typography>
+      <Typography variant="subtitle2" component="h4">{info.title}</Typography>
       <Typography variant="caption" color="text.secondary">{t('nrtm.clause', { clause: info.clause })} · {info.users.map(u => `nRNTI ${u.rnti}: ${u.modulation}`).join(' · ')}</Typography>
       <Typography variant="body2">{info.description}</Typography>
-      <Accordion disableGutters variant="outlined">
+      <Accordion disableGutters variant="outlined" slotProps={{ heading: { component: 'h4' } }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography variant="body2" sx={{ fontWeight: 600 }}>{t('nrtm.usedFor', { count: info.used_for.length })}</Typography></AccordionSummary>
         <AccordionDetails><Box component="ul" sx={{ m: 0, pl: 2.5 }}>{info.used_for.map(use => <Typography component="li" variant="body2" key={use}>{use}</Typography>)}</Box></AccordionDetails>
       </Accordion>
@@ -122,7 +128,7 @@ export function NrTestModelPanel({ catalog, recipe, status, error, resolution, f
           onChange={e => set({ data_convention: e.target.value as NrTmRecipe['data_convention'] })}>
           {(['standard', 'matlab'] as const).map(value => <MenuItem key={value} value={value}>{t(`nrtm.convention.${value}`)}</MenuItem>)}
         </TextField>
-        {recipe.duplex === 'tdd' && <TextField select label={t('nrtm.pnScope')} value={recipe.pn_scope} disabled={disabled} helperText={t('nrtm.pnScopeHelp')}
+        {recipe.duplex === 'tdd' && recipe.data_convention === 'standard' && <TextField select label={t('nrtm.pnScope')} value={recipe.pn_scope} disabled={disabled} helperText={t('nrtm.pnScopeHelp')}
           onChange={e => set({ pn_scope: e.target.value as NrTmRecipe['pn_scope'] })}>
           {(['dl_symbols', 'all_symbols'] as const).map(value => <MenuItem key={value} value={value}>{t(`nrtm.pnScope.${value}`)}</MenuItem>)}
         </TextField>}
@@ -137,35 +143,35 @@ export function NrTestModelPanel({ catalog, recipe, status, error, resolution, f
             <ToggleButton value="standard" disabled={disabled}>{t('nrtm.lengthStandard', { count: standardSubframes })}</ToggleButton>
             <ToggleButton value="custom" disabled={disabled}>{t('nrtm.lengthCustom')}</ToggleButton>
           </ToggleButtonGroup>
-          {recipe.subframes !== null && <NumberInput label={t('nrtm.subframes')} value={recipe.subframes} min={1} max={standardSubframes} disabled={disabled}
+          {recipe.subframes !== null && <NumberInput label={t('nrtm.subframes')} value={recipe.subframes} min={1} max={maxSubframes} disabled={disabled}
             onCommit={value => set({ subframes: value === null ? null : Math.trunc(value) })} />}
-          <Typography variant="caption" color="text.secondary">{t('nrtm.lengthHelp', { limit: formatNumber(catalog.limits.max_samples) })}</Typography>
+          <Typography variant="caption" color="text.secondary">{t('nrtm.lengthHelp', { max: maxSubframes, limit: formatNumber(catalog.limits.max_samples) })}</Typography>
         </Stack>
       </Box>
 
       {info?.nb_iot && recipe.nb_iot && <Paper sx={{ p: 1.5 }} component="section" aria-label={t('nrtm.nbiot')}><Stack spacing={1}>
-        <Typography variant="subtitle2">{t('nrtm.nbiot')}</Typography>
+        <Typography variant="subtitle2" component="h4">{t('nrtm.nbiot')}</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 1.5 }}>
           <TextField select label={t('nrtm.nbiotPosition')} value={recipe.nb_iot.position} disabled={disabled}
             onChange={e => set({ nb_iot: { ...(recipe.nb_iot ?? NB_IOT_DEFAULT), position: e.target.value as 'lower' | 'upper' | 'both' } })}>
             {(['lower', 'upper', 'both'] as const).map(value => <MenuItem key={value} value={value}>{t(`nrtm.nbiotPosition.${value}`)}</MenuItem>)}
           </TextField>
-          <NumberInput label={t('nrtm.nbiotBoost')} value={recipe.nb_iot.boost_db} min={3} max={12} step="any" disabled={disabled} helperText={t('nrtm.nbiotBoostHelp')}
+          <NumberInput label={t('nrtm.nbiotBoost')} value={recipe.nb_iot.boost_db} min={boost.min} max={boost.max} step="any" disabled={disabled} helperText={t('nrtm.nbiotBoostHelp', boost)}
             onCommit={value => value !== null && set({ nb_iot: { ...(recipe.nb_iot ?? NB_IOT_DEFAULT), boost_db: value } })} />
         </Box>
-        <Typography variant="caption" color="text.secondary" data-testid="nrtm-nbiot-rbs">{nbIotRbs(catalog, recipe)}</Typography>
+        <Stack data-testid="nrtm-nbiot-rbs">{nbIotRbs(catalog, recipe).map(line => <Typography key={line} variant="caption" color="text.secondary">{line}</Typography>)}</Stack>
       </Stack></Paper>}
 
       <Stack spacing={.75} aria-live="polite" data-testid="nrtm-status">
         {(status === 'waiting' || status === 'resolving') && <><Typography variant="caption" color="text.secondary" role="status">{t('nrtm.resolving')}</Typography><LinearProgress aria-label={t('nrtm.resolving')} sx={{ height: 3 }} /></>}
         {status === 'duplicate' && <Alert severity="warning" data-testid="nrtm-duplicate">{t('nrtm.duplicate', { name: duplicateOf ?? '' })}</Alert>}
         {status === 'error' && <Alert severity="error"><AlertTitle>{t('nrtm.invalid')}</AlertTitle>{describeNrTmError(error).map(line => <Typography key={line} variant="body2">{line}</Typography>)}</Alert>}
-        {summary && <Stack direction="row" useFlexGap sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap', opacity: fresh ? 1 : .55 }} data-testid="nrtm-derived">
+        {summary && status !== 'error' && <Stack direction="row" useFlexGap sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap', opacity: fresh ? 1 : .55 }} data-testid="nrtm-derived">
           <Typography variant="body2">{t('nrtm.derived', { fs: formatNumber(summary.sample_rate_hz / 1e6, { maximumFractionDigits: 4 }), os: summary.oversampling, samples: formatNumber(summary.n_samples),
             duration: formatNumber(summary.duration_ms, { maximumFractionDigits: 3 }), subframes: summary.subframes })}</Typography>
           {summary.truncated && <Chip size="small" color="warning" label={t('nrtm.truncated', { used: summary.subframes, standard: summary.standard_subframes })} />}
         </Stack>}
-        {!!summary?.warnings?.length && <Stack spacing={.75} sx={{ opacity: fresh ? 1 : .55 }} data-testid="nrtm-warnings">
+        {status !== 'error' && !!summary?.warnings?.length && <Stack spacing={.75} sx={{ opacity: fresh ? 1 : .55 }} data-testid="nrtm-warnings">
           {summary.warnings.map(warning => <Alert key={warning} severity="warning" sx={{ overflowWrap: 'anywhere' }}>{warning}</Alert>)}
         </Stack>}
       </Stack>
@@ -178,9 +184,12 @@ export function NrTestModelPanel({ catalog, recipe, status, error, resolution, f
   </Stack>
 }
 
+/** One line per host carrier of the NB-IoT carriers (first for lower, last for upper, both for both): the eligible NR RBs of that carrier's bandwidth. */
 function nbIotRbs(catalog: NrTmCatalog, recipe: NrTmRecipe) {
-  const key = String(recipe.carriers[0]?.bandwidth_mhz)
-  const eligible = catalog.nb_iot.eligible_rbs[key]
-  if (!eligible?.length) return t('nrtm.nbiotNone')
-  return t('nrtm.nbiotEligible', { bandwidth: key, count: eligible.length, lower: catalog.nb_iot.lower_rb[key] ?? eligible[0]!, upper: catalog.nb_iot.upper_rb[key] ?? eligible.at(-1)! })
+  return nbIotHosts(recipe).map(({ index, carrier }) => {
+    const key = String(carrier.bandwidth_mhz)
+    const eligible = catalog.nb_iot.eligible_rbs[key]
+    if (!eligible?.length) return t('nrtm.nbiotNone', { index: index + 1 })
+    return t('nrtm.nbiotEligible', { index: index + 1, bandwidth: key, count: eligible.length, lower: catalog.nb_iot.lower_rb[key] ?? eligible[0]!, upper: catalog.nb_iot.upper_rb[key] ?? eligible.at(-1)! })
+  })
 }

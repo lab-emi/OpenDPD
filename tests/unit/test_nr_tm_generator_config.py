@@ -82,9 +82,87 @@ def test_the_legacy_allocation_rules_do_not_apply_to_test_models(monkeypatch):
               "sample_rate_hz": 3.0e6, "n_samples": 1000}
     with pytest.raises(ValidationError, match="do not fit the FFT"):
         GeneratorConfig(**fields)                                                           # an ordinary configuration is checked
-    monkeypatch.setattr(nr_tm, "derive", lambda recipe: type("Derived", (), {"fields": fields})())
+    monkeypatch.setattr(nr_tm, "derived_fields", lambda recipe: dict(fields))
     assert GeneratorConfig(nr_test_model=r, **fields).fft_size == 64                         # a test model is described by its recipe
 
 
 def test_structural_fields_are_the_documented_set():
     assert set(derive(recipe()).fields) == set(STRUCTURAL_FIELDS)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# validate_assignment and the "stored" context
+# ---------------------------------------------------------------------------------------------------------------------
+
+STORED = {"stored": True}
+
+
+def stale_record(r=None, **edits):
+    """What a later release finds on disk: a config whose derived fields are no longer what this release derives."""
+    r = r or recipe("NR-FR1-TM1.1", 15, 10)
+    record = config(r).model_dump(mode="json")
+    record["oversampling"] = 2 if record["oversampling"] != 2 else 4
+    record.update(edits)
+    return record
+
+
+def test_editing_a_field_of_a_record_read_from_storage_does_not_judge_it_again():
+    stale = GeneratorConfig.model_validate(stale_record(), context=STORED)
+    stale.seed = 5
+    stale.rms = 0.3
+    stale.snr_db = 40.0
+    stale.clip_db = 6.0
+    stale.carrier_frequency_hz = 3.7e9
+    stale.burst_on_samples = 4096
+    assert (stale.seed, stale.rms, stale.snr_db) == (5, 0.3, 40.0)
+    copy = stale.model_copy(update={"seed": 6})
+    assert copy.seed == 6 and copy.oversampling == stale.oversampling
+    assert GeneratorConfig.model_validate_json(stale.model_dump_json(), context=STORED) == stale      # and it still round-trips as stored
+
+
+def test_assigning_a_field_bound_to_the_recipe_is_still_judged():
+    def fresh():            # a failed assignment leaves the value in place (pydantic does not roll it back), so every case gets its own
+        return config(recipe("NR-FR1-TM1.1", 15, 10))
+    for field, value in (("fft_size", 4096), ("n_samples", 5000), ("preset_id", "nr-20"), ("channel_subcarriers", [100])):
+        with pytest.raises(ValidationError, match=f"{field} of a standard test model is derived"):
+            setattr(fresh(), field, value)
+    with pytest.raises(ValidationError, match="dft_spreading is not used by standard test models"):
+        fresh().dft_spreading = True
+    with pytest.raises(ValidationError, match="OFDM signal"):
+        fresh().waveform = "noise"
+    ok = fresh()
+    ok.nr_test_model = recipe("NR-FR1-TM1.1", 15, 10)                      # assigning the very same recipe back is fine
+    with pytest.raises(ValidationError, match="derived from its nr_test_model recipe"):
+        ok.nr_test_model = recipe("NR-FR1-TM1.1", 30, 20)                  # another recipe no longer matches the fields
+    ok.nr_test_model = None                                                # without a recipe the ordinary rules apply
+    assert ok.nr_test_model is None
+
+
+def test_a_stored_record_without_the_derived_default_of_shared_channel_settings_is_read_and_stays_editable():
+    for edits in ({"shared_channel_settings": None}, {"shared_channel_settings": None, "oversampling": 8}):
+        record = stale_record(**edits)
+        record["shared_channel_settings"] = None
+        stored = GeneratorConfig.model_validate(record, context=STORED)         # the default is derived while the context is in force
+        assert stored.shared_channel_settings is True
+        assert "shared_channel_settings" in stored.model_fields_set
+        stored.seed = 9
+        assert stored.seed == 9 and stored.shared_channel_settings is True
+    ordinary = GeneratorConfig.model_validate({**GeneratorConfig().model_dump(), "shared_channel_settings": None})
+    assert ordinary.shared_channel_settings is True
+    fresh = config(recipe("NR-FR1-TM1.1", 15, 10)).model_dump(mode="json")
+    fresh["shared_channel_settings"] = None
+    assert GeneratorConfig.model_validate(fresh).shared_channel_settings is True            # user input derives the same default
+
+
+def test_the_rules_of_a_nested_configuration_are_not_mistaken_for_an_assignment():
+    """Inside a batch pydantic names the parent's field ('configs') for the nested model; that must not skip the recipe check."""
+    from opendpd.schemas.signal_generator import GeneratorBatchRequest
+    good = config(recipe("NR-FR1-TM1.1", 15, 10)).model_dump(mode="json")
+    assert len(GeneratorBatchRequest.model_validate({"configs": [good]}).configs) == 1
+    for edit in ({"n_samples": 5000}, {"fft_size": 4096}, {"preset_id": "nr-20"}):
+        with pytest.raises(ValidationError, match="derived from its nr_test_model recipe"):
+            GeneratorBatchRequest.model_validate({"configs": [{**good, **edit}]})
+    stale = stale_record()
+    with pytest.raises(ValidationError, match="derived from its nr_test_model recipe"):
+        GeneratorBatchRequest.model_validate({"configs": [stale]})
+    assert GeneratorBatchRequest.model_validate({"configs": [stale]}, context=STORED).configs[0].oversampling == stale["oversampling"]

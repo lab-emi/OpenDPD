@@ -19,7 +19,7 @@ from opendpd.schemas.signal_generator import GeneratorAnalysis, GeneratorConfig
 
 from .grid import CarrierGrid, Overlay, build_carrier_grid
 from .modulate import cp_lengths, ofdm_demodulate, ofdm_modulate, phasor
-from .plan import CarrierPlan, Plan, make_plan, summarize
+from .plan import CarrierPlan, Plan, plan_of, summarize
 
 MAX_EVM_POINTS = 4096          # per-subcarrier EVM and allocation lists are thinned to resource-block steps above this
 
@@ -71,7 +71,7 @@ def synthesize_nr_tm(config: GeneratorConfig):
     """Return exact length complex64 IQ plus bounded diagnostic data (same contract as ``generator.synthesize``)."""
     if config.nr_test_model is None:
         raise ValueError("The configuration has no nr_test_model recipe.")
-    plan = make_plan(config.nr_test_model)
+    plan = plan_of(config.nr_test_model)
     n = plan.n_samples
     if config.sample_count != n or config.sample_rate_hz != plan.sample_rate_hz:
         raise ValueError("The configuration no longer matches its test-model recipe; edit the recipe instead.")
@@ -162,7 +162,7 @@ def analyse(config: GeneratorConfig, plan: Plan, x: np.ndarray, grids, scale: fl
     carrier_evm, entries = [], []
     err_sym, ref_sym = None, None
     bins_all, err_bins, ref_bins = [], [], []
-    evm_symbols = 0
+    evm_symbols = 0           # OFDM symbols of ONE carrier grid (the lowest carrier, like the EVM trend); per carrier: the allocation entries
     all_bins = [_subcarrier_bins(c, scs_min) for c in plan.carriers]
     thin = sum(c.subcarriers for c in plan.carriers) > MAX_EVM_POINTS
     for (carrier, grid), bins in zip(grids, all_bins):
@@ -177,12 +177,12 @@ def analyse(config: GeneratorConfig, plan: Plan, x: np.ndarray, grids, scale: fl
         power = np.abs(ref) ** 2
         carrier_evm.append(_evm_percent(float(err.sum()), float(power.sum())))
         rows, cols = np.nonzero(mask)
+        used = np.unique(cols)
         if carrier.index == 0:
-            used = np.unique(cols)
             e_sym = np.bincount(cols, weights=err, minlength=mask.shape[1])[used]
             p_sym = np.bincount(cols, weights=power, minlength=mask.shape[1])[used]
             err_sym, ref_sym = e_sym, p_sym
-        evm_symbols += int(len(np.unique(cols)))
+            evm_symbols = int(len(used))
         e_row = np.bincount(rows, weights=err, minlength=mask.shape[0])
         p_row = np.bincount(rows, weights=power, minlength=mask.shape[0])
         if thin:                                   # resource-block steps keep the stored lists short
@@ -198,6 +198,7 @@ def analyse(config: GeneratorConfig, plan: Plan, x: np.ndarray, grids, scale: fl
             "modulation_order": 2 ** plan.model.highest_qm, "power_db": 0.0,
             "scs_khz": carrier.scs_khz, "bandwidth_mhz": carrier.bandwidth_mhz, "n_rb": carrier.nrb,
             "n_cell_id": carrier.n_cell_id, "center_offset_hz": float(carrier.offset_hz), "evm_percent": carrier_evm[-1],
+            "evm_symbols": int(len(used)),
         }
         host = dict(plan.nb_iot_overlays).get(carrier.index)
         if host is not None:
@@ -295,7 +296,8 @@ def notes(config: GeneratorConfig, plan: Plan) -> list[str]:
                    "resource-element amplitude on every carrier, i.e. equal power spectral density.")
     out.append("EVM is an ideal-demodulation diagnostic over the PDSCH data resource elements of each carrier (frequency shift undone, FFT of the "
                "useful part of every OFDM symbol, no equalization or gain/phase fit, no EVM window); it is not the receiver EVM of TS 38.141-1 "
-               "clause 6.5.3. EVM trend plots refer to the lowest carrier; the per-carrier EVM is in the allocation entries.")
+               "clause 6.5.3. EVM trend plots refer to the lowest carrier, and evm_symbols is the number of OFDM symbols of that one carrier "
+               "grid that carry PDSCH data (not carriers times symbols); the per-carrier EVM and symbol counts are in the allocation entries.")
     if config.burst_on_samples is not None:
         out.append("Burst gating follows continuous-wave RMS normalization; average power includes idle samples and ramps. AWGN and DC offsets are added after gating and may remain during idle intervals.")
     if config.phase_noise_rms_deg:

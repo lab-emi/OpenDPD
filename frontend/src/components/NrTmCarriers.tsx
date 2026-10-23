@@ -11,7 +11,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import type { NrTmCarrier, NrTmCatalog, NrTmModelInfo, NrTmRecipe, NrTmSummary } from '@/api/nrTestModels'
 import { formatNumber, t } from '@/i18n'
-import { bandwidthOptions, fitCarrier, resizeCarriers, scsOptions } from '@/utils/nrTestModel'
+import { bandwidthOptions, fitCarrier, removeCarrier, resizeCarriers, scsOptions } from '@/utils/nrTestModel'
 import { NumberInput } from './NrTmFields'
 
 /**
@@ -28,11 +28,12 @@ export function NrTmCarriers({ catalog, info, recipe, summary, disabled, onChang
   const patch = (index: number, change: Partial<NrTmCarrier>) => onChange({ ...recipe, carriers: recipe.carriers.map((c, i) => i === index ? { ...c, ...change } : c) })
   return <Stack spacing={1} role="group" aria-label={t('nrtm.carriers')}>
     <Stack direction="row" useFlexGap sx={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-      <Typography variant="subtitle2">{t('nrtm.carriers')} · {count}</Typography>
-      <Stack direction="row" spacing={.5} sx={{ alignItems: 'center' }} role="group" aria-label={t('nrtm.carrierCount')}>
+      <Typography variant="subtitle2" component="h4">{t('nrtm.carriers')} · {count}</Typography>
+      <Stack direction="row" spacing={.5} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap role="group" aria-label={t('nrtm.carrierCount')}>
         <IconButton size="small" aria-label={t('nrtm.fewerCarriers')} disabled={disabled || count <= 1} onClick={() => onChange(resizeCarriers(recipe, count - 1, max))}><RemoveIcon fontSize="small" /></IconButton>
         <Typography component="output" aria-live="polite" sx={{ minWidth: 24, textAlign: 'center', fontWeight: 650 }} data-testid="nrtm-carrier-count">{count}</Typography>
         <IconButton size="small" aria-label={t('nrtm.moreCarriers')} disabled={disabled || count >= max} onClick={() => onChange(resizeCarriers(recipe, count + 1, max))}><AddIcon fontSize="small" /></IconButton>
+        {count >= max && <Typography variant="caption" color="text.secondary" data-testid="nrtm-carrier-limit">{t('nrtm.carrierLimit', { max })}</Typography>}
       </Stack>
     </Stack>
     {recipe.carriers.map((carrier, index) => {
@@ -55,12 +56,13 @@ export function NrTmCarriers({ catalog, info, recipe, summary, disabled, onChang
           <NumberInput label={t('nrtm.cellId')} value={carrier.n_cell_id} allowEmpty min={0} max={catalog.limits.max_cell_id} disabled={disabled}
             placeholder={row ? t('nrtm.cellIdAuto', { id: row.n_cell_id }) : t('nrtm.auto')} onCommit={value => patch(index, { n_cell_id: value === null ? null : Math.trunc(value) })} />
           {index > 0 ? <NumberInput label={t('nrtm.gap')} value={carrier.gap_before_mhz} min={0} step={catalog.limits.carrier_gap_step_mhz} disabled={disabled}
-            helperText={index === 1 ? t('nrtm.gapHelp', { step: catalog.limits.carrier_gap_step_mhz }) : undefined} onCommit={value => patch(index, { gap_before_mhz: value ?? 0 })} /> : <span />}
-          <IconButton aria-label={t('nrtm.removeCarrier', { index: index + 1 })} disabled={disabled || count <= 1} onClick={() => onChange({ ...recipe, carriers: recipe.carriers.filter((_, i) => i !== index) })}
+            onCommit={value => patch(index, { gap_before_mhz: value ?? 0 })} /> : <span />}
+          <IconButton aria-label={t('nrtm.removeCarrier', { index: index + 1 })} disabled={disabled || count <= 1} onClick={() => onChange(removeCarrier(recipe, index))}
             sx={{ justifySelf: 'end', gridColumn: { xs: 1, sm: 2, md: 'auto' }, gridRow: { xs: 1, md: 'auto' } }}><DeleteOutlineIcon fontSize="small" /></IconButton>
         </Box>
       </Paper>
     })}
+    {count > 1 && <Typography variant="caption" color="text.secondary">{t('nrtm.gapHelp', { step: catalog.limits.carrier_gap_step_mhz })}</Typography>}
     <Button size="small" variant="outlined" startIcon={<AddIcon />} disabled={disabled || count >= max} onClick={() => onChange(resizeCarriers(recipe, count + 1, max))} sx={{ alignSelf: 'flex-start' }}>{t('nrtm.addCarrier')}</Button>
   </Stack>
 }

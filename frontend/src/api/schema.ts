@@ -4788,7 +4788,7 @@ export interface components {
             active_carriers: number;
             /**
              * Allocation
-             * @description One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic) and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps).
+             * @description One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic), evm_symbols (OFDM symbols of that carrier that enter its EVM) and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps). The evm_symbols of the analysis itself counts the OFDM symbols of one carrier grid (the lowest carrier), not carriers times symbols.
              */
             allocation: {
                 [key: string]: unknown;
@@ -6376,6 +6376,7 @@ export interface components {
             bandwidth_mhz: number;
             /**
              * Gap Before Mhz
+             * @description Extra spacing in MHz added to the nominal channel spacing before this carrier (a non-contiguous sub-block gap). 0 = contiguous. Must be 0 for the first carrier and a multiple of 0.3 MHz; a value within 1e-9 MHz of such a multiple is stored as that exact multiple.
              * @default 0
              */
             gap_before_mhz: number;
@@ -6464,11 +6465,17 @@ export interface components {
         NrTmLimits: {
             /** Carrier Gap Step Mhz */
             carrier_gap_step_mhz: number;
-            /** Max Carriers */
+            /**
+             * Max Carriers
+             * @description Largest number of carriers of a recipe. A Studio limit: the standard sets none.
+             */
             max_carriers: number;
             /** Max Cell Id */
             max_cell_id: number;
-            /** Max Samples */
+            /**
+             * Max Samples
+             * @description Largest number of complex samples of a capture (a Studio limit); the capture is shortened or refused above it.
+             */
             max_samples: number;
             /** Standard Subframes Fdd */
             standard_subframes_fdd: number;
@@ -6483,6 +6490,7 @@ export interface components {
             description: string;
             /**
              * Fdd Only
+             * @description True when Studio generates this model for FDD only. NR-N-TM: the standard also defines a TDD form (TS 38.141-1 Table 4.9.2.2-1a), which Studio does not implement in this release.
              * @default false
              */
             fdd_only: boolean;
@@ -6516,11 +6524,12 @@ export interface components {
         };
         /**
          * NrTmNbIot
-         * @description NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): FDD, 15 kHz only.
+         * @description NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): Studio generates FDD with 15 kHz hosts only.
          */
         NrTmNbIot: {
             /**
              * Boost Db
+             * @description NB-IoT power boost X in dB over the average resource element. Studio accepts 3 to 12 dB: at least 6 dB for host carriers up to 20 MHz and 3 dB for 25 MHz and wider (TS 38.104 Table 6.3.4.2-1); the upper limit of 12 dB is a Studio limit, the standard sets none.
              * @default 6
              */
             boost_db: number;
@@ -6541,6 +6550,18 @@ export interface components {
             };
             /** Lower Rb */
             lower_rb: {
+                [key: string]: number;
+            };
+            /**
+             * Max Boost Db
+             * @description Largest NB-IoT boost X in dB that Studio accepts. A Studio limit: the standard sets no upper bound.
+             */
+            max_boost_db: number;
+            /**
+             * Min Boost Db
+             * @description Smallest NB-IoT boost X in dB per host channel bandwidth (MHz as text) at the positions lower_rb and upper_rb (TS 38.104 Table 6.3.4.2-1); a smaller boost_db is refused.
+             */
+            min_boost_db: {
                 [key: string]: number;
             };
             /** Scs Khz */

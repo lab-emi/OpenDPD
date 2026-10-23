@@ -15,9 +15,10 @@ Sources
   b_q(m)), 10.2.8 baseband; clause 7.1.2 QPSK, 7.2 Gold sequence; 6.10.1.2 cell-specific reference signals (host CRS budget).
 * TS 36.213 clause 16.4.1.4/16.6.1 (l_DataStart, bit budgets 304/200) and Table 16.8-1 (LTE in-band eligible PRBs).
 * TS 36.104 V19.2.0 clause 5.7.3 (anchor carrier: M_DL in {-2,-1,0,1} -> NB-IoT carrier centre = 100 kHz raster +/- {2.5, 7.5} kHz).
-* TS 38.104 V18.15.0 Table 5.4.2.2-1 (NR RF reference frequency F_REF) and Table 5.3.2-1 (N_RB), clause 5.3.2.
+* TS 38.104 Table 5.4.2.2-1 (NR RF reference frequency F_REF), Table 5.3.2-1 (N_RB) and Table 6.3.4.2-1 (NB-IoT RB power dynamic range); read in
+  V18.15.0 and V18.10.0, whose copies of these tables are identical.
 * TS 38.141-1 V18.14.0 4.9.2.2.9 (NR-N-TM and its power formulas), 4.9.3 (L_NB-IoT / R_NB-IoT), 3.1 (in-band definition),
-  Table 4.9.2.2-1a (TDD pattern for NR with NB-IoT; not used here, FDD only).
+  Table 4.9.2.2-1a (TDD pattern for NR with NB-IoT: defined by the standard, not generated here; Studio implements FDD only).
 
 Validation
 ----------
@@ -70,8 +71,11 @@ Conventions and resolutions of under-specified points (numbering follows the res
    NPBCH/NPDCCH/NPDSCH and the host's v_shift for the NPSS/NSSS skip; that is what ``nb_iot_frame`` does.  For every host cell
    ID >= 1 under the 36.141 N_ID rule both are the same.
 
-Further fixed choices: FDD and 15 kHz subcarrier spacing only (TS 38.141-1/38.104 define NB-IoT in-band for no other numerology;
-TDD would need per-special-subframe budgets that no standard gives and no oracle exists); the NB-IoT RE grid is mapped 1:1 onto
+Further fixed choices: FDD and 15 kHz subcarrier spacing only. The standards describe NB-IoT in-band operation for 15 kHz hosts only
+(an NB-IoT carrier of 180 kHz is one NR resource block only at 15 kHz; no text for 30 or 60 kHz hosts was found). TDD is defined as well
+(TS 38.141-1 Table 4.9.2.2-1a: D S U U D at 15 kHz, 5 ms; TS 36.141 6.1.3: NB-IoT TDD N-TM with UL/DL configuration 1, special subframe
+configuration 7 and two frames), but it is not implemented here: the NB-IoT content of the special and uplink subframes of that
+combination was not built and no oracle exists for it. The NB-IoT RE grid is mapped 1:1 onto
 the NR resource grid (an NB-IoT PRB is an NR RB at 15 kHz with the same CP structure; the per-symbol common phase of NB-IoT 10.2.8
 versus NR 38.211 5.3.1 differs by a factor common to the whole PRB and does not change PSD/ACLR); NPSS/NSSS REs that overlap
 host CRS REs are skipped but counted in the sequence mapping (10.2.7.1.2, 10.2.7.2.2); the NPBCH assumes 4 CRS ports and the NRS
@@ -91,8 +95,8 @@ import numpy as np
 
 __all__ = [
     "ANCHOR_OFFSETS_KHZ", "MAX_N_ID", "NbIotCarrierPlan", "NbIotOverlayPlan",
-    "eligible_rbs", "lower_rb", "upper_rb", "max_boost_db", "nb_iot_frame", "nb_iot_n_id", "nb_iot_n_ids",
-    "nb_iot_overlay_plan", "power_split",
+    "eligible_rbs", "frame_re_count", "lower_rb", "upper_rb", "max_boost_db", "nb_iot_frame", "nb_iot_n_id", "nb_iot_n_ids",
+    "nb_iot_overlay_plan", "power_dynamic_range_floor_db", "power_split",
 ]
 
 N_SC = 12                 # subcarriers per RB
@@ -140,14 +144,18 @@ def _prb_centre_khz(rb: int, nrb: int) -> Fraction:
     return 180 * (rb - nrb // 2) + Fraction(-15, 2)          # F_REF = centre of RE k = 6 of PRB floor(N/2)
 
 
+@functools.lru_cache(maxsize=256)
+def _eligible(nrb: int, f0: Fraction) -> tuple[int, ...]:
+    return tuple(rb for rb in range(nrb) if raster_offset_khz(f0 + _prb_centre_khz(rb, nrb)) in ANCHOR_OFFSETS_KHZ)
+
+
 def eligible_rbs(nrb: int, f_ref_mod_khz=0) -> list[int]:
     """NR RB indices (0-based, ascending) whose PRB centre is a valid anchor-carrier position (resolution 6)."""
     nrb = _nrb(nrb)
-    f0 = Fraction(f_ref_mod_khz).limit_denominator(1000)
-    rbs = [rb for rb in range(nrb) if raster_offset_khz(f0 + _prb_centre_khz(rb, nrb)) in ANCHOR_OFFSETS_KHZ]
+    rbs = _eligible(nrb, Fraction(f_ref_mod_khz).limit_denominator(1000))
     if not rbs:
         raise ValueError(f"no NB-IoT in-band position is eligible for N_RB={nrb} with F_REF mod 100 kHz = {f_ref_mod_khz}")
-    return rbs
+    return list(rbs)
 
 
 def lower_rb(nrb: int, f_ref_mod_khz=0) -> int:
@@ -211,6 +219,23 @@ def power_split(nrb: int, n_nb_re: int, boost_db: float) -> tuple[float, float]:
             f"NB-IoT boost of {boost_db:g} dB on {n_nb} REs leaves no power for the NR REs of a {nrb}-RB carrier "
             f"(X must stay below {max_boost_db(nrb, n_nb):.2f} dB)")
     return math.sqrt(nr_power), math.sqrt(g)
+
+
+def power_dynamic_range_floor_db(bandwidth_mhz: int, nrb: int, rb: int) -> int:
+    """Smallest NB-IoT RB power dynamic range X (dB) that TS 38.104 Table 6.3.4.2-1 allows a BS to declare (D.43) for an NB-IoT RB.
+
+    +6 dB for 3, 5 and 10 MHz channels at any position and for 15 / 20 MHz channels inside the central 77 / 102 resource blocks (plus 15 kHz at
+    each edge); +6 dB also for 25 MHz and wider inside the central 90 % of the channel bandwidth; +3 dB at the other positions. ``rb`` is the
+    punctured NR RB (15 kHz) of a host with ``nrb`` resource blocks; the whole RB must lie inside the region for the +6 dB row to apply.
+    """
+    nrb = _nrb(nrb)
+    if not 0 <= int(rb) < nrb:
+        raise ValueError(f"rb must be in 0..{nrb - 1}, got {rb!r}")
+    if bandwidth_mhz <= 10:
+        return 6
+    half_khz = {15: Fraction(77 * 180 + 30, 2), 20: Fraction(102 * 180 + 30, 2)}.get(bandwidth_mhz, Fraction(450 * bandwidth_mhz))     # +-45 % of the channel bandwidth, in kHz
+    centre = _prb_centre_khz(int(rb), nrb)
+    return 6 if centre - 90 >= -half_khz and centre + 90 <= half_khz else 3
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -316,50 +341,105 @@ def data_res(l_start: int, excluded) -> list:
 # ---------------------------------------------------------------------------------------------------------------------
 # one frame
 # ---------------------------------------------------------------------------------------------------------------------
-@functools.lru_cache(maxsize=64)
-def _build_frame(n_id: int, inband: bool, host_v_shift: int, nrs_ports: int, host_crs_ports: int, control_symbols: int):
-    values = np.zeros((N_SUBFRAMES, N_SYMB, N_SC), dtype=np.complex128)
-    mask = np.zeros((N_SUBFRAMES, N_SYMB, N_SC), dtype=bool)
-    v_nid = n_id % 6
+@dataclass(frozen=True, eq=False)
+class _Layout:
+    """Where the NB-IoT signal sits in one frame. It depends on the N_ID only through N_ID mod 6 (the NRS and CRS shift), so it is
+    shared by all NB-IoT cell identities; the values (Gold sequences) are what depends on the full N_ID."""
+    nrs: tuple             # (k, l, slot, m) of the NRS of port 2000
+    data: tuple            # (k, l) of an NPDCCH / NPDSCH subframe
+    npss: tuple            # (k, l) of subframe 5
+    nsss_index: tuple      # indices into the 132 NSSS symbols that are transmitted (the others overlap host CRS)
+    nsss: tuple            # (k, l) of subframe 9
+    npbch: tuple           # (k, l) of subframe 0
+    mask: np.ndarray       # [10, 14, 12] bool, read-only: True on the REs that carry NB-IoT signal
+    n_re: int              # mask.sum(), NB-IoT-signal REs per frame
+
+
+@functools.lru_cache(maxsize=256)
+def _layout(v_nid: int, inband: bool, host_v_shift: int, nrs_ports: int, host_crs_ports: int, control_symbols: int) -> _Layout:
     sync_crs = crs_positions(host_v_shift, host_crs_ports) if inband else set()    # NPSS/NSSS skip the host CRS
     reserved = set()
     for p in _NRS_PORTS[:nrs_ports]:
         reserved.update((k, l) for k, l, _, _ in nrs_positions(v_nid, p))
     if inband:
         reserved |= crs_positions(v_nid, host_crs_ports)                          # data budget: CRS of N_ID's v_shift
-    data_list = data_res(control_symbols if inband else 0, reserved)
+    data = tuple(data_res(control_symbols if inband else 0, reserved))
+    nrs = tuple(nrs_positions(v_nid, 2000))
+    # NPSS, subframe 5: k = 0..10, l = 3..13; elements overlapping host CRS are not transmitted (10.2.7.1.2)
+    npss = tuple((k, l) for l in range(3, N_SYMB) for k in range(N_SC - 1) if (k, l) not in sync_crs)
+    # NSSS, subframe 9 (n_f = 0 even): d(n) fills k = 0..11 first, then l = 3..13; CRS overlaps are counted but not used
+    full = [(k, l) for l in range(3, N_SYMB) for k in range(N_SC)]
+    nsss_index = tuple(i for i, kl in enumerate(full) if kl not in sync_crs)
+    nsss = tuple(full[i] for i in nsss_index)
+    # NPBCH, subframe 0: REs l >= 3 free of CRS (ports 0-3) and NRS (ports 2000/2001), v_shift from N_ID^Ncell irrespective of the configuration (10.2.4.4)
+    npbch_excl = crs_positions(v_nid, 4) | {(k, l) for p in _NRS_PORTS for k, l, _, _ in nrs_positions(v_nid, p)}
+    npbch = tuple(data_res(3, npbch_excl))
+    mask = np.zeros((N_SUBFRAMES, N_SYMB, N_SC), dtype=bool)
+    for sf in range(N_SUBFRAMES):
+        if sf not in (5, 9):                                     # no NRS in the NPSS/NSSS subframes
+            for k, l, _, _ in nrs:
+                mask[sf, l, k] = True
+    for sf, res in ((0, npbch), (1, data), (2, data), (3, data), (4, data), (5, npss), (6, data), (7, data), (8, data), (9, nsss)):
+        for k, l in res:
+            mask[sf, l, k] = True
+    mask.flags.writeable = False
+    return _Layout(nrs, data, npss, nsss_index, nsss, npbch, mask, int(mask.sum()))
+
+
+@functools.lru_cache(maxsize=64)
+def _build_frame(n_id: int, inband: bool, host_v_shift: int, nrs_ports: int, host_crs_ports: int, control_symbols: int):
+    lay = _layout(n_id % 6, inband, host_v_shift, nrs_ports, host_crs_ports, control_symbols)
+    values = np.zeros((N_SUBFRAMES, N_SYMB, N_SC), dtype=np.complex128)
 
     def put(sf, res, vals):
         for (k, l), v in zip(res, vals):
             values[sf, l, k] = v
-            mask[sf, l, k] = True
 
     for sf in range(N_SUBFRAMES):
-        if sf not in (5, 9):                                     # no NRS in the NPSS/NSSS subframes
+        if sf not in (5, 9):
             nrs = nrs_values(n_id, 2000, sf)
             put(sf, list(nrs), list(nrs.values()))
-    # NPSS, subframe 5: k = 0..10, l = 3..13; elements overlapping host CRS are not transmitted (10.2.7.1.2)
     d = npss_symbols()
-    res = [(k, l) for l in range(3, N_SYMB) for k in range(N_SC - 1) if (k, l) not in sync_crs]
-    put(5, res, [d[l - 3, k] for k, l in res])
-    # NSSS, subframe 9 (n_f = 0 even): d(n) fills k = 0..11 first, then l = 3..13; CRS overlaps are counted but not used
-    d = nsss_sequence(n_id, 0)
-    full = [(k, l) for l in range(3, N_SYMB) for k in range(N_SC)]
-    keep = [i for i, kl in enumerate(full) if kl not in sync_crs]
-    put(9, [full[i] for i in keep], d[keep])
-    # NPBCH, subframe 0: 200 'all 0' bits scrambled with c_init = N_ID, then theta_f (n_f = 0); REs l >= 3 free of CRS (ports 0-3)
-    # and NRS (ports 2000/2001), v_shift from N_ID^Ncell irrespective of the configuration (10.2.4.4)
-    npbch_excl = crs_positions(v_nid, 4) | {(k, l) for p in _NRS_PORTS for k, l, _, _ in nrs_positions(v_nid, p)}
-    res = data_res(3, npbch_excl)
+    put(5, lay.npss, [d[l - 3, k] for k, l in lay.npss])
+    put(9, lay.nsss, nsss_sequence(n_id, 0)[list(lay.nsss_index)])
+    # NPBCH, subframe 0: 200 'all 0' bits scrambled with c_init = N_ID, then theta_f (n_f = 0)
     c_f = gold_sequence((n_id + 1) * 1 * 2 ** 9 + n_id, 200)
-    put(0, res, qpsk(gold_sequence(n_id, 200)) * _theta_f(c_f))
+    put(0, lay.npbch, qpsk(gold_sequence(n_id, 200)) * _theta_f(c_f))
     # NPDCCH (subframe 1, format 1: NCCE 0 + 1 = 12 subcarriers) and NPDSCH (SF 2-4, 6-8, n_RNTI = 1000), 'all 0' data
-    put(1, data_list, qpsk(gold_sequence(1 * 2 ** 9 + n_id, 2 * len(data_list))))
+    put(1, lay.data, qpsk(gold_sequence(1 * 2 ** 9 + n_id, 2 * len(lay.data))))
     for sf in (2, 3, 4, 6, 7, 8):
-        put(sf, data_list, qpsk(gold_sequence(1000 * 2 ** 14 + sf * 2 ** 9 + n_id, 2 * len(data_list))))
+        put(sf, lay.data, qpsk(gold_sequence(1000 * 2 ** 14 + sf * 2 ** 9 + n_id, 2 * len(lay.data))))
     values.flags.writeable = False
-    mask.flags.writeable = False
-    return values, mask
+    return values, lay.mask
+
+
+def frame_re_count(n_id: int, *, mode: str = "inband", host_cell_id: int | None = None, nrs_ports: int = 2,
+                   host_crs_ports: int = 4, control_symbols: int = 3) -> int:
+    """Number of REs of one frame that carry NB-IoT signal (``nb_iot_frame(...)[1].sum()``), without computing any sequence.
+
+    The positions depend on the N_ID only through N_ID mod 6 and on the host cell ID mod 6 (resolution 9), so this is a lookup in
+    a layout shared by all cell identities; plan validation uses it to check the power budget in closed form.
+    """
+    n_id, *rest = _frame_key(n_id, mode, host_cell_id, nrs_ports, host_crs_ports, control_symbols)
+    return _layout(n_id % 6, *rest).n_re
+
+
+def _frame_key(n_id, mode, host_cell_id, nrs_ports, host_crs_ports, control_symbols) -> tuple:
+    """Check the arguments of ``nb_iot_frame`` / ``frame_re_count`` and return the key of ``_build_frame``."""
+    if isinstance(n_id, bool) or not isinstance(n_id, (int, np.integer)) or not 0 <= int(n_id) <= MAX_N_ID:
+        raise ValueError(f"N_ID must be an integer in 0..{MAX_N_ID}, got {n_id!r}")
+    if mode not in ("inband", "standalone"):
+        raise ValueError(f"mode must be 'inband' or 'standalone', got {mode!r}")
+    if nrs_ports not in (1, 2):
+        raise ValueError(f"nrs_ports must be 1 or 2, got {nrs_ports!r}")
+    if host_crs_ports not in (1, 2, 4):
+        raise ValueError(f"host_crs_ports must be 1, 2 or 4, got {host_crs_ports!r}")
+    if control_symbols not in (0, 1, 2, 3, 4):
+        raise ValueError(f"control_symbols must be 0..4, got {control_symbols!r}")
+    host = int(n_id) if host_cell_id is None else host_cell_id
+    if isinstance(host, bool) or not isinstance(host, (int, np.integer)) or int(host) < 0:
+        raise ValueError(f"host cell ID must be an integer >= 0, got {host_cell_id!r}")
+    return int(n_id), mode == "inband", int(host) % 6, nrs_ports, host_crs_ports, control_symbols
 
 
 def nb_iot_frame(n_id: int, *, mode: str = "inband", host_cell_id: int | None = None, nrs_ports: int = 2,
@@ -374,20 +454,7 @@ def nb_iot_frame(n_id: int, *, mode: str = "inband", host_cell_id: int | None = 
     no CRS.  ``nrs_ports=2`` reserves the port-2001 NRS positions (304/200-bit budgets, resolution 2); ``1`` is the natural
     one-port budget.  The arrays are copies and may be modified.
     """
-    if isinstance(n_id, bool) or not isinstance(n_id, (int, np.integer)) or not 0 <= int(n_id) <= MAX_N_ID:
-        raise ValueError(f"N_ID must be an integer in 0..{MAX_N_ID}, got {n_id!r}")
-    if mode not in ("inband", "standalone"):
-        raise ValueError(f"mode must be 'inband' or 'standalone', got {mode!r}")
-    if nrs_ports not in (1, 2):
-        raise ValueError(f"nrs_ports must be 1 or 2, got {nrs_ports!r}")
-    if host_crs_ports not in (1, 2, 4):
-        raise ValueError(f"host_crs_ports must be 1, 2 or 4, got {host_crs_ports!r}")
-    if control_symbols not in (0, 1, 2, 3, 4):
-        raise ValueError(f"control_symbols must be 0..4, got {control_symbols!r}")
-    host = int(n_id) if host_cell_id is None else host_cell_id
-    if isinstance(host, bool) or not isinstance(host, (int, np.integer)) or int(host) < 0:
-        raise ValueError(f"host cell ID must be an integer >= 0, got {host_cell_id!r}")
-    values, mask = _build_frame(int(n_id), mode == "inband", int(host) % 6, nrs_ports, host_crs_ports, control_symbols)
+    values, mask = _build_frame(*_frame_key(n_id, mode, host_cell_id, nrs_ports, host_crs_ports, control_symbols))
     return values.copy(), mask.copy()
 
 

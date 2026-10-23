@@ -256,3 +256,15 @@ def test_no_legacy_ofdm_allocation_is_computed_for_a_test_model(monkeypatch):
     service.precheck(config)
     with pytest.raises(pytest.fail.Exception):
         service.precheck(preset("nr-20"))                                                          # ordinary configurations still use it
+
+
+def test_a_cell_identity_override_is_warned_about_but_keeps_the_coverage_label():
+    """A free cell identity is a Studio extension of TS 38.141-1 4.9.2.3: the summary says so; the signal stays a standard test model."""
+    r = NrTestModelConfig(model="NR-FR1-TM1.1", subframes=2, carriers=[NrTmCarrier(scs_khz=15, bandwidth_mhz=5, n_cell_id=7),
+                                                                           NrTmCarrier(scs_khz=15, bandwidth_mhz=5, n_cell_id=1)])
+    config = nr_tm.resolve(r).config
+    assert service.signal_coverage(config) == "standard_test_model"
+    x, analysis = nr_tm.synthesize_nr_tm(config)
+    flagged = [w for w in analysis.nr_test_model.warnings if "Studio extension" in w]
+    assert [w.split(":")[0] for w in flagged] == ["Carrier 1", "Carrier 2"] and all("TS 38.141-1 4.9.2.3" in w for w in flagged)
+    assert any("Studio extension" in note for note in analysis.notes)                       # the notes carry the warnings

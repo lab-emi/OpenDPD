@@ -120,7 +120,7 @@ def test_re_budget_and_power_ratios_measured_from_the_waveform():
     """NB-IoT REs are X dB above the average RE and 10 log10 g (N_tot - N_NB) / (N_tot - N_NB g) dB above the NR REs."""
     for bw, nrb in NRB.items():
         for position, n_carriers in (("lower", 1), ("both", 2)):
-            for boost in ((6.0, 3.0) if bw in (3, 20, 50) else (6.0,)):
+            for boost in ((6.0, 7.5) if bw in (3, 20) else (6.0, 3.0) if bw == 50 else (6.0,)):      # 3 dB is allowed from 25 MHz hosts only
                 r, plan, config, x, analysis = synthesize((bw,), position, boost)
                 spectrum = demodulate(plan, x, plan.carriers[0])
                 rbs = [LOWER[bw], UPPER[bw]][:n_carriers] if position == "both" else [LOWER[bw]]
@@ -311,7 +311,7 @@ def test_the_nb_iot_frame_repeats_every_10_ms_and_short_captures_use_the_first_s
 def test_determinism_and_distinct_ids():
     first, second = synthesize((20,), "both"), _synthesize.__wrapped__((20,), "both", 6.0, None, None)
     assert first[3].tobytes() == second[3].tobytes() and first[4].evm_percent == second[4].evm_percent
-    ids = {nr_tm.resolve(recipe(20, position=p, boost=b)).config.preset_id for p in ("lower", "upper", "both") for b in (6.0, 3.0)}
+    ids = {nr_tm.resolve(recipe(20, position=p, boost=b)).config.preset_id for p in ("lower", "upper", "both") for b in (6.0, 7.0)}
     assert len(ids) == 6 and all(i.startswith("nr-ntm-fdd-15k-20m-c1-") and len(i) <= 64 for i in ids)
     lower, upper = synthesize((20,), "lower")[3], synthesize((20,), "upper")[3]
     assert not np.array_equal(lower, upper) and lower.shape == upper.shape
@@ -359,12 +359,13 @@ def test_unsupported_configurations_are_rejected_with_readable_messages():
     for model in ("NR-FR1-TM1.1", "NR-FR1-TM3.1", "NR-FR1-TM2"):
         with pytest.raises(ValidationError, match="NB-IoT block belongs to the NR-N-TM"):
             NrTestModelConfig(model=model, carriers=[NrTmCarrier(scs_khz=15, bandwidth_mhz=10)], nb_iot=NrTmNbIot())
-    with pytest.raises(ValidationError, match=r"defined for FDD with 15 kHz.*TDD is not supported"):
+    with pytest.raises(ValidationError, match=r"generated for FDD only\. The standard also defines a TDD form \(TS 38\.141-1 Table 4\.9\.2\.2-1a\); "
+                                              r"Studio does not implement NB-IoT in-band operation with TDD in this release"):
         recipe(10, duplex="tdd")
     for scs, bw in ((30, 10), (60, 20)):
-        with pytest.raises(ValidationError, match=rf"Carrier 1: NB-IoT operation in NR in-band is defined for 15 kHz.*{scs} kHz host"):
+        with pytest.raises(ValidationError, match=rf"Carrier 1: NR-N-TM is generated for 15 kHz host carriers only.*{scs} kHz host"):
             NrTestModelConfig(model="NR-N-TM", carriers=[NrTmCarrier(scs_khz=scs, bandwidth_mhz=bw)], nb_iot=NrTmNbIot())
-    with pytest.raises(ValidationError, match=r"Carrier 2: NB-IoT operation in NR in-band is defined for 15 kHz"):
+    with pytest.raises(ValidationError, match=r"Carrier 2: NR-N-TM is generated for 15 kHz host carriers only"):
         NrTestModelConfig(model="NR-N-TM", nb_iot=NrTmNbIot(), carriers=[NrTmCarrier(scs_khz=15, bandwidth_mhz=10),
                                                                          NrTmCarrier(scs_khz=30, bandwidth_mhz=10)])
     for bw in (60, 100):
@@ -457,3 +458,113 @@ def test_sixteen_wide_carriers_are_accepted_when_they_fit_the_sample_limit():
     x, analysis = nr_tm.synthesize_nr_tm(nr_tm.resolve(recipe(*([20] * 16), position="both")).config)
     assert x.shape == (983_040,) and analysis.evm_percent < 1e-4 and analysis.nr_test_model.nb_iot_rbs == [2, 102]
     assert [e["nb_iot"]["n_id"] for e in analysis.allocation if "nb_iot" in e] == [103, 124]
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# the NB-IoT power boost X: minimum per host bandwidth (TS 38.104 Table 6.3.4.2-1, D.43) and Studio's own upper limit
+# ---------------------------------------------------------------------------------------------------------------------
+
+def test_the_boost_floor_follows_table_6_3_4_2_1_for_the_positions_studio_offers():
+    """+6 dB for hosts of 3-20 MHz (every eligible RB lies in the 'any' / 'central 77 / 102 RB' rows); +3 dB for 25 MHz and wider
+    at L_NB-IoT and R_NB-IoT, which lie outside the central 90 % of the channel bandwidth."""
+    for bw, nrb in NRB.items():
+        eligible = nb_iot.eligible_rbs(nrb)
+        floors = {rb: nb_iot.power_dynamic_range_floor_db(bw, nrb, rb) for rb in eligible}
+        expected = 6 if bw <= 20 else 3
+        assert floors[LOWER[bw]] == floors[UPPER[bw]] == expected, bw
+        if bw <= 20:
+            assert set(floors.values()) == {6}, bw
+        else:                                                           # inside the central 90 % an NB-IoT RB needs 6 dB again
+            assert set(floors.values()) == {3, 6} and floors[LOWER[bw]] == floors[UPPER[bw]] == 3, bw
+    with pytest.raises(ValueError):
+        nb_iot.power_dynamic_range_floor_db(20, 106, 106)
+
+
+def test_a_boost_below_the_minimum_of_the_host_bandwidth_is_refused_with_the_reason():
+    for bw in (3, 5, 10, 15, 20):
+        for position in ("lower", "upper", "both"):
+            for boost in (3.0, 4.5, 5.99):
+                with pytest.raises(ValidationError, match=rf"Carrier 1: the NB-IoT power boost X of a {bw} MHz host carrier must be at least 6 dB "
+                                                          r"\(TS 38\.104 Table 6\.3\.4\.2-1, declared per TS 38\.141-1 D\.43.*got "
+                                                          rf"{boost:g} dB\. Studio accepts up to 12 dB \(a Studio limit\)"):
+                    recipe(bw, position=position, boost=boost)
+            recipe(bw, position=position, boost=6.0)
+            if (bw, position) != (3, "both"):
+                recipe(bw, position=position, boost=min(12.0, nb_iot.max_boost_db(NRB[bw], 1085 * (2 if position == "both" else 1)) - 0.01))
+    for bw in (25, 30, 35, 40, 45, 50):
+        for position in ("lower", "upper", "both"):
+            assert recipe(bw, position=position, boost=3.0).nb_iot.boost_db == 3.0
+    with pytest.raises(ValidationError):
+        NrTmNbIot(boost_db=2.99)                                        # below any host's minimum: the field's own range
+
+
+def test_the_strictest_host_decides_when_the_nb_iot_hosts_differ():
+    with pytest.raises(ValidationError, match=r"Carrier 1: the NB-IoT power boost X of a 10 MHz host"):
+        recipe(10, 50, position="both", boost=4.0)
+    with pytest.raises(ValidationError, match=r"Carrier 2: the NB-IoT power boost X of a 10 MHz host"):
+        recipe(50, 10, position="both", boost=4.0)
+    assert recipe(50, 10, position="lower", boost=3.0).nb_iot.boost_db == 3.0       # only the 50 MHz carrier is a host
+    assert recipe(10, 50, position="upper", boost=3.0).nb_iot.boost_db == 3.0
+    assert recipe(10, 50, position="both", boost=6.0)
+    validate_recipe(recipe(50, 50, position="both", boost=3.0))
+    with pytest.raises(ValueError, match="at least 6 dB"):
+        validate_recipe(direct(carriers=[NrTmCarrier(scs_khz=15, bandwidth_mhz=20)], nb_iot=NrTmNbIot(boost_db=3.0)))
+
+
+def test_the_upper_limit_of_the_boost_is_called_a_studio_limit_everywhere_it_is_met():
+    for value in (12.5, 13, 13.0, 20, "13", 1e9):
+        with pytest.raises(ValidationError) as caught:
+            NrTmNbIot(boost_db=value)
+        message = str(caught.value)
+        assert "largest NB-IoT boost Studio offers (12 dB, a Studio limit" in message and "sets no upper bound" in message, value
+    assert NrTmNbIot(boost_db=12).boost_db == 12.0
+    with pytest.raises(ValidationError, match="Studio limit"):
+        NrTestModelConfig.model_validate({"model": "NR-N-TM", "nb_iot": {"position": "lower", "boost_db": 15}, "carriers": [{"scs_khz": 15, "bandwidth_mhz": 20}]})
+    schema = NrTmNbIot.model_json_schema()["properties"]["boost_db"]
+    assert schema["minimum"] == 3 and schema["maximum"] == 12 and "Studio limit" in schema["description"] and "6 dB" in schema["description"]
+    # the physics still refuses a boost that leaves no power for the NR resource elements, and says so differently
+    with pytest.raises(ValidationError, match="leave power for the NR resource elements"):
+        recipe(3, position="both", boost=12.0)
+
+
+def test_the_catalog_states_the_minimum_per_host_bandwidth_and_the_studio_limit():
+    info = nr_tm.catalog().nb_iot
+    assert info.min_boost_db == {str(bw): (6.0 if bw <= 20 else 3.0) for bw in NRB} and info.max_boost_db == 12.0
+    assert list(info.min_boost_db) == [str(bw) for bw in info.bandwidths_mhz]
+    for bw in NRB:                                              # the catalog and the resolver agree
+        floor = info.min_boost_db[str(bw)]
+        assert recipe(bw, boost=floor).nb_iot.boost_db == floor
+        with pytest.raises(ValidationError):
+            recipe(bw, boost=floor - 0.01)
+    by_name = {p.name: p.value for p in next(m for m in nr_tm.catalog().models if m.model == "NR-N-TM").fixed_parameters}
+    assert "at least 6 dB" in by_name["NB-IoT power"] and "3 dB for 25 MHz and wider" in by_name["NB-IoT power"]
+    assert "Studio limit" in by_name["NB-IoT power"] and "Table 6.3.4.2-1" in by_name["NB-IoT power"] and "D.43" in by_name["NB-IoT power"]
+
+
+def test_nr_n_tm_in_tdd_is_refused_without_attributing_the_limit_to_the_standard():
+    expected = ("NR-N-TM is generated for FDD only. The standard also defines a TDD form (TS 38.141-1 Table 4.9.2.2-1a); "
+                "Studio does not implement NB-IoT in-band operation with TDD in this release.")
+    with pytest.raises(ValidationError) as caught:
+        recipe(10, duplex="tdd")
+    assert expected in str(caught.value) and "defined for FDD" not in str(caught.value)
+    with pytest.raises(ValueError) as caught:
+        validate_recipe(direct(duplex="tdd"))
+    assert str(caught.value) == expected
+    catalog = nr_tm.catalog()
+    info = next(m for m in catalog.models if m.model == "NR-N-TM")
+    assert info.fdd_only and "TDD form" in info.description and "not implemented" in info.description
+    by_name = {p.name: p.value for p in info.fixed_parameters}
+    assert "Table 4.9.2.2-1a" in by_name["Duplex / numerology"] and "does not implement" in by_name["Duplex / numerology"]
+    assert "defined for FDD" not in by_name["Duplex / numerology"] and "FDD only" not in by_name["Duplex / numerology"]
+    assert all(m.fdd_only is False for m in catalog.models if m.model != "NR-N-TM")
+    from opendpd.schemas.nr_test_model_api import NrTmModelInfo
+    contract = NrTmModelInfo.model_fields["fdd_only"].description               # what the API contract says the flag means
+    assert "Studio generates this model for FDD only" in contract and "TS 38.141-1 Table 4.9.2.2-1a" in contract and "does not implement" in contract
+
+
+def test_the_15_khz_restriction_of_nr_n_tm_is_not_attributed_to_a_clause_that_does_not_state_it():
+    with pytest.raises(ValidationError) as caught:
+        NrTestModelConfig(model="NR-N-TM", carriers=[NrTmCarrier(scs_khz=30, bandwidth_mhz=10)], nb_iot=NrTmNbIot())
+    text = str(caught.value)
+    assert "NR-N-TM is generated for 15 kHz host carriers only" in text and "one NR resource block only at 15 kHz" in text
+    assert "describes no in-band construction for a 30 kHz host" in text and "is defined for 15 kHz" not in text

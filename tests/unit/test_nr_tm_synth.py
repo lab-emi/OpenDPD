@@ -147,6 +147,7 @@ def test_analysis_content_for_several_carriers_and_mixed_numerologies():
     config, x, analysis = run(recipe((15, 10), (15, 10), (15, 10), subframes=2))
     assert [e["channel"] for e in analysis.allocation] == [1, 2, 3] and [e["n_cell_id"] for e in analysis.allocation] == [1, 2, 3]
     assert all(e["evm_percent"] < 1e-4 for e in analysis.allocation) and analysis.evm_percent < 1e-4
+    assert analysis.evm_symbols == len(analysis.evm_per_symbol_percent) == 14 * 2 and [e["evm_symbols"] for e in analysis.allocation] == [28, 28, 28]
     offsets = [e["center_offset_hz"] for e in analysis.allocation]
     assert offsets == sorted(offsets) and offsets[1] - offsets[0] == pytest.approx(9.9e6)
     assert analysis.active_carriers == 3 * 624 and any("3 carriers" in note for note in analysis.notes)
@@ -216,3 +217,19 @@ for model, duplex, cells in (("NR-FR1-TM3.1b", "tdd", [(30, 100)]), ("NR-FR1-TM1
     assert len(x) == 983040
 """)
     assert peak < 3 * 1024, peak                                                                # the design budget is 3 GB; about 0.3 GB are used
+
+
+def test_evm_symbols_counts_the_symbols_of_one_carrier_grid_not_carriers_times_symbols():
+    """Studio prints "(N symbols)" next to the EVM; the unit is the OFDM symbols of the lowest carrier, the unit of the EVM trend plot."""
+    _, _, single = run(recipe((30, 20), subframes=2))
+    _, _, double = run(recipe((30, 20), (30, 20), subframes=2))
+    assert single.evm_symbols == double.evm_symbols == len(double.evm_per_symbol_percent) == 56 == single.complete_symbols == double.complete_symbols
+    assert [e["evm_symbols"] for e in double.allocation] == [56, 56]
+    assert any("evm_symbols is the number of OFDM symbols of that one carrier grid" in note for note in double.notes)
+    # a mixed-numerology capture: the top-level count follows carrier 1, every carrier keeps its own count
+    _, _, mixed = run(recipe((15, 10), (30, 10), subframes=2))
+    assert mixed.evm_symbols == len(mixed.evm_per_symbol_percent) == 28 and [e["evm_symbols"] for e in mixed.allocation] == [28, 56]
+    # TDD: only the downlink symbols with PDSCH data count, per carrier
+    _, _, tdd = run(recipe((15, 10), (30, 10), duplex="tdd", subframes=5))
+    assert tdd.evm_symbols == len(tdd.evm_per_symbol_percent) == tdd.allocation[0]["evm_symbols"] < 14 * 5
+    assert tdd.allocation[1]["evm_symbols"] != tdd.allocation[0]["evm_symbols"]

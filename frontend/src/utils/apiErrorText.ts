@@ -11,9 +11,9 @@ export const plainMessage = (text: string) => text.trim().replace(PYDANTIC_PREFI
  * `field` is empty for model-level validators and whose text starts with "Value error, ") and plain refusals (`{ code: 'invalid_signal', message }`
  * without details). When details exist they carry the information, so the generic summary line is left out.
  */
-export function describeApiError(error: unknown): string[] {
+export function describeApiError(error: unknown, format: (field: string, message: string) => string = (field, message) => `${field ? field + ': ' : ''}${localize(plainMessage(message))}`): string[] {
   if (error instanceof ApiError) {
-    const details = error.details.flatMap(d => d.message ? [`${d.field ? d.field + ': ' : ''}${localize(plainMessage(d.message))}`] : [])
+    const details = error.details.flatMap(d => d.message ? [format(d.field ?? '', d.message)] : [])
     const lines = details.length ? details : [localize(plainMessage(error.message))]
     return error.hint ? [...lines, localize(error.hint)] : lines
   }

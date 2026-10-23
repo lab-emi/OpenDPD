@@ -519,3 +519,28 @@ def test_overlay_shape_validation():
     for bad in (np.zeros((624, 15)), np.zeros((12, 14)), np.zeros((624,))):
         with pytest.raises(ValueError):
             plan.overlay(bad)
+
+
+@pytest.mark.parametrize("bandwidth, expected", [(3, 6), (5, 6), (10, 6), (15, 6), (20, 6), (25, 3), (30, 3), (35, 3), (40, 3), (45, 3), (50, 3)])
+def test_the_power_dynamic_range_floor_of_the_outermost_eligible_resource_blocks(bandwidth, expected):
+    """TS 38.104 Table 6.3.4.2-1: +6 dB (3, 5, 10 MHz: any position; 15 / 20 MHz: central 77 / 102 RB), else +3 dB."""
+    nrb, low, high, _ = NR_15KHZ[bandwidth]
+    assert nb.power_dynamic_range_floor_db(bandwidth, nrb, low) == nb.power_dynamic_range_floor_db(bandwidth, nrb, high) == expected
+
+
+def test_the_floor_follows_the_region_boundaries_of_the_table():
+    # 15 MHz: the central 77 of 79 RBs (RB 1..77) plus 15 kHz at each edge; 20 MHz: 102 of 106 (RB 2..103)
+    assert [nb.power_dynamic_range_floor_db(15, 79, rb) for rb in (0, 1, 38, 77, 78)] == [3, 6, 6, 6, 3]
+    assert [nb.power_dynamic_range_floor_db(20, 106, rb) for rb in (0, 1, 2, 103, 104, 105)] == [3, 3, 6, 6, 3, 3]
+    # 25 MHz: the central 90 % is +-11.25 MHz around F_REF; RB 4 (centre -11.1675 MHz, lower edge -11.2575 MHz) is just outside, RB 5 inside
+    assert [nb.power_dynamic_range_floor_db(25, 133, rb) for rb in (0, 1, 4, 5, 6)] == [3, 3, 3, 6, 6]
+    assert [nb.power_dynamic_range_floor_db(25, 133, rb) for rb in (127, 128, 129, 131, 132)] == [6, 6, 3, 3, 3]      # F_REF sits 7.5 kHz off the centre of the grid
+    with pytest.raises(ValueError):
+        nb.power_dynamic_range_floor_db(20, 106, -1)
+    with pytest.raises(ValueError):
+        nb.power_dynamic_range_floor_db(20, 5, 0)
+
+
+@pytest.mark.parametrize("n_id, host", [(103, 1), (110, 2), (97 + 6 + 4, 5), (503, 0), (0, 0), (7, 1)])
+def test_the_re_count_of_a_frame_is_available_without_building_it(n_id, host):
+    assert nb.frame_re_count(n_id, host_cell_id=host) == int(nb.nb_iot_frame(n_id, host_cell_id=host)[1].sum())

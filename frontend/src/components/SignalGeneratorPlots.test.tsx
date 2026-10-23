@@ -156,6 +156,14 @@ test('the result is named like the chip that selected it, not by its preset id; 
   expect(screen.getByText('A note only the notes list has.')).toBeVisible()
 })
 
+test('a name given by the page (entries that would read the same are told apart there) replaces the default name; the preset id stays its tooltip', () => {
+  const signal = twoNumerologies()
+  renderWithProviders(<SignalGeneratorPlots result={signal} stale={false} name="TM1.1 · 10+20 MHz · 15/30 kHz · FDD · MATLAB 5G Toolbox" />)
+  const name = screen.getByTestId('generator-result-name')
+  expect(name).toHaveTextContent(/^TM1\.1 · 10\+20 MHz · 15\/30 kHz · FDD · MATLAB 5G Toolbox · [\d,]+ I\/Q samples/)
+  expect(within(name).getByText(/^TM1\.1/)).toHaveAttribute('title', signal.config.preset_id)
+})
+
 test('a matrix signal keeps the bin-index allocation, the numerology label and the generic scope text without a carrier table', async () => {
   renderWithProviders(<SignalGeneratorPlots result={matrixSignal()} stale={false} />)
   expect(screen.getByText('Numerology preset')).toBeVisible()
@@ -172,4 +180,20 @@ test('a matrix signal keeps the bin-index allocation, the numerology label and t
   expect(screen.queryByText('Test model')).not.toBeInTheDocument()
   expect(screen.getByText(/no complete protocol frames or conformance certification/)).toBeVisible()
   expect(screen.getByTestId('generator-result-name')).toHaveTextContent(new RegExp('^' + matrixSignal().config.preset_id + ' ·'))
+})
+
+test('a capture longer than the standard reads "15 subframes (standard 10)", never "15 of 10 subframes"; shorter ones keep "of"', async () => {
+  const signal = twoNumerologies()
+  signal.analysis.nr_test_model = { ...signal.analysis.nr_test_model!, subframes: 15, standard_subframes: 10 }
+  const { unmount } = renderWithProviders(<SignalGeneratorPlots result={signal} stale={false} />)
+  await userEvent.click(screen.getByRole('tab', { name: 'Metrics & provenance' }))
+  const metrics = screen.getAllByRole('row').map(row => row.textContent ?? '')
+  expect(metrics).toContainEqual(expect.stringContaining('Captured length15 subframes (standard 10)'))
+  expect(metrics.join('\n')).not.toMatch(/15 of 10 subframes/)
+  unmount()
+  const shorter = twoNumerologies()
+  shorter.analysis.nr_test_model = { ...shorter.analysis.nr_test_model!, subframes: 8, standard_subframes: 10 }
+  renderWithProviders(<SignalGeneratorPlots result={shorter} stale={false} />)
+  await userEvent.click(screen.getByRole('tab', { name: 'Metrics & provenance' }))
+  expect(screen.getAllByRole('row').map(row => row.textContent ?? '')).toContainEqual(expect.stringContaining('Captured length8 of 10 subframes'))
 })

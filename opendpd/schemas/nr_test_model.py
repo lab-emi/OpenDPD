@@ -1,8 +1,9 @@
 """Contracts for the NR FR1 standard test models of 3GPP TS 38.141-1 clause 4.9.2.
 
-``NrTestModelConfig`` is a *recipe*: it names a test model and every parameter the
-standard leaves open (duplex mode, carriers, subcarrier spacing, channel bandwidth,
-cell identity, rank, PN-sequence choices, NB-IoT in-band placement, capture length).
+``NrTestModelConfig`` is a *recipe*: it names a test model and the parameters Studio
+lets you vary (duplex mode, carriers, subcarrier spacing, channel bandwidth, rank,
+PN-sequence choices, NB-IoT in-band placement and boost, capture length, and a cell
+identity per carrier, which is a Studio extension: the standard fixes N_ID^cell = n).
 Everything else (resource blocks, FFT size, sample rate, carrier offsets, RBG sets,
 boost levels, ...) is *derived* by ``opendpd.core.waveforms.nr_tm.resolve`` and reported
 in ``NrTmSummary``. Table-dependent rules (valid bandwidth for a subcarrier spacing,
@@ -11,9 +12,12 @@ which the validator below calls lazily, so importing this module stays dependenc
 """
 from __future__ import annotations
 
+import math
+from decimal import Decimal
+from fractions import Fraction
 from typing import Literal, get_args
 
-from pydantic import Field, ValidationInfo, model_validator
+from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from .common import StrictModel, is_stored
 
@@ -23,6 +27,12 @@ NrTmModelId = Literal[
 ]
 NR_TM_MODELS: tuple[str, ...] = get_args(NrTmModelId)
 MAX_CARRIERS = 16
+# Studio limits, not limits of the standard (TS 38.141-1 sets neither a number of carriers nor an upper bound for X).
+MAX_NB_IOT_BOOST_DB = 12
+# Sub-block gaps are multiples of 0.3 MHz, the least common multiple of the 100 kHz channel raster and the 15/30/60 kHz subcarrier
+# spacings (nr_tm.tables.GAP_STEP_KHZ / 1000); a value is stored as the exact decimal multiple so that one gap has one recipe and one id.
+GAP_STEP_MHZ = Fraction(3, 10)
+GAP_TOLERANCE_MHZ = 1e-9          # float noise such as 0.8999999999999999 is accepted and snapped; anything farther off the grid is refused
 
 
 class NrTmCarrier(StrictModel):
@@ -30,21 +40,68 @@ class NrTmCarrier(StrictModel):
     scs_khz: Literal[15, 30, 60] = 30
     # Channel bandwidth; N_RB comes from TS 38.104 Table 5.3.2-1 for this subcarrier spacing.
     bandwidth_mhz: int = Field(default=20, ge=3, le=100)
-    # None = standard rule: N_cell_ID = 1 for the lowest carrier, 2 for the second lowest, ...
+    # None = standard rule: N_cell_ID = 1 for the lowest carrier, 2 for the second lowest, ... Any other value is a Studio
+    # extension (4.9.2.3 fixes N_ID^cell = n) and is reported in the warnings of the summary.
     n_cell_id: int | None = Field(default=None, ge=0, le=1007)
     # Extra spacing (MHz) added to the nominal channel spacing of TS 38.104 5.4.1.2 before this
     # carrier. 0 = contiguous (NRTC1/NRTC2); > 0 starts a new sub-block (non-contiguous, NRTC3).
-    # Must be 0 for the first carrier; the resolver enforces the 0.3 MHz grid.
-    gap_before_mhz: float = Field(default=0, ge=0, le=1000, allow_inf_nan=False)
+    # Must be 0 for the first carrier. A multiple of 0.3 MHz; the value is stored as that exact multiple (and -0.0 as 0.0).
+    gap_before_mhz: float = Field(default=0, ge=0, le=1000, allow_inf_nan=False, description=(
+        "Extra spacing in MHz added to the nominal channel spacing before this carrier (a non-contiguous sub-block gap). 0 = contiguous. "
+        "Must be 0 for the first carrier and a multiple of 0.3 MHz; a value within 1e-9 MHz of such a multiple is stored as that exact multiple."))
+
+    @field_validator("gap_before_mhz")
+    @classmethod
+    def _gap_on_the_grid(cls, value: float, info: ValidationInfo) -> float:
+        exact = float(GAP_STEP_MHZ * round(value / float(GAP_STEP_MHZ)))
+        if abs(value - exact) <= GAP_TOLERANCE_MHZ:
+            return exact
+        if is_stored(info):               # a stored recipe only has to be well-formed
+            return value + 0.0
+        raise ValueError(f"the gap before a carrier must be a multiple of 0.3 MHz (the least common multiple of the 100 kHz channel raster "
+                         f"and the subcarrier spacings), not {value:g} MHz.")
 
 
 class NrTmNbIot(StrictModel):
-    """NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): FDD, 15 kHz only."""
+    """NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): Studio generates FDD with 15 kHz hosts only."""
     # Which eligible NR RB is punctured: closest to the lower / upper minimum guard band, or both
     # (NRTC1 places a second NB-IoT carrier at the upper edge when more than one is supported).
     position: Literal["lower", "upper", "both"] = "lower"
-    # X dB: power boost of the NB-IoT REs over the average RE power (declared >= 6 dB, or >= 3 dB).
-    boost_db: float = Field(default=6, ge=3, le=12, allow_inf_nan=False)
+    # X dB: power boost of the NB-IoT REs over the average RE power, the manufacturer's declared maximum NB-IoT power dynamic range
+    # (TS 38.141-1 D.43, TS 38.104 Table 6.3.4.2-1: at least +6 dB, or +3 dB for the outermost positions of 25 MHz and wider hosts).
+    # The resolver enforces the minimum of the host bandwidth; 12 dB is a Studio limit, the standard has no upper bound.
+    boost_db: float = Field(default=6, ge=3, le=MAX_NB_IOT_BOOST_DB, allow_inf_nan=False, description=(
+        "NB-IoT power boost X in dB over the average resource element. Studio accepts 3 to 12 dB: at least 6 dB for host carriers up to 20 MHz "
+        "and 3 dB for 25 MHz and wider (TS 38.104 Table 6.3.4.2-1); the upper limit of 12 dB is a Studio limit, the standard sets none."))
+
+    @field_validator("boost_db", mode="before")
+    @classmethod
+    def _boost_limit_is_ours(cls, value):
+        # Runs on whatever the client sent, before pydantic has judged the type: it may only ever raise ValueError. Anything that is not
+        # a finite number it can compare (bool, None, containers, NaN, +-inf, an int too large for a float, a string that is not a
+        # number) is left to pydantic, whose own message is then the one the client reads.
+        number = _plain_number(value)
+        if math.isfinite(number) and number > MAX_NB_IOT_BOOST_DB:
+            raise ValueError(f"{shortest_number(number)} dB is above the largest NB-IoT boost Studio offers ({MAX_NB_IOT_BOOST_DB} dB, a Studio "
+                             "limit: the standard sets no upper bound for X).")
+        return value
+
+
+def _plain_number(value) -> float:
+    """``value`` as a float if it is a plain number or a numeric string, NaN otherwise (never raises)."""
+    if isinstance(value, bool) or not isinstance(value, (int, float, str, Decimal)):
+        return math.nan
+    try:
+        return float(value)
+    except (ValueError, OverflowError, TypeError, ArithmeticError):     # 'x', 10**400, Decimal('sNaN'), ...
+        return math.nan
+
+
+def shortest_number(number: float) -> str:
+    """The shortest text that reads back as ``number``, without a trailing '.0': 13 -> '13', 12.0000001 -> '12.0000001'.
+    (``:g`` rounds to six digits, which printed a boost just above the cap as '12 dB is above ... 12 dB'.)"""
+    text = repr(float(number))
+    return text[:-2] if text.endswith(".0") else text
 
 
 class NrTestModelConfig(StrictModel):

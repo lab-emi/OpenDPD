@@ -1,11 +1,14 @@
 """The NR test-model routes through the real public ASGI boundary: sessions, body limits, rates, no storage, 1,000,000-sample captures."""
 import json
+import logging
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from opendpd.core.waveforms import nr_tm
 from opendpd.schemas.nr_test_model import NrTestModelConfig
+from opendpd.schemas.signal_generator import GeneratorBatchRequest
 from opendpd.web.app import create_web_app
 from opendpd.web.policy import WebConfig
 from opendpd.web.runtime import DAY, directory_bytes
@@ -108,6 +111,122 @@ def test_resolve_is_rate_limited_per_address(public):
     statuses = [client.post(TM + "/resolve", json={}, headers=auth).status_code for _ in range(124)]
     assert statuses[:120] == [200] * 120 and set(statuses[120:]) == {429}
     assert client.post(TM + "/resolve", json={}, headers=auth).json()["error"]["code"] == "rate_limited"
+
+
+def test_invalid_recipes_count_against_the_resolve_budget(public):
+    """An attempt that fails late (a 3 MHz carrier cannot take 12 dB for two NB-IoT carriers) costs the budget like a valid one."""
+    client, manager, _ = public
+    auth = new_session(client)
+    late = {"model": "NR-N-TM", "nb_iot": {"position": "both", "boost_db": 12}, "carriers": [{"scs_khz": 15, "bandwidth_mhz": 3}]}
+    statuses = []
+    for cell in range(122):
+        late["carriers"][0]["n_cell_id"] = cell + 1                                    # a different recipe every time: no cache helps
+        statuses.append(client.post(TM + "/resolve", json=late, headers=auth).status_code)
+    assert statuses[:120] == [422] * 120 and set(statuses[120:]) == {429}
+    assert client.post(TM + "/resolve", json=late, headers=auth).json()["error"]["code"] == "rate_limited"
+    assert manager.inflight == 0 and not manager.ip_inflight and not manager.storage_reserved
+
+
+def recipe_text(boost="6", carriers='[{"scs_khz":15,"bandwidth_mhz":10}]'):
+    """A recipe as JSON text, so that numbers a JSON library will not write (1e999, Infinity, a 400-digit integer) reach the server as typed."""
+    return '{"model":"NR-N-TM","nb_iot":{"position":"lower","boost_db":%s},"carriers":%s}' % (boost, carriers)
+
+
+NESTED = lambda depth: "[" * depth + "]" * depth       # noqa: E731
+# (what the client sent, the error code of the answer). 4,400 digits is more than Python converts to an integer; 30,000 levels is more than JSON reads.
+HOSTILE_RECIPES = {
+    "a 400-digit boost": (recipe_text("1" + "0" * 400), "invalid_request"),
+    "a negative 400-digit boost": (recipe_text("-1" + "0" * 400), "invalid_request"),
+    "a 4,299-digit boost": (recipe_text("1" * 4299), "invalid_request"),
+    "a 4,400-digit boost": (recipe_text("1" * 4400), "invalid_json"),
+    "a boost of '1e999'": (recipe_text('"1e999"'), "invalid_request"),
+    "a boost of 1e999": (recipe_text("1e999"), "invalid_request"),
+    "a boost of -1e999": (recipe_text("-1e999"), "invalid_request"),
+    "a boost of Infinity": (recipe_text("Infinity"), "invalid_request"),
+    "a boost of NaN": (recipe_text("NaN"), "invalid_request"),
+    "a boost of null": (recipe_text("null"), "invalid_request"),
+    "a gap of 400 digits": (recipe_text(carriers='[{"scs_khz":15,"bandwidth_mhz":10},{"scs_khz":15,"bandwidth_mhz":10,"gap_before_mhz":%s}]' % ("1" + "0" * 400)), "invalid_request"),
+    "carriers nested 500 deep": (recipe_text(carriers=NESTED(500)), "invalid_request"),
+    "carriers nested 3,000 deep": (recipe_text(carriers=NESTED(3000)), "invalid_request"),
+    "carriers nested 30,000 deep": (recipe_text(carriers=NESTED(30000)), "invalid_json"),
+}
+RECIPE_BODIES = {                  # the four public routes whose bodies can carry a recipe
+    TM + "/resolve": lambda recipe: recipe,
+    "/api/v1/signal-generator/signals": lambda recipe: '{"nr_test_model":%s}' % recipe,
+    "/api/v1/signal-generator/batches": lambda recipe: '{"configs":[{"nr_test_model":%s}]}' % recipe,
+    "/api/v1/signal-generator/validate": lambda recipe: '{"nr_test_model":%s}' % recipe,
+}
+
+
+def test_hostile_numbers_in_a_recipe_are_a_422_on_every_route_that_takes_one_and_never_a_500(public, caplog):
+    """A 400-digit integer used to escape the boost validator as an OverflowError: a 500 and a traceback per request."""
+    client, manager, now = public
+    auth = {**new_session(client), "Content-Type": "application/json"}
+    with caplog.at_level(logging.DEBUG):
+        for name, (recipe, code) in HOSTILE_RECIPES.items():
+            for path, wrap in RECIPE_BODIES.items():
+                response = client.post(path, content=wrap(recipe).encode(), headers=auth)
+                assert response.status_code == 422, (name, path, response.status_code, response.text[:200])
+                assert response.json()["error"]["code"] == code, (name, path, response.text[:200])
+            now[0] += 60                                                       # a new minute: the per-address budgets start again
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING or r.exc_info], [r.getMessage() for r in caplog.records][:3]
+    assert manager.inflight == 0 and not manager.ip_inflight and not manager.ip_expensive and not manager.storage_reserved
+    assert client.post(TM + "/resolve", json=RECIPE, headers=auth).status_code == 200      # the session and the service are fine
+
+
+def test_a_huge_boost_is_explained_like_any_other_invalid_number(public):
+    client, _, _ = public
+    auth = {**new_session(client), "Content-Type": "application/json"}
+    refused = client.post(TM + "/resolve", content=recipe_text("1" + "0" * 400).encode(), headers=auth)
+    assert refused.status_code == 422 and refused.json()["error"]["message"] == "request validation failed"
+    assert [d["field"] for d in refused.json()["error"]["details"]] == ["nb_iot.boost_db"]
+    above = client.post(TM + "/resolve", content=recipe_text("12.0000001").encode(), headers=auth).json()["error"]["details"]
+    assert "12.0000001 dB is above the largest NB-IoT boost Studio offers (12 dB" in above[0]["message"]
+
+
+def test_a_validator_that_fails_unexpectedly_is_still_the_clients_422_and_costs_one_log_line(public, monkeypatch, caplog):
+    """Defence in depth: whatever the schemas raise about a body, the public boundary answers 422 and logs no traceback per request."""
+    from opendpd.web import mutation_policy
+    client, manager, now = public
+    auth = {**new_session(client), "Content-Type": "application/json"}
+    monkeypatch.setattr(mutation_policy, "_REPORTED", set())
+
+    def explode(*_args, **_kwargs):
+        raise OverflowError("int too large to convert to float")
+    monkeypatch.setattr(NrTestModelConfig, "model_validate", explode)
+    with caplog.at_level(logging.DEBUG):
+        statuses = [client.post(TM + "/resolve", json=RECIPE, headers=auth).status_code for _ in range(5)]
+    assert statuses == [422] * 5
+    warnings = [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert len(warnings) == 1 and warnings[0].exc_info is None and "OverflowError" in warnings[0].getMessage()
+    assert manager.inflight == 0 and not manager.ip_inflight and not manager.storage_reserved
+
+
+def wide_ntm_configs(count, first_cell):
+    """`count` valid configurations of 16-carrier NR-N-TM (50 MHz hosts) whose cell identities differ from any other body."""
+    configs = []
+    for i in range(count):
+        cells = [{"scs_khz": 15, "bandwidth_mhz": 50, "n_cell_id": first_cell + i}] + [{"scs_khz": 15, "bandwidth_mhz": 50}] * 14
+        cells.append({"scs_khz": 15, "bandwidth_mhz": 50, "n_cell_id": first_cell + i + 150})
+        recipe = NrTestModelConfig.model_validate({"model": "NR-N-TM", "nb_iot": {"position": "both", "boost_db": 6}, "subframes": 1, "carriers": cells})
+        configs.append(nr_tm.resolve(recipe).config.model_dump(mode="json"))
+    return configs
+
+
+def test_invalid_batches_are_rate_limited_before_they_are_judged(public):
+    """The worst legal-but-invalid body: 16 configurations of 16 carriers (about 43 KB) that is refused for its total size (16 x 983,040 samples)."""
+    client, manager, _ = public
+    auth = new_session(client)
+    bodies = [{"configs": wide_ntm_configs(16, 1 + 17 * attempt)} for attempt in range(13)]
+    assert 30_000 < len(json.dumps(bodies[0])) < 65_536
+    with pytest.raises(ValidationError, match="at most 4,000,000 samples"):          # every configuration is legal; the batch is not
+        GeneratorBatchRequest.model_validate(bodies[0])
+    responses = [client.post("/api/v1/signal-generator/batches", json=body, headers=auth) for body in bodies]
+    assert [r.status_code for r in responses] == [422] * 12 + [429]
+    assert responses[0].json()["error"]["code"] == "invalid_request" and responses[-1].json()["error"]["code"] == "rate_limited"
+    assert client.post("/api/v1/signal-generator/batches", json=bodies[0], headers=auth).status_code == 429
+    assert not manager.storage_reserved and manager.inflight == 0 and not manager.ip_inflight
+    assert next(iter(manager.tenants.values())).mutating is False
 
 
 def test_a_test_model_signal_is_generated_downloaded_and_revalidated_in_the_public_studio(public):

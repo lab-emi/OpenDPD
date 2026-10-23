@@ -5,17 +5,26 @@
 The **5G NR** tab now opens on the NR FR1 test models of 3GPP TS 38.141-1 clause 4.9.2:
 NR-FR1-TM1.1, 1.2, 2, 2a, 2b, 3.1, 3.1a, 3.1b, 3.2, 3.3 and NR-N-TM. Choose FDD or TDD,
 one to sixteen carriers, subcarrier spacing (15, 30, 60 kHz) and channel bandwidth
-(3–100 MHz) per carrier, cell identities, gaps between carriers, rank for TM1.1, the
-PN23 reading, NB-IoT position and boost, oversampling and capture length. What the
-standard fixes is listed read-only. The old preset matrix is behind **Generic
-numerology matrix…** and is still not a set of standard test models.
+(3–100 MHz) per carrier, gaps between carriers, rank for TM1.1, the PN23 reading,
+NB-IoT position and boost, oversampling and capture length, and, as a Studio extension,
+the cell identities. What the standard fixes is listed read-only; the open parameters
+that Studio does not offer are listed in the guide. The old preset matrix is behind
+**Generic numerology matrix…** and is still not a set of standard test models.
 
-The resource grids agree with MATLAB R2026a's 5G Toolbox in all 438 compared
-configurations (414 bit-identical, the rest within 3.2e-16). The signals are uncoded
-baseband stimuli with PDCCH, PDSCH and DM-RS only; the EVM shown is a known-grid
-diagnostic, not a conformance measurement, and no instrument was involved.
-Signals that are not test models keep their identifiers. Restart a running
-workspace service after upgrading.
+With the data convention set to MATLAB's, the resource grids agree with MATLAB
+R2026a's 5G Toolbox in all 438 compared configurations (414 bit-identical, the rest
+within 3.2e-16); the default convention follows the standard's text and differs from
+MATLAB's random bits for TDD, TM2/2a/2b and captures longer than one frame. The
+signals are uncoded baseband stimuli with PDCCH, PDSCH and DM-RS only. At default
+settings 35 of the 80 combinations of duplex mode, subcarrier spacing and bandwidth of a
+single carrier (10 of 40 FDD, 25 of 40 TDD) are shorter than the standard's 10 or 20 ms, because a capture holds
+at most 1,000,000 samples. The EVM shown is a known-grid diagnostic, not a conformance
+measurement, and no instrument was involved. Signals that are not test models keep
+their identifiers, and a workspace that contains test-model signals cannot be opened
+again by 2.4.0. On the hosted Studio the Signal Generator's generate routes now count a
+request against the per-network rate limit before they validate it, so a client that keeps
+sending invalid requests receives 429 sooner. Restart a running workspace service after
+upgrading.
 
 [NR standard test models](guides/nr-test-models.md) ·
 [2.4.1 release notes](releases/2.4.1.md)

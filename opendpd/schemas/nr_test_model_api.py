@@ -34,7 +34,11 @@ class NrTmModelInfo(StrictModel):
     fixed_parameters: list[NrTmFixedParameter]
     supports_layers: bool = False
     nb_iot: bool = False
-    fdd_only: bool = False
+    # True when Studio generates the model for FDD only. For NR-N-TM that is a limit of Studio, not of the standard: TS 38.141-1
+    # Table 4.9.2.2-1a also defines a TDD form of the model, which is not implemented in this release.
+    fdd_only: bool = Field(default=False, description=(
+        "True when Studio generates this model for FDD only. NR-N-TM: the standard also defines a TDD form (TS 38.141-1 Table 4.9.2.2-1a), "
+        "which Studio does not implement in this release."))
     scs_khz: list[int]
 
 
@@ -57,11 +61,17 @@ class NrTmNbIotInfo(StrictModel):
     lower_rb: dict[str, int]
     upper_rb: dict[str, int]
     eligible_rbs: dict[str, list[int]]
+    # Smallest NB-IoT power boost X (dB) per host channel bandwidth (key = MHz as text) at the positions Studio offers (lower_rb, upper_rb):
+    # TS 38.104 Table 6.3.4.2-1, 6 dB up to 20 MHz and 3 dB from 25 MHz. The resolver refuses a smaller boost_db.
+    min_boost_db: dict[str, float] = Field(description=(
+        "Smallest NB-IoT boost X in dB per host channel bandwidth (MHz as text) at the positions lower_rb and upper_rb "
+        "(TS 38.104 Table 6.3.4.2-1); a smaller boost_db is refused."))
+    max_boost_db: float = Field(description="Largest NB-IoT boost X in dB that Studio accepts. A Studio limit: the standard sets no upper bound.")
 
 
 class NrTmLimits(StrictModel):
-    max_carriers: int
-    max_samples: int
+    max_carriers: int = Field(description="Largest number of carriers of a recipe. A Studio limit: the standard sets none.")
+    max_samples: int = Field(description="Largest number of complex samples of a capture (a Studio limit); the capture is shortened or refused above it.")
     max_cell_id: int
     standard_subframes_fdd: int
     standard_subframes_tdd: int

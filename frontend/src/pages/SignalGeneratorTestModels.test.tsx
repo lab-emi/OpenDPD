@@ -1,5 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { act } from 'react'
+import { focusManager } from '@tanstack/react-query'
 import { vi } from 'vitest'
 import { useLocation } from 'react-router'
 import fixture from '@mocks/generator_presets.json'
@@ -204,7 +206,8 @@ test('a refused setup shows the server message inline, blocks Generate, and reco
   fireEvent.change(carrier(2).getByLabelText('Gap before (MHz)'), { target: { value: '0.5' } })
   const alert = await screen.findByRole('alert')
   expect(alert).toHaveTextContent('This setup cannot be generated')
-  expect(alert).toHaveTextContent('Carrier 2: the gap before it must be a multiple of 0.3 MHz (the least common multiple of the 100 kHz channel raster and the subcarrier spacings).')
+  // The wording of the server's text is the backend's; the field is named as the form names it ("Carrier 2 · Gap before") or by the server ("Carrier 2: ...").
+  expect(alert).toHaveTextContent(/Carrier 2.*multiple of 0\.3 MHz/)
   expect(alert).not.toHaveTextContent('Value error')
   expect(generateButton()).toBeDisabled()
   // The entry keeps its last good configuration; the dataset name and chip still describe it.
@@ -346,7 +349,7 @@ test.each([['without the key', undefined], ['with a null recipe', null]])('a 2.4
   } finally { localStorage.removeItem(key) }
 })
 
-test.each([[403, 'feature_unavailable'], [404, 'not_found'], [500, 'internal_error']])('when the catalogue answers %i the generator keeps the old matrix behaviour', async (status, code) => {
+test.each([[403, 'feature_unavailable'], [404, 'not_found']])('when the catalogue answers %i the generator keeps the old matrix behaviour without a notice', async (status, code) => {
   const { calls } = setup({ [CATALOG]: () => ({ status, body: { error: { code, message: 'This endpoint is not available', details: [], hint: null } } }) })
   renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
   await screen.findByRole('heading', { name: 'Signal setup' })
@@ -356,9 +359,57 @@ test.each([[403, 'feature_unavailable'], [404, 'not_found'], [500, 'internal_err
   expect(screen.getByRole('button', { name: /01 ·.*FR1 \/ FR2 matrix.*5G NR/ })).toBeVisible()
   expect(screen.getByRole('textbox', { name: 'PA input dataset name' })).toHaveValue('syn_pa_in_nr_bw20M_q64_c1_n1')
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.queryByTestId('nrtm-catalog-problem')).not.toBeInTheDocument()
   expect(generateButton()).toBeEnabled()
   expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
   expect(calls.filter(c => c.path === '/api/v1/signal-generator/nr-test-models')).toHaveLength(1)
+})
+
+const REFUSAL_500 = { status: 500, body: { error: { code: 'internal_error', message: 'Something broke', details: [], hint: null } } }
+
+test('a catalogue that fails for another reason keeps the matrix, says so in one line with a Retry, and Retry brings the test models in without losing the selection', async () => {
+  let attempts = 0
+  const { calls } = setup({ [CATALOG]: () => ++attempts === 1 ? REFUSAL_500 : fixtureCatalog() })
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  const notice = await screen.findByTestId('nrtm-catalog-problem')
+  expect(notice).toHaveTextContent('The standard test models could not be loaded, so the generic numerology matrix is shown instead.')
+  expect(within(notice).getByRole('button', { name: 'Retry' })).toBeEnabled()
+  // The matrix underneath works as before.
+  expect(screen.getByTestId('preset-nr-20')).toHaveAttribute('aria-pressed', 'true')
+  await userEvent.click(screen.getByTestId('preset-nr-fr1-30-20-q16-c1'))
+  expect(screen.getByText('2 / 16 presets selected')).toBeVisible()
+  await userEvent.click(within(notice).getByRole('button', { name: 'Retry' }))
+  await screen.findByTestId('nrtm-panel')
+  expect(screen.queryByTestId('nrtm-catalog-problem')).not.toBeInTheDocument()
+  // The page was not replaced by a loading state: both matrix presets are still selected, and the panel offers the models to add.
+  expect(screen.getByText('2 / 16 presets selected')).toBeVisible()
+  expect(screen.getByTestId('selected-preset-nr-20')).toBeInTheDocument()
+  expect(screen.getByText(/to add it to the selection/)).toBeVisible()
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/nr-test-models')).toHaveLength(2)
+})
+
+test.each([
+  ['an object without models', { models: [] }],
+  ['a page that is not a catalogue', { version: 'nr-test-model-catalog-v1', models: [{ model: 'NR-FR1-TM1.1' }] }],
+  ['a bare list', []],
+])('%s is not a catalogue: the generator does not crash, keeps the matrix and offers a Retry', async (_name, body) => {
+  setup({ [CATALOG]: () => body })
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await screen.findByRole('heading', { name: 'Signal setup' })
+  expect(screen.getByTestId('nrtm-catalog-problem')).toBeVisible()
+  expect(screen.queryByTestId('nrtm-panel')).not.toBeInTheDocument()
+  expect(screen.getByTestId('preset-nr-20')).toBeVisible()
+  expect(generateButton()).toBeEnabled()
+})
+
+test('a 500 for the catalogue keeps the notice with its Retry; the failed retry keeps it too', async () => {
+  const { calls } = setup({ [CATALOG]: () => REFUSAL_500 })
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await userEvent.click(within(await screen.findByTestId('nrtm-catalog-problem')).getByRole('button', { name: 'Retry' }))
+  await waitFor(() => expect(calls.filter(c => c.path === '/api/v1/signal-generator/nr-test-models')).toHaveLength(2))
+  await waitFor(() => expect(within(screen.getByTestId('nrtm-catalog-problem')).getByRole('button', { name: 'Retry' })).toBeEnabled())
+  expect(screen.getByRole('heading', { name: 'Signal setup' })).toBeVisible()
+  expect(screen.getByTestId('preset-nr-20')).toBeVisible()
 })
 
 test('loading a saved test-model configuration selects the NR family and the entry, and a failed catalogue still lets it be generated', async () => {
@@ -469,4 +520,319 @@ test('the same recipe cannot be in the selection twice: the second entry is held
   expect(screen.getAllByTestId(/^selected-preset-/)).toHaveLength(1)
   expect(screen.getByTestId('selected-preset-' + DEFAULT_ID)).toHaveTextContent('TM1.1 · 20 MHz · 30 kHz · FDD')
   await waitFor(() => expect(generateButton()).toBeEnabled())
+})
+
+// ---- review round: what the user sees when edits are pending, the limit, the labels, the matrix ---------------------------------------------
+
+const REFUSED_CELL = { error: { code: 'invalid_request', message: 'request validation failed', hint: null, details: [{ field: 'carriers.0.n_cell_id', message: 'Input should be less than or equal to 1007' }] } }
+/** The real resolve answers, except that a cell ID above 1007 is refused with the envelope the backend sent for it (captured in the review round). */
+function refuseCell5000(): Routes {
+  const resolve = nrTmRoutes()['POST /api/v1/signal-generator/nr-test-models/resolve']!
+  return { 'POST /api/v1/signal-generator/nr-test-models/resolve': (url, init) => (JSON.parse(String(init.body)) as NrTmRecipe).carriers[0]!.n_cell_id === 5000 ? { status: 422, body: REFUSED_CELL } : resolve(url, init) }
+}
+const chips = () => screen.getAllByTestId(/^selected-preset-/)
+
+test('an entry with edits the server has not accepted is marked, named next to Generate when it is not on screen, and one click shows it', async () => {
+  setup(refuseCell5000())
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  await userEvent.click(screen.getByRole('button', { name: 'Add another test model' }))
+  const second = await screen.findByTestId(chip(recipeWith({ model: 'NR-FR1-TM1.2' })))
+  await waitFor(() => expect(generateButton()).toBeEnabled())
+  fireEvent.change(carrier().getByLabelText('Cell ID'), { target: { value: '5000' } })
+  expect(await screen.findByRole('alert')).toHaveTextContent('Carrier 1 · Cell ID: Input should be less than or equal to 1007')
+  expect(generateButton()).toBeDisabled()
+  // On screen, the panel says it; no second line next to Generate.
+  expect(screen.queryByTestId('generator-blocked-entry')).not.toBeInTheDocument()
+  expect(second).toHaveAttribute('data-draft', 'true')
+  expect(second).toHaveAttribute('data-cause', 'error')
+  expect(within(second).getByTitle('The server refused these settings')).toBeInTheDocument()
+  // Another chip: the panel shows the other entry, and Generate says why it is off.
+  await userEvent.click(screen.getByTestId('selected-preset-' + DEFAULT_ID))
+  const line = screen.getByTestId('generator-blocked-entry')
+  expect(line).toHaveTextContent('The server refused the settings of “TM1.2 · 20 MHz · 30 kHz · FDD”, so Generate is off. Correct them or remove the entry.')
+  expect(generateButton()).toBeDisabled()
+  expect(screen.getByTestId('selected-preset-' + DEFAULT_ID)).not.toHaveAttribute('data-draft')
+  // Another family tab: still named.
+  await userEvent.click(screen.getByRole('button', { name: /02 ·.*Wi-Fi 6/ }))
+  expect(screen.getByTestId('generator-blocked-entry')).toBeVisible()
+  expect(screen.queryByTestId('nrtm-panel')).not.toBeInTheDocument()
+  // The button brings the NR panel and the entry back, with the refusal.
+  await userEvent.click(within(screen.getByTestId('generator-blocked-entry')).getByRole('button', { name: 'Show it' }))
+  expect(await screen.findByTestId('nrtm-panel')).toBeVisible()
+  expect(screen.getByRole('button', { name: /01 ·.*5G NR/ })).toHaveAttribute('aria-pressed', 'true')
+  expect(carrier().getByLabelText('Cell ID')).toHaveValue(5000)
+  expect(screen.getByRole('alert')).toHaveTextContent('Carrier 1 · Cell ID')
+  expect(screen.queryByTestId('generator-blocked-entry')).not.toBeInTheDocument()
+  // The button that was activated is gone; the keyboard lands on the panel's heading instead of the top of the page.
+  expect(screen.getByRole('heading', { name: 'Standard 5G NR test model' })).toHaveFocus()
+  // Fixing the entry clears the marker.
+  fireEvent.change(carrier().getByLabelText('Cell ID'), { target: { value: '' } })
+  await waitFor(() => expect(generateButton()).toBeEnabled())
+  expect(chips().filter(node => node.getAttribute('data-draft'))).toHaveLength(0)
+})
+
+test('Save configuration is off while the highlighted entry has edits the server has not accepted, and writes the accepted recipe afterwards', async () => {
+  setup(refuseCell5000())
+  const blobs: Blob[] = []
+  vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: (blob: Blob) => { blobs.push(blob); return 'blob:export' }, revokeObjectURL: () => undefined }))
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  const save = () => screen.getByRole('button', { name: 'Save configuration' })
+  expect(save()).toBeEnabled()
+  // A pending edit (before the server answered) and a refused one both keep the previous recipe from being saved as if it were the one on screen.
+  fireEvent.change(carrier().getByLabelText('Cell ID'), { target: { value: '5000' } })
+  expect(save()).toBeDisabled()
+  expect(save()).toHaveAccessibleDescription(/are not part of the signal yet.*saving now would write the previous ones/)
+  await screen.findByRole('alert')
+  expect(save()).toBeDisabled()
+  fireEvent.change(carrier().getByLabelText('Cell ID'), { target: { value: '1000' } })
+  await waitFor(() => expect(save()).toBeEnabled())
+  await userEvent.click(save())
+  const saved = JSON.parse(await blobs.at(-1)!.text()) as { nr_test_model: NrTmRecipe }
+  expect(saved.nr_test_model.carriers[0]!.n_cell_id).toBe(1000)
+})
+
+test('with 16 signals selected and a matrix preset highlighted, the model cards cannot add a 17th: they are off and the limit is explained once', async () => {
+  const { calls } = setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  await userEvent.click(screen.getByRole('button', { name: 'Generic numerology matrix…' }))
+  for (const id of ['nr-20', 'nr-fr1-30-20-q16-c1', 'nr-fr1-30-20-q64-c2', 'nr-fr1-30-100-q16-c1', 'nr-100', 'nr-fr1-30-100-q64-c2']) await userEvent.click(screen.getByTestId('preset-' + id))
+  await userEvent.click(screen.getByRole('button', { name: 'FR2-1 · 120 kHz' }))
+  await userEvent.click(screen.getByTestId('preset-nr-fr2'))
+  for (const [tab, ids] of [[/02 ·.*Wi-Fi 6/, ['wifi6-20', 'wifi6-80']], [/03 ·.*Wi-Fi 7/, ['wifi7-20', 'wifi7-320']]] as const) {
+    await userEvent.click(screen.getByRole('button', { name: tab }))
+    for (const id of ids) await userEvent.click(screen.getByTestId('preset-' + id))
+  }
+  await userEvent.click(screen.getByRole('button', { name: /04 ·.*Custom/ }))
+  for (const label of ['Custom OFDM / OFDMA', 'Single-carrier QAM / PSK', 'Single tone', 'Multitone']) await userEvent.click(screen.getByRole('button', { name: label }))
+  expect(screen.getByText('16 / 16 presets selected')).toBeVisible()
+  await userEvent.click(screen.getByRole('button', { name: /01 ·.*5G NR/ }))
+  const cards = within(screen.getByRole('group', { name: 'Test model' })).getAllByRole('button')
+  for (const card of cards) expect(card).toBeDisabled()
+  expect(screen.getAllByText(/^Select up to 16 presets and 4,000,000 total I\/Q samples\./)).toHaveLength(1)
+  expect(screen.getByTestId('nrtm-selection-full')).toBeVisible()
+  fireEvent.click(cards[2]!)
+  expect(screen.getByText('16 / 16 presets selected')).toBeVisible()
+  expect(chips()).toHaveLength(16)
+  // Highlighting the test model again turns the cards into editors, and the limit is then stated by the page.
+  await userEvent.click(screen.getByTestId('selected-preset-' + DEFAULT_ID))
+  expect(within(screen.getByRole('group', { name: 'Test model' })).getAllByRole('button').every(card => !card.hasAttribute('disabled'))).toBe(true)
+  expect(screen.queryByTestId('nrtm-selection-full')).not.toBeInTheDocument()
+  expect(screen.getAllByText(/^Select up to 16 presets and 4,000,000 total I\/Q samples\./)).toHaveLength(1)
+  expect(screen.getByRole('button', { name: 'Add another test model' })).toBeDisabled()
+  expect(calls.filter(c => c.method === 'POST' && c.path.endsWith('/batches'))).toHaveLength(0)
+}, 30000)
+
+test('entries that would read the same are told apart in the chips, the preview list and the duplicate warning', async () => {
+  setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  await userEvent.click(screen.getByRole('button', { name: 'Add another test model' }))
+  await screen.findByTestId(chip(recipeWith({ model: 'NR-FR1-TM1.2' })))
+  await userEvent.click(screen.getByRole('button', { name: 'TM1.1, QPSK' }))
+  // Held as a duplicate of the first entry, whose name is still the plain one.
+  expect(await screen.findByTestId('nrtm-duplicate')).toHaveTextContent('“TM1.1 · 20 MHz · 30 kHz · FDD” is already in the selection')
+  // A custom length of 10 subframes is another signal with the same base label.
+  await userEvent.click(screen.getByRole('button', { name: 'Custom' }))
+  const second = chip(recipeWith({ subframes: 10 }))
+  await waitFor(() => expect(screen.getByTestId(second)).toBeInTheDocument())
+  expect(chips().map(node => node.querySelector('.MuiChip-label')?.textContent)).toEqual(['TM1.1 · 20 MHz · 30 kHz · FDD', 'TM1.1 · 20 MHz · 30 kHz · FDD · 10 subframes'])
+  await waitFor(() => expect(generateButton()).toBeEnabled())
+  await userEvent.click(generateButton())
+  await screen.findByTestId('signal-generator-results')
+  await userEvent.click(screen.getByRole('combobox', { name: 'Visualize a Signal in the Generated Dataset' }))
+  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['TM1.1 · 20 MHz · 30 kHz · FDD', 'TM1.1 · 20 MHz · 30 kHz · FDD · 10 subframes'])
+})
+
+test('hiding the matrix keeps the numerology group that was chosen in it', async () => {
+  setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  const toggle = screen.getByRole('button', { name: 'Generic numerology matrix…' })
+  await userEvent.click(toggle)
+  expect(screen.getByRole('button', { name: 'FR1 · 30 kHz' })).toHaveAttribute('aria-pressed', 'true')
+  await userEvent.click(screen.getByRole('button', { name: 'FR2-1 · 120 kHz' }))
+  expect(screen.getByTestId('preset-nr-fr2')).toBeVisible()
+  await userEvent.click(toggle)
+  expect(screen.queryByTestId('preset-nr-fr2')).not.toBeInTheDocument()
+  await userEvent.click(toggle)
+  expect(screen.getByRole('button', { name: 'FR2-1 · 120 kHz' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByTestId('preset-nr-fr2')).toBeVisible()
+  expect(screen.queryByTestId('preset-nr-20')).not.toBeInTheDocument()
+})
+
+test('a configuration the server refuses is listed with its fields named as the form names them', async () => {
+  setup({ 'POST /api/v1/signal-generator/validate': () => ({ status: 422, body: { error: { code: 'invalid_request', message: 'request validation failed', hint: null, details: [
+    { field: 'nr_test_model.carriers.1.n_cell_id', message: 'Input should be less than or equal to 1007' }, { field: 'nr_test_model.subframes', message: 'Input should be greater than or equal to 1' }] } } }) })
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  await userEvent.upload(screen.getByTestId('generator-config-upload'), new File(['{}'], 'signal-config.json', { type: 'application/json' }))
+  const alert = await screen.findByRole('alert')
+  expect(alert).toHaveTextContent('Carrier 2 · Cell ID: Input should be less than or equal to 1007')
+  expect(alert).toHaveTextContent('Capture length: Input should be greater than or equal to 1')
+  expect(alert).not.toHaveTextContent('request validation failed')
+})
+
+// ---- final review round: the reason an entry is held, focus, the PN23 scope, names in the results, a refocus of the window ------------------------
+
+const GENERATE_HELD = /Generate is off/
+
+test('an entry that repeats another is marked and named as a duplicate of it, not as a refusal or an unchecked edit', async () => {
+  setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  await userEvent.click(screen.getByRole('button', { name: 'Add another test model' }))
+  const second = chip(recipeWith({ model: 'NR-FR1-TM1.2' }))
+  await screen.findByTestId(second)
+  await waitFor(() => expect(generateButton()).toBeEnabled())
+  // TM1.2 is edited back into TM1.1: the server accepts it, and it is the signal of the first entry.
+  await userEvent.click(screen.getByRole('button', { name: 'TM1.1, QPSK' }))
+  await screen.findByTestId('nrtm-duplicate')
+  expect(screen.getByTestId(second)).toHaveAttribute('data-cause', 'duplicate')
+  expect(within(screen.getByTestId(second)).getByTitle('Same settings as another selected entry')).toBeInTheDocument()
+  // The first entry is on screen now; the line next to Generate names the held entry by its chip and the entry it repeats by its name.
+  await userEvent.click(screen.getByTestId('selected-preset-' + DEFAULT_ID))
+  const line = screen.getByTestId('generator-blocked-entry')
+  expect(line).toHaveAttribute('data-cause', 'duplicate')
+  expect(line).toHaveTextContent('The new settings of “TM1.2 · 20 MHz · 30 kHz · FDD” are the same as those of “TM1.1 · 20 MHz · 30 kHz · FDD”. A dataset holds each signal once, so Generate is off: change one of them or remove one.')
+  expect(line).not.toHaveTextContent(/refused|not accepted|still being checked/)
+  expect(generateButton()).toBeDisabled()
+  // Save configuration is off for the highlighted entry only; the first entry is clean.
+  expect(screen.getByRole('button', { name: 'Save configuration' })).toBeEnabled()
+  // Removing the entry it repeats lets the held one take its id: the line and the marker are gone.
+  await userEvent.click(screen.getByTestId('remove-preset-' + DEFAULT_ID))
+  await waitFor(() => expect(screen.queryByTestId('generator-blocked-entry')).not.toBeInTheDocument())
+  expect(screen.queryByTestId('nrtm-duplicate')).not.toBeInTheDocument()
+  await waitFor(() => expect(generateButton()).toBeEnabled())
+})
+
+test('an entry whose edits the server is still checking is named as such, and the line leaves with the answer', async () => {
+  setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  fireEvent.change(carrier().getByLabelText('Cell ID'), { target: { value: '1000' } })
+  // Within the debounce: the edit is still a draft that no request has been sent for.
+  await userEvent.click(screen.getByRole('button', { name: /02 ·.*Wi-Fi 6/ }))
+  const line = screen.getByTestId('generator-blocked-entry')
+  expect(line).toHaveAttribute('data-cause', 'pending')
+  expect(line).toHaveTextContent('“TM1.1 · 20 MHz · 30 kHz · FDD” is still being checked by the server, so Generate is off for the moment.')
+  expect(line).not.toHaveTextContent(/refused/)
+  expect(screen.getByTestId('selected-preset-' + DEFAULT_ID)).toHaveAttribute('data-cause', 'pending')
+  expect(within(screen.getByTestId('selected-preset-' + DEFAULT_ID)).getByTitle('The server is still checking these settings')).toBeInTheDocument()
+  expect(generateButton()).toBeDisabled()
+  // The answer comes without the user returning to the tab: the entry takes the derived id and the line goes.
+  await waitFor(() => expect(screen.queryByTestId('generator-blocked-entry')).not.toBeInTheDocument())
+  expect(screen.getByTestId(chip(recipeWith({}, { n_cell_id: 1000 })))).not.toHaveAttribute('data-draft')
+  await waitFor(() => expect(generateButton()).toBeEnabled())
+  expect(GENERATE_HELD.test(document.body.textContent ?? '')).toBe(false)
+})
+
+test('"Show it" from the keyboard leaves the focus in the panel instead of dropping it to the document body', async () => {
+  setup(refuseCell5000())
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  fireEvent.change(carrier().getByLabelText('Cell ID'), { target: { value: '5000' } })
+  await screen.findByRole('alert')
+  await userEvent.click(screen.getByRole('button', { name: /02 ·.*Wi-Fi 6/ }))
+  const button = within(screen.getByTestId('generator-blocked-entry')).getByRole('button', { name: 'Show it' })
+  act(() => button.focus())
+  expect(button).toHaveFocus()
+  await userEvent.keyboard('{Enter}')
+  await screen.findByTestId('nrtm-panel')
+  expect(button).not.toBeInTheDocument()
+  expect(document.activeElement).not.toBe(document.body)
+  const heading = screen.getByRole('heading', { name: 'Standard 5G NR test model' })
+  expect(heading).toHaveFocus()
+  expect(heading).toHaveAttribute('tabindex', '-1')
+  // The heading is not a tab stop: one Tab moves on to the first control of the panel.
+  await userEvent.tab()
+  expect(heading).not.toHaveFocus()
+  expect(within(screen.getByTestId('nrtm-panel')).getAllByRole('button')[0]).toHaveFocus()
+})
+
+test('switching to NR-N-TM (FDD only) and back never leaves the TDD-only PN23 scope on an FDD recipe', async () => {
+  const { calls } = setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  const tm32 = { model: 'NR-FR1-TM3.2' } as const
+  await userEvent.click(screen.getByRole('button', { name: 'TM3.2, QPSK, 16QAM' }))
+  await waitFor(() => expect(screen.getByTestId(chip(recipeWith(tm32)))).toBeInTheDocument())
+  await userEvent.click(screen.getByRole('button', { name: 'TDD' }))
+  await waitFor(() => expect(screen.getByTestId(chip(recipeWith({ ...tm32, duplex: 'tdd' })))).toBeInTheDocument())
+  await pick(screen.getByRole('combobox', { name: 'PN23 scope (TDD)' }), 'All symbols')
+  const tddAll = recipeWith({ ...tm32, duplex: 'tdd', pn_scope: 'all_symbols' })
+  await waitFor(() => expect(screen.getByTestId(chip(tddAll))).toBeInTheDocument())
+  const before = resolveCalls(calls).length
+  // NR-N-TM exists for FDD only: the recipe becomes FDD and the scope returns to its default.
+  await userEvent.click(screen.getByRole('button', { name: 'NR-N-TM, QPSK' }))
+  const ntm = recipeWith({ model: 'NR-N-TM', nb_iot: { position: 'lower', boost_db: 6 } }, { scs_khz: 15 })
+  await waitFor(() => expect(screen.getByTestId(chip(ntm))).toBeInTheDocument())
+  expect(screen.queryByRole('combobox', { name: 'PN23 scope (TDD)' })).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'TM3.2, QPSK, 16QAM' }))
+  const fdd = recipeWith(tm32, { scs_khz: 15 })
+  await waitFor(() => expect(screen.getByTestId(chip(fdd))).toBeInTheDocument())
+  // Every request after the switch carried the default scope, and the entry has the id of the plain FDD recipe (the same IQ must not get a second id).
+  const bodies = resolveCalls(calls).slice(before).map(c => c.body as NrTmRecipe)
+  expect(bodies.length).toBeGreaterThanOrEqual(2)
+  expect(bodies.map(body => `${body.model}/${body.duplex}/${body.pn_scope}`)).toEqual(expect.arrayContaining(['NR-N-TM/fdd/dl_symbols', 'NR-FR1-TM3.2/fdd/dl_symbols']))
+  expect(bodies.some(body => body.duplex === 'fdd' && body.pn_scope === 'all_symbols')).toBe(false)
+  expect(screen.getAllByTestId(/^selected-preset-/).map(node => node.getAttribute('data-testid'))).toEqual(['selected-preset-' + fixtureResolve(fdd).config.preset_id])
+})
+
+test('the results header names a signal like its chip and its entry in the preview list, so two test models that differ only in the PN convention are not the same line', async () => {
+  setup()
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await ready()
+  await userEvent.click(screen.getByRole('button', { name: 'Add another test model' }))
+  await screen.findByTestId(chip(recipeWith({ model: 'NR-FR1-TM1.2' })))
+  await userEvent.click(screen.getByRole('button', { name: 'TM1.1, QPSK' }))
+  await screen.findByTestId('nrtm-duplicate')
+  await pick(screen.getByRole('combobox', { name: 'PN23 data convention' }), 'MATLAB 5G Toolbox')
+  await waitFor(() => expect(screen.getByTestId(chip(recipeWith({ data_convention: 'matlab' })))).toBeInTheDocument())
+  await waitFor(() => expect(generateButton()).toBeEnabled())
+  await userEvent.click(generateButton())
+  await screen.findByTestId('signal-generator-results')
+  const preview = screen.getByRole('combobox', { name: 'Visualize a Signal in the Generated Dataset' })
+  // The plots are replaced while the other signal loads, so the header is looked up again each time.
+  const header = () => screen.getByTestId('generator-result-name').textContent
+  // The entry that was highlighted when Generate was pressed is shown first: the MATLAB-convention one.
+  await waitFor(() => expect(header()).toMatch(/^TM1\.1 · 20 MHz · 30 kHz · FDD · MATLAB 5G Toolbox · 614,400 I\/Q samples/))
+  await userEvent.click(preview)
+  expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['TM1.1 · 20 MHz · 30 kHz · FDD', 'TM1.1 · 20 MHz · 30 kHz · FDD · MATLAB 5G Toolbox'])
+  await userEvent.click(screen.getByRole('option', { name: 'TM1.1 · 20 MHz · 30 kHz · FDD' }))
+  await waitFor(() => expect(header()).toMatch(/^TM1\.1 · 20 MHz · 30 kHz · FDD · 614,400 I\/Q samples/))
+  // The preset id stays reachable as the tooltip of the name.
+  expect(within(screen.getByTestId('generator-result-name')).getByText(/^TM1\.1/)).toHaveAttribute('title', DEFAULT_ID)
+})
+
+const focusWindow = () => act(() => { focusManager.setFocused(false); focusManager.setFocused(true) })
+
+test.each([[403, 'feature_unavailable'], [404, 'not_found']])('a window refocus does not ask a server that answered %i for the catalogue again, and no failure notice flashes', async (status, code) => {
+  const { calls } = setup({ [CATALOG]: () => ({ status, body: { error: { code, message: 'This endpoint is not available', details: [], hint: null } } }) })
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  await screen.findByRole('heading', { name: 'Signal setup' })
+  const notices: number[] = []
+  const watch = new MutationObserver(() => notices.push(document.querySelectorAll('[data-testid=nrtm-catalog-problem]').length))
+  watch.observe(document.body, { childList: true, subtree: true })
+  focusWindow(); focusWindow()
+  await wait(80)
+  watch.disconnect()
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/nr-test-models')).toHaveLength(1)
+  expect(notices.every(count => count === 0)).toBe(true)
+  expect(screen.queryByTestId('nrtm-catalog-problem')).not.toBeInTheDocument()
+  expect(screen.getByTestId('preset-nr-20')).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('a catalogue that failed with a 500 is not asked again on a window refocus: the notice stays and its Retry stays available', async () => {
+  const { calls } = setup({ [CATALOG]: () => REFUSAL_500 })
+  renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
+  const notice = await screen.findByTestId('nrtm-catalog-problem')
+  focusWindow()
+  await wait(80)
+  expect(calls.filter(c => c.path === '/api/v1/signal-generator/nr-test-models')).toHaveLength(1)
+  expect(screen.getByTestId('nrtm-catalog-problem')).toBe(notice)
+  expect(within(notice).getByRole('button', { name: 'Retry' })).toBeEnabled()
 })

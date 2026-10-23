@@ -296,3 +296,74 @@ def test_derivation_is_deterministic_and_does_not_mutate_the_recipe():
     one, two = nr_tm.derive(r), nr_tm.derive(r)
     assert one.fields == two.fields and one.summary == two.summary and r.model_dump() == before
     assert nr_tm.resolve(r).config.model_dump() == nr_tm.resolve(r).config.model_dump()
+
+
+def test_one_gap_has_one_recipe_one_preset_id_and_one_exact_value():
+    """0.9 MHz written as 3 * 0.3, as the JSON of another float library, or off by float noise is the same recipe; -0.0 is 0.0; 6 is 6.0."""
+    spellings = [0.9, 3 * 0.3, 0.8999999999999999, 0.9000000000000001, 0.9 + 5e-10, "0.9", 0.9]
+    recipes = [recipe((30, 10), (30, 10), gaps=[0, g]) for g in spellings]
+    assert {r.carriers[1].gap_before_mhz for r in recipes} == {0.9} and all(repr(r.carriers[1].gap_before_mhz) == "0.9" for r in recipes)
+    assert len({preset_id_for(r) for r in recipes}) == 1 and len({plan_module.canonical_json(r) for r in recipes}) == 1
+    assert len({nr_tm.resolve(r).config.preset_id for r in recipes}) == 1
+    offsets = {make_plan(r).carriers[1].offset_hz - make_plan(r).carriers[0].offset_hz for r in recipes}
+    assert offsets == {make_plan(recipe((30, 10), (30, 10))).carriers[1].offset_hz - make_plan(recipe((30, 10), (30, 10))).carriers[0].offset_hz + 900_000}
+    zeros = [recipe((30, 10), (30, 10), gaps=[0, g]) for g in (0, 0.0, -0.0, "0", 4e-10)]
+    assert len({preset_id_for(r) for r in zeros}) == 1 and all(repr(r.carriers[1].gap_before_mhz) == "0.0" for r in zeros)
+    plain = NrTestModelConfig(model="NR-FR1-TM1.1", carriers=[{"scs_khz": 30, "bandwidth_mhz": 10}, {"scs_khz": 30, "bandwidth_mhz": 10}])
+    assert preset_id_for(plain) == preset_id_for(zeros[0])                                # an omitted gap is the default 0
+    assert json_of(plain) == json_of(zeros[0])
+
+
+def json_of(r):
+    import json
+    return json.dumps(r.model_dump(mode="json"), sort_keys=True)
+
+
+def test_a_gap_off_the_grid_is_refused_even_by_a_hair():
+    for bad in (0.30000004, 0.3000004, 0.29999996, 4e-07, 1e-7, 0.3 + 5e-9, 0.25, 9.31):
+        with pytest.raises(ValidationError, match="multiple of 0.3 MHz"):
+            recipe((30, 10), (30, 10), gaps=[0, bad])
+    with pytest.raises(ValidationError, match="first carrier"):
+        recipe((30, 10), (30, 10), gaps=[0.3, 0])
+    # a record stored by an earlier release only has to be well-formed
+    stored = NrTmCarrier.model_validate({"gap_before_mhz": 0.30000004}, context={"stored": True})
+    assert stored.gap_before_mhz == 0.30000004
+
+
+def test_the_float_fields_of_the_nb_iot_block_have_one_spelling_per_value():
+    from opendpd.schemas.nr_test_model import NrTmNbIot
+    spellings = [6, 6.0, "6", "6.0", 6.0000000000]
+    blocks = [NrTmNbIot(boost_db=b) for b in spellings]
+    assert {repr(b.boost_db) for b in blocks} == {"6.0"}
+    ids = {preset_id_for(NrTestModelConfig(model="NR-N-TM", carriers=[NrTmCarrier(scs_khz=15, bandwidth_mhz=10)], nb_iot=b)) for b in blocks}
+    ids.add(preset_id_for(NrTestModelConfig(model="NR-N-TM", carriers=[NrTmCarrier(scs_khz=15, bandwidth_mhz=10)], nb_iot=NrTmNbIot())))   # the default
+    assert len(ids) == 1
+
+
+def test_a_cell_identity_that_differs_from_the_standard_rule_is_flagged_by_carrier_as_a_studio_extension():
+    rule = [w for w in make_plan(recipe((30, 10), (30, 10), (30, 10), ids=[None, 2, 3])).warnings if "Studio extension" in w]
+    assert rule == []                                                                      # explicit ids that equal the rule are not deviations
+    plan = make_plan(recipe((30, 10), (30, 10), (30, 10), ids=[7, 2, 1]))
+    flagged = [w for w in plan.warnings if "Studio extension" in w]
+    assert len(flagged) == 2
+    assert flagged[0] == ("Carrier 1: cell identity 7 differs from the rule of TS 38.141-1 4.9.2.3 (N_ID^cell = n for the n-th lowest carrier, "
+                          "here 1); this is a Studio extension.")
+    assert flagged[1].startswith("Carrier 3: cell identity 1 differs from the rule") and "here 3" in flagged[1]
+    resolution = nr_tm.resolve(recipe((30, 10), (30, 10), (30, 10), ids=[7, 2, 1], subframes=2))
+    assert [w for w in resolution.summary.warnings if "Studio extension" in w] == flagged
+    assert resolution.config.nr_test_model.carriers[0].n_cell_id == 7
+    ordinary = make_plan(recipe((30, 10), (30, 10), ids=[8, 8]))                          # duplicates keep their own warning besides the deviation ones
+    assert sum("Studio extension" in w for w in ordinary.warnings) == 2 and any("share the cell identity 8" in w for w in ordinary.warnings)
+
+
+def test_tdd_with_different_subcarrier_spacings_says_whose_pattern_tdd_pattern_lists():
+    plan = make_plan(recipe((15, 10), (30, 10), duplex="tdd"))
+    warning, = [w for w in plan.warnings if w.startswith("TDD with different subcarrier spacings")]
+    assert "tdd_pattern lists the pattern of carrier 1 (15 kHz)" in warning
+    assert f"30 kHz: {' '.join(TDD_PATTERNS[30].labels())}" in warning and "15 kHz:" not in warning.split("(15 kHz)")[1]
+    summary = nr_tm.resolve(recipe((15, 10), (30, 10), duplex="tdd", subframes=5)).summary
+    assert summary.tdd_pattern == TDD_PATTERNS[15].labels() and warning in summary.warnings
+    three, = [w for w in make_plan(recipe((60, 10), (15, 10), (30, 10), duplex="tdd")).warnings if w.startswith("TDD with different")]
+    assert "carrier 1 (60 kHz)" in three and "15 kHz: " in three and "30 kHz: " in three
+    for quiet in (recipe((15, 10), (30, 10)), recipe((30, 10), (30, 10), duplex="tdd"), recipe((15, 10), duplex="tdd")):
+        assert not any("TDD with different" in w for w in make_plan(quiet).warnings)

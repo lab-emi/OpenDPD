@@ -13,8 +13,8 @@ MU = {15: 0, 30: 1, 60: 2}                       # TS 38.211 table 4.2-1 (FR1 su
 MAX_CELL_ID = 1007                               # TS 38.211 N_ID^cell range
 GAP_STEP_KHZ = 300                               # least common multiple of the 100 kHz raster and 15/30/60 kHz SCS
 
-# TS 38.104 V18.15.0 table 5.3.2-1: transmission bandwidth configuration N_RB, FR1, channel bandwidth (MHz) -> N_RB.
-# 3 MHz exists for 15 kHz only; the table equals the one used by the generic presets.
+# TS 38.104 table 5.3.2-1: transmission bandwidth configuration N_RB, FR1, channel bandwidth (MHz) -> N_RB. Read in V18.10.0 (2025-07)
+# and V18.15.0 (2026-09): the two copies carry the same table. 3 MHz exists for 15 kHz only; equal to the table of the generic presets.
 NRB: dict[int, dict[int, int]] = {
     15: {3: 15, 5: 25, 10: 52, 15: 79, 20: 106, 25: 133, 30: 160, 35: 188, 40: 216, 45: 242, 50: 270},
     30: {5: 11, 10: 24, 15: 38, 20: 51, 25: 65, 30: 78, 35: 92, 40: 106, 45: 119, 50: 133,
@@ -23,7 +23,7 @@ NRB: dict[int, dict[int, int]] = {
          60: 79, 70: 93, 80: 107, 90: 121, 100: 135},
 }
 
-# TS 38.104 V18.15.0 table 5.3.3-1: minimum guard band (kHz) of a BS channel bandwidth, FR1.
+# TS 38.104 table 5.3.3-1: minimum guard band (kHz) of a BS channel bandwidth, FR1 (identical in V18.10.0 and V18.15.0).
 GUARD_BAND_KHZ: dict[int, dict[int, float]] = {
     15: {3: 142.5, 5: 242.5, 10: 312.5, 15: 382.5, 20: 452.5, 25: 522.5, 30: 592.5, 35: 572.5, 40: 552.5,
          45: 712.5, 50: 692.5},
@@ -33,7 +33,8 @@ GUARD_BAND_KHZ: dict[int, dict[int, float]] = {
          60: 1530, 70: 1490, 80: 1450, 90: 1410, 100: 1370},
 }
 
-# NB-IoT operation in NR in-band (NR-N-TM, clause 4.9.2.2.9) exists for 15 kHz only; TS 38.104 table 5.3.2-1 3...50 MHz.
+# NB-IoT operation in NR in-band (NR-N-TM, clause 4.9.2.2.9) is generated for 15 kHz hosts only (the standards describe no other host
+# numerology; a 180 kHz NB-IoT carrier is one NR resource block only at 15 kHz); TS 38.104 table 5.3.2-1, 3...50 MHz.
 NB_IOT_SCS_KHZ = 15
 NB_IOT_BANDWIDTHS_MHZ = tuple(NRB[15])
 
@@ -115,7 +116,7 @@ TDD_PATTERNS: dict[int, TddPattern] = {
 }
 
 # TS 38.141-1 table 4.9.2.2-1a (NB-IoT in-band, 15 kHz only): D S U U D with TDD-UL-DL-ConfigDedicated overrides.
-# Documented for completeness; NR-N-TM is generated for FDD only (see catalog notes).
+# The standard defines this TDD form of NR-N-TM; transcribed for completeness, but Studio does not generate it in this release.
 TDD_NB_IOT_SLOT_MAPS = ("DDDDDDDDDDDDDD", "DDDDDDDDDDFFUU", "UUUUUUUUUUUUUU", "UUUUUUUUUUUUUU", "DDDDDDDDDDDDDD")
 
 STANDARD_SUBFRAMES = {"fdd": 10, "tdd": 20}      # clause 4.9.2.2: 1 radio frame FDD, 2 radio frames TDD
@@ -170,7 +171,7 @@ class ModelDef:
     target_level_db: float | None = None   # level of the target RBGs (+3, -3, -6 dB); the other user balances the power
     supports_layers: bool = False
     nb_iot: bool = False
-    fdd_only: bool = False
+    fdd_only: bool = False                 # Studio generates only FDD (NR-N-TM: the standard also defines a TDD form, table 4.9.2.2-1a)
 
     @property
     def suffix(self) -> str:
@@ -268,7 +269,7 @@ MODELS: tuple[ModelDef, ...] = (
         "NR-N-TM", "4.9.2.2.9", "NB-IoT operation in NR in-band",
         "NR-FR1-TM1.1 on the NR carrier with one NR resource block punctured by an NB-IoT carrier (TS 36.141 N-TM) at the "
         "eligible position closest to the minimum guard band; the NB-IoT resource elements are boosted by X dB over the "
-        "average resource element. FDD, 15 kHz only.",
+        "average resource element. Studio generates FDD with 15 kHz only; the standard also defines a TDD form that is not implemented.",
         ("Unwanted emissions > Occupied bandwidth", "Unwanted emissions > ACLR", "Unwanted emissions > Operating band unwanted emissions",
          "Unwanted emissions > Transmitter spurious emissions", "Transmitter intermodulation", "Receiver spurious emissions",
          "NB-IoT RB power dynamic range"),

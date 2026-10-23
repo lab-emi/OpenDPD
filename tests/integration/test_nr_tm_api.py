@@ -91,6 +91,27 @@ def test_invalid_recipes_are_refused_with_a_readable_422_before_any_compute(clie
     assert message in json.dumps(error)
 
 
+def _recipe_text(boost="6", carriers='[{"scs_khz":15,"bandwidth_mhz":10}]'):
+    return '{"model":"NR-N-TM","nb_iot":{"position":"lower","boost_db":%s},"carriers":%s}' % (boost, carriers)
+
+
+@pytest.mark.parametrize("recipe,status", [
+    (_recipe_text("1" + "0" * 400), 422), (_recipe_text("-1" + "0" * 400), 422), (_recipe_text("1" * 4299), 422), (_recipe_text("1" * 4400), 400),
+    (_recipe_text('"1e999"'), 422), (_recipe_text("1e999"), 422), (_recipe_text("-1e999"), 422), (_recipe_text("Infinity"), 422), (_recipe_text("NaN"), 422),
+    (_recipe_text(carriers='[{"scs_khz":15,"bandwidth_mhz":10},{"scs_khz":15,"bandwidth_mhz":10,"gap_before_mhz":%s}]' % ("1" + "0" * 400)), 422),
+    (_recipe_text(carriers="[" * 3000 + "]" * 3000), 422), (_recipe_text(carriers="[" * 30000 + "]" * 30000), 400),
+], ids=["boost 400 digits", "boost -400 digits", "boost 4299 digits", "boost 4400 digits", "boost '1e999'", "boost 1e999", "boost -1e999", "boost Infinity",
+        "boost NaN", "gap 400 digits", "carriers 3000 deep", "carriers 30000 deep"])
+@pytest.mark.parametrize("route,wrap", [("nr-test-models/resolve", lambda r: r), ("signals", lambda r: '{"nr_test_model":%s}' % r),
+                                        ("batches", lambda r: '{"configs":[{"nr_test_model":%s}]}' % r), ("validate", lambda r: '{"nr_test_model":%s}' % r)])
+def test_hostile_numbers_in_a_recipe_are_refused_not_a_server_error(client, route, wrap, recipe, status):
+    """A 400-digit integer used to escape the NB-IoT boost validator as an OverflowError (a 500 for every route that takes a recipe)."""
+    response = client.post(f"{API}/signal-generator/{route}", content=wrap(recipe).encode(), headers={"content-type": "application/json"})
+    assert response.status_code == status, response.text[:300]
+    if status == 422:
+        assert response.json()["error"]["code"] in {"invalid_request", "invalid_signal"}
+
+
 def test_resolve_needs_the_csrf_token_and_a_session(client):
     assert client.post(f"{TM}/resolve", json=recipe(), headers={CSRF_HEADER: "wrong"}).status_code == 403
     with TestClient(client.app, base_url="http://127.0.0.1:8877") as anonymous:

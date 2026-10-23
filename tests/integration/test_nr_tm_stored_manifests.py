@@ -130,6 +130,22 @@ def test_the_stored_context_relaxes_only_what_a_release_may_change(client):
         GeneratedSignal.from_stored(unknown)                                        # field ranges of the recipe still apply
 
 
+def test_a_stored_signal_stays_editable_when_its_derived_values_or_defaults_are_stale(client):
+    """validate_assignment runs the validators again without the 'stored' context; that must not make a readable record unusable."""
+    config, signal_id = generate_test_model(client, subframes=2)
+    manifest = json.loads(manifest_path(client, signal_id).read_text())
+    manifest["config"]["oversampling"] = 2 if manifest["config"]["oversampling"] != 2 else 4
+    manifest["config"]["shared_channel_settings"] = None
+    stored = GeneratedSignal.from_stored(manifest)
+    assert stored.config.shared_channel_settings is True and stored.config.oversampling == manifest["config"]["oversampling"]
+    stored.config.seed = 11
+    stored.config.rms = 0.25
+    stored.config.snr_db = 30.0
+    assert (stored.config.seed, stored.config.rms, stored.config.snr_db) == (11, 0.25, 30.0)
+    with pytest.raises(ValidationError, match="derived from its nr_test_model recipe"):
+        GeneratedSignal.model_validate(manifest)                               # as input it is judged by this release
+
+
 def test_manifests_of_signals_without_a_recipe_are_unchanged(client):
     """A 2.4.0 manifest has no nr_test_model key in config or analysis and is read, listed and rewritten exactly as before."""
     preset = client.get(f"{SG}/presets").json()[0]["config"]

@@ -4,6 +4,10 @@ Public API (everything else is internal):
 
 * ``validate_recipe(recipe)``   raise ``ValueError`` for a recipe the standard or the generator limits do not allow
 * ``derive(recipe)``            structural ``GeneratorConfig`` fields + ``NrTmSummary`` (+ the internal plan)
+* ``derived_fields(recipe)``    only the structural fields (what ``GeneratorConfig`` compares against)
+
+``validate_recipe``, ``derive`` and ``derived_fields`` share a bounded, thread-safe memo per canonical recipe: a recipe is judged once, and
+a plan builds no waveform and no NB-IoT frame, so validating many untrusted recipes stays cheap.
 * ``resolve(recipe, **edits)``  recipe + complete validated ``GeneratorConfig`` + summary
 * ``catalog()``                 the models, parameter ranges and fixed parameters for the UI
 * ``recipe_label(recipe)``      readable name (``NR-FR1-TM3.1a · 100 MHz · 30 kHz · FDD``) for pickers and dataset captures
@@ -16,7 +20,7 @@ from pathlib import Path
 
 from .catalog import catalog     # the function intentionally takes the place of the submodule of the same name
 from .label import recipe_label
-from .plan import STRUCTURAL_FIELDS, NrTmDerived, derive, resolve, validate_recipe
+from .plan import STRUCTURAL_FIELDS, NrTmDerived, clear_memo, derive, derived_fields, resolve, validate_recipe
 
 SOURCE_FILES: tuple[Path, ...] = tuple(sorted(Path(__file__).resolve().parent.glob("*.py")))
 
@@ -28,5 +32,5 @@ def synthesize_nr_tm(config):
     return synthesize(config)
 
 
-__all__ = ["STRUCTURAL_FIELDS", "SOURCE_FILES", "NrTmDerived", "catalog", "derive", "recipe_label", "resolve", "synthesize_nr_tm",
-           "validate_recipe"]
+__all__ = ["STRUCTURAL_FIELDS", "SOURCE_FILES", "NrTmDerived", "catalog", "clear_memo", "derive", "derived_fields", "recipe_label",
+           "resolve", "synthesize_nr_tm", "validate_recipe"]

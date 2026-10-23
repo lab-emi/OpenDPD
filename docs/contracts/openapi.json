@@ -6914,7 +6914,7 @@
             "type": "integer"
           },
           "allocation": {
-            "description": "One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic) and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps).",
+            "description": "One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic), evm_symbols (OFDM symbols of that carrier that enter its EVM) and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps). The evm_symbols of the analysis itself counts the OFDM symbols of one carrier grid (the lowest carrier), not carriers times symbols.",
             "items": {
               "additionalProperties": true,
               "type": "object"
@@ -11178,6 +11178,7 @@
           },
           "gap_before_mhz": {
             "default": 0,
+            "description": "Extra spacing in MHz added to the nominal channel spacing before this carrier (a non-contiguous sub-block gap). 0 = contiguous. Must be 0 for the first carrier and a multiple of 0.3 MHz; a value within 1e-9 MHz of such a multiple is stored as that exact multiple.",
             "maximum": 1000.0,
             "minimum": 0.0,
             "title": "Gap Before Mhz",
@@ -11416,6 +11417,7 @@
             "type": "number"
           },
           "max_carriers": {
+            "description": "Largest number of carriers of a recipe. A Studio limit: the standard sets none.",
             "title": "Max Carriers",
             "type": "integer"
           },
@@ -11424,6 +11426,7 @@
             "type": "integer"
           },
           "max_samples": {
+            "description": "Largest number of complex samples of a capture (a Studio limit); the capture is shortened or refused above it.",
             "title": "Max Samples",
             "type": "integer"
           },
@@ -11460,6 +11463,7 @@
           },
           "fdd_only": {
             "default": false,
+            "description": "True when Studio generates this model for FDD only. NR-N-TM: the standard also defines a TDD form (TS 38.141-1 Table 4.9.2.2-1a), which Studio does not implement in this release.",
             "title": "Fdd Only",
             "type": "boolean"
           },
@@ -11546,10 +11550,11 @@
       },
       "NrTmNbIot": {
         "additionalProperties": false,
-        "description": "NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): FDD, 15 kHz only.",
+        "description": "NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): Studio generates FDD with 15 kHz hosts only.",
         "properties": {
           "boost_db": {
             "default": 6,
+            "description": "NB-IoT power boost X in dB over the average resource element. Studio accepts 3 to 12 dB: at least 6 dB for host carriers up to 20 MHz and 3 dB for 25 MHz and wider (TS 38.104 Table 6.3.4.2-1); the upper limit of 12 dB is a Studio limit, the standard sets none.",
             "maximum": 12.0,
             "minimum": 3.0,
             "title": "Boost Db",
@@ -11596,6 +11601,19 @@
             "title": "Lower Rb",
             "type": "object"
           },
+          "max_boost_db": {
+            "description": "Largest NB-IoT boost X in dB that Studio accepts. A Studio limit: the standard sets no upper bound.",
+            "title": "Max Boost Db",
+            "type": "number"
+          },
+          "min_boost_db": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Smallest NB-IoT boost X in dB per host channel bandwidth (MHz as text) at the positions lower_rb and upper_rb (TS 38.104 Table 6.3.4.2-1); a smaller boost_db is refused.",
+            "title": "Min Boost Db",
+            "type": "object"
+          },
           "scs_khz": {
             "title": "Scs Khz",
             "type": "integer"
@@ -11613,7 +11631,9 @@
           "bandwidths_mhz",
           "lower_rb",
           "upper_rb",
-          "eligible_rbs"
+          "eligible_rbs",
+          "min_boost_db",
+          "max_boost_db"
         ],
         "title": "NrTmNbIotInfo",
         "type": "object"

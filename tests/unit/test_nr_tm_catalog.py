@@ -101,8 +101,8 @@ def test_limits_defaults_and_notes(cat):
 
 
 def test_package_surface_and_source_files():
-    assert set(nr_tm.__all__) == {"STRUCTURAL_FIELDS", "SOURCE_FILES", "NrTmDerived", "catalog", "derive", "recipe_label", "resolve", "synthesize_nr_tm",
-                                  "validate_recipe"}
+    assert set(nr_tm.__all__) == {"STRUCTURAL_FIELDS", "SOURCE_FILES", "NrTmDerived", "catalog", "clear_memo", "derive", "derived_fields", "recipe_label",
+                                  "resolve", "synthesize_nr_tm", "validate_recipe"}
     names = {p.name for p in nr_tm.SOURCE_FILES}
     assert {"__init__.py", "tables.py", "spec.py", "sequences.py", "grid.py", "modulate.py", "plan.py", "synth.py", "catalog.py", "label.py"} <= names
     assert list(nr_tm.SOURCE_FILES) == sorted(nr_tm.SOURCE_FILES) and all(p.is_file() and p.suffix == ".py" for p in nr_tm.SOURCE_FILES)
@@ -136,3 +136,62 @@ def test_a_recipe_is_validated_when_it_is_built_and_the_validator_does_not_recur
             "try:\n    NrTestModelConfig(carriers=[NrTmCarrier(scs_khz=60, bandwidth_mhz=5)])\nexcept ValidationError as exc:\n    print('refused', 'MHz' in str(exc))\n")
     result = run_python(code)
     assert result.returncode == 0 and "refused True" in result.stdout, result.stderr
+
+
+def test_the_notes_do_not_claim_more_than_studio_offers(cat):
+    open_note = next(n for n in cat.notes if n.startswith("Parameters you can set:"))
+    assert cat.notes[1] == open_note
+    # the claim is a list of what can be set, not "every parameter the standard leaves open"
+    assert not any("leaves open" in n or "every parameter" in n.lower() for n in cat.notes)
+    # a free cell identity, the number of carriers and the NB-IoT boost cap are Studio's, and the note says so
+    assert "Studio extensions, not options of the standard" in open_note
+    for text in ("cell identity other than N_ID^cell = n", "TS 38.141-1 4.9.2.3", "at most 16 carriers", "boost of at most 12 dB"):
+        assert text in open_note, text
+    assert open_note.index("Studio extensions") > open_note.index("capture length")       # the plain parameters come first
+    assert "cell identity," not in open_note.split("Studio extensions")[0]                 # it is not listed among the parameters the standard leaves open
+    not_offered = next(n for n in cat.notes if n.startswith("Not offered:"))
+    for text in ("NR-N-TM with TDD", "Table 4.9.2.2-1a", "15 kHz and 60 kHz raster", "PN23 stream shared by all users", "NRTC1-6"):
+        assert text in not_offered, text
+    assert any("NRTC6 ON-OFF" in n for n in cat.notes)                                      # the earlier note about NRTC6 is still there
+
+
+def test_the_limits_say_whose_limits_they_are(cat):
+    from opendpd.schemas.nr_test_model_api import NrTmLimits, NrTmNbIotInfo
+    assert "Studio limit" in NrTmLimits.model_fields["max_carriers"].description and "standard sets none" in NrTmLimits.model_fields["max_carriers"].description
+    assert "Studio limit" in NrTmLimits.model_fields["max_samples"].description
+    assert "Studio limit" in NrTmNbIotInfo.model_fields["max_boost_db"].description
+    assert cat.limits.max_carriers == 16 and cat.nb_iot.max_boost_db == 12.0
+    # the catalog's per-model duplex flag: only NR-N-TM, and the text beside it names TS 38.141-1 Table 4.9.2.2-1a
+    assert [m.model for m in cat.models if m.fdd_only] == ["NR-N-TM"]
+    info = next(m for m in cat.models if m.model == "NR-N-TM")
+    assert info.scs_khz == [15] and "Table 4.9.2.2-1a" in {p.name: p.value for p in info.fixed_parameters}["Duplex / numerology"]
+
+
+def test_releases_of_ts_38_104_are_cited_consistently():
+    """The N_RB, guard band and NB-IoT power tables were read in two copies of TS 38.104 (V18.10.0 and V18.15.0), identical for these tables.
+
+    Every release number that follows a mention of 38.104 in the test-model code (up to the next mention of another specification) must be
+    one of the two, so that a stray 'read in V18.9.0' anywhere in the package or in the schema is found."""
+    import re
+    root = Path(nr_tm.__file__).resolve().parents[3] / "schemas"
+    package = Path(nr_tm.__file__).resolve().parent
+    sources = sorted(package.glob("*.py")) + sorted(root.glob("nr_test_model*.py"))
+    assert {"tables.py", "nb_iot.py", "plan.py", "catalog.py", "nr_test_model.py", "nr_test_model_api.py"} <= {s.name for s in sources}
+    other_specification = re.compile(r"\b(?:TS|TR)\s?\d\d\.\d{3}")
+    release = re.compile(r"\bV\d+\.\d+\.\d+\b")
+    cited, mentions = {}, 0
+    for source in sources:
+        text = source.read_text()
+        for mention in re.finditer(r"38\.104", text):
+            mentions += 1
+            window = text[mention.end():mention.end() + 400]
+            stop = other_specification.search(window)
+            for found in release.findall(window[:stop.start()] if stop else window):
+                cited.setdefault(found, set()).add(source.name)
+    OWNED = {"V18.10.0", "V18.15.0"}
+    assert mentions > 10 and cited, "the scan must find the citations it is meant to check"
+    assert set(cited) == OWNED, cited                      # no stray release such as V18.9.0, and both releases are really cited
+    for found in OWNED:
+        assert {"tables.py", "nb_iot.py"} <= cited[found], (found, cited[found])
+    tables = (package / "tables.py").read_text()
+    assert "V18.10.0 (2025-07)" in tables and "V18.15.0 (2026-09)" in tables and "identical in V18.10.0 and V18.15.0" in tables
