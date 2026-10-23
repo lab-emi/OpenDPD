@@ -1,13 +1,13 @@
 # Studio Signal Generator
 
 Open **Signal Generator** in the sidebar, or choose **Get Started → Signal Generator**.
-The sidebar expands to **Generate** and **Preview** while Signal Generator is open. Generate is the default page. The first visit selects a private NR 20 MHz configuration; generation starts only when requested. Choose **5G NR**, **Wi-Fi 6**, **Wi-Fi 7** or **Custom**. The dataset name and **Generate & preview** action sit at the top of **Signal setup**.
+The sidebar expands to **Generate** and **Preview** while Signal Generator is open. Generate is the default page. The first visit selects a private NR standard test model (NR-FR1-TM1.1, FDD, one 30 kHz carrier of 20 MHz); generation starts only when requested. Choose **5G NR**, **Wi-Fi 6**, **Wi-Fi 7** or **Custom**. The dataset name and **Generate & preview** action sit at the top of **Signal setup**.
 
-Select one or more compact matrix cells: bandwidth runs horizontally, QAM vertically, and each group has a different OFDMA channel count. NR numerology buttons switch FR1/FR2 and subcarrier spacing. Selected chips let you edit or preview each preset. Sample count, duration and the optional default filter apply to the highlighted preset. Press **Generate & preview** once for the whole selection.
+**5G NR** opens on **Standard 5G NR test model** (3GPP TS 38.141-1, clause 4.9.2). Choose one of the eleven NR FR1 test models and set the duplex mode, carriers, bandwidths and the other parameters of the model that the standard leaves open and that a baseband stimulus can express; the [NR standard test models guide](nr-test-models.md) lists the parameters, what the standard fixes and [what Studio cannot set](nr-test-models.md#what-you-cannot-set). The text that the server writes for test models (descriptions, the table of fixed parameters, validation messages, warnings and notes) is English only in every interface language. The generic preset **matrix** of earlier releases is behind **Generic numerology matrix…** below the panel: select one or more compact cells, where bandwidth runs horizontally, QAM vertically, and each group has a different OFDMA channel count; its numerology buttons switch FR1/FR2 and subcarrier spacing. Wi-Fi 6 and Wi-Fi 7 show the matrix directly. Test models and matrix presets share one selection of up to 16 signals. Selected chips let you edit or preview each signal. Sample count, duration and the optional default filter apply to the highlighted matrix preset; a test model sets its own length (capture length and oversampling are in its panel). Press **Generate & preview** once for the whole selection.
 
 Generation opens **Preview** automatically. **Use this Signal: [dataset name]** puts **Choose Virtual PA**, Analyzer and download actions above the plots. **Visualize a Signal in the Generated Dataset**, just before the visualizations, selects which member to inspect.
 
-The result is explicitly a **PA Input Dataset (x)**, with no PA output. Its editable suggested name starts with `syn_pa_in_` and summarizes the waveform/specification ranges and number of signals. Virtual PA simulation produces corresponding `syn_pa_out_` and `syn_pa_inout_` output and paired dataset names. Parameter changes disable exports and the next step until regenerated. Returning to this tab restores the selected batch. Up to 16 presets can be selected, with different sample rates and lengths; they are never silently concatenated.
+The result is explicitly a **PA Input Dataset (x)**, with no PA output. Its editable suggested name starts with `syn_pa_in_` and summarizes the waveform/specification ranges and number of signals. Virtual PA simulation produces corresponding `syn_pa_out_` and `syn_pa_inout_` output and paired dataset names. Parameter changes disable exports and the next step until regenerated. Returning to this tab restores the selected batch, including the recipes of test models. Up to 16 presets or test models can be selected, with different sample rates and lengths; they are never silently concatenated.
 
 The onboarding dialog has exactly one highlighted action: Signal Generator. Existing
 datasets are the second choice, and CSV upload is third. PA and DPD each have one
@@ -32,17 +32,20 @@ The input remains available in the PA Library and Analyzer after reload. CSV and
 
 ## Waveforms and coverage
 
-The generator provides synthetic engineering stimuli with standard numerologies,
-not complete protocol implementations or certified reference test models.
+The generator provides synthetic complex-baseband stimuli. The matrix presets use
+standard numerologies; they are not complete protocol implementations or standard test
+models. The 5G NR test models are baseband implementations of the TS 38.141-1 definitions
+(PDCCH, PDSCH and DM-RS only); they are not certified or instrument-verified reference waveforms.
 
 | Family | Presets | Implemented signal |
 | --- | --- | --- |
-| 5G NR | 940 presets | FR1 3–100 MHz and FR2-1 50–400 MHz; 15/30/60/120 kHz SCS where defined; QPSK through 1024-QAM |
+| 5G NR test models | 11 models, parameterised (not presets) | NR-FR1-TM1.1, 1.2, 2, 2a, 2b, 3.1, 3.1a, 3.1b, 3.2, 3.3 and NR-N-TM of TS 38.141-1 §4.9.2; FDD or TDD; 15/30/60 kHz SCS; 3–100 MHz; 1–16 carriers; QPSK through 1024-QAM. See [NR standard test models](nr-test-models.md). |
+| 5G NR matrix | 940 presets | FR1 3–100 MHz and FR2-1 50–400 MHz; 15/30/60/120 kHz SCS where defined; QPSK through 1024-QAM |
 | Wi-Fi 6 | 96 presets | 20/40/80/160 MHz; BPSK through 1024-QAM; 1/2/4/8 allocations |
 | Wi-Fi 7 | 140 presets | 20/40/80/160/320 MHz; BPSK through 4096-QAM; 1/2/4/8 allocations |
 | Custom | 10 waveforms | OFDM/OFDMA, DFT-spread OFDM, QAM, PSK, FSK/GFSK, noise, tone, multitone, chirp |
 
-See the [preset tables and source references](signal-presets.md) for exact RB/tone counts, timing and implementation limits. These uncoded payloads use generic pilots and allocation placement, with no full protocol framing or conformance certification. Wi-Fi 8 generation has been removed. Existing stored signals remain readable.
+See the [preset tables and source references](signal-presets.md) for exact RB/tone counts, timing and implementation limits. The matrix payloads are uncoded and use generic pilots and allocation placement, with no full protocol framing or conformance certification. Test models are uncoded too: PDCCH, PDSCH and DM-RS only, with no SSB, CSI-RS or PT-RS (NR-N-TM adds the NB-IoT test-model signals). Wi-Fi 8 generation has been removed. Existing stored signals remain readable.
 
 ## Advanced parameters
 
@@ -58,6 +61,11 @@ See the [preset tables and source references](signal-presets.md) for exact RB/to
 - Tone frequency, multitone count, and a linear chirp over the declared bandwidth.
 - Frequency offset, I gain mismatch, Q phase mismatch, I/Q DC offsets, envelope
   clipping and independent white Gaussian noise.
+
+For an NR standard test model the sample rate, FFT size, bandwidth, length, channels and
+pilots come from its recipe and are not editable here; Advanced keeps RMS, seed, RF
+carrier metadata, burst envelope and the impairments above. The ideal filter is off by
+default for test models.
 
 `SCS = output sample rate / (FFT size × oversampling)`. The FFT and fixed CP inputs
 refer to the grid before oversampling; measured CP lengths are reported in output
@@ -88,7 +96,7 @@ retained to preserve the exact requested sample count and disclosed in metadata.
 
 ## Export and training
 
-**Save configuration** downloads the highlighted preset's JSON; **Load configuration** validates and selects it. **Download PA input CSV** and **Download input metadata JSON** export the currently previewed signal separately. CSV columns are `I,Q`; metadata records the signal role, actual sample rate/count, seed, filter and waveform parameters, numeric environment and hashes. Seeded byte reproduction requires the recorded implementation and environment.
+**Save configuration** downloads the highlighted preset's JSON (for a test model it contains the recipe under `nr_test_model`); **Load configuration** validates and selects it. **Download PA input CSV** and **Download input metadata JSON** export the currently previewed signal separately. CSV columns are `I,Q`; metadata records the signal role, actual sample rate/count, seed, filter and waveform parameters, numeric environment and hashes. Seeded byte reproduction requires the recorded implementation and environment.
 
 The waveform has **no PA output**. **Choose Virtual PA** carries all selected inputs to [PA Library](virtual-pa-library.md). Choose the mathematical PA and parameters, then click **Simulate PA output**. Studio simulates every capture independently, saves the complete dataset automatically and opens **Datasets → details**. There is no separate pairing form. Each capture requires at least 8,192 input samples. The default split is 60/20/20 with 256-sample guards; preprocessing can create a different version later.
 
@@ -124,14 +132,18 @@ transmitter, GitHub submission, or email is activated by generating a waveform.
 Numerical tests cover all 1,186 presets, exact sample counts, one-millisecond NR CP
 timing, FFT allocations, empty bins, deterministic impairments, analytic single-tone
 PAPR, invalid parameters, export round trips and dataset provenance. API tests cover
-authentication, CSRF, host feature gating and per-version test counts. Hosted tests
+authentication, CSRF, host feature gating and per-version test counts. The test-model
+package has its own numerical tests and a MATLAB comparison; see its
+[validation evidence](nr-test-models.md#validation-evidence). Hosted tests
 verify that one session cannot access another session's generated signals or data.
 
-`scripts/verify_signal_generator.mjs` exercises a real local browser at desktop and mobile widths: matrix selection, heterogeneous captures, formula highlighting, automatic dataset navigation, CSV/ZIP downloads, per-capture visualization and restored selection. Integration tests replay both captures through the exported Python script for all nine Virtual PA families and check tenant isolation, resource limits, rollback and real CPU training. These are software/numerical checks, not physical RF or full standards-conformance evidence.
+`scripts/verify_signal_generator.mjs` exercises a real local browser at three viewports (1366×768, 1920×1080 and 390×844). Each run generates three heterogeneous captures in one batch, one from each way a signal enters the selection: the default NR test model (shortened to two subframes), a preset of the generic numerology matrix and a Wi-Fi 7 preset. It then checks formula highlighting, one Virtual PA simulation, automatic dataset navigation, CSV/ZIP downloads, per-capture visualization and the restored selection. A bootstrap token opens exactly one browser session and every viewport is a new browser context, so `OPENDPD_BOOTSTRAP_TOKEN` takes one token per viewport, three comma-separated tokens (`token1,token2,token3`). Integration tests replay both captures through the exported Python script for all nine Virtual PA families and check tenant isolation, resource limits, rollback and real CPU training. These are software/numerical checks, not physical RF or full standards-conformance evidence.
 
 ## Studio 2.2.11 preview
 
 ![PA input waveform and its independent PSD](../../pics/studio-signal-generator.png)
+
+The screenshot was taken with Studio 2.2.11 and shows the preset matrix, which since 2.4.1 is no longer the first view of the 5G NR tab.
 
 The PSD here is labelled **PA Input**. It contains only the generated x signal; PA output appears after explicit simulation in PA Library. See [signal-chain spectra](signal-chain-spectra.md).
 

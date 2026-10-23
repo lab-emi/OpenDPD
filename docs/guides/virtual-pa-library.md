@@ -11,7 +11,7 @@ Keeping these roles separate makes the provenance of every PA output explicit.
    describe illustrative applications, not device calibrations or foundry models.
 3. Select a saved input. Adjust sliders or numeric fields; selecting a control
    highlights the matching variables in the displayed equations, and vice versa.
-4. Click **Simulate PA output**. Studio computes each selected preset at its own sample rate, creates the complete dataset and opens its detail page automatically.
+4. Click **Simulate PA output**. Studio computes each selected preset or test model at its own sample rate, creates the complete dataset and opens its detail page automatically.
 5. Inspect the input/output plots in **Datasets**. For a collection, use **Visualize subdataset** to switch captures. Download the current CSV or the whole ZIP, which includes metadata and one standalone, parameterized PA replay script. Continue to PA Training from the selected capture.
 
 There is no separate **Paired dataset** node or dataset-creation form. Each capture uses a 60/20/20 split with 256-sample guards and needs at least 8,192 samples. Captures may have unequal lengths; memory state starts from zero independently for each preset. The generator's optional ideal input filter does not filter PA output.

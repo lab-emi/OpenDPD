@@ -10,12 +10,15 @@ import type { GeneratorPreset } from '@/api/signalGenerator'
 import { t } from '@/i18n'
 import { useStudioColors } from '@/theme'
 
-export function PresetMatrix({ presets, selected, disabled, toggle }: {
-  presets: GeneratorPreset[]; selected: string[]; disabled: boolean; toggle: (preset: GeneratorPreset) => void
+/** `group` and `onGroup` let a parent that hides the matrix keep the numerology group the reader chose; without them the matrix remembers it itself. */
+export function PresetMatrix({ presets, selected, disabled, toggle, group: chosen, onGroup }: {
+  presets: GeneratorPreset[]; selected: string[]; disabled: boolean; toggle: (preset: GeneratorPreset) => void; group?: string; onGroup?: (group: string) => void
 }) {
   const colors = useStudioColors()
   const groups = [...new Set(presets.map(p => p.numerology ?? 'OFDM'))]
-  const [choice, setChoice] = useState(groups[0])
+  const [own, setOwn] = useState(groups[0])
+  const choice = chosen ?? own
+  const setChoice = (value: string) => { setOwn(value); onGroup?.(value) }
   const group = groups.includes(choice ?? '') ? choice : groups[0]
   const visible = presets.filter(p => (p.numerology ?? 'OFDM') === group)
   const channels = [...new Set(visible.map(p => p.channel_count ?? p.config.channel_subcarriers?.length ?? 1))].sort((a, b) => a-b)

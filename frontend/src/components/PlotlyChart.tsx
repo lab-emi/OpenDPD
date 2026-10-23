@@ -53,7 +53,7 @@ export interface PlotLayout {
   margin?: { l: number; r: number; t: number; b: number }
   legend?: { orientation: 'h' | 'v'; x: number; y: number; yanchor?: 'top' | 'bottom'; maxheight?: number; font?: { size: number } }
   xaxis?: { type?: 'linear' | 'log'; title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; tickmode?: 'auto' | 'array'; tickvals?: number[]; ticktext?: string[]; range?: [number, number]; constrain?: 'domain' }
-  yaxis?: { title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; range?: [number, number]; scaleanchor?: string; scaleratio?: number }
+  yaxis?: { title?: { text: string; font?: { size: number } }; tickfont?: { size: number }; range?: [number, number]; scaleanchor?: string; scaleratio?: number; dtick?: number }
   shapes?: Array<{ type: 'rect' | 'line'; x0: number; x1: number; y0: number; y1: number; yref: 'paper'; fillcolor?: string; line: { width: number; color?: string; dash?: SeriesDash } }>
   showlegend?: boolean
   height?: number

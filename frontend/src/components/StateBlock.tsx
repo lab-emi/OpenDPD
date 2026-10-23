@@ -43,7 +43,8 @@ function describeError(error: unknown): { message: string; hint: string | null }
   return { message: localize(String(error)), hint: null }
 }
 
-export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+/** `lines` replace the one-line message when the refusal itself carries the detail (one readable line per field). */
+export function ErrorState({ error, onRetry, lines }: { error: unknown; onRetry?: () => void; lines?: string[] }) {
   const { message, hint } = describeError(error)
   return (
     <Alert
@@ -58,7 +59,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
       }
     >
       <AlertTitle>{t(error instanceof ApiConnectionError ? 'web.connection.title' : 'state.error.title')}</AlertTitle>
-      {message}
+      {lines?.length ? lines.map(line => <Typography key={line} variant="body2">{line}</Typography>) : message}
       {hint && <Typography variant="body2">{hint}</Typography>}
     </Alert>
   )

@@ -17,7 +17,7 @@ from starlette.responses import JSONResponse, Response
 
 from opendpd import __version__
 from opendpd.server.security import CSRF_HEADER, SESSION_COOKIE
-from opendpd.web.policy import WebConfig, allowed, check_body, check_query, expensive_request, reject
+from opendpd.web.policy import STATELESS_POSTS, WebConfig, allowed, check_body, check_query, expensive_request, reject
 from opendpd.web.runtime import TenantManager, directory_bytes
 from opendpd.web.gpu_archive import MAX_BYTES
 
@@ -149,7 +149,8 @@ class PublicBoundary:
         if (self.manager.inflight >= self.config.max_requests or (tenant and tenant.inflight >= 3)
                 or self.manager.ip_inflight.get(ip_key, 0) >= 6):
             reject(429, "service_busy", "too many simultaneous requests; try again later")
-        mutation = tenant is not None and method in {'POST', 'PUT'} and not path.endswith('/cancel') and path != '/web/activity'
+        mutation = (tenant is not None and method in {'POST', 'PUT'} and not path.endswith('/cancel') and path != '/web/activity'
+                    and path not in STATELESS_POSTS)
         expensive = expensive_request(method, path)
         if mutation and tenant.mutating:
             reject(429, 'workspace_busy', 'Wait for the current workspace change to finish; cancellation remains available.')

@@ -193,7 +193,7 @@ def simulate_dataset(ws, request: VirtualPADatasetRequest):
                     dataset_name([signal.config], "inout", request.model_id)), _created=created)
                 results.append(response)
             captures = [DatasetCapture(dataset_id=identifier, preset_id=s.config.preset_id,
-                label=labels.get(s.config.preset_id, s.config.preset_id), n_samples=s.analysis.sample_count,
+                label=inputs.display_label(s.config, labels.get(s.config.preset_id, s.config.preset_id)), n_samples=s.analysis.sample_count,
                 sample_rate_hz=s.config.sample_rate_hz, bandwidth_hz=s.config.bandwidth_hz)
                 for identifier, s in zip(identifiers, signals)]
             for response in results[1:]:
@@ -201,7 +201,7 @@ def simulate_dataset(ws, request: VirtualPADatasetRequest):
             parent = results[0].dataset.model_copy(update={"captures": captures, "display_name": name})
             ws.save_dataset(parent)
             output_members = [AnalyzerSourceInfo(source=AnalyzerSource(kind="virtual_pa", source_id=r.simulation_id, role="output"),
-                label=s.config.preset_id, sample_count=r.analysis.n_samples, sample_rate_hz=s.config.sample_rate_hz,
+                label=inputs.display_label(s.config), sample_count=r.analysis.n_samples, sample_rate_hz=s.config.sample_rate_hz,
                 bandwidth_hz=s.config.bandwidth_hz, origin="synthetic") for s, r in zip(signals, simulations)]
             signal_datasets.save_dataset(ws, name.replace("syn_pa_inout_", "syn_pa_out_", 1), "pa_output", output_members)
             return results[0].model_copy(update={"dataset": parent})

@@ -5,6 +5,7 @@ import AddIcon from '@mui/icons-material/Add'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import DownloadIcon from '@mui/icons-material/Download'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import GraphicEqIcon from '@mui/icons-material/GraphicEq'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
@@ -25,23 +26,29 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router'
-import { api, downloadFile } from '@/api/client'
+import { api, ApiError, downloadFile } from '@/api/client'
 import { analyzerLink } from '@/api/signalAnalyzer'
+import { useNrTestModelCatalog, type NrTmCatalog, type NrTmResolution } from '@/api/nrTestModels'
 import { isGeneratorConfig, useGenerateBatch, useGeneratedSignal, useGeneratorPresets, type GeneratedSignal, type GeneratorConfig, type GeneratorPreset } from '@/api/signalGenerator'
 import { SignalImport } from '@/components/SignalImport'
 import { useCustomDatasetImports } from '@/api/hooks'
 import { useStudioWorkflow } from '@/workflow/StudioWorkflow'
 import { useMatlinkGenerator } from '@/components/MatlinkGenerator'
+import { NrTestModelPanel } from '@/components/NrTestModelPanel'
 import { PresetMatrix } from '@/components/PresetMatrix'
 import { SignalGeneratorPlots } from '@/components/SignalGeneratorPlots'
 import { ErrorState, LoadingState } from '@/components/StateBlock'
 import { formatNumber, t, type MessageKey } from '@/i18n'
 import { useStudioColors } from '@/theme'
+import { BATCH_SAMPLE_LIMIT, explainGenerateError } from '@/utils/apiErrorText'
+import { describeNrTmError, isTestModel, MAX_SELECTED, mergeEditable, rekey, recipeOf, uniqueRecipeLabels } from '@/utils/nrTestModel'
+import { useNrTmEditor } from '@/components/useNrTmEditor'
 
 const FAMILIES = ['nr', 'wifi6', 'wifi7', 'custom'] as const
 const ORDERS = [2, 4, 16, 64, 256, 1024, 4096]
@@ -55,16 +62,23 @@ function NumberField({ label, value, onChange, unit = '', help }: { label: Messa
 
 export function SignalGeneratorPage() {
   const presets = useGeneratorPresets()
+  // A catalogue that this server does not offer (403 on a public API that predates it, 404) is an answer, not an error (`data` is null): the generator
+  // keeps the preset matrix without a notice, and nothing refetches it in the background. Any other failure (5xx, offline, a reply that is not a
+  // catalogue) keeps the matrix too, but says so and offers a retry.
+  const catalog = useNrTestModelCatalog()
   const workflow = useStudioWorkflow()
   // Returning to this tab restores x instead of silently generating a new source.
   const [restoreId] = useState(workflow.state.origin === 'generated' ? workflow.state.inputId : null)
   const saved = useGeneratedSignal(restoreId)
-  if (presets.isPending || (restoreId && saved.isPending)) return <LoadingState />
+  // A retry puts the query back to pending; the page that is already on screen (with the user's selection) must not be replaced by the loading state.
+  const retrying = catalog.data === undefined && catalog.errorUpdateCount > 0
+  if (presets.isPending || (catalog.isPending && !retrying) || (restoreId && saved.isPending)) return <LoadingState />
   if (presets.isError) return <ErrorState error={presets.error} onRetry={() => void presets.refetch()} />
-  return <Generator presets={presets.data} saved={saved.data} />
+  const problem = retrying ? { fetching: catalog.isFetching, retry: () => void catalog.refetch() } : undefined
+  return <Generator presets={presets.data} catalog={catalog.data ?? undefined} catalogProblem={problem} saved={saved.data} />
 }
 
-function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: GeneratedSignal }) {
+function Generator({ presets, catalog, catalogProblem, saved }: { presets: GeneratorPreset[]; catalog?: NrTmCatalog; catalogProblem?: { fetching: boolean; retry: () => void }; saved?: GeneratedSignal }) {
   const importsAllowed = useCustomDatasetImports()
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -79,11 +93,15 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const working = generate.isPending || matlink.busy
   const imported = saved?.config.waveform === 'imported' || workflow.state.inputConfigs?.some(c => !isGeneratorConfig(c))
   const initial = !imported && workflow.state.origin === 'generated' && workflow.state.inputConfigs?.length
-    ? workflow.state.inputConfigs.filter(isGeneratorConfig) : [(!imported && saved?.config) || presets[0]!.config] as GeneratorConfig[]
+    ? workflow.state.inputConfigs.filter(isGeneratorConfig) : [(!imported && saved?.config) || catalog?.default_config || presets[0]!.config] as GeneratorConfig[]
   const [configs, setConfigs] = useState<Record<string, GeneratorConfig>>(() => Object.fromEntries(initial.map(c => [c.preset_id, c])))
   const [activeId, setActiveId] = useState(initial[0]!.preset_id)
   const config = configs[activeId] ?? initial[0]!
-  const [family, setFamily] = useState<GeneratorPreset['family']>(presets.find(p => p.preset_id === activeId)?.family ?? 'custom')
+  const [family, setFamily] = useState<GeneratorPreset['family']>(presets.find(p => p.preset_id === activeId)?.family ?? (config.nr_test_model ? 'nr' : 'custom'))
+  // The preset matrix hides behind a button unless the selection already uses it (or there is no test-model catalogue).
+  const [showMatrix, setShowMatrix] = useState(() => !catalog || initial.some(c => !c.nr_test_model && presets.some(p => p.preset_id === c.preset_id && p.family === 'nr')))
+  // The numerology group of the matrix lives here, so that hiding the matrix does not forget it.
+  const [matrixGroup, setMatrixGroup] = useState<string>()
   const [advanced, setAdvanced] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [downloading, setDownloading] = useState(false)
@@ -102,17 +120,36 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   })
   const [generatedKey, setGeneratedKey] = useState(Object.keys(generatedIds).length ? JSON.stringify(initial) : '')
   const [previewPresetId, setPreviewPresetId] = useState(initial[0]!.preset_id)
+  // Test-model entries: edits become draft recipes that the server resolves; the entry is then re-keyed to the preset_id derived from the recipe.
+  const tm = useNrTmEditor({ catalog, configs, activeId,
+    onResolved: (id: string, resolution: NrTmResolution) => {
+      const next = resolution.config as GeneratorConfig
+      setConfigs(old => rekey(old, id, next.preset_id, mergeEditable(next, old[id])))
+      setActiveId(current => current === id ? next.preset_id : current)
+    },
+    onCreate: entry => { setConfigs(old => ({ ...old, [entry.preset_id]: entry })); setActiveId(entry.preset_id); setError(null) } })
+  // Test-model chips are named after their recipe (with what sets two similar recipes apart); generated entries keep the name they had when they were generated.
+  const recipeLabels = uniqueRecipeLabels(Object.entries(configs).flatMap(([id, c]) => { const recipe = recipeOf(c); return recipe ? [{ id, recipe }] : [] }))
+  const configLabel = (c: GeneratorConfig) => recipeOf(c) ? recipeLabels[c.preset_id] ?? c.preset_id : presets.find(p => p.preset_id === c.preset_id)?.label ?? c.preset_id
+  const [generatedLabels, setGeneratedLabels] = useState<Record<string, string>>(() => Object.fromEntries(initial.map(c => [c.preset_id, configLabel(c)])))
+  const labelOf = (id: string) => configs[id] ? configLabel(configs[id]) : generatedLabels[id] ?? presets.find(p => p.preset_id === id)?.label ?? id
   const previewId = generatedIds[previewPresetId] ? previewPresetId : Object.keys(generatedIds)[0]
   const preview = useGeneratedSignal(previewId ? generatedIds[previewId]! : null)
   const result = preview.data ?? (saved?.config.preset_id === previewId ? saved : undefined)
   const stale = generatedKey !== JSON.stringify(selectedConfigs) || savedRequestedName !== name
   const shared = config.shared_channel_settings ?? [config.channel_subcarriers, config.channel_modulations, config.channel_power_db].every(values => new Set(values).size === 1)
   const ofdm = config.waveform === 'ofdm'
+  // Geometry, rate and length of a test-model configuration follow its recipe; only levels and impairments stay editable.
+  const tmConfig = !!config.nr_test_model
   const count = config.length_mode === 'samples' ? config.n_samples : Math.floor(config.sample_rate_hz * config.duration_ms / 1000 + .5)
   const duration = count / config.sample_rate_hz * 1000
   const spacing = config.sample_rate_hz / (config.fft_size * config.oversampling)
   const counts = selectedConfigs.map(c => c.length_mode === 'samples' ? c.n_samples : Math.floor(c.sample_rate_hz * c.duration_ms / 1000 + .5))
   const totalSamples = counts.reduce((sum, n) => sum+n, 0)
+  // The server's batch refusals are explained with the numbers of this selection; any other error is shown as the server sent it.
+  const failure = explainGenerateError(error || generate.error, { signals: selectedConfigs.length, samples: totalSamples })
+  // A refusal that lists its fields (a loaded configuration, a recipe) is shown with them, named as the form names them.
+  const failureLines = failure instanceof ApiError && failure.details.length ? describeNrTmError(failure) : undefined
   const validLengths = counts.every(n => Number.isInteger(n) && n >= (matlink.active ? 8192 : 256) && n <= 1_000_000)
   const validNumbers = selectedConfigs.every(c => Object.values(c).every(value => typeof value !== 'number' || Number.isFinite(value))
     && [...c.channel_subcarriers, ...c.channel_power_db, ...c.pilot_indices].every(Number.isFinite))
@@ -120,12 +157,12 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   const change = <K extends keyof GeneratorConfig>(key: K, value: GeneratorConfig[K]) => setConfig(old => ({ ...old, [key]: value }))
   const activate = (id: string) => { setActiveId(id); setPilotText((configs[id]?.pilot_indices ?? []).join(', ')) }
   const remove = (id: string) => {
-    const next = { ...configs }; delete next[id]; setConfigs(next)
+    const next = { ...configs }; delete next[id]; setConfigs(next); tm.discard(id)
     if (id === activeId) { const remaining = Object.keys(next)[0]; if (remaining) activate(remaining) }
   }
   const toggle = (entry: GeneratorPreset) => {
     if (configs[entry.preset_id]) remove(entry.preset_id)
-    else if (selected.length < 16) {
+    else if (selected.length < MAX_SELECTED) {
       setConfigs(old => ({ ...old, [entry.preset_id]: entry.config as GeneratorConfig }))
       setActiveId(entry.preset_id); setPilotText((entry.config.pilot_indices ?? []).join(', '))
     }
@@ -140,6 +177,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       setSavedDataset(dataset ?? null)
       setSavedRequestedName(name)
       setGeneratedIds(Object.fromEntries(entries.map(e => [e.name, e.signal_id])))
+      setGeneratedLabels(Object.fromEntries(selectedConfigs.map(c => [c.preset_id, configLabel(c)])))
       setGeneratedKey(JSON.stringify(selectedConfigs))
       setPreviewPresetId(activeId)
       workflow.selectInputs(entries.map(e => e.signal_id), selectedConfigs, dataset)
@@ -148,6 +186,17 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       } else navigate('/signal-generator/preview')
     } })
   }
+  // Entries with edits that are not applied (the server is still checking them, refused them, or they repeat another entry) and that are not on screen:
+  // Generate is off because of them, so the page names them, with the reason.
+  const hiddenDrafts = tm.draftIds.filter(id => id !== activeId || family !== 'nr' || !catalog)
+  const hidden = hiddenDrafts[0] === undefined ? undefined : { id: hiddenDrafts[0], ...(tm.causes[hiddenDrafts[0]] ?? { cause: 'pending' as const }) }
+  // "Show it" unmounts its own button, which would leave the keyboard on the document body: the panel's heading takes the focus once the panel is on screen.
+  const panelHeading = useRef<HTMLHeadingElement>(null)
+  const focusPanel = useRef(false)
+  useEffect(() => { if (focusPanel.current) { focusPanel.current = false; panelHeading.current?.focus() } })
+  const showEntry = (id: string) => { focusPanel.current = true; setFamily('nr'); activate(id) }
+  // Saving writes the resolved configuration of the highlighted entry; while its edits are still a draft that would be another signal than the one on screen.
+  const saveBlocked = tm.draftIds.includes(activeId)
   const exportConfig = () => {
     const blob = URL.createObjectURL(new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' }))
     const link = document.createElement('a'); link.href = blob; link.download = 'signal-config.json'; link.click(); window.setTimeout(() => URL.revokeObjectURL(blob), 1000)
@@ -156,9 +205,9 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
     try {
       if (file.size > 65536) throw new Error(t('generator.configTooLarge'))
       const checked = await api.post<GeneratorConfig>('/signal-generator/validate', JSON.parse(await file.text()))
-      if (!configs[checked.preset_id] && selected.length >= 16) throw new Error(t('generator.selectionLimit'))
+      if (!configs[checked.preset_id] && selected.length >= MAX_SELECTED) throw new Error(t('generator.selectionLimit'))
       setConfigs(old => ({ ...old, [checked.preset_id]: checked })); setActiveId(checked.preset_id)
-      setFamily(presets.find(p => p.preset_id === checked.preset_id)?.family ?? 'custom')
+      setFamily(presets.find(p => p.preset_id === checked.preset_id)?.family ?? (checked.nr_test_model ? 'nr' : 'custom'))
       setPilotText(checked.pilot_indices.join(', ')); setAdvanced(true); setError(null)
     } catch (e) { setError(e) }
   }
@@ -166,62 +215,86 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
   return <Stack spacing={2} sx={{ maxWidth: 1600, mx: 'auto' }} data-testid="generator-page" data-view={showPreview ? 'preview' : 'generate'}>
     <Stack direction="row" useFlexGap sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
       <Box><Typography variant="h1">{t('generator.title')} · {t(showPreview ? 'generator.page.preview' : 'generator.page.generate')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: .75 }}>{t(showPreview ? 'generator.previewIntro' : 'generator.intro')}</Typography></Box>
-      {showPreview ? <Button component={RouterLink} to="/signal-generator" variant="outlined">{t('generator.editSetup')}</Button> : <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}><Button component="label" variant="outlined" size="small" startIcon={<UploadFileIcon />} disabled={working}>{t('generator.importConfig')}<input type="file" hidden accept=".json,application/json" data-testid="generator-config-upload" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadConfig(file); e.target.value = '' }} /></Button><Button size="small" onClick={exportConfig} startIcon={<DownloadIcon />}>{t('generator.exportConfig')}</Button>{!matlink.active && !!Object.keys(generatedIds).length && <Button component={RouterLink} to="/signal-generator/preview" variant="outlined">{t('generator.openPreview')}</Button>}</Stack>}
+      {showPreview ? <Button component={RouterLink} to="/signal-generator" variant="outlined">{t('generator.editSetup')}</Button> : <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}><Button component="label" variant="outlined" size="small" startIcon={<UploadFileIcon />} disabled={working}>{t('generator.importConfig')}<input type="file" hidden accept=".json,application/json" data-testid="generator-config-upload" onChange={e => { const file = e.target.files?.[0]; if (file) void uploadConfig(file); e.target.value = '' }} /></Button><Tooltip title={saveBlocked ? t('nrtm.saveBlocked') : ''}><span><Button size="small" onClick={exportConfig} startIcon={<DownloadIcon />} disabled={saveBlocked} aria-describedby={saveBlocked ? 'generator-save-blocked' : undefined}>{t('generator.exportConfig')}</Button>{saveBlocked && <Box component="span" id="generator-save-blocked" hidden>{t('nrtm.saveBlocked')}</Box>}</span></Tooltip>{!matlink.active && !!Object.keys(generatedIds).length && <Button component={RouterLink} to="/signal-generator/preview" variant="outlined">{t('generator.openPreview')}</Button>}</Stack>}
     </Stack>
     {matlink.panel}
     {!showPreview ? <>
     {importsAllowed && <SignalImport disabled={generate.isPending} />}
     <Box component="nav" aria-label={t('generator.choose')} sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,minmax(0,1fr))', sm: 'repeat(4,minmax(0,1fr))' }, gap: 1 }}>
       {FAMILIES.map((key, index) => <ButtonBase key={key} onClick={() => setFamily(key)} disabled={working} aria-pressed={family === key} sx={{ textAlign: 'left', display: 'block', p: 1.5, border: 1, borderColor: family === key ? 'primary.main' : 'divider', borderRadius: 1.5, bgcolor: family === key ? colors.selected : 'background.paper', '&:hover': { borderColor: 'primary.main' }, '&.Mui-focusVisible': { outline: '3px solid', outlineColor: 'primary.main', outlineOffset: 2 } }}>
-        <Typography variant="caption" color="text.secondary">0{index+1} · {t(`generator.familyHint.${key}`)}</Typography>
+        <Typography variant="caption" color="text.secondary">0{index+1} · {t(key === 'nr' && !catalog ? 'generator.familyHint.nrMatrix' : `generator.familyHint.${key}`)}</Typography>
         <Typography sx={{ fontWeight: 750, fontSize: 17 }}>{t(`generator.family.${key}`)}</Typography>
       </ButtonBase>)}
     </Box>
     <Paper data-testid="generator-setup" sx={{ p: { xs: 1.5, md: 2 } }}><Stack spacing={1.5}>
       <Stack direction="row" useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
-        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={working || !matlink.canGenerate || !validName || !validNumbers || !validLengths || !selected.length || totalSamples > 4_000_000} onClick={run}>{t(working ? 'generator.generating' : matlink.active ? 'matlink.generateExperiment' : 'generator.generate')}</Button>
+        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={working || tm.blocked || !matlink.canGenerate || !validName || !validNumbers || !validLengths || !selected.length || totalSamples > BATCH_SAMPLE_LIMIT} onClick={run}>{t(working ? 'generator.generating' : matlink.active ? 'matlink.generateExperiment' : 'generator.generate')}</Button>
         <TextField label={t('generator.datasetName')} value={name} onChange={e => setCustomName(e.target.value)} disabled={working} error={!validName} helperText={t(validName ? 'generator.datasetNameHelp' : 'generator.datasetNameInvalid')} slotProps={{ htmlInput: { maxLength: 96 } }} sx={{ flex: '1 1 370px', minWidth: 0 }} />
         {customName !== null && <Button size="small" onClick={() => setCustomName(null)} disabled={working}>{t('generator.autoName')}</Button>}
         <Typography variant="body2" color="text.secondary">{t('generator.totalSamples', { count: formatNumber(totalSamples) })}</Typography>
       </Stack>
+      {hidden && <Alert severity="warning" role="status" data-testid="generator-blocked-entry" data-cause={hidden.cause} action={<Button color="inherit" size="small" onClick={() => showEntry(hidden.id)}>{t('nrtm.blockedShow')}</Button>}>
+        {t(`nrtm.blocked.${hidden.cause}`, { name: labelOf(hidden.id), other: hidden.of ? labelOf(hidden.of) : '' })}{hiddenDrafts.length > 1 ? ` (+${hiddenDrafts.length - 1})` : ''}
+      </Alert>}
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}><Typography variant="h2">{t('generator.setup')}</Typography><Chip size="small" label={t('generator.selectionCount', { count: selected.length })} /></Stack>
       {family === 'custom' ? <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
         {presets.filter(p => p.family === 'custom').map(entry => <Button key={entry.preset_id} aria-pressed={selected.includes(entry.preset_id)} variant={selected.includes(entry.preset_id) ? 'contained' : 'outlined'} disabled={working} onClick={() => toggle(entry)}>{entry.label}</Button>)}
-      </Stack> : <PresetMatrix key={family} presets={presets.filter(p => p.family === family)} selected={selected} disabled={working} toggle={toggle} />}
-      <Typography variant="caption" color="text.secondary">{t('generator.scopeHelp')}</Typography>
-      <Stack direction="row" useFlexGap sx={{ gap: .75, flexWrap: 'wrap' }} aria-label={t('generator.selectedPresets')}>
-        {selected.map(id => <Chip key={id} label={presets.find(p => p.preset_id === id)?.label ?? id} color={activeId === id ? 'primary' : 'default'} variant={activeId === id ? 'filled' : 'outlined'} onClick={() => activate(id)} onDelete={() => remove(id)} data-testid={'selected-preset-' + id}
-          deleteIcon={<DeleteOutlineIcon data-testid={'remove-preset-' + id} titleAccess={t('generator.removePreset', { name: presets.find(p => p.preset_id === id)?.label ?? id })} />} disabled={working} />)}
+      </Stack> : family === 'nr' && catalog ? <>
+        <NrTestModelPanel catalog={catalog} recipe={tm.recipe} status={tm.status} error={tm.error} resolution={tm.resolution} fresh={tm.fresh} loading={tm.loading} disabled={working}
+          duplicateOf={tm.duplicateOf ? labelOf(tm.duplicateOf) : undefined}
+          selectedModels={selectedConfigs.flatMap(c => c.nr_test_model ? [c.nr_test_model.model] : [])} canAdd={selected.length < MAX_SELECTED} headingRef={panelHeading} onChange={tm.edit} onAdd={tm.add} />
+        <Stack spacing={1.25} sx={{ alignItems: 'flex-start' }}>
+          <Button variant={showMatrix ? 'contained' : 'outlined'} size="small" aria-pressed={showMatrix} aria-controls="generator-matrix" disabled={working} onClick={() => setShowMatrix(value => !value)}>{t('nrtm.matrixToggle')}</Button>
+          <Stack spacing={1} id="generator-matrix" hidden={!showMatrix} sx={{ alignSelf: 'stretch', minWidth: 0, ...(showMatrix ? {} : { display: 'none' }) }}>
+            {showMatrix && <>
+              <Alert severity="info" icon={false}>{t('nrtm.matrixNote')}</Alert>
+              <PresetMatrix key={family} presets={presets.filter(p => p.family === family)} selected={selected} disabled={working} toggle={toggle} group={matrixGroup} onGroup={setMatrixGroup} />
+            </>}
+          </Stack>
+        </Stack>
+      </> : <>
+        {family === 'nr' && catalogProblem && <Alert severity="warning" data-testid="nrtm-catalog-problem" role="status" action={<Button color="inherit" size="small" disabled={catalogProblem.fetching} onClick={catalogProblem.retry}>{t('state.error.retry')}</Button>}>{t('nrtm.catalogUnavailable')}</Alert>}
+        <PresetMatrix key={family} presets={presets.filter(p => p.family === family)} selected={selected} disabled={working} toggle={toggle} />
+      </>}
+      <Typography variant="caption" color="text.secondary">{t(config.nr_test_model ? 'nrtm.scopeHelp' : 'generator.scopeHelp')}</Typography>
+      <Stack direction="row" useFlexGap role="group" sx={{ gap: .75, flexWrap: 'wrap' }} aria-label={t('generator.selectedPresets')}>
+        {selected.map(id => <Chip key={id} label={labelOf(id)} color={activeId === id ? 'primary' : 'default'} variant={activeId === id ? 'filled' : 'outlined'} onClick={() => activate(id)} onDelete={() => remove(id)} data-testid={'selected-preset-' + id}
+          {...(tm.causes[id] ? { icon: <WarningAmberIcon titleAccess={t(`nrtm.draftChip.${tm.causes[id].cause}`)} />, title: t(`nrtm.draftChip.${tm.causes[id].cause}`), 'data-draft': 'true', 'data-cause': tm.causes[id].cause } : {})}
+          sx={{ height: 'auto', maxWidth: '100%', minHeight: 32, ...(tm.draftIds.includes(id) ? { borderStyle: 'dashed' } : {}), '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', py: .25 } }}
+          deleteIcon={<DeleteOutlineIcon data-testid={'remove-preset-' + id} titleAccess={t('generator.removePreset', { name: labelOf(id) })} />} disabled={working} />)}
       </Stack>
       {!!selected.length && <Box component="fieldset" disabled={working} sx={{ m: 0, p: 0, border: 0, minWidth: 0 }}><Stack spacing={1.25}>
         <Typography variant="caption" color="text.secondary">{t('generator.editSelected')} · {config.sample_rate_hz / 1e6} MS/s · {config.bandwidth_hz / 1e6} MHz {ofdm && ` · ${(spacing / 1000).toPrecision(4)} kHz SCS`}</Typography>
         <Grid container spacing={1.5} sx={{ alignItems: 'center' }}>
+          {!tmConfig && <>
           <Grid size={{ xs: 12, md: 4 }}><ToggleButtonGroup exclusive value={config.length_mode} fullWidth size="small" aria-label={t('generator.lengthMode')} onChange={(_, value: 'samples' | 'duration' | null) => { if (value) change('length_mode', value) }}><ToggleButton value="samples">{t('generator.bySamples')}</ToggleButton><ToggleButton value="duration">{t('generator.byDuration')}</ToggleButton></ToggleButtonGroup></Grid>
           <Grid size={{ xs: 12, md: 4 }}>{config.length_mode === 'samples' ? numeric('n_samples', 'generator.samples') : numeric('duration_ms', 'generator.duration', 'ms')}</Grid>
+          </>}
           <Grid size={{ xs: 12, md: 4 }}><Typography variant="body2" color="text.secondary" aria-live="polite" data-testid="generator-length">{Number.isFinite(count) ? formatNumber(count) : '—'} I/Q · {Number.isFinite(duration) ? duration.toPrecision(5) : '—'} ms</Typography></Grid>
         </Grid>
-        <FormControlLabel label={t('generator.idealFilter')} control={<Checkbox checked={config.filter_enabled ?? true} onChange={(_, checked) => change('filter_enabled', checked)} />} />
-        <Typography variant="caption" color="text.secondary">{t('generator.filterHelp')}</Typography>
+        <FormControlLabel label={t(tmConfig ? 'nrtm.filter' : 'generator.idealFilter')} control={<Checkbox checked={config.filter_enabled ?? true} onChange={(_, checked) => change('filter_enabled', checked)} />} />
+        <Typography variant="caption" color="text.secondary">{t(tmConfig ? 'nrtm.filterHelp' : 'generator.filterHelp')}</Typography>
       </Stack></Box>}
       {!validLengths && <Alert severity="error">{t(matlink.active ? 'matlink.generatorLength' : 'generator.lengthLimit')}</Alert>}
-      {(selected.length >= 16 || totalSamples > 4_000_000) && <Alert severity="info">{t('generator.selectionLimit')}</Alert>}
+      {totalSamples > BATCH_SAMPLE_LIMIT && <Alert severity="warning" data-testid="generator-batch-limit">{t('generator.batchTooLarge', { signals: selected.length, count: formatNumber(totalSamples), limit: formatNumber(BATCH_SAMPLE_LIMIT) })}</Alert>}
+      {selected.length >= MAX_SELECTED && !(family === 'nr' && catalog && !tm.recipe) && <Alert severity="info">{t('generator.selectionLimit')}</Alert>}
       {working && <LinearProgress aria-label={t('generator.generating')} />}
-      {(generate.isError || !!error) && <ErrorState error={error || generate.error} />}
+      {(generate.isError || !!error) && <ErrorState error={failure} lines={failureLines} />}
     </Stack></Paper>
       <Box component="fieldset" disabled={working || !selected.length} sx={{ m: 0, p: 0, border: 0, minWidth: 0 }}>
         <Accordion expanded={advanced} onChange={(_, value) => setAdvanced(value)} disableGutters>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}><Typography sx={{ fontWeight: 650 }}>{t('generator.advanced')}</Typography></AccordionSummary>
           <AccordionDetails><Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0,1fr)', md: 'repeat(2,minmax(0,1fr))' }, gap: 2, alignItems: 'start', '& > .MuiTypography-root': { gridColumn: '1 / -1' }, '& > .MuiButton-root': { justifySelf: 'start' } }}>
-            <Typography variant="body2" color="text.secondary">{t('generator.advancedHelp')}</Typography>
-            {numeric('sample_rate_hz', 'generator.fs', 'MS/s', 1e6)}
-            {numeric('bandwidth_hz', 'generator.bandwidth', 'MHz', 1e6)}
+            <Typography variant="body2" color="text.secondary">{t(tmConfig ? 'nrtm.advancedHelp' : 'generator.advancedHelp')}</Typography>
+            {!tmConfig && numeric('sample_rate_hz', 'generator.fs', 'MS/s', 1e6)}
+            {!tmConfig && numeric('bandwidth_hz', 'generator.bandwidth', 'MHz', 1e6)}
             {numeric('carrier_frequency_hz', 'generator.carrier', 'GHz', 1e9, t('generator.carrierHelp'))}
             {numeric('rms', 'generator.rms')}{numeric('seed', 'generator.seed')}
-            {['ofdm', 'qam', 'psk', 'fsk', 'gfsk'].includes(config.waveform) && <>
+            {!tmConfig && ['ofdm', 'qam', 'psk', 'fsk', 'gfsk'].includes(config.waveform) && <>
               <TextField select label={t('generator.payload')} value={config.payload_mode} onChange={e => change('payload_mode', e.target.value as GeneratorConfig['payload_mode'])}>{(['random', 'prbs9', 'prbs15', 'bits'] as const).map(v => <MenuItem key={v} value={v}>{t(`generator.payload.${v}`)}</MenuItem>)}</TextField>
               {config.payload_mode === 'bits' && <TextField label={t('generator.payloadBits')} value={config.payload_bits} onChange={e => change('payload_bits', e.target.value)} helperText={t('generator.payloadHelp')} error={!/^[01]{1,4096}$/.test(config.payload_bits)} multiline minRows={2} />}
             </>}
-            {ofdm && <>
+            {ofdm && !tmConfig && <>
               <Typography variant="h3">OFDM / OFDMA</Typography>
               <FormControlLabel label={t('generator.dftSpreading')} control={<Switch checked={config.dft_spreading} onChange={(_, value) => setConfig(c => ({ ...c, dft_spreading: value, ...(value ? { pilot_mode: 'none' } : {}) }))} />} />
               {numeric('fft_size', 'generator.fft')}
@@ -266,7 +339,7 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
             {config.snr_db !== null && numeric('snr_db', 'generator.snr', 'dB')}
             <FormControlLabel label={t('generator.clipping')} control={<Switch checked={config.clip_db !== null} onChange={(_, enabled) => change('clip_db', enabled ? 8 : null)} />} />
             {config.clip_db !== null && numeric('clip_db', 'generator.clipLevel', 'dB')}
-            <Button variant="contained" startIcon={<PlayArrowIcon />} disabled={working || !matlink.canGenerate || !validName || !validNumbers || !validLengths || selected.length === 0 || totalSamples > 4_000_000} onClick={run}>{t(matlink.active ? 'matlink.generateExperiment' : 'generator.applyGenerate')}</Button>
+            <Button variant="contained" startIcon={<PlayArrowIcon />} disabled={working || tm.blocked || !matlink.canGenerate || !validName || !validNumbers || !validLengths || selected.length === 0 || totalSamples > BATCH_SAMPLE_LIMIT} onClick={run}>{t(matlink.active ? 'matlink.generateExperiment' : 'generator.applyGenerate')}</Button>
           </Box></AccordionDetails>
         </Accordion>
 
@@ -285,13 +358,13 @@ function Generator({ presets, saved }: { presets: GeneratorPreset[]; saved?: Gen
       </Stack>
       {stale && !!Object.keys(generatedIds).length && <Typography variant="caption" color="warning.main">{t('generator.stale')}</Typography>}
       {working && <LinearProgress aria-label={t('generator.generating')} />}
-      {(generate.isError || !!error) && <ErrorState error={error || generate.error} />}
+      {(generate.isError || !!error) && <ErrorState error={failure} lines={failureLines} />}
     </Stack></Paper>
     <Stack spacing={1.5} sx={{ minWidth: 0 }}>
       {!!previewId && <TextField select size="small" label={t('generator.previewSignal')} value={previewId} onChange={e => setPreviewPresetId(e.target.value)} sx={{ width: '100%', maxWidth: 640 }}>
-        {Object.keys(generatedIds).map(id => <MenuItem key={id} value={id}>{presets.find(p => p.preset_id === id)?.label ?? id}</MenuItem>)}
+        {Object.keys(generatedIds).map(id => <MenuItem key={id} value={id}>{labelOf(id)}</MenuItem>)}
       </TextField>}
-      {preview.isError ? <ErrorState error={preview.error} onRetry={() => void preview.refetch()} /> : result ? <SignalGeneratorPlots result={result} stale={stale} /> : preview.isFetching ? <LoadingState /> : <Paper sx={{ p: 4, minHeight: 260, textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} /><Typography variant="h2">{t('generator.firstPreview')}</Typography><Button component={RouterLink} to="/signal-generator" variant="contained" sx={{ mt: 2 }}>{t('generator.editSetup')}</Button></Paper>}
+      {preview.isError ? <ErrorState error={preview.error} onRetry={() => void preview.refetch()} /> : result ? <SignalGeneratorPlots result={result} stale={stale} name={previewId && isTestModel(result.config) ? labelOf(previewId) : undefined} /> : preview.isFetching ? <LoadingState /> : <Paper sx={{ p: 4, minHeight: 260, textAlign: 'center' }}><GraphicEqIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} /><Typography variant="h2">{t('generator.firstPreview')}</Typography><Button component={RouterLink} to="/signal-generator" variant="contained" sx={{ mt: 2 }}>{t('generator.editSetup')}</Button></Paper>}
     </Stack>
     </>}
   </Stack>

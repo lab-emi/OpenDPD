@@ -1876,6 +1876,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/signal-generator/nr-test-models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Nr Test Models
+         * @description The NR FR1 standard test models of 3GPP TS 38.141-1 clause 4.9.2: parameters, ranges, fixed values and defaults.
+         */
+        get: operations["nr_test_models_api_v1_signal_generator_nr_test_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/signal-generator/nr-test-models/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Nr Test Model
+         * @description Derive everything a recipe implies (resource blocks, FFT, sample rate, RBG sets, users, capture length, the complete
+         *     ``GeneratorConfig``). Nothing is generated or stored.
+         */
+        post: operations["resolve_nr_test_model_api_v1_signal_generator_nr_test_models_resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/signal-generator/presets": {
         parameters: {
             query?: never;
@@ -4721,7 +4762,7 @@ export interface components {
              * Coverage
              * @enum {string}
              */
-            coverage: "numerology" | "experimental" | "custom";
+            coverage: "numerology" | "experimental" | "custom" | "standard_test_model";
             /** Download Url */
             download_url: string;
             /** Iq Sha256 */
@@ -4745,7 +4786,10 @@ export interface components {
         GeneratorAnalysis: {
             /** Active Carriers */
             active_carriers: number;
-            /** Allocation */
+            /**
+             * Allocation
+             * @description One entry per OFDMA channel (or per carrier of a standard test model) with channel, subcarriers, pilots, modulation_order and power_db. Test-model entries add scs_khz, bandwidth_mhz, n_rb, n_cell_id, center_offset_hz, evm_percent (ideal-demodulation diagnostic), evm_symbols (OFDM symbols of that carrier that enter its EVM) and subcarrier_step (1, or 12 when the lists are thinned to resource-block steps). The evm_symbols of the analysis itself counts the OFDM symbols of one carrier grid (the lowest carrier), not carriers times symbols.
+             */
             allocation: {
                 [key: string]: unknown;
             }[];
@@ -4783,6 +4827,7 @@ export interface components {
             mean_power_dbfs: number;
             /** Notes */
             notes: string[];
+            nr_test_model?: components["schemas"]["NrTmSummary"] | null;
             /** Occupied Bandwidth 99 Hz */
             occupied_bandwidth_99_hz: number;
             /** Papr Db */
@@ -4956,6 +5001,8 @@ export interface components {
              * @default 131072
              */
             n_samples: number;
+            /** @description NR FR1 standard test model recipe (3GPP TS 38.141-1 clause 4.9.2). When set, the structural fields (preset_id, rate, FFT, channels, length, ...) must equal the values derived from it by POST /signal-generator/nr-test-models/resolve; only the impairment, burst, RMS, seed, carrier frequency and filter fields remain editable. Omitted from the serialised form when not set. */
+            nr_test_model?: components["schemas"]["NrTestModelConfig"] | null;
             /**
              * Oversampling
              * @default 4
@@ -6265,6 +6312,369 @@ export interface components {
                 [key: string]: number | string | boolean;
             };
         };
+        /** NrTestModelConfig */
+        NrTestModelConfig: {
+            /** Carriers */
+            carriers?: components["schemas"]["NrTmCarrier"][];
+            /**
+             * Data Convention
+             * @default standard
+             * @enum {string}
+             */
+            data_convention: "standard" | "matlab";
+            /**
+             * Duplex
+             * @default fdd
+             * @enum {string}
+             */
+            duplex: "fdd" | "tdd";
+            /**
+             * Layers
+             * @default 1
+             * @enum {integer}
+             */
+            layers: 1 | 2;
+            /**
+             * Model
+             * @default NR-FR1-TM1.1
+             * @enum {string}
+             */
+            model: "NR-FR1-TM1.1" | "NR-FR1-TM1.2" | "NR-FR1-TM2" | "NR-FR1-TM2a" | "NR-FR1-TM2b" | "NR-FR1-TM3.1" | "NR-FR1-TM3.1a" | "NR-FR1-TM3.1b" | "NR-FR1-TM3.2" | "NR-FR1-TM3.3" | "NR-N-TM";
+            nb_iot?: components["schemas"]["NrTmNbIot"] | null;
+            /**
+             * Output Port
+             * @default 0
+             * @enum {integer}
+             */
+            output_port: 0 | 1;
+            /** Oversampling */
+            oversampling?: (1 | 2 | 4 | 8) | null;
+            /**
+             * Pn Scope
+             * @default dl_symbols
+             * @enum {string}
+             */
+            pn_scope: "dl_symbols" | "all_symbols";
+            /** Subframes */
+            subframes?: number | null;
+            /**
+             * Version
+             * @default nr-test-model-v1
+             * @constant
+             */
+            version: "nr-test-model-v1";
+        };
+        /**
+         * NrTmCarrier
+         * @description One NR carrier carrying the test model (TS 38.141-1 4.9.2.3: one cell ID per carrier).
+         */
+        NrTmCarrier: {
+            /**
+             * Bandwidth Mhz
+             * @default 20
+             */
+            bandwidth_mhz: number;
+            /**
+             * Gap Before Mhz
+             * @description Extra spacing in MHz added to the nominal channel spacing before this carrier (a non-contiguous sub-block gap). 0 = contiguous. Must be 0 for the first carrier and a multiple of 0.3 MHz; a value within 1e-9 MHz of such a multiple is stored as that exact multiple.
+             * @default 0
+             */
+            gap_before_mhz: number;
+            /** N Cell Id */
+            n_cell_id?: number | null;
+            /**
+             * Scs Khz
+             * @default 30
+             * @enum {integer}
+             */
+            scs_khz: 15 | 30 | 60;
+        };
+        /** NrTmCarrierSummary */
+        NrTmCarrierSummary: {
+            /** Bandwidth Mhz */
+            bandwidth_mhz: number;
+            /** Boosted Rbgs */
+            boosted_rbgs?: number[];
+            /** Center Offset Hz */
+            center_offset_hz: number;
+            /** Index */
+            index: number;
+            /** N Cell Id */
+            n_cell_id: number;
+            /** N Fft */
+            n_fft: number;
+            /** N Rbg */
+            n_rbg?: number | null;
+            /** Nrb */
+            nrb: number;
+            /** Occupied Bandwidth Hz */
+            occupied_bandwidth_hz: number;
+            /** Rbg Size */
+            rbg_size?: number | null;
+            /** Scs Khz */
+            scs_khz: number;
+            /** Slots */
+            slots: number;
+            /** Slots Per Frame */
+            slots_per_frame: number;
+            /** Subcarriers */
+            subcarriers: number;
+            /** Users */
+            users?: components["schemas"]["NrTmUser"][];
+        };
+        /** NrTmCatalog */
+        NrTmCatalog: {
+            default_config: components["schemas"]["GeneratorConfig"];
+            default_recipe: components["schemas"]["NrTestModelConfig"];
+            limits: components["schemas"]["NrTmLimits"];
+            /** Models */
+            models: components["schemas"]["NrTmModelInfo"][];
+            nb_iot: components["schemas"]["NrTmNbIotInfo"];
+            /** Notes */
+            notes?: string[];
+            /** Resource Blocks */
+            resource_blocks: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+            /** Scs Khz */
+            scs_khz: number[];
+            /** Standard */
+            standard: string;
+            /** Tdd Patterns */
+            tdd_patterns: components["schemas"]["NrTmTddPattern"][];
+            /**
+             * Version
+             * @default nr-test-model-catalog-v1
+             * @constant
+             */
+            version: "nr-test-model-catalog-v1";
+        };
+        /**
+         * NrTmFixedParameter
+         * @description A parameter the standard fixes for this model (shown read-only), e.g. 'PDCCH: 1 CCE, RB 0-2, symbols 0-1'.
+         */
+        NrTmFixedParameter: {
+            /** Name */
+            name: string;
+            /** Value */
+            value: string;
+        };
+        /** NrTmLimits */
+        NrTmLimits: {
+            /** Carrier Gap Step Mhz */
+            carrier_gap_step_mhz: number;
+            /**
+             * Max Carriers
+             * @description Largest number of carriers of a recipe. A Studio limit: the standard sets none.
+             */
+            max_carriers: number;
+            /** Max Cell Id */
+            max_cell_id: number;
+            /**
+             * Max Samples
+             * @description Largest number of complex samples of a capture (a Studio limit); the capture is shortened or refused above it.
+             */
+            max_samples: number;
+            /** Standard Subframes Fdd */
+            standard_subframes_fdd: number;
+            /** Standard Subframes Tdd */
+            standard_subframes_tdd: number;
+        };
+        /** NrTmModelInfo */
+        NrTmModelInfo: {
+            /** Clause */
+            clause: string;
+            /** Description */
+            description: string;
+            /**
+             * Fdd Only
+             * @description True when Studio generates this model for FDD only. NR-N-TM: the standard also defines a TDD form (TS 38.141-1 Table 4.9.2.2-1a), which Studio does not implement in this release.
+             * @default false
+             */
+            fdd_only: boolean;
+            /** Fixed Parameters */
+            fixed_parameters: components["schemas"]["NrTmFixedParameter"][];
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "NR-FR1-TM1.1" | "NR-FR1-TM1.2" | "NR-FR1-TM2" | "NR-FR1-TM2a" | "NR-FR1-TM2b" | "NR-FR1-TM3.1" | "NR-FR1-TM3.1a" | "NR-FR1-TM3.1b" | "NR-FR1-TM3.2" | "NR-FR1-TM3.3" | "NR-N-TM";
+            /** Modulations */
+            modulations: string[];
+            /**
+             * Nb Iot
+             * @default false
+             */
+            nb_iot: boolean;
+            /** Scs Khz */
+            scs_khz: number[];
+            /**
+             * Supports Layers
+             * @default false
+             */
+            supports_layers: boolean;
+            /** Title */
+            title: string;
+            /** Used For */
+            used_for: string[];
+            /** Users */
+            users: components["schemas"]["NrTmUserInfo"][];
+        };
+        /**
+         * NrTmNbIot
+         * @description NB-IoT operation in NR in-band (NR-N-TM, TS 38.141-1 4.9.2.2.9): Studio generates FDD with 15 kHz hosts only.
+         */
+        NrTmNbIot: {
+            /**
+             * Boost Db
+             * @description NB-IoT power boost X in dB over the average resource element. Studio accepts 3 to 12 dB: at least 6 dB for host carriers up to 20 MHz and 3 dB for 25 MHz and wider (TS 38.104 Table 6.3.4.2-1); the upper limit of 12 dB is a Studio limit, the standard sets none.
+             * @default 6
+             */
+            boost_db: number;
+            /**
+             * Position
+             * @default lower
+             * @enum {string}
+             */
+            position: "lower" | "upper" | "both";
+        };
+        /** NrTmNbIotInfo */
+        NrTmNbIotInfo: {
+            /** Bandwidths Mhz */
+            bandwidths_mhz: number[];
+            /** Eligible Rbs */
+            eligible_rbs: {
+                [key: string]: number[];
+            };
+            /** Lower Rb */
+            lower_rb: {
+                [key: string]: number;
+            };
+            /**
+             * Max Boost Db
+             * @description Largest NB-IoT boost X in dB that Studio accepts. A Studio limit: the standard sets no upper bound.
+             */
+            max_boost_db: number;
+            /**
+             * Min Boost Db
+             * @description Smallest NB-IoT boost X in dB per host channel bandwidth (MHz as text) at the positions lower_rb and upper_rb (TS 38.104 Table 6.3.4.2-1); a smaller boost_db is refused.
+             */
+            min_boost_db: {
+                [key: string]: number;
+            };
+            /** Scs Khz */
+            scs_khz: number;
+            /** Upper Rb */
+            upper_rb: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * NrTmResolution
+         * @description A recipe plus the complete, validated generator configuration derived from it.
+         */
+        NrTmResolution: {
+            config: components["schemas"]["GeneratorConfig"];
+            recipe: components["schemas"]["NrTestModelConfig"];
+            summary: components["schemas"]["NrTmSummary"];
+        };
+        /** NrTmSummary */
+        NrTmSummary: {
+            /** Aggregated Bandwidth Hz */
+            aggregated_bandwidth_hz: number;
+            /** Carriers */
+            carriers: components["schemas"]["NrTmCarrierSummary"][];
+            /** Duration Ms */
+            duration_ms: number;
+            /**
+             * Model
+             * @enum {string}
+             */
+            model: "NR-FR1-TM1.1" | "NR-FR1-TM1.2" | "NR-FR1-TM2" | "NR-FR1-TM2a" | "NR-FR1-TM2b" | "NR-FR1-TM3.1" | "NR-FR1-TM3.1a" | "NR-FR1-TM3.1b" | "NR-FR1-TM3.2" | "NR-FR1-TM3.3" | "NR-N-TM";
+            /** N Samples */
+            n_samples: number;
+            /** Native Sample Rate Hz */
+            native_sample_rate_hz: number;
+            /** Nb Iot Rbs */
+            nb_iot_rbs?: number[] | null;
+            /** Oversampling */
+            oversampling: number;
+            /** Sample Rate Hz */
+            sample_rate_hz: number;
+            /** Standard Subframes */
+            standard_subframes: number;
+            /** Subframes */
+            subframes: number;
+            /** Tdd Pattern */
+            tdd_pattern?: string[] | null;
+            /** Truncated */
+            truncated: boolean;
+            /** Warnings */
+            warnings?: string[];
+        };
+        /**
+         * NrTmTddPattern
+         * @description TS 38.141-1 Table 4.9.2.2-1 (TS 38.331 TDD-UL-DL-ConfigCommon semantics).
+         */
+        NrTmTddPattern: {
+            /** Dl Slots */
+            dl_slots: number;
+            /** Dl Symbols */
+            dl_symbols: number;
+            /** Period Ms */
+            period_ms: number;
+            /** Scs Khz */
+            scs_khz: number;
+            /** Slot Map */
+            slot_map: string[];
+            /** Slots Per Period */
+            slots_per_period: number;
+            /** Ul Slots */
+            ul_slots: number;
+            /** Ul Symbols */
+            ul_symbols: number;
+        };
+        /**
+         * NrTmUser
+         * @description One user (n_RNTI) of the test model in a reference full-DL slot.
+         */
+        NrTmUser: {
+            /**
+             * Evm Measured
+             * @default false
+             */
+            evm_measured: boolean;
+            /** Level Db */
+            level_db: number;
+            /** Modulation */
+            modulation: string;
+            /** Prbs */
+            prbs: number;
+            /** Rb Ranges */
+            rb_ranges: number[][];
+            /** Rnti */
+            rnti: number;
+            /** Role */
+            role: string;
+            /** Start Symbol */
+            start_symbol: number;
+        };
+        /** NrTmUserInfo */
+        NrTmUserInfo: {
+            /**
+             * Evm Measured
+             * @default false
+             */
+            evm_measured: boolean;
+            /** Modulation */
+            modulation: string;
+            /** Rnti */
+            rnti: number;
+            /** Role */
+            role: string;
+        };
         /** PAAnalysis */
         PAAnalysis: {
             /** Am Input */
@@ -7168,7 +7578,7 @@ export interface components {
             csrf_token?: string | null;
             /**
              * Version
-             * @default 2.4.0
+             * @default 2.4.1
              */
             version: string;
         };
@@ -11577,6 +11987,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PAInputDataset"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    nr_test_models_api_v1_signal_generator_nr_test_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NrTmCatalog"];
+                };
+            };
+        };
+    };
+    resolve_nr_test_model_api_v1_signal_generator_nr_test_models_resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NrTestModelConfig"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NrTmResolution"];
                 };
             };
             /** @description Validation Error */

@@ -9,29 +9,46 @@ import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import type { GeneratedSignal } from '@/api/signalGenerator'
 import { formatNumber, t } from '@/i18n'
+import { nbIotOf, shortModel, signalName, type NbIotAllocation } from '@/utils/nrTestModel'
+import { Facts, Scroll } from './NrTmFacts'
 import { PlotlyChart, type PlotTrace } from './PlotlyChart'
 import { useStudioColors } from '@/theme'
 
-export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSignal; stale: boolean }) {
+/** `name` is the label the page gives this signal among the ones generated together (test models that would read the same are told apart); it defaults to the signal's own name. */
+export function SignalGeneratorPlots({ result, stale, name }: { result: GeneratedSignal; stale: boolean; name?: string }) {
   const PALETTE = useStudioColors().chart
   const [tab, setTab] = useState('overview')
   const a = result.analysis
   const axis = (text: string) => ({ title: { text } })
   const legendSpace = { margin: { l: 50, r: 12, t: 68, b: 42 }, legend: { orientation: 'h' as const, x: 0, y: 1.02, yanchor: 'bottom' as const, font: { size: 12 } } }
   const ccdf = a.ccdf_probability.flatMap((probability, index) => probability > 0 ? [{ x: a.ccdf_db[index]!, y: Math.log10(probability) }] : [])
+  const summary = a.nr_test_model
+  // Allocation bins and EVM subcarrier indices of every signal are absolute: signed bins from baseband DC in units of `analysis.subcarrier_spacing_hz`
+  // (the lowest spacing of a multi-numerology test model). A test model therefore plots at bin x spacing on one shared frequency axis (MHz); the
+  // centre offsets of its carriers are already contained in the bins and must not be added. Matrix signals keep the bin index.
+  const binHz = summary && a.subcarrier_spacing_hz ? a.subcarrier_spacing_hz : null
+  const placed = binHz !== null
+  const place = (bins: number[]) => binHz === null ? bins : bins.map(bin => bin * binHz / 1e6)
+  const nbIot = a.allocation.map(entry => nbIotOf(entry))
+  // Wide test-model captures list one subcarrier per resource block (`subcarrier_step` 12) to keep the stored analysis short.
+  const step = Math.max(1, ...a.allocation.map(entry => typeof entry.subcarrier_step === 'number' ? entry.subcarrier_step : 1))
   const allocations: PlotTrace[] = a.allocation.flatMap((entry, index) => {
     const bins = entry.subcarriers as number[]
     const pilots = entry.pilots as number[]
     const selected = new Set(pilots)
     const data = bins.filter(bin => !selected.has(bin))
     return [
-      { x: data, y: data.map(() => index + 1), mode: 'markers' as const, name: `${t('generator.channel')} ${index + 1}`, marker: { color: PALETTE[index % PALETTE.length], size: 5 } },
-      { x: pilots, y: pilots.map(() => index + 1), mode: 'markers' as const, name: `${t('generator.pilots')} ${index + 1}`, marker: { color: PALETTE[1], size: 9, symbol: 'cross' as const } },
+      { x: place(data), y: data.map(() => index + 1), mode: 'markers' as const, name: placed ? t('nrtm.carrierN', { index: index + 1 }) : `${t('generator.channel')} ${index + 1}`, marker: { color: PALETTE[index % PALETTE.length], size: 5 } },
+      { x: place(pilots), y: pilots.map(() => index + 1), mode: 'markers' as const, name: `${t('generator.pilots')} ${index + 1}`, marker: { color: PALETTE[1], size: 9, symbol: 'cross' as const } },
+      // The punctured NR RBs of NR-N-TM, drawn over their host carrier.
+      ...(nbIot[index]?.carriers ?? []).map(nb => ({ x: place(nb.subcarriers), y: nb.subcarriers.map(() => index + 1), mode: 'markers' as const, name: `${t('nrtm.nbiot')} · RB ${nb.rb}`,
+        marker: { color: PALETTE[3 % PALETTE.length], size: 8, symbol: 'diamond' as const } })),
     ]
   })
   const metrics = [
@@ -51,6 +68,13 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
     [t('generator.occupied'), `${(a.occupied_bandwidth_99_hz / 1e6).toPrecision(5)} MHz`],
     [t('generator.dc'), a.dc_magnitude.toPrecision(5)],
     [t('generator.evm'), a.evm_percent === null ? '—' : `${a.evm_percent.toPrecision(4)} % (${a.evm_symbols} ${t('generator.symbols')})`],
+    ...(summary ? [
+      [t('nrtm.model'), shortModel(summary.model)],
+      [t('nrtm.nativeRate'), `${summary.native_sample_rate_hz / 1e6} MHz × ${summary.oversampling}`],
+      [t('nrtm.captured'), t(summary.subframes > summary.standard_subframes ? 'nrtm.subframesLonger' : 'nrtm.subframesOf', { used: summary.subframes, standard: summary.standard_subframes })],
+      [t('nrtm.aggregated'), `${(summary.aggregated_bandwidth_hz / 1e6).toPrecision(5)} MHz`],
+      ...(summary.nb_iot_rbs?.length ? [[t('nrtm.nbiot'), `RB ${summary.nb_iot_rbs.join(', ')}`]] : []),
+    ] : []),
   ]
   return <Stack spacing={1.5} data-testid="signal-generator-results">
     <Stack direction="row" useFlexGap sx={{ gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -59,8 +83,9 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
       <Chip size="small" label={t(`generator.coverage.${result.coverage}`)} />
     </Stack>
     {stale && <Alert severity="warning">{t('generator.stale')}</Alert>}
+    {summary?.warnings?.map(warning => <Alert key={warning} severity="warning" sx={{ overflowWrap: 'anywhere' }} data-testid="nrtm-result-warning">{warning}</Alert>)}
     <Typography variant="body2" color="text.secondary">{t('paInput.help')}</Typography>
-    <Typography variant="caption" color="text.secondary">{result.config.preset_id} · {formatNumber(a.sample_count)} {t('generator.samplesUnit')} · {a.duration_ms.toPrecision(4)} ms</Typography>
+    <Typography variant="caption" color="text.secondary" data-testid="generator-result-name"><span title={result.config.preset_id}>{name ?? signalName(result.config)}</span> · {formatNumber(a.sample_count)} {t('generator.samplesUnit')} · {a.duration_ms.toPrecision(4)} ms</Typography>
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 1 }}>
       {[
         ['PAPR', `${a.papr_db.toFixed(2)} dB`],
@@ -90,18 +115,52 @@ export function SignalGeneratorPlots({ result, stale }: { result: GeneratedSigna
       <Paper sx={{ p: 1.5, minWidth: 0 }}><PlotlyChart title={t('generator.ccdf')} height={270} viewKey={result.signal_id} traces={[{ x: ccdf.map(p => p.x), y: ccdf.map(p => p.y), name: 'CCDF', mode: 'lines+markers', marker: { size: 2, color: PALETTE[2] }, line: { color: PALETTE[2], width: 2 } }]} layout={{ xaxis: axis(t('generator.ccdfAxis')), yaxis: axis('log₁₀ Pr(P / Pavg > x)'), showlegend: false }} />
         <Typography variant="caption" color="text.secondary">{t('generator.ccdfHelp')}</Typography></Paper>
     </Box>}
-    {tab === 'allocation' && <Paper sx={{ p: 2, minWidth: 0 }}><PlotlyChart title={t('generator.allocation')} height={360} viewKey={result.signal_id} traces={allocations} layout={{ xaxis: axis(t('generator.binIndex')), yaxis: axis(t('generator.channel')), showlegend: false }} /><Typography variant="body2" color="text.secondary">{t('generator.allocationHelp')}</Typography></Paper>}
+    {tab === 'allocation' && <Paper sx={{ p: 2, minWidth: 0 }}><PlotlyChart title={t('generator.allocation')} height={360} viewKey={result.signal_id} traces={allocations} layout={{ xaxis: axis(t(placed ? 'generator.frequencyAxis' : 'generator.binIndex')), yaxis: { ...axis(t(placed ? 'nrtm.carrier' : 'generator.channel')), dtick: 1 }, showlegend: false }} /><Typography variant="body2" color="text.secondary">{t('generator.allocationHelp')}{placed && step > 1 ? ' ' + t('nrtm.allocationThinned', { step }) : ''}</Typography></Paper>}
     {tab === 'evm' && <Stack spacing={1.5}>
       <Alert severity="info">{t('generator.evmTrendHelp')}</Alert>
       <Paper sx={{ p: 2 }}><PlotlyChart title={t('generator.evmSymbols')} height={290} viewKey={result.signal_id} traces={[{ x: (a.evm_per_symbol_percent ?? []).map((_, i) => i), y: a.evm_per_symbol_percent ?? [], mode: 'lines+markers' }]} layout={{ showlegend: false, xaxis: axis(t('generator.symbols')), yaxis: axis('EVM (%)') }} /></Paper>
-      <Paper sx={{ p: 2 }}><PlotlyChart title={t('generator.evmCarriers')} height={290} viewKey={result.signal_id} traces={[{ x: a.evm_subcarrier_indices ?? [], y: a.evm_per_subcarrier_percent ?? [] }]} layout={{ showlegend: false, xaxis: axis(t('generator.binIndex')), yaxis: axis('EVM (%)') }} /></Paper>
+      <Paper sx={{ p: 2 }}><PlotlyChart title={t('generator.evmCarriers')} height={290} viewKey={result.signal_id} traces={[{ x: place(a.evm_subcarrier_indices ?? []), y: a.evm_per_subcarrier_percent ?? [] }]} layout={{ showlegend: false, xaxis: axis(t(placed ? 'generator.frequencyAxis' : 'generator.binIndex')), yaxis: axis('EVM (%)') }} /></Paper>
     </Stack>}
     {tab === 'metrics' && <Stack spacing={2}>
       <Paper><TableContainer><Table size="small"><TableBody>{metrics.map(([key, value]) => <TableRow key={key}><TableCell component="th">{key}</TableCell><TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{value}</TableCell></TableRow>)}</TableBody></Table></TableContainer></Paper>
+      {summary && <Paper><TableContainer role="region" tabIndex={0} aria-label={t('nrtm.carriers')} sx={{ overflowX: 'auto' }} data-testid="nrtm-result-carriers"><Table size="small">
+        <TableHead><TableRow>{[t('nrtm.carrier'), t('nrtm.scs'), t('nrtm.bandwidth'), 'N_RB', 'FFT', t('nrtm.cellId'), t('nrtm.centerOffset'), t('nrtm.occupied'), 'EVM (%)'].map(head => <TableCell key={head} sx={{ whiteSpace: 'nowrap' }}>{head}</TableCell>)}</TableRow></TableHead>
+        <TableBody>{summary.carriers.map(c => <TableRow key={c.index}>
+          <TableCell>{c.index + 1}</TableCell><TableCell>{c.scs_khz}</TableCell><TableCell>{c.bandwidth_mhz}</TableCell><TableCell>{formatNumber(c.nrb)}</TableCell><TableCell>{formatNumber(c.n_fft)}</TableCell>
+          <TableCell>{c.n_cell_id}</TableCell><TableCell>{formatNumber(c.center_offset_hz / 1e6, { maximumFractionDigits: 3 })} MHz</TableCell><TableCell>{formatNumber(c.occupied_bandwidth_hz / 1e6, { maximumFractionDigits: 3 })} MHz</TableCell>
+          <TableCell>{typeof a.allocation[c.index]?.evm_percent === 'number' ? (a.allocation[c.index]!.evm_percent as number).toPrecision(3) : '—'}</TableCell>
+        </TableRow>)}</TableBody>
+      </Table></TableContainer></Paper>}
+      {nbIot.some(Boolean) && <NbIotDetails entries={nbIot} />}
       <Typography variant="h3">{t('generator.scope')}</Typography>
-      <Typography variant="body2">{t('generator.scopeHelp')}</Typography>
-      {a.notes.map(note => <Typography key={note} variant="body2" color="text.secondary">{note}</Typography>)}
+      <Typography variant="body2">{t(summary ? 'nrtm.scopeHelp' : 'generator.scopeHelp')}</Typography>
+      {a.notes.filter(note => !summary?.warnings?.includes(note)).map(note => <Typography key={note} variant="body2" color="text.secondary">{note}</Typography>)}
       <Typography variant="caption" sx={{ overflowWrap: 'anywhere' }}>IQ SHA-256 · {result.iq_sha256}</Typography>
     </Stack>}
   </Stack>
+}
+
+const level = (db: number) => `${formatNumber(db, { signDisplay: 'exceptZero', minimumFractionDigits: 2, maximumFractionDigits: 2 })} dB`
+
+/** NR-N-TM: what the generator did to each host carrier, read from `analysis.allocation[i].nb_iot` (nothing is recomputed here). */
+function NbIotDetails({ entries }: { entries: Array<NbIotAllocation | null> }) {
+  return <Paper component="section" aria-label={t('nrtm.nbiot')} sx={{ p: 1.5 }} data-testid="nrtm-result-nbiot"><Stack spacing={2}>
+    <Typography variant="h3">{t('nrtm.nbiot')}</Typography>
+    {entries.map((nb, index) => nb && <Stack key={index} spacing={.75} component="section" aria-label={t('nrtm.carrierN', { index: index + 1 })} data-testid={`nrtm-result-nbiot-${index}`}>
+      <Typography variant="subtitle2">{t('nrtm.nbiotHost', { index: index + 1, nid: nb.n_id, host: nb.host_cell_id })}</Typography>
+      <Facts items={[
+        [t('nrtm.nbiotBoost'), formatNumber(nb.boost_db, { maximumFractionDigits: 2 })],
+        [t('nrtm.nbiotLevel'), level(nb.nb_iot_gain_db)],
+        [t('nrtm.nrLevel'), level(nb.nr_gain_db)],
+        [t('nrtm.nbiotRePerFrame'), t('nrtm.nbiotReSplit', { nr: formatNumber(nb.nr_re), nb: formatNumber(nb.nb_iot_re), frame: formatNumber(nb.frame_re) })],
+      ]} />
+      <Scroll label={`${t('nrtm.carrierN', { index: index + 1 })} · ${t('nrtm.nbiot')}`}><Table size="small">
+        <TableHead><TableRow>{[t('nrtm.nbiotEdge'), t('nrtm.nbiotRb'), t('nrtm.nbiotFirstSubcarrier'), t('nrtm.nbiotRePerFrameShort'), t('nrtm.nbiotRePerSubframe')].map(head => <TableCell key={head} sx={{ whiteSpace: 'nowrap' }}>{head}</TableCell>)}</TableRow></TableHead>
+        <TableBody>{nb.carriers.map(c => <TableRow key={c.side}>
+          <TableCell>{t(`nrtm.nbiotEdge.${c.side}`)}</TableCell><TableCell>{c.rb}</TableCell><TableCell>{c.first_subcarrier}</TableCell><TableCell>{formatNumber(c.re_per_frame)}</TableCell>
+          <TableCell sx={{ fontVariantNumeric: 'tabular-nums', minWidth: 260 }}>{c.re_per_subframe.join(', ')}</TableCell>
+        </TableRow>)}</TableBody>
+      </Table></Scroll>
+    </Stack>)}
+  </Stack></Paper>
 }

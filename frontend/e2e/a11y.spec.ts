@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { installFakeApi } from './mock-api'
 
 /**
@@ -10,6 +11,9 @@ import { installFakeApi } from './mock-api'
  */
 
 const PAGES = ['/', '/datasets', '/datasets?guide=start', '/experiments', '/experiments/new', '/experiments/new?task=evaluate_pa', '/experiments/new?task=train_dpd', '/experiments/new?task=run_dpd', '/results', '/results/run-pa-0001', '/settings', '/gallery', '/about']
+const generatorPresets: { data: unknown } = JSON.parse(readFileSync(new URL('../mocks/generator_presets.json', import.meta.url), 'utf8'))
+const nrCatalogue: { data: { default_config: { preset_id: string } } } = JSON.parse(readFileSync(new URL('../mocks/nr_test_model_catalog.json', import.meta.url), 'utf8'))
+const nrResponses: { resolutions: Array<{ status: number; body: { config?: { preset_id: string } } }> } = JSON.parse(readFileSync(new URL('../src/test/nrTmFixtureResponses.json', import.meta.url), 'utf8'))
 
 async function scan(page: Page, path: string) {
   // Audit the settled page: wait for actual MUI transitions instead of
@@ -30,6 +34,24 @@ async function scan(page: Page, path: string) {
 }
 
 test.describe('accessibility (axe-core)', () => {
+  test('NR test-model controls are accessible with details closed, expanded and on a phone', async ({ page }) => {
+    await installFakeApi(page)
+    const resolved = nrResponses.resolutions.find(entry => entry.status === 200
+      && entry.body.config?.preset_id === nrCatalogue.data.default_config.preset_id)
+    expect(resolved).toBeDefined()
+    await page.route('**/api/v1/signal-generator/presets', route => route.fulfill({ json: generatorPresets.data }))
+    await page.route('**/api/v1/signal-generator/signals', route => route.fulfill({ json: [] }))
+    await page.route('**/api/v1/signal-generator/nr-test-models', route => route.fulfill({ json: nrCatalogue.data }))
+    await page.route('**/api/v1/signal-generator/nr-test-models/resolve', route => route.fulfill({ json: resolved!.body }))
+    await page.goto('/signal-generator')
+    await expect(page.getByTestId('nrtm-derived')).toBeVisible()
+    await scan(page, '/signal-generator')
+    await page.getByRole('button', { name: 'Defined by the standard' }).click()
+    await scan(page, '/signal-generator#standard')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await scan(page, '/signal-generator#phone')
+  })
+
   test('main pages have no serious or critical WCAG 2.1 AA violations', async ({ page }) => {
     await installFakeApi(page)
     for (const path of PAGES) {

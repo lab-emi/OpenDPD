@@ -50,6 +50,7 @@ nav:
       - Installation: install.md
       - First Studio experiment: tutorials/gui-quickstart.md
       - Signal Generator: guides/signal-generator.md
+      - NR standard test models: guides/nr-test-models.md
       - Signal preset reference: guides/signal-presets.md
       - Signal Analyzer: guides/signal-analyzer.md
       - Virtual PA Library: guides/virtual-pa-library.md

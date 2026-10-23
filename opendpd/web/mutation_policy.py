@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+import logging
 import re
 
+from opendpd.schemas.nr_test_model import NrTestModelConfig
 from opendpd.schemas.signal_generator import GeneratorConfig, GeneratorBatchRequest, ImportSignalRequest
 from opendpd.schemas.virtual_pa import VirtualPARequest, VirtualPADatasetRequest
 from opendpd.schemas.dataset_catalog import SyntheticSuiteRequest, DatasetPublicationDraft
@@ -14,6 +16,21 @@ from opendpd.web.policy import reject
 from opendpd.web.runtime import directory_bytes
 
 
+log = logging.getLogger(__name__)
+# (model, exception type) pairs already reported: a validator that fails in an unexpected way is a defect to fix, but a client must not be
+# able to turn it into one traceback per request in the log.
+_REPORTED: set[tuple[str, str]] = set()
+
+
+def _unexpected_failure(rule: "MutationRule", exc: Exception) -> None:
+    """Record, once per model and exception type and without the request body, that a validator raised something other than a validation error."""
+    key = (rule.model.__name__ if rule.model else rule.pattern, type(exc).__name__)
+    if key in _REPORTED:
+        return
+    _REPORTED.add(key)
+    log.warning("%s validation raised %s instead of a validation error; the request was answered 422 (reported once per type)", *key)
+
+
 @dataclass(frozen=True)
 class MutationRule:
     pattern: str
@@ -21,6 +38,12 @@ class MutationRule:
     rate_key: str
     per_minute: int
     estimate: str
+    # Report the validation messages instead of the generic hint (for forms whose rules the user must be able to read).
+    explain: bool = False
+    # The body can carry NR test-model recipes, whose validation derives a plan for every recipe it contains (bounded and memoised, but
+    # more than a field check): the budget is charged before the body is judged, so an invalid attempt costs what a valid one does, and
+    # the pydantic validation runs in a worker thread so that it never occupies the event loop shared by every tenant.
+    recipe: bool = False
 
 
 MUTATIONS = (
@@ -28,10 +51,13 @@ MUTATIONS = (
     MutationRule(r"/backbones/catalog/refresh", None, "backbone-catalog", 2, "none"),
 
     MutationRule(r"/signal-generator/import", ImportSignalRequest, "signal-import", 12, "signal_import"),
-    MutationRule(r"/signal-generator/batches", GeneratorBatchRequest, "signal-generator", 12, "generator_batch"),
+    MutationRule(r"/signal-generator/batches", GeneratorBatchRequest, "signal-generator", 12, "generator_batch", recipe=True),
+    # Stores nothing (policy.STATELESS_POSTS): the rule rate-limits every attempt (valid or not) and refuses an invalid recipe before any
+    # waveform or NB-IoT frame is computed.
+    MutationRule(r"/signal-generator/nr-test-models/resolve", NrTestModelConfig, "nr-test-model", 120, "none", explain=True, recipe=True),
     MutationRule(r"/pa-library/datasets", VirtualPADatasetRequest, "virtual-pa-dataset", 6, "pa_dataset"),
     MutationRule(r'/signal-analyzer/analyze', None, 'signal-analysis', 36, 'none'),
-    MutationRule(r'/signal-generator/signals', GeneratorConfig, 'signal-generator', 24, 'generator'),
+    MutationRule(r'/signal-generator/signals', GeneratorConfig, 'signal-generator', 24, 'generator', recipe=True),
     MutationRule(r'/signal-generator/signals/sg-[a-f0-9]{64}/dataset', None, 'signal-dataset', 6, 'input_dataset'),
     MutationRule(r'/pa-library/simulations', VirtualPARequest, 'virtual-pa', 24, 'pa'),
     MutationRule(r'/pa-library/simulations/vpa-[a-f0-9]{64}/dataset', None, 'virtual-pa-dataset', 6, 'paired_dataset'),
@@ -75,11 +101,28 @@ async def enforce_mutation_budget(manager, tenant, path, body):
     rule = next((item for item in MUTATIONS if re.fullmatch(item.pattern, path)), None)
     if rule is None:
         return
+    if rule.recipe:
+        manager.rate_limit(rule.rate_key + ':' + tenant.ip_key, rule.per_minute)
     try:
-        payload = rule.model.model_validate(body) if rule.model else body
-    except ValueError:
+        if rule.model is None:
+            payload = body
+        elif rule.recipe:
+            payload = await asyncio.to_thread(rule.model.model_validate, body)
+        else:
+            payload = rule.model.model_validate(body)
+    except ValueError as exc:
+        if rule.explain and hasattr(exc, 'errors'):       # the same shape as the local application's validation error
+            reject(422, 'invalid_request', 'request validation failed', [
+                {'field': '.'.join(str(p) for p in e['loc']), 'message': e['msg']} for e in exc.errors()])
         reject(422, 'invalid_request', 'Check the signal parameters, sample count and required dataset metadata.')
-    manager.rate_limit(rule.rate_key + ':' + tenant.ip_key, rule.per_minute)
+    except Exception as exc:
+        # Whatever a validator raises about a body the client wrote is the client's invalid request (422), never a 500 with a traceback
+        # that the client can repeat at will (an OverflowError from a huge number, a RecursionError, ...). The exception text is not
+        # returned: it can quote the body.
+        _unexpected_failure(rule, exc)
+        reject(422, 'invalid_request', 'Check the signal parameters, sample count and required dataset metadata.')
+    if not rule.recipe:
+        manager.rate_limit(rule.rate_key + ':' + tenant.ip_key, rule.per_minute)
     if rule.estimate == 'none':
         return
     try:

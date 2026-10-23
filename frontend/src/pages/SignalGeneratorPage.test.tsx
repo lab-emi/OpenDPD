@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { Route, Routes, useLocation } from 'react-router'
 import fixture from '@mocks/generator_presets.json'
+import { fixtureCatalog, nrTmRoutes } from '@/test/nrTestModelFixtures'
 import { mockApi, renderWithProviders } from '@/test/utils'
 import { SignalGeneratorPage } from './SignalGeneratorPage'
 import { StudioWorkflowProvider } from '@/workflow/StudioWorkflow'
@@ -12,6 +13,7 @@ vi.mock('@/components/PlotlyChart', () => ({ PlotlyChart: ({ title }: { title: s
 beforeEach(() => vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined))
 
 const fixturePresets = fixture.data
+const nrDefault = fixtureCatalog().default_config.preset_id
 const config = fixturePresets[0]!.config
 const result = {
   signal_id: `sg-${'a'.repeat(64)}`, iq_sha256: 'b'.repeat(64), config, coverage: 'numerology',
@@ -19,7 +21,8 @@ const result = {
   analysis: { sample_count: 131072, duration_ms: 1.0666, sample_rate_hz: 122.88e6, subcarrier_spacing_hz: 30000, useful_symbol_us: 33.3333, cp_lengths_samples: [352, 288], complete_symbols: 29, trailing_samples: 100, active_carriers: 612, data_carriers: 560, pilot_carriers: 52, rms: .2, peak: .8, papr_db: 12.04, mean_power_dbfs: -13.98, occupied_bandwidth_99_hz: 18.36e6, dc_magnitude: .001, evm_percent: .000002, evm_symbols: 16, time_us: [0, 1], time_i: [.1, .2], time_q: [.2, .1], time_envelope: [.22, .22], frequency_mhz: [-10, 10], psd_dbfs_hz: [-70, -70], constellation_i: [-1, 1], constellation_q: [1, -1], reference_i: [-1, 1], reference_q: [1, -1], ccdf_db: [0, 10], ccdf_probability: [.5, .01], allocation: [{ channel: 1, subcarriers: [-1, 1], pilots: [1], modulation_order: 64, power_db: 0 }], notes: ['SYNTHETIC'] },
 }
 
-function setup() {
+/** `catalog: false` leaves the test-model endpoints unanswered (404), as on a server that predates them. */
+function setup({ catalog = true }: { catalog?: boolean } = {}) {
   const signals: Record<string, typeof result> = {}
   const routes: Parameters<typeof mockApi>[0] = {
     'GET /api/v1/signal-generator/presets': () => fixturePresets,
@@ -33,6 +36,7 @@ function setup() {
       })
     },
     'POST /api/v1/signal-generator/validate': (_url, init) => JSON.parse(String(init.body)),
+    ...(catalog ? nrTmRoutes() : {}),
   }
   for (const letter of ['a', 'b']) {
     const id = 'sg-' + letter.repeat(64)
@@ -47,13 +51,14 @@ test('editable dataset name survives setup edits, validates its prefix, and is s
   const { calls } = setup()
   renderWithProviders(<SignalGeneratorPage />, { route: '/signal-generator' })
   const field = await screen.findByRole('textbox', { name: 'PA input dataset name' })
-  expect(field).toHaveValue('syn_pa_in_nr_bw20M_q64_c1_n1')
+  // The NR family opens on the standard test models: TM1.1 with 20 MHz and 30 kHz, QPSK; bandwidth_hz = 612 x 30 kHz + 30 kHz = 18.39 MHz.
+  expect(field).toHaveValue('syn_pa_in_nrtm1p1_bw18p39M_q4_c1_n1')
   fireEvent.change(field, { target: { value: 'syn_pa_in_bench_n2' } })
   await userEvent.click(screen.getByRole('button', { name: /02 ·.*Wi-Fi 6/ }))
   await userEvent.click(screen.getByTestId('preset-wifi6-20'))
   expect(field).toHaveValue('syn_pa_in_bench_n2')
   await userEvent.click(screen.getByRole('button', { name: 'Use automatic name' }))
-  expect(field).toHaveValue('syn_pa_in_nr-w6_bw20M_q64-1024_c1_s30-78p125k_n2')
+  expect(field).toHaveValue('syn_pa_in_nrtm1p1-w6_bw18p39-20M_q4-1024_c1_s30-78p125k_n2')
   fireEvent.change(field, { target: { value: 'wrong-prefix' } })
   expect(screen.getByRole('button', { name: 'Generate & preview' })).toBeDisabled()
   fireEvent.change(field, { target: { value: 'syn_pa_in_bench_n2' } })
@@ -65,8 +70,8 @@ test('editable dataset name survives setup edits, validates its prefix, and is s
   expect(screen.getByRole('link', { name: 'Open in Signal Analyzer' })).toHaveAttribute('href', expect.stringContaining('dataset=sds-'))
 })
 
-test('matrix selection keeps different preset lengths and disables stale exports', async () => {
-  const { calls } = setup()
+test('matrix selection keeps different preset lengths and disables stale exports (server without test-model endpoints)', async () => {
+  const { calls } = setup({ catalog: false })
   renderWithProviders(<Routes><Route element={<RouteContent />}><Route path="signal-generator/*" element={<SignalGeneratorPage />} /></Route></Routes>, { route: '/signal-generator' })
   expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
   await screen.findByRole('heading', { name: 'Signal setup' })
@@ -116,8 +121,11 @@ test('matrix selection keeps different preset lengths and disables stale exports
 test('advanced OFDMA channels and pilots reach the generator request', async () => {
   const { calls } = setup()
   renderWithProviders(<SignalGeneratorPage />)
-  expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
-  await userEvent.click(await screen.findByRole('button', { name: 'Generate & preview' }))
+  // OFDMA channels belong to the generic matrix; the standard test models define their own allocation.
+  await userEvent.click(await screen.findByRole('button', { name: 'Generic numerology matrix…' }))
+  await userEvent.click(screen.getByTestId('preset-nr-20'))
+  await userEvent.click(screen.getByTestId('remove-preset-' + nrDefault))
+  await userEvent.click(screen.getByRole('button', { name: 'Generate & preview' }))
   await screen.findByTestId('signal-generator-results')
   await userEvent.click(screen.getByRole('link', { name: 'Edit signal setup' }))
   await userEvent.click(screen.getByRole('button', { name: 'Advanced parameters' }))
@@ -184,7 +192,8 @@ test('opening Preview before generation does not create a signal and offers a re
   expect(screen.queryByTestId('signal-generator-results')).not.toBeInTheDocument()
   await userEvent.click(screen.getAllByRole('link', { name: 'Edit signal setup' })[0]!)
   expect(screen.getByTestId('location').textContent).toBe('/signal-generator')
-  expect(calls.filter(c => c.method === 'POST')).toHaveLength(0)
+  // Only the resolution of the default test model may be asked of the server; nothing is generated.
+  expect(calls.filter(c => c.method === 'POST' && !c.path.endsWith('/nr-test-models/resolve'))).toHaveLength(0)
 })
 
 test('a failed generation keeps the setup and does not navigate to Preview', async () => {

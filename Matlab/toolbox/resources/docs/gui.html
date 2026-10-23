@@ -42,8 +42,11 @@ silently redirects a transfer to another MATLAB process.</p>
 <h3 id="opendpd-signal-generator">OpenDPD Signal Generator</h3>
 <ol>
 <li>Select <strong>OpenDPD Signal Generator</strong>, then <strong>Open Signal Generator</strong>.</li>
-<li>Use Studio's existing waveform presets, bandwidth, sample rate, modulation,
-   sample count and advanced settings. Select one or several captures.</li>
+<li>Choose the signals in Studio's Signal Generator: a 3GPP NR standard test model
+   (the default of the <strong>5G NR</strong> tab), a preset from the generic numerology matrix
+   or another family, or custom settings. A test model derives its sample rate and
+   length from its settings; the other signals expose bandwidth, sample rate,
+   modulation, sample count and advanced settings. Select one or several captures.</li>
 <li>Choose the <strong>Virtual PA model</strong> and its parameters. The generator produces
    PA input <code>x</code>; the virtual PA creates output <code>y</code>, which PA training requires.
    The default is the library's solid-state AM/AM + AM/PM model (<code>rapp-am-pm</code>).
