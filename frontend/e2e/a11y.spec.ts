@@ -1,6 +1,9 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { installFakeApi } from './mock-api'
+import generatorPresets from '../mocks/generator_presets.json'
+import nrCatalogue from '../mocks/nr_test_model_catalog.json'
+import nrResponses from '../src/test/nrTmFixtureResponses.json'
 
 /**
  * S13 accessibility and offline checks against the mocked API.
@@ -30,6 +33,24 @@ async function scan(page: Page, path: string) {
 }
 
 test.describe('accessibility (axe-core)', () => {
+  test('NR test-model controls are accessible with details closed, expanded and on a phone', async ({ page }) => {
+    await installFakeApi(page)
+    const resolved = nrResponses.resolutions.find(entry => entry.status === 200
+      && entry.body.config?.preset_id === nrCatalogue.data.default_config.preset_id)
+    expect(resolved).toBeDefined()
+    await page.route('**/api/v1/signal-generator/presets', route => route.fulfill({ json: generatorPresets.data }))
+    await page.route('**/api/v1/signal-generator/signals', route => route.fulfill({ json: [] }))
+    await page.route('**/api/v1/signal-generator/nr-test-models', route => route.fulfill({ json: nrCatalogue.data }))
+    await page.route('**/api/v1/signal-generator/nr-test-models/resolve', route => route.fulfill({ json: resolved!.body }))
+    await page.goto('/signal-generator')
+    await expect(page.getByTestId('nrtm-derived')).toBeVisible()
+    await scan(page, '/signal-generator')
+    await page.getByRole('button', { name: 'Defined by the standard' }).click()
+    await scan(page, '/signal-generator#standard')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await scan(page, '/signal-generator#phone')
+  })
+
   test('main pages have no serious or critical WCAG 2.1 AA violations', async ({ page }) => {
     await installFakeApi(page)
     for (const path of PAGES) {

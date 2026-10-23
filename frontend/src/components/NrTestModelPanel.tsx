@@ -79,7 +79,7 @@ export function NrTestModelPanel({ catalog, recipe, status, error, resolution, f
         return <ButtonBase key={m.model} disabled={disabled || full} aria-pressed={selected} aria-label={`${shortModel(m.model)}, ${m.modulations.join(', ')}`} title={m.title} data-testid={'nrtm-model-' + m.model} onClick={() => choose(m.model)}
           sx={{ display: 'block', textAlign: 'left', p: 1.25, border: 1, borderRadius: 1.5, borderColor: selected ? 'primary.main' : 'divider', bgcolor: selected ? colors.selected : 'background.paper',
             '&:hover': { borderColor: 'primary.main' }, '&.Mui-focusVisible': { outline: '3px solid', outlineColor: 'primary.main', outlineOffset: 2 } }}>
-          <Typography component="span" sx={{ display: 'block', fontWeight: 750, fontSize: 16 }}>{shortModel(m.model)}</Typography>
+          <Typography component="span" sx={{ display: 'block', fontWeight: 750, fontSize: 16 }}>{shortModel(m.model) + ' '}</Typography>
           <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block' }}>{m.modulations.join(' · ')}</Typography>
         </ButtonBase>
       })}
