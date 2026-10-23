@@ -9,7 +9,9 @@ UMask=0077
 RuntimeDirectory=opendpd-web-vm
 RuntimeDirectoryMode=0700
 WorkingDirectory=/var/lib/opendpd-sandbox
-ExecStart=/usr/bin/qemu-system-x86_64 -name opendpd-web -machine q35,accel=kvm -cpu host -smp 4 -m 8192 -nodefaults -display none -monitor none -serial file:/var/lib/opendpd-sandbox/web-console.log -qmp unix:/run/opendpd-web-vm/qmp.sock,server=on,wait=off -drive file=/var/lib/opendpd-sandbox/web.qcow2,format=qcow2,if=virtio -drive file=/var/lib/opendpd-sandbox/web-seed.iso,format=raw,media=cdrom,readonly=on -netdev user,id=net0,restrict=on,ipv6=off,hostfwd=tcp:127.0.0.1:22224-:22,hostfwd=tcp:127.0.0.1:18765-:8765 -device virtio-net-pci,netdev=net0 -device virtio-rng-pci -sandbox on,obsolete=deny,elevateprivileges=deny,spawn=deny,resourcecontrol=deny
+# Return guest free pages to the host without reducing the 8 GiB guest capacity.
+# Keep the guest disk cache; direct I/O avoids a second copy in the host cache.
+ExecStart=/usr/bin/qemu-system-x86_64 -name opendpd-web -machine q35,accel=kvm -cpu host -smp 4 -m 8192 -nodefaults -display none -monitor none -serial file:/var/lib/opendpd-sandbox/web-console.log -qmp unix:/run/opendpd-web-vm/qmp.sock,server=on,wait=off -drive file=/var/lib/opendpd-sandbox/web.qcow2,format=qcow2,if=virtio,cache=none -drive file=/var/lib/opendpd-sandbox/web-seed.iso,format=raw,media=cdrom,readonly=on -netdev user,id=net0,restrict=on,ipv6=off,hostfwd=tcp:127.0.0.1:22224-:22,hostfwd=tcp:127.0.0.1:18765-:8765 -device virtio-net-pci,netdev=net0 -device virtio-rng-pci -device virtio-balloon-pci,free-page-reporting=on -sandbox on,obsolete=deny,elevateprivileges=deny,spawn=deny,resourcecontrol=deny
 ExecStop=/usr/bin/python3 /etc/opendpd-web/poweroff.py
 CPUQuota=400%
 MemoryMax=10G

@@ -1,5 +1,9 @@
 # What's new
 
+## 2.4.2: lower hosted VM memory residency
+
+The public Studio VM reports unused guest pages back to the host and uses direct disk I/O to avoid duplicate host/guest disk caching. The guest retains 8 GiB of addressable RAM, the API keeps its 6 GiB limit and the GPU worker keeps its existing resources. Waveform generation, numerical precision, model training and session admission limits are unchanged. See the [release notes](releases/2.4.2.md).
+
 ## 2.4.1: NR standard test models in the Signal Generator
 
 The **5G NR** tab now opens on the NR FR1 test models of 3GPP TS 38.141-1 clause 4.9.2:
