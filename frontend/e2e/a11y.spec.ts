@@ -1,9 +1,7 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { installFakeApi } from './mock-api'
-import generatorPresets from '../mocks/generator_presets.json'
-import nrCatalogue from '../mocks/nr_test_model_catalog.json'
-import nrResponses from '../src/test/nrTmFixtureResponses.json'
 
 /**
  * S13 accessibility and offline checks against the mocked API.
@@ -13,6 +11,9 @@ import nrResponses from '../src/test/nrTmFixtureResponses.json'
  */
 
 const PAGES = ['/', '/datasets', '/datasets?guide=start', '/experiments', '/experiments/new', '/experiments/new?task=evaluate_pa', '/experiments/new?task=train_dpd', '/experiments/new?task=run_dpd', '/results', '/results/run-pa-0001', '/settings', '/gallery', '/about']
+const generatorPresets: { data: unknown } = JSON.parse(readFileSync(new URL('../mocks/generator_presets.json', import.meta.url), 'utf8'))
+const nrCatalogue: { data: { default_config: { preset_id: string } } } = JSON.parse(readFileSync(new URL('../mocks/nr_test_model_catalog.json', import.meta.url), 'utf8'))
+const nrResponses: { resolutions: Array<{ status: number; body: { config?: { preset_id: string } } }> } = JSON.parse(readFileSync(new URL('../src/test/nrTmFixtureResponses.json', import.meta.url), 'utf8'))
 
 async function scan(page: Page, path: string) {
   // Audit the settled page: wait for actual MUI transitions instead of
