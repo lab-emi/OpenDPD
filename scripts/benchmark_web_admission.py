@@ -47,7 +47,9 @@ def main():
         try:
             sessions, latencies = [], []
             for index in range(config.max_sessions):
-                ip = f'198.51.100.{1 + index // 32}'
+                # Eight concurrent viewers must not share one network's six
+                # ingress slots; four sessions per IP keeps the real limit on.
+                ip = f'198.51.100.{1 + index // 4}'
                 started = time.perf_counter()
                 response = client.post('/api/v1/web/sessions', headers={'CF-Connecting-IP': ip}, json={})
                 assert response.status_code == 201, response.text

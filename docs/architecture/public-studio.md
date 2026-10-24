@@ -271,6 +271,19 @@ A release that adds public routes (2.4.1 added the two [NR test model](#nr-test-
 
 ### Host reboot recovery
 
+From 2.4.2, the VM unit enables `virtio-balloon-pci,free-page-reporting=on`
+and uses `cache=none` for its qcow2 disk. Linux reports unused guest pages
+for host reclamation while retaining all 8 GiB of guest capacity; direct
+I/O avoids duplicating the guest's disk cache on the host. There is no
+balloon size controller and no forced cache flush. A guest kernel with
+virtio balloon and free-page reporting support is required (the production
+Ubuntu 6.8 kernel supports both). Restart the VM to apply the new unit after
+draining jobs; this expires temporary sessions. Measure RSS/PSS once per
+QEMU process, not once per thread, and check cgroup file cache separately:
+`sudo python3 deployment/web/measure-memory.py --output /tmp/vm-memory.json`.
+The optional `--exercise-mib 1024` verifies allocation and release during a
+maintenance window. See the [2.4.2 release notes](../releases/2.4.2.md).
+
 Everything restarts unattended after a host reboot; no login is needed.
 `opendpd-web-vm.service`, `opendpd-tunnel-guard.service`, the connector and
 `opendpd-gpu.service` are enabled system units, and the guest enables

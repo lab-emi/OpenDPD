@@ -37,6 +37,8 @@ OpenDPD is a PyTorch framework for power amplifier (PA) modeling and digital pre
 ## What's new
 
 <!-- --8<-- [start:studio-features] -->
+**OpenDPD 2.4.2** reduces hosted VM memory residency while retaining the same 8 GiB guest capacity, compute limits and numerical behavior. See the [2.4.2 release notes](https://lab-emi.github.io/OpenDPD/releases/2.4.2/).
+
 **OpenDPD 2.4.1** adds the NR FR1 standard test models of 3GPP TS 38.141-1 to the Signal Generator: NR-FR1-TM1.1, 1.2, 2, 2a, 2b, 3.1, 3.1a, 3.1b, 3.2, 3.3 and NR-N-TM, as FDD or TDD baseband signals of 15/30/60 kHz and 3–100 MHz with one to sixteen carriers. The **5G NR** tab opens on the model picker and lists what the standard fixes; the generic preset matrix is behind a button. With the data convention set to MATLAB's, the resource grids agree with MATLAB R2026a's 5G Toolbox in all 438 compared configurations (414 bit-identical, the rest within 3.2e-16); the default convention follows the standard's text and differs from MATLAB's random bits for TDD, TM2/2a/2b and captures longer than one frame. The signals are uncoded baseband stimuli (PDCCH, PDSCH and DM-RS); at default settings 35 of the 80 combinations of duplex mode, subcarrier spacing and bandwidth (10 of 40 FDD, 25 of 40 TDD) of a single carrier are shorter than the standard's 10 or 20 ms, because a capture holds at most 1,000,000 samples; the EVM shown is a known-grid diagnostic, not a conformance claim.
 
 **OpenDPD 2.4.0** added the MATLAB toolbox, MATLINK and a Python SDK: train PA/DPD models from MATLAB, export portable model packages, and verify them in plain MATLAB. Two versioned LTE EVM/ACLR profiles pass all 115 registered digital-signal comparisons with MATLAB; the original v1 failure record remains available. **DPD Arena**, introduced in 2.3.0, compares 23 DPD model entries on **APA_200MHz_b** across parameter budgets using test EVM, output ACLR, arithmetic cost and Pareto fronts. Results are predictions through one frozen PA model, not new hardware measurements.
@@ -72,7 +74,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 mkdir opendpd-lab
 cd opendpd-lab
 uv venv --python 3.12
-uv pip install --python .venv "opendpd==2.4.1" --torch-backend=auto
+uv pip install --python .venv "opendpd==2.4.2" --torch-backend=auto
 uv run --no-project --python .venv opendpd gui
 ```
 

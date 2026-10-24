@@ -14499,7 +14499,7 @@
             "title": "Csrf Token"
           },
           "version": {
-            "default": "2.4.1",
+            "default": "2.4.2",
             "title": "Version",
             "type": "string"
           }
@@ -17104,7 +17104,7 @@
   },
   "info": {
     "title": "OpenDPD Studio API",
-    "version": "2.4.1"
+    "version": "2.4.2"
   },
   "openapi": "3.1.0",
   "paths": {
